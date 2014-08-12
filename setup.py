@@ -19,6 +19,9 @@ def parse_version(module_file):
     match = re.findall("__version__ = '([^']+)'", s)
     return match[0]
 
+f = open("README.txt")
+ga4gh_readme = f.read()
+f.close()
 ga4gh_version = parse_version("ga4gh/__init__.py") 
 
 requirements = []
@@ -29,7 +32,11 @@ if v < (2, 7) or v == (3, 0) or v == (3, 1):
 setup(
     name = "ga4gh",
     version = ga4gh_version,
+    long_description = ga4gh_readme,
     packages = ["ga4gh"], 
+    author = "AUTHOR FIXME",
+    author_email = "FIXME@somewhere.org",
+    url = "http://pypi.python.org/pypi/ga4gh", 
     scripts = ["scripts/ga4gh_ref.py"],
     install_requires = requirements,
 )
