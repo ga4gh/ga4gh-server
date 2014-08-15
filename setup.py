@@ -33,10 +33,15 @@ setup(
     name = "ga4gh",
     version = ga4gh_version,
     long_description = ga4gh_readme,
-    packages = ["ga4gh"], 
+    packages = ["ga4gh", "ga4gh.scripts"], 
     author = "AUTHOR FIXME",
     author_email = "FIXME@somewhere.org",
     url = "http://pypi.python.org/pypi/ga4gh", 
-    scripts = ["scripts/ga4gh_server.py", "scripts/ga4gh_client.py"],
+    entry_points = {
+        'console_scripts': [
+            'ga4gh_client=ga4gh.scripts.client:main',
+            'ga4gh_server=ga4gh.scripts.server:main',
+        ]
+    },
     install_requires = requirements,
 )

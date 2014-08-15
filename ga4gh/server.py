@@ -126,6 +126,10 @@ class HTTPServer(http.server.HTTPServer):
     Basic HTTP server for the GA4GH protocol.
     """
     def __init__(self, server_address, backend):
-        super(HTTPServer, self).__init__(server_address, HTTPRequestHandler)
+        #super(HTTPServer, self).__init__(server_address, HTTPRequestHandler)
+        # TODO make this a bit neater or figure out why Python2 has 
+        # a problem with super here
+        http.server.HTTPServer.__init__(self, server_address, 
+                HTTPRequestHandler)
         self.ga4ghProtocolHandler = ProtocolHandler(backend)
         
