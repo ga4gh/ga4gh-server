@@ -37,6 +37,6 @@ setup(
     author = "AUTHOR FIXME",
     author_email = "FIXME@somewhere.org",
     url = "http://pypi.python.org/pypi/ga4gh", 
-    scripts = ["scripts/ga4gh_ref.py"],
+    scripts = ["scripts/ga4gh_server.py", "scripts/ga4gh_client.py"],
     install_requires = requirements,
 )

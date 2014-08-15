@@ -4,8 +4,8 @@ Command line interface for the ga4gh reference implementation.
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-
 import future
+
 import argparse
  
 from future.standard_library import hooks
@@ -13,6 +13,7 @@ with hooks():
     import http.client
 
 import ga4gh
+import ga4gh.client
 import ga4gh.protocol
 
 class VariantSearchRunner(object):
@@ -20,18 +21,14 @@ class VariantSearchRunner(object):
         self.start = args.start
         self.end = args.end
         self.verbosity = args.verbose
-        self.http_client = http.client.HTTPConnection(args.hostname, args.port)
-        self.http_client.set_debuglevel(self.verbosity)
+        self.http_client = ga4gh.client.HTTPClient(args.hostname, args.port,
+                args.verbose)
 
     def run(self):
         svr = ga4gh.protocol.GASearchVariantsRequest()
         svr.start = self.start 
         svr.end = self.end 
-        s = svr.toJSON()
-        self.http_client.request("POST", "variants/search", s)
-        r = self.http_client.getresponse()
-        s = r.read().decode()
-        resp = ga4gh.protocol.GASearchVariantsResponse.fromJSON(s)
+        resp = self.http_client.searchVariants(svr) 
         self.print_variants(resp)
     
     def print_variants(self, response):
