@@ -94,6 +94,7 @@ class GASearchVariantsRequest(ProtocolElement):
         self.variantSetIds = None 
         self.start = None 
         self.end = None
+        self.pageToken = None
 
 
 class GAVariant(ProtocolElement):

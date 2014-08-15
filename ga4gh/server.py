@@ -4,10 +4,10 @@ Server classes for the GA4GH reference implementation.
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-import future
  
 import random
 import datetime
+import future
 from future.standard_library import hooks
 with hooks():
     import http.server
@@ -19,27 +19,23 @@ class VariantSimulator(object):
     """
     A class that simulates Variants that can be served by the GA4GH API.
     """
-    def __init__(self, seed=0, numCalls=1):
-        self.positionRng = random.Random()
-        self.positionRng.seed(seed)
+    def __init__(self, seed=0, numCalls=1, maxResponseVariants=100):
         self.randomSeed = seed
         self.numCalls = numCalls
+        self.maxResponseVariants = maxResponseVariants
         self.referenceName = "ref_sim"
         self.variantSetId = "vs_sim"
         now = protocol.convertDatetime(datetime.datetime.now()) 
         self.created = now
         self.updated = now
         
-    def generateVariant(self, position):
+    def generateVariant(self, position, rng):
         """
-        Generate a random variant for the specified position. This is done
-        by seeding the random number generator with the position and generating
-        values for all other fields using this generator. The method is 
-        therefore deterministic and reproducible.
+        Generate a random variant for the specified position using the 
+        specified random number generator. This generator should be seeded
+        with a value that is unique to this position so that the same variant
+        will always be produced regardless of the order it is generated in.
         """
-        rng = random.Random()
-        seed = position + self.randomSeed
-        rng.seed(position)
         v = protocol.GAVariant()
         # The id is the combination of the position, reference id and variant
         # set id; this allows us to generate the variant from the position and
@@ -72,15 +68,27 @@ class VariantSimulator(object):
         return v 
         
     def searchVariants(self, request):
-        variants = []
-        for j in range(request.start, request.end):
-            # This is not quite right as depending on the range that we 
-            # search, a given position will be or won't be a variant.
-            # This must be fully deterministic.
-            if self.positionRng.random() < self.variantDensity: 
-                variants.append(self.generateVariant(j))
+        """
+        Serves the specified GASearchVariantsRequest and returns a
+        GASearchVariantsResponse. If the number of variants to be returned is
+        greater than maxResponseVariants then the nextPageToken is set to a
+        non-null value. Subsequent request objects should provide this value in
+        the pageToken attribute to obtain the next page of results.
+        """
         response = protocol.GASearchVariantsResponse()
-        response.variants = variants
+        rng = random.Random()
+        v = []
+        j = request.start
+        if request.pageToken is not None:
+            j = request.pageToken 
+        while j < request.end and len(v) != self.maxResponseVariants: 
+            rng.seed(self.randomSeed + j)
+            if rng.random() < self.variantDensity: 
+                v.append(self.generateVariant(j, rng))
+            j += 1
+        if j < request.end - 1:
+            response.nextPageToken = j + 1
+        response.variants = v
         return response
        
 class ProtocolHandler(object):

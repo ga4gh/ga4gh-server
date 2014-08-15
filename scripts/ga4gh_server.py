@@ -4,7 +4,6 @@ Command line interface for the ga4gh reference implementation.
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-import future
  
 import argparse
 
@@ -16,6 +15,7 @@ class SimulateRunner(object):
         backend = ga4gh.server.VariantSimulator()
         backend.randomSeed = args.seed
         backend.variantDensity = args.variant_density
+        backend.maxResponseVariants = args.max_response_variants
         server_address = ('', args.port)
         self.http_server = ga4gh.server.HTTPServer(server_address, backend)
 
@@ -27,7 +27,7 @@ def main():
     # Add global options
     parser.add_argument("--port", "-P", default=8000, type=int,
             help="The port to listen on")
-    parser.add_argument('--verbose', '-v', action='count')
+    parser.add_argument('--verbose', '-v', action='count', default=0)
     subparsers = parser.add_subparsers(title='subcommands',)                                             
                                                                                                                  
     # help  
@@ -42,6 +42,10 @@ def main():
             help="The random seed for variants")
     sim_parser.add_argument("--variant-density", "-d", default=0.5, type=float,
             help="The probability a given position is a variant.")
+    sim_parser.add_argument("--max-response-variants", "-m", default=1000, 
+            type=int, help="""
+                The maximum number of variants returned in one response.
+                """)
     sim_parser.set_defaults(runner=SimulateRunner)
 
     args = parser.parse_args()

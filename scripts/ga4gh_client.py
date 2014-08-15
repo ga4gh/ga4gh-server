@@ -4,13 +4,8 @@ Command line interface for the ga4gh reference implementation.
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-import future
 
 import argparse
- 
-from future.standard_library import hooks
-with hooks():
-    import http.client
 
 import ga4gh
 import ga4gh.client
@@ -28,22 +23,20 @@ class VariantSearchRunner(object):
         svr = ga4gh.protocol.GASearchVariantsRequest()
         svr.start = self.start 
         svr.end = self.end 
-        resp = self.http_client.searchVariants(svr) 
-        self.print_variants(resp)
+        for v in self.http_client.searchVariants(svr):
+            self.print_variant(v)
     
-    def print_variants(self, response):
+    def print_variant(self, v):
         """
-        Prints out the specified SearchVariantsReponse object in a VCF-like
-        form.
+        Prints out the specified GAVariant object in a VCF-like form.
         """
-        for v in response.variants:
-            print(v.id, v.variantSetId, v.names, v.created, v.updated, 
-                    v.referenceName, v.start, v.end, v.referenceBases, 
-                    v.alternateBases, sep="\t", end="")
-            # TODO insert info fields
-            for c in v.calls:
-                print(c.genotype, c.genotypeLikelihood, sep=":", end="\t")
-            print()
+        print(v.id, v.variantSetId, v.names, v.created, v.updated, 
+                v.referenceName, v.start, v.end, v.referenceBases, 
+                v.alternateBases, sep="\t", end="")
+        # TODO insert info fields
+        for c in v.calls:
+            print(c.genotype, c.genotypeLikelihood, sep=":", end="\t")
+        print()
 
 def main():
     parser = argparse.ArgumentParser(description="GA4GH reference client")                                       
@@ -52,7 +45,7 @@ def main():
             help="The server host")
     parser.add_argument("--port", "-P", default=8000, type=int,
             help="The server port")
-    parser.add_argument('--verbose', '-v', action='count')
+    parser.add_argument('--verbose', '-v', action='count', default=0)
     subparsers = parser.add_subparsers(title='subcommands',)                                             
                                                                                                                  
     # help  
