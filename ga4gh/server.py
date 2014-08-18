@@ -39,8 +39,8 @@ class VariantSimulator(object):
         # The id is the combination of the position, referenceName and variant
         # set id; this allows us to generate the variant from the position and
         # id.
-        v.id = "{0}:{1}:{2}".format(self._variantSetId, referenceName,
-                                    position)
+        v.id = "{0}:{1}:{2}".format(
+            self._variantSetId, referenceName, position)
         v.variantSetId = self._variantSetId
         v.referenceName = referenceName
         v.names = []  # What's a good model to generate these?
@@ -146,6 +146,6 @@ class HTTPServer(http.server.HTTPServer):
     """
     def __init__(self, serverAddress, backend):
         # Cannot use super() here because of Python 2 issues.
-        http.server.HTTPServer.__init__(self, serverAddress,
-                                        HTTPRequestHandler)
+        http.server.HTTPServer.__init__(
+            self, serverAddress, HTTPRequestHandler)
         self.ga4ghProtocolHandler = ProtocolHandler(backend)
