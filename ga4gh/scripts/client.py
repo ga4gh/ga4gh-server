@@ -5,28 +5,68 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import time
 import argparse
 
 import ga4gh
 import ga4gh.client
 import ga4gh.protocol
 
-class VariantSearchRunner(object):
+class BenchmarkRunner(object):
+    """
+    Runner class for the client side benchmarking. This is intended to give 
+    rough figures on protocol throughput on the server side over various 
+    requests.
+    """
     def __init__(self, args):
-        self.start = args.start
-        self.end = args.end
-        self.verbosity = args.verbose
-        self.http_client = ga4gh.client.HTTPClient(args.hostname, args.port,
+        self._maxResults = args.maxResults
+        self._verbosity = args.verbose
+        self._httpClient = ga4gh.client.HTTPClient(args.hostname, args.port,
                 args.verbose)
 
     def run(self):
         svr = ga4gh.protocol.GASearchVariantsRequest()
-        svr.start = self.start 
-        svr.end = self.end 
-        for v in self.http_client.searchVariants(svr):
-            self.print_variant(v)
+        svr.start = 0
+        svr.end = 2**32
+        numVariants = 0 
+        beforeCpu = time.clock()
+        beforeWall = time.time()
+        try:
+            for v in self._httpClient.searchVariants(svr):
+                numVariants += 1
+        except KeyboardInterrupt:
+            pass
+        cpuTime = time.clock() - beforeCpu 
+        wallTime = time.time() - beforeWall
+        totalBytes = self._httpClient.getBytesRead()
+        totalBytes /= 1024 * 1024 
+        s = "read {0} variants in {1:.2f} seconds; CPU time {2:.2f}".format(
+                numVariants, wallTime, cpuTime)
+        s += "; {0:.2f} MB @ {1:.2f} MB/s".format(totalBytes, 
+                totalBytes / wallTime)
+        print(s)
+
+class VariantSearchRunner(object):
+    """
+    Runner class for the variants/search method. 
+    """
+    def __init__(self, args):
+        svr = ga4gh.protocol.GASearchVariantsRequest()
+        svr.referenceName = args.referenceName
+        svr.variantName = args.variantName
+        svr.start = args.start 
+        svr.end = args.end 
+        svr.maxResults = args.maxResults
+        self._request = svr
+        self._verbosity = args.verbose
+        self._httpClient = ga4gh.client.HTTPClient(args.hostname, args.port,
+                args.verbose)
+
+    def run(self):
+        for v in self._httpClient.searchVariants(self._request):
+            self.printVariant(v)
     
-    def print_variant(self, v):
+    def printVariant(self, v):
         """
         Prints out the specified GAVariant object in a VCF-like form.
         """
@@ -49,18 +89,33 @@ def main():
     subparsers = parser.add_subparsers(title='subcommands',)                                             
                                                                                                                  
     # help  
-    help_parser = subparsers.add_parser("help",
+    helpParser = subparsers.add_parser("help",
             description = "ga4gh_client help",
             help="show this help message and exit")
     # variants/search 
-    vs_parser = subparsers.add_parser("variants-search",
+    vsParser = subparsers.add_parser("variants-search",
             description = "Search for variants",
             help="Search for variants.")
-    vs_parser.set_defaults(runner=VariantSearchRunner)
-    vs_parser.add_argument("--start", "-s", default=0, type=int,
+    vsParser.set_defaults(runner=VariantSearchRunner)
+    vsParser.add_argument("--referenceName", "-r", default="chrSim", 
+            help="Only return variants on this reference.")
+    vsParser.add_argument("--variantName", "-n", default=None, 
+            help="Only return variants which have exactly this name. TODO")
+    vsParser.add_argument("--start", "-s", default=0, type=int,
             help="The start of the search range (inclusive).")
-    vs_parser.add_argument("--end", "-e", default=1, type=int,
+    vsParser.add_argument("--end", "-e", default=1, type=int,
             help="The end of the search range (exclusive).")
+    vsParser.add_argument("--maxResults", "-m", default=10, type=int, 
+            help="The maximum number of variants returned in one response.")
+    # benchmarking 
+    bmParser = subparsers.add_parser("benchmark",
+            description = "Run simple benchmarks on the various methods",
+            help="Benchmark server performance")
+    bmParser.set_defaults(runner=BenchmarkRunner)
+    bmParser.add_argument("--maxResults", "-m", default=10, type=int, 
+            help="The maximum number of variants returned in one response.")
+
+
     args = parser.parse_args()
     if "runner" not in args:
         parser.print_help()

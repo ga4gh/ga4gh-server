@@ -86,16 +86,6 @@ class GACall(ProtocolElement):
         self.info = []
 
 
-class GASearchVariantsRequest(ProtocolElement):
-    """
-    Search for variants.
-    """
-    def __init__(self):
-        self.variantSetIds = None 
-        self.start = None 
-        self.end = None
-        self.pageToken = None
-
 
 class GAVariant(ProtocolElement):
     """
@@ -123,10 +113,25 @@ class GAVariant(ProtocolElement):
         self.info = []
         self.calls = []
 
+class GASearchVariantsRequest(ProtocolElement):
+    """
+    Search for variants.
+    """
+    def __init__(self):
+        self.variantSetIds = []
+        self.variantName = None
+        self.callSetIds = []
+        self.referenceName = None
+        self.start = None 
+        self.end = None
+        self.pageToken = None
+        self.maxResults = 10 # Isn't this a bit small?
+
 class GASearchVariantsResponse(ProtocolElement):
     _embedded_types = {"variants":GAVariant}
 
     def __init__(self):
-        self.variants = None 
+        self.variants = [] 
         self.nextPageToken = None
         
+

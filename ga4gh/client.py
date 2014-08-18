@@ -19,9 +19,10 @@ class HTTPClient(object):
     Simple HTTP client for the GA4GH protocol.
     """
     def __init__(self, host, port, debugLevel):
-        self.httpConnection = http.client.HTTPConnection(host, port)
-        self.httpConnection.set_debuglevel(debugLevel)
-        self.debugLevel = debugLevel
+        self._httpConnection = http.client.HTTPConnection(host, port)
+        self._httpConnection.set_debuglevel(debugLevel)
+        self._debugLevel = debugLevel
+        self._bytesRead = 0
 
     def searchVariants(self, request):
         """
@@ -33,12 +34,13 @@ class HTTPClient(object):
         notDone = True
         while notDone:
             s = request.toJSON()
-            self.httpConnection.request("POST", "variants/search", s)
-            r = self.httpConnection.getresponse()
-            if self.debugLevel > 0:
+            self._httpConnection.request("POST", "variants/search", s)
+            r = self._httpConnection.getresponse()
+            if self._debugLevel > 0:
                 print() # ugly - http doesn't end lines for some reason
             s = r.read().decode() # TODO encoding??
-            if self.debugLevel > 1:
+            self._bytesRead += len(s)
+            if self._debugLevel > 1:
                 # TODO use a logging output and integrate with HTTP client more
                 # nicely.
                 print("json response:")
@@ -50,4 +52,11 @@ class HTTPClient(object):
                 yield v
             request.pageToken = resp.nextPageToken
             notDone = resp.nextPageToken is not None
+    
+    def getBytesRead(self):
+        """
+        Returns the total number of (non HTTP) bytes read from the server
+        by this client.
+        """
+        return self._bytesRead
 
