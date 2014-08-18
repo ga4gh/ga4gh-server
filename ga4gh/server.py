@@ -4,7 +4,7 @@ Server classes for the GA4GH reference implementation.
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
- 
+
 import random
 import datetime
 import future
@@ -15,6 +15,7 @@ with hooks():
 import ga4gh
 import ga4gh.protocol as protocol
 
+
 class VariantSimulator(object):
     """
     A class that simulates Variants that can be served by the GA4GH API.
@@ -23,13 +24,13 @@ class VariantSimulator(object):
         self._randomSeed = seed
         self._numCalls = numCalls
         self._variantSetId = "vs_sim"
-        now = protocol.convertDatetime(datetime.datetime.now()) 
+        now = protocol.convertDatetime(datetime.datetime.now())
         self._created = now
         self._updated = now
-        
+
     def generateVariant(self, referenceName, position, rng):
         """
-        Generate a random variant for the specified position using the 
+        Generate a random variant for the specified position using the
         specified random number generator. This generator should be seeded
         with a value that is unique to this position so that the same variant
         will always be produced regardless of the order it is generated in.
@@ -38,17 +39,17 @@ class VariantSimulator(object):
         # The id is the combination of the position, referenceName and variant
         # set id; this allows us to generate the variant from the position and
         # id.
-        v.id = "{0}:{1}:{2}".format(self._variantSetId, referenceName, 
-                position)
-        v.variantSetId = self._variantSetId 
+        v.id = "{0}:{1}:{2}".format(self._variantSetId, referenceName,
+                                    position)
+        v.variantSetId = self._variantSetId
         v.referenceName = referenceName
-        v.names = [] # What's a good model to generate these? 
+        v.names = []  # What's a good model to generate these?
         v.created = self._created
         v.updated = self._updated
         v.start = position
-        v.end = position + 1 # SNPs only for now
+        v.end = position + 1  # SNPs only for now
         bases = ["A", "C", "G", "T"]
-        ref = rng.choice(bases) 
+        ref = rng.choice(bases)
         v.referenceBases = ref
         alt = rng.choice([b for b in bases if b != ref])
         v.alternateBases = [alt]
@@ -64,8 +65,8 @@ class VariantSimulator(object):
             # Are these log-scaled? Spec does not say.
             c.genotypeLikelihood = [-100, -100, -100]
             v.calls.append(c)
-        return v 
-        
+        return v
+
     def searchVariants(self, request):
         """
         Serves the specified GASearchVariantsRequest and returns a
@@ -79,17 +80,18 @@ class VariantSimulator(object):
         v = []
         j = request.start
         if request.pageToken is not None:
-            j = request.pageToken 
-        while j < request.end and len(v) != request.maxResults: 
+            j = request.pageToken
+        while j < request.end and len(v) != request.maxResults:
             rng.seed(self.randomSeed + j)
-            if rng.random() < self.variantDensity: 
+            if rng.random() < self.variantDensity:
                 v.append(self.generateVariant(request.referenceName, j, rng))
             j += 1
         if j < request.end - 1:
-            response.nextPageToken = j 
+            response.nextPageToken = j
         response.variants = v
         return response
-       
+
+
 class ProtocolHandler(object):
     """
     Class that handles the GA4GH protocol messages and responses.
@@ -105,21 +107,21 @@ class ProtocolHandler(object):
         """
         request = protocol.GASearchVariantsRequest.fromJSON(jsonRequest)
         # TODO wrap this call in try: except and make a GAException object
-        # out of the resulting Exception object. Two classes of exception 
+        # out of the resulting Exception object. Two classes of exception
         # should be identified: those due to input errors and other expected
-        # problems the backend must deal with, and other exceptions which 
-        # indicate a server error. The former type should all subclass a 
+        # problems the backend must deal with, and other exceptions which
+        # indicate a server error. The former type should all subclass a
         # an exception defined in the ga4gh package.
-        resp = self._backend.searchVariants(request) 
+        resp = self._backend.searchVariants(request)
         s = resp.toJSON()
         return s
-            
+
 
 class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     """
-    Handler for the HTTP level of the GA4GH protocol. 
+    Handler for the HTTP level of the GA4GH protocol.
     """
-    
+
     def do_POST(self):
         """
         Handle a single POST request.
@@ -137,13 +139,13 @@ class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(s)
 
+
 class HTTPServer(http.server.HTTPServer):
     """
     Basic HTTP server for the GA4GH protocol.
     """
     def __init__(self, serverAddress, backend):
         # Cannot use super() here because of Python 2 issues.
-        http.server.HTTPServer.__init__(self, serverAddress, 
-                HTTPRequestHandler)
+        http.server.HTTPServer.__init__(self, serverAddress,
+                                        HTTPRequestHandler)
         self.ga4ghProtocolHandler = ProtocolHandler(backend)
-        

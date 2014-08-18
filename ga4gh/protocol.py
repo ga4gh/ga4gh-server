@@ -7,7 +7,8 @@ from __future__ import unicode_literals
 
 import json
 import datetime
-    
+
+
 def convertDatetime(t):
     """
     Converts the specified datetime object into its appropriate protocol
@@ -18,6 +19,7 @@ def convertDatetime(t):
     time_in_millis = delta.total_seconds() * 1000
     return int(time_in_millis)
 
+
 class ProtocolElementEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, ProtocolElement):
@@ -26,20 +28,21 @@ class ProtocolElementEncoder(json.JSONEncoder):
             ret = super(ProtocolElementEncoder, self).default(obj)
         return ret
 
+
 class ProtocolElement(object):
     """
     Superclass of GA4GH protocol elements. These elements are in one-to-one
     correspondence with the Avro definitions, and provide the basic elements
-    of the on-the-wire protocol. 
+    of the on-the-wire protocol.
     """
-    _embedded_types = {} 
+    _embedded_types = {}
 
     def toJSON(self):
         """
         Returns a JSON encoded string representation of this ProtocolElement.
         """
-        return json.dumps(self, cls=ProtocolElementEncoder) 
-    
+        return json.dumps(self, cls=ProtocolElementEncoder)
+
     @classmethod
     def fromJSON(cls, json_str):
         """
@@ -61,14 +64,16 @@ class ProtocolElement(object):
             instance.__dict__[k] = v
         return instance
 
+
 class GAKeyValue(ProtocolElement):
-    """ 
+    """
     A structure for encoding arbitrary Key-Value tuples, or tags, on other
     record types.
     """
     def __init__(self, key, value):
         self.key = key
         self.value = value
+
 
 class GACall(ProtocolElement):
     """
@@ -78,13 +83,12 @@ class GACall(ProtocolElement):
     occurrence of a SNP named rs1234 in a call set with the name NA12345
     """
     def __init__(self):
-        self.callSetId = None 
+        self.callSetId = None
         self.callSetName = None
         self.genotype = []
         self.phaseset = None
         self.genotypeLikelihood = []
         self.info = []
-
 
 
 class GAVariant(ProtocolElement):
@@ -95,8 +99,8 @@ class GAVariant(ProtocolElement):
     row in VCF.
     """
     _embedded_types = {
-        "calls":GACall,
-        "info":GAKeyValue
+        "calls": GACall,
+        "info": GAKeyValue
     }
 
     def __init__(self):
@@ -113,6 +117,7 @@ class GAVariant(ProtocolElement):
         self.info = []
         self.calls = []
 
+
 class GASearchVariantsRequest(ProtocolElement):
     """
     Search for variants.
@@ -122,16 +127,15 @@ class GASearchVariantsRequest(ProtocolElement):
         self.variantName = None
         self.callSetIds = []
         self.referenceName = None
-        self.start = None 
+        self.start = None
         self.end = None
         self.pageToken = None
-        self.maxResults = 10 # Isn't this a bit small?
+        self.maxResults = 10  # Isn't this a bit small?
+
 
 class GASearchVariantsResponse(ProtocolElement):
-    _embedded_types = {"variants":GAVariant}
+    _embedded_types = {"variants": GAVariant}
 
     def __init__(self):
-        self.variants = [] 
+        self.variants = []
         self.nextPageToken = None
-        
-

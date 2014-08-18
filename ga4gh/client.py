@@ -4,7 +4,7 @@ Client classes for the GA4GH reference implementation.
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
- 
+
 import json
 import future
 from future.standard_library import hooks
@@ -13,6 +13,7 @@ with hooks():
 
 import ga4gh
 import ga4gh.protocol as protocol
+
 
 class HTTPClient(object):
     """
@@ -37,8 +38,8 @@ class HTTPClient(object):
             self._httpConnection.request("POST", "variants/search", s)
             r = self._httpConnection.getresponse()
             if self._debugLevel > 0:
-                print() # ugly - http doesn't end lines for some reason
-            s = r.read().decode() # TODO encoding??
+                print()  # ugly - http doesn't end lines for some reason
+            s = r.read().decode()  # TODO encoding??
             self._bytesRead += len(s)
             if self._debugLevel > 1:
                 # TODO use a logging output and integrate with HTTP client more
@@ -52,11 +53,10 @@ class HTTPClient(object):
                 yield v
             request.pageToken = resp.nextPageToken
             notDone = resp.nextPageToken is not None
-    
+
     def getBytesRead(self):
         """
         Returns the total number of (non HTTP) bytes read from the server
         by this client.
         """
         return self._bytesRead
-
