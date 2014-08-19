@@ -44,25 +44,24 @@ exercise this API.
 Simulating Variants
 *******************
 
-To provide a working outline of the project as quickly as possible, we took
-the approach of serving simulated data from the ``variants/search`` method.
-We currently use a very naive and simplistic model for generating variants,
-in which SNPs are distributed over all query regions uniformly
-at a fixed density. The model is simplistic, but it is (importantly)
-*consistent*: regardless of how we perform it, any query that intersects
-with a given position will always return precisely the same variant. Thus,
-from a client's perspective, it would appear that  the server is returning
-(not very plausible) variants drawn from an infinitely large file.
+To provide a working outline of the project as quickly as possible, we took the
+approach of serving simulated data from the ``variants/search`` method.  We
+currently use a very naive and simplistic model for generating variants, in
+which SNPs are distributed over all query regions uniformly at a fixed density.
+The model is simplistic, but it is (importantly) *consistent*: regardless of
+the context, any query that intersects with a given position will always return
+precisely the same variant. Thus, from a client's perspective, it would appear
+that  the server is returning (not very plausible) variants drawn from an
+infinitely large file.
 
 Only SNPs are returned presently, but more complex variants could also be
 added. For example, large indels could be included by generating a list of
-variants with the required properties when the server starts.
-We then build a lookup table
-of the extremities of these regions. When we are generating a
-variant for a particular site, we first search to see if it intersects with
-any of the generated indels; if it does, we return the indel. If not, we
-generate a SNP as before. If there are not too many of these large variants
-and they do not overlap, this can be implemented quite efficiently.
+variants with the required properties when the server starts.  We then build a
+lookup table of the extremities of these regions. When we are generating a
+variant for a particular site, we first search to see if it intersects with any
+of the generated indels; if it does, we return the indel. If not, we generate a
+SNP as before. This can be implemented quite efficiently if the number of
+large variants is reasonably small and they don't overlap.
 
 The implementation will certainly need to serve from existing data
 files, but there are distinct advantages in also being able to simulate
@@ -99,7 +98,7 @@ Trying it out
 
 The project is designed to be published as a `PyPI <https://pypi.python.org/pypi>`_
 package, so ultimately installing the reference client and server programs
-(and API) should be as easy as::
+hould be as easy as::
 
     $ pip install ga4gh
 
