@@ -16,11 +16,14 @@ def convertDatetime(t):
     """
     epoch = datetime.datetime.utcfromtimestamp(0)
     delta = t - epoch
-    time_in_millis = delta.total_seconds() * 1000
-    return int(time_in_millis)
+    millis = delta.total_seconds() * 1000
+    return int(millis)
 
 
 class ProtocolElementEncoder(json.JSONEncoder):
+    """
+    Class responsible for encoding ProtocolElements as JSON.
+    """
     def default(self, obj):
         if isinstance(obj, ProtocolElement):
             ret = obj.__dict__
@@ -35,7 +38,7 @@ class ProtocolElement(object):
     correspondence with the Avro definitions, and provide the basic elements
     of the on-the-wire protocol.
     """
-    _embedded_types = {}
+    _embeddedTypes = {}
 
     def toJSON(self):
         """
@@ -55,11 +58,11 @@ class ProtocolElement(object):
     def _decode(cls, d):
         instance = cls()
         for k, v in d.items():
-            if k in cls._embedded_types:
+            if k in cls._embeddedTypes:
                 # TODO is this always a list?
                 l = []
                 for element in v:
-                    l.append(cls._embedded_types[k]._decode(element))
+                    l.append(cls._embeddedTypes[k]._decode(element))
                 v = l
             instance.__dict__[k] = v
         return instance
@@ -98,7 +101,7 @@ class GAVariant(ProtocolElement):
     insertion. Variants belong to a GAVariantSet. This is equivalent to a
     row in VCF.
     """
-    _embedded_types = {
+    _embeddedTypes = {
         "calls": GACall,
         "info": GAKeyValue
     }
@@ -134,7 +137,7 @@ class GASearchVariantsRequest(ProtocolElement):
 
 
 class GASearchVariantsResponse(ProtocolElement):
-    _embedded_types = {"variants": GAVariant}
+    _embeddedTypes = {"variants": GAVariant}
 
     def __init__(self):
         self.variants = []
