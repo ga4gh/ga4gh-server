@@ -48,7 +48,7 @@ To provide a working outline of the project as quickly as possible, we took the
 approach of serving simulated data from the ``variants/search`` method.  We
 currently use a very naive and simplistic model for generating variants, in
 which SNPs are distributed over all query regions uniformly at a fixed density.
-The model is simplistic, but it is (importantly) *consistent*: regardless of
+The model is simplistic, but it is  *consistent*: regardless of
 the context, any query that intersects with a given position will always return
 precisely the same variant. Thus, from a client's perspective, it would appear
 that  the server is returning (not very plausible) variants drawn from an
@@ -98,7 +98,7 @@ Trying it out
 
 The project is designed to be published as a `PyPI <https://pypi.python.org/pypi>`_
 package, so ultimately installing the reference client and server programs
-hould be as easy as::
+should be as easy as::
 
     $ pip install ga4gh
 
@@ -161,7 +161,6 @@ command. For example::
       --maxResults MAXRESULTS, -m MAXRESULTS
                             The maximum number of variants returned in one
                             response.
-                                                                                                                                                                                                                                                                               response.
 
 ******
 Layout
@@ -175,7 +174,7 @@ which holds the code defining the command line interfaces for the
 ``ga4gh_client`` and ``ga4gh_server`` programs.
 
 For development purposes, it is useful to be able to run the command
-line programs directly without installing them. To do this, make a hard link
+line programs directly without installing them. To do this, make hard links
 to the files in the scripts directory to the project root and run them
 from there; e.g::
 
