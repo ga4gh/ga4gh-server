@@ -12,8 +12,93 @@ from future.standard_library import hooks
 with hooks():
     import http.server
 
+import wormtable as wt
+
 import ga4gh
 import ga4gh.protocol as protocol
+
+class WormtableBackend(object):
+    """
+    A backend based on wormtable tables and indexes.
+    """
+    CHROM_COL = 1
+    POS_COL = 2
+    REF_COL = 4
+    ALT_COL = 5
+
+    def __init__(self, dataDir):
+        self._dataDir = dataDir
+        self._table = wt.open_table(dataDir)
+        self._chromIndex = self._table.open_index("CHROM")
+        self._chromPosIndex = self._table.open_index("CHROM+POS")
+        self._genotypeCols = [
+            c.get_position() for c in self._table.columns()
+                if c.get_name().endswith(".GT")]
+        self._infoCols = {}
+        for c in self._table.columns():
+            colName = c.get_name()
+            if colName.startswith("INFO"):
+                s = colName.split(".")[1]
+                self._infoCols[s] = c.get_position()
+
+    def convertGenotype(self, genotype):
+        """
+        Converts the specified VCF genotype into the corresponging value
+        suitable for the ga4gh protocol.
+        """
+        # TODO generalise this.
+        return map(int, genotype.split("|"))
+
+    def convertVariant(self, row):
+        """
+        Converts the specified row into a GAVariant object.
+        """
+        v = protocol.GAVariant()
+        v.variantSetId = "TODO"
+        v.referenceName = row[self.CHROM_COL]
+        v.start = row[self.POS_COL]
+        v.referenceBases = row[self.REF_COL]
+        v.end = v.start + len(v.referenceBases)
+        v.id = "{0}.{1}".format(v.referenceName, v.start)
+        alt = row[self.ALT_COL].split(",")
+        v.alternateBases = alt
+        v.calls = [protocol.GACall() for g in self._genotypeCols]
+        # TODO need to add support for sample specific columns
+        for call, c in zip(v.calls, self._genotypeCols):
+            call.genotype = self.convertGenotype(row[c])
+        v.info = []
+        for infoField, pos in self._infoCols.items():
+            if row[pos] is not None:
+                keyValue = protocol.GAKeyValue(infoField, row[pos])
+                v.info.append(keyValue)
+        return v
+
+
+    def searchVariants(self, request):
+        """
+        Serves the specified GASearchVariantsRequest and returns a
+        GASearchVariantsResponse. If the number of variants to be returned is
+        greater than request.maxResults then the nextPageToken is set to a
+        non-null value. Subsequent request objects should provide this value in
+        the pageToken attribute to obtain the next page of results.
+        """
+        response = protocol.GASearchVariantsResponse()
+        v = []
+        chrom = b'1'
+        start = (chrom, request.start)
+        end = (chrom, request.end)
+        if request.pageToken is not None:
+            start = (chrom, request.pageToken)
+        cursor = self._chromPosIndex.cursor(self._table.columns(), start, end)
+        r = next(cursor, None)
+        while r is not None and len(v) < request.maxResults:
+            v.append(self.convertVariant(r))
+            r = next(cursor, None)
+        if r is not None:
+            response.nextPageToken = r[self.POS_COL]
+        response.variants = v
+        return response
+
 
 
 class VariantSimulator(object):

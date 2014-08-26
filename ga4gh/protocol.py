@@ -72,8 +72,11 @@ class GAKeyValue(ProtocolElement):
     """
     A structure for encoding arbitrary Key-Value tuples, or tags, on other
     record types.
+
+    TODO for convenience we pass the values in at the constructor, which is
+    inconsistent with the other classes. We may want to remove this.
     """
-    def __init__(self, key, value):
+    def __init__(self, key=None, value=None):
         self.key = key
         self.value = value
 

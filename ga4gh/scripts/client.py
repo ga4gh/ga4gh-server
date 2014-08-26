@@ -73,10 +73,13 @@ class VariantSearchRunner(object):
         Prints out the specified GAVariant object in a VCF-like form.
         """
         print(
-            v.id, v.variantSetId, v.names, v.created, v.updated,
+            v.id, v.variantSetId, v.names,
             v.referenceName, v.start, v.end, v.referenceBases,
-            v.alternateBases, sep="\t", end="")
+            v.alternateBases, sep="\t", end="\t")
         # TODO insert info fields
+        for kv in v.info:
+            print(kv.key, kv.value, sep="=", end=";")
+        print("\t", end="")
         for c in v.calls:
             print(c.genotype, c.genotypeLikelihood, sep=":", end="\t")
         print()

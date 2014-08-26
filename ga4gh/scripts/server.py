@@ -11,19 +11,38 @@ import ga4gh
 import ga4gh.server
 
 
-class SimulateRunner(object):
+class ServerRunner(object):
     """
-    Runner class to start the a server using the simulated backend.
+    Superclass of server runner; takes care of functionality common to
+    all backends.
     """
     def __init__(self, args):
-        backend = ga4gh.server.VariantSimulator()
-        backend.randomSeed = args.seed
-        backend.variantDensity = args.variantDensity
         hp = ('', args.port)
+        backend = self.getBackend(args)
         self._httpServer = ga4gh.server.HTTPServer(hp, backend)
 
     def run(self):
         self._httpServer.serve_forever()
+
+
+class SimulateRunner(ServerRunner):
+    """
+    Runner class to start the a server using the simulated backend.
+    """
+    def getBackend(self, args):
+        backend = ga4gh.server.VariantSimulator()
+        backend.randomSeed = args.seed
+        backend.variantDensity = args.variantDensity
+        return backend
+
+
+class WormtableRunner(ServerRunner):
+    """
+    Runner class to run the server using the wormtable based backend.
+    """
+    def getBackend(self, args):
+        backend = ga4gh.server.WormtableBackend(args.dataDir)
+        return backend
 
 
 def main():
@@ -52,6 +71,15 @@ def main():
         "--variantDensity", "-d", default=0.5, type=float,
         help="The probability that a given position is a variant")
     simParser.set_defaults(runner=SimulateRunner)
+    # Wormtable backend
+    wtbParser = subparsers.add_parser(
+        "wormtable",
+        description="Serve the API using a wormtable based backend.",
+        help="Serve data from tables.")
+    wtbParser.add_argument(
+        "dataDir",
+        help="The directory containing the wormtables to be served.")
+    wtbParser.set_defaults(runner=WormtableRunner)
 
     args = parser.parse_args()
     if "runner" not in args:
