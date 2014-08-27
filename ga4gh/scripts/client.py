@@ -28,6 +28,7 @@ class BenchmarkRunner(object):
     def run(self):
         svr = ga4gh.protocol.GASearchVariantsRequest()
         svr.start = 0
+        svr.referenceName = '1'
         svr.end = 2**32
         numVariants = 0
         beforeCpu = time.clock()
@@ -76,7 +77,6 @@ class VariantSearchRunner(object):
             v.id, v.variantSetId, v.names,
             v.referenceName, v.start, v.end, v.referenceBases,
             v.alternateBases, sep="\t", end="\t")
-        # TODO insert info fields
         for kv in v.info:
             print(kv.key, kv.value, sep="=", end=";")
         print("\t", end="")

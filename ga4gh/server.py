@@ -23,6 +23,7 @@ class WormtableBackend(object):
     """
     CHROM_COL = 1
     POS_COL = 2
+    ID_COL = 3
     REF_COL = 4
     ALT_COL = 5
 
@@ -31,6 +32,7 @@ class WormtableBackend(object):
         self._table = wt.open_table(dataDir)
         self._chromIndex = self._table.open_index("CHROM")
         self._chromPosIndex = self._table.open_index("CHROM+POS")
+        self._chromIdIndex = self._table.open_index("CHROM+ID")
         self._genotypeCols = [
             c.get_position() for c in self._table.columns()
                 if c.get_name().endswith(".GT")]
@@ -57,6 +59,9 @@ class WormtableBackend(object):
         v.variantSetId = "TODO"
         v.referenceName = row[self.CHROM_COL]
         v.start = row[self.POS_COL]
+        names = row[self.ID_COL]
+        if names is not None:
+            v.names = names.split(";")
         v.referenceBases = row[self.REF_COL]
         v.end = v.start + len(v.referenceBases)
         v.id = "{0}.{1}".format(v.referenceName, v.start)
@@ -83,19 +88,35 @@ class WormtableBackend(object):
         the pageToken attribute to obtain the next page of results.
         """
         response = protocol.GASearchVariantsResponse()
+        # TODO encoding issues here? Wormtable only deals with bytes.
+        chrom = request.referenceName.encode()
         v = []
-        chrom = b'1'
-        start = (chrom, request.start)
-        end = (chrom, request.end)
-        if request.pageToken is not None:
-            start = (chrom, request.pageToken)
-        cursor = self._chromPosIndex.cursor(self._table.columns(), start, end)
-        r = next(cursor, None)
-        while r is not None and len(v) < request.maxResults:
-            v.append(self.convertVariant(r))
+        if request.variantName is None:
+            start = (chrom, request.start)
+            end = (chrom, request.end)
+            if request.pageToken is not None:
+                start = (chrom, request.pageToken)
+            cursor = self._chromPosIndex.cursor(self._table.columns(), start, end)
             r = next(cursor, None)
-        if r is not None:
-            response.nextPageToken = r[self.POS_COL]
+            while r is not None and len(v) < request.maxResults:
+                v.append(self.convertVariant(r))
+                r = next(cursor, None)
+            if r is not None:
+                response.nextPageToken = r[self.POS_COL]
+        else:
+            # TODO more encoding issues.
+            name = request.variantName.encode()
+            start = (chrom, name)
+            cursor = self._chromIdIndex.cursor(self._table.columns(), start)
+            r = next(cursor, None)
+            # for now, we assume that there are 0 or 1 results.
+            if r is not None:
+                # The result must still be within the range and must match
+                # the specified name exactly. The cursor is positioned at
+                # the first row >= the specified key.
+                if request.start <= r[self.POS_COL] < request.end \
+                        and r[self.ID_COL] == name:
+                    v.append(self.convertVariant(r))
         response.variants = v
         return response
 
