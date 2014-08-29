@@ -13,42 +13,6 @@ import ga4gh.client
 import ga4gh.protocol
 
 
-class BenchmarkRunner(object):
-    """
-    Runner class for the client side benchmarking. This is intended to give
-    rough figures on protocol throughput on the server side over various
-    requests.
-    """
-    def __init__(self, args):
-        self._maxResults = args.maxResults
-        self._verbosity = args.verbose
-        self._httpClient = ga4gh.client.HTTPClient(
-            args.hostname, args.port, args.verbose)
-
-    def run(self):
-        svr = ga4gh.protocol.GASearchVariantsRequest()
-        svr.start = 0
-        svr.referenceName = '1'
-        svr.end = 2**32
-        numVariants = 0
-        beforeCpu = time.clock()
-        beforeWall = time.time()
-        try:
-            for v in self._httpClient.searchVariants(svr):
-                numVariants += 1
-        except KeyboardInterrupt:
-            pass
-        cpuTime = time.clock() - beforeCpu
-        wallTime = time.time() - beforeWall
-        totalBytes = self._httpClient.getBytesRead()
-        totalBytes /= 1024 * 1024
-        s = "read {0} variants in {1:.2f} seconds; CPU time {2:.2f}".format(
-            numVariants, wallTime, cpuTime)
-        s += "; {0:.2f} MB @ {1:.2f} MB/s".format(
-            totalBytes, totalBytes / wallTime)
-        print(s)
-
-
 class VariantSearchRunner(object):
     """
     Runner class for the variants/search method.
@@ -60,6 +24,9 @@ class VariantSearchRunner(object):
         svr.start = args.start
         svr.end = args.end
         svr.maxResults = args.maxResults
+        if args.callSetIds is not None:
+            svr.callSetIds = args.callSetIds.split(",")
+        svr.variantSetIds = args.variantSetIds.split(",")
         self._request = svr
         self._verbosity = args.verbose
         self._httpClient = ga4gh.client.HTTPClient(
@@ -81,8 +48,64 @@ class VariantSearchRunner(object):
             print(kv.key, kv.value, sep="=", end=";")
         print("\t", end="")
         for c in v.calls:
-            print(c.genotype, c.genotypeLikelihood, sep=":", end="\t")
+            print(
+                c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
+                c.phaseSet, sep=":", end="\t")
         print()
+
+
+class BenchmarkRunner(VariantSearchRunner):
+    """
+    Runner class for the client side benchmarking. This is intended to give
+    rough figures on protocol throughput on the server side over various
+    requests.
+    """
+    def run(self):
+        numVariants = 0
+        beforeCpu = time.clock()
+        beforeWall = time.time()
+        try:
+            for v in self._httpClient.searchVariants(self._request):
+                numVariants += 1
+        except KeyboardInterrupt:
+            pass
+        cpuTime = time.clock() - beforeCpu
+        wallTime = time.time() - beforeWall
+        totalBytes = self._httpClient.getBytesRead()
+        totalBytes /= 1024 * 1024
+        s = "read {0} variants in {1:.2f} seconds; CPU time {2:.2f}".format(
+            numVariants, wallTime, cpuTime)
+        s += "; {0:.2f} MB @ {1:.2f} MB/s; {2:.2f} vars/s".format(
+            totalBytes, totalBytes / wallTime, numVariants / wallTime)
+        print(s)
+
+
+def addOptions(parser):
+    """
+    Adds common options to a command line parser.
+    """
+    parser.add_argument(
+        "variantSetIds",
+        help="The variant set id(s) to search over")
+    parser.add_argument(
+        "--referenceName", "-r", default="chrSim",
+        help="Only return variants on this reference.")
+    parser.add_argument(
+        "--variantName", "-n", default=None,
+        help="Only return variants which have exactly this name.")
+    parser.add_argument(
+        "--callSetIds", "-c", default=None,
+        help="""Only return variant calls which belong to call sets
+            with these IDs (comma seperated list).""")
+    parser.add_argument(
+        "--start", "-s", default=0, type=int,
+        help="The start of the search range (inclusive).")
+    parser.add_argument(
+        "--end", "-e", default=1, type=int,
+        help="The end of the search range (exclusive).")
+    parser.add_argument(
+        "--maxResults", "-m", default=100, type=int,
+        help="The maximum number of variants returned in one response.")
 
 
 def main():
@@ -105,30 +128,14 @@ def main():
         description="Search for variants",
         help="Search for variants.")
     vsParser.set_defaults(runner=VariantSearchRunner)
-    vsParser.add_argument(
-        "--referenceName", "-r", default="chrSim",
-        help="Only return variants on this reference.")
-    vsParser.add_argument(
-        "--variantName", "-n", default=None,
-        help="Only return variants which have exactly this name. TODO")
-    vsParser.add_argument(
-        "--start", "-s", default=0, type=int,
-        help="The start of the search range (inclusive).")
-    vsParser.add_argument(
-        "--end", "-e", default=1, type=int,
-        help="The end of the search range (exclusive).")
-    vsParser.add_argument(
-        "--maxResults", "-m", default=10, type=int,
-        help="The maximum number of variants returned in one response.")
+    addOptions(vsParser)
     # benchmarking
     bmParser = subparsers.add_parser(
         "benchmark",
         description="Run simple benchmarks on the various methods",
         help="Benchmark server performance")
     bmParser.set_defaults(runner=BenchmarkRunner)
-    bmParser.add_argument(
-        "--maxResults", "-m", default=10, type=int,
-        help="The maximum number of variants returned in one response.")
+    addOptions(bmParser)
 
     args = parser.parse_args()
     if "runner" not in args:

@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
 import random
 import datetime
 import future
@@ -17,46 +18,53 @@ import wormtable as wt
 import ga4gh
 import ga4gh.protocol as protocol
 
-class WormtableBackend(object):
+
+class WormtableDataset(object):
     """
-    A backend based on wormtable tables and indexes.
+    Class representing a single dataset backed by a wortable directory.
     """
     CHROM_COL = 1
     POS_COL = 2
     ID_COL = 3
     REF_COL = 4
     ALT_COL = 5
+    QUAL_COL = 6
+    FILTER_COL = 7
+    # This must be a bytes literal for integration with wormtable.
+    GENOTYPE_LIKELIHOOD_NAME = b"GL"
 
-    def __init__(self, dataDir):
-        self._dataDir = dataDir
-        self._table = wt.open_table(dataDir)
+    def __init__(self, variantSetId, wtDir):
+        self._variantSetId = variantSetId
+        self._wtDir = wtDir
+        self._table = wt.open_table(wtDir)
         self._chromIndex = self._table.open_index("CHROM")
         self._chromPosIndex = self._table.open_index("CHROM+POS")
         self._chromIdIndex = self._table.open_index("CHROM+ID")
-        self._genotypeCols = [
-            c.get_position() for c in self._table.columns()
-                if c.get_name().endswith(".GT")]
+        self._sampleCols = {}
         self._infoCols = {}
-        for c in self._table.columns():
+        self._firstSamplePosition = -1
+        cols = self._table.columns()[self.FILTER_COL + 1:]
+        for c in cols:
             colName = c.get_name()
             if colName.startswith("INFO"):
                 s = colName.split(".")[1]
-                self._infoCols[s] = c.get_position()
+                self._infoCols[s] = c
+            elif colName.endswith(".GT"):
+                s = colName.split(".")[0]
+                self._sampleCols[s] = [c, []]
+                if self._firstSamplePosition == -1:
+                    self._firstSamplePosition = c.get_position()
+            else:
+                # This must be a sample specific column
+                s = colName.split(".")
+                self._sampleCols[s[0]][1].append((c, s[1]))
 
-    def convertGenotype(self, genotype):
-        """
-        Converts the specified VCF genotype into the corresponging value
-        suitable for the ga4gh protocol.
-        """
-        # TODO generalise this.
-        return map(int, genotype.split("|"))
-
-    def convertVariant(self, row):
+    def convertVariant(self, row, callSetIds):
         """
         Converts the specified row into a GAVariant object.
         """
         v = protocol.GAVariant()
-        v.variantSetId = "TODO"
+        v.variantSetId = self._variantSetId
         v.referenceName = row[self.CHROM_COL]
         v.start = row[self.POS_COL]
         names = row[self.ID_COL]
@@ -64,20 +72,46 @@ class WormtableBackend(object):
             v.names = names.split(";")
         v.referenceBases = row[self.REF_COL]
         v.end = v.start + len(v.referenceBases)
-        v.id = "{0}.{1}".format(v.referenceName, v.start)
+        v.id = "{0}.{1}.{2}".format(v.variantSetId, v.referenceName, v.start)
         alt = row[self.ALT_COL].split(",")
         v.alternateBases = alt
-        v.calls = [protocol.GACall() for g in self._genotypeCols]
-        # TODO need to add support for sample specific columns
-        for call, c in zip(v.calls, self._genotypeCols):
-            call.genotype = self.convertGenotype(row[c])
         v.info = []
-        for infoField, pos in self._infoCols.items():
+        for infoField, col in self._infoCols.items():
+            pos = col.get_position()
             if row[pos] is not None:
                 keyValue = protocol.GAKeyValue(infoField, row[pos])
                 v.info.append(keyValue)
-        return v
+        v.calls = []
+        # All of the remaining values in the row correspond to Calls.
+        j = self._firstSamplePosition
+        for csid in callSetIds:
+            call = protocol.GACall()
+            # Why do we have both of these? Wouldn't the ID be sufficient
+            # to call back to searchCallSets to get more info?
+            call.callSetId = csid
+            call.callSetName = csid
+            genotype = row[j]
+            # Is this the correct interpretation of | and /?
+            delim = "/"
+            if "|" in genotype:
+                delim = "|"
+                call.phaseSet = True
+            try:
+                call.genotype = map(int, genotype.split(delim))
+            except ValueError:
+                # TODO what is the correct interpretation of .|.?
+                call.genotype = [-1]
 
+            for col, infoName in self._sampleCols[csid][1]:
+                j += 1
+                if infoName == self.GENOTYPE_LIKELIHOOD_NAME:
+                    call.genotypeLikelihood = row[j]
+                else:
+                    kv = protocol.GAKeyValue(infoName, str(row[j]))
+                    call.info.append(kv)
+            j += 1
+            v.calls.append(call)
+        return v
 
     def searchVariants(self, request):
         """
@@ -88,18 +122,30 @@ class WormtableBackend(object):
         the pageToken attribute to obtain the next page of results.
         """
         response = protocol.GASearchVariantsResponse()
+        response.variantSetId = self._variantSetId
+        if len(request.callSetIds) == 0:
+            readCols = self._table.columns()
+            callSetIds = self._sampleCols.keys()
+        else:
+            readCols = self._table.columns()[:self._firstSamplePosition]
+            callSetIds = request.callSetIds
+            for csid in request.callSetIds:
+                genotypeCol, infoCols = self._sampleCols[csid]
+                readCols.append(genotypeCol)
+                for col, infoName in infoCols:
+                    readCols.append(col)
+        v = []
         # TODO encoding issues here? Wormtable only deals with bytes.
         chrom = request.referenceName.encode()
-        v = []
         if request.variantName is None:
             start = (chrom, request.start)
             end = (chrom, request.end)
             if request.pageToken is not None:
                 start = (chrom, request.pageToken)
-            cursor = self._chromPosIndex.cursor(self._table.columns(), start, end)
+            cursor = self._chromPosIndex.cursor(readCols, start, end)
             r = next(cursor, None)
             while r is not None and len(v) < request.maxResults:
-                v.append(self.convertVariant(r))
+                v.append(self.convertVariant(r, callSetIds))
                 r = next(cursor, None)
             if r is not None:
                 response.nextPageToken = r[self.POS_COL]
@@ -107,7 +153,7 @@ class WormtableBackend(object):
             # TODO more encoding issues.
             name = request.variantName.encode()
             start = (chrom, name)
-            cursor = self._chromIdIndex.cursor(self._table.columns(), start)
+            cursor = self._chromIdIndex.cursor(readCols, start)
             r = next(cursor, None)
             # for now, we assume that there are 0 or 1 results.
             if r is not None:
@@ -116,10 +162,29 @@ class WormtableBackend(object):
                 # the first row >= the specified key.
                 if request.start <= r[self.POS_COL] < request.end \
                         and r[self.ID_COL] == name:
-                    v.append(self.convertVariant(r))
+                    v.append(self.convertVariant(r, callSetIds))
         response.variants = v
         return response
 
+
+class WormtableBackend(object):
+    """
+    A backend based on wormtable tables and indexes.
+    """
+    def __init__(self, dataDir):
+        self._dataDir = dataDir
+        self._variantSets = {}
+        # All files in datadir are assumed to correspond to wormtables.
+        for vsid in os.listdir(self._dataDir):
+            f = os.path.join(self._dataDir, vsid)
+            self._variantSets[vsid] = WormtableDataset(vsid, f)
+
+    def searchVariants(self, request):
+        # TODO rearrange the code so we can support searching over multiple
+        # variantSets.
+        assert len(request.variantSetIds) == 1
+        ds = self._variantSets[request.variantSetIds[0]]
+        return ds.searchVariants(request)
 
 
 class VariantSimulator(object):
