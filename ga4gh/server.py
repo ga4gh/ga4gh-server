@@ -95,7 +95,8 @@ class WormtableDataset(object):
             delim = "/"
             if "|" in genotype:
                 delim = "|"
-                call.phaseSet = True
+                # TODO what is the phaseset value supposed to be?
+                call.phaseset = "True"
             try:
                 call.genotype = map(int, genotype.split(delim))
             except ValueError:

@@ -50,7 +50,7 @@ class VariantSearchRunner(object):
         for c in v.calls:
             print(
                 c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
-                c.phaseSet, sep=":", end="\t")
+                c.phaseset, sep=":", end="\t")
         print()
 
 
