@@ -37,7 +37,6 @@ class WormtableDataset(object):
         self._variantSetId = variantSetId
         self._wtDir = wtDir
         self._table = wt.open_table(wtDir)
-        self._chromIndex = self._table.open_index("CHROM")
         self._chromPosIndex = self._table.open_index("CHROM+POS")
         self._chromIdIndex = self._table.open_index("CHROM+ID")
         self._sampleCols = {}
