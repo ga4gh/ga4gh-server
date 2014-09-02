@@ -195,7 +195,7 @@ class WormtableDataset(object):
             cursor = self._chromIdIndex.cursor(readCols, start)
             r = next(cursor, None)
             # for now, we assume that there are 0 or 1 results.
-            # TODO are there issues with having several names/IDs for a variant?
+            # TODO are there issues with having several names for a variant?
             if r is not None:
                 # The result must still be within the range and must match
                 # the specified name exactly. The cursor is positioned at
