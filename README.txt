@@ -177,7 +177,7 @@ Wormtable backend
 *****************
 
 The wormtable backend allows us to serve variants from an arbitrary VCF file.
-The VCF file must first be converted to wormtable format using the `vcf2wt`
+The VCF file must first be converted to wormtable format using the ``vcf2wt``
 utility (the `wormtable tutorial
 <http://pythonhosted.org/wormtable/tutorial.html>`_ discusses this process).
 A subset (1000 rows for each chromosome) of the 1000 Genomes VCF data (20110521
@@ -194,14 +194,15 @@ wormtable::
     $ pip install wormtable
 
 See the `wormtable PyPI page <https://pypi.python.org/pypi/wormtable>`_ for 
-detailed instructions on installing wormtable and its requirements.
+detailed instructions on installing wormtable and its dependencies.
 
 Now, download and unpack the example data, ::
 
     $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar.gz
     $ tar -zxvf ga4gh-example-data.tar.gz 
 
-and install the client and server scripts into the virtualenv::
+and install the client and server scripts into the virtualenv (assuming 
+you are in the project root directory)::
     
     $ python setup.py install
 
@@ -210,15 +211,15 @@ the downloaded datafile::
 
     $ ga4gh_server wormtable ga4gh-example-data
 
-To run queries against this server, we can use the `ga4gh_client` program;
-for example, here we run the `variants/search` method over the 
-`1000g_2013` variant set, where the reference name is `1`, the end coordinate
+To run queries against this server, we can use the ``ga4gh_client`` program;
+for example, here we run the ``variants/search`` method over the 
+``1000g_2013`` variant set, where the reference name is ``1``, the end coordinate
 is 60000 and we only want calls returned for call set ID HG03279::
 
     $ ga4gh_client variants-search 1000g_2013 -r1 -e 60000 -c HG03279 | less -S
 
 We can also query against the *variant name*; here we return the variant that 
-has variant name `rs75454623`::
+has variant name ``rs75454623``::
 
     $ ga4gh_client variants-search 1000g_2013 -r1 -e 60000 -n rs75454623  | less -S
 
@@ -230,7 +231,7 @@ To duplicate the data for the above example, we must first create VCF files
 that contain the entire variant set of interest. The VCF files for the set
 mentioned above have been made `available 
 <http://www.well.ox.ac.uk/~jk/ga4gh-example-source.tar.gz>`_. After downloading
-and extracting these files, we can build the wormtable using `vcf2wt`::
+and extracting these files, we can build the wormtable using ``vcf2wt``::
 
     $ vcf2wt 1000g_2013-subset.vcf -s schema-1000g_2013.xml -t 1000g_2013 
     
@@ -238,13 +239,13 @@ Schemas for the 2011 and 2013 1000G files have been provided as these do a
 more compact job of storing the data than the default auto-generated schemas.
 We must also truncate and remove some columns because of a current limitation
 in the length of strings that wormtable can handle.
-After building the table, we must create indexes on the `POS` and `ID` columns::
+After building the table, we must create indexes on the ``POS`` and ``ID`` columns::
     
     $ wtadmin add 1000g_2013 CHROM+POS
     $ wtadmin add 1000g_2013 CHROM+ID
 
-The `wtadmin` command is useful to examine the table and supports several
-commands to administer and examine the dataset; see `wtadmin help` for details.
+The ``wtadmin`` program supports several
+commands to administer and examine the dataset; see ``wtadmin help`` for details.
 These commands and schemas also work for the full 1000G data; however, it is
 important to specify a sufficiently large `cache size
 <http://pythonhosted.org/wormtable/performance.html#cache-tuning>`_ when

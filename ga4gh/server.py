@@ -21,8 +21,28 @@ import ga4gh.protocol as protocol
 
 class WormtableDataset(object):
     """
-    Class representing a single dataset backed by a wortable directory.
+    Class representing a single dataset backed by a wormtable directory.
+    We assume that VCF data has been converted to wormtable format using
+    vcf2wt, which maps VCF data to wormtable columns in the following
+    way:
+    o The zeroth column (row_id) in a row is the primary key;
+    o The next 7 columns correspond to the fixed fields in VCF, and are
+      called CHROM, POS, etc.
+    o There is then a single column for each INFO field defined in the
+      VCF header. The column names are prefixed with "INFO.", and so
+      we might have INFO.AF, INFO.THETA etc.
+    o There is then a set of columns for each sample, one for each field
+      defined in the FORMAT rows of the header. These are prefixed by the
+      sample ID and suffixed with the field name, and so we have fields
+      like HG00096.GT, NA20828.GL etc.
+    The ``wtadmin show`` command is useful to see the columns in a table.
+
+    We assume that indexes on the combination of the CHROM and POS columns
+    and the CHROM and ID columns have been built. This is to support
+    efficient retrieval of rows based on both coordinates and names
+    within a chromosome.
     """
+    # Positions of the fixed columns within a row
     CHROM_COL = 1
     POS_COL = 2
     ID_COL = 3
@@ -34,33 +54,43 @@ class WormtableDataset(object):
     GENOTYPE_LIKELIHOOD_NAME = b"GL"
 
     def __init__(self, variantSetId, wtDir):
+        """
+        Allocates a new WormtableDataset with the specified variantSetId
+        based on the specified wormtable directory.
+        """
         self._variantSetId = variantSetId
         self._wtDir = wtDir
         self._table = wt.open_table(wtDir)
         self._chromPosIndex = self._table.open_index("CHROM+POS")
         self._chromIdIndex = self._table.open_index("CHROM+ID")
         self._sampleCols = {}
-        self._infoCols = {}
+        self._infoCols = []
         self._firstSamplePosition = -1
         cols = self._table.columns()[self.FILTER_COL + 1:]
+        # We build lookup tables for the INFO and sample columns so they can
+        # be easily found during conversion. For the sample columns we make
+        # a dictionary mapping the sample name to a the list of (name, col)
+        # tuples for that sample.
         for c in cols:
             colName = c.get_name()
             if colName.startswith("INFO"):
                 s = colName.split(".")[1]
-                self._infoCols[s] = c
+                self._infoCols.append((s, c))
+            # We assume the .GT is the first column for each sample
             elif colName.endswith(".GT"):
                 s = colName.split(".")[0]
-                self._sampleCols[s] = [c, []]
+                self._sampleCols[s] = [(c, "GT")]
                 if self._firstSamplePosition == -1:
                     self._firstSamplePosition = c.get_position()
             else:
                 # This must be a sample specific column
                 s = colName.split(".")
-                self._sampleCols[s[0]][1].append((c, s[1]))
+                self._sampleCols[s[0]].append((c, s[1]))
 
     def convertVariant(self, row, callSetIds):
         """
-        Converts the specified row into a GAVariant object.
+        Converts the specified wormtable row into a GAVariant object including
+        the specified set of callSetIds.
         """
         v = protocol.GAVariant()
         v.variantSetId = self._variantSetId
@@ -75,7 +105,7 @@ class WormtableDataset(object):
         alt = row[self.ALT_COL].split(",")
         v.alternateBases = alt
         v.info = []
-        for infoField, col in self._infoCols.items():
+        for infoField, col in self._infoCols:
             pos = col.get_position()
             if row[pos] is not None:
                 keyValue = protocol.GAKeyValue(infoField, row[pos])
@@ -101,8 +131,7 @@ class WormtableDataset(object):
             except ValueError:
                 # TODO what is the correct interpretation of .|.?
                 call.genotype = [-1]
-
-            for col, infoName in self._sampleCols[csid][1]:
+            for col, infoName in self._sampleCols[csid][1:]:
                 j += 1
                 if infoName == self.GENOTYPE_LIKELIHOOD_NAME:
                     call.genotypeLikelihood = row[j]
@@ -123,6 +152,9 @@ class WormtableDataset(object):
         """
         response = protocol.GASearchVariantsResponse()
         response.variantSetId = self._variantSetId
+        # First we get the set of columns for wormtable to retrieve. We don't
+        # want to waste time reading in and decoding data for columns that
+        # are not needed for the output when we specify callSetIds
         if len(request.callSetIds) == 0:
             readCols = self._table.columns()
             callSetIds = self._sampleCols.keys()
@@ -130,10 +162,8 @@ class WormtableDataset(object):
             readCols = self._table.columns()[:self._firstSamplePosition]
             callSetIds = request.callSetIds
             for csid in request.callSetIds:
-                genotypeCol, infoCols = self._sampleCols[csid]
-                readCols.append(genotypeCol)
-                for col, infoName in infoCols:
-                    readCols.append(col)
+                cols = [c for c, name in self._sampleCols[csid]]
+                readCols.extend(cols)
         v = []
         # TODO encoding issues here? Wormtable only deals with bytes.
         chrom = request.referenceName.encode()
@@ -141,8 +171,17 @@ class WormtableDataset(object):
             start = (chrom, request.start)
             end = (chrom, request.end)
             if request.pageToken is not None:
+                # TODO we must sanitise the input here! This should be an int.
                 start = (chrom, request.pageToken)
+            # A wormtable cursor on an index returns an iterator over the rows
+            # in the table in the order defined by the index, starting with
+            # the first two >= to the index key start. Each row returned is a
+            # list, where each entry is the decoded value for the
+            # corresponding column in readCols.
             cursor = self._chromPosIndex.cursor(readCols, start, end)
+            # Normally, we would use a for loop to iterate over the rows in
+            # a cursor, but here we use the next() function so that we can
+            # end the iteration early when we have generated enough results.
             r = next(cursor, None)
             while r is not None and len(v) < request.maxResults:
                 v.append(self.convertVariant(r, callSetIds))
@@ -156,6 +195,7 @@ class WormtableDataset(object):
             cursor = self._chromIdIndex.cursor(readCols, start)
             r = next(cursor, None)
             # for now, we assume that there are 0 or 1 results.
+            # TODO are there issues with having several names/IDs for a variant?
             if r is not None:
                 # The result must still be within the range and must match
                 # the specified name exactly. The cursor is positioned at
@@ -169,7 +209,11 @@ class WormtableDataset(object):
 
 class WormtableBackend(object):
     """
-    A backend based on wormtable tables and indexes.
+    A backend based on wormtable tables and indexes. This backend is provided
+    with a directory within which it can find VCF variant sets converted into
+    wormtable format. Each file within the specified directory is assumed to
+    be a wormtable, and the variant set ID will be the name of the
+    corresponding wormtable directory.
     """
     def __init__(self, dataDir):
         self._dataDir = dataDir
