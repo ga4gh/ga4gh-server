@@ -191,15 +191,15 @@ class VariantSimulator(object):
     """
     A class that simulates Variants that can be served by the GA4GH API.
     """
-    def __init__(self, seed=0, numCalls=1):
+    def __init__(self, seed=0, numCalls=1, variantDensity=0.5):
         self._randomSeed = seed
         self._numCalls = numCalls
-        self._variantSetId = "vs_sim"
+        self._variantDensity = variantDensity
         now = protocol.convertDatetime(datetime.datetime.now())
         self._created = now
         self._updated = now
 
-    def generateVariant(self, referenceName, position, rng):
+    def generateVariant(self, variantSetId, referenceName, position, rng):
         """
         Generate a random variant for the specified position using the
         specified random number generator. This generator should be seeded
@@ -207,12 +207,12 @@ class VariantSimulator(object):
         will always be produced regardless of the order it is generated in.
         """
         v = protocol.GAVariant()
+        v.variantSetId = variantSetId
         # The id is the combination of the position, referenceName and variant
         # set id; this allows us to generate the variant from the position and
         # id.
         v.id = "{0}:{1}:{2}".format(
-            self._variantSetId, referenceName, position)
-        v.variantSetId = self._variantSetId
+            v.variantSetId, referenceName, position)
         v.referenceName = referenceName
         v.names = []  # What's a good model to generate these?
         v.created = self._created
@@ -253,9 +253,11 @@ class VariantSimulator(object):
         if request.pageToken is not None:
             j = request.pageToken
         while j < request.end and len(v) != request.maxResults:
-            rng.seed(self.randomSeed + j)
-            if rng.random() < self.variantDensity:
-                v.append(self.generateVariant(request.referenceName, j, rng))
+            rng.seed(self._randomSeed + j)
+            if rng.random() < self._variantDensity:
+                # TODO fix variant set IDS so we can have multiple
+                v.append(self.generateVariant(
+                    request.variantSetIds[0], request.referenceName, j, rng))
             j += 1
         if j < request.end - 1:
             response.nextPageToken = j

@@ -30,9 +30,8 @@ class SimulateRunner(ServerRunner):
     Runner class to start the a server using the simulated backend.
     """
     def getBackend(self, args):
-        backend = ga4gh.server.VariantSimulator()
-        backend.randomSeed = args.seed
-        backend.variantDensity = args.variantDensity
+        backend = ga4gh.server.VariantSimulator(
+            args.seed, args.numCalls, args.variantDensity)
         return backend
 
 
@@ -70,6 +69,9 @@ def main():
     simParser.add_argument(
         "--variantDensity", "-d", default=0.5, type=float,
         help="The probability that a given position is a variant")
+    simParser.add_argument(
+        "--numCalls", "-c", default=1, type=int,
+        help="The number of GACalls returned for each variant")
     simParser.set_defaults(runner=SimulateRunner)
     # Wormtable backend
     wtbParser = subparsers.add_parser(
