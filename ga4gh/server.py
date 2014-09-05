@@ -18,6 +18,68 @@ import wormtable as wt
 import ga4gh
 import ga4gh.protocol as protocol
 
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge, BadRequest,\
+    UnsupportedMediaType
+from werkzeug.routing import Map, Rule
+from werkzeug.wrappers import BaseRequest, Response, CommonRequestDescriptorsMixin
+from werkzeug.datastructures import MIMEAccept
+from werkzeug.utils import cached_property
+
+class GA4GHRequest(BaseRequest, CommonRequestDescriptorsMixin):
+    """
+    Class representing GA4GH HTTP request objects.
+    """
+
+class HTTPHandler(object):
+    """
+    Handles the HTTP end of the protocol and delegates the methods to the
+    appropriate end point on the backend.
+    """
+    def __init__(self, backend):
+        self._max_input_size = 4 * 2**10  # 4 MiB should be enough?
+        self._backend = backend
+        self._urlMap = Map([
+            Rule(
+                "/variants/search",
+                endpoint=(
+                    backend.searchVariants,
+                    protocol.GASearchVariantsRequest
+                ),
+                methods=["POST"]
+            ),
+        ])
+
+    @GA4GHRequest.application
+    def wsgiApplication(self, request):
+        adapter = self._urlMap.bind_to_environ(request.environ)
+        try:
+            (endpoint, cls), values = adapter.match()
+            if request.content_type != "application/json":
+                # TODO is this the correct HTTP response?
+                raise UnsupportedMediaType()
+            # Make sure we don't get tricked into reading in large volumes
+            # of data, exhausting server memory
+            if request.content_length >= self._max_input_size:
+                raise RequestEntityTooLarge()
+            data = request.get_data()
+            # TODO this should be a more specific Exception for JSON
+            # parse errors; malformed JSON input is a HTTP error, whereas
+            # anything after this gives a HTTP success, with a GAException
+            # response.
+            try:
+                protocolRequest = cls.fromJSON(data)
+            except ValueError as e:
+                raise BadRequest()
+            protocolResponse = endpoint(protocolRequest)
+            s = protocolResponse.toJSON()
+            response = Response(s, mimetype="application/json")
+            ret = response
+
+        except HTTPException as e:
+            ret = e
+        return ret
+
+
 
 class WormtableDataset(object):
     """
@@ -206,8 +268,12 @@ class WormtableDataset(object):
         response.variants = v
         return response
 
+class Backend(object):
+    """
+    Superclass of GA4GH protocol backends.
+    """
 
-class WormtableBackend(object):
+class WormtableBackend(Backend):
     """
     A backend based on wormtable tables and indexes. This backend is provided
     with a directory within which it can find VCF variant sets converted into
@@ -231,7 +297,7 @@ class WormtableBackend(object):
         return ds.searchVariants(request)
 
 
-class VariantSimulator(object):
+class VariantSimulator(Backend):
     """
     A class that simulates Variants that can be served by the GA4GH API.
     """
@@ -309,6 +375,9 @@ class VariantSimulator(object):
         return response
 
 
+
+
+
 class ProtocolHandler(object):
     """
     Class that handles the GA4GH protocol messages and responses.
@@ -366,3 +435,5 @@ class HTTPServer(http.server.HTTPServer):
         http.server.HTTPServer.__init__(
             self, serverAddress, HTTPRequestHandler)
         self.ga4ghProtocolHandler = ProtocolHandler(backend)
+
+

@@ -10,8 +10,9 @@ import argparse
 import ga4gh
 import ga4gh.server
 
+import werkzeug.serving
 
-class ServerRunner(object):
+class OldServerRunner(object):
     """
     Superclass of server runner; takes care of functionality common to
     all backends.
@@ -23,6 +24,23 @@ class ServerRunner(object):
 
     def run(self):
         self._httpServer.serve_forever()
+
+
+class ServerRunner(object):
+    """
+    Superclass of server runner; takes care of functionality common to
+    all backends.
+    """
+    def __init__(self, args):
+        backend = self.getBackend(args)
+        self._port = args.port
+        self._httpHandler = ga4gh.server.HTTPHandler(backend)
+
+    def run(self):
+        werkzeug.serving.run_simple(
+            '', self._port, self._httpHandler.wsgiApplication,
+            use_reloader=True)
+
 
 
 class SimulateRunner(ServerRunner):

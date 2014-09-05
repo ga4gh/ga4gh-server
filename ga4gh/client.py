@@ -35,7 +35,8 @@ class HTTPClient(object):
         notDone = True
         while notDone:
             s = request.toJSON()
-            self._httpConnection.request("POST", "variants/search", s)
+            headers = {"Content-type": "application/json"}
+            self._httpConnection.request("POST", "variants/search", s, headers)
             r = self._httpConnection.getresponse()
             if self._debugLevel > 0:
                 print()  # ugly - http doesn't end lines for some reason
