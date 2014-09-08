@@ -188,6 +188,9 @@ class WormtableDataset(object):
         the specified set of callSetIds.
         """
         v = protocol.GAVariant()
+        # TODO How should we populate these from VCF?
+        v.created = 0
+        v.updated = 0
         v.variantSetId = self._variantSetId
         v.referenceName = row[self.CHROM_COL]
         v.start = row[self.POS_COL]
