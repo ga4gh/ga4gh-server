@@ -14,13 +14,12 @@ import wormtable as wt
 import ga4gh
 import ga4gh.protocol as protocol
 
-import werkzeug as wg
-import werkzeug.routing as wgr
-import werkzeug.wrappers as wgw
-import werkzeug.exceptions as wge
+import werkzeug.routing as wzr
+import werkzeug.wrappers as wzw
+import werkzeug.exceptions as wze
 
 
-class GA4GHRequest(wgw.BaseRequest, wgw.CommonRequestDescriptorsMixin):
+class GA4GHRequest(wzw.BaseRequest, wzw.CommonRequestDescriptorsMixin):
     """
     Class representing GA4GH HTTP request objects.
     """
@@ -34,8 +33,8 @@ class HTTPHandler(object):
     def __init__(self, backend):
         self._max_input_size = 4 * 2**10  # 4 MiB should be enough?
         self._backend = backend
-        self._urlMap = wgr.Map([
-            wgr.Rule(
+        self._urlMap = wzr.Map([
+            wzr.Rule(
                 "/variants/search",
                 endpoint=(
                     backend.searchVariants,
@@ -61,7 +60,7 @@ class HTTPHandler(object):
                 # TODO this should never happen, so another exception would be
                 # more appropriate
                 raise ValueError("HTTP Method not handled")
-        except wge.HTTPException as e:
+        except wze.HTTPException as e:
             ret = e
         return ret
 
@@ -72,11 +71,11 @@ class HTTPHandler(object):
         """
         if request.mimetype != "application/json":
             # TODO is this the correct HTTP response?
-            raise wge.UnsupportedMediaType()
+            raise wze.UnsupportedMediaType()
         # Make sure we don't get tricked into reading in large volumes
         # of data, exhausting server memory
         if request.content_length >= self._max_input_size:
-            raise wge.RequestEntityTooLarge()
+            raise wze.RequestEntityTooLarge()
         data = request.get_data()
         # TODO this should be a more specific Exception for JSON
         # parse errors; malformed JSON input is a HTTP error, whereas
@@ -85,10 +84,10 @@ class HTTPHandler(object):
         try:
             protocolRequest = protocolClass.fromJSON(data)
         except ValueError as e:
-            raise wge.BadRequest()
+            raise wze.BadRequest()
         protocolResponse = endpoint(protocolRequest)
         s = protocolResponse.toJSON()
-        response = wgw.Response(s, mimetype="application/json")
+        response = wzw.Response(s, mimetype="application/json")
         # TODO is this correct CORS support?
         response.headers.add("Access-Control-Allow-Origin", "*")
         return response
@@ -98,7 +97,7 @@ class HTTPHandler(object):
         Handles the specified HTTP OPTIONS request returing a werkzeug
         response.
         """
-        response = wgw.Response("", mimetype="application/json")
+        response = wzw.Response("", mimetype="application/json")
         # TODO is this correct CORS support?
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add(
