@@ -13,6 +13,23 @@ import ga4gh.client
 import ga4gh.protocol
 
 
+class VariantSetSearchRunner(object):
+    """
+    Runner class for the variantsets/search method.
+    """
+    def __init__(self, args):
+        svsr = ga4gh.protocol.GASearchVariantSetsRequest()
+        svsr.pageSize = args.pageSize
+        self._request = svsr
+        self._verbosity = args.verbose
+        self._httpClient = ga4gh.client.HTTPClient(
+            args.hostname, args.port, args.verbose)
+
+    def run(self):
+        for v in self._httpClient.searchVariantSets(self._request):
+            print(v.datasetId, v.id)
+
+
 class VariantSearchRunner(object):
     """
     Runner class for the variants/search method.
@@ -23,7 +40,7 @@ class VariantSearchRunner(object):
         svr.variantName = args.variantName
         svr.start = args.start
         svr.end = args.end
-        svr.maxResults = args.maxResults
+        svr.pageSize = args.pageSize
         if args.callSetIds is not None:
             svr.callSetIds = args.callSetIds.split(",")
         svr.variantSetIds = args.variantSetIds.split(",")
@@ -104,7 +121,7 @@ def addOptions(parser):
         "--end", "-e", default=1, type=int,
         help="The end of the search range (exclusive).")
     parser.add_argument(
-        "--maxResults", "-m", default=100, type=int,
+        "--pageSize", "-m", default=100, type=int,
         help="The maximum number of variants returned in one response.")
 
 
@@ -136,6 +153,15 @@ def main():
         help="Benchmark server performance")
     bmParser.set_defaults(runner=BenchmarkRunner)
     addOptions(bmParser)
+    # variantsets/search
+    vssParser = subparsers.add_parser(
+        "variantsets-search",
+        description="Search for variantSets",
+        help="Search for variantSets.")
+    vssParser.set_defaults(runner=VariantSetSearchRunner)
+    vssParser.add_argument(
+        "--pageSize", "-m", default=100, type=int,
+        help="The maximum number of variants returned in one response.")
 
     args = parser.parse_args()
     if "runner" not in args:

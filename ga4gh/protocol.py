@@ -124,6 +124,27 @@ class GAVariant(ProtocolElement):
         self.calls = []
 
 
+class GAVariantSet(ProtocolElement):
+    def __init__(self):
+        self.id = ""
+        self.datasetId = ""
+
+
+class GASearchVariantSetsRequest(ProtocolElement):
+    def __init__(self):
+        self.dataSetIds = []
+        self.pageSize = None
+        self.pageToken = None
+
+
+class GASearchVariantSetsResponse(ProtocolElement):
+    _embeddedTypes = {"variantSets": GAVariantSet}
+
+    def __init__(self):
+        self.variantSets = []
+        self.nextPageToken = None
+
+
 class GASearchVariantsRequest(ProtocolElement):
     """
     Search for variants.
@@ -136,7 +157,7 @@ class GASearchVariantsRequest(ProtocolElement):
         self.start = None
         self.end = None
         self.pageToken = None
-        self.maxResults = 10  # Isn't this a bit small?
+        self.pageSize = 10  # Isn't this a bit small?
 
 
 class GASearchVariantsResponse(ProtocolElement):
