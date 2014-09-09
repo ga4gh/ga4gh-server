@@ -61,8 +61,8 @@ class VariantSearchRunner(object):
             v.id, v.variantSetId, v.names,
             v.referenceName, v.start, v.end, v.referenceBases,
             v.alternateBases, sep="\t", end="\t")
-        for kv in v.info:
-            print(kv.key, kv.value, sep="=", end=";")
+        for key, value in v.info.items():
+            print(key, value, sep="=", end=";")
         print("\t", end="")
         for c in v.calls:
             print(

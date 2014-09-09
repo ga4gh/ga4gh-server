@@ -202,12 +202,11 @@ class WormtableDataset(object):
         v.id = "{0}.{1}.{2}".format(v.variantSetId, v.referenceName, v.start)
         alt = row[self.ALT_COL].split(",")
         v.alternateBases = alt
-        v.info = []
+        v.info = {}
         for infoField, col in self._infoCols:
             pos = col.get_position()
             if row[pos] is not None:
-                keyValue = protocol.GAKeyValue(infoField, row[pos])
-                v.info.append(keyValue)
+                v.info[infoField] = str(row[pos])
         v.calls = []
         # All of the remaining values in the row correspond to Calls.
         j = self._firstSamplePosition
@@ -234,8 +233,7 @@ class WormtableDataset(object):
                 if infoName == self.GENOTYPE_LIKELIHOOD_NAME:
                     call.genotypeLikelihood = row[j]
                 else:
-                    kv = protocol.GAKeyValue(infoName, str(row[j]))
-                    call.info.append(kv)
+                    call.info[infoName] = str(row[j])
             j += 1
             v.calls.append(call)
         return v
