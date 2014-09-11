@@ -8,15 +8,102 @@ from __future__ import unicode_literals
 import os
 import random
 import datetime
-import future
-from future.standard_library import hooks
-with hooks():
-    import http.server
 
 import wormtable as wt
 
 import ga4gh
 import ga4gh.protocol as protocol
+
+import werkzeug.routing as wzr
+import werkzeug.wrappers as wzw
+import werkzeug.exceptions as wze
+
+
+class GA4GHRequest(wzw.BaseRequest, wzw.CommonRequestDescriptorsMixin):
+    """
+    Class representing GA4GH HTTP request objects.
+    """
+
+
+class HTTPHandler(object):
+    """
+    Handles the HTTP end of the protocol and delegates the methods to the
+    appropriate end point on the backend.
+    """
+    def __init__(self, backend):
+        self._max_input_size = 4 * 2**10  # 4 MiB should be enough?
+        self._backend = backend
+        self._urlMap = wzr.Map([
+            wzr.Rule(
+                "/variants/search",
+                endpoint=(
+                    backend.searchVariants,
+                    protocol.GASearchVariantsRequest
+                ),
+                methods=["POST", "OPTIONS"]
+            ),
+        ])
+
+    @GA4GHRequest.application
+    def wsgiApplication(self, request):
+        """
+        The main entry point for this WSGI application.
+        """
+        adapter = self._urlMap.bind_to_environ(request.environ)
+        try:
+            (endpoint, cls), values = adapter.match()
+            if request.method == "POST":
+                ret = self.handleHTTPPost(request, endpoint, cls)
+            elif request.method == "OPTIONS":
+                ret = self.handleHTTPOptions(request)
+            else:
+                # TODO this should never happen, so another exception would be
+                # more appropriate
+                raise ValueError("HTTP Method not handled")
+        except wze.HTTPException as e:
+            ret = e
+        return ret
+
+    def handleHTTPPost(self, request, endpoint, protocolClass):
+        """
+        Handles the specified HTTP POST request, which maps to the specified
+        protocol handler handpoint and protocol request class.
+        """
+        if request.mimetype != "application/json":
+            # TODO is this the correct HTTP response?
+            raise wze.UnsupportedMediaType()
+        # Make sure we don't get tricked into reading in large volumes
+        # of data, exhausting server memory
+        if request.content_length >= self._max_input_size:
+            raise wze.RequestEntityTooLarge()
+        data = request.get_data()
+        # TODO this should be a more specific Exception for JSON
+        # parse errors; malformed JSON input is a HTTP error, whereas
+        # anything after this gives a HTTP success, with a GAException
+        # response.
+        try:
+            protocolRequest = protocolClass.fromJSON(data)
+        except ValueError as e:
+            raise wze.BadRequest()
+        protocolResponse = endpoint(protocolRequest)
+        s = protocolResponse.toJSON()
+        response = wzw.Response(s, mimetype="application/json")
+        # TODO is this correct CORS support?
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response
+
+    def handleHTTPOptions(self, request):
+        """
+        Handles the specified HTTP OPTIONS request returing a werkzeug
+        response.
+        """
+        response = wzw.Response("", mimetype="application/json")
+        # TODO is this correct CORS support?
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add(
+            "Access-Control-Request-Methods", "GET,POST,OPTIONS")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        return response
 
 
 class WormtableDataset(object):
@@ -207,7 +294,13 @@ class WormtableDataset(object):
         return response
 
 
-class WormtableBackend(object):
+class Backend(object):
+    """
+    Superclass of GA4GH protocol backends.
+    """
+
+
+class WormtableBackend(Backend):
     """
     A backend based on wormtable tables and indexes. This backend is provided
     with a directory within which it can find VCF variant sets converted into
@@ -231,7 +324,7 @@ class WormtableBackend(object):
         return ds.searchVariants(request)
 
 
-class VariantSimulator(object):
+class VariantSimulator(Backend):
     """
     A class that simulates Variants that can be served by the GA4GH API.
     """
@@ -307,62 +400,3 @@ class VariantSimulator(object):
             response.nextPageToken = j
         response.variants = v
         return response
-
-
-class ProtocolHandler(object):
-    """
-    Class that handles the GA4GH protocol messages and responses.
-    """
-    def __init__(self, backend):
-        self._backend = backend
-
-    def searchVariants(self, jsonRequest):
-        """
-        Handles the specified JSON encoding of a GASearchVariantsRequest.
-        and returns the corresponding JSON encoded GASearchVariantsResponse
-        (in case of success) or GAException (in case of error).
-        """
-        request = protocol.GASearchVariantsRequest.fromJSON(jsonRequest)
-        # TODO wrap this call in try: except and make a GAException object
-        # out of the resulting Exception object. Two classes of exception
-        # should be identified: those due to input errors and other expected
-        # problems the backend must deal with, and other exceptions which
-        # indicate a server error. The former type should all subclass a
-        # an exception defined in the ga4gh package.
-        resp = self._backend.searchVariants(request)
-        s = resp.toJSON()
-        return s
-
-
-class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
-    """
-    Handler for the HTTP level of the GA4GH protocol.
-    """
-
-    def do_POST(self):
-        """
-        Handle a single POST request.
-        """
-        h = self.server.ga4ghProtocolHandler
-        # TODO read the path and 404 if not correct
-        length = int(self.headers['Content-Length'])
-        # TODO is this safe encoding-wise? Do we need to specify an
-        # explicit encoding?
-        jsonRequest = self.rfile.read(length).decode()
-        s = h.searchVariants(jsonRequest).encode()
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.send_header("Content-Length", len(s))
-        self.end_headers()
-        self.wfile.write(s)
-
-
-class HTTPServer(http.server.HTTPServer):
-    """
-    Basic HTTP server for the GA4GH protocol.
-    """
-    def __init__(self, serverAddress, backend):
-        # Cannot use super() here because of Python 2 issues.
-        http.server.HTTPServer.__init__(
-            self, serverAddress, HTTPRequestHandler)
-        self.ga4ghProtocolHandler = ProtocolHandler(backend)

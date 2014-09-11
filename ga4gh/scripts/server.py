@@ -10,6 +10,8 @@ import argparse
 import ga4gh
 import ga4gh.server
 
+import werkzeug.serving
+
 
 class ServerRunner(object):
     """
@@ -17,12 +19,14 @@ class ServerRunner(object):
     all backends.
     """
     def __init__(self, args):
-        hp = ('', args.port)
         backend = self.getBackend(args)
-        self._httpServer = ga4gh.server.HTTPServer(hp, backend)
+        self._port = args.port
+        self._httpHandler = ga4gh.server.HTTPHandler(backend)
 
     def run(self):
-        self._httpServer.serve_forever()
+        werkzeug.serving.run_simple(
+            '', self._port, self._httpHandler.wsgiApplication,
+            use_reloader=True)
 
 
 class SimulateRunner(ServerRunner):
