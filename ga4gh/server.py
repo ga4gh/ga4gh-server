@@ -42,6 +42,14 @@ class HTTPHandler(object):
                 ),
                 methods=["POST", "OPTIONS"]
             ),
+            wzr.Rule(
+                "/variantsets/search",
+                endpoint=(
+                    backend.searchVariantSets,
+                    protocol.GASearchVariantSetsRequest
+                ),
+                methods=["POST", "OPTIONS"]
+            ),
         ])
 
     @GA4GHRequest.application
@@ -180,6 +188,9 @@ class WormtableDataset(object):
         the specified set of callSetIds.
         """
         v = protocol.GAVariant()
+        # TODO How should we populate these from VCF?
+        v.created = 0
+        v.updated = 0
         v.variantSetId = self._variantSetId
         v.referenceName = row[self.CHROM_COL]
         v.start = row[self.POS_COL]
@@ -191,12 +202,11 @@ class WormtableDataset(object):
         v.id = "{0}.{1}.{2}".format(v.variantSetId, v.referenceName, v.start)
         alt = row[self.ALT_COL].split(",")
         v.alternateBases = alt
-        v.info = []
+        v.info = {}
         for infoField, col in self._infoCols:
             pos = col.get_position()
             if row[pos] is not None:
-                keyValue = protocol.GAKeyValue(infoField, row[pos])
-                v.info.append(keyValue)
+                v.info[infoField] = str(row[pos])
         v.calls = []
         # All of the remaining values in the row correspond to Calls.
         j = self._firstSamplePosition
@@ -223,8 +233,7 @@ class WormtableDataset(object):
                 if infoName == self.GENOTYPE_LIKELIHOOD_NAME:
                     call.genotypeLikelihood = row[j]
                 else:
-                    kv = protocol.GAKeyValue(infoName, str(row[j]))
-                    call.info.append(kv)
+                    call.info[infoName] = str(row[j])
             j += 1
             v.calls.append(call)
         return v
@@ -233,10 +242,14 @@ class WormtableDataset(object):
         """
         Serves the specified GASearchVariantsRequest and returns a
         GASearchVariantsResponse. If the number of variants to be returned is
-        greater than request.maxResults then the nextPageToken is set to a
+        greater than request.pageSize then the nextPageToken is set to a
         non-null value. Subsequent request objects should provide this value in
         the pageToken attribute to obtain the next page of results.
         """
+        # This is temporary until we do this properly based on the output
+        # buffer size
+        if request.pageSize is None:
+            request.pageSize = 100
         response = protocol.GASearchVariantsResponse()
         response.variantSetId = self._variantSetId
         # First we get the set of columns for wormtable to retrieve. We don't
@@ -259,6 +272,7 @@ class WormtableDataset(object):
             end = (chrom, request.end)
             if request.pageToken is not None:
                 # TODO we must sanitise the input here! This should be an int.
+                # We must also check chrom to make sure it's not nasty.
                 start = (chrom, request.pageToken)
             # A wormtable cursor on an index returns an iterator over the rows
             # in the table in the order defined by the index, starting with
@@ -270,7 +284,7 @@ class WormtableDataset(object):
             # a cursor, but here we use the next() function so that we can
             # end the iteration early when we have generated enough results.
             r = next(cursor, None)
-            while r is not None and len(v) < request.maxResults:
+            while r is not None and len(v) < request.pageSize:
                 v.append(self.convertVariant(r, callSetIds))
                 r = next(cursor, None)
             if r is not None:
@@ -315,6 +329,7 @@ class WormtableBackend(Backend):
         for vsid in os.listdir(self._dataDir):
             f = os.path.join(self._dataDir, vsid)
             self._variantSets[vsid] = WormtableDataset(vsid, f)
+        self._variantSetIds = sorted(self._variantSets.keys())
 
     def searchVariants(self, request):
         # TODO rearrange the code so we can support searching over multiple
@@ -322,6 +337,32 @@ class WormtableBackend(Backend):
         assert len(request.variantSetIds) == 1
         ds = self._variantSets[request.variantSetIds[0]]
         return ds.searchVariants(request)
+
+    def searchVariantSets(self, request):
+        """
+        Returns a GASearchVariantSets response for the specified
+        GASearchVariantSetsRequest object.
+        """
+        # This is temporary until we do this properly based on the output
+        # buffer size
+        if request.pageSize is None:
+            request.pageSize = 100
+        response = protocol.GASearchVariantSetsResponse()
+        j = 0
+        if request.pageToken is not None:
+            j = int(request.pageToken)
+            print("pagetoken = ", j)
+        v = []
+        while j < len(self._variantSetIds) and len(v) < request.pageSize:
+            vs = protocol.GAVariantSet()
+            vs.id = self._variantSetIds[j]
+            vs.datasetId = "NotImplemented"
+            v.append(vs)
+            j += 1
+        if j < len(self._variantSetIds):
+            response.nextPageToken = j
+        response.variantSets = v
+        return response
 
 
 class VariantSimulator(Backend):
@@ -379,7 +420,7 @@ class VariantSimulator(Backend):
         """
         Serves the specified GASearchVariantsRequest and returns a
         GASearchVariantsResponse. If the number of variants to be returned is
-        greater than request.maxResults then the nextPageToken is set to a
+        greater than request.pageSize then the nextPageToken is set to a
         non-null value. Subsequent request objects should provide this value in
         the pageToken attribute to obtain the next page of results.
         """
@@ -389,7 +430,7 @@ class VariantSimulator(Backend):
         j = request.start
         if request.pageToken is not None:
             j = request.pageToken
-        while j < request.end and len(v) != request.maxResults:
+        while j < request.end and len(v) != request.pageSize:
             rng.seed(self._randomSeed + j)
             if rng.random() < self._variantDensity:
                 # TODO fix variant set IDS so we can have multiple
