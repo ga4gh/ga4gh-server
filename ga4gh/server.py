@@ -459,8 +459,6 @@ class WormtableBackend(Backend):
         return response
 
 
-
-
 class VariantSimulator(Backend):
     """
     A class that simulates Variants that can be served by the GA4GH API.
