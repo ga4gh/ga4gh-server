@@ -309,40 +309,21 @@ class WormtableDataset(object):
         return response
 
 
-class Backend(object):
+class TabixDataset(object):
     """
-    Superclass of GA4GH protocol backends.
+    Class representing a single dataset backed by a tabix directory.
     """
-
-
-class VariantTabix(Backend):
-    """
-    A class that serves variaints inexed by tabix.
-    """
-    def __init__(self, fn, chroms, directory=None):
-        self._variantSetId = fn
+    def __init__(self, variantSetId, vcfDir):
+        self._variantSetId = variantSetId
         now = protocol.convertDatetime(datetime.datetime.now())
         self._created = now
         self._updated = now
-        self.fn = fn
-        self.directory = directory
-        self._variantSetId = fn  # Is this a reasonable value?
-        #  May need to add an arg
-
-        self.tb = {}
-        if directory:
-            if fn:
-                for chrom in chroms:
-                    self.tb[chrom] = tabix.open(os.path.join(self.directory,
-                                                             self.fn % chrom))
-            else:
-                pass  # TODO: Sniff all VCFs and host them...
-        else:
-            # single VCF.  To make code below universal, we'll use a dummy dict
-            # where all chrom keys point to the same tabix object
-            tmp_tabix = tabix.open(os.path.join(self.directory, self.fn))
-            for chrom in chroms:
-                self.tb[chrom] = tmp_tabix
+        self.directory = vcfDir
+        self.tb = {}  # chrom -> vcf
+        for fn in os.listdir(vcfDir):
+            if fn.endswith(".vcf") or fn.endswith(".vcf.gz"):
+                chrom = fn.split(".")[1][3:]  # for 1kg ALL.chr<chom>.blah.vcf.gz
+                self.tb[chrom] = tabix.open(os.path.join(vcfDir, fn))
 
     def generateVariant(self, record):
         v = protocol.GAVariant()
@@ -414,21 +395,17 @@ class VariantTabix(Backend):
         return searchVariants(self, request)  # TODO support multiple VCFs
 
 
-class WormtableBackend(Backend):
+class Backend(object):
     """
-    A backend based on wormtable tables and indexes. This backend is provided
-    with a directory within which it can find VCF variant sets converted into
-    wormtable format. Each file within the specified directory is assumed to
-    be a wormtable, and the variant set ID will be the name of the
-    corresponding wormtable directory.
+    Superclass of GA4GH protocol backends.
     """
-    def __init__(self, dataDir):
+    def __init__(self, dataDir, Datatype):
         self._dataDir = dataDir
         self._variantSets = {}
-        # All files in datadir are assumed to correspond to wormtables.
+        # All files in datadir are assumed to correspond to <Datatype>s.
         for vsid in os.listdir(self._dataDir):
             f = os.path.join(self._dataDir, vsid)
-            self._variantSets[vsid] = WormtableDataset(vsid, f)
+            self._variantSets[vsid] = Datatype(vsid, f)
         self._variantSetIds = sorted(self._variantSets.keys())
 
     def searchVariants(self, request):
@@ -463,6 +440,26 @@ class WormtableBackend(Backend):
             response.nextPageToken = j
         response.variantSets = v
         return response
+
+
+class TabixBackend(Backend):
+    """
+    A class that serves variants indexed by tabix.
+    """
+    def __init__(self, dataDir):
+        Backend.__init__(self, dataDir, TabixDataset)
+
+
+class WormtableBackend(Backend):
+    """
+    A backend based on wormtable tables and indexes. This backend is provided
+    with a directory within which it can find VCF variant sets converted into
+    wormtable format. Each file within the specified directory is assumed to
+    be a wormtable, and the variant set ID will be the name of the
+    corresponding wormtable directory.
+    """
+    def __init__(self, dataDir):
+        Backend.__init__(self, dataDir, WormtableDataset)
 
 
 class VariantSimulator(Backend):

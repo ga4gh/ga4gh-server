@@ -53,9 +53,7 @@ class TabixRunner(ServerRunner):
     Runner class to start the server using a tabix backend.
     """
     def getBackend(self, args):
-        backend = ga4gh.server.VariantTabix(args.fn,
-                                            args.chroms.split(","),
-                                            args.directory)
+        backend = ga4gh.server.TabixBackend(args.dataDir)
         return backend
 
 
@@ -103,15 +101,8 @@ def main():
         description="tabix hosting of a directory with one vcf per chrom",
         help="Serve directory of VCFs")
     tabixParser.add_argument(
-        "--fn", "-f",
-        default="ALL.chr%s.phase3_shapeit2_mvncall_integrated_v4." +
-                "20130502.genotypes.vcf.gz", type=str,
-        help="Example VCF filename. In case of with %s in place of chrom")
-    tabixParser.add_argument(
-        "--directory", "-d", default="/Users/hershman/Desktop/gc/1kg_phase3",
-        type=str,
-        help="Directory with VCFs." +
-             "Only needed if serving VCFs split by chromsome ")
+        "dataDir",
+        help="The directory containing folders of tabix indexed VCFs.")
     tabixParser.set_defaults(runner=TabixRunner)
 
     args = parser.parse_args()
