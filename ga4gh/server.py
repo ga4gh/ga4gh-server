@@ -315,17 +315,15 @@ class TabixDataset(object):
     """
     def __init__(self, variantSetId, vcfDir):
         self._variantSetId = variantSetId
-        now = protocol.convertDatetime(datetime.datetime.now())
-        self._created = now
-        self._updated = now
+        self._created = protocol.convertDatetime(datetime.datetime.now())
         self.directory = vcfDir
         self.tb = {}  # chrom -> vcf
         for fn in os.listdir(vcfDir):
             if fn.endswith(".vcf") or fn.endswith(".vcf.gz"):
-                chrom = fn.split(".")[1][3:]  # for 1kg ALL.chr<chom>.blah.vcf.gz
+                chrom = fn.split(".")[1][3:]  # Kludge. For 1kg ALL.chr<chom>.blah.vcf.gz
                 self.tb[chrom] = tabix.open(os.path.join(vcfDir, fn))
 
-    def generateVariant(self, record):
+    def convertVariant(self, record):
         v = protocol.GAVariant()
         position = int(record[1])
 
@@ -334,8 +332,9 @@ class TabixDataset(object):
         v.variantSetId = self._variantSetId
         v.referenceName = record[0]
         v.names = []  # What's a good model to generate these?
+        # TODO How should we populate these from VCF?
         v.created = self._created
-        v.updated = self._updated
+        v.updated = self._created
         v.start = position
         v.end = position + 1  # SNPs only for nowf
         v.referenceBases = record[3]
@@ -380,32 +379,29 @@ class TabixDataset(object):
                 record = cursor.next()
             except StopIteration:
                 break
-            v.append(self.generateVariant(record))
+            v.append(self.convertVariant(record))
         try:
             record = cursor.next()
         except StopIteration:
             pass
         else:
-            response.nextPageToken = self.generateVariant(record).start
+            response.nextPageToken = self.convertVariant(record).start
         response.variants = v
 
         return response
-
-    def searchVariantSets(self, request):
-        return searchVariants(self, request)  # TODO support multiple VCFs
 
 
 class Backend(object):
     """
     Superclass of GA4GH protocol backends.
     """
-    def __init__(self, dataDir, Datatype):
+    def __init__(self, dataDir, Dataset):
         self._dataDir = dataDir
         self._variantSets = {}
-        # All files in datadir are assumed to correspond to <Datatype>s.
+        # All files in datadir are assumed to correspond to Datasets.
         for vsid in os.listdir(self._dataDir):
             f = os.path.join(self._dataDir, vsid)
-            self._variantSets[vsid] = Datatype(vsid, f)
+            self._variantSets[vsid] = Dataset(vsid, f)
         self._variantSetIds = sorted(self._variantSets.keys())
 
     def searchVariants(self, request):
