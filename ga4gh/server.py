@@ -13,6 +13,7 @@ import wormtable as wt
 
 import ga4gh
 import ga4gh.protocol as protocol
+import tabix
 
 import werkzeug.routing as wzr
 import werkzeug.wrappers as wzw
@@ -313,6 +314,99 @@ class Backend(object):
     Superclass of GA4GH protocol backends.
     """
 
+class VariantTabix(Backend):
+    """
+    A class that serves variaints inexed by tabix.
+    """
+    def __init__(self, fn, chroms, directory=None):
+        self._variantSetId = fn
+        now = protocol.convertDatetime(datetime.datetime.now())
+        self._created = now
+        self._updated = now
+        self.fn = fn
+        self.directory = directory
+        self._variantSetId = fn # Is this a reasonable value? May need to add an arg
+
+        self.tb = {}
+        if directory:
+            if fn:
+                for chrom in chroms:
+                    self.tb[chrom]= tabix.open(os.path.join(self.directory, self.fn % chrom) )
+            else:
+                pass #TODO: Sniff all VCFs and host them...
+        else:
+            #single VCF.  To make code below universal, we'll use a dummy dict
+            # where all chrom keys point to the same tabix object
+            tmp_tabix = tabix.open(os.path.join(self.directory, self.fn))
+            for chrom in chroms:
+                self.tb[chrom] = tmp_tabix
+
+    def generateVariant(self, record):
+        v = protocol.GAVariant()
+        position = int(record[1])
+
+        v.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position) # Should this be RSID?
+        v.variantSetId = self._variantSetId
+        v.referenceName = record[0]
+        v.names = []  # What's a good model to generate these?
+        v.created = self._created
+        v.updated = self._updated
+        v.start = position
+        v.end = position + 1  # SNPs only for nowf
+        v.referenceBases = record[3]
+        v.alternateBases = [record[4].split(",")]
+        v.calls = []
+        for j in range(9,len(record)):
+            c = protocol.GACall()
+            c.genotype = record[j].split(":")[0].split("[\/\|]")  # "(\d+)([\|\/])(\d+)"
+            # Need to make up genotypeLikelihood for dev vcf. make something more robust later
+            c.genotypeLikelihood = [-100, -100, -100]
+            v.calls.append(c)
+        return v
+
+    def searchVariants(self, request):
+        """
+        Serves the specified GASearchVariantsRequest and returns a
+        GASearchVariantsResponse. If the number of variants to be returned is
+        greater than request.maxResults then the nextPageToken is set to a
+        non-null value. Subsequent request objects should provide this value in
+        the pageToken attribute to obtain the next page of results.
+        """
+        # This is temporary until we do this properly based on the output
+        # buffer size
+        if request.pageSize is None:
+            request.pageSize = 100
+        response = protocol.GASearchVariantsResponse()
+        response.variantSetId = self._variantSetId
+
+        v = []
+        j = int(request.start)
+        if request.pageToken is not None:
+            j = int(request.pageToken)
+        if request.end is None:
+            request.end=request.start+1
+        cursor = self.tb[request.referenceName].query(str(request.referenceName), j-1, int(request.end))
+            # Weird with the -1 but seems required from my testing. 0 based i guess?
+        while len(v) < request.pageSize:
+            try:
+                record = cursor.next()
+            except StopIteration:
+                break
+            v.append(self.generateVariant(record))
+        try:
+            record = cursor.next()
+        except StopIteration:
+            pass
+        else:
+            response.nextPageToken = self.generateVariant(record).start
+        response.variants = v
+
+        return response
+
+    def searchVariantSets(self, request):
+        return searchVariants(self, request) # TODO support multiple VCFs
+
+
 
 class WormtableBackend(Backend):
     """
@@ -363,6 +457,8 @@ class WormtableBackend(Backend):
             response.nextPageToken = j
         response.variantSets = v
         return response
+
+
 
 
 class VariantSimulator(Backend):
