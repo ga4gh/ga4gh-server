@@ -314,6 +314,7 @@ class Backend(object):
     Superclass of GA4GH protocol backends.
     """
 
+
 class VariantTabix(Backend):
     """
     A class that serves variaints inexed by tabix.
@@ -325,17 +326,19 @@ class VariantTabix(Backend):
         self._updated = now
         self.fn = fn
         self.directory = directory
-        self._variantSetId = fn # Is this a reasonable value? May need to add an arg
+        self._variantSetId = fn  # Is this a reasonable value?
+        #  May need to add an arg
 
         self.tb = {}
         if directory:
             if fn:
                 for chrom in chroms:
-                    self.tb[chrom]= tabix.open(os.path.join(self.directory, self.fn % chrom) )
+                    self.tb[chrom] = tabix.open(os.path.join(self.directory,
+                                                             self.fn % chrom))
             else:
-                pass #TODO: Sniff all VCFs and host them...
+                pass  # TODO: Sniff all VCFs and host them...
         else:
-            #single VCF.  To make code below universal, we'll use a dummy dict
+            # single VCF.  To make code below universal, we'll use a dummy dict
             # where all chrom keys point to the same tabix object
             tmp_tabix = tabix.open(os.path.join(self.directory, self.fn))
             for chrom in chroms:
@@ -345,7 +348,8 @@ class VariantTabix(Backend):
         v = protocol.GAVariant()
         position = int(record[1])
 
-        v.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position) # Should this be RSID?
+        v.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position)
+        # Should this be RSID?
         v.variantSetId = self._variantSetId
         v.referenceName = record[0]
         v.names = []  # What's a good model to generate these?
@@ -356,10 +360,12 @@ class VariantTabix(Backend):
         v.referenceBases = record[3]
         v.alternateBases = [record[4].split(",")]
         v.calls = []
-        for j in range(9,len(record)):
+        for j in range(9, len(record)):
             c = protocol.GACall()
-            c.genotype = record[j].split(":")[0].split("[\/\|]")  # "(\d+)([\|\/])(\d+)"
-            # Need to make up genotypeLikelihood for dev vcf. make something more robust later
+            c.genotype = record[j].split(":")[0].split("[\/\|]")
+            # "(\d+)([\|\/])(\d+)"
+            # Need to make up genotypeLikelihood for dev vcf.
+            # make something more robust later
             c.genotypeLikelihood = [-100, -100, -100]
             v.calls.append(c)
         return v
@@ -384,9 +390,10 @@ class VariantTabix(Backend):
         if request.pageToken is not None:
             j = int(request.pageToken)
         if request.end is None:
-            request.end=request.start+1
-        cursor = self.tb[request.referenceName].query(str(request.referenceName), j-1, int(request.end))
-            # Weird with the -1 but seems required from my testing. 0 based i guess?
+            request.end = request.start + 1
+        cursor = self.tb[request.referenceName]\
+            .query(str(request.referenceName), j-1, int(request.end))
+        # Weird with the -1 but seems required. 0 based i guess?
         while len(v) < request.pageSize:
             try:
                 record = cursor.next()
@@ -404,8 +411,7 @@ class VariantTabix(Backend):
         return response
 
     def searchVariantSets(self, request):
-        return searchVariants(self, request) # TODO support multiple VCFs
-
+        return searchVariants(self, request)  # TODO support multiple VCFs
 
 
 class WormtableBackend(Backend):

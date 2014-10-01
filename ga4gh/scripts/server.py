@@ -47,12 +47,15 @@ class WormtableRunner(ServerRunner):
         backend = ga4gh.server.WormtableBackend(args.dataDir)
         return backend
 
+
 class TabixRunner(ServerRunner):
     """
     Runner class to start the server using a tabix backend.
     """
     def getBackend(self, args):
-        backend = ga4gh.server.VariantTabix(args.fn, args.chroms.split(","), args.directory)
+        backend = ga4gh.server.VariantTabix(args.fn,
+                                            args.chroms.split(","),
+                                            args.directory)
         return backend
 
 
@@ -98,16 +101,17 @@ def main():
     tabixParser = subparsers.add_parser(
         "tabix",
         description="tabix hosting of a directory with one vcf per chrom",
-        help = "Serve directory of VCFs")
+        help="Serve directory of VCFs")
     tabixParser.add_argument(
-        "--fn", "-f", default="ALL.chr%s.phase3_shapeit2_mvncall_integrated_v4.20130502.genotypes.vcf.gz", type=str,
+        "--fn", "-f",
+        default="ALL.chr%s.phase3_shapeit2_mvncall_integrated_v4." +
+                "20130502.genotypes.vcf.gz", type=str,
         help="Example VCF filename. In case of with %s in place of chrom")
     tabixParser.add_argument(
-        "--directory", "-d", default="/Users/hershman/Desktop/gc/1kg_phase3", type=str,
-        help="Directory with VCFs. Only needed if serving VCFs that are split by chromsome ")
-    tabixParser.add_argument(
-        "--chroms", "-c", default="1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22", type=str,
-        help="Chromosomes to include")
+        "--directory", "-d", default="/Users/hershman/Desktop/gc/1kg_phase3",
+        type=str,
+        help="Directory with VCFs." +
+             "Only needed if serving VCFs split by chromsome ")
     tabixParser.set_defaults(runner=TabixRunner)
 
     args = parser.parse_args()
