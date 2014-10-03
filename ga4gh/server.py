@@ -161,6 +161,10 @@ class WormtableDataset(object):
         self._sampleCols = {}
         self._infoCols = []
         self._firstSamplePosition = -1
+        t = int(os.path.getctime(wtDir) * 1000)
+        # ctime is in seconds, and we want milliseconds since the epoch
+        self._creationTime = t
+        self._updatedTime = t
         cols = self._table.columns()[self.FILTER_COL + 1:]
         # We build lookup tables for the INFO and sample columns so they can
         # be easily found during conversion. For the sample columns we make
@@ -188,9 +192,8 @@ class WormtableDataset(object):
         the specified set of callSetIds.
         """
         v = protocol.GAVariant()
-        # TODO How should we populate these from VCF?
-        v.created = 0
-        v.updated = 0
+        v.created = self._creationTime
+        v.updated = self._updatedTime
         v.variantSetId = self._variantSetId
         v.referenceName = row[self.CHROM_COL]
         v.start = row[self.POS_COL]
