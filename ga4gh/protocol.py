@@ -110,10 +110,27 @@ class GAVariant(ProtocolElement):
         self.calls = []
 
 
+class GAVariantSetMetadata(ProtocolElement):
+
+    def __init__(self):
+        self.key = ""
+        self.value = ""
+        self.id = ""
+        self.type = ""
+        self.number = ""
+        self.description = ""
+        self.info = {}
+
+
 class GAVariantSet(ProtocolElement):
+    _embeddedTypes = {
+        "metadata": GAVariantSetMetadata
+    }
+
     def __init__(self):
         self.id = ""
         self.datasetId = ""
+        self.metadata = []
 
 
 class GASearchVariantSetsRequest(ProtocolElement):
