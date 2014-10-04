@@ -330,6 +330,7 @@ class TabixDataset(object):
                 if len(tabixfile.contigs)>1:
                     raise Exception, "If you store multiple VCFs in a directory, each may only have variants from one contig"
                 self.tb[tabixfile.contigs[0]] = tabix.open(os.path.join(vcfPath, fn))
+                tabixfile.close()
         else:
             if self._isVCF(vcfPath):
                 self.tb=tabix.open(vcfPath)
