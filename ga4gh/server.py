@@ -327,15 +327,18 @@ class TabixDataset(object):
                 if not self._isVCF(fn):
                     continue
                 tabixfile = pysam.Tabixfile(os.path.join(vcfPath, fn))
-                if len(tabixfile.contigs)>1:
-                    raise Exception, "If you store multiple VCFs in a directory, each may only have variants from one contig"
-                self.tb[tabixfile.contigs[0]] = tabix.open(os.path.join(vcfPath, fn))
+                if len(tabixfile.contigs) > 1:
+                    raise Exception("If you store multiple VCFs in a" +
+                                    " directory, each may only have variants" +
+                                    "from one contig")
+                self.tb[tabixfile.contigs[0]] = \
+                    tabix.open(os.path.join(vcfPath, fn))
                 tabixfile.close()
         else:
             if self._isVCF(vcfPath):
-                self.tb=tabix.open(vcfPath)
+                self.tb = tabix.open(vcfPath)
             else:
-                print(vcfPath,"not vcf; not opening")
+                print(vcfPath, "not vcf; not opening")
 
     def _isVCF(self, fn):
         return fn.endswith(".vcf") or fn.endswith(".vcf.gz")
@@ -388,11 +391,13 @@ class TabixDataset(object):
         if request.end is None:
             request.end = request.start + 1
 
-        if type(self.tb)==dict:
+        if type(self.tb) == dict:
             cursor = self.tb[request.referenceName]\
                 .query(str(request.referenceName), j-1, int(request.end))
         else:
-            cursor = self.tb.query(str(request.referenceName), j-1, int(request.end))
+            cursor = self.tb.query(str(request.referenceName),
+                                   j-1,
+                                   int(request.end))
         # Weird with the -1 but seems required. 0 based i guess?
         while len(v) < request.pageSize:
             try:
@@ -409,7 +414,6 @@ class TabixDataset(object):
         response.variants = v
 
         return response
-
 
 
 class Backend(object):
