@@ -98,11 +98,11 @@ def main():
     # Tabix
     tabixParser = subparsers.add_parser(
         "tabix",
-        description="tabix hosting of a directory with one vcf per chrom",
-        help="Serve directory of VCFs")
+        description="Serve the API using a tabix based backend.",
+        help="The directory containing the VCFs to be served.")
     tabixParser.add_argument(
         "dataDir",
-        help="The directory containing folders of tabix indexed VCFs.")
+        help="The directory containing VCFs and folders of VCFs split by chromosome")
     tabixParser.set_defaults(runner=TabixRunner)
 
     args = parser.parse_args()

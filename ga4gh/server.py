@@ -10,10 +10,11 @@ import random
 import datetime
 
 import wormtable as wt
+import tabix
+import pysam
 
 import ga4gh
 import ga4gh.protocol as protocol
-import tabix
 
 import werkzeug.routing as wzr
 import werkzeug.wrappers as wzw
@@ -313,22 +314,36 @@ class TabixDataset(object):
     """
     Class representing a single dataset backed by a tabix directory.
     """
-    def __init__(self, variantSetId, vcfDir):
+    def __init__(self, variantSetId, vcfPath):
         self._variantSetId = variantSetId
         self._created = protocol.convertDatetime(datetime.datetime.now())
-        self.directory = vcfDir
-        self.tb = {}  # chrom -> vcf
-        for fn in os.listdir(vcfDir):
-            if fn.endswith(".vcf") or fn.endswith(".vcf.gz"):
-                chrom = fn.split(".")[1][3:]  # Kludge. For 1kg ALL.chr<chom>.blah.vcf.gz
-                self.tb[chrom] = tabix.open(os.path.join(vcfDir, fn))
+        self.directory = vcfPath
+
+        # Read in Tabix files.  If vcfPath is a path, self.tb will be
+        # chrom -> vcf dict. Otherwise self.tb will be a vcf file (or nothing)
+        self.tb = {}
+        if os.path.isdir(vcfPath):
+            for fn in os.listdir(vcfPath):
+                if not self._isVCF(fn):
+                    continue
+                tabixfile = pysam.Tabixfile(os.path.join(vcfPath, fn))
+                if len(tabixfile.contigs)>1:
+                    raise Exception, "If you store multiple VCFs in a directory, each may only have variants from one contig"
+                self.tb[tabixfile.contigs[0]] = tabix.open(os.path.join(vcfPath, fn))
+        else:
+            if self._isVCF(vcfPath):
+                self.tb=tabix.open(vcfPath)
+            else:
+                print(vcfPath,"not vcf; not opening")
+
+    def _isVCF(self, fn):
+        return fn.endswith(".vcf") or fn.endswith(".vcf.gz")
 
     def convertVariant(self, record):
         v = protocol.GAVariant()
         position = int(record[1])
 
         v.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position)
-        # Should this be RSID?
         v.variantSetId = self._variantSetId
         v.referenceName = record[0]
         v.names = []  # What's a good model to generate these?
@@ -336,7 +351,7 @@ class TabixDataset(object):
         v.created = self._created
         v.updated = self._created
         v.start = position
-        v.end = position + 1  # SNPs only for nowf
+        v.end = position + 1  # TODO support non SNP variaints
         v.referenceBases = record[3]
         v.alternateBases = [record[4].split(",")]
         v.calls = []
@@ -371,8 +386,12 @@ class TabixDataset(object):
             j = int(request.pageToken)
         if request.end is None:
             request.end = request.start + 1
-        cursor = self.tb[request.referenceName]\
-            .query(str(request.referenceName), j-1, int(request.end))
+
+        if type(self.tb)==dict:
+            cursor = self.tb[request.referenceName]\
+                .query(str(request.referenceName), j-1, int(request.end))
+        else:
+            cursor = self.tb.query(str(request.referenceName), j-1, int(request.end))
         # Weird with the -1 but seems required. 0 based i guess?
         while len(v) < request.pageSize:
             try:
@@ -389,6 +408,7 @@ class TabixDataset(object):
         response.variants = v
 
         return response
+
 
 
 class Backend(object):
