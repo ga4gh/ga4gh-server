@@ -10,7 +10,6 @@ import random
 import datetime
 
 import wormtable as wt
-import tabix
 import pysam
 
 import ga4gh
@@ -331,12 +330,10 @@ class TabixDataset(object):
                     raise Exception("If you store multiple VCFs in a" +
                                     " directory, each may only have variants" +
                                     "from one contig")
-                self.tb[tabixfile.contigs[0]] = \
-                    tabix.open(os.path.join(vcfPath, fn))
-                tabixfile.close()
+                self.tb[tabixfile.contigs[0]] = tabixfile
         else:
             if self._isVCF(vcfPath):
-                self.tb = tabix.open(vcfPath)
+                self.tb = pysam.Tabixfile(vcfPath)
             else:
                 print(vcfPath, "not vcf; not opening")
 
@@ -393,9 +390,9 @@ class TabixDataset(object):
 
         if type(self.tb) == dict:
             cursor = self.tb[request.referenceName]\
-                .query(str(request.referenceName), j-1, int(request.end))
+                .fetch(str(request.referenceName), j-1, int(request.end))
         else:
-            cursor = self.tb.query(str(request.referenceName),
+            cursor = self.tb.fetch(str(request.referenceName),
                                    j-1,
                                    int(request.end))
         # Weird with the -1 but seems required. 0 based i guess?
