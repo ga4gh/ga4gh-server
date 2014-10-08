@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import glob
 import random
 import datetime
 
@@ -318,30 +319,20 @@ class TabixDataset(object):
         self._created = protocol.convertDatetime(datetime.datetime.now())
         self.directory = vcfPath
 
-        # Read in Tabix files.  If vcfPath is a path, self.tb will be
-        # chrom -> vcf dict. Otherwise self.tb will be a vcf file (or nothing)
-        self.tb = {}
-        if os.path.isdir(vcfPath):
-            for fn in os.listdir(vcfPath):
-                if not self._isVCF(fn):
-                    continue
-                tabixfile = pysam.Tabixfile(os.path.join(vcfPath, fn))
-                if len(tabixfile.contigs) > 1:
-                    raise Exception("If you store multiple VCFs in a" +
-                                    " directory, each may only have variants" +
-                                    "from one contig")
-                self.tb[tabixfile.contigs[0]] = tabixfile
-        else:
-            if self._isVCF(vcfPath):
-                self.tb = pysam.Tabixfile(vcfPath)
-            else:
-                print(vcfPath, "not vcf; not opening")
+        # Read in Tabix-index VCF files from vcfPath is a path.
+        # self.tb chrom -> vcf dict
+        self._tabixMap = {}
 
-    def _isVCF(self, fn):
-        return fn.endswith(".vcf") or fn.endswith(".vcf.gz")
+        for fn in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
+            tabixfile = pysam.Tabixfile(fn)
+            for chrom in tabixfile.contigs:
+                if chrom in self._tabixMap:
+                    raise Exception("cannot have overlapping VCF files.")
+                self._tabixMap[chrom] = tabixfile
 
     def convertVariant(self, record):
         v = protocol.GAVariant()
+        record = record.split('\t')
         position = int(record[1])
 
         v.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position)
@@ -388,13 +379,8 @@ class TabixDataset(object):
         if request.end is None:
             request.end = request.start + 1
 
-        if type(self.tb) == dict:
-            cursor = self.tb[request.referenceName]\
-                .fetch(str(request.referenceName), j-1, int(request.end))
-        else:
-            cursor = self.tb.fetch(str(request.referenceName),
-                                   j-1,
-                                   int(request.end))
+        cursor = self._tabixMap[request.referenceName]\
+            .fetch(str(request.referenceName), j-1, int(request.end))
         # Weird with the -1 but seems required. 0 based i guess?
         while len(v) < request.pageSize:
             try:
