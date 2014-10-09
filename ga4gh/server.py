@@ -161,6 +161,10 @@ class WormtableDataset(object):
         self._sampleCols = {}
         self._infoCols = []
         self._firstSamplePosition = -1
+        t = int(os.path.getctime(wtDir) * 1000)
+        # ctime is in seconds, and we want milliseconds since the epoch
+        self._creationTime = t
+        self._updatedTime = t
         cols = self._table.columns()[self.FILTER_COL + 1:]
         # We build lookup tables for the INFO and sample columns so they can
         # be easily found during conversion. For the sample columns we make
@@ -182,15 +186,25 @@ class WormtableDataset(object):
                 s = colName.split(".")
                 self._sampleCols[s[0]].append((c, s[1]))
 
+    def convertInfoField(self, v):
+        """
+        Converts the specified value into an appropriate format for a protocol
+        info field. Info fields are arrays of strings.
+        """
+        if isinstance(v, tuple):
+            ret = [str(x) for x in v]
+        else:
+            ret = [str(v)]
+        return ret
+
     def convertVariant(self, row, callSetIds):
         """
         Converts the specified wormtable row into a GAVariant object including
         the specified set of callSetIds.
         """
         v = protocol.GAVariant()
-        # TODO How should we populate these from VCF?
-        v.created = 0
-        v.updated = 0
+        v.created = self._creationTime
+        v.updated = self._updatedTime
         v.variantSetId = self._variantSetId
         v.referenceName = row[self.CHROM_COL]
         v.start = row[self.POS_COL]
@@ -206,7 +220,7 @@ class WormtableDataset(object):
         for infoField, col in self._infoCols:
             pos = col.get_position()
             if row[pos] is not None:
-                v.info[infoField] = str(row[pos])
+                v.info[infoField] = self.convertInfoField(row[pos])
         v.calls = []
         # All of the remaining values in the row correspond to Calls.
         j = self._firstSamplePosition
@@ -233,7 +247,7 @@ class WormtableDataset(object):
                 if infoName == self.GENOTYPE_LIKELIHOOD_NAME:
                     call.genotypeLikelihood = row[j]
                 else:
-                    call.info[infoName] = str(row[j])
+                    call.info[infoName] = self.convertInfoField(row[j])
             j += 1
             v.calls.append(call)
         return v
@@ -307,6 +321,32 @@ class WormtableDataset(object):
         response.variants = v
         return response
 
+    def getMetadata(self):
+        """
+        Returns a list of GAVariantSetMetadata objects for this variant set.
+        """
+        def f(infoField, col):
+            md = protocol.GAVariantSetMetadata()
+            md.key = infoField
+            md.value = ""
+            md.id = ""
+            # What are the encodings here? With the lack of any precise
+            # definitions I'm just using wormtable values for now.
+            md.type = col.get_type_name()
+            md.number = str(col.get_num_elements())
+            md.description = col.get_description()
+            return md
+        ret = []
+        for infoField, col in self._infoCols:
+            ret.append(f(infoField, col))
+        if len(self._sampleCols) > 0:
+            # TODO this is pretty nasty, making a list just to take the head.
+            sampleName = list(self._sampleCols.keys())[0]
+            for col, infoField in self._sampleCols[sampleName]:
+                if infoField != "GT":
+                    ret.append(f(infoField, col))
+        return ret
+
 
 class Backend(object):
     """
@@ -351,12 +391,12 @@ class WormtableBackend(Backend):
         j = 0
         if request.pageToken is not None:
             j = int(request.pageToken)
-            print("pagetoken = ", j)
         v = []
         while j < len(self._variantSetIds) and len(v) < request.pageSize:
             vs = protocol.GAVariantSet()
             vs.id = self._variantSetIds[j]
             vs.datasetId = "NotImplemented"
+            vs.metadata = self._variantSets[vs.id].getMetadata()
             v.append(vs)
             j += 1
         if j < len(self._variantSetIds):
