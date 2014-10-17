@@ -257,8 +257,10 @@ Tabix backend
 
 The tabix backend allows us to serve variants from an arbitrary VCF file.
 The VCF file must first be index with `tabix <http://samtools.sourceforge.net/tabix.shtml>`_.
-Many projects, including the 1000 genomes project, release files with tabix indicies already
-precomputed.  This backend can serve such datasets without any preprocessing via the command:
+Many projects, including the `1000 genomes project
+<ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/>`_, release files with tabix
+indicies already precomputed.  This backend can serve such datasets without any
+preprocessing via the command:
 
     $ python ga4gh/scripts/server.py tabix DATADIR
 
