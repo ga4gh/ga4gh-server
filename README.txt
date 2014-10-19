@@ -44,8 +44,8 @@ exercise this API.
 Serving variants from a VCF file
 ********************************
 
-An implementation of the variants API is available that can serve data based 
-on existing VCF files. This backend is based on `wormtable 
+Two implementations of the variants API is available that can serve data based
+on existing VCF files. This backends are based on tabix and `wormtable
 <http://www.biomedcentral.com/1471-2105/14/356>`_, which is a Python library 
 to handle large scale tabular data. See `Wormtable backend`_ for instructions
 on serving VCF data from the GA4GH API.
@@ -251,6 +251,21 @@ important to specify a sufficiently large `cache size
 <http://pythonhosted.org/wormtable/performance.html#cache-tuning>`_ when
 building and indexing such large tables.
 
+*****************
+Tabix backend
+*****************
+
+The tabix backend allows us to serve variants from an arbitrary VCF file.
+The VCF file must first be indexed with `tabix <http://samtools.sourceforge.net/tabix.shtml>`_.
+Many projects, including the `1000 genomes project
+<http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/>`_, release files with tabix
+indicies already precomputed.  This backend can serve such datasets without any
+preprocessing via the command:
+
+    $ python ga4gh/scripts/server.py tabix DATADIR
+
+where DATADIR is a directory that contains folders of tabix-indexed VCF file(s).  There cannot
+be more than one VCF file in any subdirectory that has data for the same reference contig.
 
 ******
 Layout
