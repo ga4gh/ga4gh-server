@@ -48,6 +48,15 @@ class WormtableRunner(ServerRunner):
         return backend
 
 
+class TabixRunner(ServerRunner):
+    """
+    Runner class to start the server using a tabix backend.
+    """
+    def getBackend(self, args):
+        backend = ga4gh.server.TabixBackend(args.dataDir)
+        return backend
+
+
 def main():
     parser = argparse.ArgumentParser(description="GA4GH reference server")
     # Add global options
@@ -86,6 +95,15 @@ def main():
         "dataDir",
         help="The directory containing the wormtables to be served.")
     wtbParser.set_defaults(runner=WormtableRunner)
+    # Tabix
+    tabixParser = subparsers.add_parser(
+        "tabix",
+        description="Serve the API using a tabix based backend.",
+        help="The directory containing the VCFs to be served.")
+    tabixParser.add_argument(
+        "dataDir",
+        help="The directory containing VCFs and folders of VCFs split by chromosome")
+    tabixParser.set_defaults(runner=TabixRunner)
 
     args = parser.parse_args()
     if "runner" not in args:
