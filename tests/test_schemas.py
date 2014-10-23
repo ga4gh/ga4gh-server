@@ -1,6 +1,9 @@
 """
 Test loading the schemas.
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
@@ -9,27 +12,26 @@ import os
 import subprocess
 import unittest
 
+
 class TestLoadSchemas(unittest.TestCase):
 
     def setUp(self):
 
         # have we already generated the schemas? if not, generate them
-        if not os.path.isdir("../schemas"):
-
+        if not os.path.isdir("schemas"):
             # generate schemas
-            os.chdir("../scripts")
-            subprocess.call("./preprocess_schemas.sh")
-            os.chdir("../tests")
+            subprocess.call("./scripts/preprocess_schemas.sh")
 
-    def test_loadSchema(self):
+    def testLoadSchema(self):
 
         # load schema
-        schema = avro.schema.parse(open("../schemas/GAVariant.avsc").read())
+        schema = avro.schema.parse(open("schemas/GAVariant.avsc").read())
 
         # write schemas
-        writer = DataFileWriter(open("variants.avro", "w"), DatumWriter(), schema)
-        writer.append({"id": "myID", 
-                       "variantSetId": "mySetID", 
+        writer = DataFileWriter(
+            open("variants.avro", "w"), DatumWriter(), schema)
+        writer.append({"id": "myID",
+                       "variantSetId": "mySetID",
                        "names": ["myName"],
                        "created": 100L,
                        "updated": None,
@@ -51,7 +53,7 @@ class TestLoadSchemas(unittest.TestCase):
             assert len(variant["names"]) == 1
             assert "myName" in variant["names"]
             assert variant["created"] == 100L
-            assert variant["updated"] == None
+            assert variant["updated"] is None
             assert variant["referenceName"] == "chr1"
             assert variant["start"] == 1L
             assert variant["end"] == 2L
@@ -61,7 +63,7 @@ class TestLoadSchemas(unittest.TestCase):
             assert len(variant["info"]["infoKey"]) == 1
             assert "myInfo" in variant["info"]["infoKey"]
             assert len(variant["calls"]) == 0
-            
+
             readCount += 1
         reader.close()
 
@@ -70,7 +72,3 @@ class TestLoadSchemas(unittest.TestCase):
 
         # remove avro file
         os.remove("variants.avro")
-
-if __name__ == '__main__':
-    unittest.main()
-        

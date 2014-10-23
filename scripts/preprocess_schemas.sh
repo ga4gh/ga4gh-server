@@ -1,7 +1,11 @@
-#!/bin/bash
+#!/bin/bash -x
 
-# remove old schemas
-rm -r ../schemas
+# Create tmp dir and cd into it
+PRJROOT=$PWD
+TMPDIR=$( mktemp -d )
+cd $TMPDIR
+
+echo $TMPDIR
 
 # download the avro-tools jar
 wget http://www.carfab.com/apachesoftware/avro/stable/java/avro-tools-1.7.7.jar
@@ -13,13 +17,16 @@ wget https://raw.githubusercontent.com/ga4gh/schemas/master/src/main/resources/a
 # extract schemata
 java -jar avro-tools-1.7.7.jar idl2schemata variants.avdl
 
-# cd down, and make a schemas directory
-cd ..
-mkdir -p schemas
+SCHEMA_DIR=schemas
+# make a schemas directory if it does not exist
+cd $PRJROOT
+mkdir -p $SCHEMA_DIR
+
+# remove old schemas
+rm -fr $SCHEMA_DIR/*
 
 # move schemas to schema directory
-mv scripts/*.avdl schemas
-mv scripts/*.avsc schemas
+mv $TMPDIR/*.avdl $SCHEMA_DIR 
+mv $TMPDIR/*.avsc $SCHEMA_DIR
 
-# remove avro-tools jarfile
-rm scripts/avro-tools-1.7.7.jar
+rm -fR $TMPDIR

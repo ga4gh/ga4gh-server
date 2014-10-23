@@ -11,7 +11,6 @@ import datetime
 
 import wormtable as wt
 
-import ga4gh
 import ga4gh.protocol as protocol
 
 import werkzeug.routing as wzr
@@ -145,8 +144,9 @@ class WormtableDataset(object):
     ALT_COL = 5
     QUAL_COL = 6
     FILTER_COL = 7
-    # This must be a bytes literal for integration with wormtable.
+    # These must be bytes literals for integration with wormtable.
     GENOTYPE_LIKELIHOOD_NAME = b"GL"
+    GENOTYPE_NAME = b"GT"
 
     def __init__(self, variantSetId, wtDir):
         """
@@ -159,6 +159,7 @@ class WormtableDataset(object):
         self._chromPosIndex = self._table.open_index("CHROM+POS")
         self._chromIdIndex = self._table.open_index("CHROM+ID")
         self._sampleCols = {}
+        self._sampleNames = []
         self._infoCols = []
         self._firstSamplePosition = -1
         t = int(os.path.getctime(wtDir) * 1000)
@@ -175,16 +176,15 @@ class WormtableDataset(object):
             if colName.startswith("INFO"):
                 s = colName.split(".")[1]
                 self._infoCols.append((s, c))
-            # We assume the .GT is the first column for each sample
-            elif colName.endswith(".GT"):
-                s = colName.split(".")[0]
-                self._sampleCols[s] = [(c, "GT")]
-                if self._firstSamplePosition == -1:
-                    self._firstSamplePosition = c.get_position()
             else:
-                # This must be a sample specific column
-                s = colName.split(".")
-                self._sampleCols[s[0]].append((c, s[1]))
+                if self._firstSamplePosition == -1:
+                    # This must be a sample specific column
+                    self._firstSamplePosition = c.get_position()
+                sampleName, infoName = colName.split(".")
+                if sampleName not in self._sampleCols:
+                    self._sampleCols[sampleName] = []
+                    self._sampleNames.append(sampleName)
+                self._sampleCols[sampleName].append((infoName, c))
 
     def convertInfoField(self, v):
         """
@@ -197,7 +197,25 @@ class WormtableDataset(object):
             ret = [str(v)]
         return ret
 
-    def convertVariant(self, row, callSetIds):
+    def convertGenotype(self, call, genotype):
+        """
+        Updates the specified call to reflect the value encoded in the
+        specified VCF genotype string.
+        """
+        if genotype is not None:
+            # Is this the correct interpretation of | and /?
+            delim = "/"
+            if "|" in genotype:
+                delim = "|"
+                # TODO what is the phaseset value supposed to be?
+                call.phaseset = "True"
+            try:
+                call.genotype = map(int, genotype.split(delim))
+            except ValueError:
+                # TODO what is the correct interpretation of .|.?
+                call.genotype = [-1]
+
+    def convertVariant(self, row, sampleRowPositions):
         """
         Converts the specified wormtable row into a GAVariant object including
         the specified set of callSetIds.
@@ -213,9 +231,10 @@ class WormtableDataset(object):
             v.names = names.split(";")
         v.referenceBases = row[self.REF_COL]
         v.end = v.start + len(v.referenceBases)
-        v.id = "{0}.{1}.{2}".format(v.variantSetId, v.referenceName, v.start)
-        alt = row[self.ALT_COL].split(",")
-        v.alternateBases = alt
+        v.id = "{0}.{1}".format(v.variantSetId, row[0])
+        alt = row[self.ALT_COL]
+        if alt is not None:
+            v.alternateBases = alt.split(",")
         v.info = {}
         for infoField, col in self._infoCols:
             pos = col.get_position()
@@ -223,32 +242,21 @@ class WormtableDataset(object):
                 v.info[infoField] = self.convertInfoField(row[pos])
         v.calls = []
         # All of the remaining values in the row correspond to Calls.
-        j = self._firstSamplePosition
-        for csid in callSetIds:
+        for csid, rowPositions in sampleRowPositions.items():
             call = protocol.GACall()
             # Why do we have both of these? Wouldn't the ID be sufficient
             # to call back to searchCallSets to get more info?
             call.callSetId = csid
             call.callSetName = csid
-            genotype = row[j]
-            # Is this the correct interpretation of | and /?
-            delim = "/"
-            if "|" in genotype:
-                delim = "|"
-                # TODO what is the phaseset value supposed to be?
-                call.phaseset = "True"
-            try:
-                call.genotype = map(int, genotype.split(delim))
-            except ValueError:
-                # TODO what is the correct interpretation of .|.?
-                call.genotype = [-1]
-            for col, infoName in self._sampleCols[csid][1:]:
-                j += 1
-                if infoName == self.GENOTYPE_LIKELIHOOD_NAME:
+            for (info, col), j in zip(self._sampleCols[csid], rowPositions):
+                if info == self.GENOTYPE_LIKELIHOOD_NAME:
                     call.genotypeLikelihood = row[j]
+                elif info == self.GENOTYPE_NAME:
+                    self.convertGenotype(call, row[j])
                 else:
-                    call.info[infoName] = self.convertInfoField(row[j])
-            j += 1
+                    if row[j] is not None:
+                        # Missing values are not included in the info array
+                        call.info[info] = self.convertInfoField(row[j])
             v.calls.append(call)
         return v
 
@@ -271,13 +279,24 @@ class WormtableDataset(object):
         # are not needed for the output when we specify callSetIds
         if len(request.callSetIds) == 0:
             readCols = self._table.columns()
-            callSetIds = self._sampleCols.keys()
+            # These must be in the correct order, so we cannot use the keys of
+            # self._sampleCols
+            callSetIds = self._sampleNames
         else:
             readCols = self._table.columns()[:self._firstSamplePosition]
             callSetIds = request.callSetIds
             for csid in request.callSetIds:
-                cols = [c for c, name in self._sampleCols[csid]]
+                cols = [c for name, c in self._sampleCols[csid]]
                 readCols.extend(cols)
+        # Now we get the row positions for the sample columns
+        sampleRowPositions = {}
+        j = self._firstSamplePosition
+        for csid in callSetIds:
+            l = []
+            for c in self._sampleCols[csid]:
+                l.append(j)
+                j += 1
+            sampleRowPositions[csid] = l
         v = []
         # TODO encoding issues here? Wormtable only deals with bytes.
         chrom = request.referenceName.encode()
@@ -299,7 +318,7 @@ class WormtableDataset(object):
             # end the iteration early when we have generated enough results.
             r = next(cursor, None)
             while r is not None and len(v) < request.pageSize:
-                v.append(self.convertVariant(r, callSetIds))
+                v.append(self.convertVariant(r, sampleRowPositions))
                 r = next(cursor, None)
             if r is not None:
                 response.nextPageToken = r[self.POS_COL]
@@ -317,7 +336,7 @@ class WormtableDataset(object):
                 # the first row >= the specified key.
                 if request.start <= r[self.POS_COL] < request.end \
                         and r[self.ID_COL] == name:
-                    v.append(self.convertVariant(r, callSetIds))
+                    v.append(self.convertVariant(r, sampleRowPositions))
         response.variants = v
         return response
 
@@ -342,8 +361,8 @@ class WormtableDataset(object):
         if len(self._sampleCols) > 0:
             # TODO this is pretty nasty, making a list just to take the head.
             sampleName = list(self._sampleCols.keys())[0]
-            for col, infoField in self._sampleCols[sampleName]:
-                if infoField != "GT":
+            for infoField, col in self._sampleCols[sampleName]:
+                if infoField != self.GENOTYPE_NAME:
                     ret.append(f(infoField, col))
         return ret
 
