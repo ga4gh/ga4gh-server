@@ -6,10 +6,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import glob
 import random
 import datetime
 
 import wormtable as wt
+import pysam
 
 import ga4gh.protocol as protocol
 
@@ -367,27 +369,105 @@ class WormtableDataset(object):
         return ret
 
 
+class TabixDataset(object):
+    """
+    Class representing a single dataset backed by a tabix directory.
+    """
+    def __init__(self, variantSetId, vcfPath):
+        self._variantSetId = variantSetId
+        self._created = protocol.convertDatetime(datetime.datetime.now())
+
+        # Read in Tabix-index VCF files from vcfPath is a path.
+        # self.tb chrom -> vcf dict
+        self._tabixMap = {}
+
+        for fn in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
+            tabixfile = pysam.Tabixfile(fn)
+            for chrom in tabixfile.contigs:
+                if chrom in self._tabixMap:
+                    raise Exception("cannot have overlapping VCF files.")
+                self._tabixMap[chrom] = tabixfile
+
+    def convertVariant(self, record):
+        v = protocol.GAVariant()
+        record = record.split('\t')
+        position = int(record[1])
+
+        v.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position)
+        v.variantSetId = self._variantSetId
+        v.referenceName = record[0]
+        v.names = []  # What's a good model to generate these?
+        # TODO How should we populate these from VCF?
+        v.created = self._created
+        v.updated = self._created
+        v.start = position
+        v.end = position + 1  # TODO support non SNP variaints
+        v.referenceBases = record[3]
+        v.alternateBases = [record[4].split(",")]
+        v.calls = []
+        for j in range(9, len(record)):
+            c = protocol.GACall()
+            c.genotype = record[j].split(":")[0].split("[\/\|]")
+            # "(\d+)([\|\/])(\d+)"
+            # Need to make up genotypeLikelihood for dev vcf.
+            # make something more robust later
+            c.genotypeLikelihood = [-100, -100, -100]
+            v.calls.append(c)
+        return v
+
+    def searchVariants(self, request):
+        """
+        Serves the specified GASearchVariantsRequest and returns a
+        GASearchVariantsResponse. If the number of variants to be returned is
+        greater than request.maxResults then the nextPageToken is set to a
+        non-null value. Subsequent request objects should provide this value in
+        the pageToken attribute to obtain the next page of results.
+        """
+        # This is temporary until we do this properly based on the output
+        # buffer size
+        if request.pageSize is None:
+            request.pageSize = 100
+        response = protocol.GASearchVariantsResponse()
+        response.variantSetId = self._variantSetId
+
+        v = []
+        j = int(request.start)
+        if request.pageToken is not None:
+            j = int(request.pageToken)
+        if request.end is None:
+            request.end = request.start + 1
+
+        cursor = self._tabixMap[request.referenceName]\
+            .fetch(str(request.referenceName), j-1, int(request.end))
+        # Weird with the -1 but seems required. 0 based i guess?
+        while len(v) < request.pageSize:
+            try:
+                record = cursor.next()
+            except StopIteration:
+                break
+            v.append(self.convertVariant(record))
+        try:
+            record = cursor.next()
+        except StopIteration:
+            pass
+        else:
+            response.nextPageToken = self.convertVariant(record).start
+        response.variants = v
+
+        return response
+
+
 class Backend(object):
     """
     Superclass of GA4GH protocol backends.
     """
-
-
-class WormtableBackend(Backend):
-    """
-    A backend based on wormtable tables and indexes. This backend is provided
-    with a directory within which it can find VCF variant sets converted into
-    wormtable format. Each file within the specified directory is assumed to
-    be a wormtable, and the variant set ID will be the name of the
-    corresponding wormtable directory.
-    """
-    def __init__(self, dataDir):
+    def __init__(self, dataDir, Dataset):
         self._dataDir = dataDir
         self._variantSets = {}
-        # All files in datadir are assumed to correspond to wormtables.
+        # All files in datadir are assumed to correspond to Datasets.
         for vsid in os.listdir(self._dataDir):
             f = os.path.join(self._dataDir, vsid)
-            self._variantSets[vsid] = WormtableDataset(vsid, f)
+            self._variantSets[vsid] = Dataset(vsid, f)
         self._variantSetIds = sorted(self._variantSets.keys())
 
     def searchVariants(self, request):
@@ -422,6 +502,26 @@ class WormtableBackend(Backend):
             response.nextPageToken = j
         response.variantSets = v
         return response
+
+
+class TabixBackend(Backend):
+    """
+    A class that serves variants indexed by tabix.
+    """
+    def __init__(self, dataDir):
+        Backend.__init__(self, dataDir, TabixDataset)
+
+
+class WormtableBackend(Backend):
+    """
+    A backend based on wormtable tables and indexes. This backend is provided
+    with a directory within which it can find VCF variant sets converted into
+    wormtable format. Each file within the specified directory is assumed to
+    be a wormtable, and the variant set ID will be the name of the
+    corresponding wormtable directory.
+    """
+    def __init__(self, dataDir):
+        Backend.__init__(self, dataDir, WormtableDataset)
 
 
 class VariantSimulator(Backend):
