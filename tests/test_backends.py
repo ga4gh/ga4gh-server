@@ -342,12 +342,7 @@ class TestVariants(TestWormtableBackend):
             # Verify we've got the correct csids.
             s1 = set(cs.callSetId for cs in variant.calls)
             self.assertEqual(len(s1), len(variant.calls))
-            # TODO remove this check once we've corrected the empty list
-            # semantics in the protocol
-            if len(callSetIds) != 0:
-                self.assertEqual(s1, set(callSetIds))
-            else:
-                self.assertEqual(s1, set(self.getCallSetIds(vsid)))
+            self.assertEqual(s1, set(callSetIds))
 
     def testSearchAllVariants(self):
         for vs in self.getVariantSets():
