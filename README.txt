@@ -1,17 +1,17 @@
+
+.. image:: http://genomicsandhealth.org/files/logo_ga.png
+
 ==============================
 GA4GH Reference Implementation
 ==============================
 
-A reference implementation of the APIs defined in the schemas repository.
+This is a prototype for the GA4GH reference client and
+server applications. It is under heavy development, and many aspects of
+the layout and APIs will change as requirements are better understood.
+If you would like to help, please check out our list of
+`issues <https://github.com/ga4gh/server/issues>`_!
 
-*************************
-Initial skeleton overview
-*************************
-
-This is a proposed skeleton layout for the GA4GH reference client and
-server applications. As such, nothing is finalised and all aspects of
-the design and implementation are open for discussion and debate. The overall
-goals of the project are:
+Our aims for this implementation are:
 
 Simplicity/clarity
     The main goal of this implementation is to provide an easy to understand
@@ -36,45 +36,15 @@ Ease of use
     make installing the ``ga4gh`` reference code very easy across a range of
     operating systems.
 
-
-
-*************
-Trying it out
-*************
-
-The project is designed to be published as a `PyPI <https://pypi.python.org/pypi>`_
-package, so ultimately installing the reference client and server programs
-should be as easy as::
-
-    $ pip install ga4gh
-
-However, the code is currently only a proposal, so it has not been uploaded to
-the Python package index. The best way to try out the code right now is to
-use `virtualenv <http://virtualenv.readthedocs.org/en/latest/>`_. After cloning
-the git repo, and changing to the project directory, do the following::
-
-    $ virtualenv testenv
-    $ source testenv/bin/activate
-    $ python setup.py install
-
-This should install the ``ga4gh_server`` and ``ga4gh_client`` scripts into the
-virtualenv and update your ``PATH`` so that they are available. When you have
-finished trying out the programs you can leave the virtualenv using::
-
-    $ deactivate
-
-The virtualenv can be restarted at any time, and can also be deleted
-when you no longer need it.
-
 ********************************
 Serving variants from a VCF file
 ********************************
 
-Two implementations of the variants API is available that can serve data based
-on existing VCF files. This backends are based on tabix and `wormtable
-<http://www.biomedcentral.com/1471-2105/14/356>`_, which is a Python library
-to handle large scale tabular data. See `Wormtable backend`_ for instructions
-on serving VCF data from the GA4GH API.
+Two implementations of the variants API are available that can serve data based
+on existing VCF files. These backends are based on tabix and `wormtable
+<http://www.biomedcentral.com/1471-2105/14/356>`_, which is a Python library to
+handle large scale tabular data. See `Wormtable backend`_ for instructions on
+serving VCF data from the GA4GH API.
 
 *****************
 Wormtable backend
@@ -159,38 +129,41 @@ building and indexing such large tables.
 Tabix backend
 *****************
 
-The tabix backend allows us to serve variants from an arbitrary VCF file.
-The VCF file must first be indexed with `tabix <http://samtools.sourceforge.net/tabix.shtml>`_.
-Many projects, including the `1000 genomes project
-<http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/>`_, release files with tabix
-indicies already precomputed.  This backend can serve such datasets without any
-preprocessing via the command:
+The tabix backend allows us to serve variants from an arbitrary VCF file.  The
+VCF file must first be indexed with `tabix
+<http://samtools.sourceforge.net/tabix.shtml>`_.  Many projects, including the
+`1000 genomes project
+<http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/>`_, release files
+with tabix indicies already precomputed.  This backend can serve such datasets
+without any preprocessing via the command::
 
-    $ python ga4gh/scripts/server.py tabix DATADIR
+    $ ga4gh_server tabix DATADIR
 
-where DATADIR is a directory that contains folders of tabix-indexed VCF file(s).  There cannot
-be more than one VCF file in any subdirectory that has data for the same reference contig.
+where DATADIR is a directory that contains subdirectories of tabix-indexed VCF
+file(s).  There cannot be more than one VCF file in any subdirectory that has
+data for the same reference contig.
 
 ******
 Layout
 ******
 
-The code for the project is held in the ``ga4gh`` package, which corresponds
-to the ``ga4gh`` directory in the project root. Within this package,
-the functionality is split between the ``client``, ``server`` and
-``protocol`` modules. There is also a subpackage called ``scripts``
-which holds the code defining the command line interfaces for the
+The code for the project is held in the ``ga4gh`` package, which corresponds to
+the ``ga4gh`` directory in the project root. Within this package, the
+functionality is split between the ``client``, ``server``, ``protocol`` and
+``cli`` modules.  The ``cli`` module contains the definitions for the
 ``ga4gh_client`` and ``ga4gh_server`` programs.
 
-For development purposes, it is useful to be able to run the command
-line programs directly without installing them. To do this, make hard links
-to the files in the scripts directory to the project root and run them
-from there; e.g::
+For development purposes, it is useful to be able to run the command line
+programs directly without installing them. To do this, use the
+``server_dev.py`` and ``client_dev.py`` scripts. (These are just shims to
+facilitate development, and are not intended to be distributed.  The
+distributed versions of the programs are packaged using the setuptools
+``entry_point`` key word; see ``setup.py`` for details). For example, the run
+the server command simply run::
 
-    $ ln ga4gh/scripts/server.py .
-    $ python server.py
-    usage: server.py [-h] [--port PORT] [--verbose] {help,simulate} ...
-    server.py: error: too few arguments
+    $ python server_dev.py
+    usage: server_dev.py [-h] [--port PORT] [--verbose] {help,wormtable,tabix} ...
+    server_dev.py: error: too few arguments
 
 ++++++++++++
 Coding style
@@ -199,6 +172,13 @@ Coding style
 The code follows the guidelines of `PEP 8
 <http://legacy.python.org/dev/peps/pep-0008>`_ in most cases. The only notable
 difference is the use of camel case over underscore delimited identifiers; this
-is done for consistency with the GA4GH API. The code was checked for compliance
+is done for consistency with the GA4GH API. Code should be checked for compliance
 using the `pep8 <https://pypi.python.org/pypi/pep8>`_ tool.
 
+
+**********
+Deployment
+**********
+
+*TODO* Give simple instructions for deploying the server on common platforms
+like Apache and Nginx.

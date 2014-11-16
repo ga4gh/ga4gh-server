@@ -33,14 +33,14 @@ setup(
     name="ga4gh",
     version=ga4gh_version,
     long_description=ga4gh_readme,
-    packages=["ga4gh", "ga4gh.scripts"],
+    packages=["ga4gh"],
     author="AUTHOR FIXME",
     author_email="FIXME@somewhere.org",
     url="http://pypi.python.org/pypi/ga4gh",
     entry_points={
         'console_scripts': [
-            'ga4gh_client=ga4gh.scripts.client:main',
-            'ga4gh_server=ga4gh.scripts.server:main',
+            'ga4gh_client=ga4gh.cli:client_main',
+            'ga4gh_server=ga4gh.cli:server_main',
         ]
     },
     install_requires=requirements,
