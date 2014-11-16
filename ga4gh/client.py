@@ -6,12 +6,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
-import future
-from future.standard_library import hooks
-with hooks():
-    import http.client
+import requests
+import posixpath
 
-import ga4gh
 import ga4gh.protocol as protocol
 
 
@@ -19,9 +16,8 @@ class HTTPClient(object):
     """
     Simple HTTP client for the GA4GH protocol.
     """
-    def __init__(self, host, port, debugLevel):
-        self._httpConnection = http.client.HTTPConnection(host, port)
-        self._httpConnection.set_debuglevel(debugLevel)
+    def __init__(self, urlPrefix, debugLevel):
+        self._urlPrefix = urlPrefix
         self._debugLevel = debugLevel
         self._bytesRead = 0
 
@@ -36,11 +32,13 @@ class HTTPClient(object):
         while notDone:
             s = request.toJSON()
             headers = {"Content-type": "application/json"}
-            self._httpConnection.request("POST", url, s, headers)
-            r = self._httpConnection.getresponse()
-            if self._debugLevel > 0:
-                print()  # ugly - http doesn't end lines for some reason
-            s = r.read().decode()  # TODO encoding??
+            # make sure we correctly join with/out trailing slashes
+            fullUrl = posixpath.join(self._urlPrefix, url)
+            # TODO Can we get requests to output debugging information when
+            # debugLevel > 0?
+            r = requests.post(fullUrl, s, headers=headers, verify=False)
+            r.raise_for_status()
+            s = r.text
             self._bytesRead += len(s)
             if self._debugLevel > 1:
                 # TODO use a logging output and integrate with HTTP client more
@@ -49,7 +47,7 @@ class HTTPClient(object):
                 pp = json.dumps(json.loads(s), sort_keys=True, indent=4)
                 print(pp)
             resp = protocolClass.fromJSON(s)
-            # TODO check if this resp is a GAException and raise an error
+            # TODO handle HTTP errors from requests and display.
             for v in getattr(resp, listAttr):
                 yield v
             request.pageToken = resp.nextPageToken

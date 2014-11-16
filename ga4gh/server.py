@@ -20,6 +20,16 @@ import werkzeug.wrappers as wzw
 import werkzeug.exceptions as wze
 
 
+def makeApplication(backend):
+    """
+    Factory function to create a WSGI application using the specified backend.
+
+    TODO add detailed usage comments.
+    """
+    httpHandler = HTTPHandler(backend)
+    return httpHandler.wsgiApplication
+
+
 class GA4GHRequest(wzw.BaseRequest, wzw.CommonRequestDescriptorsMixin):
     """
     Class representing GA4GH HTTP request objects.
