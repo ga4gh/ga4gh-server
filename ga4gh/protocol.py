@@ -8,6 +8,8 @@ from __future__ import unicode_literals
 import json
 import datetime
 
+import avro.io
+
 
 def convertDatetime(t):
     """
@@ -38,134 +40,114 @@ class ProtocolElement(object):
     correspondence with the Avro definitions, and provide the basic elements
     of the on-the-wire protocol.
     """
-    _embeddedTypes = {}
+
+    def __str__(self):
+        return "{0}({1})".format(self.__class__.__name__, self.toJSON())
+
+    def __eq__(self, other):
+        """
+        Returns True if all fields in this protocol element are equal to the
+        fields in the specified protocol element.
+
+        TODO This feature is experimental and requires more testing; use
+        with caution!!
+        """
+        # TODO This implementation is ugly! There must be a nicer way to do
+        # this...
+        ret = False
+        if type(other) == type(self):
+            ret = True
+            for f in self.schema.fields:
+                k = f.name
+                a1 = getattr(self, k)
+                a2 = getattr(other, k)
+                if self.isEmbeddedType(k):
+                    if isinstance(f.type, avro.schema.ArraySchema):
+                        if len(a1) == len(a2):
+                            ret = ret and all(x == y for x, y in zip(a1, a2))
+                        else:
+                            ret = False
+                    else:
+                        ret = ret and a1 == a2
+                else:
+                    ret = ret and a1 == a2
+        return ret
+
+    def __ne__(self, other):
+        return not self == other
 
     def toJSON(self):
         """
         Returns a JSON encoded string representation of this ProtocolElement.
+
+        TODO This method is deprecated in favour of the more explicit
+        toJSONString.
         """
         return json.dumps(self, cls=ProtocolElementEncoder)
 
+    def toJSONString(self):
+        """
+        Returns a JSON encoded string representation of this ProtocolElement.
+
+        TODO is this a good API? Should we just let the client call the
+        appropriate json method and use ProtocolElementEncoder?
+        """
+        return json.dumps(self, cls=ProtocolElementEncoder)
+
+    def toJSONDict(self):
+        """
+        Returns a JSON dictionary representation of this ProtocolElement.
+        """
+        # TODO this is horrible! Need to streamline this and reuse some
+        # of the code in _decode below
+        return json.loads(json.dumps(self, cls=ProtocolElementEncoder))
+
     @classmethod
-    def fromJSON(cls, json_str):
+    def validate(cls, jsonDict):
+        """
+        Validates the specified json dictionary to determine if it is an
+        instance of this element's schema.
+        """
+        return avro.io.validate(cls.schema, jsonDict)
+
+    @classmethod
+    def fromJSON(cls, jsonStr):
         """
         Returns a decoded ProtocolElement from the specified JSON string.
+
+        TODO change the signature of this to take a json dictionary, and the
+        fold in _decode in here.
         """
-        d = json.loads(json_str)
+        d = json.loads(jsonStr)
         return cls._decode(d)
 
     @classmethod
     def _decode(cls, d):
         instance = cls()
-        for k, v in d.items():
-            if k in cls._embeddedTypes:
-                # TODO is this always a list?
-                l = []
-                for element in v:
-                    l.append(cls._embeddedTypes[k]._decode(element))
-                v = l
+        schema = cls.schema
+        if d is None:
+            raise ValueError("Required values not set in {0}".format(cls))
+        for f in schema.fields:
+            instance.__dict__[f.name] = f.default
+            k = f.name
+            if k in d:
+                v = d[k]
+                if cls.isEmbeddedType(k):
+                    if isinstance(f.type, avro.schema.ArraySchema):
+                        l = []
+                        for element in v:
+                            l.append(cls.getEmbeddedType(k)._decode(element))
+                        v = l
+                    elif isinstance(f.type, avro.schema.RecordSchema):
+                        v = cls.getEmbeddedType(k)._decode(v)
+                    elif isinstance(f.type, avro.schema.UnionSchema):
+                        if v is not None:
+                            v = cls.getEmbeddedType(k)._decode(v)
+                    else:
+                        raise Exception("Schema assumptions violated")
             instance.__dict__[k] = v
         return instance
 
-
-class GACall(ProtocolElement):
-    """
-    A GACall represents the determination of genotype with respect to a
-    particular variant. It may include associated information such as quality
-    and phasing. For example, a call might assign a probability of 0.32 to the
-    occurrence of a SNP named rs1234 in a call set with the name NA12345
-    """
-    def __init__(self):
-        self.callSetId = None
-        self.callSetName = None
-        self.genotype = []
-        self.phaseset = None
-        self.genotypeLikelihood = []
-        self.info = {}
-
-
-class GAVariant(ProtocolElement):
-    """
-    A GAVariant represents a change in DNA sequence relative to some
-    reference. For example, a variant could represent a SNP or an
-    insertion. Variants belong to a GAVariantSet. This is equivalent to a
-    row in VCF.
-    """
-    _embeddedTypes = {
-        "calls": GACall,
-    }
-
-    def __init__(self):
-        self.id = ""
-        self.variantSetId = ""
-        self.names = []
-        self.created = None
-        self.updated = None
-        self.referenceName = ""
-        self.start = None
-        self.end = None
-        self.referenceBases = ""
-        self.alternateBases = []
-        self.info = {}
-        self.calls = []
-
-
-class GAVariantSetMetadata(ProtocolElement):
-
-    def __init__(self):
-        self.key = ""
-        self.value = ""
-        self.id = ""
-        self.type = ""
-        self.number = ""
-        self.description = ""
-        self.info = {}
-
-
-class GAVariantSet(ProtocolElement):
-    _embeddedTypes = {
-        "metadata": GAVariantSetMetadata
-    }
-
-    def __init__(self):
-        self.id = ""
-        self.datasetId = ""
-        self.metadata = []
-
-
-class GASearchVariantSetsRequest(ProtocolElement):
-    def __init__(self):
-        self.dataSetIds = []
-        self.pageSize = None
-        self.pageToken = None
-
-
-class GASearchVariantSetsResponse(ProtocolElement):
-    _embeddedTypes = {"variantSets": GAVariantSet}
-
-    def __init__(self):
-        self.variantSets = []
-        self.nextPageToken = None
-
-
-class GASearchVariantsRequest(ProtocolElement):
-    """
-    Search for variants.
-    """
-    def __init__(self):
-        self.variantSetIds = []
-        self.variantName = None
-        self.callSetIds = []
-        self.referenceName = None
-        self.start = None
-        self.end = None
-        self.pageToken = None
-        self.pageSize = 10  # Isn't this a bit small?
-
-
-class GASearchVariantsResponse(ProtocolElement):
-    _embeddedTypes = {"variants": GAVariant}
-
-    def __init__(self):
-        self.variants = []
-        self.nextPageToken = None
+# We can now import the definitions of the protocol elements from the
+# generated file.
+from _protocol_definitions import *

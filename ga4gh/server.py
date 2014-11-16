@@ -284,7 +284,6 @@ class WormtableDataset(object):
         if request.pageSize is None:
             request.pageSize = 100
         response = protocol.GASearchVariantsResponse()
-        response.variantSetId = self._variantSetId
         # First we get the set of columns for wormtable to retrieve. We don't
         # want to waste time reading in and decoding data for columns that
         # are not needed for the output when we specify callSetIds
