@@ -29,16 +29,6 @@ class ServerRunner(object):
             use_reloader=True)
 
 
-class SimulateRunner(ServerRunner):
-    """
-    Runner class to start the a server using the simulated backend.
-    """
-    def getBackend(self, args):
-        backend = ga4gh.server.VariantSimulator(
-            args.seed, args.numCalls, args.variantDensity)
-        return backend
-
-
 class WormtableRunner(ServerRunner):
     """
     Runner class to run the server using the wormtable based backend.
@@ -71,21 +61,6 @@ def main():
         "help",
         description="ga4gh_server help",
         help="show this help message and exit")
-    # Simplistic simulator
-    simParser = subparsers.add_parser(
-        "simulate",
-        description="Serve a simplistic simulated model.",
-        help="Serve simulated data")
-    simParser.add_argument(
-        "--seed", "-s", default=0, type=int,
-        help="The random seed for variants")
-    simParser.add_argument(
-        "--variantDensity", "-d", default=0.5, type=float,
-        help="The probability that a given position is a variant")
-    simParser.add_argument(
-        "--numCalls", "-c", default=1, type=int,
-        help="The number of GACalls returned for each variant")
-    simParser.set_defaults(runner=SimulateRunner)
     # Wormtable backend
     wtbParser = subparsers.add_parser(
         "wormtable",
@@ -99,10 +74,10 @@ def main():
     tabixParser = subparsers.add_parser(
         "tabix",
         description="Serve the API using a tabix based backend.",
-        help="The directory containing the VCFs to be served.")
+        help="Serve data from Tabix indexed VCFs")
     tabixParser.add_argument(
         "dataDir",
-        help="The directory containing VCFs and folders of VCFs split by chromosome")
+        help="The directory containing VCFs")
     tabixParser.set_defaults(runner=TabixRunner)
 
     args = parser.parse_args()
