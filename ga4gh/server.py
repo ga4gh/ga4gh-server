@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 
 import os
 import glob
-import random
 import datetime
 
 import wormtable as wt
@@ -102,7 +101,7 @@ class HTTPHandler(object):
         # response.
         try:
             protocolRequest = protocolClass.fromJSON(data)
-        except ValueError as e:
+        except ValueError:
             raise wze.BadRequest()
         protocolResponse = endpoint(protocolRequest)
         s = protocolResponse.toJSON()
@@ -532,81 +531,3 @@ class WormtableBackend(Backend):
     """
     def __init__(self, dataDir):
         Backend.__init__(self, dataDir, WormtableDataset)
-
-
-class VariantSimulator(Backend):
-    """
-    A class that simulates Variants that can be served by the GA4GH API.
-    """
-    def __init__(self, seed=0, numCalls=1, variantDensity=0.5):
-        self._randomSeed = seed
-        self._numCalls = numCalls
-        self._variantDensity = variantDensity
-        now = protocol.convertDatetime(datetime.datetime.now())
-        self._created = now
-        self._updated = now
-
-    def generateVariant(self, variantSetId, referenceName, position, rng):
-        """
-        Generate a random variant for the specified position using the
-        specified random number generator. This generator should be seeded
-        with a value that is unique to this position so that the same variant
-        will always be produced regardless of the order it is generated in.
-        """
-        v = protocol.GAVariant()
-        v.variantSetId = variantSetId
-        # The id is the combination of the position, referenceName and variant
-        # set id; this allows us to generate the variant from the position and
-        # id.
-        v.id = "{0}:{1}:{2}".format(
-            v.variantSetId, referenceName, position)
-        v.referenceName = referenceName
-        v.names = []  # What's a good model to generate these?
-        v.created = self._created
-        v.updated = self._updated
-        v.start = position
-        v.end = position + 1  # SNPs only for now
-        bases = ["A", "C", "G", "T"]
-        ref = rng.choice(bases)
-        v.referenceBases = ref
-        alt = rng.choice([b for b in bases if b != ref])
-        v.alternateBases = [alt]
-        v.calls = []
-        for j in range(self._numCalls):
-            c = protocol.GACall()
-            # for now, the genotype is either [0,1], [1,1] or [1,0] with equal
-            # probability; probably will want to do something more
-            # sophisticated later.
-            g = rng.choice([[0, 1], [1, 0], [1, 1]])
-            c.genotype = g
-            # TODO What is a reasonable model for generating these likelihoods?
-            # Are these log-scaled? Spec does not say.
-            c.genotypeLikelihood = [-100, -100, -100]
-            v.calls.append(c)
-        return v
-
-    def searchVariants(self, request):
-        """
-        Serves the specified GASearchVariantsRequest and returns a
-        GASearchVariantsResponse. If the number of variants to be returned is
-        greater than request.pageSize then the nextPageToken is set to a
-        non-null value. Subsequent request objects should provide this value in
-        the pageToken attribute to obtain the next page of results.
-        """
-        response = protocol.GASearchVariantsResponse()
-        rng = random.Random()
-        v = []
-        j = request.start
-        if request.pageToken is not None:
-            j = request.pageToken
-        while j < request.end and len(v) != request.pageSize:
-            rng.seed(self._randomSeed + j)
-            if rng.random() < self._variantDensity:
-                # TODO fix variant set IDS so we can have multiple
-                v.append(self.generateVariant(
-                    request.variantSetIds[0], request.referenceName, j, rng))
-            j += 1
-        if j < request.end - 1:
-            response.nextPageToken = j
-        response.variants = v
-        return response
