@@ -22,8 +22,7 @@ class VariantSetSearchRunner(object):
         svsr.pageSize = args.pageSize
         self._request = svsr
         self._verbosity = args.verbose
-        self._httpClient = ga4gh.client.HTTPClient(
-            args.hostname, args.port, args.verbose)
+        self._httpClient = ga4gh.client.HTTPClient(args.baseUrl, args.verbose)
 
     def run(self):
         for v in self._httpClient.searchVariantSets(self._request):
@@ -46,8 +45,7 @@ class VariantSearchRunner(object):
         svr.variantSetIds = args.variantSetIds.split(",")
         self._request = svr
         self._verbosity = args.verbose
-        self._httpClient = ga4gh.client.HTTPClient(
-            args.hostname, args.port, args.verbose)
+        self._httpClient = ga4gh.client.HTTPClient(args.baseUrl, args.verbose)
 
     def run(self):
         for v in self._httpClient.searchVariants(self._request):
@@ -125,13 +123,16 @@ def addOptions(parser):
         help="The maximum number of variants returned in one response.")
 
 
+def addUrlArgument(parser):
+    """
+    Adds the URL endpoint argument to the specified parser.
+    """
+    parser.add_argument("baseUrl", help="The URL of the API endpoint")
+
+
 def main():
     parser = argparse.ArgumentParser(description="GA4GH reference client")
     # Add global options
-    parser.add_argument(
-        "--hostname", "-H", default="localhost", help="The server host")
-    parser.add_argument(
-        "--port", "-P", default=8000, type=int, help="The server port")
     parser.add_argument('--verbose', '-v', action='count', default=0)
     subparsers = parser.add_subparsers(title='subcommands',)
 
@@ -145,12 +146,14 @@ def main():
         description="Search for variants",
         help="Search for variants.")
     vsParser.set_defaults(runner=VariantSearchRunner)
+    addUrlArgument(vsParser)
     addOptions(vsParser)
     # benchmarking
     bmParser = subparsers.add_parser(
         "benchmark",
         description="Run simple benchmarks on the various methods",
         help="Benchmark server performance")
+    addUrlArgument(bmParser)
     bmParser.set_defaults(runner=BenchmarkRunner)
     addOptions(bmParser)
     # variantsets/search
@@ -159,6 +162,7 @@ def main():
         description="Search for variantSets",
         help="Search for variantSets.")
     vssParser.set_defaults(runner=VariantSetSearchRunner)
+    addUrlArgument(vssParser)
     vssParser.add_argument(
         "--pageSize", "-m", default=100, type=int,
         help="The maximum number of variants returned in one response.")

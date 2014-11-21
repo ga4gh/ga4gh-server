@@ -46,7 +46,7 @@ Serving variants from a VCF file
 
 Two implementations of the variants API is available that can serve data based
 on existing VCF files. This backends are based on tabix and `wormtable
-<http://www.biomedcentral.com/1471-2105/14/356>`_, which is a Python library 
+<http://www.biomedcentral.com/1471-2105/14/356>`_, which is a Python library
 to handle large scale tabular data. See `Wormtable backend`_ for instructions
 on serving VCF data from the GA4GH API.
 
@@ -183,7 +183,7 @@ utility (the `wormtable tutorial
 A subset (1000 rows for each chromosome) of the 1000 Genomes VCF data (20110521
 and 20130502 releases) has been prepared and converted to wormtable format
 and made available `here <http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar.gz>`_.
-See `Converting 1000G data`_ for more information on converting 1000 genomes 
+See `Converting 1000G data`_ for more information on converting 1000 genomes
 data into wormtable format.
 
 To run the server on this example dataset, create a virtualenv and install
@@ -193,17 +193,17 @@ wormtable::
     $ source testenv/bin/activate
     $ pip install wormtable
 
-See the `wormtable PyPI page <https://pypi.python.org/pypi/wormtable>`_ for 
+See the `wormtable PyPI page <https://pypi.python.org/pypi/wormtable>`_ for
 detailed instructions on installing wormtable and its dependencies.
 
 Now, download and unpack the example data, ::
 
     $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar.gz
-    $ tar -zxvf ga4gh-example-data.tar.gz 
+    $ tar -zxvf ga4gh-example-data.tar.gz
 
-and install the client and server scripts into the virtualenv (assuming 
+and install the client and server scripts into the virtualenv (assuming
 you are in the project root directory)::
-    
+
     $ python setup.py install
 
 We can now run the server, telling it to serve variants from the sets in
@@ -212,16 +212,16 @@ the downloaded datafile::
     $ ga4gh_server wormtable ga4gh-example-data
 
 To run queries against this server, we can use the ``ga4gh_client`` program;
-for example, here we run the ``variants/search`` method over the 
+for example, here we run the ``variants/search`` method over the
 ``1000g_2013`` variant set, where the reference name is ``1``, the end coordinate
 is 60000 and we only want calls returned for call set ID HG03279::
 
-    $ ga4gh_client variants-search 1000g_2013 -r1 -e 60000 -c HG03279 | less -S
+    $ ga4gh_client variants-search http://localhost:8000 1000g_2013 -r1 -e 60000 -c HG03279 | less -S
 
-We can also query against the *variant name*; here we return the variant that 
+We can also query against the *variant name*; here we return the variant that
 has variant name ``rs75454623``::
 
-    $ ga4gh_client variants-search 1000g_2013 -r1 -e 60000 -n rs75454623  | less -S
+    $ ga4gh_client variants-search http://localhost:8000 1000g_2013 -r1 -e 60000 -n rs75454623  | less -S
 
 +++++++++++++++++++++
 Converting 1000G data
@@ -229,18 +229,18 @@ Converting 1000G data
 
 To duplicate the data for the above example, we must first create VCF files
 that contain the entire variant set of interest. The VCF files for the set
-mentioned above have been made `available 
+mentioned above have been made `available
 <http://www.well.ox.ac.uk/~jk/ga4gh-example-source.tar.gz>`_. After downloading
 and extracting these files, we can build the wormtable using ``vcf2wt``::
 
-    $ vcf2wt 1000g_2013-subset.vcf -s schema-1000g_2013.xml -t 1000g_2013 
-    
-Schemas for the 2011 and 2013 1000G files have been provided as these do a 
+    $ vcf2wt 1000g_2013-subset.vcf -s schema-1000g_2013.xml -t 1000g_2013
+
+Schemas for the 2011 and 2013 1000G files have been provided as these do a
 more compact job of storing the data than the default auto-generated schemas.
 We must also truncate and remove some columns because of a current limitation
 in the length of strings that wormtable can handle.
 After building the table, we must create indexes on the ``POS`` and ``ID`` columns::
-    
+
     $ wtadmin add 1000g_2013 CHROM+POS
     $ wtadmin add 1000g_2013 CHROM+ID
 
