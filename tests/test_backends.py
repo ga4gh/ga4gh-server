@@ -171,6 +171,16 @@ class TestWormtableBackend(unittest.TestCase):
         for k in i.counter().keys():
             yield k
 
+    def getCommonRefNames(self, variantSetIds):
+        """
+        Returns the reference names common to all the specified variantSetIds.
+        """
+        assert len(variantSetIds) > 0
+        commonNames = set(self.getReferenceNames(variantSetIds[0]))
+        for vsid in variantSetIds[1:]:
+            commonNames &= set(self.getReferenceNames(vsid))
+        return commonNames
+
     def getWormtableVariants(
             self, variantSetIds, referenceName, start=0, end=2**32,
             callSetIds=[]):
@@ -312,14 +322,15 @@ class TestVariants(TestWormtableBackend):
                 self.assertEqual(v, convertInfoValue(columns[k], r[k]))
 
     def verifySearchVariants(
-            self, vsid, referenceName, start, end, pageSize=1000):
+            self, variantSetIds, referenceName, start, end, pageSize=1000):
         """
-        Verifies queries on the specified variant set id and reference name.
+        Verifies queries on the specified reference name and list of variant
+        set ids.
         """
         l1 = [v for v in self.getVariants(
-            [vsid], referenceName, start=start, end=end)]
+            variantSetIds, referenceName, start=start, end=end)]
         l2 = [r for r in self.getWormtableVariants(
-            [vsid], referenceName, start=start, end=end)]
+            variantSetIds, referenceName, start=start, end=end)]
         self.assertEqual(len(l1), len(l2))
         for variant, row in zip(l1, l2):
             self.verifyVariantsEqual(variant, row)
@@ -352,7 +363,7 @@ class TestVariants(TestWormtableBackend):
     def testSearchAllVariants(self):
         for vs in self.getVariantSets():
             for referenceName in self.getReferenceNames(vs.id):
-                self.verifySearchVariants(vs.id, referenceName, 0, 2**32)
+                self.verifySearchVariants([vs.id], referenceName, 0, 2**32)
 
     def testSearchVariantSlices(self):
         for vs in self.getVariantSets():
@@ -361,21 +372,22 @@ class TestVariants(TestWormtableBackend):
                 mid = (last - first) // 2
                 for pageSize in [1, 2, 3, 5, 1000]:
                     self.verifySearchVariants(
-                        vs.id, referenceName, first, last, pageSize=pageSize)
+                        [vs.id], referenceName, first, last, pageSize=pageSize)
                     self.verifySearchVariants(
-                        vs.id, referenceName, first, mid, pageSize=pageSize)
+                        [vs.id], referenceName, first, mid, pageSize=pageSize)
                     self.verifySearchVariants(
-                        vs.id, referenceName, mid, last, pageSize=pageSize)
+                        [vs.id], referenceName, mid, last, pageSize=pageSize)
                     self.verifySearchVariants(
-                        vs.id, referenceName, first, first + 1,
+                        [vs.id], referenceName, first, first + 1,
                         pageSize=pageSize)
                     self.verifySearchVariants(
-                        vs.id, referenceName, mid, mid + 1, pageSize=pageSize)
-                    self.verifySearchVariants(
-                        vs.id, referenceName, mid - 1, mid + 1,
+                        [vs.id], referenceName, mid, mid + 1,
                         pageSize=pageSize)
                     self.verifySearchVariants(
-                        vs.id, referenceName, last, last + 1,
+                        [vs.id], referenceName, mid - 1, mid + 1,
+                        pageSize=pageSize)
+                    self.verifySearchVariants(
+                        [vs.id], referenceName, last, last + 1,
                         pageSize=pageSize)
 
     def testSearchByCallSetIds(self):
@@ -394,3 +406,13 @@ class TestVariants(TestWormtableBackend):
                 for v in self.getVariants([vs.id], referenceName):
                     self.assertTrue(v.id not in ids)
                     ids.add(v.id)
+
+    def testAcrossVariantSets(self):
+        allVariantSets = [vs.id for vs in self.getVariantSets()]
+        for permLen in range(1, len(allVariantSets) + 1):
+            for variantSets in itertools.permutations(allVariantSets, permLen):
+                for referenceName in self.getCommonRefNames(variantSets):
+                    for pageSize in [1, 2, 3, 5, 1000]:
+                        self.verifySearchVariants(
+                            variantSets, referenceName, 0, 2**32,
+                            pageSize=pageSize)
