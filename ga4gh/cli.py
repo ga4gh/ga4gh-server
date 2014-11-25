@@ -20,6 +20,7 @@ import ga4gh.protocol
 # Server
 ##############################################################################
 
+
 class ServerRunner(object):
     """
     Superclass of server runner; takes care of functionality common to
@@ -98,6 +99,7 @@ def server_main():
 # Client
 ##############################################################################
 
+
 class VariantSetSearchRunner(object):
     """
     Runner class for the variantsets/search method.
@@ -125,7 +127,11 @@ class VariantSearchRunner(object):
         svr.start = args.start
         svr.end = args.end
         svr.pageSize = args.pageSize
-        if args.callSetIds is not None:
+        if args.callSetIds == []:
+            svr.callSetIds = []
+        elif args.callSetIds == '*':
+            svr.callSetIds = None
+        else:
             svr.callSetIds = args.callSetIds.split(",")
         svr.variantSetIds = args.variantSetIds.split(",")
         self._request = svr
@@ -194,9 +200,12 @@ def addOptions(parser):
         "--variantName", "-n", default=None,
         help="Only return variants which have exactly this name.")
     parser.add_argument(
-        "--callSetIds", "-c", default=None,
-        help="""Only return variant calls which belong to call sets
-            with these IDs (comma seperated list).""")
+        "--callSetIds", "-c", default=[],
+        help="""Return variant calls which belong to call sets
+            with these IDs. Pass in IDs as a comma separated list (no spaces),
+            or '*' (with the single quotes!) to indicate 'all call sets'.
+            Omit this option to indicate 'no call sets'.
+            """)
     parser.add_argument(
         "--start", "-s", default=0, type=int,
         help="The start of the search range (inclusive).")

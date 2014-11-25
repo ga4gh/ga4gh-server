@@ -288,7 +288,7 @@ class WormtableDataset(object):
         # First we get the set of columns for wormtable to retrieve. We don't
         # want to waste time reading in and decoding data for columns that
         # are not needed for the output when we specify callSetIds
-        if len(request.callSetIds) == 0:
+        if request.callSetIds is None:
             readCols = self._table.columns()
             # These must be in the correct order, so we cannot use the keys of
             # self._sampleCols
