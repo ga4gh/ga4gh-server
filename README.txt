@@ -95,7 +95,7 @@ is 60000 and we only want calls returned for call set ID HG03279::
 We can also query against the *variant name*; here we return the variant that
 has variant name ``rs75454623``::
 
-    $ client_dev.py variants-search http://localhost:8000 1000g_2013 -r1 -e 60000 -n rs75454623  | less -S
+    $ ga4gh_client variants-search http://localhost:8000 1000g_2013 -r1 -e 60000 -n rs75454623  | less -S
 
 +++++++++++++++++++++
 Converting 1000G data
