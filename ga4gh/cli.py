@@ -65,42 +65,6 @@ def server_main():
 ##############################################################################
 # Server
 ##############################################################################
-
-
-class ServerRunner(object):
-    """
-    Superclass of server runner; takes care of functionality common to
-    all backends.
-    """
-    def __init__(self, args):
-        backend = self.getBackend(args)
-        self._port = args.port
-        self._httpHandler = ga4gh.server.HTTPHandler(backend)
-
-    def run(self):
-        werkzeug.serving.run_simple(
-            '', self._port, self._httpHandler.wsgiApplication,
-            use_reloader=True)
-
-
-class WormtableRunner(ServerRunner):
-    """
-    Runner class to run the server using the wormtable based backend.
-    """
-    def getBackend(self, args):
-        backend = ga4gh.server.WormtableBackend(args.dataDir)
-        return backend
-
-
-class TabixRunner(ServerRunner):
-    """
-    Runner class to start the server using a tabix backend.
-    """
-    def getBackend(self, args):
-        backend = ga4gh.server.TabixBackend(args.dataDir)
-        return backend
-
-
 def server_main():
     parser = argparse.ArgumentParser(description="GA4GH reference server")
     # Add global options
@@ -123,7 +87,7 @@ def server_main():
     wtbParser.add_argument(
         "dataDir",
         help="The directory containing the wormtables to be served.")
-    wtbParser.set_defaults(runner=WormtableRunner)
+    wtbParser.set_defaults(backend=WormtableBackend)
     # Tabix
     tabixParser = subparsers.add_parser(
         "tabix",
@@ -132,20 +96,14 @@ def server_main():
     tabixParser.add_argument(
         "dataDir",
         help="The directory containing VCFs")
-    tabixParser.set_defaults(runner=TabixRunner)
+    tabixParser.set_defaults(backend=TabixBackend)
 
     args = parser.parse_args()
-    if "runner" not in args:
+    if "backend" not in args:
         parser.print_help()
     else:
-        runner = args.runner(args)
-        runner.run()
-
-##############################################################################
-# Client
-##############################################################################
-
-
+        app.config["VariantBackend"] = args.backend(args.dataDir)
+        app.run(host='0.0.0.0', port=args.port)
 ##############################################################################
 # Client
 ##############################################################################

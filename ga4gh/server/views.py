@@ -1,5 +1,5 @@
 from . import app
-from flask import Response, request, render_template
+from flask import Response, request, render_template, abort
 import ga4gh.protocol as protocol
 from ga4gh.backends import WormtableBackend, TabixBackend
 
@@ -27,42 +27,42 @@ def index():
 
 @app.route('/references/<id>', methods=['GET'])
 def getReference(id):
-    return "TODO"
+    abort(404)
 
 
 @app.route('/references/<id>/bases', methods=['GET'])
 def getReferenceBases(id):
-    return "TODO"
+    abort(404)
 
 
 @app.route('/referencesets/<id>', methods=['GET'])
 def getReferenceSet(id):
-    return "TODO"
+    abort(404)
 
 
 @app.route('/callsets/search', methods=['POST'])
 def searchCallSets():
-    return "TODO"
+    abort(404)
 
 
 @app.route('/readgroupsets/search', methods=['POST'])
 def searchReadGroupSets():
-    return "TODO"
+    abort(404)
 
 
 @app.route('/reads/search', methods=['POST'])
 def searchReads():
-    return "TODO"
+    abort(404)
 
 
 @app.route('/referencesets/search', methods=['POST'])
 def searchReferenceSets():
-    return "TODO"
+    abort(404)
 
 
 @app.route('/references/search', methods=['POST'])
 def searchReferences():
-    return "TODO"
+    abort(404)
 
 
 @app.route('/variantsets/search', methods=['POST'])

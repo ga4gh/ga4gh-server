@@ -83,7 +83,7 @@ you are in the project root directory)::
 We can now run the server, telling it to serve variants from the sets in
 the downloaded datafile::
 
-    $ server_dev.py wormtable ga4gh-example-data
+    $ ga4gh_server wormtable ga4gh-example-data
 
 To run queries against this server, we can use the ``ga4gh_client`` program;
 for example, here we run the ``variants/search`` method over the
@@ -137,7 +137,7 @@ VCF file must first be indexed with `tabix
 with tabix indices already precomputed.  This backend can serve such datasets
 without any preprocessing via the command::
 
-    $ server_dev.py tabix DATADIR
+    $ ga4gh_server tabix DATADIR
 
 where DATADIR is a directory that contains subdirectories of tabix-indexed VCF
 file(s).  There cannot be more than one VCF file in any subdirectory that has
