@@ -15,12 +15,8 @@ import pysam
 import ga4gh.protocol as protocol
 
 
-class VariantDataset(object):
-    def __init__(self):
-        pass
 
-
-class WormtableDataset(VariantDataset):
+class WormtableDataset(object):
     """
     Class representing a single dataset backed by a wormtable directory.
     We assume that VCF data has been converted to wormtable format using
@@ -274,7 +270,7 @@ class WormtableDataset(VariantDataset):
         return ret
 
 
-class TabixDataset(VariantDataset):
+class TabixDataset(object):
     """
     Class representing a single dataset backed by a tabix directory.
     """
