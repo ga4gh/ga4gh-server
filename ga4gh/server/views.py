@@ -22,38 +22,7 @@ def handleHTTPPost(request, endpoint, protocolClass):
 
 @app.route('/')
 def index():
-    """ Returns website for a beacon interface
-    """
-    # TODO: Programmatically fetch variaint_sets
-    # variant_sets = [x for x in os.listdir(args.dataDir) if isdir(join(args.dataDir, x))]
-    if app.config["BEACON"]:
-        return render_template('beacon.haml', variant_sets=["1kg_phase3"])
-    else:
-        return render_template('index.haml')
-
-
-if app.config["BEACON"]:
-    @app.route('/search', methods=["POST"])
-    def search():
-        """
-        Searches beacon
-        """
-        query = protocol.GASearchVariantsRequest()
-        query.variantSetIds = [request.values["population"]]
-        query.referenceName = request.values["chr"]
-        query.start = int(request.values['coord'])
-        query.end = int(request.values['coord'])
-
-        result = app.config["VariantBackend"].searchVariants(query)
-        for var in result.variants:
-            if request.values["allele"] == "D":
-                if len(var.referenceBases) > 1:
-                    return "True"
-            else:
-                for alt in var.alternateBases:
-                    if request.values["allele"] in alt:
-                        return "True"
-        return "False"
+    return render_template("index.haml")
 
 
 @app.route('/references/<id>', methods=['GET'])
