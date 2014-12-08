@@ -367,25 +367,7 @@ class TabixDataset(VariantDataset):
         return ret
 
 
-class Backend(object):
-    """
-    Superclass of GA4GH protocol VariantBackend, ReadBackend.
-    """
-
-    def __init__(self, dataDir):
-        self._dataDir = dataDir
-
-
-class ReadBackend(Backend):
-    """
-    GA4GH Read protocol backend with pysam
-    """
-
-    def __init__(self, dataDir):
-        self._dataDir = dataDir
-
-
-class VariantBackend(Backend):
+class VariantBackend(object):
     """
     Superclass of GA4GH protocol backends.
     """

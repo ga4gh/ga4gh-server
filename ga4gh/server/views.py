@@ -1,7 +1,6 @@
 from . import app
 from flask import Response, request, render_template, abort
 import ga4gh.protocol as protocol
-from ga4gh.backends import WormtableBackend, TabixBackend
 
 
 # Helper function
@@ -17,6 +16,7 @@ def handleHTTPPost(request, endpoint, protocolClass):
     resp = Response(response=ret,
                     status=200,
                     mimetype="application/json")
+    resp.headers.add("Access-Control-Allow-Origin", "*") # CORS Support?
     return resp
 
 
