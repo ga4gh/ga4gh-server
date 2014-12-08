@@ -184,7 +184,7 @@ class WormtableDataset(VariantDataset):
         # First we get the set of columns for wormtable to retrieve. We don't
         # want to waste time reading in and decoding data for columns that
         # are not needed for the output when we specify callSetIds
-        if len(request.callSetIds) == 0:
+        if request.callSetIds is None:
             readCols = self._table.columns()
             # These must be in the correct order, so we cannot use the keys of
             # self._sampleCols
@@ -399,11 +399,31 @@ class VariantBackend(Backend):
         self._variantSetIds = sorted(self._variantSets.keys())
 
     def searchVariants(self, request):
-        # TODO rearrange the code so we can support searching over multiple
-        # variantSets.
-        assert len(request.variantSetIds) == 1
-        ds = self._variantSets[request.variantSetIds[0]]
-        return ds.searchVariants(request)
+        assert len(request.variantSetIds) > 0
+        variantSetIndex = 0  # x
+        if request.pageToken is not None:
+            # parse the pageToken and change what will be passed in
+            variantSetIndex, pageToken = request.pageToken.split(':')
+            variantSetIndex = int(variantSetIndex)
+            if pageToken == '':
+                pageToken = None  # None is represented as '' in the pageToken
+            else:
+                pageToken = int(pageToken)
+            request.pageToken = pageToken
+        ds = self._variantSets[request.variantSetIds[variantSetIndex]]
+        response = ds.searchVariants(request)
+        # Add the index of the variant set of the next
+        # page to the nextPageToken
+        if response.nextPageToken is None:
+            if variantSetIndex < len(request.variantSetIds) - 1:
+                # if not, there are no more results, so leave the token as None
+                response.nextPageToken = '{0}:'.format(variantSetIndex + 1)
+                # this token will give results from the beginning of the
+                # next variantSet
+        else:
+            response.nextPageToken = "{0}:{1}".format(variantSetIndex,
+                                                      response.nextPageToken)
+        return response
 
     def searchVariantSets(self, request):
         """

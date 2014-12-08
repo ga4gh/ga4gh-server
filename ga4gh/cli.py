@@ -9,8 +9,10 @@ from __future__ import unicode_literals
 
 import time
 import argparse
+import werkzeug.serving
 
 import ga4gh
+import ga4gh.server
 import ga4gh.client
 from ga4gh.backends import WormtableBackend, TabixBackend
 from ga4gh.server import app
@@ -60,6 +62,89 @@ def server_main():
         app.config["VariantBackend"] = args.backend(args.dataDir)
         app.run(host='0.0.0.0', port=args.port)
 
+##############################################################################
+# Server
+##############################################################################
+
+
+class ServerRunner(object):
+    """
+    Superclass of server runner; takes care of functionality common to
+    all backends.
+    """
+    def __init__(self, args):
+        backend = self.getBackend(args)
+        self._port = args.port
+        self._httpHandler = ga4gh.server.HTTPHandler(backend)
+
+    def run(self):
+        werkzeug.serving.run_simple(
+            '', self._port, self._httpHandler.wsgiApplication,
+            use_reloader=True)
+
+
+class WormtableRunner(ServerRunner):
+    """
+    Runner class to run the server using the wormtable based backend.
+    """
+    def getBackend(self, args):
+        backend = ga4gh.server.WormtableBackend(args.dataDir)
+        return backend
+
+
+class TabixRunner(ServerRunner):
+    """
+    Runner class to start the server using a tabix backend.
+    """
+    def getBackend(self, args):
+        backend = ga4gh.server.TabixBackend(args.dataDir)
+        return backend
+
+
+def server_main():
+    parser = argparse.ArgumentParser(description="GA4GH reference server")
+    # Add global options
+    parser.add_argument(
+        "--port", "-P", default=8000, type=int,
+        help="The port to listen on")
+    parser.add_argument('--verbose', '-v', action='count', default=0)
+    subparsers = parser.add_subparsers(title='subcommands',)
+
+    # help
+    helpParser = subparsers.add_parser(
+        "help",
+        description="ga4gh_server help",
+        help="show this help message and exit")
+    # Wormtable backend
+    wtbParser = subparsers.add_parser(
+        "wormtable",
+        description="Serve the API using a wormtable based backend.",
+        help="Serve data from tables.")
+    wtbParser.add_argument(
+        "dataDir",
+        help="The directory containing the wormtables to be served.")
+    wtbParser.set_defaults(runner=WormtableRunner)
+    # Tabix
+    tabixParser = subparsers.add_parser(
+        "tabix",
+        description="Serve the API using a tabix based backend.",
+        help="Serve data from Tabix indexed VCFs")
+    tabixParser.add_argument(
+        "dataDir",
+        help="The directory containing VCFs")
+    tabixParser.set_defaults(runner=TabixRunner)
+
+    args = parser.parse_args()
+    if "runner" not in args:
+        parser.print_help()
+    else:
+        runner = args.runner(args)
+        runner.run()
+
+##############################################################################
+# Client
+##############################################################################
+
 
 ##############################################################################
 # Client
@@ -92,7 +177,11 @@ class VariantSearchRunner(object):
         svr.start = args.start
         svr.end = args.end
         svr.pageSize = args.pageSize
-        if args.callSetIds is not None:
+        if args.callSetIds == []:
+            svr.callSetIds = []
+        elif args.callSetIds == '*':
+            svr.callSetIds = None
+        else:
             svr.callSetIds = args.callSetIds.split(",")
         svr.variantSetIds = args.variantSetIds.split(",")
         self._request = svr
@@ -161,9 +250,12 @@ def addOptions(parser):
         "--variantName", "-n", default=None,
         help="Only return variants which have exactly this name.")
     parser.add_argument(
-        "--callSetIds", "-c", default=None,
-        help="""Only return variant calls which belong to call sets
-            with these IDs (comma seperated list).""")
+        "--callSetIds", "-c", default=[],
+        help="""Return variant calls which belong to call sets
+            with these IDs. Pass in IDs as a comma separated list (no spaces),
+            or '*' (with the single quotes!) to indicate 'all call sets'.
+            Omit this option to indicate 'no call sets'.
+            """)
     parser.add_argument(
         "--start", "-s", default=0, type=int,
         help="The start of the search range (inclusive).")
