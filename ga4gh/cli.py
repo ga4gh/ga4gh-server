@@ -21,6 +21,7 @@ from ga4gh.server import app
 # Server
 ##############################################################################
 
+
 def server_main():
     parser = argparse.ArgumentParser(description="GA4GH reference server")
     # Add global options
@@ -64,6 +65,7 @@ def server_main():
 ##############################################################################
 # Client
 ##############################################################################
+
 
 class VariantSetSearchRunner(object):
     """

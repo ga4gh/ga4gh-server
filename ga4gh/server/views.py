@@ -4,6 +4,7 @@ import ga4gh.protocol as protocol
 import werkzeug.wrappers as wzw
 import werkzeug.exceptions as wze
 
+
 def handleHTTPPost(request, endpoint, protocolClass):
     """
     Handles the specified HTTP POST request, which maps to the specified
@@ -31,6 +32,7 @@ def handleHTTPPost(request, endpoint, protocolClass):
     # TODO is this correct CORS support?
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
+
 
 def handleHTTPOptions():
     """
@@ -95,16 +97,19 @@ def searchReferences():
 def searchVariantSets():
     if request.method == "POST":
         return handleHTTPPost(
-                request, app.config["VariantBackend"].searchVariantSets,
-                protocol.GASearchVariantSetsRequest)
+            request,
+            app.config["VariantBackend"].searchVariantSets,
+            protocol.GASearchVariantSetsRequest)
     else:
         return handleHTTPOptions()
+
 
 @app.route('/variants/search', methods=['POST', 'OPTIONS'])
 def searchVariants():
     if request.method == "POST":
         return handleHTTPPost(
-                request, app.config["VariantBackend"].searchVariants,
-                protocol.GASearchVariantsRequest)
+            request,
+            app.config["VariantBackend"].searchVariants,
+            protocol.GASearchVariantsRequest)
     else:
         return handleHTTPOptions()

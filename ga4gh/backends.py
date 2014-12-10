@@ -15,7 +15,6 @@ import pysam
 import ga4gh.protocol as protocol
 
 
-
 class WormtableDataset(object):
     """
     Class representing a single dataset backed by a wormtable directory.
