@@ -21,7 +21,6 @@ from ga4gh.server import app
 # Server
 ##############################################################################
 
-
 def server_main():
     parser = argparse.ArgumentParser(description="GA4GH reference server")
     # Add global options
@@ -60,50 +59,8 @@ def server_main():
         parser.print_help()
     else:
         app.config["VariantBackend"] = args.backend(args.dataDir)
-        app.run(host='0.0.0.0', port=args.port)
+        app.run(host="0.0.0.0", port=args.port, debug=True)
 
-##############################################################################
-# Server
-##############################################################################
-def server_main():
-    parser = argparse.ArgumentParser(description="GA4GH reference server")
-    # Add global options
-    parser.add_argument(
-        "--port", "-P", default=8000, type=int,
-        help="The port to listen on")
-    parser.add_argument('--verbose', '-v', action='count', default=0)
-    subparsers = parser.add_subparsers(title='subcommands',)
-
-    # help
-    helpParser = subparsers.add_parser(
-        "help",
-        description="ga4gh_server help",
-        help="show this help message and exit")
-    # Wormtable backend
-    wtbParser = subparsers.add_parser(
-        "wormtable",
-        description="Serve the API using a wormtable based backend.",
-        help="Serve data from tables.")
-    wtbParser.add_argument(
-        "dataDir",
-        help="The directory containing the wormtables to be served.")
-    wtbParser.set_defaults(backend=WormtableBackend)
-    # Tabix
-    tabixParser = subparsers.add_parser(
-        "tabix",
-        description="Serve the API using a tabix based backend.",
-        help="Serve data from Tabix indexed VCFs")
-    tabixParser.add_argument(
-        "dataDir",
-        help="The directory containing VCFs")
-    tabixParser.set_defaults(backend=TabixBackend)
-
-    args = parser.parse_args()
-    if "backend" not in args:
-        parser.print_help()
-    else:
-        app.config["VariantBackend"] = args.backend(args.dataDir)
-        app.run(host='0.0.0.0', port=args.port)
 ##############################################################################
 # Client
 ##############################################################################
