@@ -19,6 +19,7 @@ import wormtable as wt
 
 import ga4gh.server as server
 import ga4gh.protocol as protocol
+import ga4gh.backends as backends
 
 
 def powerset(iterable, max_sets=None):
@@ -111,7 +112,7 @@ class TestWormtableBackend(unittest.TestCase):
             self._tables[f] = t
             self._chromIndexes[f] = t.open_index("CHROM")
             self._chromPosIndexes[f] = t.open_index("CHROM+POS")
-        self._backend = server.WormtableBackend(self._dataDir)
+        self._backend = backends.WormtableBackend(self._dataDir)
 
     def tearDown(self):
         for t in self._tables.values():
