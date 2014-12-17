@@ -50,7 +50,7 @@ def handleHTTPOptions():
 
 @app.route('/')
 def index():
-    return "ATGC"
+    abort(404)
 
 
 @app.route('/references/<id>', methods=['GET'])
