@@ -134,7 +134,7 @@ VCF file must first be indexed with `tabix
 <http://samtools.sourceforge.net/tabix.shtml>`_.  Many projects, including the
 `1000 genomes project
 <http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/>`_, release files
-with tabix indicies already precomputed.  This backend can serve such datasets
+with tabix indices already precomputed.  This backend can serve such datasets
 without any preprocessing via the command::
 
     $ ga4gh_server tabix DATADIR
