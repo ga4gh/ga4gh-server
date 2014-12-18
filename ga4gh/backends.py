@@ -14,115 +14,6 @@ import pysam
 
 import ga4gh.protocol as protocol
 
-import werkzeug.routing as wzr
-import werkzeug.wrappers as wzw
-import werkzeug.exceptions as wze
-
-
-def makeApplication(backend):
-    """
-    Factory function to create a WSGI application using the specified backend.
-
-    TODO add detailed usage comments.
-    """
-    httpHandler = HTTPHandler(backend)
-    return httpHandler.wsgiApplication
-
-
-class GA4GHRequest(wzw.BaseRequest, wzw.CommonRequestDescriptorsMixin):
-    """
-    Class representing GA4GH HTTP request objects.
-    """
-
-
-class HTTPHandler(object):
-    """
-    Handles the HTTP end of the protocol and delegates the methods to the
-    appropriate end point on the backend.
-    """
-    def __init__(self, backend):
-        self._max_input_size = 4 * 2**10  # 4 MiB should be enough?
-        self._backend = backend
-        self._urlMap = wzr.Map([
-            wzr.Rule(
-                "/variants/search",
-                endpoint=(
-                    backend.searchVariants,
-                    protocol.GASearchVariantsRequest
-                ),
-                methods=["POST", "OPTIONS"]
-            ),
-            wzr.Rule(
-                "/variantsets/search",
-                endpoint=(
-                    backend.searchVariantSets,
-                    protocol.GASearchVariantSetsRequest
-                ),
-                methods=["POST", "OPTIONS"]
-            ),
-        ])
-
-    @GA4GHRequest.application
-    def wsgiApplication(self, request):
-        """
-        The main entry point for this WSGI application.
-        """
-        adapter = self._urlMap.bind_to_environ(request.environ)
-        try:
-            (endpoint, cls), values = adapter.match()
-            if request.method == "POST":
-                ret = self.handleHTTPPost(request, endpoint, cls)
-            elif request.method == "OPTIONS":
-                ret = self.handleHTTPOptions(request)
-            else:
-                # TODO this should never happen, so another exception would be
-                # more appropriate
-                raise ValueError("HTTP Method not handled")
-        except wze.HTTPException as e:
-            ret = e
-        return ret
-
-    def handleHTTPPost(self, request, endpoint, protocolClass):
-        """
-        Handles the specified HTTP POST request, which maps to the specified
-        protocol handler handpoint and protocol request class.
-        """
-        if request.mimetype != "application/json":
-            # TODO is this the correct HTTP response?
-            raise wze.UnsupportedMediaType()
-        # Make sure we don't get tricked into reading in large volumes
-        # of data, exhausting server memory
-        if request.content_length >= self._max_input_size:
-            raise wze.RequestEntityTooLarge()
-        data = request.get_data()
-        # TODO this should be a more specific Exception for JSON
-        # parse errors; malformed JSON input is a HTTP error, whereas
-        # anything after this gives a HTTP success, with a GAException
-        # response.
-        try:
-            protocolRequest = protocolClass.fromJSON(data)
-        except ValueError:
-            raise wze.BadRequest()
-        protocolResponse = endpoint(protocolRequest)
-        s = protocolResponse.toJSON()
-        response = wzw.Response(s, mimetype="application/json")
-        # TODO is this correct CORS support?
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
-
-    def handleHTTPOptions(self, request):
-        """
-        Handles the specified HTTP OPTIONS request returing a werkzeug
-        response.
-        """
-        response = wzw.Response("", mimetype="application/json")
-        # TODO is this correct CORS support?
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add(
-            "Access-Control-Request-Methods", "GET,POST,OPTIONS")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-        return response
-
 
 class WormtableDataset(object):
     """
@@ -463,6 +354,11 @@ class TabixDataset(object):
         response.variants = v
 
         return response
+
+    def getMetadata(self):
+        # TODO: Implement this
+        ret = []
+        return ret
 
 
 class Backend(object):
