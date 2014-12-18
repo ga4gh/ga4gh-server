@@ -15,6 +15,9 @@ import avro.schema
 import tests
 import ga4gh.protocol as protocol
 
+# TODO We should add some tests here - see comment from @pashields on
+# https://github.com/ga4gh/server/pull/39
+
 
 def randomString():
     """
@@ -111,13 +114,14 @@ class SchemaTest(unittest.TestCase):
         if isinstance(t, avro.schema.MapSchema):
             ret = {}
             for j in range(random.randint(0, maxListSize)):
-                l = [randomString() for j in
-                    range(random.randint(0, maxListSize))]
+                l = [randomString() for j in range(
+                    random.randint(0, maxListSize))]
                 ret["key{0}".format(j)] = l
         elif isinstance(t, avro.schema.ArraySchema):
             n = random.randint(0, maxListSize)
             if cls.isEmbeddedType(field.name):
                 embeddedClass = cls.getEmbeddedType(field.name)
+
                 def f():
                     return self.getRandomInstance(embeddedClass)
             else:
@@ -246,7 +250,7 @@ class EqualityTest(SchemaTest):
 
     def testSameClasses(self):
         factories = [self.getDefaultInstance, self.getTypicalInstance,
-                self.getRandomInstance]
+                     self.getRandomInstance]
         for cls in self.getProtocolClasses():
             for f in factories:
                 i1 = f(cls)
@@ -256,7 +260,7 @@ class EqualityTest(SchemaTest):
     def testDifferentValues(self):
         f = lambda cls: cls()
         factories = [f, self.getTypicalInstance, self.getDefaultInstance,
-                self.getRandomInstance]
+                     self.getRandomInstance]
         classes = list(self.getProtocolClasses())
         c1 = classes[0]
         for c2 in classes[1:]:
@@ -265,6 +269,7 @@ class EqualityTest(SchemaTest):
                 i2 = f(c2)
                 self.assertFalse(i1 == i2)
                 self.assertTrue(i1 != i2)
+
 
 class SerialisationTest(SchemaTest):
     """
@@ -326,4 +331,3 @@ class ValidatorTest(SchemaTest):
                     for f in c:
                         d[f] = self.getInvalidValue(cls, f)
                     self.assertFalse(cls.validate(d))
-

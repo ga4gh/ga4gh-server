@@ -51,6 +51,10 @@ class SchemaClass(object):
         """
         Returns the set of embedded types in this class.
         """
+        # TODO need to clarify how we operate on Unions here. The current
+        # code will break when we move to schema version 0.6 as we are
+        # no longer assured that the first element of the union is null.
+        # This would be a good opportunity to tidy this up.
         ret = []
         if isinstance(self.schema, avro.schema.RecordSchema):
             for field in self.getFields():

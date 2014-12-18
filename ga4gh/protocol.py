@@ -40,6 +40,10 @@ class ProtocolElement(object):
     correspondence with the Avro definitions, and provide the basic elements
     of the on-the-wire protocol.
     """
+    # TODO We need to think the API for this through a little better.
+    # Should the JSON converters return strings or dicts, or do we
+    # need both? The equality operators also need some work and more
+    # rigorous testing.
 
     def __str__(self):
         return "{0}({1})".format(self.__class__.__name__, self.toJSON())
@@ -123,6 +127,7 @@ class ProtocolElement(object):
 
     @classmethod
     def _decode(cls, d):
+        # TODO This code is needlessly obscure and needs refactoring.
         instance = cls()
         schema = cls.schema
         if d is None:
