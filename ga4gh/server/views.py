@@ -1,5 +1,6 @@
 from . import app
 from flask import abort, request, render_template, Response
+from flask.ext.api import exceptions
 import ga4gh.protocol as protocol
 
 
@@ -9,32 +10,25 @@ def handleHTTPPost(request, endpoint, protocolClass):
     protocol handler handpoint and protocol request class.
     """
     if request.mimetype != "application/json":
-        abort(415) # Unsupported Media Type.
-    # TODO: update app.config with user configurable MAX_CONTENT_LENGTH.
-    # Setting to 2MB for now.
+        raise exceptions.UnsupportedMediaType()
     content_length_ = request.content_length
-    if content_length_ is not None and content_length_ > 2 * 1024 * 1024:
-	abort(413) # Request Entity Too Large.
     data = request.get_data()
     try:
         protocolRequest = protocolClass.fromJSON(data)
     except ValueError:
-        abort(400)
+        raise exceptions.ParseError()
     protocolResponse = endpoint(protocolRequest)
     s = protocolResponse.toJSON()
-    return(s, status=200, mimetype="application/json")
+    response = Response(s, status=200, mimetype="application/json")
+    return response
 
 
 def handleHTTPOptions():
     """
     Handles the specified HTTP OPTIONS request.
     """
-    response = wzw.Response("", mimetype="application/json")
-    # TODO is this correct CORS support?
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add(
-        "Access-Control-Request-Methods", "GET,POST,OPTIONS")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    response = Response("", mimetype="application/json")
+    response.headers.add("Access-Control-Request-Methods", "GET,POST,OPTIONS")
     return response
 
 
