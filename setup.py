@@ -37,7 +37,7 @@ setup(
     description="A reference implementation of the ga4gh API",
     license='Apache License 2.0',
     long_description=ga4gh_readme,
-    packages=["ga4gh"],
+    packages=["ga4gh", "ga4gh.server"],
     author="Global Alliance for Genomics and Health",
     author_email="theglobalalliance@genomicsandhealth.org",
     url="https://github.com/ga4gh/server",
