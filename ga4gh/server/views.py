@@ -13,6 +13,10 @@ def handleHTTPPost(request, endpoint, protocolClass):
         raise exceptions.UnsupportedMediaType()
     content_length_ = request.content_length
     data = request.get_data()
+    # TODO this should be a more specific Exception for JSON
+    # parse errors; malformed JSON input is a HTTP error, whereas
+    # anything after this gives a HTTP success, with a GAException
+    # response.
     try:
         protocolRequest = protocolClass.fromJSON(data)
     except ValueError:
