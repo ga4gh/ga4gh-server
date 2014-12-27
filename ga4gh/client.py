@@ -30,7 +30,7 @@ class HTTPClient(object):
         """
         notDone = True
         while notDone:
-            s = request.toJSON()
+            s = request.toJSONString()
             headers = {"Content-type": "application/json"}
             # make sure we correctly join with/out trailing slashes
             fullUrl = posixpath.join(self._urlPrefix, url)
@@ -46,7 +46,7 @@ class HTTPClient(object):
                 print("json response:")
                 pp = json.dumps(json.loads(s), sort_keys=True, indent=4)
                 print(pp)
-            resp = protocolClass.fromJSON(s)
+            resp = protocolClass.fromJSONString(s)
             # TODO handle HTTP errors from requests and display.
             for v in getattr(resp, listAttr):
                 yield v

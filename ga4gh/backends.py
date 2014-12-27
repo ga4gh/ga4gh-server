@@ -356,7 +356,7 @@ class Backend(object):
         any point using the nextPageToken attribute of the request object.
         """
         # TODO change this to fromJSONDict and validate
-        request = requestClass.fromJSON(requestStr)
+        request = requestClass.fromJSONString(requestStr)
         pageList = []
         nextPageToken = None
         for obj, nextPageToken in objectGenerator(request):
@@ -366,7 +366,7 @@ class Backend(object):
         response = responseClass()
         response.nextPageToken = nextPageToken
         setattr(response, pageListName, pageList)
-        return response.toJSON()
+        return response.toJSONString()
 
     def searchVariantSets(self, request):
         """
