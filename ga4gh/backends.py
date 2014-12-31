@@ -15,7 +15,7 @@ import pysam
 import ga4gh.protocol as protocol
 
 
-class WormtableDataset(object):
+class WormtableVariantSet(object):
     """
     Class representing a single dataset backed by a wormtable directory.
     We assume that VCF data has been converted to wormtable format using
@@ -52,7 +52,7 @@ class WormtableDataset(object):
 
     def __init__(self, variantSetId, wtDir):
         """
-        Allocates a new WormtableDataset with the specified variantSetId
+        Allocates a new WormtableVariantSet with the specified variantSetId
         based on the specified wormtable directory.
         """
         self._variantSetId = variantSetId
@@ -64,39 +64,39 @@ class WormtableDataset(object):
         self._sampleNames = []
         self._infoCols = []
         self._firstSamplePosition = -1
-        t = int(os.path.getctime(wtDir) * 1000)
+        ctimeInMillis = int(os.path.getctime(wtDir) * 1000)
         # ctime is in seconds, and we want milliseconds since the epoch
-        self._creationTime = t
-        self._updatedTime = t
+        self._creationTime = ctimeInMillis
+        self._updatedTime = ctimeInMillis
         cols = self._table.columns()[self.FILTER_COL + 1:]
         # We build lookup tables for the INFO and sample columns so they can
         # be easily found during conversion. For the sample columns we make
-        # a dictionary mapping the sample name to a the list of (name, col)
+        # a dictionary mapping the sample name to a list of (sample name, col)
         # tuples for that sample.
-        for c in cols:
-            colName = c.get_name()
+        for col in cols:
+            colName = col.get_name()
             if colName.startswith("INFO"):
-                s = colName.split(".")[1]
-                self._infoCols.append((s, c))
+                infoField = colName.split(".")[1]
+                self._infoCols.append((infoField, col))
             else:
                 if self._firstSamplePosition == -1:
                     # This must be a sample specific column
-                    self._firstSamplePosition = c.get_position()
+                    self._firstSamplePosition = col.get_position()
                 sampleName, infoName = colName.split(".")
                 if sampleName not in self._sampleCols:
                     self._sampleCols[sampleName] = []
                     self._sampleNames.append(sampleName)
-                self._sampleCols[sampleName].append((infoName, c))
+                self._sampleCols[sampleName].append((infoName, col))
 
-    def convertInfoField(self, v):
+    def convertInfoField(self, value):
         """
         Converts the specified value into an appropriate format for a protocol
-        info field. Info fields are arrays of strings.
+        info field. Info fields are lists of strings.
         """
-        if isinstance(v, tuple):
-            ret = [str(x) for x in v]
+        if isinstance(value, tuple):
+            ret = [str(x) for x in value]
         else:
-            ret = [str(v)]
+            ret = [str(value)]
         return ret
 
     def convertGenotype(self, call, genotype):
@@ -122,45 +122,45 @@ class WormtableDataset(object):
         Converts the specified wormtable row into a GAVariant object including
         the specified set of callSetIds.
         """
-        v = protocol.GAVariant()
-        v.created = self._creationTime
-        v.updated = self._updatedTime
-        v.variantSetId = self._variantSetId
-        v.referenceName = row[self.CHROM_COL]
-        v.start = row[self.POS_COL]
+        variant = protocol.GAVariant()
+        variant.created = self._creationTime
+        variant.updated = self._updatedTime
+        variant.variantSetId = self._variantSetId
+        variant.referenceName = row[self.CHROM_COL]
+        variant.start = row[self.POS_COL]
         names = row[self.ID_COL]
         if names is not None:
-            v.names = names.split(";")
-        v.referenceBases = row[self.REF_COL]
-        v.end = v.start + len(v.referenceBases)
-        v.id = "{0}.{1}".format(v.variantSetId, row[0])
+            variant.names = names.split(";")
+        variant.referenceBases = row[self.REF_COL]
+        variant.end = variant.start + len(variant.referenceBases)
+        variant.id = "{0}.{1}".format(variant.variantSetId, row[0])
         alt = row[self.ALT_COL]
         if alt is not None:
-            v.alternateBases = alt.split(",")
-        v.info = {}
+            variant.alternateBases = alt.split(",")
+        variant.info = {}
         for infoField, col in self._infoCols:
             pos = col.get_position()
             if row[pos] is not None:
-                v.info[infoField] = self.convertInfoField(row[pos])
-        v.calls = []
+                variant.info[infoField] = self.convertInfoField(row[pos])
+        variant.calls = []
         # All of the remaining values in the row correspond to Calls.
-        for csid, rowPositions in sampleRowPositions.items():
+        for callSetId, rowPositions in sampleRowPositions.items():
             call = protocol.GACall()
             # Why do we have both of these? Wouldn't the ID be sufficient
             # to call back to searchCallSets to get more info?
-            call.callSetId = csid
-            call.callSetName = csid
-            for (info, col), j in zip(self._sampleCols[csid], rowPositions):
+            call.callSetId = callSetId
+            call.callSetName = callSetId
+            for (info, col), rowPosition in zip(self._sampleCols[callSetId], rowPositions):
                 if info == self.GENOTYPE_LIKELIHOOD_NAME:
-                    call.genotypeLikelihood = row[j]
+                    call.genotypeLikelihood = row[rowPosition]
                 elif info == self.GENOTYPE_NAME:
-                    self.convertGenotype(call, row[j])
+                    self.convertGenotype(call, row[rowPosition])
                 else:
-                    if row[j] is not None:
+                    if row[rowPosition] is not None:
                         # Missing values are not included in the info array
-                        call.info[info] = self.convertInfoField(row[j])
-            v.calls.append(call)
-        return v
+                        call.info[info] = self.convertInfoField(row[rowPosition])
+            variant.calls.append(call)
+        return variant
 
     def searchVariants(self, request):
         """
@@ -186,19 +186,19 @@ class WormtableDataset(object):
         else:
             readCols = self._table.columns()[:self._firstSamplePosition]
             callSetIds = request.callSetIds
-            for csid in request.callSetIds:
-                cols = [c for name, c in self._sampleCols[csid]]
+            for callSetId in request.callSetIds:
+                cols = [col for name, col in self._sampleCols[callSetId]]
                 readCols.extend(cols)
         # Now we get the row positions for the sample columns
         sampleRowPositions = {}
-        j = self._firstSamplePosition
-        for csid in callSetIds:
-            l = []
-            for c in self._sampleCols[csid]:
-                l.append(j)
-                j += 1
-            sampleRowPositions[csid] = l
-        v = []
+        currentRowPosition = self._firstSamplePosition
+        for callSetId in callSetIds:
+            sampleRowPositionsList = []
+            for col in self._sampleCols[callSetId]:
+                sampleRowPositionsList.append(currentRowPosition)
+                currentRowPosition += 1
+            sampleRowPositions[callSetId] = sampleRowPositionsList
+        variants = []
         # TODO encoding issues here? Wormtable only deals with bytes.
         chrom = request.referenceName.encode()
         if request.variantName is None:
@@ -217,60 +217,60 @@ class WormtableDataset(object):
             # Normally, we would use a for loop to iterate over the rows in
             # a cursor, but here we use the next() function so that we can
             # end the iteration early when we have generated enough results.
-            r = next(cursor, None)
-            while r is not None and len(v) < request.pageSize:
-                v.append(self.convertVariant(r, sampleRowPositions))
-                r = next(cursor, None)
-            if r is not None:
-                response.nextPageToken = r[self.POS_COL]
+            currentRow = next(cursor, None)
+            while currentRow is not None and len(variants) < request.pageSize:
+                variants.append(self.convertVariant(currentRow, sampleRowPositions))
+                currentRow = next(cursor, None)
+            if currentRow is not None:
+                response.nextPageToken = currentRow[self.POS_COL]
         else:
             # TODO more encoding issues.
             name = request.variantName.encode()
             start = (chrom, name)
             cursor = self._chromIdIndex.cursor(readCols, start)
-            r = next(cursor, None)
+            currentRow = next(cursor, None)
             # for now, we assume that there are 0 or 1 results.
             # TODO are there issues with having several names for a variant?
-            if r is not None:
+            if currentRow is not None:
                 # The result must still be within the range and must match
                 # the specified name exactly. The cursor is positioned at
                 # the first row >= the specified key.
-                if request.start <= r[self.POS_COL] < request.end \
-                        and r[self.ID_COL] == name:
-                    v.append(self.convertVariant(r, sampleRowPositions))
-        response.variants = v
+                if request.start <= currentRow[self.POS_COL] < request.end \
+                        and currentRow[self.ID_COL] == name:
+                    variants.append(self.convertVariant(currentRow, sampleRowPositions))
+        response.variants = variants
         return response
 
     def getMetadata(self):
         """
         Returns a list of GAVariantSetMetadata objects for this variant set.
         """
-        def f(infoField, col):
-            md = protocol.GAVariantSetMetadata()
-            md.key = infoField
-            md.value = ""
-            md.id = ""
+        def getMetadata(infoField, col):
+            metadata = protocol.GAVariantSetMetadata()
+            metadata.key = infoField
+            metadata.value = ""
+            metadata.id = ""
             # What are the encodings here? With the lack of any precise
             # definitions I'm just using wormtable values for now.
-            md.type = col.get_type_name()
-            md.number = str(col.get_num_elements())
-            md.description = col.get_description()
-            return md
+            metadata.type = col.get_type_name()
+            metadata.number = str(col.get_num_elements())
+            metadata.description = col.get_description()
+            return metadata
         ret = []
         for infoField, col in self._infoCols:
-            ret.append(f(infoField, col))
+            ret.append(getMetadata(infoField, col))
         if len(self._sampleCols) > 0:
             # TODO this is pretty nasty, making a list just to take the head.
             sampleName = list(self._sampleCols.keys())[0]
             for infoField, col in self._sampleCols[sampleName]:
                 if infoField != self.GENOTYPE_NAME:
-                    ret.append(f(infoField, col))
+                    ret.append(getMetadata(infoField, col))
         return ret
 
 
-class TabixDataset(object):
+class TabixVariantSet(object):
     """
-    Class representing a single dataset backed by a tabix directory.
+    Class representing a single variant set backed by a tabix directory.
     """
     def __init__(self, variantSetId, vcfPath):
         self._variantSetId = variantSetId
@@ -280,30 +280,30 @@ class TabixDataset(object):
         # self.tb chrom -> vcf dict
         self._tabixMap = {}
 
-        for fn in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
-            tabixfile = pysam.Tabixfile(fn)
+        for vcfFile in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
+            tabixfile = pysam.Tabixfile(vcfFile)
             for chrom in tabixfile.contigs:
                 if chrom in self._tabixMap:
                     raise Exception("cannot have overlapping VCF files.")
                 self._tabixMap[chrom] = tabixfile
 
     def convertVariant(self, record):
-        v = protocol.GAVariant()
+        variant = protocol.GAVariant()
         record = record.split('\t')
         position = int(record[1])
 
-        v.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position)
-        v.variantSetId = self._variantSetId
-        v.referenceName = record[0]
-        v.names = []  # What's a good model to generate these?
+        variant.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position)
+        variant.variantSetId = self._variantSetId
+        variant.referenceName = record[0]
+        variant.names = []  # What's a good model to generate these?
         # TODO How should we populate these from VCF?
-        v.created = self._created
-        v.updated = self._created
-        v.start = position
-        v.end = position + 1  # TODO support non SNP variaints
-        v.referenceBases = record[3]
-        v.alternateBases = [record[4].split(",")]
-        v.calls = []
+        variant.created = self._created
+        variant.updated = self._created
+        variant.start = position
+        variant.end = position + 1  # TODO support non SNP variaints
+        variant.referenceBases = record[3]
+        variant.alternateBases = [record[4].split(",")]
+        variant.calls = []
         for j in range(9, len(record)):
             c = protocol.GACall()
             c.genotype = record[j].split(":")[0].split("[\/\|]")
@@ -311,8 +311,8 @@ class TabixDataset(object):
             # Need to make up genotypeLikelihood for dev vcf.
             # make something more robust later
             c.genotypeLikelihood = [-100, -100, -100]
-            v.calls.append(c)
-        return v
+            variant.calls.append(c)
+        return variant
 
     def searchVariants(self, request):
         """
@@ -329,7 +329,7 @@ class TabixDataset(object):
         response = protocol.GASearchVariantsResponse()
         response.variantSetId = self._variantSetId
 
-        v = []
+        variant = []
         j = int(request.start)
         if request.pageToken is not None:
             j = int(request.pageToken)
@@ -339,19 +339,19 @@ class TabixDataset(object):
         cursor = self._tabixMap[request.referenceName]\
             .fetch(str(request.referenceName), j-1, int(request.end))
         # Weird with the -1 but seems required. 0 based i guess?
-        while len(v) < request.pageSize:
+        while len(variant) < request.pageSize:
             try:
                 record = cursor.next()
             except StopIteration:
                 break
-            v.append(self.convertVariant(record))
+            variant.append(self.convertVariant(record))
         try:
             record = cursor.next()
         except StopIteration:
             pass
         else:
             response.nextPageToken = self.convertVariant(record).start
-        response.variants = v
+        response.variants = variant
 
         return response
 
@@ -365,18 +365,23 @@ class Backend(object):
     """
     Superclass of GA4GH protocol backends.
     """
-    def __init__(self, dataDir, Dataset):
+
+    def __init__(self, dataDir, VariantSet):
+        # We will use dataDir as the Dataset Id.
         self._dataDir = dataDir
-        self._variantSets = {}
-        # All files in datadir are assumed to correspond to Datasets.
-        for vsid in os.listdir(self._dataDir):
-            f = os.path.join(self._dataDir, vsid)
-            self._variantSets[vsid] = Dataset(vsid, f)
-        self._variantSetIds = sorted(self._variantSets.keys())
+        self._variantSetDict = {}
+        # All directories in datadir are assumed to correspond to VariantSets.
+        for variantSetId in os.listdir(self._dataDir):
+            relativePath = os.path.join(self._dataDir, variantSetId)
+            # A variant set is all files under a directory, so we skip non-directory files.
+            if os.path.isfile(relativePath):
+                continue
+            self._variantSetDict[variantSetId] = VariantSet(variantSetId, relativePath)
+        self._variantSetIds = sorted(self._variantSetDict.keys())
 
     def searchVariants(self, request):
         assert len(request.variantSetIds) > 0
-        variantSetIndex = 0  # x
+        variantSetIndex = 0
         if request.pageToken is not None:
             # parse the pageToken and change what will be passed in
             variantSetIndex, pageToken = request.pageToken.split(':')
@@ -386,8 +391,8 @@ class Backend(object):
             else:
                 pageToken = int(pageToken)
             request.pageToken = pageToken
-        ds = self._variantSets[request.variantSetIds[variantSetIndex]]
-        response = ds.searchVariants(request)
+        variantSet = self._variantSetDict[request.variantSetIds[variantSetIndex]]
+        response = variantSet.searchVariants(request)
         # Add the index of the variant set of the next
         # page to the nextPageToken
         if response.nextPageToken is None:
@@ -411,20 +416,20 @@ class Backend(object):
         if request.pageSize is None:
             request.pageSize = 100
         response = protocol.GASearchVariantSetsResponse()
-        j = 0
+        currentIndex = 0
         if request.pageToken is not None:
-            j = int(request.pageToken)
-        v = []
-        while j < len(self._variantSetIds) and len(v) < request.pageSize:
-            vs = protocol.GAVariantSet()
-            vs.id = self._variantSetIds[j]
-            vs.datasetId = "NotImplemented"
-            vs.metadata = self._variantSets[vs.id].getMetadata()
-            v.append(vs)
-            j += 1
-        if j < len(self._variantSetIds):
-            response.nextPageToken = j
-        response.variantSets = v
+            currentIndex = int(request.pageToken)
+        variantSetList = []
+        while currentIndex < len(self._variantSetIds) and len(variantSetList) < request.pageSize:
+            variantSet = protocol.GAVariantSet()
+            variantSet.id = self._variantSetIds[currentIndex]
+            variantSet.datasetId = self._dataDir
+            variantSet.metadata = self._variantSetDict[variantSet.id].getMetadata()
+            variantSetList.append(variantSet)
+            currentIndex += 1
+        if currentIndex < len(self._variantSetIds):
+            response.nextPageToken = currentIndex
+        response.variantSets = variantSetList
         return response
 
 
@@ -433,7 +438,7 @@ class TabixBackend(Backend):
     A class that serves variants indexed by tabix.
     """
     def __init__(self, dataDir):
-        Backend.__init__(self, dataDir, TabixDataset)
+        Backend.__init__(self, dataDir, TabixVariantSet)
 
 
 class WormtableBackend(Backend):
@@ -445,4 +450,4 @@ class WormtableBackend(Backend):
     corresponding wormtable directory.
     """
     def __init__(self, dataDir):
-        Backend.__init__(self, dataDir, WormtableDataset)
+        Backend.__init__(self, dataDir, WormtableVariantSet)
