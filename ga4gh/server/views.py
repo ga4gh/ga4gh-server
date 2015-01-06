@@ -1,8 +1,7 @@
 from . import app
-from flask import request, render_template, abort
+from flask import abort, request, render_template, Response
+from flask.ext.api import exceptions
 import ga4gh.protocol as protocol
-import werkzeug.wrappers as wzw
-import werkzeug.exceptions as wze
 
 
 def handleHTTPPost(request, endpoint, protocolClass):
@@ -11,12 +10,8 @@ def handleHTTPPost(request, endpoint, protocolClass):
     protocol handler handpoint and protocol request class.
     """
     if request.mimetype != "application/json":
-        # TODO is this the correct HTTP response?
-        raise wze.UnsupportedMediaType()
-    # Make sure we don't get tricked into reading in large volumes
-    # of data, exhausting server memory
-    if request.content_length >= 8192:  # FIXME!
-        raise wze.RequestEntityTooLarge()
+        raise exceptions.UnsupportedMediaType()
+    content_length_ = request.content_length
     data = request.get_data()
     # TODO this should be a more specific Exception for JSON
     # parse errors; malformed JSON input is a HTTP error, whereas
@@ -25,26 +20,19 @@ def handleHTTPPost(request, endpoint, protocolClass):
     try:
         protocolRequest = protocolClass.fromJSON(data)
     except ValueError:
-        raise wze.BadRequest()
+        raise exceptions.ParseError()
     protocolResponse = endpoint(protocolRequest)
     s = protocolResponse.toJSON()
-    response = wzw.Response(s, mimetype="application/json")
-    # TODO is this correct CORS support?
-    response.headers.add("Access-Control-Allow-Origin", "*")
+    response = Response(s, status=200, mimetype="application/json")
     return response
 
 
 def handleHTTPOptions():
     """
-    Handles the specified HTTP OPTIONS request returing a werkzeug
-    response.
+    Handles the specified HTTP OPTIONS request.
     """
-    response = wzw.Response("", mimetype="application/json")
-    # TODO is this correct CORS support?
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add(
-        "Access-Control-Request-Methods", "GET,POST,OPTIONS")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+    response = Response("", mimetype="application/json")
+    response.headers.add("Access-Control-Request-Methods", "GET,POST,OPTIONS")
     return response
 
 

@@ -26,7 +26,9 @@ f = open("README.txt")
 ga4gh_readme = f.read()
 f.close()
 ga4gh_version = parse_version("ga4gh/__init__.py")
-requirements = ["avro", "flask", "pysam", "requests", "werkzeug", "wormtable"]
+# Flask must come after all other requirements that have "flask" as a prefix 
+# due to a setuptools bug.
+requirements = ["avro", "Flask-API", "flask-cors", "flask", "pysam", "requests", "wormtable"]
 v = sys.version_info[:2]
 if v < (2, 7) or v == (3, 0) or v == (3, 1):
     requirements.append("argparse")
