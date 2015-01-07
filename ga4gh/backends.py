@@ -249,7 +249,7 @@ class WormtableVariantSet(object):
         """
         Returns a list of GAVariantSetMetadata objects for this variant set.
         """
-        def f(infoField, col):
+        def buildMetadata(infoField, col):
             metadata = protocol.GAVariantSetMetadata()
             metadata.key = infoField
             metadata.value = ""
@@ -262,13 +262,13 @@ class WormtableVariantSet(object):
             return metadata
         ret = []
         for infoField, col in self._infoCols:
-            ret.append(f(infoField, col))
+            ret.append(buildMetadata(infoField, col))
         if len(self._sampleCols) > 0:
             # TODO this is pretty nasty, making a list just to take the head.
             sampleName = list(self._sampleCols.keys())[0]
             for infoField, col in self._sampleCols[sampleName]:
                 if infoField != self.GENOTYPE_NAME:
-                    ret.append(f(infoField, col))
+                    ret.append(buildMetadata(infoField, col))
         return ret
 
 
