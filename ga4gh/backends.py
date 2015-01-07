@@ -150,7 +150,8 @@ class WormtableVariantSet(object):
             # to call back to searchCallSets to get more info?
             call.callSetId = callSetId
             call.callSetName = callSetId
-            for (info, col), rowPosition in zip(self._sampleCols[callSetId], rowPositions):
+            for (info, col), rowPosition in zip(self._sampleCols[callSetId],
+                                                rowPositions):
                 if info == self.GENOTYPE_LIKELIHOOD_NAME:
                     call.genotypeLikelihood = row[rowPosition]
                 elif info == self.GENOTYPE_NAME:
@@ -158,7 +159,8 @@ class WormtableVariantSet(object):
                 else:
                     if row[rowPosition] is not None:
                         # Missing values are not included in the info array
-                        call.info[info] = self.convertInfoField(row[rowPosition])
+                        call.info[info] = \
+                            self.convertInfoField(row[rowPosition])
             variant.calls.append(call)
         return variant
 
@@ -219,7 +221,8 @@ class WormtableVariantSet(object):
             # end the iteration early when we have generated enough results.
             currentRow = next(cursor, None)
             while currentRow is not None and len(variants) < request.pageSize:
-                variants.append(self.convertVariant(currentRow, sampleRowPositions))
+                variants.append(self.convertVariant(currentRow,
+                                                    sampleRowPositions))
                 currentRow = next(cursor, None)
             if currentRow is not None:
                 response.nextPageToken = currentRow[self.POS_COL]
@@ -235,9 +238,10 @@ class WormtableVariantSet(object):
                 # The result must still be within the range and must match
                 # the specified name exactly. The cursor is positioned at
                 # the first row >= the specified key.
-                if request.start <= currentRow[self.POS_COL] < request.end \
-                        and currentRow[self.ID_COL] == name:
-                    variants.append(self.convertVariant(currentRow, sampleRowPositions))
+                if (request.start <= currentRow[self.POS_COL] < request.end and
+                        currentRow[self.ID_COL] == name):
+                    variants.append(self.convertVariant(currentRow,
+                                                        sampleRowPositions))
         response.variants = variants
         return response
 
@@ -245,7 +249,7 @@ class WormtableVariantSet(object):
         """
         Returns a list of GAVariantSetMetadata objects for this variant set.
         """
-        def getMetadata(infoField, col):
+        def f(infoField, col):
             metadata = protocol.GAVariantSetMetadata()
             metadata.key = infoField
             metadata.value = ""
@@ -258,13 +262,13 @@ class WormtableVariantSet(object):
             return metadata
         ret = []
         for infoField, col in self._infoCols:
-            ret.append(getMetadata(infoField, col))
+            ret.append(f(infoField, col))
         if len(self._sampleCols) > 0:
             # TODO this is pretty nasty, making a list just to take the head.
             sampleName = list(self._sampleCols.keys())[0]
             for infoField, col in self._sampleCols[sampleName]:
                 if infoField != self.GENOTYPE_NAME:
-                    ret.append(getMetadata(infoField, col))
+                    ret.append(f(infoField, col))
         return ret
 
 
@@ -292,7 +296,8 @@ class TabixVariantSet(object):
         record = record.split('\t')
         position = int(record[1])
 
-        variant.id = "{0}:{1}:{2}".format(self._variantSetId, record[0], position)
+        variant.id = "{0}:{1}:{2}".format(self._variantSetId,
+                                          record[0], position)
         variant.variantSetId = self._variantSetId
         variant.referenceName = record[0]
         variant.names = []  # What's a good model to generate these?
@@ -329,7 +334,7 @@ class TabixVariantSet(object):
         response = protocol.GASearchVariantsResponse()
         response.variantSetId = self._variantSetId
 
-        variant = []
+        variants = []
         j = int(request.start)
         if request.pageToken is not None:
             j = int(request.pageToken)
@@ -366,18 +371,19 @@ class Backend(object):
     Superclass of GA4GH protocol backends.
     """
 
-    def __init__(self, dataDir, VariantSet):
-        # We will use dataDir as the Dataset Id.
+    def __init__(self, dataDir, variantSet):
         self._dataDir = dataDir
-        self._variantSetDict = {}
+        self._variantSetMap = {}
         # All directories in datadir are assumed to correspond to VariantSets.
         for variantSetId in os.listdir(self._dataDir):
             relativePath = os.path.join(self._dataDir, variantSetId)
-            # A variant set is all files under a directory, so we skip non-directory files.
+            # A variant set is all files under a directory,
+            # so we skip non-directory files.
             if os.path.isfile(relativePath):
                 continue
-            self._variantSetDict[variantSetId] = VariantSet(variantSetId, relativePath)
-        self._variantSetIds = sorted(self._variantSetDict.keys())
+            self._variantSetMap[variantSetId] = variantSet(variantSetId,
+                                                           relativePath)
+        self._variantSetIds = sorted(self._variantSetMap.keys())
 
     def searchVariants(self, request):
         assert len(request.variantSetIds) > 0
@@ -391,7 +397,8 @@ class Backend(object):
             else:
                 pageToken = int(pageToken)
             request.pageToken = pageToken
-        variantSet = self._variantSetDict[request.variantSetIds[variantSetIndex]]
+        variantSet = self\
+            ._variantSetMap[request.variantSetIds[variantSetIndex]]
         response = variantSet.searchVariants(request)
         # Add the index of the variant set of the next
         # page to the nextPageToken
@@ -413,6 +420,7 @@ class Backend(object):
         """
         # This is temporary until we do this properly based on the output
         # buffer size
+        print(request)
         if request.pageSize is None:
             request.pageSize = 100
         response = protocol.GASearchVariantSetsResponse()
@@ -420,11 +428,14 @@ class Backend(object):
         if request.pageToken is not None:
             currentIndex = int(request.pageToken)
         variantSetList = []
-        while currentIndex < len(self._variantSetIds) and len(variantSetList) < request.pageSize:
+        print(self._variantSetIds)
+        while (currentIndex < len(self._variantSetIds) and
+               len(variantSetList) < request.pageSize):
             variantSet = protocol.GAVariantSet()
             variantSet.id = self._variantSetIds[currentIndex]
-            variantSet.datasetId = self._dataDir
-            variantSet.metadata = self._variantSetDict[variantSet.id].getMetadata()
+            variantSet.datasetId = "NotImplemented"
+            variantSet.metadata = self._variantSetMap[variantSet.id]\
+                .getMetadata()
             variantSetList.append(variantSet)
             currentIndex += 1
         if currentIndex < len(self._variantSetIds):
