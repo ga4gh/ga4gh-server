@@ -159,8 +159,8 @@ class WormtableVariantSet(object):
                 else:
                     if row[rowPosition] is not None:
                         # Missing values are not included in the info array
-                        call.info[info] = \
-                            self.convertInfoField(row[rowPosition])
+                        call.info[info] = self.convertInfoField(
+                            row[rowPosition])
             variant.calls.append(call)
         return variant
 
@@ -341,22 +341,22 @@ class TabixVariantSet(object):
         if request.end is None:
             request.end = request.start + 1
 
-        cursor = self._tabixMap[request.referenceName]\
-            .fetch(str(request.referenceName), j-1, int(request.end))
+        cursor = self._tabixMap[request.referenceName].fetch(
+            str(request.referenceName), j-1, int(request.end))
         # Weird with the -1 but seems required. 0 based i guess?
-        while len(variant) < request.pageSize:
+        while len(variants) < request.pageSize:
             try:
                 record = cursor.next()
             except StopIteration:
                 break
-            variant.append(self.convertVariant(record))
+            variants.append(self.convertVariant(record))
         try:
             record = cursor.next()
         except StopIteration:
             pass
         else:
             response.nextPageToken = self.convertVariant(record).start
-        response.variants = variant
+        response.variants = variants
 
         return response
 
@@ -370,9 +370,10 @@ class Backend(object):
     """
     Superclass of GA4GH protocol backends.
     """
-
-    def __init__(self, dataDir, variantSet):
+    # TODO: create real parent class for VariantSet.
+    def __init__(self, dataDir, variantSetClass):
         self._dataDir = dataDir
+        print(dataDir)
         self._variantSetMap = {}
         # All directories in datadir are assumed to correspond to VariantSets.
         for variantSetId in os.listdir(self._dataDir):
@@ -381,8 +382,9 @@ class Backend(object):
             # so we skip non-directory files.
             if os.path.isfile(relativePath):
                 continue
-            self._variantSetMap[variantSetId] = variantSet(variantSetId,
-                                                           relativePath)
+            print(variantSetId)
+            self._variantSetMap[variantSetId] = variantSetClass(
+                variantSetId, relativePath)
         self._variantSetIds = sorted(self._variantSetMap.keys())
 
     def searchVariants(self, request):
@@ -397,8 +399,8 @@ class Backend(object):
             else:
                 pageToken = int(pageToken)
             request.pageToken = pageToken
-        variantSet = self\
-            ._variantSetMap[request.variantSetIds[variantSetIndex]]
+        variantSet = self._variantSetMap[
+            request.variantSetIds[variantSetIndex]]
         response = variantSet.searchVariants(request)
         # Add the index of the variant set of the next
         # page to the nextPageToken
@@ -434,8 +436,8 @@ class Backend(object):
             variantSet = protocol.GAVariantSet()
             variantSet.id = self._variantSetIds[currentIndex]
             variantSet.datasetId = "NotImplemented"
-            variantSet.metadata = self._variantSetMap[variantSet.id]\
-                .getMetadata()
+            variantSet.metadata = self._variantSetMap[
+                variantSet.id].getMetadata()
             variantSetList.append(variantSet)
             currentIndex += 1
         if currentIndex < len(self._variantSetIds):
