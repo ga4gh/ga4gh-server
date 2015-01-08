@@ -1,3 +1,8 @@
+"""
+The GA4GH HTTP frontend.
+
+TODO: document this properly.
+"""
 from flask.ext.api import FlaskAPI
 from flask.ext.cors import CORS
 

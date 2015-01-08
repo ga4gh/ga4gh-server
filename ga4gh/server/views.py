@@ -1,30 +1,23 @@
+"""
+The Flask views for the GA4GH HTTP API.
+
+TODO Document properly.
+"""
 from . import app
-from flask import abort, request, render_template, Response
+from flask import abort, request, Response
 from flask.ext.api import exceptions
-import ga4gh.protocol as protocol
 
 
-def handleHTTPPost(request, endpoint, protocolClass):
+def handleHTTPPost(request, endpoint):
     """
     Handles the specified HTTP POST request, which maps to the specified
     protocol handler handpoint and protocol request class.
     """
-    if request.mimetype != "application/json":
+    mimetype = "application/json"
+    if request.mimetype != mimetype:
         raise exceptions.UnsupportedMediaType()
-    content_length_ = request.content_length
-    data = request.get_data()
-    # TODO this should be a more specific Exception for JSON
-    # parse errors; malformed JSON input is a HTTP error, whereas
-    # anything after this gives a HTTP success, with a GAException
-    # response.
-    try:
-        protocolRequest = protocolClass.fromJSON(data)
-    except ValueError:
-        raise exceptions.ParseError()
-    protocolResponse = endpoint(protocolRequest)
-    s = protocolResponse.toJSON()
-    response = Response(s, status=200, mimetype="application/json")
-    return response
+    responseStr = endpoint(request.get_data())
+    return Response(responseStr, status=200, mimetype=mimetype)
 
 
 def handleHTTPOptions():
@@ -84,10 +77,7 @@ def searchReferences():
 @app.route('/variantsets/search', methods=['POST', 'OPTIONS'])
 def searchVariantSets():
     if request.method == "POST":
-        return handleHTTPPost(
-            request,
-            app.config["VariantBackend"].searchVariantSets,
-            protocol.GASearchVariantSetsRequest)
+        return handleHTTPPost(request, app.backend.searchVariantSets)
     else:
         return handleHTTPOptions()
 
@@ -95,9 +85,6 @@ def searchVariantSets():
 @app.route('/variants/search', methods=['POST', 'OPTIONS'])
 def searchVariants():
     if request.method == "POST":
-        return handleHTTPPost(
-            request,
-            app.config["VariantBackend"].searchVariants,
-            protocol.GASearchVariantsRequest)
+        return handleHTTPPost(request, app.backend.searchVariants)
     else:
         return handleHTTPOptions()

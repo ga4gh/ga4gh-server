@@ -18,7 +18,6 @@ import subprocess
 import wormtable as wt
 
 import tests
-import ga4gh.server as server
 import ga4gh.protocol as protocol
 import ga4gh.backends as backends
 
@@ -101,7 +100,8 @@ class TestWormtableBackend(unittest.TestCase):
             self._tables[f] = t
             self._chromIndexes[f] = t.open_index("CHROM")
             self._chromPosIndexes[f] = t.open_index("CHROM+POS")
-        self._backend = backends.WormtableBackend(self._dataDir)
+        self._backend = backends.Backend(
+            self._dataDir, backends.WormtableVariantSet)
 
     def tearDown(self):
         for t in self._tables.values():
@@ -117,8 +117,9 @@ class TestWormtableBackend(unittest.TestCase):
         not_done = True
         request.pageSize = pageSize
         while not_done:
-            response = searchMethod(request)
-            self.assertEqual(type(response), ResponseClass)
+            # TODO validate the response there.
+            responseStr = searchMethod(request.toJSON())
+            response = ResponseClass.fromJSON(responseStr)
             l = getattr(response, listMember)
             self.assertLessEqual(len(l), pageSize)
             for vs in l:
@@ -131,7 +132,7 @@ class TestWormtableBackend(unittest.TestCase):
         Returns an iterator over the variantSets, abstracting away the details
         of the pageSize.
         """
-        request = protocol.GASearchVariantsRequest()
+        request = protocol.GASearchVariantSetsRequest()
         return self.resultIterator(
             request, pageSize, self._backend.searchVariantSets,
             protocol.GASearchVariantSetsResponse, "variantSets")

@@ -9,15 +9,22 @@ import os
 import glob
 import datetime
 
-import wormtable as wt
 import pysam
+import wormtable as wt
 
 import ga4gh.protocol as protocol
 
 
-class WormtableVariantSet(object):
+class VariantSet(object):
     """
-    Class representing a single dataset backed by a wormtable directory.
+    Class representing a single VariantSet in the GA4GH data model.
+    """
+    # TODO abstract details shared by wormtable and tabix based backends.
+
+
+class WormtableVariantSet(VariantSet):
+    """
+    Class representing a single variant set backed by a wormtable directory.
     We assume that VCF data has been converted to wormtable format using
     vcf2wt, which maps VCF data to wormtable columns in the following
     way:
@@ -142,7 +149,6 @@ class WormtableVariantSet(object):
             pos = col.get_position()
             if row[pos] is not None:
                 variant.info[infoField] = self.convertInfoField(row[pos])
-        variant.calls = []
         # All of the remaining values in the row correspond to Calls.
         for callSetId, rowPositions in sampleRowPositions.items():
             call = protocol.GACall()
@@ -164,31 +170,24 @@ class WormtableVariantSet(object):
             variant.calls.append(call)
         return variant
 
-    def searchVariants(self, request):
+    def getVariants(self, referenceName, startPosition, endPosition,
+                    variantName, callSetIds):
         """
-        Serves the specified GASearchVariantsRequest and returns a
-        GASearchVariantsResponse. If the number of variants to be returned is
-        greater than request.pageSize then the nextPageToken is set to a
-        non-null value. Subsequent request objects should provide this value in
-        the pageToken attribute to obtain the next page of results.
+        Returns an iterator over the specified variants. The parameters
+        correspond to the attributes of a GASearchVariantsRequest object.
         """
-        # This is temporary until we do this properly based on the output
-        # buffer size
-        if request.pageSize is None:
-            request.pageSize = 100
-        response = protocol.GASearchVariantsResponse()
-        # First we get the set of columns for wormtable to retrieve. We don't
-        # want to waste time reading in and decoding data for columns that
-        # are not needed for the output when we specify callSetIds
-        if request.callSetIds is None:
+        # TODO encoding issues here? Wormtable (and most likely pysam and other
+        # low level libraries) only deal with bytes. We'll need to adopt some
+        # convention here for where we move from unicode to bytes.
+        chrom = referenceName.encode()
+        if callSetIds is None:
             readCols = self._table.columns()
             # These must be in the correct order, so we cannot use the keys of
             # self._sampleCols
             callSetIds = self._sampleNames
         else:
             readCols = self._table.columns()[:self._firstSamplePosition]
-            callSetIds = request.callSetIds
-            for callSetId in request.callSetIds:
+            for callSetId in callSetIds:
                 cols = [col for name, col in self._sampleCols[callSetId]]
                 readCols.extend(cols)
         # Now we get the row positions for the sample columns
@@ -200,50 +199,24 @@ class WormtableVariantSet(object):
                 sampleRowPositionsList.append(currentRowPosition)
                 currentRowPosition += 1
             sampleRowPositions[callSetId] = sampleRowPositionsList
-        variants = []
-        # TODO encoding issues here? Wormtable only deals with bytes.
-        chrom = request.referenceName.encode()
-        if request.variantName is None:
-            start = (chrom, request.start)
-            end = (chrom, request.end)
-            if request.pageToken is not None:
-                # TODO we must sanitise the input here! This should be an int.
-                # We must also check chrom to make sure it's not nasty.
-                start = (chrom, request.pageToken)
-            # A wormtable cursor on an index returns an iterator over the rows
-            # in the table in the order defined by the index, starting with
-            # the first two >= to the index key start. Each row returned is a
-            # list, where each entry is the decoded value for the
-            # corresponding column in readCols.
-            cursor = self._chromPosIndex.cursor(readCols, start, end)
-            # Normally, we would use a for loop to iterate over the rows in
-            # a cursor, but here we use the next() function so that we can
-            # end the iteration early when we have generated enough results.
-            currentRow = next(cursor, None)
-            while currentRow is not None and len(variants) < request.pageSize:
-                variants.append(self.convertVariant(currentRow,
-                                                    sampleRowPositions))
-                currentRow = next(cursor, None)
-            if currentRow is not None:
-                response.nextPageToken = currentRow[self.POS_COL]
+        if variantName is None:
+            cursor = self._chromPosIndex.cursor(
+                readCols, (chrom, startPosition), (chrom, endPosition))
+            for row in cursor:
+                yield self.convertVariant(row, sampleRowPositions)
         else:
-            # TODO more encoding issues.
-            name = request.variantName.encode()
-            start = (chrom, name)
-            cursor = self._chromIdIndex.cursor(readCols, start)
-            currentRow = next(cursor, None)
-            # for now, we assume that there are 0 or 1 results.
-            # TODO are there issues with having several names for a variant?
-            if currentRow is not None:
+            variantName = variantName.encode()  # TODO encoding?
+            cursor = self._chromIdIndex.cursor(readCols, (chrom, variantName))
+            for row in cursor:
+                # TODO issues with having several names for a variant?
                 # The result must still be within the range and must match
                 # the specified name exactly. The cursor is positioned at
                 # the first row >= the specified key.
-                if (request.start <= currentRow[self.POS_COL] < request.end and
-                        currentRow[self.ID_COL] == name):
-                    variants.append(self.convertVariant(currentRow,
-                                                        sampleRowPositions))
-        response.variants = variants
-        return response
+                if (startPosition <= row[self.POS_COL] < endPosition and
+                        row[self.ID_COL] == variantName):
+                    yield self.convertVariant(row, sampleRowPositions)
+                else:
+                    break
 
     def getMetadata(self):
         """
@@ -272,93 +245,63 @@ class WormtableVariantSet(object):
         return ret
 
 
-class TabixVariantSet(object):
+class TabixVariantSet(VariantSet):
     """
     Class representing a single variant set backed by a tabix directory.
     """
     def __init__(self, variantSetId, vcfPath):
         self._variantSetId = variantSetId
         self._created = protocol.convertDatetime(datetime.datetime.now())
-
-        # Read in Tabix-index VCF files from vcfPath is a path.
-        # self.tb chrom -> vcf dict
-        self._tabixMap = {}
-
+        self._chromTabixFileMap = {}
         for vcfFile in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
-            tabixfile = pysam.Tabixfile(vcfFile)
-            for chrom in tabixfile.contigs:
-                if chrom in self._tabixMap:
+            tabixFile = pysam.Tabixfile(vcfFile)
+            for chrom in tabixFile.contigs:
+                if chrom in self._chromTabixFileMap:
                     raise Exception("cannot have overlapping VCF files.")
-                self._tabixMap[chrom] = tabixfile
+                self._chromTabixFileMap[chrom] = tabixFile
 
     def convertVariant(self, record):
+        """
+        Converts the specified pysam VCF Record into a GA4GH GAVariant
+        object.
+        """
         variant = protocol.GAVariant()
         record = record.split('\t')
         position = int(record[1])
-
         variant.id = "{0}:{1}:{2}".format(self._variantSetId,
                                           record[0], position)
         variant.variantSetId = self._variantSetId
         variant.referenceName = record[0]
-        variant.names = []  # What's a good model to generate these?
-        # TODO How should we populate these from VCF?
+        variant.names = []
         variant.created = self._created
         variant.updated = self._created
         variant.start = position
-        variant.end = position + 1  # TODO support non SNP variaints
+        variant.end = position + 1  # TODO support non SNP variants
         variant.referenceBases = record[3]
         variant.alternateBases = [record[4].split(",")]
-        variant.calls = []
         for j in range(9, len(record)):
             c = protocol.GACall()
             c.genotype = record[j].split(":")[0].split("[\/\|]")
-            # "(\d+)([\|\/])(\d+)"
-            # Need to make up genotypeLikelihood for dev vcf.
-            # make something more robust later
-            c.genotypeLikelihood = [-100, -100, -100]
             variant.calls.append(c)
         return variant
 
-    def searchVariants(self, request):
+    def getVariants(self, referenceName, startPosition, endPosition,
+                    variantName, callSetIds):
         """
-        Serves the specified GASearchVariantsRequest and returns a
-        GASearchVariantsResponse. If the number of variants to be returned is
-        greater than request.maxResults then the nextPageToken is set to a
-        non-null value. Subsequent request objects should provide this value in
-        the pageToken attribute to obtain the next page of results.
+        Returns an iterator over the specified variants. The parameters
+        correspond to the attributes of a GASearchVariantsRequest object.
         """
-        # This is temporary until we do this properly based on the output
-        # buffer size
-        if request.pageSize is None:
-            request.pageSize = 100
-        response = protocol.GASearchVariantsResponse()
-        response.variantSetId = self._variantSetId
-
-        variants = []
-        j = int(request.start)
-        if request.pageToken is not None:
-            j = int(request.pageToken)
-        if request.end is None:
-            request.end = request.start + 1
-
-        cursor = self._tabixMap[request.referenceName].fetch(
-            str(request.referenceName), j-1, int(request.end))
-        # Weird with the -1 but seems required. 0 based i guess?
-        while len(variants) < request.pageSize:
-            try:
-                record = cursor.next()
-            except StopIteration:
-                break
-            variants.append(self.convertVariant(record))
-        try:
-            record = cursor.next()
-        except StopIteration:
-            pass
-        else:
-            response.nextPageToken = self.convertVariant(record).start
-        response.variants = variants
-
-        return response
+        if variantName is not None:
+            raise NotImplementedError(
+                "Searching by variantName is not supported")
+        if len(callSetIds) != 0:
+            raise NotImplementedError(
+                "Specifying call set ids is not supported")
+        if referenceName in self._chromTabixFileMap:
+            tabixFile = self._chromTabixFileMap[referenceName]
+            cursor = tabixFile.fetch(referenceName, startPosition, endPosition)
+            for record in cursor:
+                yield self.convertVariant(record)
 
     def getMetadata(self):
         # TODO: Implement this
@@ -368,99 +311,122 @@ class TabixVariantSet(object):
 
 class Backend(object):
     """
-    Superclass of GA4GH protocol backends.
+    The GA4GH backend. This class provides methods for all of the GA4GH
+    protocol end points.
     """
-    # TODO: create real parent class for VariantSet.
     def __init__(self, dataDir, variantSetClass):
         self._dataDir = dataDir
-        print(dataDir)
-        self._variantSetMap = {}
+        self._variantSetIdMap = {}
         # All directories in datadir are assumed to correspond to VariantSets.
         for variantSetId in os.listdir(self._dataDir):
             relativePath = os.path.join(self._dataDir, variantSetId)
-            # A variant set is all files under a directory,
-            # so we skip non-directory files.
-            if os.path.isfile(relativePath):
-                continue
-            print(variantSetId)
-            self._variantSetMap[variantSetId] = variantSetClass(
-                variantSetId, relativePath)
-        self._variantSetIds = sorted(self._variantSetMap.keys())
+            if os.path.isdir(relativePath):
+                self._variantSetIdMap[variantSetId] = variantSetClass(
+                    variantSetId, relativePath)
+        self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
-    def searchVariants(self, request):
-        assert len(request.variantSetIds) > 0
-        variantSetIndex = 0
-        if request.pageToken is not None:
-            # parse the pageToken and change what will be passed in
-            variantSetIndex, pageToken = request.pageToken.split(':')
-            variantSetIndex = int(variantSetIndex)
-            if pageToken == '':
-                pageToken = None  # None is represented as '' in the pageToken
-            else:
-                pageToken = int(pageToken)
-            request.pageToken = pageToken
-        variantSet = self._variantSetMap[
-            request.variantSetIds[variantSetIndex]]
-        response = variantSet.searchVariants(request)
-        # Add the index of the variant set of the next
-        # page to the nextPageToken
-        if response.nextPageToken is None:
-            if variantSetIndex < len(request.variantSetIds) - 1:
-                # if not, there are no more results, so leave the token as None
-                response.nextPageToken = '{0}:'.format(variantSetIndex + 1)
-                # this token will give results from the beginning of the
-                # next variantSet
-        else:
-            response.nextPageToken = "{0}:{1}".format(variantSetIndex,
-                                                      response.nextPageToken)
-        return response
+    def parsePageToken(self, pageToken, numValues):
+        """
+        Parses the specified pageToken and returns a list of the specified
+        number of values. Page tokens are assumed to consist of a fixed
+        number of integers seperated by colons. If the page token does
+        not conform to this specification, raise a InvalidPageToken
+        exception.
+        """
+        tokens = pageToken.split(":")
+        # TODO define exceptions.InvalidPageToken and raise here.
+        if len(tokens) != numValues:
+            raise Exception("Invalid number of values in page token")
+        # TODO catch a ValueError here when bad integers are passed and
+        # convert this into the appropriate InvalidPageToken exception.
+        values = map(int, tokens)
+        return values
+
+    def runSearchRequest(
+            self, requestStr, requestClass, responseClass, pageListName,
+            objectGenerator):
+        """
+        Runs the specified request. The request is a string containing
+        a JSON representation of an instance of the specified requestClass
+        in which the page list variable has the specified pageListName.
+        We return a string representation of an instance of the specified
+        responseClass in JSON format. Objects are filled into the page list
+        using the specified object generator, which must return
+        (object, nextPageToken) pairs, and be able to resume iteration from
+        any point using the nextPageToken attribute of the request object.
+        """
+        # TODO change this to fromJSONDict and validate
+        request = requestClass.fromJSON(requestStr)
+        pageList = []
+        nextPageToken = None
+        for obj, nextPageToken in objectGenerator(request):
+            pageList.append(obj)
+            if len(pageList) >= request.pageSize:
+                break
+        response = responseClass()
+        response.nextPageToken = nextPageToken
+        setattr(response, pageListName, pageList)
+        return response.toJSON()
 
     def searchVariantSets(self, request):
         """
-        Returns a GASearchVariantSets response for the specified
+        Returns a GASearchVariantSetsResponse for the specified
         GASearchVariantSetsRequest object.
         """
-        # This is temporary until we do this properly based on the output
-        # buffer size
-        print(request)
-        if request.pageSize is None:
-            request.pageSize = 100
-        response = protocol.GASearchVariantSetsResponse()
+        return self.runSearchRequest(
+            request, protocol.GASearchVariantSetsRequest,
+            protocol.GASearchVariantSetsResponse, "variantSets",
+            self.variantSetsGenerator)
+
+    def searchVariants(self, request):
+        """
+        Returns a GASearchVariantsResponse for the specified
+        GASearchVariantsRequest  object.
+        """
+        return self.runSearchRequest(
+            request, protocol.GASearchVariantsRequest,
+            protocol.GASearchVariantsResponse, "variants",
+            self.variantsGenerator)
+
+    def variantSetsGenerator(self, request):
+        """
+        Returns a generator over the (variantSet, nextPageToken) pairs defined
+        by the speficied request.
+        """
         currentIndex = 0
         if request.pageToken is not None:
-            currentIndex = int(request.pageToken)
-        variantSetList = []
-        print(self._variantSetIds)
-        while (currentIndex < len(self._variantSetIds) and
-               len(variantSetList) < request.pageSize):
+            currentIndex, = self.parsePageToken(request.pageToken, 1)
+        while currentIndex < len(self._variantSetIds):
             variantSet = protocol.GAVariantSet()
             variantSet.id = self._variantSetIds[currentIndex]
             variantSet.datasetId = "NotImplemented"
-            variantSet.metadata = self._variantSetMap[
+            variantSet.metadata = self._variantSetIdMap[
                 variantSet.id].getMetadata()
-            variantSetList.append(variantSet)
             currentIndex += 1
-        if currentIndex < len(self._variantSetIds):
-            response.nextPageToken = currentIndex
-        response.variantSets = variantSetList
-        return response
+            nextPageToken = None
+            if currentIndex < len(self._variantSetIds):
+                nextPageToken = str(currentIndex)
+            yield variantSet, nextPageToken
 
-
-class TabixBackend(Backend):
-    """
-    A class that serves variants indexed by tabix.
-    """
-    def __init__(self, dataDir):
-        Backend.__init__(self, dataDir, TabixVariantSet)
-
-
-class WormtableBackend(Backend):
-    """
-    A backend based on wormtable tables and indexes. This backend is provided
-    with a directory within which it can find VCF variant sets converted into
-    wormtable format. Each file within the specified directory is assumed to
-    be a wormtable, and the variant set ID will be the name of the
-    corresponding wormtable directory.
-    """
-    def __init__(self, dataDir):
-        Backend.__init__(self, dataDir, WormtableVariantSet)
+    def variantsGenerator(self, request):
+        """
+        Returns a generator over the (variant, nextPageToken) pairs defined by
+        the specified request.
+        """
+        variantSetIds = request.variantSetIds
+        startVariantSetIndex = 0
+        startPosition = request.start
+        if request.pageToken is not None:
+            startVariantSetIndex, startPosition = self.parsePageToken(
+                request.pageToken, 2)
+        for variantSetIndex in range(startVariantSetIndex, len(variantSetIds)):
+            variantSetId = variantSetIds[variantSetIndex]
+            if variantSetId in self._variantSetIdMap:
+                variantSet = self._variantSetIdMap[variantSetId]
+                iterator = variantSet.getVariants(
+                    request.referenceName, startPosition, request.end,
+                    request.variantName, request.callSetIds)
+                for variant in iterator:
+                    nextPageToken = "{0}:{1}".format(
+                        variantSetIndex, variant.start + 1)
+                    yield variant, nextPageToken
