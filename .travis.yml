@@ -7,6 +7,10 @@ before_install:
   - sudo apt-get install -qq libdb-dev
 
 install:
-  - "python setup.py install"
+  - pip install pep8
+  - python setup.py install
+
+before_script:
+  - pep8 ga4gh tests
 
 script: nosetests

@@ -5,7 +5,7 @@ Tests for the frontend.
 import unittest
 
 import ga4gh.server as server
-import ga4gh.cli
+
 
 class TestFrontend(unittest.TestCase):
 

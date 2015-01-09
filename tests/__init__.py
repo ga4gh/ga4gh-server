@@ -14,4 +14,3 @@ def powerset(iterable, max_sets=None):
     return itertools.islice(itertools.chain.from_iterable(
         itertools.combinations(s, r) for r in range(len(s) + 1)),
         0, max_sets)
-
