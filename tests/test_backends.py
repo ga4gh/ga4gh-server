@@ -36,8 +36,8 @@ class WormtableTestFixture(object):
         Converts the specified VCF file into wormtable format, storing it
         the data directory.
         """
-        vsid = vcfFile.split("/")[-1].split(".")[0]
-        wtDir = os.path.join(self.dataDir, vsid)
+        variantSetid = vcfFile.split("/")[-1].split(".")[0]
+        wtDir = os.path.join(self.dataDir, variantSetid)
         # convert the vcf to wormtable format.
         cmd = ["vcf2wt", "-q", vcfFile, wtDir]
         subprocess.check_call(cmd)
@@ -48,8 +48,8 @@ class WormtableTestFixture(object):
             subprocess.check_call(cmd)
 
     def setUp(self):
-        for f in glob.glob("tests/data/*.vcf.gz"):
-            self.convertVariantSet(f)
+        for filename in glob.glob("tests/data/*.vcf.gz"):
+            self.convertVariantSet(filename)
 
     def tearDown(self):
         shutil.rmtree(self.dataDir)
@@ -83,7 +83,7 @@ def convertInfoValue(column, value):
     if column.get_num_elements() == 1 or column.get_type() == wt.WT_CHAR:
         ret = [str(value)]
     else:
-        ret = [str(v) for v in value]
+        ret = [str(listElement) for listElement in value]
     return ret
 
 
@@ -95,17 +95,17 @@ class TestWormtableBackend(unittest.TestCase):
         self._tables = {}
         self._chromIndexes = {}
         self._chromPosIndexes = {}
-        for f in os.listdir(self._dataDir):
-            t = wt.open_table(os.path.join(self._dataDir, f))
-            self._tables[f] = t
-            self._chromIndexes[f] = t.open_index("CHROM")
-            self._chromPosIndexes[f] = t.open_index("CHROM+POS")
+        for relativePath in os.listdir(self._dataDir):
+            table = wt.open_table(os.path.join(self._dataDir, relativePath))
+            self._tables[relativePath] = table
+            self._chromIndexes[relativePath] = table.open_index("CHROM")
+            self._chromPosIndexes[relativePath] = table.open_index("CHROM+POS")
         self._backend = backends.Backend(
             self._dataDir, backends.WormtableVariantSet)
 
     def tearDown(self):
-        for t in self._tables.values():
-            t.close()
+        for table in self._tables.values():
+            table.close()
 
     def resultIterator(
             self, request, pageSize, searchMethod, ResponseClass, listMember):
@@ -114,17 +114,17 @@ class TestWormtableBackend(unittest.TestCase):
         request.  All results are returned, and paging is handled
         automatically.
         """
-        not_done = True
+        notDone = True
         request.pageSize = pageSize
-        while not_done:
+        while notDone:
             # TODO validate the response there.
             responseStr = searchMethod(request.toJSON())
             response = ResponseClass.fromJSON(responseStr)
-            l = getattr(response, listMember)
-            self.assertLessEqual(len(l), pageSize)
-            for vs in l:
-                yield vs
-            not_done = response.nextPageToken is not None
+            objectList = getattr(response, listMember)
+            self.assertLessEqual(len(objectList), pageSize)
+            for obj in objectList:
+                yield obj
+            notDone = response.nextPageToken is not None
             request.pageToken = response.nextPageToken
 
     def getVariantSets(self, pageSize=100):
@@ -158,9 +158,9 @@ class TestWormtableBackend(unittest.TestCase):
         """
         Returns the distinct reference names for the specified variantSetId.
         """
-        i = self._chromIndexes[variantSetId]
-        for k in i.counter().keys():
-            yield k
+        index = self._chromIndexes[variantSetId]
+        for referenceName in index.counter().keys():
+            yield referenceName
 
     def getCommonRefNames(self, variantSetIds):
         """
@@ -168,8 +168,8 @@ class TestWormtableBackend(unittest.TestCase):
         """
         assert len(variantSetIds) > 0
         commonNames = set(self.getReferenceNames(variantSetIds[0]))
-        for vsid in variantSetIds[1:]:
-            commonNames &= set(self.getReferenceNames(vsid))
+        for variantSetId in variantSetIds[1:]:
+            commonNames &= set(self.getReferenceNames(variantSetId))
         return commonNames
 
     def getWormtableVariants(
@@ -181,47 +181,47 @@ class TestWormtableBackend(unittest.TestCase):
         is empty, return all sample specific columns. Otherwise, only return
         columns sample specific columns for the callSetIds in question.
         """
-        for vsid in variantSetIds:
-            t = self._tables[vsid]
-            i = self._chromPosIndexes[vsid]
-            s = (referenceName, start)
-            e = (referenceName, end)
-            cols = t.columns()[1:8]
-            for c in t.columns()[8:]:
-                name = c.get_name()
+        for variantSetId in variantSetIds:
+            table = self._tables[variantSetId]
+            index = self._chromPosIndexes[variantSetId]
+            cols = table.columns()[1:8]
+            for col in table.columns()[8:]:
+                name = col.get_name()
                 if name.startswith("INFO"):
-                    cols.append(c)
+                    cols.append(col)
                 else:
                     if len(callSetIds) == 0:
-                        cols.append(c)
+                        cols.append(col)
                     else:
-                        csid = name.split(".")[0]
-                        if csid in callSetIds:
-                            cols.append(c)
-            for r in i.cursor(cols, s, e):
-                yield dict((c, v) for c, v in zip(cols, r))
+                        callSetId = name.split(".")[0]
+                        if callSetId in callSetIds:
+                            cols.append(col)
+            cursor = index.cursor(
+                cols, (referenceName, start), (referenceName, end))
+            for row in cursor:
+                yield dict((col, value) for col, value in zip(cols, row))
 
     def getStartBounds(self, variantSetId, referenceName):
         """
         Returns the first and last start coorinate for the specified
         referenceName in the specified variantSet.
         """
-        i = self._chromPosIndexes[variantSetId]
-        first = i.min_key(referenceName)
-        last = i.max_key(referenceName)
+        index = self._chromPosIndexes[variantSetId]
+        first = index.min_key(referenceName)
+        last = index.max_key(referenceName)
         return first[1], last[1]
 
     def getCallSetIds(self, variantSetId):
         """
         Returns the set of callSetIds derived from the wormtable header.
         """
-        t = self._tables[variantSetId]
-        s = set()
-        for c in t.columns()[8:]:  # skip VCF fixed cols
-            name = c.get_name()
+        table = self._tables[variantSetId]
+        callSetIds = set()
+        for col in table.columns()[8:]:  # skip VCF fixed cols
+            name = col.get_name()
             if not name.startswith("INFO"):
-                s.add(name.split(".")[0])
-        return s
+                callSetIds.add(name.split(".")[0])
+        return callSetIds
 
 
 class TestVariantSets(TestWormtableBackend):
@@ -230,18 +230,20 @@ class TestVariantSets(TestWormtableBackend):
     """
 
     def testPagination(self):
-        vsids = []
-        for ps in range(1, 10):
-            s = [vs.id for vs in self.getVariantSets(pageSize=ps)]
-            vsids.append(s)
-        for v in vsids[1:]:
-            self.assertEqual(v, vsids[0])
+        results = []
+        for pageSize in range(1, 10):
+            variantSetIds = [
+                variantSet.id for variantSet in self.getVariantSets(
+                    pageSize=pageSize)]
+            results.append(variantSetIds)
+        for result in results[1:]:
+            self.assertEqual(result, results[0])
         # TODO repeat this for full object equality, not just ids
 
     def testIds(self):
-        variantSets = [vs for vs in self.getVariantSets()]
+        variantSets = [variantSet for variantSet in self.getVariantSets()]
         self.assertEqual(len(variantSets), len(self._tables))
-        ids = set(vs.id for vs in variantSets)
+        ids = set(variantSet.id for variantSet in variantSets)
         self.assertEqual(ids, set(self._tables.keys()))
 
 
@@ -257,18 +259,18 @@ class TestVariants(TestWormtableBackend):
         """
         # TODO parse the VCF string and verify that it's correct.
 
-    def verifyVariantsEqual(self, variant, row):
+    def verifyVariantsEqual(self, variant, columnValueMap):
         """
         Verifies that the specified protocol Variant object is equal to the
-        specified wormtable row. The row is a dictionary mapping columns
-        to values.
+        specified wormtable row, provided in the form of a dictionary
+        mapping column objects to values.
         """
-        r = {}
-        columns = {}
-        for c, value in row.items():
-            name = c.get_name()
-            columns[name] = c
-            r[name] = value
+        nameValueMap = {}
+        nameColumnMap = {}
+        for col, value in columnValueMap.items():
+            name = col.get_name()
+            nameColumnMap[name] = col
+            nameValueMap[name] = value
             # Check the info cols.
             if name.startswith("INFO."):
                 infoField = name.split(".")[1]
@@ -277,13 +279,13 @@ class TestVariants(TestWormtableBackend):
                     if infoField in variant.info:
                         self.assertNone(variant.info[infoField])
                 else:
-                    v = variant.info[infoField]
-                    self.assertEqual(v, convertInfoValue(c, value))
-        self.assertEqual(variant.referenceName, r["CHROM"])
-        self.assertEqual(variant.start, r["POS"])
-        ref = r["REF"]
+                    infoValue = variant.info[infoField]
+                    self.assertEqual(infoValue, convertInfoValue(col, value))
+        self.assertEqual(variant.referenceName, nameValueMap["CHROM"])
+        self.assertEqual(variant.start, nameValueMap["POS"])
+        ref = nameValueMap["REF"]
         self.assertEqual(variant.referenceBases, ref)
-        alt = r["ALT"]
+        alt = nameValueMap["ALT"]
         if alt is None:
             alt = []
         else:
@@ -291,26 +293,28 @@ class TestVariants(TestWormtableBackend):
         self.assertEqual(variant.alternateBases, alt)
         end = variant.start + len(ref)
         self.assertEqual(variant.end, end)
-        names = r["ID"]
+        names = nameValueMap["ID"]
         if names is None:
             names = []
         else:
             names = names.split(",")
         self.assertEqual(variant.names, names)
         for call in variant.calls:
-            csid = call.callSetId
-            k = csid + ".GT"
-            self.assertTrue(k in r)
-            self.verifyGenotype(call, r[k])
-            k = csid + ".GL"
-            if k in r:
+            callSetId = call.callSetId
+            colName = callSetId + ".GT"
+            self.assertTrue(colName in nameValueMap)
+            self.verifyGenotype(call, nameValueMap[colName])
+            colName = callSetId + ".GL"
+            if colName in nameValueMap:
                 self.assertTrue(False)  # TODO add test case and data.
             else:
                 self.assertEqual(len(call.genotypeLikelihood), 0)
-            for infoField, v in call.info.items():
-                k = csid + "." + infoField
-                self.assertTrue(k in r)
-                self.assertEqual(v, convertInfoValue(columns[k], r[k]))
+            for infoField, value in call.info.items():
+                colName = callSetId + "." + infoField
+                self.assertTrue(colName in nameValueMap)
+                self.assertEqual(
+                    value, convertInfoValue(
+                        nameColumnMap[colName], nameValueMap[colName]))
 
     def verifySearchVariants(
             self, variantSetIds, referenceName, start, end, pageSize=1000):
@@ -318,83 +322,92 @@ class TestVariants(TestWormtableBackend):
         Verifies queries on the specified reference name and list of variant
         set ids.
         """
-        l1 = [v for v in self.getVariants(
-            variantSetIds, referenceName, start=start, end=end)]
-        l2 = [r for r in self.getWormtableVariants(
-            variantSetIds, referenceName, start=start, end=end)]
-        self.assertEqual(len(l1), len(l2))
-        for variant, row in zip(l1, l2):
-            self.verifyVariantsEqual(variant, row)
+        ga4ghVariants = list(self.getVariants(
+            variantSetIds, referenceName, start=start, end=end))
+        wormtableVariants = list(self.getWormtableVariants(
+            variantSetIds, referenceName, start=start, end=end))
+        self.assertEqual(len(ga4ghVariants), len(wormtableVariants))
+        for ga4ghVariant, wormtableVariant in zip(
+                ga4ghVariants, wormtableVariants):
+            self.verifyVariantsEqual(ga4ghVariant, wormtableVariant)
 
     def verifySearchByCallSetIds(
-            self, vsid, referenceName, start, end, callSetIds, pageSize=1000):
+            self, variantSetId, referenceName, start, end, callSetIds,
+            pageSize=1000):
         """
         Verifies the variants we get back contain the correct callSet
         information.
         """
-        l1 = [v for v in self.getVariants(
-            [vsid], referenceName, start=start, end=end,
-            callSetIds=callSetIds)]
-        l2 = [r for r in self.getWormtableVariants(
-            [vsid], referenceName, start=start, end=end,
-            callSetIds=callSetIds)]
-        self.assertEqual(len(l1), len(l2))
-        for variant, row in zip(l1, l2):
-            self.verifyVariantsEqual(variant, row)
-            # Verify we've got the correct csids.
-            s1 = set(cs.callSetId for cs in variant.calls)
-            self.assertEqual(len(s1), len(variant.calls))
-            self.assertEqual(s1, set(callSetIds))
+        ga4ghVariants = list(self.getVariants(
+            [variantSetId], referenceName, start=start, end=end,
+            callSetIds=callSetIds))
+        wormtableVariants = list(self.getWormtableVariants(
+            [variantSetId], referenceName, start=start, end=end,
+            callSetIds=callSetIds))
+        self.assertEqual(len(ga4ghVariants), len(wormtableVariants))
+        for ga4ghVariant, wormtableVariant in zip(
+                ga4ghVariants, wormtableVariants):
+            self.verifyVariantsEqual(ga4ghVariant, wormtableVariant)
+            # Verify we've got the correct callSetIds.
+            returnedCallSetIds = set(cs.callSetId for cs in ga4ghVariant.calls)
+            self.assertEqual(len(returnedCallSetIds), len(ga4ghVariant.calls))
+            self.assertEqual(returnedCallSetIds, set(callSetIds))
 
     def testSearchAllVariants(self):
-        for vs in self.getVariantSets():
-            for referenceName in self.getReferenceNames(vs.id):
-                self.verifySearchVariants([vs.id], referenceName, 0, 2**32)
+        for variantSet in self.getVariantSets():
+            for referenceName in self.getReferenceNames(variantSet.id):
+                self.verifySearchVariants(
+                    [variantSet.id], referenceName, 0, 2**32)
 
     def testSearchVariantSlices(self):
-        for vs in self.getVariantSets():
-            for referenceName in self.getReferenceNames(vs.id):
-                first, last = self.getStartBounds(vs.id, referenceName)
+        for variantSet in self.getVariantSets():
+            for referenceName in self.getReferenceNames(variantSet.id):
+                first, last = self.getStartBounds(variantSet.id, referenceName)
                 mid = (last - first) // 2
                 for pageSize in [1, 2, 3, 5, 1000]:
                     self.verifySearchVariants(
-                        [vs.id], referenceName, first, last, pageSize=pageSize)
-                    self.verifySearchVariants(
-                        [vs.id], referenceName, first, mid, pageSize=pageSize)
-                    self.verifySearchVariants(
-                        [vs.id], referenceName, mid, last, pageSize=pageSize)
-                    self.verifySearchVariants(
-                        [vs.id], referenceName, first, first + 1,
+                        [variantSet.id], referenceName, first, last,
                         pageSize=pageSize)
                     self.verifySearchVariants(
-                        [vs.id], referenceName, mid, mid + 1,
+                        [variantSet.id], referenceName, first, mid,
                         pageSize=pageSize)
                     self.verifySearchVariants(
-                        [vs.id], referenceName, mid - 1, mid + 1,
+                        [variantSet.id], referenceName, mid, last,
                         pageSize=pageSize)
                     self.verifySearchVariants(
-                        [vs.id], referenceName, last, last + 1,
+                        [variantSet.id], referenceName, first, first + 1,
+                        pageSize=pageSize)
+                    self.verifySearchVariants(
+                        [variantSet.id], referenceName, mid, mid + 1,
+                        pageSize=pageSize)
+                    self.verifySearchVariants(
+                        [variantSet.id], referenceName, mid - 1, mid + 1,
+                        pageSize=pageSize)
+                    self.verifySearchVariants(
+                        [variantSet.id], referenceName, last, last + 1,
                         pageSize=pageSize)
 
     def testSearchByCallSetIds(self):
-        for vs in self.getVariantSets():
-            csids = self.getCallSetIds(vs.id)
+        for variantSet in self.getVariantSets():
+            callSetIds = self.getCallSetIds(variantSet.id)
             # limit the subsets we check over to some small value.
-            for subset in tests.powerset(csids, 20):
-                for referenceName in self.getReferenceNames(vs.id):
+            for subset in tests.powerset(callSetIds, 20):
+                for referenceName in self.getReferenceNames(variantSet.id):
                     self.verifySearchByCallSetIds(
-                        vs.id, referenceName, 0, 2**32, subset)
+                        variantSet.id, referenceName, 0, 2**32, subset)
 
     def testUniqueIds(self):
         ids = set()
-        for vs in self.getVariantSets():
-            for referenceName in self.getReferenceNames(vs.id):
-                for v in self.getVariants([vs.id], referenceName):
-                    self.assertTrue(v.id not in ids)
-                    ids.add(v.id)
+        for variantSet in self.getVariantSets():
+            for referenceName in self.getReferenceNames(variantSet.id):
+                for variant in self.getVariants(
+                        [variantSet.id], referenceName):
+                    self.assertTrue(variant.id not in ids)
+                    ids.add(variant.id)
 
     def testAcrossVariantSets(self):
-        allVariantSets = [vs.id for vs in self.getVariantSets()]
+        allVariantSets = [
+            variantSet.id for variantSet in self.getVariantSets()]
         for permLen in range(1, len(allVariantSets) + 1):
             for variantSets in itertools.permutations(allVariantSets, permLen):
                 for referenceName in self.getCommonRefNames(variantSets):
