@@ -381,7 +381,7 @@ class Backend(object):
     def searchVariants(self, request):
         """
         Returns a GASearchVariantsResponse for the specified
-        GASearchVariantsRequest  object.
+        GASearchVariantsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.GASearchVariantsRequest,
@@ -430,3 +430,16 @@ class Backend(object):
                     nextPageToken = "{0}:{1}".format(
                         variantSetIndex, variant.start + 1)
                     yield variant, nextPageToken
+
+
+class MockBackend(Backend):
+    """
+    A mock Backend class for testing.
+    """
+    def __init__(self, dataDir=None):
+        # TODO make a superclass of backend that does this
+        # automatically without needing to know about the internal
+        # details of the backend.
+        self._dataDir = None
+        self._variantSetIdMap = {}
+        self._variantSetIds = []

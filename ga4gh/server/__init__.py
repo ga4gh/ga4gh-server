@@ -3,6 +3,10 @@ The GA4GH HTTP frontend.
 
 TODO: document this properly.
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from flask.ext.api import FlaskAPI
 from flask.ext.cors import CORS
 

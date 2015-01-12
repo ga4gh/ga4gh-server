@@ -3,6 +3,10 @@ The Flask views for the GA4GH HTTP API.
 
 TODO Document properly.
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 from . import app
 from flask import abort, request, Response
 from flask.ext.api import exceptions
