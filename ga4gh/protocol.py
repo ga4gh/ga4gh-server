@@ -150,7 +150,7 @@ class ProtocolElement(object):
                             v = cls.getEmbeddedType(k)._decode(v)
                     else:
                         raise Exception("Schema assumptions violated")
-            instance.__dict__[k] = v
+                instance.__dict__[k] = v
         return instance
 
 # We can now import the definitions of the protocol elements from the
