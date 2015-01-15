@@ -183,6 +183,9 @@ Deployment
 *TODO* Give simple instructions for deploying the server on common platforms
 like Apache and Nginx.
 
+Configuration parameters are specified in the file ga4gh/server/config.py;
+they can be overridden by setting the absolute path of a file containing
+new values in the environment variable GA4GH_CONFIGURATION. 
 
 +++++++++++++
 Running tests
