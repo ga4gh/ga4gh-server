@@ -7,17 +7,17 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.server as server
-import ga4gh.backends as backends
+import ga4gh.frontend as frontend
+import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 
 
 class TestFrontend(unittest.TestCase):
 
     def setUp(self):
-        server.app.config['TESTING'] = True
-        server.app.backend = backends.MockBackend()
-        self.app = server.app.test_client()
+        frontend.app.config['TESTING'] = True
+        frontend.app.backend = backend.MockBackend()
+        self.app = frontend.app.test_client()
 
     def testServer(self):
         self.assertEqual(404, self.app.get('/').status_code)
