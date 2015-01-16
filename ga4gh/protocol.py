@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import json
 import datetime
+import itertools
 
 import avro.io
 
@@ -46,7 +47,7 @@ class ProtocolElement(object):
     # rigorous testing.
 
     def __str__(self):
-        return "{0}({1})".format(self.__class__.__name__, self.toJSON())
+        return "{0}({1})".format(self.__class__.__name__, self.toJSONString())
 
     def __eq__(self, other):
         """
@@ -56,38 +57,14 @@ class ProtocolElement(object):
         TODO This feature is experimental and requires more testing; use
         with caution!!
         """
-        # TODO This implementation is ugly! There must be a nicer way to do
-        # this...
-        ret = False
-        if type(other) == type(self):
-            ret = True
-            for f in self.schema.fields:
-                k = f.name
-                a1 = getattr(self, k)
-                a2 = getattr(other, k)
-                if self.isEmbeddedType(k):
-                    if isinstance(f.type, avro.schema.ArraySchema):
-                        if len(a1) == len(a2):
-                            ret = ret and all(x == y for x, y in zip(a1, a2))
-                        else:
-                            ret = False
-                    else:
-                        ret = ret and a1 == a2
-                else:
-                    ret = ret and a1 == a2
-        return ret
+        if type(other) != type(self):
+            return False
+
+        fieldNames = itertools.imap(lambda f: f.name, self.schema.fields)
+        return all(getattr(self, k) == getattr(other, k) for k in fieldNames)
 
     def __ne__(self, other):
         return not self == other
-
-    def toJSON(self):
-        """
-        Returns a JSON encoded string representation of this ProtocolElement.
-
-        TODO This method is deprecated in favour of the more explicit
-        toJSONString.
-        """
-        return json.dumps(self, cls=ProtocolElementEncoder)
 
     def toJSONString(self):
         """
@@ -102,56 +79,68 @@ class ProtocolElement(object):
         """
         Returns a JSON dictionary representation of this ProtocolElement.
         """
-        # TODO this is horrible! Need to streamline this and reuse some
-        # of the code in _decode below
-        return json.loads(json.dumps(self, cls=ProtocolElementEncoder))
+        out = {}
+        for field in self.schema.fields:
+            val = self.__dict__[field.name]
+            if self.isEmbeddedType(field.name):
+                if isinstance(val, list):
+                    out[field.name] = list(el.toJSONDict() for el in val)
+                elif val is None:
+                    out[field.name] = None
+                else:
+                    out[field.name] = val.toJSONDict()
+            elif isinstance(val, list):
+                out[field.name] = list(val)
+            else:
+                out[field.name] = val
+        return out
 
     @classmethod
     def validate(cls, jsonDict):
         """
-        Validates the specified json dictionary to determine if it is an
+        Validates the specified JSON dictionary to determine if it is an
         instance of this element's schema.
         """
         return avro.io.validate(cls.schema, jsonDict)
 
     @classmethod
-    def fromJSON(cls, jsonStr):
+    def fromJSONString(cls, jsonStr):
         """
         Returns a decoded ProtocolElement from the specified JSON string.
-
-        TODO change the signature of this to take a json dictionary, and the
-        fold in _decode in here.
         """
-        d = json.loads(jsonStr)
-        return cls._decode(d)
+        jsonDict = json.loads(jsonStr)
+        return cls.fromJSONDict(jsonDict)
 
     @classmethod
-    def _decode(cls, d):
-        # TODO This code is needlessly obscure and needs refactoring.
-        instance = cls()
-        schema = cls.schema
-        if d is None:
+    def fromJSONDict(cls, jsonDict):
+        """
+        Returns a decoded ProtocolElement from the specified JSON dictionary.
+        """
+        if jsonDict is None:
             raise ValueError("Required values not set in {0}".format(cls))
-        for f in schema.fields:
-            instance.__dict__[f.name] = f.default
-            k = f.name
-            if k in d:
-                v = d[k]
-                if cls.isEmbeddedType(k):
-                    if isinstance(f.type, avro.schema.ArraySchema):
-                        l = []
-                        for element in v:
-                            l.append(cls.getEmbeddedType(k)._decode(element))
-                        v = l
-                    elif isinstance(f.type, avro.schema.RecordSchema):
-                        v = cls.getEmbeddedType(k)._decode(v)
-                    elif isinstance(f.type, avro.schema.UnionSchema):
-                        if v is not None:
-                            v = cls.getEmbeddedType(k)._decode(v)
-                    else:
-                        raise Exception("Schema assumptions violated")
-                instance.__dict__[k] = v
+
+        instance = cls()
+        for field in cls.schema.fields:
+            instanceVal = field.default
+            if field.name in jsonDict:
+                val = jsonDict[field.name]
+                if cls.isEmbeddedType(field.name):
+                    instanceVal = cls._decodeEmbedded(field, val)
+                else:
+                    instanceVal = val
+            instance.__dict__[field.name] = instanceVal
         return instance
+
+    @classmethod
+    def _decodeEmbedded(cls, field, val):
+        if val is None:
+            return None
+
+        embeddedType = cls.getEmbeddedType(field.name)
+        if isinstance(field.type, avro.schema.ArraySchema):
+            return list(embeddedType.fromJSONDict(elem) for elem in val)
+        else:
+            return embeddedType.fromJSONDict(val)
 
 # We can now import the definitions of the protocol elements from the
 # generated file.

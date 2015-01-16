@@ -118,8 +118,8 @@ class TestWormtableBackend(unittest.TestCase):
         request.pageSize = pageSize
         while notDone:
             # TODO validate the response there.
-            responseStr = searchMethod(request.toJSON())
-            response = ResponseClass.fromJSON(responseStr)
+            responseStr = searchMethod(request.toJSONString())
+            response = ResponseClass.fromJSONString(responseStr)
             objectList = getattr(response, listMember)
             self.assertLessEqual(len(objectList), pageSize)
             for obj in objectList:

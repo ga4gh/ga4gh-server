@@ -58,7 +58,7 @@ class TestFrontend(unittest.TestCase):
                                  headers={'Content-type': 'application/json'},
                                  data='{"variantSetIds": [1, 2]}')
         self.assertEqual(200, response.status_code)
-        responseData = protocol.GASearchVariantsResponse.fromJSON(
+        responseData = protocol.GASearchVariantsResponse.fromJSONString(
             response.data)
         self.assertEqual(responseData.variants, [])
 
@@ -67,6 +67,6 @@ class TestFrontend(unittest.TestCase):
                                  headers={'Content-type': 'application/json'},
                                  data='{"dataSetIds": [1, 2]}')
         self.assertEqual(200, response.status_code)
-        responseData = protocol.GASearchVariantSetsResponse.fromJSON(
+        responseData = protocol.GASearchVariantSetsResponse.fromJSONString(
             response.data)
         self.assertEqual(responseData.variantSets, [])

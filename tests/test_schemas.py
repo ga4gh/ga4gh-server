@@ -254,7 +254,7 @@ class EqualityTest(SchemaTest):
         for cls in self.getProtocolClasses():
             for f in factories:
                 i1 = f(cls)
-                i2 = cls.fromJSON(i1.toJSON())
+                i2 = cls.fromJSONDict(i1.toJSONDict())
                 self.verifyEqualityOperations(i1, i2)
 
     def testDifferentValues(self):
@@ -270,6 +270,12 @@ class EqualityTest(SchemaTest):
                 self.assertFalse(i1 == i2)
                 self.assertTrue(i1 != i2)
 
+    def testDifferentLengthArrays(self):
+        i1 = self.getTypicalInstance(protocol.GACallSet)
+        i2 = protocol.GACallSet.fromJSONDict(i1.toJSONDict())
+        i2.variantSetIds.append("extra")
+        self.assertFalse(i1 == i2)
+
 
 class SerialisationTest(SchemaTest):
     """
@@ -278,8 +284,12 @@ class SerialisationTest(SchemaTest):
     def validateClasses(self, factory):
         for cls in self.getProtocolClasses():
             instance = factory(cls)
-            jsonStr = instance.toJSON()
-            otherInstance = cls.fromJSON(jsonStr)
+            jsonStr = instance.toJSONString()
+            otherInstance = cls.fromJSONString(jsonStr)
+            self.assertEqual(instance, otherInstance)
+
+            jsonDict = instance.toJSONDict()
+            otherInstance = cls.fromJSONDict(jsonDict)
             self.assertEqual(instance, otherInstance)
 
     def testSerialiseDefaultValues(self):
