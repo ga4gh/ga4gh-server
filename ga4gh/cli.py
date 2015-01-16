@@ -14,7 +14,7 @@ import werkzeug.serving
 import ga4gh
 import ga4gh.server
 import ga4gh.client
-from ga4gh.backends import WormtableBackend, TabixBackend
+from ga4gh.backends import Backend, WormtableVariantSet, TabixVariantSet
 from ga4gh.server import app
 
 ##############################################################################
@@ -44,7 +44,7 @@ def server_main():
     wtbParser.add_argument(
         "dataDir",
         help="The directory containing the wormtables to be served.")
-    wtbParser.set_defaults(backend=WormtableBackend)
+    wtbParser.set_defaults(variantSetClass=WormtableVariantSet)
     # Tabix
     tabixParser = subparsers.add_parser(
         "tabix",
@@ -53,13 +53,14 @@ def server_main():
     tabixParser.add_argument(
         "dataDir",
         help="The directory containing VCFs")
-    tabixParser.set_defaults(backend=TabixBackend)
+    tabixParser.set_defaults(variantSetClass=TabixVariantSet)
 
     args = parser.parse_args()
-    if "backend" not in args:
+    if "variantSetClass" not in args:
         parser.print_help()
     else:
-        app.config["VariantBackend"] = args.backend(args.dataDir)
+        backend = Backend(args.dataDir, args.variantSetClass)
+        app.backend = backend
         app.run(host="0.0.0.0", port=args.port, debug=True)
 
 ##############################################################################
