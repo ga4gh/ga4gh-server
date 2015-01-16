@@ -27,6 +27,9 @@ def server_main():
     parser.add_argument(
         "--port", "-P", default=8000, type=int,
         help="The port to listen on")
+    parser.add_argument(
+        "--config", "-C", default='DefaultConfig', type=str,
+        help="The configuration to use")
 
     subparsers = parser.add_subparsers(title='subcommands',)
 
@@ -58,6 +61,7 @@ def server_main():
     if "variantSetClass" not in args:
         parser.print_help()
     else:
+        frontend.configure(args.config)
         frontend.app.backend = backend.Backend(
             args.dataDir, args.variantSetClass)
         frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
