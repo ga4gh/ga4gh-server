@@ -26,7 +26,7 @@ f = open("README.txt")
 ga4gh_readme = f.read()
 f.close()
 ga4gh_version = parse_version("ga4gh/__init__.py")
-# Flask must come after all other requirements that have "flask" as a prefix 
+# Flask must come after all other requirements that have "flask" as a prefix
 # due to a setuptools bug.
 requirements = ["avro", "Flask-API", "flask-cors", "flask", "pysam", "requests", "wormtable"]
 v = sys.version_info[:2]
@@ -39,7 +39,7 @@ setup(
     description="A reference implementation of the ga4gh API",
     license='Apache License 2.0',
     long_description=ga4gh_readme,
-    packages=["ga4gh", "ga4gh.server"],
+    packages=["ga4gh", "ga4gh.datamodel"],
     author="Global Alliance for Genomics and Health",
     author_email="theglobalalliance@genomicsandhealth.org",
     url="https://github.com/ga4gh/server",

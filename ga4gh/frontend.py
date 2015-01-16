@@ -1,5 +1,5 @@
 """
-The Flask views for the GA4GH HTTP API.
+The Flask frontend for the GA4GH API.
 
 TODO Document properly.
 """
@@ -7,9 +7,17 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from . import app
-from flask import abort, request, Response
-from flask.ext.api import exceptions
+import os
+import flask
+import flask.ext.api as api
+import flask.ext.cors as cors
+
+app = api.FlaskAPI(__name__)
+app.config.from_object('ga4gh.server.config:DefaultConfig')
+if os.environ.get('GA4GH_CONFIGURATION') is not None:
+    app.config.from_envvar('GA4GH_CONFIGURATION')
+
+cors.CORS(app, allow_headers='Content-Type')
 
 
 def handleHTTPPost(request, endpoint):
@@ -19,76 +27,76 @@ def handleHTTPPost(request, endpoint):
     """
     mimetype = "application/json"
     if request.mimetype != mimetype:
-        raise exceptions.UnsupportedMediaType()
+        raise api.exceptions.UnsupportedMediaType()
     responseStr = endpoint(request.get_data())
-    return Response(responseStr, status=200, mimetype=mimetype)
+    return flask.Response(responseStr, status=200, mimetype=mimetype)
 
 
 def handleHTTPOptions():
     """
     Handles the specified HTTP OPTIONS request.
     """
-    response = Response("", mimetype="application/json")
+    response = flask.Response("", mimetype="application/json")
     response.headers.add("Access-Control-Request-Methods", "GET,POST,OPTIONS")
     return response
 
 
 @app.route('/')
 def index():
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/references/<id>', methods=['GET'])
 def getReference(id):
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/references/<id>/bases', methods=['GET'])
 def getReferenceBases(id):
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/referencesets/<id>', methods=['GET'])
 def getReferenceSet(id):
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/callsets/search', methods=['POST'])
 def searchCallSets():
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/readgroupsets/search', methods=['POST'])
 def searchReadGroupSets():
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/reads/search', methods=['POST'])
 def searchReads():
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/referencesets/search', methods=['POST'])
 def searchReferenceSets():
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/references/search', methods=['POST'])
 def searchReferences():
-    abort(404)
+    flask.abort(404)
 
 
 @app.route('/variantsets/search', methods=['POST', 'OPTIONS'])
 def searchVariantSets():
-    if request.method == "POST":
-        return handleHTTPPost(request, app.backend.searchVariantSets)
+    if flask.request.method == "POST":
+        return handleHTTPPost(flask.request, app.backend.searchVariantSets)
     else:
         return handleHTTPOptions()
 
 
 @app.route('/variants/search', methods=['POST', 'OPTIONS'])
 def searchVariants():
-    if request.method == "POST":
-        return handleHTTPPost(request, app.backend.searchVariants)
+    if flask.request.method == "POST":
+        return handleHTTPPost(flask.request, app.backend.searchVariants)
     else:
         return handleHTTPOptions()

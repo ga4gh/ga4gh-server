@@ -18,8 +18,9 @@ import subprocess
 import wormtable as wt
 
 import tests
+import ga4gh.backend as backend
 import ga4gh.protocol as protocol
-import ga4gh.backends as backends
+import ga4gh.datamodel.variants as variants
 
 
 class WormtableTestFixture(object):
@@ -100,8 +101,8 @@ class TestWormtableBackend(unittest.TestCase):
             self._tables[relativePath] = table
             self._chromIndexes[relativePath] = table.open_index("CHROM")
             self._chromPosIndexes[relativePath] = table.open_index("CHROM+POS")
-        self._backend = backends.Backend(
-            self._dataDir, backends.WormtableVariantSet)
+        self._backend = backend.Backend(
+            self._dataDir, variants.WormtableVariantSet)
 
     def tearDown(self):
         for table in self._tables.values():

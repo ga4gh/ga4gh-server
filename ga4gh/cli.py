@@ -9,13 +9,12 @@ from __future__ import unicode_literals
 
 import time
 import argparse
-import werkzeug.serving
 
-import ga4gh
-import ga4gh.server
-import ga4gh.client
-from ga4gh.backends import Backend, WormtableVariantSet, TabixVariantSet
-from ga4gh.server import app
+import ga4gh.frontend as frontend
+import ga4gh.client as client
+import ga4gh.backend as backend
+import ga4gh.protocol as protocol
+import ga4gh.datamodel.variants as variants
 
 ##############################################################################
 # Server
@@ -44,7 +43,7 @@ def server_main():
     wtbParser.add_argument(
         "dataDir",
         help="The directory containing the wormtables to be served.")
-    wtbParser.set_defaults(variantSetClass=WormtableVariantSet)
+    wtbParser.set_defaults(variantSetClass=variants.WormtableVariantSet)
     # Tabix
     tabixParser = subparsers.add_parser(
         "tabix",
@@ -53,15 +52,15 @@ def server_main():
     tabixParser.add_argument(
         "dataDir",
         help="The directory containing VCFs")
-    tabixParser.set_defaults(variantSetClass=TabixVariantSet)
+    tabixParser.set_defaults(variantSetClass=variants.TabixVariantSet)
 
     args = parser.parse_args()
     if "variantSetClass" not in args:
         parser.print_help()
     else:
-        backend = Backend(args.dataDir, args.variantSetClass)
-        app.backend = backend
-        app.run(host="0.0.0.0", port=args.port, debug=True)
+        frontend.app.backend = backend.Backend(
+            args.dataDir, args.variantSetClass)
+        frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
 
 ##############################################################################
 # Client
@@ -73,11 +72,11 @@ class VariantSetSearchRunner(object):
     Runner class for the variantsets/search method.
     """
     def __init__(self, args):
-        svsr = ga4gh.protocol.GASearchVariantSetsRequest()
+        svsr = protocol.GASearchVariantSetsRequest()
         svsr.pageSize = args.pageSize
         self._request = svsr
         self._verbosity = args.verbose
-        self._httpClient = ga4gh.client.HTTPClient(args.baseUrl, args.verbose)
+        self._httpClient = client.HTTPClient(args.baseUrl, args.verbose)
 
     def run(self):
         for v in self._httpClient.searchVariantSets(self._request):
@@ -89,7 +88,7 @@ class VariantSearchRunner(object):
     Runner class for the variants/search method.
     """
     def __init__(self, args):
-        svr = ga4gh.protocol.GASearchVariantsRequest()
+        svr = protocol.GASearchVariantsRequest()
         svr.referenceName = args.referenceName
         svr.variantName = args.variantName
         svr.start = args.start
@@ -104,7 +103,7 @@ class VariantSearchRunner(object):
         svr.variantSetIds = args.variantSetIds.split(",")
         self._request = svr
         self._verbosity = args.verbose
-        self._httpClient = ga4gh.client.HTTPClient(args.baseUrl, args.verbose)
+        self._httpClient = client.HTTPClient(args.baseUrl, args.verbose)
 
     def run(self):
         for v in self._httpClient.searchVariants(self._request):
