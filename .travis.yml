@@ -8,13 +8,14 @@ before_install:
 
 install:
   - pip install pep8
+  - pip install coverage
   - python setup.py install
 
 before_script:
-  # the following two lines are to prevent travis from 
+  # the following two lines are to prevent travis from
   # verbosely complaining about a security problem; see issue 54
   - mkdir $HOME/.python-eggs
   - chmod og-w $HOME/.python-eggs
   - pep8 ga4gh tests
 
-script: nosetests
+script: nosetests --with-coverage --cover-package=ga4gh
