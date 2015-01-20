@@ -79,8 +79,8 @@ class VariantSetSearchRunner(object):
         self._httpClient = client.HTTPClient(args.baseUrl, args.verbose)
 
     def run(self):
-        for v in self._httpClient.searchVariantSets(self._request):
-            print(v.datasetId, v.id)
+        for variantSet in self._httpClient.searchVariantSets(self._request):
+            print(variantSet.datasetId, variantSet.id)
 
 
 class VariantSearchRunner(object):
@@ -106,21 +106,22 @@ class VariantSearchRunner(object):
         self._httpClient = client.HTTPClient(args.baseUrl, args.verbose)
 
     def run(self):
-        for v in self._httpClient.searchVariants(self._request):
-            self.printVariant(v)
+        for variant in self._httpClient.searchVariants(self._request):
+            self.printVariant(variant)
 
-    def printVariant(self, v):
+    def printVariant(self, variant):
         """
         Prints out the specified GAVariant object in a VCF-like form.
         """
         print(
-            v.id, v.variantSetId, v.names,
-            v.referenceName, v.start, v.end, v.referenceBases,
-            v.alternateBases, sep="\t", end="\t")
-        for key, value in v.info.items():
+            variant.id, variant.variantSetId, variant.names,
+            variant.referenceName, variant.start, variant.end,
+            variant.referenceBases, variant.alternateBases,
+            sep="\t", end="\t")
+        for key, value in variant.info.items():
             print(key, value, sep="=", end=";")
         print("\t", end="")
-        for c in v.calls:
+        for c in variant.calls:
             print(
                 c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
                 c.phaseset, sep=":", end="\t")
@@ -138,7 +139,7 @@ class BenchmarkRunner(VariantSearchRunner):
         beforeCpu = time.clock()
         beforeWall = time.time()
         try:
-            for v in self._httpClient.searchVariants(self._request):
+            for variant in self._httpClient.searchVariants(self._request):
                 numVariants += 1
         except KeyboardInterrupt:
             pass
