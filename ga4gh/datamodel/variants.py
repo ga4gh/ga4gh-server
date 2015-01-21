@@ -16,6 +16,77 @@ import wormtable as wt
 import ga4gh.protocol as protocol
 
 
+class BackendIndex(object):
+
+    def __init__(self, index):
+        self.index = index
+
+    def cursor(self, columns, start=0, stop=None):
+        cols = [col.column for col in columns]
+        return self.index.cursor(cols, start, stop)
+
+
+class BackendColumn(object):
+
+    def __init__(self, column):
+        self.column = column
+
+    def getName(self):
+        return self.column.get_name()
+
+    def getPosition(self):
+        return self.column.get_position()
+
+    def getTypeName(self):
+        return self.column.get_type_name()
+
+    def getNumElements(self):
+        return self.column.get_num_elements()
+
+    def getDescription(self):
+        return self.column.get_description()
+
+
+class BackendColumnList(object):
+
+    def __init__(self, columns, backcol=BackendColumn):
+        self.columns = columns
+        self.backcol = backcol
+
+    def __getitem__(self, slice_):
+        cols = self.columns[slice_]
+        return [self.backcol(col) for col in cols]
+
+
+class BackendPath(object):
+
+    def __init__(self, path, backcollist=BackendColumnList,
+                 backindex=BackendIndex):
+        self.path = path
+        self.table = None
+        self.backcollist = backcollist
+        self.backindex = backindex
+
+    def getCtime(self):
+        return int(os.path.getctime(self.path) * 1000)
+
+    def getPath(self):
+        return self.path
+
+    def openTable(self):
+        table = wt.open_table(self.path)
+        self.table = table
+        return table
+
+    def openIndex(self, indexStr):
+        index = self.table.open_index(indexStr)
+        return self.backindex(index)
+
+    def getColumns(self):
+        cols = self.table.columns()
+        return self.backcollist(cols)
+
+
 class VariantSet(object):
     """
     Class representing a single VariantSet in the GA4GH data model.
@@ -58,38 +129,39 @@ class WormtableVariantSet(VariantSet):
     GENOTYPE_LIKELIHOOD_NAME = b"GL"
     GENOTYPE_NAME = b"GT"
 
-    def __init__(self, variantSetId, wtDir):
+    def __init__(self, variantSetId, wtDir, backpath=BackendPath):
         """
         Allocates a new WormtableVariantSet with the specified variantSetId
         based on the specified wormtable directory.
         """
+        self._backpath = backpath(wtDir)
         self._variantSetId = variantSetId
-        self._wtDir = wtDir
-        self._table = wt.open_table(wtDir)
-        self._chromPosIndex = self._table.open_index("CHROM+POS")
-        self._chromIdIndex = self._table.open_index("CHROM+ID")
+        self._wtDir = self._backpath.getPath()
+        self._table = self._backpath.openTable()
+        self._chromPosIndex = self._backpath.openIndex("CHROM+POS")
+        self._chromIdIndex = self._backpath.openIndex("CHROM+ID")
         self._sampleCols = {}
         self._sampleNames = []
         self._infoCols = []
         self._firstSamplePosition = -1
-        ctimeInMillis = int(os.path.getctime(wtDir) * 1000)
+        ctimeInMillis = self._backpath.getCtime()
         # ctime is in seconds, and we want milliseconds since the epoch
         self._creationTime = ctimeInMillis
         self._updatedTime = ctimeInMillis
-        cols = self._table.columns()[self.FILTER_COL + 1:]
+        cols = self._backpath.getColumns()[self.FILTER_COL + 1:]
         # We build lookup tables for the INFO and sample columns so they can
         # be easily found during conversion. For the sample columns we make
         # a dictionary mapping the sample name to a list of (sample name, col)
         # tuples for that sample.
         for col in cols:
-            colName = col.get_name()
+            colName = col.getName()
             if colName.startswith("INFO"):
                 infoField = colName.split(".")[1]
                 self._infoCols.append((infoField, col))
             else:
                 if self._firstSamplePosition == -1:
                     # This must be a sample specific column
-                    self._firstSamplePosition = col.get_position()
+                    self._firstSamplePosition = col.getPosition()
                 sampleName, infoName = colName.split(".")
                 if sampleName not in self._sampleCols:
                     self._sampleCols[sampleName] = []
@@ -147,7 +219,7 @@ class WormtableVariantSet(VariantSet):
             variant.alternateBases = alt.split(",")
         variant.info = {}
         for infoField, col in self._infoCols:
-            pos = col.get_position()
+            pos = col.getPosition()
             if row[pos] is not None:
                 variant.info[infoField] = self.convertInfoField(row[pos])
         # All of the remaining values in the row correspond to Calls.
@@ -182,12 +254,12 @@ class WormtableVariantSet(VariantSet):
         # convention here for where we move from unicode to bytes.
         chrom = referenceName.encode()
         if callSetIds is None:
-            readCols = self._table.columns()
+            readCols = self._backpath.getColumns()
             # These must be in the correct order, so we cannot use the keys of
             # self._sampleCols
             callSetIds = self._sampleNames
         else:
-            readCols = self._table.columns()[:self._firstSamplePosition]
+            readCols = self._backpath.getColumns()[:self._firstSamplePosition]
             for callSetId in callSetIds:
                 cols = [col for name, col in self._sampleCols[callSetId]]
                 readCols.extend(cols)
@@ -230,9 +302,9 @@ class WormtableVariantSet(VariantSet):
             metadata.id = ""
             # What are the encodings here? With the lack of any precise
             # definitions I'm just using wormtable values for now.
-            metadata.type = col.get_type_name()
-            metadata.number = str(col.get_num_elements())
-            metadata.description = col.get_description()
+            metadata.type = col.getTypeName()
+            metadata.number = str(col.getNumElements())
+            metadata.description = col.getDescription()
             return metadata
         ret = []
         for infoField, col in self._infoCols:
