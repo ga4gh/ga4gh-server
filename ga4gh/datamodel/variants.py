@@ -16,6 +16,34 @@ import wormtable as wt
 import ga4gh.protocol as protocol
 
 
+class TableFactory(object):
+    """
+    Encapsulates table construction; frees us to use diferent
+    construction methods during testing.
+    creationTime is in miliseconds.
+    """
+    def __init__(self, creationTime):
+        self.creationTime = creationTime
+
+    @classmethod
+    def wormtableFromPath(cls, wtDir):
+        retval = cls(int(os.path.getctime(wtDir) * 1000))
+        retval.table = wt.open_table(wtDir)
+        return retval
+
+    @classmethod
+    def tabixFromPath(cls, vfcDir):
+        retval = cls(protocol.convertDatetime(datetime.datetime.now()))
+        retval.chromTabixFileMap = {}
+        for vcfFile in glob.glob(os.path.join(vcfDir, "*.vcf.gz")):
+            tabixFile = pysam.Tabixfile(vcfFile)
+            for chrom in tabixFile.contigs:
+                if chrom in retval.chromTabixFileMap:
+                    raise Exception("cannot have overlapping VCF files.")
+                retval.chromTabixFileMap[chrom] = tabixFile
+        return retval
+
+
 class VariantSet(object):
     """
     Class representing a single VariantSet in the GA4GH data model.
@@ -58,24 +86,21 @@ class WormtableVariantSet(VariantSet):
     GENOTYPE_LIKELIHOOD_NAME = b"GL"
     GENOTYPE_NAME = b"GT"
 
-    def __init__(self, variantSetId, wtDir):
+    def __init__(self, variantSetId, wtTableFactory):
         """
         Allocates a new WormtableVariantSet with the specified variantSetId
         based on the specified wormtable directory.
         """
         self._variantSetId = variantSetId
-        self._wtDir = wtDir
-        self._table = wt.open_table(wtDir)
+        self._table = wtTableFactory.table
         self._chromPosIndex = self._table.open_index("CHROM+POS")
         self._chromIdIndex = self._table.open_index("CHROM+ID")
         self._sampleCols = {}
         self._sampleNames = []
         self._infoCols = []
         self._firstSamplePosition = -1
-        ctimeInMillis = int(os.path.getctime(wtDir) * 1000)
-        # ctime is in seconds, and we want milliseconds since the epoch
-        self._creationTime = ctimeInMillis
-        self._updatedTime = ctimeInMillis
+        self._creationTime = wtTableFactory.creationTime
+        self._updatedTime = wtTableFactory.creationTime
         cols = self._table.columns()[self.FILTER_COL + 1:]
         # We build lookup tables for the INFO and sample columns so they can
         # be easily found during conversion. For the sample columns we make
@@ -250,16 +275,10 @@ class TabixVariantSet(VariantSet):
     """
     Class representing a single variant set backed by a tabix directory.
     """
-    def __init__(self, variantSetId, vcfPath):
+    def __init__(self, variantSetId, vcfTableFactory):
         self._variantSetId = variantSetId
-        self._created = protocol.convertDatetime(datetime.datetime.now())
-        self._chromTabixFileMap = {}
-        for vcfFile in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
-            tabixFile = pysam.Tabixfile(vcfFile)
-            for chrom in tabixFile.contigs:
-                if chrom in self._chromTabixFileMap:
-                    raise Exception("cannot have overlapping VCF files.")
-                self._chromTabixFileMap[chrom] = tabixFile
+        self._created = vcfTableFactory.creationTime
+        self._chromTabixFileMap = vcfTableFactory.chromTabixFileMap
 
     def convertVariant(self, record):
         """
