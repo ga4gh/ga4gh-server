@@ -71,27 +71,42 @@ def server_main():
 ##############################################################################
 
 
-class VariantSetSearchRunner(object):
+class AbstractSearchRunner(object):
+    """
+    Abstract base class for search runner classes
+    """
+    def __init__(self, args):
+        self._workarounds = set(args.workarounds.split(','))
+        self._key = args.key
+
+    def usingWorkaroundsFor(self, workaround):
+        return workaround in self._workarounds
+
+
+class VariantSetSearchRunner(AbstractSearchRunner):
     """
     Runner class for the variantsets/search method.
     """
     def __init__(self, args):
+        super(VariantSetSearchRunner, self).__init__(args)
         svsr = protocol.GASearchVariantSetsRequest()
         svsr.pageSize = args.pageSize
         self._request = svsr
         self._verbosity = args.verbose
-        self._httpClient = client.HTTPClient(args.baseUrl, args.verbose)
+        self._httpClient = client.HTTPClient(
+            args.baseUrl, args.verbose, self._workarounds, self._key)
 
     def run(self):
         for variantSet in self._httpClient.searchVariantSets(self._request):
             print(variantSet.datasetId, variantSet.id)
 
 
-class VariantSearchRunner(object):
+class VariantSearchRunner(AbstractSearchRunner):
     """
     Runner class for the variants/search method.
     """
     def __init__(self, args):
+        super(VariantSearchRunner, self).__init__(args)
         svr = protocol.GASearchVariantsRequest()
         svr.referenceName = args.referenceName
         svr.variantName = args.variantName
@@ -107,7 +122,8 @@ class VariantSearchRunner(object):
         svr.variantSetIds = args.variantSetIds.split(",")
         self._request = svr
         self._verbosity = args.verbose
-        self._httpClient = client.HTTPClient(args.baseUrl, args.verbose)
+        self._httpClient = client.HTTPClient(
+            args.baseUrl, args.verbose, self._workarounds, self._key)
 
     def run(self):
         for variant in self._httpClient.searchVariants(self._request):
@@ -130,6 +146,32 @@ class VariantSearchRunner(object):
                 c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
                 c.phaseset, sep=":", end="\t")
         print()
+
+
+class ReferenceSetSearchRunner(AbstractSearchRunner):
+    """
+    Runner class for the referencesets/search method.
+    """
+    def __init__(self, args):
+        super(ReferenceSetSearchRunner, self).__init__(args)
+        request = protocol.GASearchReferenceSetsRequest()
+        if args.accessions is not None:
+            request.accessions = args.accessions.split(",")
+        if self.usingWorkaroundsFor(client.HTTPClient.workaroundGoogle):
+            # google says assemblyId not a valid field
+            del request.__dict__['assemblyId']
+        if args.md5checksums is not None:
+            request.md5checksums = args.md5checksums.split(",")
+        request.pageSize = args.pageSize
+        self._request = request
+        self._verbosity = args.verbose
+        self._httpClient = client.HTTPClient(
+            args.baseUrl, args.verbose, self._workarounds, self._key)
+
+    def run(self):
+        for referenceSetId in self._httpClient.searchReferenceSets(
+                self._request):
+            print(referenceSetId.id)
 
 
 class BenchmarkRunner(VariantSearchRunner):
@@ -200,6 +242,10 @@ def client_main():
     parser = argparse.ArgumentParser(description="GA4GH reference client")
     # Add global options
     parser.add_argument('--verbose', '-v', action='count', default=0)
+    parser.add_argument(
+        "--workarounds", "-w", default='', help="The workarounds to use")
+    parser.add_argument(
+        "--key", "-k", help="The auth key to use")
     subparsers = parser.add_subparsers(title='subcommands',)
 
     # help
@@ -219,8 +265,8 @@ def client_main():
         "benchmark",
         description="Run simple benchmarks on the various methods",
         help="Benchmark server performance")
-    addUrlArgument(bmParser)
     bmParser.set_defaults(runner=BenchmarkRunner)
+    addUrlArgument(bmParser)
     addOptions(bmParser)
     # variantsets/search
     vssParser = subparsers.add_parser(
@@ -230,6 +276,25 @@ def client_main():
     vssParser.set_defaults(runner=VariantSetSearchRunner)
     addUrlArgument(vssParser)
     vssParser.add_argument(
+        "--pageSize", "-m", default=100, type=int,
+        help="The maximum number of variants returned in one response.")
+    # referencesets/search
+    rssParser = subparsers.add_parser(
+        "referencesets-search",
+        description="Search for referenceSets",
+        help="Search for referenceSets")
+    rssParser.set_defaults(runner=ReferenceSetSearchRunner)
+    addUrlArgument(rssParser)
+    rssParser.add_argument(
+        "--accessions", default=None,
+        help="The accessions to search over")
+    rssParser.add_argument(
+        "--md5checksums", default=None,
+        help="The md5checksums to search over")
+    rssParser.add_argument(
+        "--assembly-id",
+        help="The assembly id to search over")
+    rssParser.add_argument(
         "--pageSize", "-m", default=100, type=int,
         help="The maximum number of variants returned in one response.")
 
