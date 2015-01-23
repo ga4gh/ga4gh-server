@@ -18,4 +18,5 @@ before_script:
   - chmod og-w $HOME/.python-eggs
   - pep8 ga4gh tests
 
-script: nosetests --with-coverage --cover-package=ga4gh
+script: nosetests --with-coverage --cover-package ga4gh
+                  --cover-inclusive --cover-min-percentage 80
