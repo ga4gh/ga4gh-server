@@ -19,8 +19,29 @@ class TestFrontend(unittest.TestCase):
         frontend.app.backend = backend.MockBackend()
         self.app = frontend.app.test_client()
 
+    def sendVariantsSearch(self, data):
+        return self.app.post('/variants/search',
+                             headers={'Content-type': 'application/json'},
+                             data=data)
+
+    def sendVariantSetsSearch(self, data):
+        return self.app.post('/variantsets/search',
+                             headers={'Content-type': 'application/json'},
+                             data=data)
+
     def testServer(self):
         self.assertEqual(404, self.app.get('/').status_code)
+
+    def testCors(self):
+        def assertHeaders(response):
+            self.assertEqual('*',
+                             response.headers['Access-Control-Allow-Origin'])
+            self.assertTrue('Content-Type' in response.headers)
+
+        assertHeaders(self.app.get('/'))
+        assertHeaders(self.sendVariantsSearch('{"variantSetIds": [1, 2]}'))
+        assertHeaders(self.sendVariantSetsSearch('{"dataSetIds": [1, 2]}'))
+        # TODO: Test other methods as they are implemented
 
     def testRouteReferences(self):
         for path in ['/references/1', 'references/1/bases', 'referencesets/1']:
@@ -54,18 +75,14 @@ class TestFrontend(unittest.TestCase):
             self.assertEqual(405, self.app.get(path).status_code)
 
     def testVariantsSearch(self):
-        response = self.app.post('/variants/search',
-                                 headers={'Content-type': 'application/json'},
-                                 data='{"variantSetIds": [1, 2]}')
+        response = self.sendVariantsSearch('{"variantSetIds": [1, 2]}')
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchVariantsResponse.fromJSONString(
             response.data)
         self.assertEqual(responseData.variants, [])
 
     def testVariantSetsSearch(self):
-        response = self.app.post('/variantsets/search',
-                                 headers={'Content-type': 'application/json'},
-                                 data='{"dataSetIds": [1, 2]}')
+        response = self.sendVariantSetsSearch('{"dataSetIds": [1, 2]}')
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchVariantSetsResponse.fromJSONString(
             response.data)
