@@ -14,3 +14,10 @@ class DefaultConfig(object):
     Simplest default server configuration.
     """
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
+
+
+class TestConfig(DefaultConfig):
+    """
+    Configuration used in frontend unit tests.
+    """
+    TESTING = True

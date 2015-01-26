@@ -15,7 +15,7 @@ import ga4gh.protocol as protocol
 class TestFrontend(unittest.TestCase):
 
     def setUp(self):
-        frontend.app.config['TESTING'] = True
+        frontend.configure("TestConfig")
         frontend.app.backend = backend.MockBackend()
         self.app = frontend.app.test_client()
 
