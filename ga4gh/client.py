@@ -30,23 +30,23 @@ class HTTPClient(object):
         """
         notDone = True
         while notDone:
-            s = request.toJSONString()
+            jsonData = request.toJSONString()
             headers = {"Content-type": "application/json"}
             # make sure we correctly join with/out trailing slashes
             fullUrl = posixpath.join(self._urlPrefix, url)
             # TODO Can we get requests to output debugging information when
             # debugLevel > 0?
-            r = requests.post(fullUrl, s, headers=headers, verify=False)
-            r.raise_for_status()
-            s = r.text
-            self._bytesRead += len(s)
+            post = requests.post(fullUrl, s, headers=headers, verify=False)
+            post.raise_for_status()
+            jsonData = post.text
+            self._bytesRead += len(jsonData)
             if self._debugLevel > 1:
                 # TODO use a logging output and integrate with HTTP client more
                 # nicely.
                 print("json response:")
-                pp = json.dumps(json.loads(s), sort_keys=True, indent=4)
+                pp = json.dumps(json.loads(jsonData), sort_keys=True, indent=4)
                 print(pp)
-            resp = protocolClass.fromJSONString(s)
+            resp = protocolClass.fromJSONString(jsonData)
             # TODO handle HTTP errors from requests and display.
             for v in getattr(resp, listAttr):
                 yield v

@@ -23,9 +23,10 @@ def randomString():
     """
     Returns a randomly generated short string.
     """
-    n = random.randint(0, 10)
-    s = ''.join(random.choice(string.ascii_letters) for x in range(n))
-    return s
+    randInt = random.randint(0, 10)
+    randStr = ''.join(random.choice(
+        string.ascii_letters) for _ in range(randInt))
+    return randStr
 
 
 class SchemaTest(unittest.TestCase):
@@ -73,9 +74,9 @@ class SchemaTest(unittest.TestCase):
         Returns the avro schema for the specified field.
         """
         field = None
-        for f in cls.schema.fields:
-            if f.name == fieldName:
-                field = f
+        for fld in cls.schema.fields:
+            if fld.name == fieldName:
+                field = fld
         return field
 
     def getInvalidValue(self, cls, fieldName):
@@ -83,19 +84,19 @@ class SchemaTest(unittest.TestCase):
         Returns a value that should trigger a schema validation failure.
         """
         field = self.getAvroSchema(cls, fieldName)
-        t = field.type
-        if isinstance(t, avro.schema.UnionSchema):
-            t = t.schemas[1]
-        if isinstance(t, avro.schema.MapSchema):
+        typ = field.type
+        if isinstance(typ, avro.schema.UnionSchema):
+            typ = typ.schemas[1]
+        if isinstance(typ, avro.schema.MapSchema):
             ret = ["string"]
-        elif isinstance(t, avro.schema.ArraySchema):
+        elif isinstance(typ, avro.schema.ArraySchema):
             ret = 42.0
-        elif isinstance(t, avro.schema.EnumSchema):
+        elif isinstance(typ, avro.schema.EnumSchema):
             ret = "NO ENUM COULD HAVE THIS NAME"
-        elif isinstance(t, avro.schema.RecordSchema):
+        elif isinstance(typ, avro.schema.RecordSchema):
             ret = 42
-        elif t.type in self.badValueMap:
-            ret = self.badValueMap[t.type]
+        elif typ.type in self.badValueMap:
+            ret = self.badValueMap[typ.type]
         else:
             raise Exception("schema assumptions violated")
         return ret
@@ -106,35 +107,35 @@ class SchemaTest(unittest.TestCase):
         """
         maxListSize = 10
         field = self.getAvroSchema(cls, fieldName)
-        t = field.type
-        if isinstance(t, avro.schema.UnionSchema):
+        typ = field.type
+        if isinstance(typ, avro.schema.UnionSchema):
             # TODO put in some probability that return None if
             # we have a union schema
-            t = t.schemas[1]
-        if isinstance(t, avro.schema.MapSchema):
+            typ = typ.schemas[1]
+        if isinstance(typ, avro.schema.MapSchema):
             ret = {}
             for j in range(random.randint(0, maxListSize)):
-                l = [randomString() for j in range(
+                randStr = [randomString() for _ in range(
                     random.randint(0, maxListSize))]
-                ret["key{0}".format(j)] = l
-        elif isinstance(t, avro.schema.ArraySchema):
-            n = random.randint(0, maxListSize)
+                ret["key{0}".format(j)] = randStr
+        elif isinstance(typ, avro.schema.ArraySchema):
+            randInt = random.randint(0, maxListSize)
             if cls.isEmbeddedType(field.name):
                 embeddedClass = cls.getEmbeddedType(field.name)
 
-                def f():
+                def getRandInst():
                     return self.getRandomInstance(embeddedClass)
             else:
-                f = self.randomValueMap[t.items.type]
-            ret = [f() for j in range(n)]
-        elif isinstance(t, avro.schema.EnumSchema):
-            ret = random.choice(t.symbols)
-        elif isinstance(t, avro.schema.RecordSchema):
+                getRandInst = self.randomValueMap[typ.items.type]
+            ret = [getRandInst() for j in range(randInt)]
+        elif isinstance(typ, avro.schema.EnumSchema):
+            ret = random.choice(typ.symbols)
+        elif isinstance(typ, avro.schema.RecordSchema):
             assert cls.isEmbeddedType(fieldName)
             embeddedClass = cls.getEmbeddedType(fieldName)
             ret = self.getRandomInstance(embeddedClass)
-        elif t.type in self.randomValueMap:
-            ret = self.randomValueMap[t.type]()
+        elif typ.type in self.randomValueMap:
+            ret = self.randomValueMap[typ.type]()
         else:
             raise Exception("schema assumptions violated")
         return ret
@@ -150,39 +151,39 @@ class SchemaTest(unittest.TestCase):
         # this fact here.
         err = "Schema structure assumptions violated"
         field = self.getAvroSchema(cls, fieldName)
-        t = field.type
-        if isinstance(t, avro.schema.UnionSchema):
-            t0 = t.schemas[0]
+        typ = field.type
+        if isinstance(typ, avro.schema.UnionSchema):
+            t0 = typ.schemas[0]
             if (isinstance(t0, avro.schema.PrimitiveSchema)
                     and t0.type == "null"):
-                t = t.schemas[1]
+                typ = typ.schemas[1]
             else:
                 raise Exception(err)
         ret = None
-        if isinstance(t, avro.schema.MapSchema):
+        if isinstance(typ, avro.schema.MapSchema):
             ret = {"key": ["value1", "value2"]}
-            if not isinstance(t.values, avro.schema.ArraySchema):
+            if not isinstance(typ.values, avro.schema.ArraySchema):
                 raise Exception(err)
-            if not isinstance(t.values.items, avro.schema.PrimitiveSchema):
+            if not isinstance(typ.values.items, avro.schema.PrimitiveSchema):
                 raise Exception(err)
-            if t.values.items.type != "string":
+            if typ.values.items.type != "string":
                 raise Exception(err)
-        elif isinstance(t, avro.schema.ArraySchema):
+        elif isinstance(typ, avro.schema.ArraySchema):
             if cls.isEmbeddedType(field.name):
                 embeddedClass = cls.getEmbeddedType(field.name)
                 ret = [self.getTypicalInstance(embeddedClass)]
             else:
-                if not isinstance(t.items, avro.schema.PrimitiveSchema):
+                if not isinstance(typ.items, avro.schema.PrimitiveSchema):
                     raise Exception(err)
-                ret = [self.typicalValueMap[t.items.type]]
-        elif isinstance(t, avro.schema.EnumSchema):
-            ret = t.symbols[0]
-        elif isinstance(t, avro.schema.RecordSchema):
+                ret = [self.typicalValueMap[typ.items.type]]
+        elif isinstance(typ, avro.schema.EnumSchema):
+            ret = typ.symbols[0]
+        elif isinstance(typ, avro.schema.RecordSchema):
             assert cls.isEmbeddedType(fieldName)
             embeddedClass = cls.getEmbeddedType(fieldName)
             ret = self.getTypicalInstance(embeddedClass)
-        elif t.type in self.typicalValueMap:
-            ret = self.typicalValueMap[t.type]
+        elif typ.type in self.typicalValueMap:
+            ret = self.typicalValueMap[typ.type]
         else:
             raise Exception("schema assumptions violated")
         return ret
@@ -212,10 +213,10 @@ class SchemaTest(unittest.TestCase):
         """
         Sets the required values in the specified instance to typical values.
         """
-        for k in instance.__dict__.keys():
-            if k in instance.requiredFields:
-                v = self.getTypicalValue(type(instance), k)
-                setattr(instance, k, v)
+        for key in instance.__dict__.keys():
+            if key in instance.requiredFields:
+                value = self.getTypicalValue(type(instance), key)
+                setattr(instance, key, value)
 
     def getDefaultInstance(self, cls):
         """
@@ -237,14 +238,14 @@ class EqualityTest(SchemaTest):
         self.assertEqual(i1, i2)
         self.assertTrue(i1 == i2)
         self.assertFalse(i1 != i2)
-        for v in [None, {}, [], object, ""]:
-            self.assertFalse(i1 == v)
-            self.assertTrue(i1 != v)
-            self.assertFalse(v == i1)
-            self.assertTrue(v != i1)
+        for val in [None, {}, [], object, ""]:
+            self.assertFalse(i1 == val)
+            self.assertTrue(i1 != val)
+            self.assertFalse(val == i1)
+            self.assertTrue(val != i1)
         # Now change an attribute on one and check if equality fails.
-        for f in i1.schema.fields:
-            setattr(i1, f.name, "value unique to i1")
+        for field in i1.schema.fields:
+            setattr(i1, field.name, "value unique to i1")
             self.assertFalse(i1 == i2)
             self.assertTrue(i1 != i2)
 
@@ -252,21 +253,21 @@ class EqualityTest(SchemaTest):
         factories = [self.getDefaultInstance, self.getTypicalInstance,
                      self.getRandomInstance]
         for cls in self.getProtocolClasses():
-            for f in factories:
-                i1 = f(cls)
+            for factory in factories:
+                i1 = factory(cls)
                 i2 = cls.fromJSONDict(i1.toJSONDict())
                 self.verifyEqualityOperations(i1, i2)
 
     def testDifferentValues(self):
-        f = lambda cls: cls()
-        factories = [f, self.getTypicalInstance, self.getDefaultInstance,
+        factory = lambda cls: cls()
+        factories = [factory, self.getTypicalInstance, self.getDefaultInstance,
                      self.getRandomInstance]
         classes = list(self.getProtocolClasses())
         c1 = classes[0]
         for c2 in classes[1:]:
-            for f in factories:
-                i1 = f(c1)
-                i2 = f(c2)
+            for factory in factories:
+                i1 = factory(c1)
+                i2 = factory(c2)
                 self.assertFalse(i1 == i2)
                 self.assertTrue(i1 != i2)
 
@@ -331,13 +332,13 @@ class ValidatorTest(SchemaTest):
             self.assertFalse(cls.validate([]))
             self.assertFalse(cls.validate(1))
             # setting values to bad values should be invalid
-            for f in jsonDict.keys():
-                d = dict(jsonDict)
-                d[f] = self.getInvalidValue(cls, f)
-                self.assertFalse(cls.validate(d))
+            for key in jsonDict.keys():
+                dct = dict(jsonDict)
+                dct[key] = self.getInvalidValue(cls, key)
+                self.assertFalse(cls.validate(dct))
             for c in tests.powerset(jsonDict.keys(), 10):
                 if len(c) > 0:
-                    d = dict(jsonDict)
+                    dct = dict(jsonDict)
                     for f in c:
-                        d[f] = self.getInvalidValue(cls, f)
-                    self.assertFalse(cls.validate(d))
+                        dct[f] = self.getInvalidValue(cls, f)
+                    self.assertFalse(cls.validate(dct))
