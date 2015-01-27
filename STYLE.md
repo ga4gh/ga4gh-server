@@ -6,6 +6,9 @@ difference is the use of camel case over underscore delimited identifiers; this
 is done for consistency with the GA4GH API. Code should be checked for compliance
 using the `pep8 <https://pypi.python.org/pypi/pep8>`_ tool.
 
+## Naming
+Short variable names are OK when the scope is small (less than five lines) and the meaning is obvious. If the scope is longer or more complex, please use descriptive longer names.
+
 ## Imports
 Imports should be structured into the following groups:
 
