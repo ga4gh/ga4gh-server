@@ -16,7 +16,7 @@ app = api.FlaskAPI(__name__)
 
 
 def configure(config):
-    configStr = 'ga4gh.server.config:{0}'.format(config)
+    configStr = 'ga4gh.serverconfig:{0}'.format(config)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
         app.config.from_envvar('GA4GH_CONFIGURATION')
