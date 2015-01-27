@@ -19,6 +19,7 @@ import ga4gh.protocol as protocol
 
 class DummyRequest(protocol.ProtocolElement):
 
+    __slots__ = ["stringVal", "intVal", "arrayVal", "pageToken"]
     def __init__(self):
         self.stringVal = "stringVal"
         self.intVal = 1

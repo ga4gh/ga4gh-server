@@ -131,6 +131,12 @@ class SchemaClass(object):
         return string
 
     def writeConstructor(self, outputFile):
+        # Force using slots to avoid the overhead of a dict per object;
+        # when a query returns hundreds of thousands of calls this can
+        # save a hundred megabytes or more.
+        print("    __slots__ = ['",
+              "', '".join([field.name for field in self.getFields()]), "']",
+              sep='', file=outputFile)
         print("    def __init__(self):", file=outputFile)
         for field in self.getFields():
             print("        self.{0} = {1}".format(
