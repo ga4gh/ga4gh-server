@@ -1586,3 +1586,26 @@ This metadata represents VCF header information.
         self.number = None
         self.type = None
         self.value = None
+
+postMethods = \
+    [('/callsets/search',
+      GASearchCallSetsRequest,
+      GASearchCallSetsResponse),
+     ('/readgroupsets/search',
+      GASearchReadGroupSetsRequest,
+      GASearchReadGroupSetsResponse),
+     ('/reads/search',
+      GASearchReadsRequest,
+      GASearchReadsResponse),
+     ('/referencesets/search',
+      GASearchReferenceSetsRequest,
+      GASearchReferenceSetsResponse),
+     ('/references/search',
+      GASearchReferencesRequest,
+      GASearchReferencesResponse),
+     ('/variantsets/search',
+      GASearchVariantSetsRequest,
+      GASearchVariantSetsResponse),
+     ('/variants/search',
+      GASearchVariantsRequest,
+      GASearchVariantsResponse)]

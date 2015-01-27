@@ -1,6 +1,6 @@
 *~
-.swp
-.swo
+*.swp
+*.swo
 ga4gh-example-data
 
 # Below taken from https://gist.github.com/octocat/9257657
