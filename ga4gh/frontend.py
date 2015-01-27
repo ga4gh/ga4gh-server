@@ -13,6 +13,7 @@ import flask.ext.api as api
 import flask.ext.cors as cors
 
 app = api.FlaskAPI(__name__)
+cors.CORS(app, allow_headers='Content-Type')
 
 
 def configure(config):
@@ -20,7 +21,6 @@ def configure(config):
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
         app.config.from_envvar('GA4GH_CONFIGURATION')
-    cors.CORS(app, allow_headers='Content-Type')
 
 
 def handleHTTPPost(request, endpoint):
