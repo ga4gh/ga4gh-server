@@ -57,6 +57,7 @@ class WormtableVariantSet(VariantSet):
     # These must be bytes literals for integration with wormtable.
     GENOTYPE_LIKELIHOOD_NAME = b"GL"
     GENOTYPE_NAME = b"GT"
+    PHASESET_NAME = b"PS"
 
     def __init__(self, variantSetId, wtDir):
         """
@@ -107,23 +108,36 @@ class WormtableVariantSet(VariantSet):
             ret = [str(value)]
         return ret
 
-    def convertGenotype(self, call, genotype):
+    @staticmethod
+    def convertPhaseset(vcfPhaseset):
         """
-        Updates the specified call to reflect the value encoded in the
-        specified VCF genotype string.
+        Parses the VCF phaseset string
         """
-        if genotype is not None:
-            # Is this the correct interpretation of | and /?
+        if vcfPhaseset is not None and vcfPhaseset != ".":
+            phaseset = vcfPhaseset
+        else:
+            phaseset = "*"
+        return phaseset
+
+    @staticmethod
+    def convertGenotype(vcfGenotype, vcfPhaseset):
+        """
+        Parses the VCF genotype and VCF phaseset strings
+        """
+        phaseset = None
+        if vcfGenotype is not None:
             delim = "/"
-            if "|" in genotype:
+            if "|" in vcfGenotype:
                 delim = "|"
-                # TODO what is the phaseset value supposed to be?
-                call.phaseset = "True"
-            try:
-                call.genotype = map(int, genotype.split(delim))
-            except ValueError:
-                # TODO what is the correct interpretation of .|.?
-                call.genotype = [-1]
+                phaseset = WormtableVariantSet.convertPhaseset(vcfPhaseset)
+            if "." in vcfGenotype:
+                genotype = [-1]
+            else:
+                genotype = map(int, vcfGenotype.split(delim))
+        else:
+            genotype = [-1]
+
+        return genotype, phaseset
 
     def convertVariant(self, row, sampleRowPositions):
         """
@@ -157,17 +171,22 @@ class WormtableVariantSet(VariantSet):
             # to call back to searchCallSets to get more info?
             call.callSetId = callSetId
             call.callSetName = callSetId
+            phaseset = None
             for (info, col), rowPosition in zip(self._sampleCols[callSetId],
                                                 rowPositions):
                 if info == self.GENOTYPE_LIKELIHOOD_NAME:
                     call.genotypeLikelihood = row[rowPosition]
                 elif info == self.GENOTYPE_NAME:
-                    self.convertGenotype(call, row[rowPosition])
+                    genotype = row[rowPosition]
+                elif info == self.PHASESET_NAME:
+                    phaseset = row[rowPosition]
                 else:
                     if row[rowPosition] is not None:
                         # Missing values are not included in the info array
                         call.info[info] = self.convertInfoField(
                             row[rowPosition])
+            call.genotype, call.phaseset = self.convertGenotype(genotype,
+                                                                phaseset)
             variant.calls.append(call)
         return variant
 
