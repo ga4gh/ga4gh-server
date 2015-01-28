@@ -16,7 +16,8 @@ before_script:
   # verbosely complaining about a security problem; see issue 54
   - mkdir $HOME/.python-eggs
   - chmod og-w $HOME/.python-eggs
-  - pep8 ga4gh tests
 
-script: nosetests --with-coverage --cover-package ga4gh
-                  --cover-inclusive --cover-min-percentage 80
+script: 
+  - pep8 ga4gh tests scripts 
+  - nosetests --with-coverage --cover-package ga4gh
+              --cover-inclusive --cover-min-percentage 80
