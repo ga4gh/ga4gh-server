@@ -30,6 +30,9 @@ def server_main():
     parser.add_argument(
         "--config", "-C", default='DefaultConfig', type=str,
         help="The configuration to use")
+    parser.add_argument(
+        "--config-file", "-F", type=str,
+        help="The configuration file to use")
 
     subparsers = parser.add_subparsers(title='subcommands',)
 
@@ -61,7 +64,7 @@ def server_main():
     if "variantSetClass" not in args:
         parser.print_help()
     else:
-        frontend.configure(args.config)
+        frontend.configure(args.config, args.config_file)
         frontend.app.backend = backend.Backend(
             args.dataDir, args.variantSetClass)
         frontend.app.run(host="0.0.0.0", port=args.port, debug=True)

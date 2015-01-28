@@ -15,11 +15,13 @@ import flask.ext.cors as cors
 app = api.FlaskAPI(__name__)
 
 
-def configure(config):
+def configure(config="DefaultConfig", config_file=None):
     configStr = 'ga4gh.serverconfig:{0}'.format(config)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
         app.config.from_envvar('GA4GH_CONFIGURATION')
+    if config_file is not None:
+        app.config.from_pyfile(args.config_file)
     cors.CORS(app, allow_headers='Content-Type')
 
 
