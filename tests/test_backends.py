@@ -167,7 +167,7 @@ class TestWormtableBackend(unittest.TestCase):
         """
         Returns the reference names common to all the specified variantSetIds.
         """
-        assert len(variantSetIds) > 0
+        self.assertGreater(len(variantSetIds), 0)
         commonNames = set(self.getReferenceNames(variantSetIds[0]))
         for variantSetId in variantSetIds[1:]:
             commonNames &= set(self.getReferenceNames(variantSetId))
