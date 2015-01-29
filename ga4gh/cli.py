@@ -76,13 +76,16 @@ def server_main(parser=None):
 ##############################################################################
 
 
-class AbstractSearchRunner(object):
+class AbstractQueryRunner(object):
     """
-    Abstract base class for search runner classes
+    Abstract base class for runner classes
     """
     def __init__(self, args):
         self._workarounds = set(args.workarounds.split(','))
         self._key = args.key
+        self._verbosity = args.verbose
+        self._httpClient = client.HttpClient(
+            args.baseUrl, args.verbose, self._workarounds, self._key)
 
     def usingWorkaroundsFor(self, workaround):
         """
@@ -90,24 +93,45 @@ class AbstractSearchRunner(object):
         """
         return workaround in self._workarounds
 
-    def setHttpClient(self, request, args):
-        """
-        Sets the _httpClient and other common attributes
-        """
-        request.pageSize = args.pageSize
-        self._minimalOutput = args.minimalOutput
-        self._request = request
-        self._verbosity = args.verbose
+
+class AbstractGetRunner(AbstractQueryRunner):
+    """
+    Abstract base class for get runner classes
+    """
+    def __init__(self, args):
+        super(AbstractGetRunner, self).__init__(args)
+        self._id = args.id
         self._httpClient = client.HttpClient(
             args.baseUrl, args.verbose, self._workarounds, self._key)
 
-    def _run(self, methodName, attrName=None):
+    def _run(self, method):
+        response = method(self._id)
+        print(response.id)
+
+
+class AbstractSearchRunner(AbstractQueryRunner):
+    """
+    Abstract base class for search runner classes
+    """
+    def __init__(self, args):
+        super(AbstractSearchRunner, self).__init__(args)
+
+    def _setRequest(self, request, args):
+        """
+        Sets the _httpClient and other common attributes
+        """
+        self._minimalOutput = args.minimalOutput
+        if 'pageSize' in args:
+            # GAListReferenceBasesRequest does not have a pageSize attr
+            request.pageSize = args.pageSize
+        self._request = request
+
+    def _run(self, method, attrName=None):
         """
         Runs the request given methodname and prints out
         the each result's attrName attribute if it is provided.
         If not, prints each entire result object.
         """
-        method = getattr(self._httpClient, methodName)
         results = method(self._request)
         for result in results:
             if attrName is None:
@@ -117,26 +141,26 @@ class AbstractSearchRunner(object):
                 print(attr)
 
 
-class VariantSetSearchRunner(AbstractSearchRunner):
+class SearchVariantSetsRunner(AbstractSearchRunner):
     """
     Runner class for the variantsets/search method.
     """
     def __init__(self, args):
-        super(VariantSetSearchRunner, self).__init__(args)
+        super(SearchVariantSetsRunner, self).__init__(args)
         request = protocol.GASearchVariantSetsRequest()
         setCommaSeparatedAttribute(request, args, 'datasetIds')
-        self.setHttpClient(request, args)
+        self._setRequest(request, args)
 
     def run(self):
-        self._run('searchVariantSets', 'datasetId')
+        self._run(self._httpClient.searchVariantSets, 'datasetId')
 
 
-class VariantSearchRunner(AbstractSearchRunner):
+class SearchVariantsRunner(AbstractSearchRunner):
     """
     Runner class for the variants/search method.
     """
     def __init__(self, args):
-        super(VariantSearchRunner, self).__init__(args)
+        super(SearchVariantsRunner, self).__init__(args)
         request = protocol.GASearchVariantsRequest()
         request.referenceName = args.referenceName
         request.variantName = args.variantName
@@ -151,11 +175,11 @@ class VariantSearchRunner(AbstractSearchRunner):
         else:
             request.callSetIds = args.callSetIds.split(",")
         setCommaSeparatedAttribute(request, args, 'variantSetIds')
-        self.setHttpClient(request, args)
+        self._setRequest(request, args)
 
     def run(self):
         if self._minimalOutput:
-            self._run('searchVariants', 'id')
+            self._run(self._httpClient.searchVariants, 'id')
         else:
             results = self._httpClient.searchVariants(self._request)
             for result in results:
@@ -180,91 +204,141 @@ class VariantSearchRunner(AbstractSearchRunner):
         print()
 
 
-class ReferenceSetSearchRunner(AbstractSearchRunner):
+class SearchReferenceSetsRunner(AbstractSearchRunner):
     """
     Runner class for the referencesets/search method.
     """
     def __init__(self, args):
-        super(ReferenceSetSearchRunner, self).__init__(args)
+        super(SearchReferenceSetsRunner, self).__init__(args)
         request = protocol.GASearchReferenceSetsRequest()
         setCommaSeparatedAttribute(request, args, 'accessions')
         setCommaSeparatedAttribute(request, args, 'md5checksums')
-        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
-            # google says assemblyId not a valid field
-            del request.__dict__['assemblyId']
-        self.setHttpClient(request, args)
+        self._setRequest(request, args)
 
     def run(self):
-        self._run('searchReferenceSets', 'id')
+        self._run(self._httpClient.searchReferenceSets, 'id')
 
 
-class ReferencesSearchRunner(AbstractSearchRunner):
+class SearchReferencesRunner(AbstractSearchRunner):
     """
     Runner class for the references/search method
     """
     def __init__(self, args):
-        super(ReferencesSearchRunner, self).__init__(args)
+        super(SearchReferencesRunner, self).__init__(args)
         request = protocol.GASearchReferencesRequest()
         setCommaSeparatedAttribute(request, args, 'accessions')
         setCommaSeparatedAttribute(request, args, 'md5checksums')
-        self.setHttpClient(request, args)
+        self._setRequest(request, args)
 
     def run(self):
-        self._run('searchReferences', 'id')
+        self._run(self._httpClient.searchReferences, 'id')
 
 
-class ReadGroupSetsSearchRunner(AbstractSearchRunner):
+class SearchReadGroupSetsRunner(AbstractSearchRunner):
     """
     Runner class for the readgroupsets/search method
     """
     def __init__(self, args):
-        super(ReadGroupSetsSearchRunner, self).__init__(args)
+        super(SearchReadGroupSetsRunner, self).__init__(args)
         request = protocol.GASearchReadGroupSetsRequest()
         setCommaSeparatedAttribute(request, args, 'datasetIds')
         request.name = args.name
-        self.setHttpClient(request, args)
+        self._setRequest(request, args)
 
     def run(self):
-        self._run('searchReadGroupSets', 'id')
+        self._run(self._httpClient.searchReadGroupSets, 'id')
 
 
-class CallSetsSearchRunner(AbstractSearchRunner):
+class SearchCallSetsRunner(AbstractSearchRunner):
     """
     Runner class for the callsets/search method
     """
     def __init__(self, args):
-        super(CallSetsSearchRunner, self).__init__(args)
+        super(SearchCallSetsRunner, self).__init__(args)
         request = protocol.GASearchCallSetsRequest()
         setCommaSeparatedAttribute(request, args, 'variantSetIds')
         request.name = args.name
-        self.setHttpClient(request, args)
+        self._setRequest(request, args)
 
     def run(self):
-        self._run('searchCallSets', 'id')
+        self._run(self._httpClient.searchCallSets, 'id')
 
 
-class ReadsSearchRunner(AbstractSearchRunner):
+class SearchReadsRunner(AbstractSearchRunner):
     """
     Runner class for the reads/search method
     """
+    class GASearchReadsRequestGoogle(protocol.ProtocolElement):
+
+        __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds',
+                     'referenceName', 'start']
+
+        def __init__(self):
+            self.end = None
+            self.pageSize = None
+            self.pageToken = None
+            self.readGroupIds = []
+            self.referenceName = None
+            self.start = 0
+
     def __init__(self, args):
-        super(ReadsSearchRunner, self).__init__(args)
+        super(SearchReadsRunner, self).__init__(args)
         request = protocol.GASearchReadsRequest()
+        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
+            # google says referenceId not a valid field
+            request = self.GASearchReadsRequestGoogle()
         setCommaSeparatedAttribute(request, args, 'readGroupIds')
         request.start = args.start
         request.end = args.end
         request.referenceId = args.referenceId
         request.referenceName = args.referenceName
-        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
-            # google says referenceId not a valid field
-            del request.__dict__['referenceId']
-        self.setHttpClient(request, args)
+        self._setRequest(request, args)
 
     def run(self):
-        self._run('searchReads', 'id')
+        self._run(self._httpClient.searchReads, 'id')
 
 
-class BenchmarkRunner(VariantSearchRunner):
+class ListReferenceBasesRunner(AbstractSearchRunner):
+    """
+    Runner class for the references/{id}/bases method
+    """
+    def __init__(self, args):
+        super(ListReferenceBasesRunner, self).__init__(args)
+        request = protocol.GAListReferenceBasesRequest()
+        request.start = args.start
+        request.end = args.end
+        self._id = args.id
+        self._setRequest(request, args)
+
+    def run(self):
+        method = self._httpClient.listReferenceBases
+        for base in method(self._request, self._id):
+            print(base.sequence)
+
+
+class GetReferenceSetRunner(AbstractGetRunner):
+    """
+    Runner class for the referencesets/{id} method
+    """
+    def __init__(self, args):
+        super(GetReferenceSetRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.getReferenceSet)
+
+
+class GetReferenceRunner(AbstractGetRunner):
+    """
+    Runner class for the references/{id} method
+    """
+    def __init__(self, args):
+        super(GetReferenceRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.getReference)
+
+
+class BenchmarkRunner(SearchVariantsRunner):
     """
     Runner class for the client side benchmarking. This is intended to give
     rough figures on protocol throughput on the server side over various
@@ -333,6 +407,15 @@ def addEndArgument(parser):
     parser.add_argument(
         "--end", "-e", default=1, type=int,
         help="The end of the search range (exclusive).")
+
+
+def addIdArgument(parser):
+    parser.add_argument("--id", default=None, help="The id of the object")
+
+
+def addGetArguments(parser):
+    addIdArgument(parser)
+    addUrlArgument(parser)
 
 
 def addUrlArgument(parser):
@@ -413,7 +496,7 @@ def client_main(parser=None):
         "variants-search",
         description="Search for variants",
         help="Search for variants.")
-    vsParser.set_defaults(runner=VariantSearchRunner)
+    vsParser.set_defaults(runner=SearchVariantsRunner)
     addUrlArgument(vsParser)
     addVariantSearchOptions(vsParser)
 
@@ -422,7 +505,7 @@ def client_main(parser=None):
         "variantsets-search",
         description="Search for variantSets",
         help="Search for variantSets.")
-    vssParser.set_defaults(runner=VariantSetSearchRunner)
+    vssParser.set_defaults(runner=SearchVariantSetsRunner)
     addUrlArgument(vssParser)
     addPageSizeArgument(vssParser)
     addDatasetIdsArgument(vssParser)
@@ -432,7 +515,7 @@ def client_main(parser=None):
         "referencesets-search",
         description="Search for referenceSets",
         help="Search for referenceSets")
-    rssParser.set_defaults(runner=ReferenceSetSearchRunner)
+    rssParser.set_defaults(runner=SearchReferenceSetsRunner)
     addUrlArgument(rssParser)
     addPageSizeArgument(rssParser)
     addAccessionsArgument(rssParser)
@@ -446,7 +529,7 @@ def client_main(parser=None):
         "references-search",
         description="Search for references",
         help="Search for references")
-    rsParser.set_defaults(runner=ReferencesSearchRunner)
+    rsParser.set_defaults(runner=SearchReferencesRunner)
     addUrlArgument(rsParser)
     addPageSizeArgument(rsParser)
     addAccessionsArgument(rsParser)
@@ -457,7 +540,7 @@ def client_main(parser=None):
         "readgroupsets-search",
         description="Search for readGroupSets",
         help="Search for readGroupSets")
-    rgsParser.set_defaults(runner=ReadGroupSetsSearchRunner)
+    rgsParser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(rgsParser)
     addPageSizeArgument(rgsParser)
     addDatasetIdsArgument(rgsParser)
@@ -468,7 +551,7 @@ def client_main(parser=None):
         "callsets-search",
         description="Search for callSets",
         help="Search for callSets")
-    csParser.set_defaults(runner=CallSetsSearchRunner)
+    csParser.set_defaults(runner=SearchCallSetsRunner)
     addUrlArgument(csParser)
     addPageSizeArgument(csParser)
     addNameArgument(csParser)
@@ -479,7 +562,7 @@ def client_main(parser=None):
         "reads-search",
         description="Search for reads",
         help="Search for reads")
-    rParser.set_defaults(runner=ReadsSearchRunner)
+    rParser.set_defaults(runner=SearchReadsRunner)
     addUrlArgument(rParser)
     addPageSizeArgument(rParser)
     addStartArgument(rParser)
@@ -493,6 +576,32 @@ def client_main(parser=None):
     rParser.add_argument(
         "--referenceName", default=None,
         help="The referenceName to search over")
+
+    # referencesets/{id}
+    rsidParser = subparsers.add_parser(
+        "referencesets-get",
+        description="Get a referenceset",
+        help="Get a referenceset")
+    rsidParser.set_defaults(runner=GetReferenceSetRunner)
+    addGetArguments(rsidParser)
+
+    # references/{id}
+    ridParser = subparsers.add_parser(
+        "references-get",
+        description="Get a reference",
+        help="Get a reference")
+    ridParser.set_defaults(runner=GetReferenceRunner)
+    addGetArguments(ridParser)
+
+    # referencesets/{id}/bases
+    basesParser = subparsers.add_parser(
+        "references-list-bases",
+        description="List bases of a reference",
+        help="List bases of a reference")
+    basesParser.set_defaults(runner=ListReferenceBasesRunner)
+    addGetArguments(basesParser)
+    addStartArgument(basesParser)
+    addEndArgument(basesParser)
 
     args = parser.parse_args()
     if "runner" not in args:

@@ -16,12 +16,11 @@ requests.packages.urllib3.disable_warnings()
 
 
 class HttpClient(object):
-
+    """
+    GA4GH Http Client
+    """
     workaroundGoogle = 'google'
 
-    """
-    Simple HTTP client for the GA4GH protocol.
-    """
     def __init__(self, urlPrefix, debugLevel, workarounds, key):
         self._urlPrefix = urlPrefix
         self._debugLevel = debugLevel
@@ -29,39 +28,138 @@ class HttpClient(object):
         self._workarounds = workarounds
         self._key = key
 
-    def runRequest(self, request, url, protocolClass, listAttr):
+    def getBytesRead(self):
         """
-        Runs the specified request at the specified url and instantiates
+        Returns the total number of (non HTTP) bytes read from the server
+        by this client.
+        """
+        return self._bytesRead
+
+    # TODO temporary auth solution
+    def _getAuth(self):
+        if self._usingWorkaroundsFor(self.workaroundGoogle):
+            return {'key': self._key}
+        else:
+            return {}
+
+    def _usingWorkaroundsFor(self, workaround):
+        return workaround in self._workarounds
+
+    def _debugResponse(self, jsonString):
+        if self._debugLevel > 1:
+            # TODO use a logging output and integrate with HTTP client more
+            # nicely... also, logging / error handling in general
+            print("json response:")
+            pp = json.dumps(
+                json.loads(jsonString), sort_keys=True, indent=4)
+            print(pp)
+
+    def _checkStatus(self, response):
+        if response.status_code != requests.codes.ok:
+            print(response.text)
+            # TODO use custom exception instead of Exception
+            raise Exception("Url {0} had status_code {1}".format(
+                response.url, response.status_code))
+
+    def _updateBytesRead(self, jsonString):
+        self._bytesRead += len(jsonString)
+
+    def _deserializeResponse(self, response, protocolResponseClass):
+        jsonResponseString = response.text
+        self._updateBytesRead(jsonResponseString)
+        self._debugResponse(jsonResponseString)
+        responseObject = protocolResponseClass.fromJsonString(
+            jsonResponseString)
+        return responseObject
+
+    def _updateNotDone(self, responseObject, protocolRequest):
+        if hasattr(responseObject, 'nextPageToken'):
+            protocolRequest.pageToken = responseObject.nextPageToken
+            notDone = responseObject.nextPageToken is not None
+        else:
+            notDone = False
+        return notDone
+
+    def _doRequest(self, httpMethod, url, protocolResponseClass,
+                   httpParams={}, httpData=None):
+        """
+        Performs a request to the server and returns the response
+        """
+        headers = {}
+        if httpData is not None:
+            headers.update({"Content-type": "application/json"})
+        params = self._getAuth()
+        params.update(httpParams)
+        response = requests.request(
+            httpMethod, url, params=params, data=httpData, headers=headers)
+        self._checkStatus(response)
+        return self._deserializeResponse(response, protocolResponseClass)
+
+    def runSearchRequest(self, protocolRequest, objectName,
+                         protocolResponseClass, listAttr):
+        """
+        Runs the specified request at the specified objectName and instantiates
         an object of the specified class. We yield each object in listAttr.
         If pages of results are present, repeat this process until the
         pageToken is null.
         """
+        fullUrl = posixpath.join(self._urlPrefix, objectName + '/search')
         notDone = True
         while notDone:
-            jsonString = request.toJsonString()
-            if self._debugLevel > 1:
-                self.printJsonMessage("request:", jsonString)
-            headers = {"Content-type": "application/json"}
-            # make sure we correctly join with/out trailing slashes
-            fullUrl = posixpath.join(self._urlPrefix, url)
-            # TODO Can we get requests to output debugging information when
-            # debugLevel > 0?
-            authUrl = self._addAuth(fullUrl)
-            response = requests.post(
-                authUrl, jsonString, headers=headers, verify=False)
-            response.raise_for_status()
-            jsonString = response.text
-            self._bytesRead += len(jsonString)
-            if self._debugLevel > 1:
-                # TODO use a logging output and integrate with HTTP client more
-                # nicely.
-                self.printJsonMessage("response:", jsonString)
-            resp = protocolClass.fromJsonString(jsonString)
-            # TODO handle HTTP errors from requests and display.
-            for extract in getattr(resp, listAttr):
+            data = protocolRequest.toJsonString()
+            responseObject = self._doRequest(
+                'POST', fullUrl, protocolResponseClass, httpData=data)
+            for extract in getattr(responseObject, listAttr):
                 yield extract
-            request.pageToken = resp.nextPageToken
-            notDone = resp.nextPageToken is not None
+            notDone = self._updateNotDone(responseObject, protocolRequest)
+
+    def runListRequest(self, protocolRequest, url,
+                       protocolResponseClass, id_):
+        """
+        Asks the server to list objects of type protocolResponseClass and
+        returns an iterator over the results.
+        """
+        fullUrl = posixpath.join(self._urlPrefix, url).format(id=id_)
+        notDone = True
+        while notDone:
+            requestDict = protocolRequest.toJsonDict()
+            responseObject = self._doRequest(
+                'GET', fullUrl, protocolResponseClass, requestDict)
+            yield responseObject
+            notDone = self._updateNotDone(responseObject, protocolRequest)
+
+    def runGetRequest(self, objectName, protocolResponseClass, id_):
+        """
+        Requests an object from the server and returns the object of
+        type protocolResponseClass that has id id_.
+        Used for requests where a single object is the expected response.
+        """
+        url = "{objectName}/{id}"
+        fullUrl = posixpath.join(
+            self._urlPrefix, url).format(id=id_, objectName=objectName)
+        return self._doRequest('GET', fullUrl, protocolResponseClass)
+
+    def getReferenceSet(self, id_):
+        """
+        Returns a referenceSet from the server
+        """
+        return self.runGetRequest(
+            "referencesets", protocol.GAReferenceSet, id_)
+
+    def getReference(self, id_):
+        """
+        Returns a reference from the server
+        """
+        return self.runGetRequest(
+            "references", protocol.GAReference, id_)
+
+    def listReferenceBases(self, protocolRequest, id_):
+        """
+        Returns an iterator over the bases from the server
+        """
+        return self.runListRequest(
+            protocolRequest, "references/{id}/bases",
+            protocol.GAListReferenceBasesResponse, id_)
 
     def printJsonMessage(self, header, jsonString):
         """
@@ -72,78 +170,58 @@ class HttpClient(object):
             json.loads(jsonString), sort_keys=True, indent=4)
         print(pp)
 
-    def searchVariants(self, request):
+    def searchVariants(self, protocolRequest):
         """
-        Sends the specified GASearchVariantsRequest to the server and returns
-        an iterator over the returned set of GAVariant objects. Result paging
-        is handled transparently, so that several HTTP requests may be made
-        while this method executes.
+        Returns an iterator over the Variants from the server
         """
-        return self.runRequest(
-            request, "variants/search", protocol.GASearchVariantsResponse,
-            "variants")
+        return self.runSearchRequest(
+            protocolRequest, "variants",
+            protocol.GASearchVariantsResponse, "variants")
 
-    def searchVariantSets(self, request):
+    def searchVariantSets(self, protocolRequest):
         """
         Returns an iterator over the VariantSets from the server.
         """
-        return self.runRequest(
-            request, "variantsets/search",
+        return self.runSearchRequest(
+            protocolRequest, "variantsets",
             protocol.GASearchVariantSetsResponse, "variantSets")
 
-    def searchReferenceSets(self, request):
+    def searchReferenceSets(self, protocolRequest):
         """
         Returns an iterator over the ReferenceSets from the server.
         """
-        return self.runRequest(
-            request, "referencesets/search",
+        return self.runSearchRequest(
+            protocolRequest, "referencesets",
             protocol.GASearchReferenceSetsResponse, "referenceSets")
 
-    def searchReferences(self, request):
+    def searchReferences(self, protocolRequest):
         """
         Returns an iterator over the References from the server
         """
-        return self.runRequest(
-            request, "references/search",
+        return self.runSearchRequest(
+            protocolRequest, "references",
             protocol.GASearchReferencesResponse, "references")
 
-    def searchReadGroupSets(self, request):
-        """
-        Returns an iterator over the ReadGroupSets from the server
-        """
-        return self.runRequest(
-            request, "readgroupsets/search",
-            protocol.GASearchReadGroupSetsResponse, "readGroupSets")
-
-    def searchCallSets(self, request):
+    def searchCallSets(self, protocolRequest):
         """
         Returns an iterator over the CallSets from the server
         """
-        return self.runRequest(
-            request, "callsets/search",
+        return self.runSearchRequest(
+            protocolRequest, "callsets",
             protocol.GASearchCallSetsResponse, "callSets")
 
-    def searchReads(self, request):
+    def searchReadGroupSets(self, protocolRequest):
+        """
+        Returns an iterator over the ReadGroupSets from the server
+        """
+        return self.runSearchRequest(
+            protocolRequest, "readgroupsets",
+            protocol.GASearchReadGroupSetsResponse, "readGroupSets")
+
+    def searchReads(self, protocolRequest):
         """
         Returns an iterator over the Reads from the server
         """
-        return self.runRequest(
-            request, "reads/search",
+        return self.runSearchRequest(
+            protocolRequest, "reads",
             protocol.GASearchReadsResponse, "alignments")
-
-    def getBytesRead(self):
-        """
-        Returns the total number of (non HTTP) bytes read from the server
-        by this client.
-        """
-        return self._bytesRead
-
-    # TODO temporary auth solution
-    def _addAuth(self, url):
-        if self._usingWorkaroundsFor(self.workaroundGoogle):
-            return url + "?key={0}".format(self._key)
-        else:
-            return url
-
-    def _usingWorkaroundsFor(self, workaround):
-        return workaround in self._workarounds
