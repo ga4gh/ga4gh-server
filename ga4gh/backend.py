@@ -57,6 +57,7 @@ class Backend(object):
         (object, nextPageToken) pairs, and be able to resume iteration from
         any point using the nextPageToken attribute of the request object.
         """
+        self.startProfile()
         # TODO change this to fromJSONDict and validate
         request = requestClass.fromJSONString(requestStr)
         pageList = []
@@ -68,6 +69,7 @@ class Backend(object):
         response = responseClass()
         response.nextPageToken = nextPageToken
         setattr(response, pageListName, pageList)
+        self.endProfile()
         return response.toJSONString()
 
     def searchVariantSets(self, request):
@@ -132,6 +134,12 @@ class Backend(object):
                     nextPageToken = "{0}:{1}".format(
                         variantSetIndex, variant.start + 1)
                     yield variant, nextPageToken
+
+    def startProfile(self):
+        pass
+
+    def endProfile(self):
+        pass
 
 
 class MockBackend(Backend):
