@@ -18,6 +18,7 @@ def runTests():
     baseUrl = "https://www.googleapis.com/genomics/v1beta2"
     keyStr = "--key AIzaSyBcdyeUZSzUVE0e_HPLyCJd7bOZ6g3lr3I"
     workarounds = "--workarounds=google"
+    minimalOutput = "-O"
     commands = [
         "variants-search --variantSetIds 10473108253681171589 "
         "--referenceName 22 --start 51005353 --end 51015353 --pageSize 1",
@@ -33,22 +34,25 @@ def runTests():
         "22 --pageSize 1",
     ]
     for command in commands:
-        cmdStr = "python {path} {keyStr} {workarounds} {command} {baseUrl}"
+        cmdStr = """
+            python {path} {keyStr} {minimalOutput} {workarounds}
+            {command} {baseUrl}
+            """
         cmdDict = {
             "path": path,
             "command": command,
             "workarounds": workarounds,
             "keyStr": keyStr,
             "baseUrl": baseUrl,
+            "minimalOutput": minimalOutput,
         }
         cmd = cmdStr.format(**cmdDict)
-        print(separator)
-        print(cmd)
-        print(separator)
         splits = cmd.split()
-        proc = subprocess.Popen(splits)
-        proc.communicate()
-        assert proc.returncode == 0
+        cleanCmd = ' '.join(splits)
+        print(separator)
+        print(cleanCmd)
+        print(separator)
+        subprocess.check_call(splits)
 
 
 if __name__ == '__main__':

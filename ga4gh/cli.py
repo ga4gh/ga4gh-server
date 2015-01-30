@@ -95,6 +95,7 @@ class AbstractSearchRunner(object):
         Sets the _httpClient and other common attributes
         """
         request.pageSize = args.pageSize
+        self._minimalOutput = args.minimalOutput
         self._request = request
         self._verbosity = args.verbose
         self._httpClient = client.HTTPClient(
@@ -153,7 +154,30 @@ class VariantSearchRunner(AbstractSearchRunner):
         self.setHttpClient(request, args)
 
     def run(self):
-        self._run('searchVariants', 'id')
+        if self._minimalOutput:
+            self._run('searchVariants', 'id')
+        else:
+            results = self._httpClient.searchVariants(self._request)
+            for result in results:
+                self.printVariant(result)
+
+    def printVariant(self, variant):
+        """
+        Prints out the specified GAVariant object in a VCF-like form.
+        """
+        print(
+            variant.id, variant.variantSetId, variant.names,
+            variant.referenceName, variant.start, variant.end,
+            variant.referenceBases, variant.alternateBases,
+            sep="\t", end="\t")
+        for key, value in variant.info.items():
+            print(key, value, sep="=", end=";")
+        print("\t", end="")
+        for c in variant.calls:
+            print(
+                c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
+                c.phaseset, sep=":", end="\t")
+        print()
 
 
 class ReferenceSetSearchRunner(AbstractSearchRunner):
@@ -364,7 +388,11 @@ def client_main(parser=None):
         "--workarounds", "-w", default='', help="The workarounds to use")
     parser.add_argument(
         "--key", "-k", help="The auth key to use")
-    subparsers = parser.add_subparsers(title='subcommands',)
+    parser.add_argument(
+        "--minimalOutput", "-O", default=False,
+        help="Use minimal output; default False",
+        action='store_true')
+    subparsers = parser.add_subparsers(title='subcommands')
 
     # help
     helpParser = subparsers.add_parser(
