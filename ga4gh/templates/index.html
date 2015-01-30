@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <title>GA4GH reference server {{ info.version }}</title>
+    </head>
+    <body>
+        <h2>GA4GH reference server {{ info.version }}</h2>
+        <div>
+            <h3>Operations available</h3>
+            <table>
+                <th>Method</th>
+                <th>Path</th>
+            {% for rule in info.urls %}
+            <tr>
+                <td>{{ rule[1] }}</td>
+                <td>{{ rule[0] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        </div>
+        <div>
+            <h3>Uptime</h3>
+            Running since {{ info.uptime.natural }} ({{ info.uptime.datetime }})
+        </div>
+    </body>
+</html>

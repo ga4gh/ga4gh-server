@@ -30,7 +30,7 @@ class TestFrontend(unittest.TestCase):
                              data=data)
 
     def testServer(self):
-        self.assertEqual(404, self.app.get('/').status_code)
+        self.assertEqual(404, self.app.get('/doesNotExist').status_code)
 
     def testCors(self):
         def assertHeaders(response):
