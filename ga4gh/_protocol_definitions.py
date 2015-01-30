@@ -37,7 +37,9 @@ null, "doc": "", "type": ["null", "string"], "name": "allele"}]}
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['allele', 'chromosome', 'coordinate', 'populationId', 'referenceVersion']
+    __slots__ = ['allele', 'chromosome', 'coordinate', 'populationId',
+                 'referenceVersion']
+
     def __init__(self):
         self.allele = None
         self.chromosome = None
@@ -70,6 +72,7 @@ No documentation
         return embeddedTypes[fieldName]
 
     __slots__ = ['exists', 'frequency']
+
     def __init__(self):
         self.exists = None
         self.frequency = None
@@ -106,7 +109,9 @@ null, "doc": "", "type": ["null", "string"], "name": "callSetName"},
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['callSetId', 'callSetName', 'genotype', 'genotypeLikelihood', 'info', 'phaseset']
+    __slots__ = ['callSetId', 'callSetName', 'genotype', 'genotypeLikelihood',
+                 'info', 'phaseset']
+
     def __init__(self):
         self.callSetId = None
         self.callSetName = None
@@ -149,7 +154,9 @@ null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['created', 'id', 'info', 'name', 'sampleId', 'updated', 'variantSetIds']
+    __slots__ = ['created', 'id', 'info', 'name', 'sampleId', 'updated',
+                 'variantSetIds']
+
     def __init__(self):
         self.created = None
         self.id = None
@@ -243,6 +250,7 @@ A structure for an instance of a CIGAR operation.
         return embeddedTypes[fieldName]
 
     __slots__ = ['operation', 'operationLength', 'referenceSequence']
+
     def __init__(self):
         self.operation = None
         self.operationLength = None
@@ -272,6 +280,7 @@ No documentation
         return embeddedTypes[fieldName]
 
     __slots__ = ['description', 'id']
+
     def __init__(self):
         self.description = None
         self.id = None
@@ -300,6 +309,7 @@ A general exception type.
         return embeddedTypes[fieldName]
 
     __slots__ = ['errorCode', 'message']
+
     def __init__(self):
         self.errorCode = -1
         self.message = None
@@ -333,7 +343,9 @@ No documentation
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['instrumentModel', 'libraryId', 'platformUnit', 'sequencingCenter']
+    __slots__ = ['instrumentModel', 'libraryId', 'platformUnit',
+                 'sequencingCenter']
+
     def __init__(self):
         self.instrumentModel = None
         self.libraryId = None
@@ -381,6 +393,7 @@ A linear alignment can be represented by one CIGAR string.
         return embeddedTypes[fieldName]
 
     __slots__ = ['cigar', 'mappingQuality', 'position']
+
     def __init__(self):
         self.cigar = []
         self.mappingQuality = None
@@ -415,6 +428,7 @@ example:
         return embeddedTypes[fieldName]
 
     __slots__ = ['end', 'pageToken', 'start']
+
     def __init__(self):
         self.end = None
         self.pageToken = None
@@ -446,6 +460,7 @@ The response from `GET /references/{id}/bases` expressed as JSON.
         return embeddedTypes[fieldName]
 
     __slots__ = ['nextPageToken', 'offset', 'sequence']
+
     def __init__(self):
         self.nextPageToken = None
         self.offset = 0
@@ -483,6 +498,7 @@ forward or reverse strand that we're talking about.
         return embeddedTypes[fieldName]
 
     __slots__ = ['position', 'referenceName', 'reverseStrand']
+
     def __init__(self):
         self.position = None
         self.referenceName = None
@@ -516,6 +532,7 @@ No documentation
         return embeddedTypes[fieldName]
 
     __slots__ = ['commandLine', 'id', 'name', 'prevProgramId', 'version']
+
     def __init__(self):
         self.commandLine = None
         self.id = None
@@ -589,7 +606,15 @@ null, "doc": "", "type": ["null", "string"], "name": "alignedSequence"},
         }
         return embeddedTypes[fieldName]
 
-    __slots__ = ['alignedQuality', 'alignedSequence', 'alignment', 'duplicateFragment', 'failedVendorQualityChecks', 'fragmentLength', 'fragmentName', 'id', 'info', 'nextMatePosition', 'numberReads', 'properPlacement', 'readGroupId', 'readNumber', 'secondaryAlignment', 'supplementaryAlignment']
+    __slots__ = ['alignedQuality', 'alignedSequence', 'alignment',
+                 'duplicateFragment',
+                 'failedVendorQualityChecks',
+                 'fragmentLength', 'fragmentName', 'id',
+                 'info', 'nextMatePosition', 'numberReads',
+                 'properPlacement', 'readGroupId',
+                 'readNumber', 'secondaryAlignment',
+                 'supplementaryAlignment']
+
     def __init__(self):
         self.alignedQuality = []
         self.alignedSequence = None
@@ -664,7 +689,11 @@ null, "doc": "", "type": ["null", "string"], "name": "prevProgramId"},
         }
         return embeddedTypes[fieldName]
 
-    __slots__ = ['created', 'datasetId', 'description', 'experiment', 'id', 'info', 'name', 'predictedInsertSize', 'programs', 'referenceSetId', 'sampleId', 'updated']
+    __slots__ = ['created', 'datasetId', 'description', 'experiment', 'id',
+                 'info', 'name', 'predictedInsertSize',
+                 'programs', 'referenceSetId', 'sampleId',
+                 'updated']
+
     def __init__(self):
         self.created = None
         self.datasetId = None
@@ -734,6 +763,7 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceSetId"},
         return embeddedTypes[fieldName]
 
     __slots__ = ['datasetId', 'id', 'name', 'readGroups']
+
     def __init__(self):
         self.datasetId = None
         self.id = None
@@ -778,7 +808,10 @@ null, "doc": "", "type": ["null", "string"], "name": "sourceURI"},
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['id', 'isDerived', 'length', 'md5checksum', 'name', 'ncbiTaxonId', 'sourceAccessions', 'sourceDivergence', 'sourceURI']
+    __slots__ = ['id', 'isDerived', 'length', 'md5checksum', 'name',
+                 'ncbiTaxonId', 'sourceAccessions',
+                 'sourceDivergence', 'sourceURI']
+
     def __init__(self):
         self.id = None
         self.isDerived = False
@@ -827,7 +860,10 @@ false, "doc": "", "type": "boolean", "name": "isDerived"}], "doc": ""}
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['assemblyId', 'description', 'id', 'isDerived', 'md5checksum', 'ncbiTaxonId', 'referenceIds', 'sourceAccessions', 'sourceURI']
+    __slots__ = ['assemblyId', 'description', 'id', 'isDerived', 'md5checksum',
+                 'ncbiTaxonId', 'referenceIds',
+                 'sourceAccessions', 'sourceURI']
+
     def __init__(self):
         self.assemblyId = None
         self.description = None
@@ -867,6 +903,7 @@ This request maps to the body of `POST /callsets/search` as JSON.
         return embeddedTypes[fieldName]
 
     __slots__ = ['name', 'pageSize', 'pageToken', 'variantSetIds']
+
     def __init__(self):
         self.name = None
         self.pageSize = None
@@ -911,6 +948,7 @@ This is the response from `POST /callsets/search` expressed as JSON.
         return embeddedTypes[fieldName]
 
     __slots__ = ['callSets', 'nextPageToken']
+
     def __init__(self):
         self.callSets = []
         self.nextPageToken = None
@@ -943,6 +981,7 @@ This request maps to the body of `POST /readgroupsets/search` as JSON.
         return embeddedTypes[fieldName]
 
     __slots__ = ['datasetIds', 'name', 'pageSize', 'pageToken']
+
     def __init__(self):
         self.datasetIds = []
         self.name = None
@@ -1008,6 +1047,7 @@ null, "doc": "", "type": ["null", "string"], "name": "prevProgramId"},
         return embeddedTypes[fieldName]
 
     __slots__ = ['nextPageToken', 'readGroupSets']
+
     def __init__(self):
         self.nextPageToken = None
         self.readGroupSets = []
@@ -1046,7 +1086,9 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceName"},
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds', 'referenceId', 'referenceName', 'start']
+    __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds', 'referenceId',
+                 'referenceName', 'start']
+
     def __init__(self):
         self.end = None
         self.pageSize = None
@@ -1119,6 +1161,7 @@ null, "doc": "", "type": ["null", "string"], "name": "nextPageToken"}],
         return embeddedTypes[fieldName]
 
     __slots__ = ['alignments', 'nextPageToken']
+
     def __init__(self):
         self.alignments = []
         self.nextPageToken = None
@@ -1152,7 +1195,9 @@ as JSON.
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['accessions', 'assemblyId', 'md5checksums', 'pageSize', 'pageToken']
+    __slots__ = ['accessions', 'assemblyId', 'md5checksums', 'pageSize',
+                 'pageToken']
+
     def __init__(self):
         self.accessions = []
         self.assemblyId = None
@@ -1201,6 +1246,7 @@ expressed as JSON.
         return embeddedTypes[fieldName]
 
     __slots__ = ['nextPageToken', 'referenceSets']
+
     def __init__(self):
         self.nextPageToken = None
         self.referenceSets = []
@@ -1234,6 +1280,7 @@ as JSON.
         return embeddedTypes[fieldName]
 
     __slots__ = ['accessions', 'md5checksums', 'pageSize', 'pageToken']
+
     def __init__(self):
         self.accessions = []
         self.md5checksums = []
@@ -1279,6 +1326,7 @@ null, "doc": "", "type": ["null", "string"], "name": "sourceURI"},
         return embeddedTypes[fieldName]
 
     __slots__ = ['nextPageToken', 'references']
+
     def __init__(self):
         self.nextPageToken = None
         self.references = []
@@ -1310,6 +1358,7 @@ This request maps to the body of `POST /variantsets/search` as JSON.
         return embeddedTypes[fieldName]
 
     __slots__ = ['datasetIds', 'pageSize', 'pageToken']
+
     def __init__(self):
         self.datasetIds = []
         self.pageSize = None
@@ -1355,6 +1404,7 @@ This is the response from `POST /variantsets/search` expressed as JSON.
         return embeddedTypes[fieldName]
 
     __slots__ = ['nextPageToken', 'variantSets']
+
     def __init__(self):
         self.nextPageToken = None
         self.variantSets = []
@@ -1393,7 +1443,9 @@ This request maps to the body of `POST /variants/search` as JSON.
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['callSetIds', 'end', 'pageSize', 'pageToken', 'referenceName', 'start', 'variantName', 'variantSetIds']
+    __slots__ = ['callSetIds', 'end', 'pageSize', 'pageToken', 'referenceName',
+                 'start', 'variantName', 'variantSetIds']
+
     def __init__(self):
         self.callSetIds = []
         self.end = None
@@ -1455,6 +1507,7 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"}, {"doc":
         return embeddedTypes[fieldName]
 
     __slots__ = ['nextPageToken', 'variants']
+
     def __init__(self):
         self.nextPageToken = None
         self.variants = []
@@ -1516,7 +1569,10 @@ This is equivalent to a row in VCF.
         }
         return embeddedTypes[fieldName]
 
-    __slots__ = ['alternateBases', 'calls', 'created', 'end', 'id', 'info', 'names', 'referenceBases', 'referenceName', 'start', 'updated', 'variantSetId']
+    __slots__ = ['alternateBases', 'calls', 'created', 'end', 'id', 'info',
+                 'names', 'referenceBases', 'referenceName',
+                 'start', 'updated', 'variantSetId']
+
     def __init__(self):
         self.alternateBases = []
         self.calls = []
@@ -1572,6 +1628,7 @@ The variant set is equivalent to a VCF file.
         return embeddedTypes[fieldName]
 
     __slots__ = ['datasetId', 'id', 'metadata']
+
     def __init__(self):
         self.datasetId = None
         self.id = None
@@ -1613,6 +1670,7 @@ This metadata represents VCF header information.
         return embeddedTypes[fieldName]
 
     __slots__ = ['description', 'id', 'info', 'key', 'number', 'type', 'value']
+
     def __init__(self):
         self.description = None
         self.id = None
@@ -1623,24 +1681,24 @@ This metadata represents VCF header information.
         self.value = None
 
 postMethods = \
-    [('/callsets/search',
-      GASearchCallSetsRequest,
-      GASearchCallSetsResponse),
-     ('/readgroupsets/search',
+    [('/readgroupsets/search',
       GASearchReadGroupSetsRequest,
-      GASearchReadGroupSetsResponse),
-     ('/reads/search',
-      GASearchReadsRequest,
+      GASearchVariantSetsResponse),
+     ('/variantsets/search',
+      GASearchVariantSetsRequest,
       GASearchReadsResponse),
      ('/referencesets/search',
       GASearchReferenceSetsRequest,
+      GASearchVariantsResponse),
+     ('/variants/search',
+      GASearchVariantsRequest,
+      GASearchCallSetsResponse),
+     ('/reads/search',
+      GASearchReadsRequest,
       GASearchReferenceSetsResponse),
      ('/references/search',
       GASearchReferencesRequest,
       GASearchReferencesResponse),
-     ('/variantsets/search',
-      GASearchVariantSetsRequest,
-      GASearchVariantSetsResponse),
-     ('/variants/search',
-      GASearchVariantsRequest,
-      GASearchVariantsResponse)]
+     ('/callsets/search',
+      GASearchCallSetsRequest,
+      GASearchReadGroupSetsResponse)]

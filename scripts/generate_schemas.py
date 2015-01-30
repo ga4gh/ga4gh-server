@@ -17,6 +17,7 @@ import tempfile
 import requests
 import argparse
 import subprocess
+import textwrap
 import re
 
 import avro.schema
@@ -135,8 +136,11 @@ class SchemaClass(object):
         # when a query returns hundreds of thousands of calls this can
         # save a hundred megabytes or more.
         print("    __slots__ = ['",
-              "', '".join([field.name for field in self.getFields()]), "']",
+              textwrap.fill(
+                  "', '".join([field.name for field in self.getFields()]),
+                  62, subsequent_indent='                 '), "']",
               sep='', file=outputFile)
+        print(file=outputFile)
         print("    def __init__(self):", file=outputFile)
         for field in self.getFields():
             print("        self.{0} = {1}".format(
