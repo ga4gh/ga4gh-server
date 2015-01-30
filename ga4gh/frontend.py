@@ -8,9 +8,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import traceback
+
 import flask
 import flask.ext.api as api
 import flask.ext.cors as cors
+
+import ga4gh.frontend_exceptions as frontendExceptions
+import ga4gh.protocol as protocol
 
 app = api.FlaskAPI(__name__)
 
@@ -46,49 +51,64 @@ def handleHTTPOptions():
     return response
 
 
+@app.errorhandler(Exception)
+def handle_error(exception):
+    if not isinstance(exception, frontendExceptions.FrontendException):
+        if app.config['DEBUG']:
+            print(traceback.format_exc(exception))
+        exception = frontendExceptions.ServerException()
+
+    error = protocol.GAException()
+    error.errorCode = exception.code
+    error.message = exception.message
+    response = flask.jsonify(error.toJSONDict())
+    response.status_code = exception.httpStatus
+    return response
+
+
 @app.route('/')
 def index():
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/references/<id>', methods=['GET'])
 def getReference(id):
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/references/<id>/bases', methods=['GET'])
 def getReferenceBases(id):
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/referencesets/<id>', methods=['GET'])
 def getReferenceSet(id):
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/callsets/search', methods=['POST'])
 def searchCallSets():
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/readgroupsets/search', methods=['POST'])
 def searchReadGroupSets():
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/reads/search', methods=['POST'])
 def searchReads():
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/referencesets/search', methods=['POST'])
 def searchReferenceSets():
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/references/search', methods=['POST'])
 def searchReferences():
-    flask.abort(404)
+    raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/variantsets/search', methods=['POST', 'OPTIONS'])
