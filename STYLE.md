@@ -17,3 +17,5 @@ Imports should be structured into the following groups:
 3. Any third party library imports
 4. Any package level imports
 
+## Tests
+Tests should avoid use of the `assert` keyword and instead use the methods that `unittest` provides.

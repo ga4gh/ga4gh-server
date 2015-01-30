@@ -84,6 +84,30 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
             self.request, "referencesets/search",
             protocol.GASearchReferenceSetsResponse, "referenceSets")
 
+    def testSearchReferences(self):
+        self.httpClient.searchReferences(self.request)
+        self.httpClient.runRequest.assert_called_once_with(
+            self.request, "references/search",
+            protocol.GASearchReferencesResponse, "references")
+
+    def testSearchReadGroupSets(self):
+        self.httpClient.searchReadGroupSets(self.request)
+        self.httpClient.runRequest.assert_called_once_with(
+            self.request, "readgroupsets/search",
+            protocol.GASearchReadGroupSetsResponse, "readGroupSets")
+
+    def testSearchCallSets(self):
+        self.httpClient.searchCallSets(self.request)
+        self.httpClient.runRequest.assert_called_once_with(
+            self.request, "callsets/search",
+            protocol.GASearchCallSetsResponse, "callSets")
+
+    def testSearchReads(self):
+        self.httpClient.searchReads(self.request)
+        self.httpClient.runRequest.assert_called_once_with(
+            self.request, "reads/search",
+            protocol.GASearchReadsResponse, "alignments")
+
 
 class TestRunRequest(unittest.TestCase):
     """
@@ -105,10 +129,10 @@ class TestRunRequest(unittest.TestCase):
                 request, url, protocolClass, listAttr)]
 
             # verify results of invocation
-            assert len(result) == 2
-            assert result[0].id == "refA"
-            assert result[0].md5checksum == "abc"
-            assert result[1].id == "refB"
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result[0].id, "refA")
+            self.assertEqual(result[0].md5checksum, "abc")
+            self.assertEqual(result[1].id, "refB")
 
             # verify requests.post called correctly
             url = "http://example.com/referencesets/search"
