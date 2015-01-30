@@ -15,6 +15,20 @@ import ga4gh.backend
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.variants as variants
 
+import guppy
+
+
+class HeapProfilerBackend(ga4gh.backend.Backend):
+    def __init__(self, dataDir, variantSetClass):
+        super(HeapProfilerBackend, self).__init__(dataDir, variantSetClass)
+        self.profiler = guppy.hpy()
+
+    def startProfile(self):
+        self.profiler.setrelheap()
+
+    def endProfile(self):
+        print(self.profiler.heap())
+
 
 def _heavyQuery():
     """
@@ -91,9 +105,24 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="GA4GH reference server benchmark")
+    parser.add_argument('--profile', default='none',
+                        choices=['none', 'heap'],
+                        help='"heap" runs a heap profiler '
+                             'once inside the backend')
+    parser.add_argument('--repeatLimit', type=int, default=3, metavar='N',
+                        help='how many times to run each test case '
+                             '(default: %(default)s)')
+    parser.add_argument('--pageLimit', type=int, default=3, metavar='N',
+                        help='how many pages (max) to load '
+                             'from each test case (default: %(default)s)')
+    args = parser.parse_args()
 
-    backend = ga4gh.backend.Backend("ga4gh-example-data",
-                                    variants.WormtableVariantSet)
+    backendClass = ga4gh.backend.Backend
+    if args.profile == 'heap':
+        backendClass = HeapProfilerBackend
+        args.repeatLimit = 1
+        args.pageLimit = 1
 
-    initialRequest = _heavyQuery()
-    print(benchmarkOneQuery(initialRequest))
+    backend = backendClass("ga4gh-example-data", variants.WormtableVariantSet)
+
+    print(benchmarkOneQuery(_heavyQuery(), args.repeatLimit, args.pageLimit))
