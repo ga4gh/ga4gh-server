@@ -48,3 +48,6 @@ variant = ga4gh.protocol.Variant()
 from ga4gh.protocol import Variant
 variant = Variant()
 ```
+
+## Tests
+Tests should avoid use of the `assert` keyword and instead use the methods that `unittest` provides.

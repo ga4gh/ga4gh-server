@@ -91,6 +91,38 @@ class HTTPClient(object):
             request, "referencesets/search",
             protocol.GASearchReferenceSetsResponse, "referenceSets")
 
+    def searchReferences(self, request):
+        """
+        Returns an iterator over the References from the server
+        """
+        return self.runRequest(
+            request, "references/search",
+            protocol.GASearchReferencesResponse, "references")
+
+    def searchReadGroupSets(self, request):
+        """
+        Returns an iterator over the ReadGroupSets from the server
+        """
+        return self.runRequest(
+            request, "readgroupsets/search",
+            protocol.GASearchReadGroupSetsResponse, "readGroupSets")
+
+    def searchCallSets(self, request):
+        """
+        Returns an iterator over the CallSets from the server
+        """
+        return self.runRequest(
+            request, "callsets/search",
+            protocol.GASearchCallSetsResponse, "callSets")
+
+    def searchReads(self, request):
+        """
+        Returns an iterator over the Reads from the server
+        """
+        return self.runRequest(
+            request, "reads/search",
+            protocol.GASearchReadsResponse, "alignments")
+
     def getBytesRead(self):
         """
         Returns the total number of (non HTTP) bytes read from the server

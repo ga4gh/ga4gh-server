@@ -131,7 +131,7 @@ class SchemaTest(unittest.TestCase):
         elif isinstance(typ, avro.schema.EnumSchema):
             ret = random.choice(typ.symbols)
         elif isinstance(typ, avro.schema.RecordSchema):
-            assert cls.isEmbeddedType(fieldName)
+            self.assertTrue(cls.isEmbeddedType(fieldName))
             embeddedClass = cls.getEmbeddedType(fieldName)
             ret = self.getRandomInstance(embeddedClass)
         elif typ.type in self.randomValueMap:
@@ -179,7 +179,7 @@ class SchemaTest(unittest.TestCase):
         elif isinstance(typ, avro.schema.EnumSchema):
             ret = typ.symbols[0]
         elif isinstance(typ, avro.schema.RecordSchema):
-            assert cls.isEmbeddedType(fieldName)
+            self.assertTrue(cls.isEmbeddedType(fieldName))
             embeddedClass = cls.getEmbeddedType(fieldName)
             ret = self.getTypicalInstance(embeddedClass)
         elif typ.type in self.typicalValueMap:
