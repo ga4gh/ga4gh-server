@@ -213,7 +213,7 @@ class SchemaTest(unittest.TestCase):
         """
         Sets the required values in the specified instance to typical values.
         """
-        for key in instance.__dict__.keys():
+        for key in instance.__slots__:
             if key in instance.requiredFields:
                 value = self.getTypicalValue(type(instance), key)
                 setattr(instance, key, value)

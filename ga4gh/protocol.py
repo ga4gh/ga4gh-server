@@ -29,7 +29,7 @@ class ProtocolElementEncoder(json.JSONEncoder):
     """
     def default(self, obj):
         if isinstance(obj, ProtocolElement):
-            ret = obj.__dict__
+            ret = {a: getattr(obj, a) for a in obj.__slots__}
         else:
             ret = super(ProtocolElementEncoder, self).default(obj)
         return ret
@@ -81,7 +81,7 @@ class ProtocolElement(object):
         """
         out = {}
         for field in self.schema.fields:
-            val = self.__dict__[field.name]
+            val = getattr(self, field.name)
             if self.isEmbeddedType(field.name):
                 if isinstance(val, list):
                     out[field.name] = list(el.toJSONDict() for el in val)
@@ -128,7 +128,7 @@ class ProtocolElement(object):
                     instanceVal = cls._decodeEmbedded(field, val)
                 else:
                     instanceVal = val
-            instance.__dict__[field.name] = instanceVal
+            setattr(instance, field.name, instanceVal)
         return instance
 
     @classmethod
