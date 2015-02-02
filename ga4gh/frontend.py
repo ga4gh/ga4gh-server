@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import os
 import traceback
+import logging
 
 import flask
 import flask.ext.api as api
@@ -28,6 +29,19 @@ def configure(config="DefaultConfig", config_file=None):
     if config_file is not None:
         app.config.from_pyfile(args.config_file)
     cors.CORS(app, allow_headers='Content-Type')
+
+fileHandler = logging.FileHandler('log/server.log')
+fmt = '%(asctime)s [%(funcName)s] %(levelname)s: %(message)s'
+formatter = logging.Formatter(fmt)
+fileHandler.setFormatter(formatter)
+
+app.logger.addHandler(fileHandler)
+app.logger.setLevel(logging.INFO)
+app.logger.info('Server started')
+
+werkLog = logging.getLogger('werkzeug')
+werkLog.addHandler(fileHandler)
+werkLog.setLevel(logging.INFO)
 
 
 def handleHTTPPost(request, endpoint):
