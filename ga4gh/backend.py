@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import os
 
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.references as references
 
 
 class Backend(object):
@@ -26,6 +27,19 @@ class Backend(object):
                 self._variantSetIdMap[variantSetId] = variantSetClass(
                     variantSetId, relativePath)
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
+        self._nextReferenceSetId = 0
+        self._referenceSetIdMap = {}
+        self._referenceSetIds = []
+
+    def addReferenceSet(self, referenceDir):
+        """
+        Adds a ReferenceSet from the data in the specified directory.
+        """
+        referenceSet = references.ReferenceSet(
+            self._nextReferenceSetId, referenceDir)
+        self._referenceSetIdMap[self._nextReferenceSetId] = referenceSet
+        self._referenceSetIds.append(self._nextReferenceSetId)
+        self._nextReferenceSetId += 1
 
     def parsePageToken(self, pageToken, numValues):
         """
@@ -72,6 +86,33 @@ class Backend(object):
         self.endProfile()
         return response.toJSONString()
 
+
+    def getReferenceBases(self, referenceId, request):
+        """
+        TODO document.
+        """
+
+
+    def searchReferenceSets(self, request):
+        """
+        Returns a GASearchReferenceSetsResponse for the specified
+        GASearchReferenceSetsRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.GASearchReferenceSetsRequest,
+            protocol.GASearchReferenceSetsResponse, "referenceSets",
+            self.referenceSetsGenerator)
+
+    def searchReferences(self, request):
+        """
+        Returns a GASearchReferencesResponse for the specified
+        GASearchReferencesRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.GASearchReferencesRequest,
+            protocol.GASearchReferencesResponse, "references",
+            self.referencesGenerator)
+
     def searchVariantSets(self, request):
         """
         Returns a GASearchVariantSetsResponse for the specified
@@ -91,6 +132,45 @@ class Backend(object):
             request, protocol.GASearchVariantsRequest,
             protocol.GASearchVariantsResponse, "variants",
             self.variantsGenerator)
+
+    def referenceSetsGenerator(self, request):
+        """
+        Returns a generator over the (referenceSet, nextPageToken) pairs defined
+        by the speficied request.
+        """
+        currentIndex = 0
+        if request.pageToken is not None:
+            currentIndex, = self.parsePageToken(request.pageToken, 1)
+        while currentIndex < len(self._referenceSetIds):
+            id_ = self._referenceSetIds[currentIndex]
+            referenceSet = self._referenceSetIdMap[id_].toProtocolElement()
+            currentIndex += 1
+            nextPageToken = None
+            if currentIndex < len(self._referenceSetIds):
+                nextPageToken = str(currentIndex)
+            yield referenceSet, nextPageToken
+
+    def referencesGenerator(self, request):
+        """
+        Returns a generator over the (reference, nextPageToken) pairs defined by
+        the specified request.
+        """
+        # TODO paging is broken here; FIXME!
+        startReferenceSetIndex = 0
+        if request.pageToken is not None:
+            startReferenceSetIndex, startReferenceIndex = self.parsePageToken(
+                request.pageToken, 2)
+        for referenceSetIndex in range(
+                startReferenceSetIndex, len(self._referenceSetIds)):
+            referenceSetId = self._referenceSetIds[referenceSetIndex]
+            if referenceSetId in self._referenceSetIdMap:
+                referenceSet = self._referenceSetIdMap[referenceSetId]
+                iterator = referenceSet.getReferences(startReferenceSetIndex,
+                    request.md5checksums, request.accessions)
+                for reference, referenceIndex in iterator:
+                    nextPageToken = "{0}:{1}".format(
+                        referenceSetIndex, referenceIndex)
+                    yield reference, nextPageToken
 
     def variantSetsGenerator(self, request):
         """

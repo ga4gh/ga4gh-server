@@ -14,6 +14,8 @@ class DefaultConfig(object):
     Simplest default server configuration.
     """
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
+    REFERENCE_SETS = []
+    DATA_SETS = []
 
 
 class TestConfig(DefaultConfig):

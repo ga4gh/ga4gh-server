@@ -28,17 +28,32 @@ def configure(config="DefaultConfig", config_file=None):
     if config_file is not None:
         app.config.from_pyfile(args.config_file)
     cors.CORS(app, allow_headers='Content-Type')
+    # Create backend and setup the input data.
+    for refDir in app.config["REFERENCE_SETS"]:
+        app.backend.addReferenceSet(refDir)
 
 
 def handleHTTPPost(request, endpoint):
     """
     Handles the specified HTTP POST request, which maps to the specified
-    protocol handler handpoint and protocol request class.
+    protocol handler endpoint.
     """
     mimetype = "application/json"
     if request.mimetype != mimetype:
         raise api.exceptions.UnsupportedMediaType()
     responseStr = endpoint(request.get_data())
+    return flask.Response(responseStr, status=200, mimetype=mimetype)
+
+
+def handleHTTPGet(request, id_, endpoint):
+    """
+    Handles the specified HTTP GET request, which maps to the specified
+    protocol handler endpoint.
+    """
+    mimetype = "application/json"
+    if request.mimetype != mimetype:
+        raise api.exceptions.UnsupportedMediaType()
+    responseStr = endpoint(id_, request.get_data())
     return flask.Response(responseStr, status=200, mimetype=mimetype)
 
 
@@ -72,17 +87,17 @@ def index():
 
 
 @app.route('/references/<id>', methods=['GET'])
-def getReference(id):
+def getReference(id_):
     raise frontendExceptions.PathNotFoundException()
 
 
 @app.route('/references/<id>/bases', methods=['GET'])
-def getReferenceBases(id):
-    raise frontendExceptions.PathNotFoundException()
+def getReferenceBases(id_):
+    return handleHTTPGet(flask.request, id_, app.backend.getReferenceBases)
 
 
 @app.route('/referencesets/<id>', methods=['GET'])
-def getReferenceSet(id):
+def getReferenceSet(id_):
     raise frontendExceptions.PathNotFoundException()
 
 
@@ -101,14 +116,19 @@ def searchReads():
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/referencesets/search', methods=['POST'])
+@app.route('/referencesets/search', methods=['POST', 'OPTIONS'])
 def searchReferenceSets():
-    raise frontendExceptions.PathNotFoundException()
+    if flask.request.method == "POST":
+        return handleHTTPPost(flask.request, app.backend.searchReferenceSets)
+    else:
+        return handleHTTPOptions()
 
-
-@app.route('/references/search', methods=['POST'])
+@app.route('/references/search', methods=['POST', 'OPTIONS'])
 def searchReferences():
-    raise frontendExceptions.PathNotFoundException()
+    if flask.request.method == "POST":
+        return handleHTTPPost(flask.request, app.backend.searchReferences)
+    else:
+        return handleHTTPOptions()
 
 
 @app.route('/variantsets/search', methods=['POST', 'OPTIONS'])

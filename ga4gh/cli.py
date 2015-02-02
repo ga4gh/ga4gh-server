@@ -66,9 +66,9 @@ def server_main(parser=None):
     if "variantSetClass" not in args:
         parser.print_help()
     else:
-        frontend.configure(args.config, args.config_file)
         frontend.app.backend = backend.Backend(
             args.dataDir, args.variantSetClass)
+        frontend.configure(args.config, args.config_file)
         frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
 
 ##############################################################################
