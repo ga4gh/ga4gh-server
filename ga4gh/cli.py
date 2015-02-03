@@ -167,7 +167,7 @@ class ReferenceSetSearchRunner(AbstractSearchRunner):
         setCommaSeparatedAttribute(request, args, 'md5checksums')
         if self.usingWorkaroundsFor(client.HTTPClient.workaroundGoogle):
             # google says assemblyId not a valid field
-            del request.__dict__['assemblyId']
+            request.__slots__.remove('assemblyId')
         self.setHttpClient(request, args)
 
     def run(self):
@@ -233,7 +233,7 @@ class ReadsSearchRunner(AbstractSearchRunner):
         request.referenceName = args.referenceName
         if self.usingWorkaroundsFor(client.HTTPClient.workaroundGoogle):
             # google says referenceId not a valid field
-            del request.__dict__['referenceId']
+            request.__slots__.remove('referenceId')
         self.setHttpClient(request, args)
 
     def run(self):
