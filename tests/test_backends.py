@@ -139,7 +139,7 @@ class TestWormtableBackend(unittest.TestCase):
             protocol.GASearchVariantSetsResponse, "variantSets")
 
     def getVariants(
-            self, variantSetIds, referenceName, start=0, end=2**32,
+            self, variantSetIds, referenceName, start=0, end=2 ** 32,
             pageSize=100, callSetIds=[]):
         """
         Returns an iterator over the specified list of variants, abstracting
@@ -174,7 +174,7 @@ class TestWormtableBackend(unittest.TestCase):
         return commonNames
 
     def getWormtableVariants(
-            self, variantSetIds, referenceName, start=0, end=2**32,
+            self, variantSetIds, referenceName, start=0, end=2 ** 32,
             callSetIds=[]):
         """
         Returns the rows from the table corresponding to the specified values.
@@ -529,7 +529,7 @@ class TestVariants(TestWormtableBackend):
         for variantSet in self.getVariantSets():
             for referenceName in self.getReferenceNames(variantSet.id):
                 self.verifySearchVariants(
-                    [variantSet.id], referenceName, 0, 2**32)
+                    [variantSet.id], referenceName, 0, 2 ** 32)
 
     def testSearchVariantSlices(self):
         for variantSet in self.getVariantSets():
@@ -566,7 +566,7 @@ class TestVariants(TestWormtableBackend):
             for subset in tests.powerset(callSetIds, 20):
                 for referenceName in self.getReferenceNames(variantSet.id):
                     self.verifySearchByCallSetIds(
-                        variantSet.id, referenceName, 0, 2**32, subset)
+                        variantSet.id, referenceName, 0, 2 ** 32, subset)
 
     def testUniqueIds(self):
         ids = set()
@@ -585,5 +585,5 @@ class TestVariants(TestWormtableBackend):
                 for referenceName in self.getCommonRefNames(variantSets):
                     for pageSize in [1, 2, 3, 5, 1000]:
                         self.verifySearchVariants(
-                            variantSets, referenceName, 0, 2**32,
+                            variantSets, referenceName, 0, 2 ** 32,
                             pageSize=pageSize)

@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 import unittest
 import inspect
 
-import tests
 import ga4gh.frontend_exceptions as frontendExceptions
 
 

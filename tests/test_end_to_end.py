@@ -79,7 +79,7 @@ class EndToEndWormtableTest(unittest.TestCase):
         self.assertEqual([], responseData.variants)
 
         # Larger request window, expect results
-        request.end = 2**16
+        request.end = 2 ** 16
         response = self.sendJSONPostRequest('/variants/search',
                                             request.toJSONString())
         self.assertEqual(200, response.status_code)
@@ -92,7 +92,7 @@ class EndToEndWormtableTest(unittest.TestCase):
         # Verify all results are in the correct range, set and reference
         for variant in responseData.variants:
             self.assertGreaterEqual(variant.start, 0)
-            self.assertLessEqual(variant.end, 2**16)
+            self.assertLessEqual(variant.end, 2 ** 16)
             self.assertTrue(variant.variantSetId in expectedIds)
             self.assertEqual(variant.referenceName, referenceName)
 
