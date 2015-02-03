@@ -20,7 +20,7 @@ def runTests():
     workarounds = "--workarounds=google"
     commands = [
         "variants-search --variantSetIds 10473108253681171589 "
-        "--referenceName 22 --start 51005353 --end 51015353 --pageSize 1",
+        "--referenceName 22 --start 51005491 --end 51005492 --pageSize 1",
         "variantsets-search --datasetIds 10473108253681171589",
         "referencesets-search --accessions GCA_000001405.15",
         "references-search --md5checksums 1b22b98cdeb4a9304cb5d48026a85128",

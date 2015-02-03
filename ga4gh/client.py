@@ -29,6 +29,15 @@ class HTTPClient(object):
         self._workarounds = workarounds
         self._key = key
 
+    def printJSONMessage(self, header, jsonString):
+        """
+        Prints the specified jsonString to stdout for debugging purposes.
+        """
+        print("json", header)
+        pp = json.dumps(
+            json.loads(jsonString), sort_keys=True, indent=4)
+        print(pp)
+
     def runRequest(self, request, url, protocolClass, listAttr):
         """
         Runs the specified request at the specified url and instantiates
@@ -39,6 +48,8 @@ class HTTPClient(object):
         notDone = True
         while notDone:
             jsonString = request.toJSONString()
+            if self._debugLevel > 1:
+                self.printJSONMessage("request:", jsonString)
             headers = {"Content-type": "application/json"}
             # make sure we correctly join with/out trailing slashes
             fullUrl = posixpath.join(self._urlPrefix, url)
@@ -53,10 +64,7 @@ class HTTPClient(object):
             if self._debugLevel > 1:
                 # TODO use a logging output and integrate with HTTP client more
                 # nicely.
-                print("json response:")
-                pp = json.dumps(
-                    json.loads(jsonString), sort_keys=True, indent=4)
-                print(pp)
+                self.printJSONMessage("response:", jsonString)
             resp = protocolClass.fromJSONString(jsonString)
             # TODO handle HTTP errors from requests and display.
             for extract in getattr(resp, listAttr):
