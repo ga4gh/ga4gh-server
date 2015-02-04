@@ -295,7 +295,7 @@ def addVariantSearchOptions(parser):
 
 def addVariantSetIdsArgument(parser):
     parser.add_argument(
-        "--variantSetIds", "-v",
+        "--variantSetIds", "-V",
         help="The variant set id(s) to search over")
 
 
