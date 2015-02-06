@@ -3,6 +3,7 @@ Flask-API
 Flask-Cors
 avro
 coverage
+flake8
 guppy
 mock
 nose

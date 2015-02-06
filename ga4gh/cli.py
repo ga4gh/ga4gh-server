@@ -39,7 +39,7 @@ def server_main(parser=None):
     subparsers = parser.add_subparsers(title='subcommands',)
 
     # help
-    helpParser = subparsers.add_parser(
+    subparsers.add_parser(
         "help",
         description="ga4gh_server help",
         help="show this help message and exit")
@@ -395,7 +395,7 @@ def client_main(parser=None):
     subparsers = parser.add_subparsers(title='subcommands')
 
     # help
-    helpParser = subparsers.add_parser(
+    subparsers.add_parser(
         "help", description="ga4gh_client help",
         help="show this help message and exit")
 

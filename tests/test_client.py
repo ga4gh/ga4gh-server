@@ -10,9 +10,7 @@ import unittest
 import json
 
 import mock
-import requests
 
-import tests
 import ga4gh.client as client
 import ga4gh.protocol as protocol
 

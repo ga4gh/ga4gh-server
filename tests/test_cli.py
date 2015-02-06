@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 import unittest
 import argparse
 
-import tests
 import ga4gh.cli as cli
 import ga4gh.protocol as protocol
 import ga4gh.client as client
