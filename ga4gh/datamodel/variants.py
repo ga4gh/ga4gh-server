@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import os
 import glob
 import datetime
+import re
 
 import pysam
 import wormtable as wt
@@ -22,6 +23,35 @@ class VariantSet(object):
     """
     # TODO abstract details shared by wormtable and tabix based backends.
 
+    @staticmethod
+    def convertPhaseset(vcfPhaseset):
+        """
+        Parses the VCF phaseset string
+        """
+        if vcfPhaseset is not None and vcfPhaseset != ".":
+            phaseset = vcfPhaseset
+        else:
+            phaseset = "*"
+        return phaseset
+
+    @staticmethod
+    def convertGenotype(vcfGenotype, vcfPhaseset):
+        """
+        Parses the VCF genotype and VCF phaseset strings
+        """
+        phaseset = None
+        if vcfGenotype is not None:
+            delim = "/"
+            if "|" in vcfGenotype:
+                delim = "|"
+                phaseset = VariantSet.convertPhaseset(vcfPhaseset)
+            if "." in vcfGenotype:
+                genotype = [-1]
+            else:
+                genotype = map(int, vcfGenotype.split(delim))
+        else:
+            genotype = [-1]
+        return genotype, phaseset
 
 class WormtableVariantSet(VariantSet):
     """
@@ -107,37 +137,6 @@ class WormtableVariantSet(VariantSet):
         else:
             ret = [str(value)]
         return ret
-
-    @staticmethod
-    def convertPhaseset(vcfPhaseset):
-        """
-        Parses the VCF phaseset string
-        """
-        if vcfPhaseset is not None and vcfPhaseset != ".":
-            phaseset = vcfPhaseset
-        else:
-            phaseset = "*"
-        return phaseset
-
-    @staticmethod
-    def convertGenotype(vcfGenotype, vcfPhaseset):
-        """
-        Parses the VCF genotype and VCF phaseset strings
-        """
-        phaseset = None
-        if vcfGenotype is not None:
-            delim = "/"
-            if "|" in vcfGenotype:
-                delim = "|"
-                phaseset = WormtableVariantSet.convertPhaseset(vcfPhaseset)
-            if "." in vcfGenotype:
-                genotype = [-1]
-            else:
-                genotype = map(int, vcfGenotype.split(delim))
-        else:
-            genotype = [-1]
-
-        return genotype, phaseset
 
     def convertVariant(self, row, sampleRowPositions):
         """
@@ -240,7 +239,7 @@ class WormtableVariantSet(VariantSet):
 
     def getMetadata(self):
         """
-        Returns a list of GAVariantSetMetadata objects for this variant set.
+        Returns a GAVariantSetMetadata object for this variant set.
         """
         def buildMetadata(infoField, col):
             metadata = protocol.GAVariantSetMetadata()
@@ -280,12 +279,13 @@ class TabixVariantSet(VariantSet):
                     raise Exception("cannot have overlapping VCF files.")
                 self._chromTabixFileMap[chrom] = tabixFile
 
-    def convertVariant(self, record):
+    def convertVariant(self, record, headerLine):
         """
         Converts the specified pysam VCF Record into a GA4GH GAVariant
         object.
         """
         variant = protocol.GAVariant()
+        headerCols = headerLine.split('\t')
         record = record.split('\t')
         position = int(record[1])
         variant.id = "{0}:{1}:{2}".format(self._variantSetId,
@@ -298,11 +298,42 @@ class TabixVariantSet(VariantSet):
         variant.start = position
         variant.end = position + 1  # TODO support non SNP variants
         variant.referenceBases = record[3]
-        variant.alternateBases = [record[4].split(",")]
-        for j in range(9, len(record)):
-            c = protocol.GACall()
-            c.genotype = record[j].split(":")[0].split("[\/\|]")
-            variant.calls.append(c)
+        variant.alternateBases = record[4].split(",")
+        variant.info = {}
+        infoFields = record[7].split(";")
+        for field in infoFields:
+            key, data = field.split("=")
+            dataList = data.split(",")
+            variant.info[key] = dataList
+        formatFields = record[8].split(":")
+        fieldIndicesMap = {}
+        index = 0
+        for field in formatFields:
+            fieldIndicesMap[field] = index
+            index = index + 1
+        for sampleCol in range(9, len(record)):
+            call = protocol.GACall()
+            call.callSetId = headerCols[sampleCol]
+            call.callSetName = headerCols[sampleCol]
+            callFields = record[sampleCol].split(":")
+            genotype = None
+            phaseset = None
+            info = {}
+            for field in fieldIndicesMap:
+                index = fieldIndicesMap[field]
+                if field == "GT":
+                    genotype = callFields[index]
+                elif field == "PS":
+                    phaseset = callFields[index]
+                elif field == "GL":
+                    call.genotypeLikelihood = map(float,
+                            callFields[index].split(","))
+                else:
+                    info[field] = callFields[index].split(",")
+            call.genotype, call.phaseset = self.convertGenotype(genotype,
+                                                                phaseset)
+            call.info = info
+            variant.calls.append(call)
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
@@ -314,16 +345,78 @@ class TabixVariantSet(VariantSet):
         if variantName is not None:
             raise NotImplementedError(
                 "Searching by variantName is not supported")
-        if len(callSetIds) != 0:
+        if callSetIds is None or len(callSetIds) != 0:
             raise NotImplementedError(
                 "Specifying call set ids is not supported")
         if referenceName in self._chromTabixFileMap:
             tabixFile = self._chromTabixFileMap[referenceName]
-            cursor = tabixFile.fetch(referenceName, startPosition, endPosition)
+            headerIterator = tabixFile.header
+            headerLine = ''
+            for metaInfoLine in headerIterator:
+                # Only extract the header line.
+                if metaInfoLine.startswith('#CHROM'):
+                    headerLine = metaInfoLine
+            cursor = tabixFile.fetch(referenceName.encode(), startPosition, endPosition)
             for record in cursor:
-                yield self.convertVariant(record)
+                yield self.convertVariant(record, headerLine)
 
     def getMetadata(self):
-        # TODO: Implement this
-        ret = []
-        return ret
+        """
+        A VariantSetMetadata represents VCF header information. Since one
+        VairantSet can be comprised of many VCF files, with many duplicate
+        header fields across files, we will only return unique
+        VariantSetMetadata objects, where equality is defined as identical
+        string values in the vcf file.
+        """
+        metadataList = []
+        infoStringSet = set()
+        for tabixFile in self._chromTabixFileMap.values():
+            headerIterator = tabixFile.header
+            for metaInfoLine in headerIterator:
+                # header lines must begin with '##', and all header lines
+                # precede non-header lines.
+                if not metaInfoLine.startswith('##'):
+                    break
+                # Only add values we have not yet seen.
+                elif metaInfoLine in infoStringSet:
+                    break
+                else:
+                    infoString = metaInfoLine.lstrip('##')
+                    infoStringSet.add(infoString)
+        for infoString in infoStringSet:
+            # One VariantSetMetadata object corresponds to one INFO field
+            metadata = protocol.GAVariantSetMetadata()
+            metadata.description = ''
+            metadata.id = ''
+            metadata.type = ''
+            metadata.number = ''
+            metadata.info = {}
+            if not '=' in infoString:
+                print('Error! INFO field must contain "="')
+            topLevelKeyValue = infoString.split('=', 1)
+            metadata.key = topLevelKeyValue[0]
+            # Is this a simple key,value pair?
+            if not (topLevelKeyValue[1].startswith('<') and
+                    topLevelKeyValue[1].endswith('>')):
+                metadata.value = topLevelKeyValue[1]
+            else:
+            # It is a more complex INFO field.
+                metadata.value = ''
+                regexString = """(\w+)=("[^"]*"|[^",]*)"""
+                subFields = re.findall(regexString, topLevelKeyValue[1].strip('<>'))
+                for (key, value) in subFields:
+                    if key == 'ID':
+                        metadata.id = value
+                    elif key == 'Number':
+                        metadata.number = value
+                    elif key == 'Type':
+                        metadata.type = value
+                    elif key == 'Description':
+                        metadata.description = value
+                    else:
+                        if key not in metadata.info:
+                            metadata.info[key] = [value]
+                        else:
+                            metadata.info[key].append(value)
+            metadataList.append(metadata)
+        return metadataList

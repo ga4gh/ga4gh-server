@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import os
 import glob
+import json
 import shutil
 import tempfile
 import unittest
@@ -21,7 +22,6 @@ import tests
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.variants as variants
-
 
 class WormtableTestFixture(object):
     """
@@ -587,3 +587,73 @@ class TestVariants(TestWormtableBackend):
                         self.verifySearchVariants(
                             variantSets, referenceName, 0, 2 ** 32,
                             pageSize=pageSize)
+
+class TestTabixBackend(unittest.TestCase):
+
+    def setUp(self):
+        # TODO: Replace data-based testing when dependency injection is done.
+        self._dataDir = "tests/data/set1"
+        self._tabixVariantSet = variants.TabixVariantSet("testSet", self._dataDir)
+        self._variantSetsRequest = protocol.GASearchVariantSetsRequest()
+        self._vcfHeaderLine = '''#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\tS1\tS2\tS3'''
+        self._vcfLine = '''1\t959\t.\tC\tA\t658.81\t.\tAC=2;AF=0.100;AN=20;BaseQRankSum=2.047;DP=259;Dels=0.00;FS=1.736;HaplotypeScore=1.4810;InbreedingCoeff=-0.1111;MLEAC=2;MLEAF=0.100;MQ=56.51;MQ0=0;MQRankSum=-0.648;QD=12.67;ReadPosRankSum=-0.341\tGT:AD:DP:PS:GL\t0/0:21,0:20:12:0.54,1.234\t0|0:20,0:19:499:45.454,101.12,33.33\t0/.:28,0:27:300:0.111,3234.2'''
+
+class TestTabixVariants(TestTabixBackend):
+    
+    def testConvertVariantIsValid(self):
+        variant = self._tabixVariantSet.convertVariant(self._vcfLine,
+                                                       self._vcfHeaderLine)
+        self.assertTrue(protocol.GAVariant.validate(variant.toJSONDict()))
+        calls = variant.calls
+        for call in calls:
+            self.assertTrue(protocol.GACall.validate(call.toJSONDict()))
+
+    def testConvertVariant(self):
+        variant = self._tabixVariantSet.convertVariant(self._vcfLine,
+                                                       self._vcfHeaderLine)
+        print(variant)
+        self.assertTrue(variant.id == "testSet:1:959")
+        self.assertTrue(variant.variantSetId == "testSet")
+        self.assertTrue(variant.names == [])
+        self.assertTrue(variant.created == self._tabixVariantSet._created)
+        self.assertTrue(variant.updated == self._tabixVariantSet._created)
+        self.assertTrue(variant.referenceName == "1")
+        self.assertTrue(variant.start == 959)
+        self.assertTrue(variant.end == 960)
+        self.assertTrue(variant.referenceBases == "C")
+        self.assertTrue(variant.alternateBases == ["A"])
+        self.assertTrue(variant.info["HaplotypeScore"] == ["1.4810"])
+        self.assertTrue(len(variant.info) == 16)
+        self.assertTrue(len(variant.calls) == 3)
+        self.assertTrue(variant.calls[0].genotype == [0,0])
+        self.assertTrue(variant.calls[2].genotype  == [-1])
+        self.assertTrue(variant.calls[0].phaseset == None)
+        self.assertTrue(variant.calls[1].phaseset == "499")
+        self.assertTrue(variant.calls[0].genotypeLikelihood == [0.54, 1.234])
+        self.assertTrue(len(variant.calls[0].info) == 2)
+        self.assertTrue(variant.calls[0].info["AD"] == ["21", "0"])
+
+
+
+    def testGetVariantsIsValid(self):
+        variantIterator = self._tabixVariantSet.getVariants("1", 1, 100, None, [])
+        for variant in variantIterator:
+            self.assertTrue(protocol.GAVariant.validate(variant.toJSONDict()))
+
+    def testGetVariantsThrowsForVariantName(self):
+        with self.assertRaises(NotImplementedError):
+            self._tabixVariantSet.getVariants("1", 1, 100, "Sm01", []).next()
+
+    def testGetVariantsThrowsForCallSetIDsPresent(self):
+        with self.assertRaises(NotImplementedError):
+            self._tabixVariantSet.getVariants("1", 1, 100, None, [1,2,3]).next()
+
+    def testGetVariantsThrowsForCallSetIDsAreNone(self):
+        with self.assertRaises(NotImplementedError):
+            self._tabixVariantSet.getVariants("1", 1, 100, None, None).next()
+
+    def testGetMetadataIsValid(self):
+        metadataList = self._tabixVariantSet.getMetadata()
+        for metadata in metadataList:
+            print(metadata.toJSONDict())
+            self.assertTrue(protocol.GAVariantSetMetadata.validate(metadata.toJSONDict()))
