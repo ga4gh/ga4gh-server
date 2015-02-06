@@ -11,6 +11,8 @@ Short variable names are OK when the scope is small (less than five lines)
 and the meaning is obvious. If the scope is longer or more complex,
 please use descriptive longer names.
 
+Contrary to PEP8, acronyms should be camel cased, not capitalized.  For instance, HTTPAPIClient should be written as HttpApiClient.
+
 ## Imports
 Imports should be structured into the following groups:
 
