@@ -6,6 +6,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import flask.ext.api as api
+
 
 class FrontendException(Exception):
 
@@ -74,3 +76,20 @@ class ServerException(FrontendException):
         self.httpStatus = 500
         self.message = "Internal server error"
         self.code = 7
+
+
+class UnsupportedMediaTypeException(FrontendException):
+
+    def __init__(self):
+        super(FrontendException, self).__init__()
+        self.httpStatus = 415
+        self.message = "Unsupported media type"
+        self.code = 8
+
+
+# exceptions thrown by the underlying system that we want to
+# translate to exceptions that we define before they are
+# serialized and returned to the client
+exceptionMap = {
+    api.exceptions.UnsupportedMediaType: UnsupportedMediaTypeException,
+}

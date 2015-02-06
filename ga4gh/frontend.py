@@ -9,15 +9,54 @@ from __future__ import unicode_literals
 
 import os
 import traceback
+import datetime
 
 import flask
 import flask.ext.api as api
 import flask.ext.cors as cors
+import humanize
 
 import ga4gh.frontend_exceptions as frontendExceptions
 import ga4gh.protocol as protocol
 
-app = api.FlaskAPI(__name__)
+
+app = flask.Flask(__name__)
+
+
+class ServerStatus(object):
+
+    def __init__(self):
+        self.startupTime = datetime.datetime.now()
+
+    def getStatusInfo(self):
+        info = {
+            'urls': self._getUrls(),
+            'uptime': self._getUptime(),
+            'version': protocol.version,
+        }
+        return info
+
+    def _getUptime(self):
+        uptime = {
+            'natural': humanize.naturaltime(self.startupTime),
+            'datetime': self.startupTime.strftime("%H:%M:%S %d %b %Y")
+        }
+        return uptime
+
+    def _getUrls(self):
+        urls = []
+        rules = app.url_map.iter_rules()
+        excluded_methods = ('OPTIONS', 'HEAD')
+        excluded_rules = (
+            '/', '/flask-api/static/<path:filename>',
+            '/static/<path:filename>')
+        for rule in rules:
+            for method in rule.methods:
+                if (method not in excluded_methods and
+                        rule.rule not in excluded_rules):
+                        urls.append((rule.rule, method))
+        urls.sort()
+        return urls
 
 
 def configure(config="DefaultConfig", config_file=None):
@@ -28,6 +67,7 @@ def configure(config="DefaultConfig", config_file=None):
     if config_file is not None:
         app.config.from_pyfile(config_file)
     cors.CORS(app, allow_headers='Content-Type')
+    app.serverStatus = ServerStatus()
 
 
 def handleHTTPPost(request, endpoint):
@@ -52,7 +92,12 @@ def handleHTTPOptions():
 
 
 @app.errorhandler(Exception)
-def handle_error(exception):
+def handleException(exception):
+    exceptionClass = exception.__class__
+    if exceptionClass in frontendExceptions.exceptionMap:
+        newExceptionClass = frontendExceptions.exceptionMap[exceptionClass]
+        exception = newExceptionClass()
+
     if not isinstance(exception, frontendExceptions.FrontendException):
         if app.config['DEBUG']:
             print(traceback.format_exc(exception))
@@ -68,7 +113,8 @@ def handle_error(exception):
 
 @app.route('/')
 def index():
-    raise frontendExceptions.PathNotFoundException()
+    return flask.render_template(
+        'index.html', info=app.serverStatus.getStatusInfo())
 
 
 @app.route('/references/<id>', methods=['GET'])

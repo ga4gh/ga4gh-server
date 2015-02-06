@@ -5,6 +5,7 @@ avro
 coverage
 flake8
 guppy
+humanize
 mock
 nose
 pep8
