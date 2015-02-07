@@ -146,6 +146,12 @@ class TestWormtableBackend(unittest.TestCase):
             request, pageSize, self._backend.searchVariantSets,
             protocol.GASearchVariantSetsResponse, "variantSets")
 
+    def getVariantSetIds(self):
+        """
+        Return all variantSetIds.
+        """
+        return [variantSet.id for variantSet in self.getVariantSets()]
+
     def getVariants(
             self, variantSetIds, referenceName, start=0, end=2 ** 32,
             pageSize=100, callSetIds=[]):
@@ -162,6 +168,16 @@ class TestWormtableBackend(unittest.TestCase):
         return self.resultIterator(
             request, pageSize, self._backend.searchVariants,
             protocol.GASearchVariantsResponse, "variants")
+
+    def getCallSets(self, variantSetId, pageSize=100):
+        """
+        Returns an iterator over the callsets in a specified variant set.
+        """
+        request = protocol.GASearchCallSetsRequest()
+        request.variantSetIds = [variantSetId]
+        return self.resultIterator(
+            request, pageSize, self._backend.searchCallSets,
+            protocol.GASearchCallSetsResponse, "callSets")
 
     def getReferenceNames(self, variantSetId):
         """
@@ -220,16 +236,16 @@ class TestWormtableBackend(unittest.TestCase):
         last = index.max_key(referenceName)
         return first[1], last[1]
 
-    def getCallSetIds(self, variantSetId):
+    def getWormtableCallSetIds(self, variantSetId):
         """
         Returns the set of callSetIds derived from the wormtable header.
         """
         table = self._tables[variantSetId]
-        callSetIds = set()
+        callSetIds = list()
         for col in table.columns()[8:]:  # skip VCF fixed cols
-            name = col.get_name()
-            if not name.startswith("INFO"):
-                callSetIds.add(name.split(".")[0])
+            name = col.get_name().split(".")[0]
+            if not name.startswith("INFO") and name not in callSetIds:
+                callSetIds.append(name.split(".")[0])
         return callSetIds
 
 
@@ -463,7 +479,7 @@ class TestVariants(TestWormtableBackend):
 
     def testSearchByCallSetIds(self):
         for variantSet in self.getVariantSets():
-            callSetIds = self.getCallSetIds(variantSet.id)
+            callSetIds = self.getWormtableCallSetIds(variantSet.id)
             # limit the subsets we check over to some small value.
             for subset in utils.powerset(callSetIds, 20):
                 for referenceName in self.getReferenceNames(variantSet.id):
@@ -480,8 +496,7 @@ class TestVariants(TestWormtableBackend):
                     ids.add(variant.id)
 
     def testAcrossVariantSets(self):
-        allVariantSets = [
-            variantSet.id for variantSet in self.getVariantSets()]
+        allVariantSets = self.getVariantSetIds()
         for permLen in range(1, len(allVariantSets) + 1):
             for variantSets in itertools.permutations(allVariantSets, permLen):
                 for referenceName in self.getCommonRefNames(variantSets):
@@ -489,3 +504,69 @@ class TestVariants(TestWormtableBackend):
                         self.verifySearchVariants(
                             variantSets, referenceName, 0, 2 ** 32,
                             pageSize=pageSize)
+
+
+class TestCallSets(TestWormtableBackend):
+    """
+    Tests the searchCallSets end point.
+    """
+
+    def verifySearchCallSets(self, variantSetId, pageSize=1000):
+        """
+        Verifies callsets queries based on specified variant set ids.
+        """
+        ga4ghCallSets = list(self.getCallSets(variantSetId))
+        wormtableCallSets = list(self.getWormtableCallSetIds(variantSetId))
+        self.assertEqual(len(ga4ghCallSets), len(wormtableCallSets))
+        for ga4ghCallSet, wormtableCallSet in zip(
+                ga4ghCallSets, wormtableCallSets):
+            self.verifyCallSetsEqual(
+                variantSetId, ga4ghCallSet, wormtableCallSet)
+
+    def verifyCallSetsEqual(
+            self, variantSetId, ga4ghCallSet, wormtableCallSet):
+        """
+        Verifies that the ga4ghCallSet Ojbect is equal to the wormtable column.
+        """
+        self.assertEqual(ga4ghCallSet.id,
+                         "{0}.{1}".format(variantSetId, wormtableCallSet))
+        self.assertEqual(ga4ghCallSet.name, wormtableCallSet)
+        self.assertEqual(ga4ghCallSet.sampleId, wormtableCallSet)
+
+    def testSearchAllCallSets(self):
+        for variantSet in self.getVariantSets():
+            self.verifySearchCallSets(variantSet.id)
+
+    def testSearchByCallSetIds(self):
+        # TODO implement after schemas on name string search is determined
+        pass
+
+    def testCallSetIds(self):
+        # verify that callSetIds are equal to sample columns in wormtable
+        variantSetIdMap = self._backend.getVariantSetIdMap()
+        for variantSetId in self.getVariantSetIds():
+            callSetIds = set(self.getWormtableCallSetIds(variantSetId))
+            variantSets = variantSetIdMap[variantSetId]
+            sampleNames = set(variantSets.getSampleNames())
+            self.assertEqual(callSetIds, sampleNames)
+            self.assertIsNotNone(callSetIds)
+            self.assertIsNotNone(sampleNames)
+
+    def testUniqueCallSetIds(self):
+        # verify that all callSetIds are unique
+        for variantSetId in self.getVariantSetIds():
+            callSetIds = set()
+            for callSetId in self.getWormtableCallSetIds(variantSetId):
+                self.assertTrue(callSetId not in callSetIds)
+                callSetIds.add(callSetId)
+
+    def testVariantSetIds(self):
+        # test the VariantSetId field of GACallSet object is correct
+        allCallSetIdMap = dict()
+        for variantSetId in self.getVariantSetIds():
+            for callSetId in self.getWormtableCallSetIds(variantSetId):
+                if callSetId not in allCallSetIdMap:
+                    allCallSetIdMap[callSetId] = []
+                allCallSetIdMap[callSetId].append(variantSetId)
+        wormtableCallSetIdMap = self._backend.getCallSetIdMap()
+        self.assertEqual(allCallSetIdMap, wormtableCallSetIdMap)

@@ -28,6 +28,8 @@ class EndToEndWormtableTest(unittest.TestCase):
         self._wtTestFixture.setUp()
         self.setUpServer(backend.Backend(self._wtTestFixture.dataDir,
                                          variants.WormtableVariantSet))
+        self._expectedVariantSetIds = ['example_1', 'example_2',
+                                       'example_3', 'example_4']
 
     def tearDown(self):
         self._wtTestFixture.tearDown()
@@ -104,5 +106,44 @@ class EndToEndWormtableTest(unittest.TestCase):
         # pagination behavior.
 
         # TODO: Add test cases for other methods when they are implemented.
+
+    def testCallSetsSearch(self):
+        request = protocol.GASearchCallSetsRequest()
+        request.name = None
+        path = utils.applyVersion('/callsets/search')
+
+        # when variantSetIds are wrong, no results
+        request.variantSetIds = ["xxxx"]
+        response = self.sendJSONPostRequest(
+            path, request.toJsonString())
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.GASearchCallSetsResponse.fromJsonString(
+            response.data)
+        self.assertIsNone(responseData.nextPageToken)
+        self.assertEqual([], responseData.callSets)
+
+        # if no callset name is given return all callsets
+        request.variantSetIds = ["example_1"]
+        response = self.sendJSONPostRequest(
+            path, request.toJsonString())
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.GASearchCallSetsResponse.fromJsonString(
+            response.data)
+        self.assertTrue(protocol.GASearchCallSetsResponse.validate(
+            responseData.toJsonDict()))
+        self.assertNotEqual([], responseData.callSets)
+        # TODO test the length of responseData.callSets equal to all callsets
+
+        # Verify all results are of the correct type and range
+        for callSet in responseData.callSets:
+            self.assertIs(type(callSet.info), dict)
+            self.assertIs(type(callSet.variantSetIds), list)
+            variantSetId = callSet.id.split(".")[0]
+            callSetName = callSet.id.split(".")[1]
+            self.assertTrue(variantSetId in callSet.variantSetIds)
+            self.assertEqual(callSetName, callSet.name)
+            self.assertEqual(callSetName, callSet.sampleId)
+
+        # TODO add tests after name string search schemas is implemented
 
     # TODO: Add tests for other backends

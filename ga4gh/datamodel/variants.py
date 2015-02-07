@@ -139,6 +139,12 @@ class WormtableVariantSet(VariantSet):
                     self._sampleNames.append(sampleName)
                 self._sampleCols[sampleName].append((infoName, col))
 
+    def getSampleNames(self):
+        return self._sampleNames
+
+    def getVariantSetId(self):
+        return self._variantSetId
+
     def convertInfoField(self, value):
         """
         Converts the specified value into an appropriate format for a protocol
@@ -252,6 +258,32 @@ class WormtableVariantSet(VariantSet):
                     yield self.convertVariant(row, sampleRowPositions)
                 else:
                     break
+
+    def getCallSets(self, name, startPosition):
+        """
+        Returns an iterator over the specified callset name. The parameters
+        correspond to the attributes of a GASearchCallSetsReuqest object.
+        """
+        # TODO: implement name string search after semantics is clarified
+        if name is not None:
+            raise NotImplementedError()
+        else:
+            callSetIds = self._sampleNames[startPosition:]
+            for i in range(len(callSetIds)):
+                yield self.convertCallSet(callSetIds[i]), i+startPosition
+
+    def convertCallSet(self, callSetId):
+        """
+        Converts the specified wormtable column into a GACallSet object.
+        """
+        callSet = protocol.GACallSet()
+        callSet.created = self._creationTime
+        callSet.updated = self._updatedTime
+        # TODO clarifying between id, name and sampleID in appropriate dataset
+        callSet.id = "{0}.{1}".format(self._variantSetId, callSetId)
+        callSet.name = callSetId
+        callSet.sampleId = callSetId
+        return callSet
 
     def getMetadata(self):
         """

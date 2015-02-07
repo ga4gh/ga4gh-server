@@ -185,7 +185,8 @@ def getReferenceSet(version, id):
 
 @app.route('/<version>/callsets/search', methods=['POST'])
 def searchCallSets(version):
-    raise frontendExceptions.PathNotFoundException()
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchCallSets)
 
 
 @app.route('/<version>/readgroupsets/search', methods=['POST'])
