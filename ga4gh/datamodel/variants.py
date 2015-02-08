@@ -14,13 +14,32 @@ import pysam
 import wormtable as wt
 
 import ga4gh.protocol as protocol
+import ga4gh.datamodel as datamodel
 
 
-class VariantSet(object):
+def variantSetFactory(dataDir, dataset):
+    """
+    Allocates a new VariantSet object for the specified data directory
+    """
+    # We take a look in dataDir. If it contains exactly one directory,
+    # we decide it's a Wormtable variant set. Otherwise, we create a
+    # Tabix variant set.
+    contents = list(os.listdir(dataDir))
+    if len(contents) == 1 and os.path.isdir(contents[0]):
+        variantSet = WormtableVariantSet(dataDir, dataset)
+    else:
+        variantSet = TabixVariantSet(dataDir, dataset)
+    return variantSet
+
+
+class VariantSet(datamodel.DataObject):
     """
     Class representing a single VariantSet in the GA4GH data model.
     """
     # TODO abstract details shared by wormtable and tabix based backends.
+    def __init__(self, dataDir, parentDataset):
+        super(VariantSet, self).__init__(dataDir, parentDataset)
+        print("allocating new variant set from", dataDir)
 
 
 class WormtableVariantSet(VariantSet):
@@ -59,7 +78,7 @@ class WormtableVariantSet(VariantSet):
     GENOTYPE_NAME = b"GT"
     PHASESET_NAME = b"PS"
 
-    def __init__(self, variantSetId, wtDir):
+    def __init__(self,  ariantSetId, wtDir):
         """
         Allocates a new WormtableVariantSet with the specified variantSetId
         based on the specified wormtable directory.

@@ -10,11 +10,9 @@ from __future__ import unicode_literals
 import time
 import argparse
 
-import ga4gh.frontend as frontend
 import ga4gh.client as client
-import ga4gh.backend as backend
+import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
-import ga4gh.datamodel.variants as variants
 
 ##############################################################################
 # Server
@@ -33,43 +31,12 @@ def server_main(parser=None):
         "--config", "-C", default='DefaultConfig', type=str,
         help="The configuration to use")
     parser.add_argument(
-        "--config-file", "-F", type=str,
+        "configFile", type=str,
         help="The configuration file to use")
 
-    subparsers = parser.add_subparsers(title='subcommands',)
-
-    # help
-    helpParser = subparsers.add_parser(
-        "help",
-        description="ga4gh_server help",
-        help="show this help message and exit")
-    # Wormtable backend
-    wtbParser = subparsers.add_parser(
-        "wormtable",
-        description="Serve the API using a wormtable based backend.",
-        help="Serve data from tables.")
-    wtbParser.add_argument(
-        "dataDir",
-        help="The directory containing the wormtables to be served.")
-    wtbParser.set_defaults(variantSetClass=variants.WormtableVariantSet)
-    # Tabix
-    tabixParser = subparsers.add_parser(
-        "tabix",
-        description="Serve the API using a tabix based backend.",
-        help="Serve data from Tabix indexed VCFs")
-    tabixParser.add_argument(
-        "dataDir",
-        help="The directory containing VCFs")
-    tabixParser.set_defaults(variantSetClass=variants.TabixVariantSet)
-
     args = parser.parse_args()
-    if "variantSetClass" not in args:
-        parser.print_help()
-    else:
-        frontend.configure(args.config, args.config_file)
-        frontend.app.backend = backend.Backend(
-            args.dataDir, args.variantSetClass)
-        frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
+    frontend.configure(args.config, args.configFile)
+    frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
 
 ##############################################################################
 # Client

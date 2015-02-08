@@ -14,20 +14,25 @@ import flask
 import flask.ext.api as api
 import flask.ext.cors as cors
 
-import ga4gh.frontend_exceptions as frontendExceptions
+import ga4gh.backend as backend
 import ga4gh.protocol as protocol
+import ga4gh.frontend_exceptions as frontendExceptions
 
 app = api.FlaskAPI(__name__)
 
 
-def configure(config="DefaultConfig", config_file=None):
+def configure(config="DefaultConfig", configFile=None):
     configStr = 'ga4gh.serverconfig:{0}'.format(config)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
         app.config.from_envvar('GA4GH_CONFIGURATION')
-    if config_file is not None:
-        app.config.from_pyfile(args.config_file)
+    if configFile is not None:
+        app.config.from_pyfile(configFile)
     cors.CORS(app, allow_headers='Content-Type')
+    # Set up our datasets
+    app.backend = backend.Backend()
+    for dataDir in app.config["DATA_SETS"]:
+        app.backend.addDataset(dataDir)
 
 
 def handleHTTPPost(request, endpoint):

@@ -6,9 +6,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
-
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.datasets as datasets
 
 
 class Backend(object):
@@ -16,16 +15,23 @@ class Backend(object):
     The GA4GH backend. This class provides methods for all of the GA4GH
     protocol end points.
     """
-    def __init__(self, dataDir, variantSetClass):
-        self._dataDir = dataDir
-        self._variantSetIdMap = {}
-        # All directories in datadir are assumed to correspond to VariantSets.
-        for variantSetId in os.listdir(self._dataDir):
-            relativePath = os.path.join(self._dataDir, variantSetId)
-            if os.path.isdir(relativePath):
-                self._variantSetIdMap[variantSetId] = variantSetClass(
-                    variantSetId, relativePath)
-        self._variantSetIds = sorted(self._variantSetIdMap.keys())
+    def __init__(self):
+        self._datasetIdMap = {}
+        self._datasetIds = []
+
+    def addDataset(self, dataDir):
+        """
+        Adds a new dataset for data stored in the specifed directory.
+        """
+        dataset = datasets.Dataset(dataDir)
+        datasetId = dataset.getId()
+        # TODO support online adding of datasets
+        if datasetId in self._datasetIdMap:
+            currentDataset = self._datasetIdMap[datasetId]
+            # TODO shutdown currentDataset cleanly
+        else:
+            self._datasetIds.append(datasetId)
+        self._datasetIdMap[datasetId] = dataset
 
     def parsePageToken(self, pageToken, numValues):
         """
