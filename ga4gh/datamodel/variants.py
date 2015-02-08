@@ -23,8 +23,9 @@ def variantSetFactory(dataDir, dataset):
     """
     # We take a look in dataDir. If it contains exactly one directory,
     # we decide it's a Wormtable variant set. Otherwise, we create a
-    # Tabix variant set.
-    contents = list(os.listdir(dataDir))
+    # Tabix variant set. This is a completely arbirary short-term hack.
+    # See the WormtableVariantSet constructor for more details.
+    contents = list(os.path.join(dataDir, f) for f in os.listdir(dataDir))
     if len(contents) == 1 and os.path.isdir(contents[0]):
         variantSet = WormtableVariantSet(dataDir, dataset)
     else:
@@ -39,7 +40,6 @@ class VariantSet(datamodel.DataObject):
     # TODO abstract details shared by wormtable and tabix based backends.
     def __init__(self, dataDir, parentDataset):
         super(VariantSet, self).__init__(dataDir, parentDataset)
-        print("allocating new variant set from", dataDir)
 
 
 class WormtableVariantSet(VariantSet):
@@ -78,11 +78,27 @@ class WormtableVariantSet(VariantSet):
     GENOTYPE_NAME = b"GT"
     PHASESET_NAME = b"PS"
 
-    def __init__(self,  ariantSetId, wtDir):
+    def __init__(self, dataDir, parentDataset):
         """
         Allocates a new WormtableVariantSet with the specified variantSetId
         based on the specified wormtable directory.
         """
+        super(WormtableVariantSet, self).__init__(dataDir, parentDataset)
+        # TODO this is the minimal changes needed to make this work. This
+        # should all be refactored to make the DataObject model consistent.
+        # We assume that the wt variant set exists in a directory on it's
+        # own and so we make the WT dir this directory. This is a very poor
+        # model, and is not intended to be a long-term fix. A good way to do
+        # this is to bring the split variant set semantics from TabixVariantSet
+        # into the superclass, and expect the WormtableVariantSet to be able
+        # to handle the same semantics. So we have a 'shard' of a variant set
+        # stored in some file in dataDir, and we make sure these shards don't
+        # overlap as we do in TabixVariantSet. The type of shard we instantiate
+        # depends on the filetype, and we can then mix shards based on
+        # wormtable tables and VCFs within the same variant set.
+        variantSetId = self._id
+        contents = list(os.path.join(dataDir, f) for f in os.listdir(dataDir))
+        wtDir = contents[0]
         self._variantSetId = variantSetId
         self._wtDir = wtDir
         self._table = wt.open_table(wtDir)
@@ -288,8 +304,13 @@ class TabixVariantSet(VariantSet):
     """
     Class representing a single variant set backed by a tabix directory.
     """
-    def __init__(self, variantSetId, vcfPath):
-        self._variantSetId = variantSetId
+    def __init__(self, dataDir, parentDataset):
+        super(TabixVariantSet, self).__init__(dataDir, parentDataset)
+        # TMP: these are the minimal changes required to get this to
+        # work without disturbing the code too much. This should all
+        # be heavily refactored.
+        self._variantSetId = self._id
+        vcfPath = dataDir
         self._created = protocol.convertDatetime(datetime.datetime.now())
         self._chromTabixFileMap = {}
         for vcfFile in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):

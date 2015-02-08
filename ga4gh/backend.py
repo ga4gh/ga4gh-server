@@ -103,6 +103,14 @@ class Backend(object):
         Returns a generator over the (variantSet, nextPageToken) pairs defined
         by the speficied request.
         """
+        # TODO we now have datasetIds to iterate over also. We need a better
+        # abstraction for iterating over these nested lists, as it's something
+        # we're going to be doing a lot, and it's far too error prone now.
+        # We need to (1) iterate over the data set ids; (2) iterate over the
+        # variant set ids within each dataset.
+        #
+        # This code here is now broken because the variantSets have been moved
+        # into the Dataset class.
         currentIndex = 0
         if request.pageToken is not None:
             currentIndex, = self.parsePageToken(request.pageToken, 1)
