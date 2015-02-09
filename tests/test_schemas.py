@@ -259,7 +259,8 @@ class EqualityTest(SchemaTest):
                 self.verifyEqualityOperations(i1, i2)
 
     def testDifferentValues(self):
-        factory = lambda cls: cls()
+        def factory(cls):
+            return cls()
         factories = [factory, self.getTypicalInstance, self.getDefaultInstance,
                      self.getRandomInstance]
         classes = list(self.getProtocolClasses())

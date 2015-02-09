@@ -144,4 +144,4 @@ class ProtocolElement(object):
 
 # We can now import the definitions of the protocol elements from the
 # generated file.
-from _protocol_definitions import *
+from _protocol_definitions import *  # NOQA
