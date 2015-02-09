@@ -17,8 +17,6 @@ before_script:
   - chmod og-w $HOME/.python-eggs
 
 script: 
-  # We ignore 'from module import *' as we use this legitimately
-  # in ga4gh/protocol.py
-  - flake8 --ignore=F403 tests ga4gh scripts
+  - flake8 tests ga4gh scripts
   - nosetests --with-coverage --cover-package ga4gh
               --cover-inclusive --cover-min-percentage 80
