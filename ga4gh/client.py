@@ -15,7 +15,7 @@ import ga4gh.protocol as protocol
 requests.packages.urllib3.disable_warnings()
 
 
-class HTTPClient(object):
+class HttpClient(object):
 
     workaroundGoogle = 'google'
 
@@ -38,9 +38,9 @@ class HTTPClient(object):
         """
         notDone = True
         while notDone:
-            jsonString = request.toJSONString()
+            jsonString = request.toJsonString()
             if self._debugLevel > 1:
-                self.printJSONMessage("request:", jsonString)
+                self.printJsonMessage("request:", jsonString)
             headers = {"Content-type": "application/json"}
             # make sure we correctly join with/out trailing slashes
             fullUrl = posixpath.join(self._urlPrefix, url)
@@ -55,15 +55,15 @@ class HTTPClient(object):
             if self._debugLevel > 1:
                 # TODO use a logging output and integrate with HTTP client more
                 # nicely.
-                self.printJSONMessage("response:", jsonString)
-            resp = protocolClass.fromJSONString(jsonString)
+                self.printJsonMessage("response:", jsonString)
+            resp = protocolClass.fromJsonString(jsonString)
             # TODO handle HTTP errors from requests and display.
             for extract in getattr(resp, listAttr):
                 yield extract
             request.pageToken = resp.nextPageToken
             notDone = resp.nextPageToken is not None
 
-    def printJSONMessage(self, header, jsonString):
+    def printJsonMessage(self, header, jsonString):
         """
         Prints the specified jsonString to stdout for debugging purposes.
         """

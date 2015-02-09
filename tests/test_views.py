@@ -77,13 +77,13 @@ class TestFrontend(unittest.TestCase):
     def testVariantsSearch(self):
         response = self.sendVariantsSearch('{"variantSetIds": [1, 2]}')
         self.assertEqual(200, response.status_code)
-        responseData = protocol.GASearchVariantsResponse.fromJSONString(
+        responseData = protocol.GASearchVariantsResponse.fromJsonString(
             response.data)
         self.assertEqual(responseData.variants, [])
 
     def testVariantSetsSearch(self):
         response = self.sendVariantSetsSearch('{"dataSetIds": [1, 2]}')
         self.assertEqual(200, response.status_code)
-        responseData = protocol.GASearchVariantSetsResponse.fromJSONString(
+        responseData = protocol.GASearchVariantSetsResponse.fromJsonString(
             response.data)
         self.assertEqual(responseData.variantSets, [])

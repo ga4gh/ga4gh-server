@@ -58,7 +58,7 @@ def timeOneSearch(queryString):
 
 def extractNextPageToken(resultString):
     """
-    Calling GASearchVariantsResponse.fromJSONString() can be slower
+    Calling GASearchVariantsResponse.fromJsonString() can be slower
     than doing the variant search in the first place; instead we use
     a regexp to extract the next page token.
     """
@@ -77,7 +77,7 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
     processing to prepare queries or parse responses.
     """
     times = []
-    queryString = request.toJSONString()
+    queryString = request.toJsonString()
     for i in range(0, repeatLimit):
         resultString, elapsedTime = timeOneSearch(queryString)
         accruedTime = elapsedTime
@@ -87,7 +87,7 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
         while token is not None and pageCount < pageLimit:
             pageRequest = request
             pageRequest.pageToken = token
-            pageRequestString = pageRequest.toJSONString()
+            pageRequestString = pageRequest.toJsonString()
             resultString, elapsedTime = timeOneSearch(pageRequestString)
             accruedTime += elapsedTime
             pageCount = pageCount + 1

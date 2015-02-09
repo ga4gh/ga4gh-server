@@ -47,7 +47,7 @@ class ProtocolElement(object):
     # rigorous testing.
 
     def __str__(self):
-        return "{0}({1})".format(self.__class__.__name__, self.toJSONString())
+        return "{0}({1})".format(self.__class__.__name__, self.toJsonString())
 
     def __eq__(self, other):
         """
@@ -66,7 +66,7 @@ class ProtocolElement(object):
     def __ne__(self, other):
         return not self == other
 
-    def toJSONString(self):
+    def toJsonString(self):
         """
         Returns a JSON encoded string representation of this ProtocolElement.
 
@@ -75,7 +75,7 @@ class ProtocolElement(object):
         """
         return json.dumps(self, cls=ProtocolElementEncoder)
 
-    def toJSONDict(self):
+    def toJsonDict(self):
         """
         Returns a JSON dictionary representation of this ProtocolElement.
         """
@@ -84,11 +84,11 @@ class ProtocolElement(object):
             val = getattr(self, field.name)
             if self.isEmbeddedType(field.name):
                 if isinstance(val, list):
-                    out[field.name] = list(el.toJSONDict() for el in val)
+                    out[field.name] = list(el.toJsonDict() for el in val)
                 elif val is None:
                     out[field.name] = None
                 else:
-                    out[field.name] = val.toJSONDict()
+                    out[field.name] = val.toJsonDict()
             elif isinstance(val, list):
                 out[field.name] = list(val)
             else:
@@ -104,15 +104,15 @@ class ProtocolElement(object):
         return avro.io.validate(cls.schema, jsonDict)
 
     @classmethod
-    def fromJSONString(cls, jsonStr):
+    def fromJsonString(cls, jsonStr):
         """
         Returns a decoded ProtocolElement from the specified JSON string.
         """
         jsonDict = json.loads(jsonStr)
-        return cls.fromJSONDict(jsonDict)
+        return cls.fromJsonDict(jsonDict)
 
     @classmethod
-    def fromJSONDict(cls, jsonDict):
+    def fromJsonDict(cls, jsonDict):
         """
         Returns a decoded ProtocolElement from the specified JSON dictionary.
         """
@@ -138,9 +138,9 @@ class ProtocolElement(object):
 
         embeddedType = cls.getEmbeddedType(field.name)
         if isinstance(field.type, avro.schema.ArraySchema):
-            return list(embeddedType.fromJSONDict(elem) for elem in val)
+            return list(embeddedType.fromJsonDict(elem) for elem in val)
         else:
-            return embeddedType.fromJSONDict(val)
+            return embeddedType.fromJsonDict(val)
 
 # We can now import the definitions of the protocol elements from the
 # generated file.

@@ -70,7 +70,7 @@ def configure(config="DefaultConfig", config_file=None):
     app.serverStatus = ServerStatus()
 
 
-def handleHTTPPost(request, endpoint):
+def handleHttpPost(request, endpoint):
     """
     Handles the specified HTTP POST request, which maps to the specified
     protocol handler handpoint and protocol request class.
@@ -82,7 +82,7 @@ def handleHTTPPost(request, endpoint):
     return flask.Response(responseStr, status=200, mimetype=mimetype)
 
 
-def handleHTTPOptions():
+def handleHttpOptions():
     """
     Handles the specified HTTP OPTIONS request.
     """
@@ -106,7 +106,7 @@ def handleException(exception):
     error = protocol.GAException()
     error.errorCode = exception.code
     error.message = exception.message
-    response = flask.jsonify(error.toJSONDict())
+    response = flask.jsonify(error.toJsonDict())
     response.status_code = exception.httpStatus
     return response
 
@@ -160,14 +160,14 @@ def searchReferences():
 @app.route('/variantsets/search', methods=['POST', 'OPTIONS'])
 def searchVariantSets():
     if flask.request.method == "POST":
-        return handleHTTPPost(flask.request, app.backend.searchVariantSets)
+        return handleHttpPost(flask.request, app.backend.searchVariantSets)
     else:
-        return handleHTTPOptions()
+        return handleHttpOptions()
 
 
 @app.route('/variants/search', methods=['POST', 'OPTIONS'])
 def searchVariants():
     if flask.request.method == "POST":
-        return handleHTTPPost(flask.request, app.backend.searchVariants)
+        return handleHttpPost(flask.request, app.backend.searchVariants)
     else:
-        return handleHTTPOptions()
+        return handleHttpOptions()
