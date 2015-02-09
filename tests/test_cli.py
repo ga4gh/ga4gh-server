@@ -54,7 +54,7 @@ class TestClientArguments(unittest.TestCase):
 
         # ensure the correct attributes on the runner are set
         self.assertIsInstance(runner._request, protocol.ProtocolElement)
-        self.assertIsInstance(runner._httpClient, client.HTTPClient)
+        self.assertIsInstance(runner._httpClient, client.HttpClient)
 
     def run(self, *args, **kwargs):
         super(TestClientArguments, self).run(*args, **kwargs)

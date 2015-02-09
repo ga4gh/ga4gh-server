@@ -255,7 +255,7 @@ class EqualityTest(SchemaTest):
         for cls in self.getProtocolClasses():
             for factory in factories:
                 i1 = factory(cls)
-                i2 = cls.fromJSONDict(i1.toJSONDict())
+                i2 = cls.fromJsonDict(i1.toJsonDict())
                 self.verifyEqualityOperations(i1, i2)
 
     def testDifferentValues(self):
@@ -274,7 +274,7 @@ class EqualityTest(SchemaTest):
 
     def testDifferentLengthArrays(self):
         i1 = self.getTypicalInstance(protocol.GACallSet)
-        i2 = protocol.GACallSet.fromJSONDict(i1.toJSONDict())
+        i2 = protocol.GACallSet.fromJsonDict(i1.toJsonDict())
         i2.variantSetIds.append("extra")
         self.assertFalse(i1 == i2)
 
@@ -286,12 +286,12 @@ class SerialisationTest(SchemaTest):
     def validateClasses(self, factory):
         for cls in self.getProtocolClasses():
             instance = factory(cls)
-            jsonStr = instance.toJSONString()
-            otherInstance = cls.fromJSONString(jsonStr)
+            jsonStr = instance.toJsonString()
+            otherInstance = cls.fromJsonString(jsonStr)
             self.assertEqual(instance, otherInstance)
 
-            jsonDict = instance.toJSONDict()
-            otherInstance = cls.fromJSONDict(jsonDict)
+            jsonDict = instance.toJsonDict()
+            otherInstance = cls.fromJsonDict(jsonDict)
             self.assertEqual(instance, otherInstance)
 
     def testSerialiseDefaultValues(self):
@@ -313,7 +313,7 @@ class ValidatorTest(SchemaTest):
     def validateClasses(self, factory):
         for cls in self.getProtocolClasses():
             instance = factory(cls)
-            jsonDict = instance.toJSONDict()
+            jsonDict = instance.toJsonDict()
             self.assertTrue(cls.validate(jsonDict))
 
     def testValidateDefaultValues(self):
@@ -328,7 +328,7 @@ class ValidatorTest(SchemaTest):
     def testValidateBadValues(self):
         for cls in self.getProtocolClasses():
             instance = self.getTypicalInstance(cls)
-            jsonDict = instance.toJSONDict()
+            jsonDict = instance.toJsonDict()
             self.assertFalse(cls.validate(None))
             self.assertFalse(cls.validate([]))
             self.assertFalse(cls.validate(1))

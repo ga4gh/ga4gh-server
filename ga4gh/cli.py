@@ -98,7 +98,7 @@ class AbstractSearchRunner(object):
         self._minimalOutput = args.minimalOutput
         self._request = request
         self._verbosity = args.verbose
-        self._httpClient = client.HTTPClient(
+        self._httpClient = client.HttpClient(
             args.baseUrl, args.verbose, self._workarounds, self._key)
 
     def _run(self, methodName, attrName=None):
@@ -142,7 +142,7 @@ class VariantSearchRunner(AbstractSearchRunner):
         request.variantName = args.variantName
         request.start = args.start
         request.end = args.end
-        if self.usingWorkaroundsFor(client.HTTPClient.workaroundGoogle):
+        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
             request.maxCalls = args.maxCalls
         if args.callSetIds == []:
             request.callSetIds = []
@@ -189,7 +189,7 @@ class ReferenceSetSearchRunner(AbstractSearchRunner):
         request = protocol.GASearchReferenceSetsRequest()
         setCommaSeparatedAttribute(request, args, 'accessions')
         setCommaSeparatedAttribute(request, args, 'md5checksums')
-        if self.usingWorkaroundsFor(client.HTTPClient.workaroundGoogle):
+        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
             # google says assemblyId not a valid field
             del request.__dict__['assemblyId']
         self.setHttpClient(request, args)
@@ -255,7 +255,7 @@ class ReadsSearchRunner(AbstractSearchRunner):
         request.end = args.end
         request.referenceId = args.referenceId
         request.referenceName = args.referenceName
-        if self.usingWorkaroundsFor(client.HTTPClient.workaroundGoogle):
+        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
             # google says referenceId not a valid field
             del request.__dict__['referenceId']
         self.setHttpClient(request, args)

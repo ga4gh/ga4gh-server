@@ -53,7 +53,7 @@ def makeHttpClient():
     debugLevel = 1
     workarounds = set()
     key = "KEY"
-    httpClient = client.HTTPClient(url, debugLevel, workarounds, key)
+    httpClient = client.HttpClient(url, debugLevel, workarounds, key)
     return httpClient
 
 
@@ -136,7 +136,7 @@ class TestRunRequest(unittest.TestCase):
 
             # verify requests.post called correctly
             url = "http://example.com/referencesets/search"
-            jsonString = request.toJSONString()
+            jsonString = request.toJsonString()
             headers = {"Content-type": "application/json"}
             mockPost.assert_called_twice_with(
                 url, jsonString, headers=headers, verify=False)

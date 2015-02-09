@@ -58,8 +58,8 @@ class Backend(object):
         any point using the nextPageToken attribute of the request object.
         """
         self.startProfile()
-        # TODO change this to fromJSONDict and validate
-        request = requestClass.fromJSONString(requestStr)
+        # TODO change this to fromJsonDict and validate
+        request = requestClass.fromJsonString(requestStr)
         pageList = []
         nextPageToken = None
         for obj, nextPageToken in objectGenerator(request):
@@ -70,7 +70,7 @@ class Backend(object):
         response.nextPageToken = nextPageToken
         setattr(response, pageListName, pageList)
         self.endProfile()
-        return response.toJSONString()
+        return response.toJsonString()
 
     def searchVariantSets(self, request):
         """
