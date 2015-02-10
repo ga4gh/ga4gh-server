@@ -17,6 +17,106 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel.variants as variants
 
 
+def setCommaSeparatedAttribute(request, args, attr):
+    attribute = getattr(args, attr)
+    if attribute is not None:
+        setattr(request, attr, attribute.split(","))
+
+
+class RequestFactory(object):
+    """
+    Provides methods for easy inititalization of request objects
+    """
+    class GASearchReadsRequestGoogle(protocol.ProtocolElement):
+
+        __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds',
+                     'referenceName', 'start']
+
+        def __init__(self):
+            self.end = None
+            self.pageSize = None
+            self.pageToken = None
+            self.readGroupIds = []
+            self.referenceName = None
+            self.start = 0
+
+    def __init__(self, args):
+        self.args = args
+        self.workarounds = set(self.args.workarounds.split(','))
+
+    def usingWorkaroundsFor(self, workaround):
+        """
+        Returns true if we are using the passed-in workaround
+        """
+        return workaround in self.workarounds
+
+    def createGASearchVariantSetsRequest(self):
+        request = protocol.GASearchVariantSetsRequest()
+        setCommaSeparatedAttribute(request, self.args, 'datasetIds')
+        request.pageSize = self.args.pageSize
+        request.pageToken = None
+        return request
+
+    def createGASearchVariantsRequest(self):
+        request = protocol.GASearchVariantsRequest()
+        request.referenceName = self.args.referenceName
+        request.variantName = self.args.variantName
+        request.start = self.args.start
+        request.end = self.args.end
+        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
+            request.maxCalls = self.args.maxCalls
+        if self.args.callSetIds == []:
+            request.callSetIds = []
+        elif self.args.callSetIds == '*':
+            request.callSetIds = None
+        else:
+            request.callSetIds = self.args.callSetIds.split(",")
+        setCommaSeparatedAttribute(request, self.args, 'variantSetIds')
+        return request
+
+    def createGASearchReferenceSetsRequest(self):
+        request = protocol.GASearchReferenceSetsRequest()
+        setCommaSeparatedAttribute(request, self.args, 'accessions')
+        setCommaSeparatedAttribute(request, self.args, 'md5checksums')
+        return request
+
+    def createGASearchReferencesRequest(self):
+        request = protocol.GASearchReferencesRequest()
+        setCommaSeparatedAttribute(request, self.args, 'accessions')
+        setCommaSeparatedAttribute(request, self.args, 'md5checksums')
+        return request
+
+    def createGASearchReadGroupSetsRequest(self):
+        request = protocol.GASearchReadGroupSetsRequest()
+        setCommaSeparatedAttribute(request, self.args, 'datasetIds')
+        request.name = self.args.name
+        return request
+
+    def createGASearchCallSetsRequest(self):
+        request = protocol.GASearchCallSetsRequest()
+        setCommaSeparatedAttribute(request, self.args, 'variantSetIds')
+        request.name = self.args.name
+        return request
+
+    def createGASearchReadsRequest(self):
+        request = protocol.GASearchReadsRequest()
+        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
+            # google says referenceId not a valid field
+            request = self.GASearchReadsRequestGoogle()
+        setCommaSeparatedAttribute(request, self.args, 'readGroupIds')
+        request.start = self.args.start
+        request.end = self.args.end
+        request.referenceId = self.args.referenceId
+        request.referenceName = self.args.referenceName
+        return request
+
+    def createGAListReferenceBasesRequest(self):
+        request = protocol.GAListReferenceBasesRequest()
+        request.start = self.args.start
+        request.end = self.args.end
+        return request
+
+
 ##############################################################################
 # Server
 ##############################################################################
@@ -88,12 +188,6 @@ class AbstractQueryRunner(object):
         self._httpClient = client.HttpClient(
             args.baseUrl, args.verbose, self._workarounds, self._key)
 
-    def usingWorkaroundsFor(self, workaround):
-        """
-        Returns true if we are using the passed-in workaround
-        """
-        return workaround in self._workarounds
-
 
 class AbstractGetRunner(AbstractQueryRunner):
     """
@@ -148,8 +242,7 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchVariantSetsRunner, self).__init__(args)
-        request = protocol.GASearchVariantSetsRequest()
-        setCommaSeparatedAttribute(request, args, 'datasetIds')
+        request = RequestFactory(args).createGASearchVariantSetsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -162,20 +255,7 @@ class SearchVariantsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchVariantsRunner, self).__init__(args)
-        request = protocol.GASearchVariantsRequest()
-        request.referenceName = args.referenceName
-        request.variantName = args.variantName
-        request.start = args.start
-        request.end = args.end
-        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
-            request.maxCalls = args.maxCalls
-        if args.callSetIds == []:
-            request.callSetIds = []
-        elif args.callSetIds == '*':
-            request.callSetIds = None
-        else:
-            request.callSetIds = args.callSetIds.split(",")
-        setCommaSeparatedAttribute(request, args, 'variantSetIds')
+        request = RequestFactory(args).createGASearchVariantsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -211,9 +291,7 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReferenceSetsRunner, self).__init__(args)
-        request = protocol.GASearchReferenceSetsRequest()
-        setCommaSeparatedAttribute(request, args, 'accessions')
-        setCommaSeparatedAttribute(request, args, 'md5checksums')
+        request = RequestFactory(args).createGASearchReferenceSetsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -226,9 +304,7 @@ class SearchReferencesRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReferencesRunner, self).__init__(args)
-        request = protocol.GASearchReferencesRequest()
-        setCommaSeparatedAttribute(request, args, 'accessions')
-        setCommaSeparatedAttribute(request, args, 'md5checksums')
+        request = RequestFactory(args).createGASearchReferencesRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -241,9 +317,7 @@ class SearchReadGroupSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReadGroupSetsRunner, self).__init__(args)
-        request = protocol.GASearchReadGroupSetsRequest()
-        setCommaSeparatedAttribute(request, args, 'datasetIds')
-        request.name = args.name
+        request = RequestFactory(args).createGASearchReadGroupSetsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -256,9 +330,7 @@ class SearchCallSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchCallSetsRunner, self).__init__(args)
-        request = protocol.GASearchCallSetsRequest()
-        setCommaSeparatedAttribute(request, args, 'variantSetIds')
-        request.name = args.name
+        request = RequestFactory(args).createGASearchCallSetsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -284,15 +356,7 @@ class SearchReadsRunner(AbstractSearchRunner):
 
     def __init__(self, args):
         super(SearchReadsRunner, self).__init__(args)
-        request = protocol.GASearchReadsRequest()
-        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
-            # google says referenceId not a valid field
-            request = self.GASearchReadsRequestGoogle()
-        setCommaSeparatedAttribute(request, args, 'readGroupIds')
-        request.start = args.start
-        request.end = args.end
-        request.referenceId = args.referenceId
-        request.referenceName = args.referenceName
+        request = RequestFactory(args).createGASearchReadsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -305,9 +369,7 @@ class ListReferenceBasesRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(ListReferenceBasesRunner, self).__init__(args)
-        request = protocol.GAListReferenceBasesRequest()
-        request.start = args.start
-        request.end = args.end
+        request = RequestFactory(args).createGAListReferenceBasesRequest()
         self._id = args.id
         self._setRequest(request, args)
 
@@ -454,12 +516,6 @@ def addNameArgument(parser):
     parser.add_argument(
         "--name", default=None,
         help="The name to search over")
-
-
-def setCommaSeparatedAttribute(request, args, attr):
-    attribute = getattr(args, attr)
-    if attribute is not None:
-        setattr(request, attr, attribute.split(","))
 
 
 def addClientGlobalOptions(parser):
