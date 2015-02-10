@@ -11,8 +11,8 @@ import json
 
 import mock
 
-import ga4gh.client as client
 import ga4gh.protocol as protocol
+import tests.utils as utils
 
 
 class DummyRequest(protocol.ProtocolElement):
@@ -58,21 +58,12 @@ class DummyResponse(object):
         pass
 
 
-def makeHttpClient():
-    url = "http://example.com"
-    debugLevel = 0
-    workarounds = set()
-    key = "KEY"
-    httpClient = client.HttpClient(url, debugLevel, workarounds, key)
-    return httpClient
-
-
 class TestSearchMethodsCallRunRequest(unittest.TestCase):
     """
     Test that search methods call lower-level functionality correctly
     """
     def setUp(self):
-        self.httpClient = makeHttpClient()
+        self.httpClient = utils.makeHttpClient()
         self.protocolRequest = DummyRequest()
         self.httpClient.runSearchRequest = mock.Mock()
         self.httpClient.runListRequest = mock.Mock()
@@ -143,7 +134,7 @@ class TestRunRequest(unittest.TestCase):
     Test the logic of the run*Request methods
     """
     def setUp(self):
-        self.httpClient = makeHttpClient()
+        self.httpClient = utils.makeHttpClient()
 
     def testRunSearchRequest(self):
         # setup

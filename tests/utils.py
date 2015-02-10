@@ -12,6 +12,16 @@ import string
 import avro.schema
 
 import ga4gh.protocol as protocol
+import ga4gh.client as client
+
+
+def makeHttpClient():
+    url = "http://example.com"
+    debugLevel = 0
+    workarounds = set()
+    key = "KEY"
+    httpClient = client.HttpClient(url, debugLevel, workarounds, key)
+    return httpClient
 
 
 def applyVersion(route):

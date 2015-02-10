@@ -5,8 +5,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import unittest
 import argparse
+import unittest
+import mock
 
 import ga4gh.cli as cli
 import ga4gh.protocol as protocol
@@ -17,17 +18,70 @@ class TestNoInput(unittest.TestCase):
     """
     Test the cli as if there was no input; print_help should be called
     """
+    def setUp(self):
+        self.parser = StubArgumentParser(self)
+
+    def run(self, *args, **kwargs):
+        super(TestNoInput, self).run(*args, **kwargs)
+        self.verifyInput()
+
+    def verifyInput(self):
+        self.parser.assertParseArgsCountEquals(1)
+        self.parser.assertHelpCountEquals(1)
+
+    def testGa2VcfNoInput(self):
+        cli.ga2vcf_main(self.parser)
+
+    def testGa2SamNoInput(self):
+        cli.ga2sam_main(self.parser)
+
     def testServerNoInput(self):
-        parser = StubArgumentParser(self)
-        cli.server_main(parser)
-        parser.assertParseArgsCountEquals(1)
-        parser.assertHelpCountEquals(1)
+        cli.server_main(self.parser)
 
     def testCliNoInput(self):
-        parser = StubArgumentParser(self)
-        cli.client_main(parser)
-        parser.assertParseArgsCountEquals(1)
-        parser.assertHelpCountEquals(1)
+        cli.client_main(self.parser)
+
+
+class TestGa2VcfArguments(unittest.TestCase):
+    """
+    Tests the ga2vcf cli can parse all arguments it is supposed to
+    """
+    def testVariantsSearchArguments(self):
+        cliInput = """--workarounds WORK,AROUND
+        --key KEY -O --outputFile /dev/null
+        variants-search --referenceName REFERENCENAME
+        --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
+        --end 1 --pageSize 2 --variantSetIds VARIANT,SET,IDS
+        --datasetIds DATASET,IDS --maxCalls 5
+        BASEURL"""
+        stubConverterModule = StubConverterModuleVcf(self)
+        with mock.patch(
+                'ga4gh.converters.VcfConverter',
+                stubConverterModule):
+            parser = StubArgumentParserCli(self, cliInput)
+            cli.ga2vcf_main(parser)
+            parser.assertParseArgsCountEquals(1)
+            stubConverterModule.assertVcfConvertCountEquals(1)
+
+
+class TestGa2SamArguments(unittest.TestCase):
+    """
+    Tests the ga2sam cli can parse all arguments it is supposed to
+    """
+    def testReadsSearchArguments(self):
+        cliInput = """--workarounds WORK,AROUND --key KEY -O
+        --pageSize 1 --start 2 --end 3 --outputFile OUT.SAM
+        --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
+        --referenceName REFERENCENAME --binaryOutput
+        BASEURL"""
+        stubConverterModule = StubConverterModuleSam(self)
+        with mock.patch(
+                'ga4gh.converters.SamConverter',
+                stubConverterModule):
+            parser = StubArgumentParserCli(self, cliInput)
+            cli.ga2sam_main(parser)
+            parser.assertParseArgsCountEquals(1)
+            stubConverterModule.assertSamConvertCountEquals(1)
 
 
 class TestClientArguments(unittest.TestCase):
@@ -131,3 +185,66 @@ class StubArgumentParser(object):
 
     def __getattr__(self, name):
         return getattr(self.parser, name)
+
+
+class StubArgumentParserCli(StubArgumentParser):
+    """
+    Like StubArgumentParser, but returns real arguments from the
+    parse_args call (that the user provides)
+    """
+    def __init__(self, currentTest, cliInput):
+        super(StubArgumentParserCli, self).__init__(currentTest)
+        self.cliInput = cliInput
+
+    def _parseArgs(self):
+        self.parseArgsCount += 1
+        splits = self.cliInput.split()
+        return self.parser.parse_args(splits)
+
+
+class StubConverterModule(object):
+    """
+    A stand-in object for the converter module.
+    Just provides access to dummy objects.
+    """
+    def __init__(self, currentTest):
+        self.currentTest = currentTest
+        self.VcfConverter = StubConverter(self.currentTest)
+        self.SamConverter = StubConverter(self.currentTest)
+
+    def assertVcfConvertCountEquals(self, convertCount):
+        self.VcfConverter.assertConvertCountEquals(convertCount)
+
+    def assertSamConvertCountEquals(self, convertCount):
+        self.SamConverter.assertConvertCountEquals(convertCount)
+
+
+class StubConverterModuleSam(StubConverterModule):
+    """
+    The StubConverterModule for Sam tests
+    """
+    def __call__(self, *args):
+        return self.SamConverter
+
+
+class StubConverterModuleVcf(StubConverterModule):
+    """
+    The StubConverterModule for Vcf tests
+    """
+    def __call__(self, *args):
+        return self.VcfConverter
+
+
+class StubConverter(object):
+    """
+    A stand-in object for a converter that does nothing
+    """
+    def __init__(self, currentTest):
+        self.currentTest = currentTest
+        self.convertCount = 0
+
+    def convert(self):
+        self.convertCount += 1
+
+    def assertConvertCountEquals(self, convertCount):
+        self.currentTest.assertEquals(self.convertCount, convertCount)
