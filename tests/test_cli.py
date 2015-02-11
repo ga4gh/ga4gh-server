@@ -53,7 +53,8 @@ class TestClientArguments(unittest.TestCase):
         runner = args.runner(args)
 
         # ensure the correct attributes on the runner are set
-        self.assertIsInstance(runner._request, protocol.ProtocolElement)
+        if hasattr(runner, '_request'):
+            self.assertIsInstance(runner._request, protocol.ProtocolElement)
         self.assertIsInstance(runner._httpClient, client.HttpClient)
 
     def run(self, *args, **kwargs):
@@ -89,6 +90,16 @@ class TestClientArguments(unittest.TestCase):
         self.cliInput = """reads-search --pageSize 1 --start 2 --end 3
         --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
         --referenceName REFERENCENAME"""
+
+    def testReferenceSetGetArguments(self):
+        self.cliInput = """referencesets-get --id ID"""
+
+    def testReferenceGetArguments(self):
+        self.cliInput = """references-get --id ID"""
+
+    def testReferenceBasesListArguments(self):
+        self.cliInput = """references-list-bases --id ID
+        --start 1 --end 2"""
 
 
 class StubArgumentParser(object):

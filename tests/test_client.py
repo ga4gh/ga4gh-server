@@ -25,10 +25,20 @@ class DummyRequest(protocol.ProtocolElement):
         self.arrayVal = [1, 2, 3]
         self.pageToken = None
 
+    def __eq__(self, other):
+        for field in self.__slots__:
+            if getattr(self, field) != getattr(other, field):
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 
 class DummyResponse(object):
 
     def __init__(self, text=None):
+        self.status_code = 200
         if text is None:
             self.text = self._getText()
         else:
@@ -63,70 +73,92 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     """
     def setUp(self):
         self.httpClient = makeHttpClient()
-        self.request = DummyRequest()
-        self.httpClient.runRequest = mock.Mock()
+        self.protocolRequest = DummyRequest()
+        self.httpClient.runSearchRequest = mock.Mock()
+        self.httpClient.runListRequest = mock.Mock()
+        self.httpClient.runGetRequest = mock.Mock()
+        self._id = "SomeId"
 
     def testSearchVariants(self):
-        self.httpClient.searchVariants(self.request)
-        self.httpClient.runRequest.assert_called_once_with(
-            self.request, "variants/search",
+        self.httpClient.searchVariants(self.protocolRequest)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            self.protocolRequest, "variants",
             protocol.GASearchVariantsResponse, "variants")
 
     def testSearchVariantSets(self):
-        self.httpClient.searchVariantSets(self.request)
-        self.httpClient.runRequest.assert_called_once_with(
-            self.request, "variantsets/search",
+        self.httpClient.searchVariantSets(self.protocolRequest)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            self.protocolRequest, "variantsets",
             protocol.GASearchVariantSetsResponse, "variantSets")
 
     def testSearchReferenceSets(self):
-        self.httpClient.searchReferenceSets(self.request)
-        self.httpClient.runRequest.assert_called_once_with(
-            self.request, "referencesets/search",
+        self.httpClient.searchReferenceSets(self.protocolRequest)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            self.protocolRequest, "referencesets",
             protocol.GASearchReferenceSetsResponse, "referenceSets")
 
     def testSearchReferences(self):
-        self.httpClient.searchReferences(self.request)
-        self.httpClient.runRequest.assert_called_once_with(
-            self.request, "references/search",
+        self.httpClient.searchReferences(self.protocolRequest)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            self.protocolRequest, "references",
             protocol.GASearchReferencesResponse, "references")
 
     def testSearchReadGroupSets(self):
-        self.httpClient.searchReadGroupSets(self.request)
-        self.httpClient.runRequest.assert_called_once_with(
-            self.request, "readgroupsets/search",
+        self.httpClient.searchReadGroupSets(self.protocolRequest)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            self.protocolRequest, "readgroupsets",
             protocol.GASearchReadGroupSetsResponse, "readGroupSets")
 
     def testSearchCallSets(self):
-        self.httpClient.searchCallSets(self.request)
-        self.httpClient.runRequest.assert_called_once_with(
-            self.request, "callsets/search",
+        self.httpClient.searchCallSets(self.protocolRequest)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            self.protocolRequest, "callsets",
             protocol.GASearchCallSetsResponse, "callSets")
 
     def testSearchReads(self):
-        self.httpClient.searchReads(self.request)
-        self.httpClient.runRequest.assert_called_once_with(
-            self.request, "reads/search",
+        self.httpClient.searchReads(self.protocolRequest)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            self.protocolRequest, "reads",
             protocol.GASearchReadsResponse, "alignments")
+
+    def testGetReferenceSet(self):
+        self.httpClient.getReferenceSet(self._id)
+        self.httpClient.runGetRequest.assert_called_once_with(
+            "referencesets", protocol.GAReferenceSet, self._id)
+
+    def testGetReference(self):
+        self.httpClient.getReference(self._id)
+        self.httpClient.runGetRequest.assert_called_once_with(
+            "references", protocol.GAReference, self._id)
+
+    def testListReferenceBases(self):
+        self.httpClient.listReferenceBases(self.protocolRequest, self._id)
+        self.httpClient.runListRequest.assert_called_once_with(
+            self.protocolRequest, "references/{id}/bases",
+            protocol.GAListReferenceBasesResponse, self._id)
 
 
 class TestRunRequest(unittest.TestCase):
     """
-    Test the logic of runRequest
+    Test the logic of the run*Request methods
     """
-    def testRunRequest(self):
+    def setUp(self):
+        self.httpClient = makeHttpClient()
+
+    def testRunSearchRequest(self):
         # setup
         mockPost = mock.Mock()
-        with mock.patch('requests.post', mockPost):
+        with mock.patch('requests.request', mockPost):
             mockPost.side_effect = [DummyResponse(), DummyResponse('{}')]
-            request = DummyRequest()
+            protocolRequest = DummyRequest()
+            objectName = "referencesets"
+            protocolResponseClass = protocol.GASearchReferenceSetsResponse
+            listAttr = "referenceSets"
 
             # invoke SUT
-            url = "referencesets/search"
-            protocolClass = protocol.GASearchReferenceSetsResponse
-            listAttr = "referenceSets"
-            httpClient = makeHttpClient()
-            result = [refSet for refSet in httpClient.runRequest(
-                request, url, protocolClass, listAttr)]
+            result = [refSet for refSet in self.httpClient.runSearchRequest(
+                protocolRequest, objectName,
+                protocolResponseClass, listAttr)]
 
             # verify results of invocation
             self.assertEqual(len(result), 2)
@@ -136,7 +168,71 @@ class TestRunRequest(unittest.TestCase):
 
             # verify requests.post called correctly
             url = "http://example.com/referencesets/search"
-            jsonString = request.toJsonString()
+            jsonString = protocolRequest.toJsonString()
             headers = {"Content-type": "application/json"}
+            httpMethod = 'POST'
             mockPost.assert_called_twice_with(
-                url, jsonString, headers=headers, verify=False)
+                httpMethod, url, jsonString, headers=headers, verify=False)
+
+    def testRunGetRequest(self):
+        # setup
+        mockGet = mock.Mock()
+        with mock.patch('requests.request', mockGet):
+            text = {
+                "id": "gaid",
+                "md5checksum": "def",
+            }
+            mockGet.side_effect = [DummyResponse(json.dumps(text))]
+            objectName = "reference"
+            protocolResponseClass = protocol.GAReference
+            id_ = 'anId'
+
+            # invoke SUT
+            result = self.httpClient.runGetRequest(
+                objectName, protocolResponseClass, id_)
+
+            # verify results of invocation
+            self.assertEqual(result.id, "gaid")
+            self.assertEqual(result.md5checksum, "def")
+
+            # verify requests.get called correctly
+            url = "http://example.com/reference/anId"
+            params = {}
+            httpMethod = 'GET'
+            headers = {}
+            data = None
+            mockGet.assert_called_once_with(
+                httpMethod, url, params=params, data=data, headers=headers)
+
+    def testRunListRequest(self):
+        # setup
+        mockGet = mock.Mock()
+        with mock.patch('requests.request', mockGet):
+            text = {
+                "offset": 123,
+                "sequence": "sequence",
+                "nextPageToken": "pageTok",
+            }
+            mockGet.side_effect = [
+                DummyResponse(json.dumps(text)), DummyResponse('{}')]
+            protocolRequest = protocol.GAListReferenceBasesRequest()
+            protocolRequest.start = 1
+            protocolRequest.end = 5
+            url = "references/{id}/bases"
+            protocolResponseClass = protocol.GAListReferenceBasesResponse
+            id_ = 'myId'
+
+            # invoke SUT
+            result = [base for base in self.httpClient.runListRequest(
+                protocolRequest, url, protocolResponseClass, id_)]
+
+            # verify results of invocation
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result[0].offset, 123)
+            self.assertEqual(result[0].sequence, "sequence")
+
+            # verify requests.get called correctly
+            url = "http://example.com/references/myId/bases"
+            params = {"start": 1, "end": 5}
+            httpMethod = 'GET'
+            mockGet.assert_called_twice_with(httpMethod, url, params=params)

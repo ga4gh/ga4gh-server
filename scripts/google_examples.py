@@ -9,6 +9,16 @@ from __future__ import unicode_literals
 import os
 import subprocess
 
+import yaml
+
+
+def getKey():
+    filepath = 'scripts/auth.yml'
+    with open(filepath) as stream:
+        doc = yaml.load(stream)
+        key = doc['google']['key']
+    return key
+
 
 def runTests():
     separator = "----------------------"
@@ -16,12 +26,17 @@ def runTests():
         os.path.abspath(os.path.dirname(__file__)),
         '..', 'client_dev.py')
     baseUrl = "https://www.googleapis.com/genomics/v1beta2"
-    keyStr = "--key AIzaSyBcdyeUZSzUVE0e_HPLyCJd7bOZ6g3lr3I"
+    key = getKey()
+    keyStr = "--key {0}".format(key)
     workarounds = "--workarounds=google"
     minimalOutput = "-O"
     commands = [
         "variants-search --variantSetIds 10473108253681171589 "
-        "--referenceName 22 --start 51005353 --end 51015353 --pageSize 1",
+        "--referenceName 22 --start 51005491 --end 51005492 --pageSize 1",
+        "references-list-bases --id EIaSo62VtfXT4AE --start 15000 "
+        "--end 15010",
+        "referencesets-get --id EMud_c37lKPXTQ",
+        "references-get --id EIaSo62VtfXT4AE",
         "variantsets-search --datasetIds 10473108253681171589",
         "referencesets-search --accessions GCA_000001405.15",
         "references-search --md5checksums 1b22b98cdeb4a9304cb5d48026a85128",
