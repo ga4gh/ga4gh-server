@@ -8,10 +8,18 @@ from __future__ import unicode_literals
 
 import os
 
-import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.datacontainers as datacontainers
 
-class Dataset(datamodel.DataObject):
+class DatasetContainer(datacontainers.DataContainer):
+    """
+    Class representing a set of datasets.
+    """
+    def __init__(self):
+        super(DatasetContainer, self).__init__()
+
+
+class Dataset(datacontainers.FileSystemDataContainer):
     """
     Class representing a single dataset in the GA4GH data model. A
     dataset corresponds to a single directory in the file system

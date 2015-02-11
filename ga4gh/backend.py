@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.datasets as datasets
 
@@ -16,22 +17,14 @@ class Backend(object):
     protocol end points.
     """
     def __init__(self):
-        self._datasetIdMap = {}
-        self._datasetIds = []
+        self._datasets = datasets.DatasetContainer()
 
     def addDataset(self, dataDir):
         """
         Adds a new dataset for data stored in the specifed directory.
         """
         dataset = datasets.Dataset(dataDir)
-        datasetId = dataset.getId()
-        # TODO support online adding of datasets
-        if datasetId in self._datasetIdMap:
-            currentDataset = self._datasetIdMap[datasetId]
-            # TODO shutdown currentDataset cleanly
-        else:
-            self._datasetIds.append(datasetId)
-        self._datasetIdMap[datasetId] = dataset
+        self._datasets.add(dataset)
 
     def parsePageToken(self, pageToken, numValues):
         """
