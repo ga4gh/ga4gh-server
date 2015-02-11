@@ -51,5 +51,49 @@ from ga4gh.protocol import Variant
 variant = Variant()
 ```
 
-## Tests
-Tests should avoid use of the `assert` keyword and instead use the methods that `unittest` provides.
+## Tests 
+Unit tests should have descriptive 
+method names and should aim to be short, simple and isolated. Where complex 
+testing is required, we should delegate the verification to another 
+method. For example, 
+
+```python
+class TestGenotypeConversion(unittest.TestCase):
+    """ 
+    Tests the conversion of VCF genotypes to GA4GH values.
+    """
+    def verifyConversion(self, vcfGenotype, vcfPhaseset, 
+                         ga4ghGenotype, ga4ghPhaseset):
+        """
+        Verifies that the convertGenotype function properly converts the 
+        specified VCF genotype and phaseset values into the specified 
+        GA4GH genotype and phaseset values.
+        """
+        self.assertEqual(
+            (ga4ghGenotype, ga4ghPhaseset),
+            variants.convertVcfGenotype(vcfGenotype, vcfPhaseset))
+
+    def testUnphasedNoCall(self):
+        self.verifyConversion("./.", "0", [-1], None)
+
+    def testUnphasedSecondHalfCall(self):
+        self.verifyConversion("./0", "25", [-1], None)
+
+    # etc.
+```
+
+Tests should avoid use of the `assert` keyword and instead use the
+methods that `unittest` provides. 
+
+## Docstring comments
+
+All public methods and functions should have docstring comments, and should 
+follow the conventions of [PEP 257](https://www.python.org/dev/peps/pep-0257/).
+
+The exception to this rule is for unit tests, which should have descriptive
+method names, and no docstring comments. (The reason for this is that 
+nosetests prints out the docstring comment rather than the methodname 
+when running `nosetests -v`, which seems less useful.) See above for an 
+example of the recommended structure for unit tests. 
+
+
