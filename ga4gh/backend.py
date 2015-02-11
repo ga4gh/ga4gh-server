@@ -24,24 +24,8 @@ class Backend(object):
         Adds a new dataset for data stored in the specifed directory.
         """
         dataset = datasets.Dataset(dataDir)
-        self._datasets.add(dataset)
+        self._datasets.addChild(dataset)
 
-    def parsePageToken(self, pageToken, numValues):
-        """
-        Parses the specified pageToken and returns a list of the specified
-        number of values. Page tokens are assumed to consist of a fixed
-        number of integers seperated by colons. If the page token does
-        not conform to this specification, raise a InvalidPageToken
-        exception.
-        """
-        tokens = pageToken.split(":")
-        # TODO define exceptions.InvalidPageToken and raise here.
-        if len(tokens) != numValues:
-            raise Exception("Invalid number of values in page token")
-        # TODO catch a ValueError here when bad integers are passed and
-        # convert this into the appropriate InvalidPageToken exception.
-        values = map(int, tokens)
-        return values
 
     def runSearchRequest(
             self, requestStr, requestClass, responseClass, pageListName,
@@ -89,58 +73,8 @@ class Backend(object):
         return self.runSearchRequest(
             request, protocol.GASearchVariantsRequest,
             protocol.GASearchVariantsResponse, "variants",
-            self.variantsGenerator)
+            self._datasets.variantsGenerator)
 
-    def variantSetsGenerator(self, request):
-        """
-        Returns a generator over the (variantSet, nextPageToken) pairs defined
-        by the speficied request.
-        """
-        # TODO we now have datasetIds to iterate over also. We need a better
-        # abstraction for iterating over these nested lists, as it's something
-        # we're going to be doing a lot, and it's far too error prone now.
-        # We need to (1) iterate over the data set ids; (2) iterate over the
-        # variant set ids within each dataset.
-        #
-        # This code here is now broken because the variantSets have been moved
-        # into the Dataset class.
-        currentIndex = 0
-        if request.pageToken is not None:
-            currentIndex, = self.parsePageToken(request.pageToken, 1)
-        while currentIndex < len(self._variantSetIds):
-            variantSet = protocol.GAVariantSet()
-            variantSet.id = self._variantSetIds[currentIndex]
-            variantSet.datasetId = "NotImplemented"
-            variantSet.metadata = self._variantSetIdMap[
-                variantSet.id].getMetadata()
-            currentIndex += 1
-            nextPageToken = None
-            if currentIndex < len(self._variantSetIds):
-                nextPageToken = str(currentIndex)
-            yield variantSet, nextPageToken
-
-    def variantsGenerator(self, request):
-        """
-        Returns a generator over the (variant, nextPageToken) pairs defined by
-        the specified request.
-        """
-        variantSetIds = request.variantSetIds
-        startVariantSetIndex = 0
-        startPosition = request.start
-        if request.pageToken is not None:
-            startVariantSetIndex, startPosition = self.parsePageToken(
-                request.pageToken, 2)
-        for variantSetIndex in range(startVariantSetIndex, len(variantSetIds)):
-            variantSetId = variantSetIds[variantSetIndex]
-            if variantSetId in self._variantSetIdMap:
-                variantSet = self._variantSetIdMap[variantSetId]
-                iterator = variantSet.getVariants(
-                    request.referenceName, startPosition, request.end,
-                    request.variantName, request.callSetIds)
-                for variant in iterator:
-                    nextPageToken = "{0}:{1}".format(
-                        variantSetIndex, variant.start + 1)
-                    yield variant, nextPageToken
 
     def startProfile(self):
         pass

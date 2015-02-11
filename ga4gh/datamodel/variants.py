@@ -14,7 +14,7 @@ import pysam
 import wormtable as wt
 
 import ga4gh.protocol as protocol
-import ga4gh.datamodel as datamodel
+import ga4gh.datamodel.datacontainers as datacontainers
 
 
 def variantSetFactory(dataDir, dataset):
@@ -33,7 +33,7 @@ def variantSetFactory(dataDir, dataset):
     return variantSet
 
 
-class VariantSet(datamodel.DataObject):
+class VariantSet(datacontainers.FileSystemDataContainer):
     """
     Class representing a single VariantSet in the GA4GH data model.
     """
