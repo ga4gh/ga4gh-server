@@ -60,7 +60,7 @@ class DummyResponse(object):
 
 def makeHttpClient():
     url = "http://example.com"
-    debugLevel = 1
+    debugLevel = 0
     workarounds = set()
     key = "KEY"
     httpClient = client.HttpClient(url, debugLevel, workarounds, key)
