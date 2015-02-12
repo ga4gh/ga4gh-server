@@ -1,0 +1,13 @@
+Flask
+Flask-API
+Flask-Cors
+avro
+coverage
+guppy
+mock
+nose
+pep8
+pysam
+pyyaml
+requests
+wormtable

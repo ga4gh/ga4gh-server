@@ -17,6 +17,8 @@ import tempfile
 import requests
 import argparse
 import subprocess
+import textwrap
+import re
 
 import avro.schema
 
@@ -83,24 +85,25 @@ class SchemaClass(object):
         stack = [schema]
         # Strip out all the docs
         while len(stack) > 0:
-            d = stack.pop()
-            if "doc" in d:
-                d["doc"] = ""
-            for u in d.values():
-                if isinstance(u, dict):
-                    stack.append(u)
-                elif isinstance(u, list):
-                    for v in u:
-                        if isinstance(v, dict):
-                            stack.append(v)
-        s = json.dumps(schema)
-        with tempfile.TemporaryFile() as f:
-            f.write(s)
-            f.seek(0)
+            elm = stack.pop()
+            if "doc" in elm:
+                elm["doc"] = ""
+            for value in elm.values():
+                if isinstance(value, dict):
+                    stack.append(value)
+                elif isinstance(value, list):
+                    for dic in value:
+                        if isinstance(dic, dict):
+                            stack.append(dic)
+        jsonData = json.dumps(schema)
+        with tempfile.TemporaryFile() as tmp:
+            tmp.write(jsonData)
+            tmp.seek(0)
             # Filter the text through fmt to make it look like acceptable code.
-            p = subprocess.Popen(["fmt"], stdout=subprocess.PIPE, stdin=f)
-        (output, err) = p.communicate()
-        exitStatus = p.wait()
+            subproc = subprocess.Popen(
+                ["fmt"], stdout=subprocess.PIPE, stdin=tmp)
+            (output, err) = subproc.communicate()
+            exitStatus = subproc.wait()
         if exitStatus != 0:
             msg = "Error occured running fmt: {0}: {1}".format(exitStatus, err)
             raise Exception(msg)
@@ -117,78 +120,89 @@ class SchemaClass(object):
                 fields.append(field)
 
         if len(fields) < 2:
-            s = "set(["
+            string = "set(["
             for field in fields:
-                s += '"{0}"'.format(field.name)
-            s += "])"
+                string += '"{0}"'.format(field.name)
+            string += "])"
         else:
-            s = "set([\n"
+            string = "set([\n"
             for field in fields:
-                s += (" " * 8) + '"{0}",\n'.format(field.name)
-            s += (" " * 4) + "])"
-        return s
+                string += (" " * 8) + '"{0}",\n'.format(field.name)
+            string += (" " * 4) + "])"
+        return string
 
-    def writeConstructor(self, f):
-        print("    def __init__(self):", file=f)
+    def writeConstructor(self, outputFile):
+        # Force using slots to avoid the overhead of a dict per object;
+        # when a query returns hundreds of thousands of calls this can
+        # save a hundred megabytes or more.
+        print("    __slots__ = ['",
+              textwrap.fill(
+                  "', '".join([field.name for field in self.getFields()]),
+                  62, subsequent_indent='                 '), "']",
+              sep='', file=outputFile)
+        print(file=outputFile)
+        print("    def __init__(self):", file=outputFile)
         for field in self.getFields():
             print("        self.{0} = {1}".format(
-                field.name, field.default), file=f)
+                field.name, field.default), file=outputFile)
 
-    def writeEmbeddedTypesClassMethods(self, f):
+    def writeEmbeddedTypesClassMethods(self, outputFile):
         """
         Returns the definition for the _embeddedTypes dictionary. This is a
         temporary mechanism to provide a simple path from the current
         approach to more efficient and type-safe methods that we want
         to transition to.
         """
-        print("    @classmethod", file=f)
-        print("    def isEmbeddedType(cls, fieldName):", file=f)
+        print("    @classmethod", file=outputFile)
+        print("    def isEmbeddedType(cls, fieldName):", file=outputFile)
         et = self.getEmbeddedTypes()
         if len(et) == 0:
-            s = (" " * 8) + "embeddedTypes = {}"
+            string = (" " * 8) + "embeddedTypes = {}"
         else:
-            s = (" " * 8) + "embeddedTypes = {\n"
+            string = (" " * 8) + "embeddedTypes = {\n"
             for fn, ft in self.getEmbeddedTypes():
-                s += (" " * 12) + "'{0}': {1},\n".format(fn, ft)
-            s += (" " * 8) + "}"
-        print(s, file=f)
-        print(" " * 8 + "return fieldName in embeddedTypes", file=f)
-        print(file=f)
-        print("    @classmethod", file=f)
-        print("    def getEmbeddedType(cls, fieldName):", file=f)
-        print(s, file=f)
-        print(" " * 8 + "return embeddedTypes[fieldName]", file=f)
-        print(file=f)
+                string += (" " * 12) + "'{0}': {1},\n".format(fn, ft)
+            string += (" " * 8) + "}"
+        print(string, file=outputFile)
+        print(" " * 8 + "return fieldName in embeddedTypes", file=outputFile)
+        print(file=outputFile)
+        print("    @classmethod", file=outputFile)
+        print("    def getEmbeddedType(cls, fieldName):", file=outputFile)
+        print(string, file=outputFile)
+        print(" " * 8 + "return embeddedTypes[fieldName]", file=outputFile)
+        print(file=outputFile)
 
-    def write(self, f):
+    def write(self, outputFile):
         """
         Writes the class definition to the specified file.
         """
         superclass = "ProtocolElement"
         if isinstance(self.schema, avro.schema.EnumSchema):
             superclass = "object"
-        s = "\n\nclass {0}({1}):".format(self.schema.name, superclass)
-        print(s, file=f)
+        string = "\n\nclass {0}({1}):".format(self.schema.name, superclass)
+        print(string, file=outputFile)
         doc = self.schema.doc
         if doc is None:
             doc = "No documentation"
-        s = '    """\n{0}\n    """'.format(doc)
-        print(s, file=f)
+        string = '    """\n{0}\n    """'.format(doc)
+        print(string, file=outputFile)
         if isinstance(self.schema, avro.schema.RecordSchema):
-            s = '    _schemaSource = """\n{0}"""'.format(self.formatSchema())
-            print(s, file=f)
-            s = '    schema = avro.schema.parse(_schemaSource)'
-            print(s, file=f)
-            s = '    requiredFields = {0}'.format(self.formatRequiredFields())
-            print(s, file=f)
-            print(file=f)
-            self.writeEmbeddedTypesClassMethods(f)
-            self.writeConstructor(f)
+            string = '    _schemaSource = """\n{0}"""'.format(
+                self.formatSchema())
+            print(string, file=outputFile)
+            string = '    schema = avro.schema.parse(_schemaSource)'
+            print(string, file=outputFile)
+            string = '    requiredFields = {0}'.format(
+                self.formatRequiredFields())
+            print(string, file=outputFile)
+            print(file=outputFile)
+            self.writeEmbeddedTypesClassMethods(outputFile)
+            self.writeConstructor(outputFile)
         elif isinstance(self.schema, avro.schema.EnumSchema):
             # TODO make a proper Python enum here using the Python 3.4 enum?
             for symbol in self.schema.symbols:
-                s = '    {0} = "{0}"'.format(symbol, symbol)
-                print(s, file=f)
+                string = '    {0} = "{0}"'.format(symbol, symbol)
+                print(string, file=outputFile)
 
 
 class SchemaGenerator(object):
@@ -200,32 +214,63 @@ class SchemaGenerator(object):
         self.schemaDir = schemaDir
         self.outputFile = outputFile
         self.classes = []
-        for f in glob.glob(os.path.join(self.schemaDir, "*.avsc")):
-            self.classes.append(SchemaClass(f))
+        for avscFile in glob.glob(os.path.join(self.schemaDir, "*.avsc")):
+            self.classes.append(SchemaClass(avscFile))
+        self.requestClassNames = [
+            cls.name for cls in self.classes
+            if re.search('Search.+Request', cls.name)]
+        self.responseClassNames = [
+            cls.name for cls in self.classes
+            if re.search('Search.+Response', cls.name)]
+        self.postSignatures = []
+        for request, response in zip(
+                self.requestClassNames, self.responseClassNames):
+            objname = re.search('Search(.+)Request', request).groups()[0]
+            url = '/{0}/search'.format(objname.lower())
+            tup = (url, request, response)
+            self.postSignatures.append(tup)
 
-    def writeHeader(self, f):
+    def writeHeader(self, outputFile):
         """
         Writes the header information to the output file.
         """
-        print('"""{0}"""'.format(HEADER_COMMENT), file=f)
-        print("from protocol import ProtocolElement", file=f)
-        print("import avro.schema", file=f)
-        print(file=f)
+        print('"""{0}"""'.format(HEADER_COMMENT), file=outputFile)
+        print("from protocol import ProtocolElement", file=outputFile)
+        print("import avro.schema", file=outputFile)
+        print(file=outputFile)
         versionStr = self.version[1:]  # Strip off leading 'v'
-        print("version = '{0}'".format(versionStr), file=f)
+        print("version = '{0}'".format(versionStr), file=outputFile)
 
     def write(self):
         """
         Writes the generated schema classes to the output file.
         """
-        with open(self.outputFile, "w") as f:
-            self.writeHeader(f)
+        with open(self.outputFile, "w") as outputFile:
+            self.writeHeader(outputFile)
             # Get the classnames and sort them to get consistent ordering.
-            names = [c.name for c in self.classes]
-            classes = dict([(c.name, c) for c in self.classes])
+            names = [cls.name for cls in self.classes]
+            classes = dict([(cls.name, cls) for cls in self.classes])
             for name in sorted(names):
-                c = classes[name]
-                c.write(f)
+                cls = classes[name]
+                cls.write(outputFile)
+
+            # can't just use pprint library because
+            # pep8 will complain about formatting
+            outputFile.write('\npostMethods = \\\n    [(\'')
+            for i, tup in enumerate(self.postSignatures):
+                url, request, response = tup
+                if i != 0:
+                    outputFile.write('     (\'')
+                outputFile.write(url)
+                outputFile.write('\',\n      ')
+                outputFile.write(request)
+                outputFile.write(',\n      ')
+                outputFile.write(response)
+                outputFile.write(')')
+                if i == len(self.postSignatures) - 1:
+                    outputFile.write(']\n')
+                else:
+                    outputFile.write(',\n')
 
 
 class SchemaProcessor(object):
@@ -239,9 +284,10 @@ class SchemaProcessor(object):
         self.verbosity = args.verbose
         self.tmpDir = tempfile.mkdtemp(prefix="ga4gh_")
         self.sourceTar = os.path.join(self.tmpDir, "schemas.tar.gz")
+        self.avroJarPath = args.avro_tools_jar
         # Note! The tarball does not contain the leading v
-        s = "schemas-{0}".format(self.version[1:])
-        self.schemaDir = os.path.join(self.tmpDir, s)
+        string = "schemas-{0}".format(self.version[1:])
+        self.schemaDir = os.path.join(self.tmpDir, string)
         self.avroJar = os.path.join(self.schemaDir, "avro-tools.jar")
 
     def cleanup(self):
@@ -256,7 +302,7 @@ class SchemaProcessor(object):
         """
         if self.verbosity > 1:
             print("Downloading", url, end="")
-        with open(destination, "wb") as f:
+        with open(destination, "wb") as outputFile:
             response = requests.get(url, stream=True)
             response.raise_for_status()
             for block in response.iter_content(8192):
@@ -264,22 +310,24 @@ class SchemaProcessor(object):
                     print(".", end="")
                     sys.stdout.flush()
                 if len(block) > 0:
-                    f.write(block)
+                    outputFile.write(block)
             if self.verbosity > 1:
                 print("done")
 
     def convertAvro(self, avdlFile):
         """
-        Converts the specified avdl file using the  java tools.
+        Converts the specified avdl file using the java tools.
         """
         args = ["java", "-jar", self.avroJar, "idl2schemata", avdlFile]
         if self.verbosity > 0:
             print("converting", avdlFile)
         if self.verbosity > 1:
             print("running:", " ".join(args))
-        # TODO silence the Java output unless we are in verbose mode by
-        # capturing stdout/stderr here
-        subprocess.check_call(args)
+        if self.verbosity > 1:
+            subprocess.check_call(args)
+        else:
+            with open(os.devnull, 'w') as devnull:
+                subprocess.check_call(args, stdout=devnull, stderr=devnull)
 
     def run(self):
         url = "https://github.com/ga4gh/schemas/archive/{0}.tar.gz".format(
@@ -287,23 +335,21 @@ class SchemaProcessor(object):
         self.download(url, self.sourceTar)
         with tarfile.open(self.sourceTar, "r") as tarball:
             tarball.extractall(self.tmpDir)
-        d = os.path.join(self.schemaDir, "src/main/resources/avro")
-        # TODO should we make it an option to download this each time
-        # or to use a local copy? Should we continue using this version?
-        url = "http://www.carfab.com/apachesoftware/avro/stable/java/"\
-            "avro-tools-1.7.7.jar"
-        # it's useful to put a copy in cwd and uncomment this for
-        # developement; should we put this in as an official option?
-        # self.avroJar = os.path.join(os.getcwd(), "avro-tools.jar")
-        self.download(url, self.avroJar)
+        directory = os.path.join(self.schemaDir, "src/main/resources/avro")
+        if self.avroJarPath is not None:
+            self.avroJar = os.path.abspath(self.avroJarPath)
+        else:
+            url = "http://www.carfab.com/apachesoftware/avro/stable/java/"\
+                "avro-tools-1.7.7.jar"
+            self.download(url, self.avroJar)
         cwd = os.getcwd()
-        os.chdir(d)
-        for f in glob.glob("*.avdl"):
-            self.convertAvro(f)
+        os.chdir(directory)
+        for avdlFile in glob.glob("*.avdl"):
+            self.convertAvro(avdlFile)
         os.chdir(cwd)
         if self.verbosity > 0:
             print("Writing schemas to ", self.destinationFile)
-        sg = SchemaGenerator(self.version, d, self.destinationFile)
+        sg = SchemaGenerator(self.version, directory, self.destinationFile)
         sg.write()
 
 
@@ -317,6 +363,9 @@ def main():
     parser.add_argument(
         "version",
         help="The tagged git release to process, e.g., v0.5.1")
+    parser.add_argument(
+        "--avro-tools-jar", "-j",
+        help="The path to a local avro-tools.jar", default=None)
     # TODO is this the right approach? Maybe we should be noisy be
     # default and add in an option to be quiet.
     parser.add_argument('--verbose', '-v', action='count', default=0)

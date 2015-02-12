@@ -7,6 +7,16 @@ before_install:
   - sudo apt-get install -qq libdb-dev
 
 install:
-  - "python setup.py install"
+  - pip install -r requirements.txt
+  - python setup.py install
 
-script: nosetests
+before_script:
+  # the following two lines are to prevent travis from
+  # verbosely complaining about a security problem; see issue 54
+  - mkdir $HOME/.python-eggs
+  - chmod og-w $HOME/.python-eggs
+
+script: 
+  - pep8 ga4gh tests scripts 
+  - nosetests --with-coverage --cover-package ga4gh
+              --cover-inclusive --cover-min-percentage 80

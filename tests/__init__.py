@@ -4,7 +4,7 @@ Test module.
 import itertools
 
 
-def powerset(iterable, max_sets=None):
+def powerset(iterable, maxSets=None):
     """
     powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
 
@@ -13,5 +13,4 @@ def powerset(iterable, max_sets=None):
     s = list(iterable)
     return itertools.islice(itertools.chain.from_iterable(
         itertools.combinations(s, r) for r in range(len(s) + 1)),
-        0, max_sets)
-
+        0, maxSets)
