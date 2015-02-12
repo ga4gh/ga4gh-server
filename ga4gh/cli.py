@@ -16,6 +16,7 @@ import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.variants as variants
 
+
 ##############################################################################
 # Server
 ##############################################################################
@@ -461,11 +462,7 @@ def setCommaSeparatedAttribute(request, args, attr):
         setattr(request, attr, attribute.split(","))
 
 
-def client_main(parser=None):
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH reference client")
-    # Add global options
+def addClientGlobalOptions(parser):
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument(
         "--workarounds", "-w", default='', help="The workarounds to use")
@@ -475,133 +472,173 @@ def client_main(parser=None):
         "--minimalOutput", "-O", default=False,
         help="Use minimal output; default False",
         action='store_true')
-    subparsers = parser.add_subparsers(title='subcommands')
 
-    # help
-    subparsers.add_parser(
+
+def addHelpParser(subparsers):
+    parser = subparsers.add_parser(
         "help", description="ga4gh_client help",
         help="show this help message and exit")
+    return parser
 
-    # benchmarking
-    bmParser = subparsers.add_parser(
+
+def addBenchmarkingParser(subparsers):
+    parser = subparsers.add_parser(
         "benchmark",
         description="Run simple benchmarks on the various methods",
         help="Benchmark server performance")
-    bmParser.set_defaults(runner=BenchmarkRunner)
-    addUrlArgument(bmParser)
-    addVariantSearchOptions(bmParser)
+    parser.set_defaults(runner=BenchmarkRunner)
+    addUrlArgument(parser)
+    addVariantSearchOptions(parser)
+    return parser
 
-    # variants/search
-    vsParser = subparsers.add_parser(
+
+def addVariantsSearchParser(subparsers):
+    parser = subparsers.add_parser(
         "variants-search",
         description="Search for variants",
         help="Search for variants.")
-    vsParser.set_defaults(runner=SearchVariantsRunner)
-    addUrlArgument(vsParser)
-    addVariantSearchOptions(vsParser)
+    parser.set_defaults(runner=SearchVariantsRunner)
+    addUrlArgument(parser)
+    addVariantSearchOptions(parser)
+    return parser
 
-    # variantsets/search
-    vssParser = subparsers.add_parser(
+
+def addVariantSetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
         "variantsets-search",
         description="Search for variantSets",
         help="Search for variantSets.")
-    vssParser.set_defaults(runner=SearchVariantSetsRunner)
-    addUrlArgument(vssParser)
-    addPageSizeArgument(vssParser)
-    addDatasetIdsArgument(vssParser)
+    parser.set_defaults(runner=SearchVariantSetsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addDatasetIdsArgument(parser)
+    return parser
 
-    # referencesets/search
-    rssParser = subparsers.add_parser(
+
+def addReferenceSetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
         "referencesets-search",
         description="Search for referenceSets",
         help="Search for referenceSets")
-    rssParser.set_defaults(runner=SearchReferenceSetsRunner)
-    addUrlArgument(rssParser)
-    addPageSizeArgument(rssParser)
-    addAccessionsArgument(rssParser)
-    addMd5ChecksumsArgument(rssParser)
-    rssParser.add_argument(
+    parser.set_defaults(runner=SearchReferenceSetsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addAccessionsArgument(parser)
+    addMd5ChecksumsArgument(parser)
+    parser.add_argument(
         "--assemblyId",
         help="The assembly id to search over")
+    return parser
 
-    # references/search
-    rsParser = subparsers.add_parser(
+
+def addReferencesSearchParser(subparsers):
+    parser = subparsers.add_parser(
         "references-search",
         description="Search for references",
         help="Search for references")
-    rsParser.set_defaults(runner=SearchReferencesRunner)
-    addUrlArgument(rsParser)
-    addPageSizeArgument(rsParser)
-    addAccessionsArgument(rsParser)
-    addMd5ChecksumsArgument(rsParser)
+    parser.set_defaults(runner=SearchReferencesRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addAccessionsArgument(parser)
+    addMd5ChecksumsArgument(parser)
+    return parser
 
-    # readgroupsets/search
-    rgsParser = subparsers.add_parser(
+
+def addReadGroupSetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
         "readgroupsets-search",
         description="Search for readGroupSets",
         help="Search for readGroupSets")
-    rgsParser.set_defaults(runner=SearchReadGroupSetsRunner)
-    addUrlArgument(rgsParser)
-    addPageSizeArgument(rgsParser)
-    addDatasetIdsArgument(rgsParser)
-    addNameArgument(rgsParser)
+    parser.set_defaults(runner=SearchReadGroupSetsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addDatasetIdsArgument(parser)
+    addNameArgument(parser)
+    return parser
 
-    # callsets/search
-    csParser = subparsers.add_parser(
+
+def addCallsetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
         "callsets-search",
         description="Search for callSets",
         help="Search for callSets")
-    csParser.set_defaults(runner=SearchCallSetsRunner)
-    addUrlArgument(csParser)
-    addPageSizeArgument(csParser)
-    addNameArgument(csParser)
-    addVariantSetIdsArgument(csParser)
+    parser.set_defaults(runner=SearchCallSetsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addNameArgument(parser)
+    addVariantSetIdsArgument(parser)
+    return parser
 
-    # reads/search
-    rParser = subparsers.add_parser(
+
+def addReadsSearchParser(subparsers):
+    parser = subparsers.add_parser(
         "reads-search",
         description="Search for reads",
         help="Search for reads")
-    rParser.set_defaults(runner=SearchReadsRunner)
-    addUrlArgument(rParser)
-    addPageSizeArgument(rParser)
-    addStartArgument(rParser)
-    addEndArgument(rParser)
-    rParser.add_argument(
+    parser.set_defaults(runner=SearchReadsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+    parser.add_argument(
         "--readGroupIds", default=None,
         help="The readGroupIds to search over")
-    rParser.add_argument(
+    parser.add_argument(
         "--referenceId", default=None,
         help="The referenceId to search over")
-    rParser.add_argument(
+    parser.add_argument(
         "--referenceName", default=None,
         help="The referenceName to search over")
+    return parser
 
-    # referencesets/{id}
-    rsidParser = subparsers.add_parser(
+
+def addReferenceSetsGetParser(subparsers):
+    parser = subparsers.add_parser(
         "referencesets-get",
         description="Get a referenceset",
         help="Get a referenceset")
-    rsidParser.set_defaults(runner=GetReferenceSetRunner)
-    addGetArguments(rsidParser)
+    parser.set_defaults(runner=GetReferenceSetRunner)
+    addGetArguments(parser)
 
-    # references/{id}
-    ridParser = subparsers.add_parser(
+
+def addReferencesGetParser(subparsers):
+    parser = subparsers.add_parser(
         "references-get",
         description="Get a reference",
         help="Get a reference")
-    ridParser.set_defaults(runner=GetReferenceRunner)
-    addGetArguments(ridParser)
+    parser.set_defaults(runner=GetReferenceRunner)
+    addGetArguments(parser)
 
-    # referencesets/{id}/bases
-    basesParser = subparsers.add_parser(
+
+def addReferencesBasesListParser(subparsers):
+    parser = subparsers.add_parser(
         "references-list-bases",
         description="List bases of a reference",
         help="List bases of a reference")
-    basesParser.set_defaults(runner=ListReferenceBasesRunner)
-    addGetArguments(basesParser)
-    addStartArgument(basesParser)
-    addEndArgument(basesParser)
+    parser.set_defaults(runner=ListReferenceBasesRunner)
+    addGetArguments(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+
+
+def client_main(parser=None):
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description="GA4GH reference client")
+    addClientGlobalOptions(parser)
+    subparsers = parser.add_subparsers(title='subcommands',)
+    addHelpParser(subparsers)
+    addBenchmarkingParser(subparsers)
+    addVariantsSearchParser(subparsers)
+    addVariantSetsSearchParser(subparsers)
+    addReferenceSetsSearchParser(subparsers)
+    addReferencesSearchParser(subparsers)
+    addReadGroupSetsSearchParser(subparsers)
+    addCallsetsSearchParser(subparsers)
+    addReadsSearchParser(subparsers)
+    addReferenceSetsGetParser(subparsers)
+    addReferencesGetParser(subparsers)
+    addReferencesBasesListParser(subparsers)
 
     args = parser.parse_args()
     if "runner" not in args:
