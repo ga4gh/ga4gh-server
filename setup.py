@@ -38,6 +38,7 @@ setup(
     license='Apache License 2.0',
     long_description=ga4ghReadme,
     packages=["ga4gh", "ga4gh.datamodel"],
+    zip_safe=False,
     author="Global Alliance for Genomics and Health",
     author_email="theglobalalliance@genomicsandhealth.org",
     url="https://github.com/ga4gh/server",
