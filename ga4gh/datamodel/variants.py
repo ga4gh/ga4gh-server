@@ -16,6 +16,37 @@ import wormtable as wt
 import ga4gh.protocol as protocol
 
 
+def convertVCFPhaseset(vcfPhaseset):
+    """
+    Parses the VCF phaseset string
+    """
+    if vcfPhaseset is not None and vcfPhaseset != ".":
+        phaseset = vcfPhaseset
+    else:
+        phaseset = "*"
+    return phaseset
+
+
+def convertVCFGenotype(vcfGenotype, vcfPhaseset):
+    """
+    Parses the VCF genotype and VCF phaseset strings
+    """
+    phaseset = None
+    if vcfGenotype is not None:
+        delim = "/"
+        if "|" in vcfGenotype:
+            delim = "|"
+            phaseset = convertVCFPhaseset(vcfPhaseset)
+        if "." in vcfGenotype:
+            genotype = [-1]
+        else:
+            genotype = map(int, vcfGenotype.split(delim))
+    else:
+        genotype = [-1]
+
+    return genotype, phaseset
+
+
 class VariantSet(object):
     """
     Class representing a single VariantSet in the GA4GH data model.
@@ -108,37 +139,6 @@ class WormtableVariantSet(VariantSet):
             ret = [str(value)]
         return ret
 
-    @staticmethod
-    def convertPhaseset(vcfPhaseset):
-        """
-        Parses the VCF phaseset string
-        """
-        if vcfPhaseset is not None and vcfPhaseset != ".":
-            phaseset = vcfPhaseset
-        else:
-            phaseset = "*"
-        return phaseset
-
-    @staticmethod
-    def convertGenotype(vcfGenotype, vcfPhaseset):
-        """
-        Parses the VCF genotype and VCF phaseset strings
-        """
-        phaseset = None
-        if vcfGenotype is not None:
-            delim = "/"
-            if "|" in vcfGenotype:
-                delim = "|"
-                phaseset = WormtableVariantSet.convertPhaseset(vcfPhaseset)
-            if "." in vcfGenotype:
-                genotype = [-1]
-            else:
-                genotype = map(int, vcfGenotype.split(delim))
-        else:
-            genotype = [-1]
-
-        return genotype, phaseset
-
     def convertVariant(self, row, sampleRowPositions):
         """
         Converts the specified wormtable row into a GAVariant object including
@@ -185,8 +185,8 @@ class WormtableVariantSet(VariantSet):
                         # Missing values are not included in the info array
                         call.info[info] = self.convertInfoField(
                             row[rowPosition])
-            call.genotype, call.phaseset = self.convertGenotype(genotype,
-                                                                phaseset)
+            call.genotype, call.phaseset = convertVCFGenotype(genotype,
+                                                              phaseset)
             variant.calls.append(call)
         return variant
 
