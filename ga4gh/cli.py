@@ -9,12 +9,68 @@ from __future__ import unicode_literals
 
 import time
 import argparse
+import sys
 
 import ga4gh.frontend as frontend
 import ga4gh.client as client
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.variants as variants
+import ga4gh.converters as converters
+
+
+##############################################################################
+# ga2vcf
+##############################################################################
+
+
+def ga2vcf_main(parser=None):
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description="GA4GH VCF conversion tool")
+    addClientGlobalOptions(parser)
+    subparsers = parser.add_subparsers(title='subcommands',)
+    addVariantsSearchParser(subparsers)
+    args = parser.parse_args()
+    request = protocol.GASearchVariantsRequest()
+    setCommaSeparatedAttribute(request, args, 'datasetIds')
+    # TODO add outputFile cli argument
+    outputFile = sys.stdout
+    vcfConverter = converters.VcfConverter(request, outputFile)
+    vcfConverter.convert()
+
+
+##############################################################################
+# ga2sam
+##############################################################################
+
+
+def ga2sam_main(parser=None):
+
+    def usingWorkaroundsFor(workaround):
+        return workaround in workarounds
+
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description="GA4GH SAM conversion tool")
+    addClientGlobalOptions(parser)
+    subparsers = parser.add_subparsers(title='subcommands',)
+    addReadsSearchParser(subparsers)
+    args = parser.parse_args()
+    workarounds = set(args.workarounds.split(','))
+    request = protocol.GASearchReadsRequest()
+    if usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
+        # google says referenceId not a valid field
+        request = SearchReadsRunner.GASearchReadsRequestGoogle()
+    setCommaSeparatedAttribute(request, args, 'readGroupIds')
+    request.start = args.start
+    request.end = args.end
+    request.referenceId = args.referenceId
+    request.referenceName = args.referenceName
+    # TODO add outputFile cli argument
+    outputFile = sys.stdout
+    samConverter = converters.SamConverter(request, outputFile)
+    samConverter.convert()
 
 
 def setCommaSeparatedAttribute(request, args, attr):
