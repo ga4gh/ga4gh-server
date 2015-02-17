@@ -87,15 +87,15 @@ the downloaded datafile::
 
 To run queries against this server, we can use the ``ga4gh_client`` program;
 for example, here we run the ``variants/search`` method over the
-``1000g_2013`` variant set, where the reference name is ``1``, the end coordinate
-is 60000 and we only want calls returned for call set ID HG03279::
+``1000g_2013`` variant set, where the reference name is ``1``
+and we only want calls returned for call set ID HG03279::
 
-    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013 -r 1 -e 60000 -c HG03279 | less -S
+    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013 -r 1 -c HG03279 | less -S
 
 We can also query against the *variant name*; here we return the variant that
 has variant name ``rs75454623``::
 
-    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013 -r 1 -e 60000 -n rs75454623  | less -S
+    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013 -r 1 -n rs75454623  | less -S
 
 +++++++++++++++++++++
 Converting 1000G data
