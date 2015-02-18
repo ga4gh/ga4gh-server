@@ -111,6 +111,13 @@ def handleException(exception):
     return response
 
 
+def handleFlaskRequest(flaskRequest, endpoint):
+    if flaskRequest.method == "POST":
+        return handleHttpPost(flaskRequest, endpoint)
+    else:
+        return handleHttpOptions()
+
+
 @app.route('/')
 def index():
     return flask.render_template(
@@ -159,15 +166,9 @@ def searchReferences():
 
 @app.route('/variantsets/search', methods=['POST', 'OPTIONS'])
 def searchVariantSets():
-    if flask.request.method == "POST":
-        return handleHttpPost(flask.request, app.backend.searchVariantSets)
-    else:
-        return handleHttpOptions()
+    return handleFlaskRequest(flask.request, app.backend.searchVariantSets)
 
 
 @app.route('/variants/search', methods=['POST', 'OPTIONS'])
 def searchVariants():
-    if flask.request.method == "POST":
-        return handleHttpPost(flask.request, app.backend.searchVariants)
-    else:
-        return handleHttpOptions()
+    return handleFlaskRequest(flask.request, app.backend.searchVariants)
