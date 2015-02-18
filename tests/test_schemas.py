@@ -89,8 +89,8 @@ class SchemaTest(unittest.TestCase):
         typ = field.type
         if isinstance(typ, avro.schema.UnionSchema):
             t0 = typ.schemas[0]
-            if (isinstance(t0, avro.schema.PrimitiveSchema)
-                    and t0.type == "null"):
+            if (isinstance(t0, avro.schema.PrimitiveSchema) and
+                    t0.type == "null"):
                 typ = typ.schemas[1]
             else:
                 raise Exception(err)
