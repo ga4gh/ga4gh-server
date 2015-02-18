@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-from tests.test_backends import WormtableTestFixture
+from tests.unit.test_backends import WormtableTestFixture
 import ga4gh.backend as backend
 import ga4gh.datamodel.variants as variants
 import ga4gh.frontend as frontend
