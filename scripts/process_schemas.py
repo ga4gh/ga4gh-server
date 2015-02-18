@@ -68,8 +68,8 @@ class SchemaClass(object):
                 elif isinstance(field.type, avro.schema.UnionSchema):
                     t0 = field.type.schemas[0]
                     t1 = field.type.schemas[1]
-                    if (isinstance(t0, avro.schema.PrimitiveSchema)
-                            and t0.type == "null"):
+                    if (isinstance(t0, avro.schema.PrimitiveSchema) and
+                            t0.type == "null"):
                         if isinstance(t1, avro.schema.RecordSchema):
                             ret.append((field.name, t1.name))
                     else:
