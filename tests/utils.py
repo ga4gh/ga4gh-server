@@ -11,6 +11,12 @@ import string
 
 import avro.schema
 
+import ga4gh.protocol as protocol
+
+
+def applyVersion(route):
+    return "/{0}{1}".format(protocol.version, route)
+
 
 def powerset(iterable, maxSets=None):
     """

@@ -87,6 +87,23 @@ class UnsupportedMediaTypeException(FrontendException):
         self.code = 8
 
 
+class VersionNotSupportedException(NotFoundException):
+
+    def __init__(self):
+        super(VersionNotSupportedException, self).__init__()
+        self.message = "API version not supported"
+        self.code = 9
+
+
+class MethodNotAllowedException(FrontendException):
+
+    def __init__(self):
+        super(FrontendException, self).__init__()
+        self.httpStatus = 405
+        self.message = "Method not allowed"
+        self.code = 10
+
+
 # exceptions thrown by the underlying system that we want to
 # translate to exceptions that we define before they are
 # serialized and returned to the client
