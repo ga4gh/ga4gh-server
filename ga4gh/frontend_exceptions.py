@@ -1,12 +1,13 @@
 """
-Module containing error objects we return to clients
+Error objects we return to clients
 """
-
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import flask.ext.api as api
+
+import ga4gh.backend_exceptions as backendExceptions
 
 
 class FrontendException(Exception):
@@ -92,4 +93,6 @@ class UnsupportedMediaTypeException(FrontendException):
 # serialized and returned to the client
 exceptionMap = {
     api.exceptions.UnsupportedMediaType: UnsupportedMediaTypeException,
+    backendExceptions.BackendException: ServerException,
+    backendExceptions.CallSetNotInVariantSetException: NotFoundException,
 }

@@ -14,6 +14,7 @@ import pysam
 import wormtable as wt
 
 import ga4gh.protocol as protocol
+import ga4gh.backend_exceptions as backendExceptions
 
 
 def convertVCFPhaseset(vcfPhaseset):
@@ -208,7 +209,11 @@ class WormtableVariantSet(VariantSet):
         else:
             readCols = self._table.columns()[:self._firstSamplePosition]
             for callSetId in callSetIds:
-                cols = [col for name, col in self._sampleCols[callSetId]]
+                try:
+                    cols = [col for name, col in self._sampleCols[callSetId]]
+                except KeyError:
+                    raise backendExceptions.CallSetNotInVariantSetException(
+                        callSetId, self._variantSetId)
                 readCols.extend(cols)
         # Now we get the row positions for the sample columns
         sampleRowPositions = {}
