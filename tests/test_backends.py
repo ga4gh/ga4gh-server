@@ -253,166 +253,60 @@ class TestVariants(TestWormtableBackend):
     Tests the searchVariants end point.
     """
 
+    def verifyGenotypeConversion(self, vcfGenotype, vcfPhaseset,
+                                 callGenotype, callPhaseset):
+        """
+        Verifies that the convertGenotype function properly converts the vcf
+        genotype and phaseset values into the desired call genotype and
+        phaseset values.
+        """
+        self.assertEqual((callGenotype, callPhaseset),
+                         variants.convertVCFGenotype(vcfGenotype, vcfPhaseset))
+
     def testGenotypeUnphasedNoCall(self):
-        """
-        Test genotype conversion for a genotype with no call
-        """
-        g = "./."
-        p = "0"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [-1])
-        self.assertEqual(phaseset, None)
+        self.verifyGenotypeConversion("./.", "0", [-1], None)
 
     def testGenotypeUnphasedSecondHalfCall(self):
-        """
-        Test genotype converstion for a half call where only the second half
-        is called.
-        """
-        g = "./0"
-        p = "25"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [-1])
-        self.assertEqual(phaseset, None)
+        self.verifyGenotypeConversion("./0", "25", [-1], None)
 
     def testGenotypeUnphasedFirstHalfCall(self):
-        """
-        Test genotype conversion for a half call where only the first half
-        is called
-        """
-        g = "0/."
-        p = ""
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [-1])
-        self.assertEqual(phaseset, None)
+        self.verifyGenotypeConversion("0/.", "", [-1], None)
 
     def testGenotypeUnphasedRefRef(self):
-        """
-        Test genotype conversion for an unphased genotype with both halves
-        of a diploid call as the reference allele
-        """
-        g = "0/0"
-        p = "3124234"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [0, 0])
-        self.assertEqual(phaseset, None)
+        self.verifyGenotypeConversion("0/0", "3124234", [0, 0], None)
 
     def testGenotypeUnphasedAltRef(self):
-        """
-        Test genotype conversion for an unphased genotype with the first half
-        an alternate allele, and the second half the reference allele
-        """
-        g = "1/0"
-        p = "-56809"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [1, 0])
-        self.assertEqual(phaseset, None)
+        self.verifyGenotypeConversion("1/0", "-56809", [1, 0], None)
 
     def testGenotypeUnphasedRefAlt(self):
-        """
-        Test genotype converstion for an unphased genotype with the first half
-        the reference allele, and the sencond half an alternate allele.
-        """
-        g = "0/1"
-        p = "134965"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [0, 1])
-        self.assertEqual(phaseset, None)
+        self.verifyGenotypeConversion("0/1", "134965", [0, 1], None)
 
     def testGenotypePhasedNoCall(self):
-        """
-        Test genotype conversion for a phased genotype with no call
-        """
-        g = ".|."
-        p = "36"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [-1])
-        self.assertEqual(phaseset, "36")
+        self.verifyGenotypeConversion(".|.", "36", [-1], "36")
 
     def testGenotypePhasedSecondHalfCall(self):
-        """
-        Test genotype conversion for a half called phased genotype with only
-        the second half called.
-        """
-        g = ".|0"
-        p = "45032"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [-1])
-        self.assertEqual(phaseset, "45032")
+        self.verifyGenotypeConversion(".|0", "45032", [-1], "45032")
 
     def testGenotypePhasedFirstHalfCall(self):
-        """
-        Test genotype conversion for a half called phased genotype with only
-        the first half called
-        """
-        g = "0|."
-        p = "645"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [-1])
-        self.assertEqual(phaseset, "645")
+        self.verifyGenotypeConversion("0|.", "645", [-1], "645")
 
     def testGenotypePhasedRefRef(self):
-        """
-        Test genotype conversion for a phased reference genotype with no
-        phaseset information
-        """
-        g = "0|0"
-        p = "."
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [0, 0])
-        self.assertEqual(phaseset, "*")
+        self.verifyGenotypeConversion("0|0", ".", [0, 0], "*")
 
     def testGenotypePhasedRefAlt(self):
-        """
-        Test genotype conversion for a phased genotype with one reference and
-        one alternate allele
-        """
-        g = "0|1"
-        p = "45"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [0, 1])
-        self.assertEqual(phaseset, "45")
+        self.verifyGenotypeConversion("0|1", "45", [0, 1], "45")
 
     def testGenotypePhasedAltAlt(self):
-        """
-        Test genotype conversion for a phased genotype with two alternate
-        alleles
-        """
-        g = "1|1"
-        p = "."
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [1, 1])
-        self.assertEqual(phaseset, "*")
+        self.verifyGenotypeConversion("1|1", ".", [1, 1], "*")
 
     def testGenotypePhasedDiffAlt(self):
-        """
-        Test genotype conversion when the genotype contains two different
-        alternate alleles
-        """
-        g = "2|1"
-        p = "245624"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [2, 1])
-        self.assertEqual(phaseset, "245624")
+        self.verifyGenotypeConversion("2|1", "245624", [2, 1], "245624")
 
     def testPhasesetZero(self):
-        """
-        Test genotype conversion when the phaseset is zero
-        """
-        g = "3|0"
-        p = "0"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [3, 0])
-        self.assertEqual(phaseset, "0")
+        self.verifyGenotypeConversion("3|0", "0", [3, 0], "0")
 
     def testGenotypeHaploid(self):
-        """
-        Test genotype conversion of a haploid genotype
-        """
-        g = "1"
-        p = "376"
-        genotype, phaseset = variants.WormtableVariantSet.convertGenotype(g, p)
-        self.assertEqual(genotype, [1])
-        self.assertEqual(phaseset, None)
+        self.verifyGenotypeConversion("1", "376", [1], None)
 
     def verifyGenotype(self, call, vcfString):
         """
