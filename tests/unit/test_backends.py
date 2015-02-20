@@ -457,7 +457,7 @@ class TestVariants(TestWormtableBackend):
         for variantSet in self.getVariantSets():
             callSetIds = self.getCallSetIds(variantSet.id)
             # limit the subsets we check over to some small value.
-            for subset in tests.powerset(callSetIds, 20):
+            for subset in tests.utils.powerset(callSetIds, 20):
                 for referenceName in self.getReferenceNames(variantSet.id):
                     self.verifySearchByCallSetIds(
                         variantSet.id, referenceName, 0, 2 ** 32, subset)
