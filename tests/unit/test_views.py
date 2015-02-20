@@ -32,9 +32,11 @@ class TestFrontend(unittest.TestCase):
                              headers={'Content-type': 'application/json'},
                              data=data)
 
-    def testDefaultRoute(self):
+    def test404sReturnJson(self):
         path = utils.applyVersion('/doesNotExist')
-        self.assertEqual(404, self.app.get(path).status_code)
+        response = self.app.get(path)
+        protocol.GAException.fromJsonString(response.get_data())
+        self.assertEqual(404, response.status_code)
 
     def testCors(self):
         def assertHeaders(response):
@@ -54,16 +56,21 @@ class TestFrontend(unittest.TestCase):
         correct status code.
         """
         versionedPath = utils.applyVersion(path)
-        self.assertEqual(415, self.app.post(versionedPath).status_code)
+        response = self.app.post(versionedPath)
+        protocol.GAException.fromJsonString(response.get_data())
+        self.assertEqual(415, response.status_code)
+        if not getDefined:
+            getResponse = self.app.get(versionedPath)
+            protocol.GAException.fromJsonString(getResponse.get_data())
+            self.assertEqual(405, getResponse.status_code)
+
+        # TODO uncomment when error handling correctly implemented
+        # badResponse = self.app.post(
+        #     versionedPath, headers={'Content-type': 'application/json'})
+        # self.assertEqual(400, badResponse.status_code)
+
         # OPTIONS should return success
         self.assertEqual(200, self.app.options(versionedPath).status_code)
-        if not getDefined:
-            self.assertEqual(405, self.app.get(versionedPath).status_code)
-        # TODO disabling this test until we correctly implement error
-        # handling in the frontend.
-        # self.assertEqual(400, self.app.post(
-        #     path,
-        #     headers={'Content-type': 'application/json'}).status_code)
 
     def testRouteReferences(self):
         paths = ['/references/1', 'references/1/bases', 'referencesets/1']

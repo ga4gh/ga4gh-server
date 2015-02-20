@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import flask.ext.api as api
 
 import ga4gh.backend_exceptions as backendExceptions
+import ga4gh.protocol as protocol
 
 
 class FrontendException(Exception):
@@ -18,6 +19,12 @@ class FrontendException(Exception):
         self.code = None
         self.description = ""
         self.httpStatus = None
+
+    def toGaException(self):
+        error = protocol.GAException()
+        error.errorCode = self.code
+        error.message = self.message
+        return error
 
 
 class BadRequestException(FrontendException):
