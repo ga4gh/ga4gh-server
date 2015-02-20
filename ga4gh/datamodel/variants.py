@@ -53,6 +53,21 @@ class VariantSet(object):
     """
     # TODO abstract details shared by wormtable and tabix based backends.
 
+    def getId(self):
+        # TODO temporary method before we abstract all of this upwards into
+        # the DataObject class.
+        return self._variantSetId
+
+
+    def toProtocolElement(self):
+        """
+        Converts this data object into it's equivalent GA4GH protocol element.
+        """
+        protocolElement = protocol.GAVariantSet()
+        protocolElement.id = self.getId()
+        protocolElement.datasetId = "NotImplemented"
+        protocolElement.metadata = self.getMetadata()
+        return protocolElement
 
 class WormtableVariantSet(VariantSet):
     """
@@ -263,6 +278,19 @@ class WormtableVariantSet(VariantSet):
                 if infoField != self.GENOTYPE_NAME:
                     ret.append(buildMetadata(infoField, col))
         return ret
+
+    def search(self, request, depth):
+        startPosition = 0
+        if request.pageToken is not None:
+            tokens = request.pageToken.split(":")
+            startPosition = int(tokens[1])
+        iterator = self.getVariants(
+                request.referenceName, startPosition, request.end,
+                request.variantName, request.callSetIds)
+        for variant in iterator:
+            pageToken = "{}:{}".format(variant.variantSetId, variant.start + 1)
+            yield variant, pageToken
+
 
 
 class TabixVariantSet(VariantSet):

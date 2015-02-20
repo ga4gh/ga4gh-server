@@ -468,6 +468,7 @@ class TestVariants(TestWormtableBackend):
             for referenceName in self.getReferenceNames(variantSet.id):
                 for variant in self.getVariants(
                         [variantSet.id], referenceName):
+                        print(ids)
                     self.assertTrue(variant.id not in ids)
                     ids.add(variant.id)
 
