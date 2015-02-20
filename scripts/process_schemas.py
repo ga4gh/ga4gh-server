@@ -96,17 +96,7 @@ class SchemaClass(object):
                         if isinstance(dic, dict):
                             stack.append(dic)
         jsonData = json.dumps(schema)
-        with tempfile.TemporaryFile() as tmp:
-            tmp.write(jsonData)
-            tmp.seek(0)
-            # Filter the text through fmt to make it look like acceptable code.
-            subproc = subprocess.Popen(
-                ["fmt"], stdout=subprocess.PIPE, stdin=tmp)
-            (output, err) = subproc.communicate()
-            exitStatus = subproc.wait()
-        if exitStatus != 0:
-            msg = "Error occured running fmt: {0}: {1}".format(exitStatus, err)
-            raise Exception(msg)
+        output = "\n".join(textwrap.wrap(jsonData)) + "\n"
         return output
 
     def formatRequiredFields(self):
@@ -356,7 +346,7 @@ class SchemaProcessor(object):
 def main():
     parser = argparse.ArgumentParser(
         description="Script to process GA4GH Avro schemas. Requires "
-        "java and fmt external commands")
+        "java external command")
     parser.add_argument(
         "--outputFile", "-o", default="ga4gh/_protocol_definitions.py",
         help="The file to output the protocol definitions to.")
