@@ -21,8 +21,9 @@ No documentation
 "name": "populationId"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "referenceVersion"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "chromosome"}, {"default": null,
-"doc": "", "type": ["null", "long"], "name": "coordinate"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "allele"}]}
+"doc": "", "type": ["null", "long"], "name": "coordinate"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"allele"}]}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -55,8 +56,8 @@ No documentation
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name": "BEACONResponse",
 "fields": [{"default": null, "doc": "", "type": ["null", "boolean"],
-"name": "exists"}, {"default": null, "doc": "", "type": ["null", "long"],
-"name": "frequency"}]}
+"name": "exists"}, {"default": null, "doc": "", "type": ["null",
+"long"], "name": "frequency"}]}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -86,15 +87,16 @@ and phasing. For example, a call might assign a probability of 0.32 to
 the occurrence of a SNP named rs1234 in a call set with the name NA12345.
     """
     _schemaSource = """
-{"namespace": "org.ga4gh", "type": "record", "name": "GACall", "fields":
-[{"doc": "", "type": ["null", "string"], "name": "callSetId"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "callSetName"},
-{"default": [], "doc": "", "type": {"items": "int", "type": "array"},
-"name": "genotype"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "phaseset"}, {"default": [], "doc": "", "type":
-{"items": "double", "type": "array"}, "name": "genotypeLikelihood"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string", "type":
-"array"}, "type": "map"}, "name": "info"}], "doc": ""}
+{"namespace": "org.ga4gh", "type": "record", "name": "GACall",
+"fields": [{"doc": "", "type": ["null", "string"], "name":
+"callSetId"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "callSetName"}, {"default": [], "doc": "", "type": {"items":
+"int", "type": "array"}, "name": "genotype"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "phaseset"}, {"default": [],
+"doc": "", "type": {"items": "double", "type": "array"}, "name":
+"genotypeLikelihood"}, {"default": {}, "doc": "", "type": {"values":
+{"items": "string", "type": "array"}, "type": "map"}, "name":
+"info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set(["callSetId"])
@@ -130,13 +132,13 @@ It belongs to a `GAVariantSet`. This is equivalent to one column in VCF.
 {"namespace": "org.ga4gh", "type": "record", "name": "GACallSet",
 "fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
-"", "type": ["null", "string"], "name": "sampleId"}, {"default":
-[], "doc": "", "type": {"items": "string", "type": "array"}, "name":
-"variantSetIds"}, {"default": null, "doc": "", "type": ["null", "long"],
-"name": "created"}, {"default": null, "doc": "", "type": ["null",
-"long"], "name": "updated"}, {"default": {}, "doc": "", "type": {"values":
-{"items": "string", "type": "array"}, "type": "map"}, "name": "info"}],
-"doc": ""}
+"", "type": ["null", "string"], "name": "sampleId"}, {"default": [],
+"doc": "", "type": {"items": "string", "type": "array"}, "name":
+"variantSetIds"}, {"default": null, "doc": "", "type": ["null",
+"long"], "name": "created"}, {"default": null, "doc": "", "type":
+["null", "long"], "name": "updated"}, {"default": {}, "doc": "",
+"type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -230,8 +232,8 @@ A structure for an instance of a CIGAR operation.
 "INSERT", "DELETE", "SKIP", "CLIP_SOFT", "CLIP_HARD", "PAD",
 "SEQUENCE_MATCH", "SEQUENCE_MISMATCH"], "doc": "", "type": "enum",
 "name": "GACigarOperation"}, "name": "operation"}, {"doc": "", "type":
-"long", "name": "operationLength"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "referenceSequence"}], "doc": ""}
+"long", "name": "operationLength"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "referenceSequence"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -263,8 +265,8 @@ No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name": "GADataset",
-"fields": [{"doc": "", "type": "string", "name": "id"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "description"}]}
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "description"}]}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set(["id"])
@@ -292,8 +294,9 @@ A general exception type.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "error", "name": "GAException",
-"fields": [{"doc": "", "type": "string", "name": "message"}, {"default":
--1, "doc": "", "type": "int", "name": "errorCode"}], "doc": ""}
+"fields": [{"doc": "", "type": "string", "name": "message"},
+{"default": -1, "doc": "", "type": "int", "name": "errorCode"}],
+"doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set(["message"])
@@ -358,20 +361,22 @@ class GALinearAlignment(ProtocolElement):
 A linear alignment can be represented by one CIGAR string.
     """
     _schemaSource = """
-{"namespace": "org.ga4gh", "type": "record", "name": "GALinearAlignment",
-"fields": [{"doc": "", "type": {"doc": "", "type": "record", "name":
-"GAPosition", "fields": [{"doc": "", "type": "string", "name":
-"referenceName"}, {"doc": "", "type": "long", "name": "position"},
-{"doc": "", "type": "boolean", "name": "reverseStrand"}]}, "name":
-"position"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "mappingQuality"}, {"default": [], "doc": "", "type": {"items":
-{"doc": "", "type": "record", "name": "GACigarUnit", "fields": [{"doc":
-"", "type": {"symbols": ["ALIGNMENT_MATCH", "INSERT", "DELETE", "SKIP",
-"CLIP_SOFT", "CLIP_HARD", "PAD", "SEQUENCE_MATCH", "SEQUENCE_MISMATCH"],
-"doc": "", "type": "enum", "name": "GACigarOperation"}, "name":
-"operation"}, {"doc": "", "type": "long", "name": "operationLength"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"referenceSequence"}]}, "type": "array"}, "name": "cigar"}], "doc": ""}
+{"namespace": "org.ga4gh", "type": "record", "name":
+"GALinearAlignment", "fields": [{"doc": "", "type": {"doc": "",
+"type": "record", "name": "GAPosition", "fields": [{"doc": "", "type":
+"string", "name": "referenceName"}, {"doc": "", "type": "long",
+"name": "position"}, {"doc": "", "type": "boolean", "name":
+"reverseStrand"}]}, "name": "position"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "mappingQuality"}, {"default": [],
+"doc": "", "type": {"items": {"doc": "", "type": "record", "name":
+"GACigarUnit", "fields": [{"doc": "", "type": {"symbols":
+["ALIGNMENT_MATCH", "INSERT", "DELETE", "SKIP", "CLIP_SOFT",
+"CLIP_HARD", "PAD", "SEQUENCE_MATCH", "SEQUENCE_MISMATCH"], "doc": "",
+"type": "enum", "name": "GACigarOperation"}, "name": "operation"},
+{"doc": "", "type": "long", "name": "operationLength"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name":
+"referenceSequence"}]}, "type": "array"}, "name": "cigar"}], "doc":
+""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set(["position"])
@@ -442,9 +447,9 @@ The response from `GET /references/{id}/bases` expressed as JSON.
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
 "GAListReferenceBasesResponse", "fields": [{"default": 0, "doc": "",
-"type": "long", "name": "offset"}, {"doc": "", "type": "string", "name":
-"sequence"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "nextPageToken"}], "doc": ""}
+"type": "long", "name": "offset"}, {"doc": "", "type": "string",
+"name": "sequence"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set(["sequence"])
@@ -476,9 +481,9 @@ forward or reverse strand that we're talking about.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name": "GAPosition",
-"fields": [{"doc": "", "type": "string", "name": "referenceName"}, {"doc":
-"", "type": "long", "name": "position"}, {"doc": "", "type": "boolean",
-"name": "reverseStrand"}], "doc": ""}
+"fields": [{"doc": "", "type": "string", "name": "referenceName"},
+{"doc": "", "type": "long", "name": "position"}, {"doc": "", "type":
+"boolean", "name": "reverseStrand"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -513,10 +518,10 @@ No documentation
 {"namespace": "org.ga4gh", "type": "record", "name": "GAProgram",
 "fields": [{"default": null, "doc": "", "type": ["null", "string"],
 "name": "commandLine"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "prevProgramId"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "version"}]}
+"string"], "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "prevProgramId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "version"}]}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -548,40 +553,43 @@ about the fragment and the read. A read alignment object is equivalent to a
 line in a SAM file.
     """
     _schemaSource = """
-{"namespace": "org.ga4gh", "type": "record", "name": "GAReadAlignment",
-"fields": [{"doc": "", "type": ["null", "string"], "name": "id"},
-{"doc": "", "type": "string", "name": "readGroupId"}, {"doc": "", "type":
-"string", "name": "fragmentName"}, {"default": false, "doc": "", "type":
-["null", "boolean"], "name": "properPlacement"}, {"default": false,
-"doc": "", "type": ["null", "boolean"], "name": "duplicateFragment"},
+{"namespace": "org.ga4gh", "type": "record", "name":
+"GAReadAlignment", "fields": [{"doc": "", "type": ["null", "string"],
+"name": "id"}, {"doc": "", "type": "string", "name": "readGroupId"},
+{"doc": "", "type": "string", "name": "fragmentName"}, {"default":
+false, "doc": "", "type": ["null", "boolean"], "name":
+"properPlacement"}, {"default": false, "doc": "", "type": ["null",
+"boolean"], "name": "duplicateFragment"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "numberReads"}, {"default": null,
+"doc": "", "type": ["null", "int"], "name": "fragmentLength"},
 {"default": null, "doc": "", "type": ["null", "int"], "name":
-"numberReads"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "fragmentLength"}, {"default": null, "doc": "", "type": ["null",
-"int"], "name": "readNumber"}, {"default": false, "doc": "", "type":
-["null", "boolean"], "name": "failedVendorQualityChecks"}, {"default":
-null, "doc": "", "type": ["null", {"doc": "", "type": "record",
-"name": "GALinearAlignment", "fields": [{"doc": "", "type": {"doc": "",
+"readNumber"}, {"default": false, "doc": "", "type": ["null",
+"boolean"], "name": "failedVendorQualityChecks"}, {"default": null,
+"doc": "", "type": ["null", {"doc": "", "type": "record", "name":
+"GALinearAlignment", "fields": [{"doc": "", "type": {"doc": "",
 "type": "record", "name": "GAPosition", "fields": [{"doc": "", "type":
-"string", "name": "referenceName"}, {"doc": "", "type": "long", "name":
-"position"}, {"doc": "", "type": "boolean", "name": "reverseStrand"}]},
-"name": "position"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "mappingQuality"}, {"default": [], "doc": "", "type": {"items":
-{"doc": "", "type": "record", "name": "GACigarUnit", "fields": [{"doc":
-"", "type": {"symbols": ["ALIGNMENT_MATCH", "INSERT", "DELETE", "SKIP",
-"CLIP_SOFT", "CLIP_HARD", "PAD", "SEQUENCE_MATCH", "SEQUENCE_MISMATCH"],
-"doc": "", "type": "enum", "name": "GACigarOperation"}, "name":
-"operation"}, {"doc": "", "type": "long", "name": "operationLength"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
+"string", "name": "referenceName"}, {"doc": "", "type": "long",
+"name": "position"}, {"doc": "", "type": "boolean", "name":
+"reverseStrand"}]}, "name": "position"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "mappingQuality"}, {"default": [],
+"doc": "", "type": {"items": {"doc": "", "type": "record", "name":
+"GACigarUnit", "fields": [{"doc": "", "type": {"symbols":
+["ALIGNMENT_MATCH", "INSERT", "DELETE", "SKIP", "CLIP_SOFT",
+"CLIP_HARD", "PAD", "SEQUENCE_MATCH", "SEQUENCE_MISMATCH"], "doc": "",
+"type": "enum", "name": "GACigarOperation"}, "name": "operation"},
+{"doc": "", "type": "long", "name": "operationLength"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name":
 "referenceSequence"}]}, "type": "array"}, "name": "cigar"}]}], "name":
-"alignment"}, {"default": false, "doc": "", "type": ["null", "boolean"],
-"name": "secondaryAlignment"}, {"default": false, "doc": "", "type":
-["null", "boolean"], "name": "supplementaryAlignment"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "alignedSequence"},
-{"default": [], "doc": "", "type": {"items": "int", "type": "array"},
-"name": "alignedQuality"}, {"default": null, "doc": "", "type": ["null",
-"GAPosition"], "name": "nextMatePosition"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type": "map"},
-"name": "info"}], "doc": ""}
+"alignment"}, {"default": false, "doc": "", "type": ["null",
+"boolean"], "name": "secondaryAlignment"}, {"default": false, "doc":
+"", "type": ["null", "boolean"], "name": "supplementaryAlignment"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"alignedSequence"}, {"default": [], "doc": "", "type": {"items":
+"int", "type": "array"}, "name": "alignedQuality"}, {"default": null,
+"doc": "", "type": ["null", "GAPosition"], "name":
+"nextMatePosition"}, {"default": {}, "doc": "", "type": {"values":
+{"items": "string", "type": "array"}, "type": "map"}, "name":
+"info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -640,31 +648,33 @@ No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name": "GAReadGroup",
-"fields": [{"doc": "", "type": "string", "name": "id"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "datasetId"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "name"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "description"},
-{"doc": "", "type": ["null", "string"], "name": "sampleId"}, {"doc":
-"", "type": ["null", {"fields": [{"default": null, "doc": "", "type":
-["null", "string"], "name": "libraryId"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "platformUnit"}, {"doc": "", "type":
-["null", "string"], "name": "sequencingCenter"}, {"doc": "", "type":
-["null", "string"], "name": "instrumentModel"}], "type": "record", "name":
-"GAExperiment"}], "name": "experiment"}, {"default": null, "doc": "",
-"type": ["null", "int"], "name": "predictedInsertSize"}, {"default": null,
-"doc": "", "type": ["null", "long"], "name": "created"}, {"default": null,
-"doc": "", "type": ["null", "long"], "name": "updated"}, {"default": [],
-"doc": "", "type": {"items": {"fields": [{"default": null, "doc": "",
-"type": ["null", "string"], "name": "commandLine"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "id"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "name"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "prevProgramId"},
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "datasetId"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"version"}], "type": "record", "name": "GAProgram"}, "type": "array"},
-"name": "programs"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceSetId"}, {"default": {}, "doc": "", "type":
-{"values": {"items": "string", "type": "array"}, "type": "map"}, "name":
-"info"}]}
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"doc": "", "type": ["null", "string"],
+"name": "sampleId"}, {"doc": "", "type": ["null", {"fields":
+[{"default": null, "doc": "", "type": ["null", "string"], "name":
+"libraryId"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "platformUnit"}, {"doc": "", "type": ["null", "string"],
+"name": "sequencingCenter"}, {"doc": "", "type": ["null", "string"],
+"name": "instrumentModel"}], "type": "record", "name":
+"GAExperiment"}], "name": "experiment"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "predictedInsertSize"}, {"default":
+null, "doc": "", "type": ["null", "long"], "name": "created"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"updated"}, {"default": [], "doc": "", "type": {"items": {"fields":
+[{"default": null, "doc": "", "type": ["null", "string"], "name":
+"commandLine"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "prevProgramId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "version"}],
+"type": "record", "name": "GAProgram"}, "type": "array"}, "name":
+"programs"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "referenceSetId"}, {"default": {}, "doc": "", "type":
+{"values": {"items": "string", "type": "array"}, "type": "map"},
+"name": "info"}]}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -715,35 +725,37 @@ No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name": "GAReadGroupSet",
-"fields": [{"doc": "", "type": "string", "name": "id"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "datasetId"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "name"}, {"default":
-[], "doc": "", "type": {"items": {"fields": [{"doc": "", "type":
-"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "datasetId"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "name"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "description"}, {"doc": "", "type": ["null",
-"string"], "name": "sampleId"}, {"doc": "", "type": ["null", {"fields":
-[{"default": null, "doc": "", "type": ["null", "string"], "name":
-"libraryId"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "platformUnit"}, {"doc": "", "type": ["null", "string"], "name":
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "datasetId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": [], "doc": "", "type": {"items": {"fields":
+[{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "datasetId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "name"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"description"}, {"doc": "", "type": ["null", "string"], "name":
+"sampleId"}, {"doc": "", "type": ["null", {"fields": [{"default":
+null, "doc": "", "type": ["null", "string"], "name": "libraryId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"platformUnit"}, {"doc": "", "type": ["null", "string"], "name":
 "sequencingCenter"}, {"doc": "", "type": ["null", "string"], "name":
-"instrumentModel"}], "type": "record", "name": "GAExperiment"}], "name":
-"experiment"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "predictedInsertSize"}, {"default": null, "doc": "", "type":
-["null", "long"], "name": "created"}, {"default": null, "doc": "", "type":
-["null", "long"], "name": "updated"}, {"default": [], "doc": "", "type":
-{"items": {"fields": [{"default": null, "doc": "", "type": ["null",
-"string"], "name": "commandLine"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "id"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "name"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "prevProgramId"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "version"}], "type": "record",
-"name": "GAProgram"}, "type": "array"}, "name": "programs"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "referenceSetId"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string", "type":
-"array"}, "type": "map"}, "name": "info"}], "type": "record", "name":
-"GAReadGroup"}, "type": "array"}, "name": "readGroups"}]}
+"instrumentModel"}], "type": "record", "name": "GAExperiment"}],
+"name": "experiment"}, {"default": null, "doc": "", "type": ["null",
+"int"], "name": "predictedInsertSize"}, {"default": null, "doc": "",
+"type": ["null", "long"], "name": "created"}, {"default": null, "doc":
+"", "type": ["null", "long"], "name": "updated"}, {"default": [],
+"doc": "", "type": {"items": {"fields": [{"default": null, "doc": "",
+"type": ["null", "string"], "name": "commandLine"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "id"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "name"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"prevProgramId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "version"}], "type": "record", "name":
+"GAProgram"}, "type": "array"}, "name": "programs"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "referenceSetId"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}], "type": "record",
+"name": "GAReadGroup"}, "type": "array"}, "name": "readGroups"}]}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set(["id"])
@@ -780,14 +792,15 @@ reference coordinate space for other genomic annotations. A single
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name": "GAReference",
 "fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
-"type": "long", "name": "length"}, {"doc": "", "type": "string", "name":
-"md5checksum"}, {"doc": "", "type": "string", "name": "name"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "sourceURI"},
-{"doc": "", "type": {"items": "string", "type": "array"}, "name":
-"sourceAccessions"}, {"default": false, "doc": "", "type": "boolean",
-"name": "isDerived"}, {"default": null, "doc": "", "type": ["null",
-"float"], "name": "sourceDivergence"}, {"default": null, "doc": "",
-"type": ["null", "int"], "name": "ncbiTaxonId"}], "doc": ""}
+"type": "long", "name": "length"}, {"doc": "", "type": "string",
+"name": "md5checksum"}, {"doc": "", "type": "string", "name": "name"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceURI"}, {"doc": "", "type": {"items": "string", "type":
+"array"}, "name": "sourceAccessions"}, {"default": false, "doc": "",
+"type": "boolean", "name": "isDerived"}, {"default": null, "doc": "",
+"type": ["null", "float"], "name": "sourceDivergence"}, {"default":
+null, "doc": "", "type": ["null", "int"], "name": "ncbiTaxonId"}],
+"doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -836,12 +849,13 @@ coordinate space for comparing reference-aligned experimental data.
 [], "doc": "", "type": {"items": "string", "type": "array"}, "name":
 "referenceIds"}, {"doc": "", "type": "string", "name": "md5checksum"},
 {"default": null, "doc": "", "type": ["null", "int"], "name":
-"ncbiTaxonId"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "description"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "assemblyId"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "sourceURI"}, {"doc": "", "type": {"items":
-"string", "type": "array"}, "name": "sourceAccessions"}, {"default":
-false, "doc": "", "type": "boolean", "name": "isDerived"}], "doc": ""}
+"ncbiTaxonId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "assemblyId"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceURI"}, {"doc":
+"", "type": {"items": "string", "type": "array"}, "name":
+"sourceAccessions"}, {"default": false, "doc": "", "type": "boolean",
+"name": "isDerived"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -883,11 +897,11 @@ This request maps to the body of `POST /callsets/search` as JSON.
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
 "GASearchCallSetsRequest", "fields": [{"default": [], "doc": "",
-"type": {"items": "string", "type": "array"}, "name": "variantSetIds"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}, {"default": null, "doc": "", "type": ["null", "int"], "name":
-"pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "pageToken"}], "doc": ""}
+"type": {"items": "string", "type": "array"}, "name":
+"variantSetIds"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -917,18 +931,19 @@ This is the response from `POST /callsets/search` expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
-"GASearchCallSetsResponse", "fields": [{"default": [], "doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "GACallSet", "fields":
-[{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "name"}, {"doc": "", "type":
-["null", "string"], "name": "sampleId"}, {"default": [], "doc": "",
-"type": {"items": "string", "type": "array"}, "name": "variantSetIds"},
-{"default": null, "doc": "", "type": ["null", "long"], "name": "created"},
-{"default": null, "doc": "", "type": ["null", "long"], "name": "updated"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string", "type":
-"array"}, "type": "map"}, "name": "info"}]}, "type": "array"}, "name":
-"callSets"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "nextPageToken"}], "doc": ""}
+"GASearchCallSetsResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"doc": "", "type": "record", "name": "GACallSet",
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
+"", "type": ["null", "string"], "name": "sampleId"}, {"default": [],
+"doc": "", "type": {"items": "string", "type": "array"}, "name":
+"variantSetIds"}, {"default": null, "doc": "", "type": ["null",
+"long"], "name": "created"}, {"default": null, "doc": "", "type":
+["null", "long"], "name": "updated"}, {"default": {}, "doc": "",
+"type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}]}, "type": "array"}, "name": "callSets"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -997,37 +1012,40 @@ This is the response from `POST /readgroupsets/search` expressed as JSON.
 {"namespace": "org.ga4gh", "type": "record", "name":
 "GASearchReadGroupSetsResponse", "fields": [{"default": [], "doc": "",
 "type": {"items": {"fields": [{"doc": "", "type": "string", "name":
-"id"}, {"default": null, "doc": "", "type": ["null", "string"], "name":
-"datasetId"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "name"}, {"default": [], "doc": "", "type": {"items": {"fields":
-[{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "datasetId"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "name"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "description"},
-{"doc": "", "type": ["null", "string"], "name": "sampleId"}, {"doc":
-"", "type": ["null", {"fields": [{"default": null, "doc": "", "type":
-["null", "string"], "name": "libraryId"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "platformUnit"}, {"doc": "", "type":
-["null", "string"], "name": "sequencingCenter"}, {"doc": "", "type":
-["null", "string"], "name": "instrumentModel"}], "type": "record", "name":
-"GAExperiment"}], "name": "experiment"}, {"default": null, "doc": "",
-"type": ["null", "int"], "name": "predictedInsertSize"}, {"default": null,
-"doc": "", "type": ["null", "long"], "name": "created"}, {"default": null,
-"doc": "", "type": ["null", "long"], "name": "updated"}, {"default": [],
-"doc": "", "type": {"items": {"fields": [{"default": null, "doc": "",
-"type": ["null", "string"], "name": "commandLine"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "id"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "name"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "prevProgramId"},
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "datasetId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"default": [], "doc": "", "type":
+{"items": {"fields": [{"doc": "", "type": "string", "name": "id"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"version"}], "type": "record", "name": "GAProgram"}, "type": "array"},
-"name": "programs"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceSetId"}, {"default": {}, "doc": "", "type":
-{"values": {"items": "string", "type": "array"}, "type": "map"}, "name":
-"info"}], "type": "record", "name": "GAReadGroup"}, "type": "array"},
-"name": "readGroups"}], "type": "record", "name": "GAReadGroupSet"},
-"type": "array"}, "name": "readGroupSets"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "nextPageToken"}], "doc": ""}
+"datasetId"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}, {"doc": "", "type": ["null",
+"string"], "name": "sampleId"}, {"doc": "", "type": ["null",
+{"fields": [{"default": null, "doc": "", "type": ["null", "string"],
+"name": "libraryId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "platformUnit"}, {"doc": "", "type": ["null",
+"string"], "name": "sequencingCenter"}, {"doc": "", "type": ["null",
+"string"], "name": "instrumentModel"}], "type": "record", "name":
+"GAExperiment"}], "name": "experiment"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "predictedInsertSize"}, {"default":
+null, "doc": "", "type": ["null", "long"], "name": "created"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"updated"}, {"default": [], "doc": "", "type": {"items": {"fields":
+[{"default": null, "doc": "", "type": ["null", "string"], "name":
+"commandLine"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "prevProgramId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "version"}],
+"type": "record", "name": "GAProgram"}, "type": "array"}, "name":
+"programs"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "referenceSetId"}, {"default": {}, "doc": "", "type":
+{"values": {"items": "string", "type": "array"}, "type": "map"},
+"name": "info"}], "type": "record", "name": "GAReadGroup"}, "type":
+"array"}, "name": "readGroups"}], "type": "record", "name":
+"GAReadGroupSet"}, "type": "array"}, "name": "readGroupSets"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1064,14 +1082,14 @@ specified, all `GAReadGroup`s must be aligned to the same `GAReferenceSet`.
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
 "GASearchReadsRequest", "fields": [{"default": [], "doc": "", "type":
-{"items": "string", "type": "array"}, "name": "readGroupIds"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "referenceName"},
+{"items": "string", "type": "array"}, "name": "readGroupIds"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"referenceId"}, {"default": 0, "doc": "", "type": ["null", "long"],
-"name": "start"}, {"default": null, "doc": "", "type": ["null", "long"],
-"name": "end"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "pageToken"}], "doc": ""}
+"referenceName"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "referenceId"}, {"default": 0, "doc": "", "type":
+["null", "long"], "name": "start"}, {"default": null, "doc": "",
+"type": ["null", "long"], "name": "end"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "pageSize"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1108,40 +1126,42 @@ This is the response from `POST /reads/search` expressed as JSON.
 "GASearchReadsResponse", "fields": [{"default": [], "doc": "", "type":
 {"items": {"doc": "", "type": "record", "name": "GAReadAlignment",
 "fields": [{"doc": "", "type": ["null", "string"], "name": "id"},
-{"doc": "", "type": "string", "name": "readGroupId"}, {"doc": "", "type":
-"string", "name": "fragmentName"}, {"default": false, "doc": "", "type":
-["null", "boolean"], "name": "properPlacement"}, {"default": false,
-"doc": "", "type": ["null", "boolean"], "name": "duplicateFragment"},
-{"default": null, "doc": "", "type": ["null", "int"], "name":
-"numberReads"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "fragmentLength"}, {"default": null, "doc": "", "type": ["null",
-"int"], "name": "readNumber"}, {"default": false, "doc": "", "type":
-["null", "boolean"], "name": "failedVendorQualityChecks"}, {"default":
-null, "doc": "", "type": ["null", {"doc": "", "type": "record",
-"name": "GALinearAlignment", "fields": [{"doc": "", "type": {"doc": "",
-"type": "record", "name": "GAPosition", "fields": [{"doc": "", "type":
-"string", "name": "referenceName"}, {"doc": "", "type": "long", "name":
-"position"}, {"doc": "", "type": "boolean", "name": "reverseStrand"}]},
-"name": "position"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "mappingQuality"}, {"default": [], "doc": "", "type": {"items":
-{"doc": "", "type": "record", "name": "GACigarUnit", "fields": [{"doc":
-"", "type": {"symbols": ["ALIGNMENT_MATCH", "INSERT", "DELETE", "SKIP",
-"CLIP_SOFT", "CLIP_HARD", "PAD", "SEQUENCE_MATCH", "SEQUENCE_MISMATCH"],
-"doc": "", "type": "enum", "name": "GACigarOperation"}, "name":
-"operation"}, {"doc": "", "type": "long", "name": "operationLength"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"referenceSequence"}]}, "type": "array"}, "name": "cigar"}]}], "name":
-"alignment"}, {"default": false, "doc": "", "type": ["null", "boolean"],
-"name": "secondaryAlignment"}, {"default": false, "doc": "", "type":
-["null", "boolean"], "name": "supplementaryAlignment"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "alignedSequence"},
+{"doc": "", "type": "string", "name": "readGroupId"}, {"doc": "",
+"type": "string", "name": "fragmentName"}, {"default": false, "doc":
+"", "type": ["null", "boolean"], "name": "properPlacement"},
+{"default": false, "doc": "", "type": ["null", "boolean"], "name":
+"duplicateFragment"}, {"default": null, "doc": "", "type": ["null",
+"int"], "name": "numberReads"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "fragmentLength"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "readNumber"}, {"default": false,
+"doc": "", "type": ["null", "boolean"], "name":
+"failedVendorQualityChecks"}, {"default": null, "doc": "", "type":
+["null", {"doc": "", "type": "record", "name": "GALinearAlignment",
+"fields": [{"doc": "", "type": {"doc": "", "type": "record", "name":
+"GAPosition", "fields": [{"doc": "", "type": "string", "name":
+"referenceName"}, {"doc": "", "type": "long", "name": "position"},
+{"doc": "", "type": "boolean", "name": "reverseStrand"}]}, "name":
+"position"}, {"default": null, "doc": "", "type": ["null", "int"],
+"name": "mappingQuality"}, {"default": [], "doc": "", "type":
+{"items": {"doc": "", "type": "record", "name": "GACigarUnit",
+"fields": [{"doc": "", "type": {"symbols": ["ALIGNMENT_MATCH",
+"INSERT", "DELETE", "SKIP", "CLIP_SOFT", "CLIP_HARD", "PAD",
+"SEQUENCE_MATCH", "SEQUENCE_MISMATCH"], "doc": "", "type": "enum",
+"name": "GACigarOperation"}, "name": "operation"}, {"doc": "", "type":
+"long", "name": "operationLength"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "referenceSequence"}]}, "type":
+"array"}, "name": "cigar"}]}], "name": "alignment"}, {"default":
+false, "doc": "", "type": ["null", "boolean"], "name":
+"secondaryAlignment"}, {"default": false, "doc": "", "type": ["null",
+"boolean"], "name": "supplementaryAlignment"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "alignedSequence"},
 {"default": [], "doc": "", "type": {"items": "int", "type": "array"},
-"name": "alignedQuality"}, {"default": null, "doc": "", "type": ["null",
-"GAPosition"], "name": "nextMatePosition"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type": "map"},
-"name": "info"}]}, "type": "array"}, "name": "alignments"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "nextPageToken"}],
-"doc": ""}
+"name": "alignedQuality"}, {"default": null, "doc": "", "type":
+["null", "GAPosition"], "name": "nextMatePosition"}, {"default": {},
+"doc": "", "type": {"values": {"items": "string", "type": "array"},
+"type": "map"}, "name": "info"}]}, "type": "array"}, "name":
+"alignments"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1176,11 +1196,12 @@ as JSON.
 {"namespace": "org.ga4gh", "type": "record", "name":
 "GASearchReferenceSetsRequest", "fields": [{"default": [], "doc": "",
 "type": {"items": "string", "type": "array"}, "name": "md5checksums"},
-{"default": [], "doc": "", "type": {"items": "string", "type": "array"},
-"name": "accessions"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "assemblyId"}, {"default": null, "doc": "", "type":
-["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+{"default": [], "doc": "", "type": {"items": "string", "type":
+"array"}, "name": "accessions"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "assemblyId"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "pageSize"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "pageToken"}], "doc":
+""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1213,20 +1234,21 @@ expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
-"GASearchReferenceSetsResponse", "fields": [{"default": [],
-"doc": "", "type": {"items": {"doc": "", "type": "record", "name":
+"GASearchReferenceSetsResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"doc": "", "type": "record", "name":
 "GAReferenceSet", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"default": [], "doc": "", "type": {"items": "string", "type":
-"array"}, "name": "referenceIds"}, {"doc": "", "type": "string", "name":
-"md5checksum"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "ncbiTaxonId"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "description"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "assemblyId"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "sourceURI"}, {"doc": "", "type":
-{"items": "string", "type": "array"}, "name": "sourceAccessions"},
-{"default": false, "doc": "", "type": "boolean", "name": "isDerived"}]},
-"type": "array"}, "name": "referenceSets"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "nextPageToken"}], "doc": ""}
+"array"}, "name": "referenceIds"}, {"doc": "", "type": "string",
+"name": "md5checksum"}, {"default": null, "doc": "", "type": ["null",
+"int"], "name": "ncbiTaxonId"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "description"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "assemblyId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "sourceURI"},
+{"doc": "", "type": {"items": "string", "type": "array"}, "name":
+"sourceAccessions"}, {"default": false, "doc": "", "type": "boolean",
+"name": "isDerived"}]}, "type": "array"}, "name": "referenceSets"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1261,10 +1283,10 @@ as JSON.
 {"namespace": "org.ga4gh", "type": "record", "name":
 "GASearchReferencesRequest", "fields": [{"default": [], "doc": "",
 "type": {"items": "string", "type": "array"}, "name": "md5checksums"},
-{"default": [], "doc": "", "type": {"items": "string", "type": "array"},
-"name": "accessions"}, {"default": null, "doc": "", "type": ["null",
-"int"], "name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "pageToken"}], "doc": ""}
+{"default": [], "doc": "", "type": {"items": "string", "type":
+"array"}, "name": "accessions"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1297,16 +1319,16 @@ This is the response from `POST /references/search` expressed as JSON.
 "GASearchReferencesResponse", "fields": [{"default": [], "doc": "",
 "type": {"items": {"doc": "", "type": "record", "name": "GAReference",
 "fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
-"type": "long", "name": "length"}, {"doc": "", "type": "string", "name":
-"md5checksum"}, {"doc": "", "type": "string", "name": "name"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "sourceURI"},
-{"doc": "", "type": {"items": "string", "type": "array"}, "name":
-"sourceAccessions"}, {"default": false, "doc": "", "type": "boolean",
-"name": "isDerived"}, {"default": null, "doc": "", "type": ["null",
-"float"], "name": "sourceDivergence"}, {"default": null, "doc": "",
-"type": ["null", "int"], "name": "ncbiTaxonId"}]}, "type": "array"},
-"name": "references"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "nextPageToken"}], "doc": ""}
+"type": "long", "name": "length"}, {"doc": "", "type": "string",
+"name": "md5checksum"}, {"doc": "", "type": "string", "name": "name"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceURI"}, {"doc": "", "type": {"items": "string", "type":
+"array"}, "name": "sourceAccessions"}, {"default": false, "doc": "",
+"type": "boolean", "name": "isDerived"}, {"default": null, "doc": "",
+"type": ["null", "float"], "name": "sourceDivergence"}, {"default":
+null, "doc": "", "type": ["null", "int"], "name": "ncbiTaxonId"}]},
+"type": "array"}, "name": "references"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1372,19 +1394,20 @@ This is the response from `POST /variantsets/search` expressed as JSON.
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
 "GASearchVariantSetsResponse", "fields": [{"default": [], "doc": "",
-"type": {"items": {"doc": "", "type": "record", "name": "GAVariantSet",
-"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
-"type": "string", "name": "datasetId"}, {"default": [], "doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "GAVariantSetMetadata",
-"fields": [{"doc": "", "type": "string", "name": "key"}, {"doc": "",
-"type": "string", "name": "value"}, {"doc": "", "type": "string",
-"name": "id"}, {"doc": "", "type": "string", "name": "type"}, {"doc":
-"", "type": "string", "name": "number"}, {"doc": "", "type": "string",
-"name": "description"}, {"default": {}, "doc": "", "type": {"values":
-{"items": "string", "type": "array"}, "type": "map"}, "name": "info"}]},
-"type": "array"}, "name": "metadata"}]}, "type": "array"}, "name":
-"variantSets"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "nextPageToken"}], "doc": ""}
+"type": {"items": {"doc": "", "type": "record", "name":
+"GAVariantSet", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": "string", "name": "datasetId"}, {"default":
+[], "doc": "", "type": {"items": {"doc": "", "type": "record", "name":
+"GAVariantSetMetadata", "fields": [{"doc": "", "type": "string",
+"name": "key"}, {"doc": "", "type": "string", "name": "value"},
+{"doc": "", "type": "string", "name": "id"}, {"doc": "", "type":
+"string", "name": "type"}, {"doc": "", "type": "string", "name":
+"number"}, {"doc": "", "type": "string", "name": "description"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}]}, "type": "array"},
+"name": "metadata"}]}, "type": "array"}, "name": "variantSets"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1417,14 +1440,15 @@ This request maps to the body of `POST /variants/search` as JSON.
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
 "GASearchVariantsRequest", "fields": [{"default": [], "doc": "",
-"type": {"items": "string", "type": "array"}, "name": "variantSetIds"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"variantName"}, {"default": [], "doc": "", "type": {"items": "string",
-"type": "array"}, "name": "callSetIds"}, {"doc": "", "type": "string",
-"name": "referenceName"}, {"doc": "", "type": "long", "name": "start"},
-{"doc": "", "type": "long", "name": "end"}, {"default": null, "doc": "",
-"type": ["null", "int"], "name": "pageSize"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"type": {"items": "string", "type": "array"}, "name":
+"variantSetIds"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "variantName"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "callSetIds"}, {"doc":
+"", "type": "string", "name": "referenceName"}, {"doc": "", "type":
+"long", "name": "start"}, {"doc": "", "type": "long", "name": "end"},
+{"default": null, "doc": "", "type": ["null", "int"], "name":
+"pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1463,31 +1487,33 @@ This is the response from `POST /variants/search` expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
-"GASearchVariantsResponse", "fields": [{"default": [], "doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "GAVariant", "fields":
-[{"doc": "", "type": "string", "name": "id"}, {"doc": "", "type":
-"string", "name": "variantSetId"}, {"default": [], "doc": "", "type":
-{"items": "string", "type": "array"}, "name": "names"}, {"default": null,
-"doc": "", "type": ["null", "long"], "name": "created"}, {"default":
-null, "doc": "", "type": ["null", "long"], "name": "updated"}, {"doc":
-"", "type": "string", "name": "referenceName"}, {"doc": "", "type":
-"long", "name": "start"}, {"doc": "", "type": "long", "name": "end"},
-{"doc": "", "type": "string", "name": "referenceBases"}, {"default":
-[], "doc": "", "type": {"items": "string", "type": "array"}, "name":
-"alternateBases"}, {"default": {}, "doc": "", "type": {"values": {"items":
-"string", "type": "array"}, "type": "map"}, "name": "info"}, {"default":
-[], "doc": "", "type": {"items": {"doc": "", "type": "record", "name":
-"GACall", "fields": [{"doc": "", "type": ["null", "string"], "name":
-"callSetId"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "callSetName"}, {"default": [], "doc": "", "type": {"items":
-"int", "type": "array"}, "name": "genotype"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "phaseset"}, {"default":
-[], "doc": "", "type": {"items": "double", "type": "array"}, "name":
-"genotypeLikelihood"}, {"default": {}, "doc": "", "type": {"values":
-{"items": "string", "type": "array"}, "type": "map"}, "name": "info"}]},
-"type": "array"}, "name": "calls"}]}, "type": "array"}, "name":
-"variants"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "nextPageToken"}], "doc": ""}
+"GASearchVariantsResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"doc": "", "type": "record", "name": "GAVariant",
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
+"type": "string", "name": "variantSetId"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "names"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"created"}, {"default": null, "doc": "", "type": ["null", "long"],
+"name": "updated"}, {"doc": "", "type": "string", "name":
+"referenceName"}, {"doc": "", "type": "long", "name": "start"},
+{"doc": "", "type": "long", "name": "end"}, {"doc": "", "type":
+"string", "name": "referenceBases"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name":
+"alternateBases"}, {"default": {}, "doc": "", "type": {"values":
+{"items": "string", "type": "array"}, "type": "map"}, "name": "info"},
+{"default": [], "doc": "", "type": {"items": {"doc": "", "type":
+"record", "name": "GACall", "fields": [{"doc": "", "type": ["null",
+"string"], "name": "callSetId"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "callSetName"}, {"default": [], "doc": "",
+"type": {"items": "int", "type": "array"}, "name": "genotype"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"phaseset"}, {"default": [], "doc": "", "type": {"items": "double",
+"type": "array"}, "name": "genotypeLikelihood"}, {"default": {},
+"doc": "", "type": {"values": {"items": "string", "type": "array"},
+"type": "map"}, "name": "info"}]}, "type": "array"}, "name":
+"calls"}]}, "type": "array"}, "name": "variants"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "nextPageToken"}],
+"doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -1522,28 +1548,29 @@ This is equivalent to a row in VCF.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name": "GAVariant",
-"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc":
-"", "type": "string", "name": "variantSetId"}, {"default": [],
-"doc": "", "type": {"items": "string", "type": "array"}, "name":
-"names"}, {"default": null, "doc": "", "type": ["null", "long"],
-"name": "created"}, {"default": null, "doc": "", "type": ["null",
-"long"], "name": "updated"}, {"doc": "", "type": "string", "name":
-"referenceName"}, {"doc": "", "type": "long", "name": "start"}, {"doc":
-"", "type": "long", "name": "end"}, {"doc": "", "type": "string", "name":
-"referenceBases"}, {"default": [], "doc": "", "type": {"items": "string",
-"type": "array"}, "name": "alternateBases"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type": "map"},
-"name": "info"}, {"default": [], "doc": "", "type": {"items": {"doc":
-"", "type": "record", "name": "GACall", "fields": [{"doc": "", "type":
-["null", "string"], "name": "callSetId"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "callSetName"}, {"default":
-[], "doc": "", "type": {"items": "int", "type": "array"}, "name":
-"genotype"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "phaseset"}, {"default": [], "doc": "", "type": {"items":
-"double", "type": "array"}, "name": "genotypeLikelihood"}, {"default":
-{}, "doc": "", "type": {"values": {"items": "string", "type": "array"},
-"type": "map"}, "name": "info"}]}, "type": "array"}, "name": "calls"}],
-"doc": ""}
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
+"type": "string", "name": "variantSetId"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "names"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"created"}, {"default": null, "doc": "", "type": ["null", "long"],
+"name": "updated"}, {"doc": "", "type": "string", "name":
+"referenceName"}, {"doc": "", "type": "long", "name": "start"},
+{"doc": "", "type": "long", "name": "end"}, {"doc": "", "type":
+"string", "name": "referenceBases"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name":
+"alternateBases"}, {"default": {}, "doc": "", "type": {"values":
+{"items": "string", "type": "array"}, "type": "map"}, "name": "info"},
+{"default": [], "doc": "", "type": {"items": {"doc": "", "type":
+"record", "name": "GACall", "fields": [{"doc": "", "type": ["null",
+"string"], "name": "callSetId"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "callSetName"}, {"default": [], "doc": "",
+"type": {"items": "int", "type": "array"}, "name": "genotype"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"phaseset"}, {"default": [], "doc": "", "type": {"items": "double",
+"type": "array"}, "name": "genotypeLikelihood"}, {"default": {},
+"doc": "", "type": {"values": {"items": "string", "type": "array"},
+"type": "map"}, "name": "info"}]}, "type": "array"}, "name":
+"calls"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1597,15 +1624,16 @@ The variant set is equivalent to a VCF file.
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name": "GAVariantSet",
 "fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
-"type": "string", "name": "datasetId"}, {"default": [], "doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "GAVariantSetMetadata",
-"fields": [{"doc": "", "type": "string", "name": "key"}, {"doc": "",
-"type": "string", "name": "value"}, {"doc": "", "type": "string",
-"name": "id"}, {"doc": "", "type": "string", "name": "type"}, {"doc":
-"", "type": "string", "name": "number"}, {"doc": "", "type": "string",
-"name": "description"}, {"default": {}, "doc": "", "type": {"values":
-{"items": "string", "type": "array"}, "type": "map"}, "name": "info"}]},
-"type": "array"}, "name": "metadata"}], "doc": ""}
+"type": "string", "name": "datasetId"}, {"default": [], "doc": "",
+"type": {"items": {"doc": "", "type": "record", "name":
+"GAVariantSetMetadata", "fields": [{"doc": "", "type": "string",
+"name": "key"}, {"doc": "", "type": "string", "name": "value"},
+{"doc": "", "type": "string", "name": "id"}, {"doc": "", "type":
+"string", "name": "type"}, {"doc": "", "type": "string", "name":
+"number"}, {"doc": "", "type": "string", "name": "description"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}]}, "type": "array"},
+"name": "metadata"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1641,13 +1669,13 @@ This metadata represents VCF header information.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh", "type": "record", "name":
-"GAVariantSetMetadata", "fields": [{"doc": "", "type": "string", "name":
-"key"}, {"doc": "", "type": "string", "name": "value"}, {"doc": "",
-"type": "string", "name": "id"}, {"doc": "", "type": "string", "name":
-"type"}, {"doc": "", "type": "string", "name": "number"}, {"doc": "",
-"type": "string", "name": "description"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type": "map"},
-"name": "info"}], "doc": ""}
+"GAVariantSetMetadata", "fields": [{"doc": "", "type": "string",
+"name": "key"}, {"doc": "", "type": "string", "name": "value"},
+{"doc": "", "type": "string", "name": "id"}, {"doc": "", "type":
+"string", "name": "type"}, {"doc": "", "type": "string", "name":
+"number"}, {"doc": "", "type": "string", "name": "description"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1681,24 +1709,24 @@ This metadata represents VCF header information.
         self.value = None
 
 postMethods = \
-    [('/readgroupsets/search',
+    [('/callsets/search',
+      GASearchCallSetsRequest,
+      GASearchCallSetsResponse),
+     ('/readgroupsets/search',
       GASearchReadGroupSetsRequest,
-      GASearchVariantSetsResponse),
-     ('/variantsets/search',
-      GASearchVariantSetsRequest,
+      GASearchReadGroupSetsResponse),
+     ('/reads/search',
+      GASearchReadsRequest,
       GASearchReadsResponse),
      ('/referencesets/search',
       GASearchReferenceSetsRequest,
-      GASearchVariantsResponse),
-     ('/variants/search',
-      GASearchVariantsRequest,
-      GASearchCallSetsResponse),
-     ('/reads/search',
-      GASearchReadsRequest,
       GASearchReferenceSetsResponse),
      ('/references/search',
       GASearchReferencesRequest,
       GASearchReferencesResponse),
-     ('/callsets/search',
-      GASearchCallSetsRequest,
-      GASearchReadGroupSetsResponse)]
+     ('/variantsets/search',
+      GASearchVariantSetsRequest,
+      GASearchVariantSetsResponse),
+     ('/variants/search',
+      GASearchVariantsRequest,
+      GASearchVariantsResponse)]
