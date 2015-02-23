@@ -120,19 +120,34 @@ def handleHttpOptions():
 
 @app.errorhandler(Exception)
 def handleException(exception):
+    # if the caught exception implements toErrorMessage, extract the
+    # message to be returned to the client at this point (because
+    # the exception object may get overwritten later in the method)
+    errorMessage = None
+    if hasattr(exception, 'toErrorMessage'):
+        errorMessage = exception.toErrorMessage()
+
+    # if the type of exception is one we have registered in the exceptionMap,
+    # convert the exception to one that we want to return to the client
     exceptionClass = exception.__class__
     if exceptionClass in frontendExceptions.exceptionMap:
         newExceptionClass = frontendExceptions.exceptionMap[exceptionClass]
         exception = newExceptionClass()
 
+    # if at this point the exception is still unrecognized
+    # send the client a 500 error
     if not isinstance(exception, frontendExceptions.FrontendException):
         if app.config['DEBUG']:
             print(traceback.format_exc(exception))
         exception = frontendExceptions.ServerException()
 
+    # serialize the exception
     error = protocol.GAException()
     error.errorCode = exception.code
-    error.message = exception.message
+    if errorMessage is not None:
+        error.message = errorMessage
+    else:
+        error.message = exception.message
     response = flask.jsonify(error.toJsonDict())
     response.status_code = exception.httpStatus
     return response
