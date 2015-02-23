@@ -14,6 +14,7 @@ import ga4gh.backend as backend
 import ga4gh.datamodel.variants as variants
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
+import tests.utils as utils
 
 
 class EndToEndWormtableTest(unittest.TestCase):
@@ -42,8 +43,9 @@ class EndToEndWormtableTest(unittest.TestCase):
         expectedIds = ['example_1', 'example_2', 'example_3', 'example_4']
         request = protocol.GASearchVariantSetsRequest()
         request.pageSize = len(expectedIds)
-        response = self.sendJSONPostRequest('/variantsets/search',
-                                            request.toJsonString())
+        path = utils.applyVersion('/variantsets/search')
+        response = self.sendJSONPostRequest(
+            path, request.toJsonString())
 
         self.assertEqual(200, response.status_code)
 
@@ -70,8 +72,9 @@ class EndToEndWormtableTest(unittest.TestCase):
         request.variantSetIds = expectedIds
 
         # Request windows is too small, no results
-        response = self.sendJSONPostRequest('/variants/search',
-                                            request.toJsonString())
+        path = utils.applyVersion('/variants/search')
+        response = self.sendJSONPostRequest(
+            path, request.toJsonString())
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchVariantsResponse.fromJsonString(
             response.data)
@@ -80,8 +83,9 @@ class EndToEndWormtableTest(unittest.TestCase):
 
         # Larger request window, expect results
         request.end = 2 ** 16
-        response = self.sendJSONPostRequest('/variants/search',
-                                            request.toJsonString())
+        path = utils.applyVersion('/variants/search')
+        response = self.sendJSONPostRequest(
+            path, request.toJsonString())
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchVariantsResponse.fromJsonString(
             response.data)

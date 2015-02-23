@@ -23,8 +23,35 @@ import ga4gh.protocol as protocol
 app = flask.Flask(__name__)
 
 
-class ServerStatus(object):
+class Version(object):
+    """
+    A major/minor/revision version tag
+    """
+    @classmethod
+    def parseString(cls, versionString):
+        versions = versionString.strip('vV').split('.')
+        return Version(*versions)
 
+    def __init__(self, major, minor, revision):
+        self.version = (major, minor, revision)
+
+    def __cmp__(self, other):
+        return cmp(self.version, other.version)
+
+    def __hash__(self):
+        return hash(self.version)
+
+    def __eq__(self, other):
+        return self.version == other.version
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
+class ServerStatus(object):
+    """
+    Generates information about the status of the server for display
+    """
     def __init__(self):
         self.startupTime = datetime.datetime.now()
 
@@ -111,11 +138,16 @@ def handleException(exception):
     return response
 
 
-def handleFlaskRequest(flaskRequest, endpoint):
+def handleFlaskPostRequest(version, flaskRequest, endpoint):
+    if Version.parseString(version) != Version.parseString(protocol.version):
+        raise frontendExceptions.VersionNotSupportedException()
+
     if flaskRequest.method == "POST":
         return handleHttpPost(flaskRequest, endpoint)
-    else:
+    elif flaskRequest.method == "OPTIONS":
         return handleHttpOptions()
+    else:
+        raise frontendExceptions.MethodNotAllowedException()
 
 
 @app.route('/')
@@ -124,51 +156,53 @@ def index():
         'index.html', info=app.serverStatus.getStatusInfo())
 
 
-@app.route('/references/<id>', methods=['GET'])
-def getReference(id):
+@app.route('/<version>/references/<id>', methods=['GET'])
+def getReference(version, id):
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/references/<id>/bases', methods=['GET'])
-def getReferenceBases(id):
+@app.route('/<version>/references/<id>/bases', methods=['GET'])
+def getReferenceBases(version, id):
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/referencesets/<id>', methods=['GET'])
-def getReferenceSet(id):
+@app.route('/<version>/referencesets/<id>', methods=['GET'])
+def getReferenceSet(version, id):
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/callsets/search', methods=['POST'])
-def searchCallSets():
+@app.route('/<version>/callsets/search', methods=['POST'])
+def searchCallSets(version):
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/readgroupsets/search', methods=['POST'])
-def searchReadGroupSets():
+@app.route('/<version>/readgroupsets/search', methods=['POST'])
+def searchReadGroupSets(version):
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/reads/search', methods=['POST'])
-def searchReads():
+@app.route('/<version>/reads/search', methods=['POST'])
+def searchReads(version):
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/referencesets/search', methods=['POST'])
-def searchReferenceSets():
+@app.route('/<version>/referencesets/search', methods=['POST'])
+def searchReferenceSets(version):
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/references/search', methods=['POST'])
-def searchReferences():
+@app.route('/<version>/references/search', methods=['POST'])
+def searchReferences(version):
     raise frontendExceptions.PathNotFoundException()
 
 
-@app.route('/variantsets/search', methods=['POST', 'OPTIONS'])
-def searchVariantSets():
-    return handleFlaskRequest(flask.request, app.backend.searchVariantSets)
+@app.route('/<version>/variantsets/search', methods=['POST', 'OPTIONS'])
+def searchVariantSets(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchVariantSets)
 
 
-@app.route('/variants/search', methods=['POST', 'OPTIONS'])
-def searchVariants():
-    return handleFlaskRequest(flask.request, app.backend.searchVariants)
+@app.route('/<version>/variants/search', methods=['POST', 'OPTIONS'])
+def searchVariants(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchVariants)
