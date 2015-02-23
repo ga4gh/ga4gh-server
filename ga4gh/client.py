@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import json
 import requests
 import posixpath
+import logging
 
 import ga4gh.protocol as protocol
 
@@ -28,6 +29,20 @@ class HttpClient(object):
         self._workarounds = workarounds
         self._key = key
 
+        # logging config
+        self._logger = logging.getLogger(__name__)
+        if self._debugLevel == 0:
+            logLevel = logging.WARN
+        elif self._debugLevel == 1:
+            logLevel = logging.INFO
+        else:
+            logLevel = logging.DEBUG
+        self._logger.setLevel(logLevel)
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(name)s: %(message)s')
+        handler.setFormatter(formatter)
+        self._logger.addHandler(handler)
+
     def getBytesRead(self):
         """
         Returns the total number of (non HTTP) bytes read from the server
@@ -45,18 +60,26 @@ class HttpClient(object):
     def _usingWorkaroundsFor(self, workaround):
         return workaround in self._workarounds
 
+    # Ordinarily logger's implementation will take care of if log messages
+    # should be emitted based on the log level.  The _shouldLog* methods
+    # are only used if there are additional performance hits involved in
+    # creating the log message that we want to avoid otherwise.
+    def _shouldLogDebug(self):
+        return self._debugLevel > 1
+
+    def _shouldLogInfo(self):
+        return self._debugLevel > 0
+
     def _debugResponse(self, jsonString):
-        if self._debugLevel > 1:
-            # TODO use a logging output and integrate with HTTP client more
-            # nicely... also, logging / error handling in general
-            print("json response:")
+        if self._shouldLogDebug():
+            self._logger.debug("json response:")
             pp = json.dumps(
                 json.loads(jsonString), sort_keys=True, indent=4)
-            print(pp)
+            self._logger.debug(pp)
 
     def _checkStatus(self, response):
         if response.status_code != requests.codes.ok:
-            print(response.text)
+            self._logger.error("%s %s", response.status_code, response.text)
             # TODO use custom exception instead of Exception
             raise Exception("Url {0} had status_code {1}".format(
                 response.url, response.status_code))
@@ -90,6 +113,7 @@ class HttpClient(object):
             headers.update({"Content-type": "application/json"})
         params = self._getAuth()
         params.update(httpParams)
+        self._logger.info("{0} {1}".format(httpMethod, url))
         response = requests.request(
             httpMethod, url, params=params, data=httpData, headers=headers)
         self._checkStatus(response)
@@ -160,15 +184,6 @@ class HttpClient(object):
         return self.runListRequest(
             protocolRequest, "references/{id}/bases",
             protocol.GAListReferenceBasesResponse, id_)
-
-    def printJsonMessage(self, header, jsonString):
-        """
-        Prints the specified jsonString to stdout for debugging purposes.
-        """
-        print("json", header)
-        pp = json.dumps(
-            json.loads(jsonString), sort_keys=True, indent=4)
-        print(pp)
 
     def searchVariants(self, protocolRequest):
         """
