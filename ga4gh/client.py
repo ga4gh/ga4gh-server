@@ -73,9 +73,18 @@ class HttpClient(object):
     def _debugResponse(self, jsonString):
         if self._shouldLogDebug():
             self._logger.debug("json response:")
-            pp = json.dumps(
-                json.loads(jsonString), sort_keys=True, indent=4)
-            self._logger.debug(pp)
+            prettyString = self._prettyJsonString(jsonString)
+            self._logger.debug(prettyString)
+
+    def _debugRequest(self, jsonString):
+        if self._shouldLogDebug():
+            self._logger.debug("json request:")
+            prettyString = self._prettyJsonString(jsonString)
+            self._logger.debug(prettyString)
+
+    def _prettyJsonString(self, jsonString):
+        # note: expensive method
+        return json.dumps(json.loads(jsonString), sort_keys=True, indent=4)
 
     def _checkStatus(self, response):
         if response.status_code != requests.codes.ok:
@@ -109,11 +118,12 @@ class HttpClient(object):
         Performs a request to the server and returns the response
         """
         headers = {}
-        if httpData is not None:
-            headers.update({"Content-type": "application/json"})
         params = self._getAuth()
         params.update(httpParams)
         self._logger.info("{0} {1}".format(httpMethod, url))
+        if httpData is not None:
+            headers.update({"Content-type": "application/json"})
+            self._debugRequest(httpData)
         response = requests.request(
             httpMethod, url, params=params, data=httpData, headers=headers)
         self._checkStatus(response)
