@@ -13,7 +13,7 @@ If you would like to help, please check out our list of
 
 Our aims for this implementation are:
 
-Simplicity/clarity
+**Simplicity/clarity**
     The main goal of this implementation is to provide an easy to understand
     and maintain implementation of the GA4GH API. Design choices
     are driven by the goal of making the code as easy to understand as
@@ -22,19 +22,73 @@ Simplicity/clarity
     that is useful in many cases where the extremes of scale are not
     important.
 
-Portability
+**Portability**
     The code is written in Python for maximum portability, and it
     should be possible to run on any modern computer/operating system (Windows
-    compatibility should be possible, although this has not been tested).  We use a
-    subset of Python 3 which is backwards compatible with Python 2 following the
-    current `best practices <http://python-future.org/compatible_idioms.html>`_.
-    In this way, we fully support both Python 2 and 3.
+    compatibility should be possible, although this has not been tested). Our coding
+    guidelines specify using a subset of Python 3 which is backwards compatible with Python 2 
+    following the current `best practices <http://python-future.org/compatible_idioms.html>`_.
+    The project currently does not yet support Python 3, as support for it is lacking in several
+    packages that we depend on. However, our eventual goal is to support both Python 2
+    and 3.
 
-Ease of use
+**Ease of use**
     The code follows the `Python Packaging User Guide
-    <http://python-packaging-user-guide.readthedocs.org/en/latest/>`_. This will
-    make installing the ``ga4gh`` reference code very easy across a range of
-    operating systems.
+    <http://python-packaging-user-guide.readthedocs.org/en/latest/>`_. 
+    Specifically, pip is used to handle python package dependencies (see below 
+    for details). This allows for easy installation of the ``ga4gh`` reference code 
+    across a range of operating systems.
+
+
+*******************************
+Installing the reference server
+*******************************
+
+Prerequisites:
+
+* Python 2.7,
+* Berkeley DB together with include and lib files (version 4.8 or higher),
+* Virtualenv (or another python sandboxing tool) is highly recommended.
+
+General installation procedure:
+
+* Install Berkeley DB (version 4.8 or higher) using your system's preferred 
+  package manager, see the `wormtable help page 
+  <https://pypi.python.org/pypi/wormtable>`_ for platform-specific details.
+
+* (On MacOS X, make sure the LDFLAGS and CFLAGS environment variables are set to
+  include the lib and include directories for the Berkeley DB install of your choice. 
+  The wormtable help page cited above provides more detailed instructions, or
+  see the `Appendix`_ to this README for an example install on that platform.)
+
+* Create a python sandbox directory using virtualenv, preferably 
+  *not* inside the ga4gh server directory. For an good introduction
+  to using virtualenv, see the `Python Guide page
+  <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
+  On some systems, you may need to specify the --no-site-packages
+  option to ensure a clean dependency install. For example, to 
+  create a sandbox named ``testenv``::
+
+  $ virtualenv --no-site-packages testenv
+
+* Make the virtualenv sandbox created above active::
+
+  $ source testenv/bin/activate
+
+* cd to the ga4gh server directory, and load the dependencies via pip::
+
+  $ cd [your ga4gh server directory]
+  $ pip install -r requirements.txt
+
+* Finally, run the install script, and run nosetests to confirm the install::
+
+  $ python setup.py install
+  $ nosetests
+
+A successfull install should result in a clean run of all the tests, 
+resulting in a line of dots followed by ``OK``. If this still isn't working,
+you may want to check the `Appendix`_ at the end of this README for 
+system-specific installation examples.
 
 ********************************
 Serving variants from a VCF file
@@ -60,27 +114,13 @@ and made available `here <http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar.gz
 See `Converting 1000G data`_ for more information on converting 1000 genomes
 data into wormtable format.
 
-To run the server on this example dataset, create a virtualenv and install
-wormtable::
-
-    $ virtualenv testenv
-    $ source testenv/bin/activate
-    $ pip install wormtable
-
-See the `wormtable PyPI page <https://pypi.python.org/pypi/wormtable>`_ for
-detailed instructions on installing wormtable and its dependencies.
-
-Now, download and unpack the example data, ::
+To run the server on this example dataset, follow the steps on
+installing the server, then download and unpack the example data ::
 
     $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar.gz
     $ tar -zxvf ga4gh-example-data.tar.gz
 
-and install the client and server scripts into the virtualenv (assuming
-you are in the project root directory)::
-
-    $ python setup.py install
-
-We can now run the server, telling it to serve variants from the sets in
+You can now run the server, telling it to serve variants from the sets in
 the downloaded datafile::
 
     $ ga4gh_server wormtable ga4gh-example-data
@@ -125,9 +165,9 @@ important to specify a sufficiently large `cache size
 <http://pythonhosted.org/wormtable/performance.html#cache-tuning>`_ when
 building and indexing such large tables.
 
-*****************
+*************
 Tabix backend
-*****************
+*************
 
 The tabix backend allows us to serve variants from an arbitrary VCF file.  The
 VCF file must first be indexed with `tabix
@@ -187,25 +227,25 @@ Configuration parameters are specified in the file ga4gh/server/config.py;
 they can be overridden by setting the absolute path of a file containing
 new values in the environment variable GA4GH_CONFIGURATION. 
 
-+++++++++++++
-Running tests
-+++++++++++++
+********
+Appendix 
+********
 
-The tests/ directory contains tests for the backend objects and the
-autogenerated schemas. To run these tests use the following commands
-from the projects's root directory::
+**system specific install examples**
 
-Set up a virtualenv and install `nose
-<http://nose.readthedocs.org/en/latest/usage.html>`_::
+MacOS X (with MacPorts)::
 
-    $ virtualenv testenv
-    $ source testenv/bin/activate
-    $ pip install nose
+  $ sudo port install db48
+  $ export CFLAGS=-I/opt/local/include/db48/  LDFLAGS=-L/opt/local/lib/db48/
+  $ cd [some working directory outside the ga4gh server directory tree]
+  $ virtualenv --no-site-packages testenv
+  $ source testenv/bin/activate
+  $ cd [your ga4gh server directory]
+  $ pip install -r requirements.txt
+  $ python setup.py install
+  $ nosetests
 
-then install the client and server scripts into the virtualenv::
+*TODO* Append examples of installs (using package managers if possible, no dependency
+installs from source) on the target platform of your choice. 
 
-    $ python setup.py install
 
-and run the tests::
-
-    $ nosetests
