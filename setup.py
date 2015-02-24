@@ -46,6 +46,8 @@ setup(
         'console_scripts': [
             'ga4gh_client=ga4gh.cli:client_main',
             'ga4gh_server=ga4gh.cli:server_main',
+            'ga2vcf=ga4gh.cli:ga2vcf_main',
+            'ga2sam=ga4gh.cli:ga2sam_main',
         ]
     },
     classifiers=[
