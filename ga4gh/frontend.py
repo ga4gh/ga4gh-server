@@ -142,12 +142,9 @@ def handleException(exception):
         exception = frontendExceptions.ServerException()
 
     # serialize the exception
-    error = protocol.GAException()
-    error.errorCode = exception.code
+    error = exception.toGaException()
     if errorMessage is not None:
         error.message = errorMessage
-    else:
-        error.message = exception.message
     response = flask.jsonify(error.toJsonDict())
     response.status_code = exception.httpStatus
     return response
@@ -223,3 +220,24 @@ def searchVariantSets(version):
 def searchVariants(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchVariants)
+
+
+# The below methods ensure that JSON is returned for various errors
+# instead of the default, html
+
+
+@app.errorhandler(404)
+def pathNotFoundHandler(errorString):
+    return handleHttpError(frontendExceptions.PathNotFoundException())
+
+
+@app.errorhandler(405)
+def methodNotAllowedHandler(errorString):
+    return handleHttpError(frontendExceptions.MethodNotAllowedException())
+
+
+def handleHttpError(exception):
+    error = exception.toGaException()
+    response = flask.jsonify(error.toJsonDict())
+    response.status_code = exception.httpStatus
+    return response
