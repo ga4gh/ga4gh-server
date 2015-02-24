@@ -246,6 +246,9 @@ def addGlobalOptions(parser):
     parser.add_argument(
         "--config-file", "-f", type=str, default=None,
         help="The configuration file to use")
+    parser.add_argument(
+        "--dont-use-reloader", default=False, action="store_true",
+        help="Don't use the flask reloader")
 
 
 def server_main(parser=None):
@@ -255,7 +258,9 @@ def server_main(parser=None):
     addGlobalOptions(parser)
     args = parser.parse_args()
     frontend.configure(args.config, args.config_file)
-    frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
+    frontend.app.run(
+            host="0.0.0.0", port=args.port, debug=True,
+            use_reloader=not args.dont_use_reloader)
 
 
 ##############################################################################
@@ -616,7 +621,7 @@ def addNameArgument(parser):
 def addClientGlobalOptions(parser):
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument(
-        "--workarounds", "-w", default="", help="The workarounds to use")
+        "--workarounds", "-w", default=None, help="The workarounds to use")
     parser.add_argument(
         "--key", "-k", help="The auth key to use")
     parser.add_argument(
