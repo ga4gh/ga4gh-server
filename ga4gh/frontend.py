@@ -193,7 +193,8 @@ def searchCallSets(version):
 
 @app.route('/<version>/readgroupsets/search', methods=['POST'])
 def searchReadGroupSets(version):
-    raise frontendExceptions.PathNotFoundException()
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchReadGroupSets)
 
 
 @app.route('/<version>/reads/search', methods=['POST'])
@@ -203,7 +204,8 @@ def searchReads(version):
 
 @app.route('/<version>/referencesets/search', methods=['POST'])
 def searchReferenceSets(version):
-    raise frontendExceptions.PathNotFoundException()
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchReferenceSets)
 
 
 @app.route('/<version>/references/search', methods=['POST'])
