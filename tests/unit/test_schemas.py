@@ -12,9 +12,8 @@ import unittest
 
 import avro.schema
 
-import tests
 import ga4gh.protocol as protocol
-import tests.utils
+import tests.utils as utils
 
 
 def randomString():
@@ -40,7 +39,7 @@ class SchemaTest(unittest.TestCase):
         "float": 0.25
     }
 
-    instanceGenerator = tests.utils.InstanceGenerator()
+    instanceGenerator = utils.InstanceGenerator()
 
     def getProtocolClasses(self):
         """
@@ -268,7 +267,7 @@ class ValidatorTest(SchemaTest):
                 dct = dict(jsonDict)
                 dct[key] = self.getInvalidValue(cls, key)
                 self.assertFalse(cls.validate(dct))
-            for c in tests.utils.powerset(jsonDict.keys(), 10):
+            for c in utils.powerset(jsonDict.keys(), 10):
                 if len(c) > 0:
                     dct = dict(jsonDict)
                     for f in c:
