@@ -258,9 +258,7 @@ class AbstractQueryRunner(object):
     Abstract base class for runner classes
     """
     def __init__(self, args):
-        self._workarounds = set()
-        if args.workarounds is not None:
-            self._workarounds = set(args.workarounds.split(','))
+        self._workarounds = set(args.workarounds.split(','))
         self._key = args.key
         self._verbosity = args.verbose
         self._httpClient = client.HttpClient(
@@ -520,7 +518,7 @@ def addVariantSearchOptions(parser):
     """
     addVariantSetIdsArgument(parser)
     parser.add_argument(
-        "--referenceName", "-r", default="chrSim",
+        "--referenceName", "-r", default="1",
         help="Only return variants on this reference.")
     parser.add_argument(
         "--variantName", "-n", default=None,
@@ -608,7 +606,7 @@ def addNameArgument(parser):
 def addClientGlobalOptions(parser):
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument(
-        "--workarounds", "-w", default=None, help="The workarounds to use")
+        "--workarounds", "-w", default="", help="The workarounds to use")
     parser.add_argument(
         "--key", "-k", help="The auth key to use")
     parser.add_argument(
