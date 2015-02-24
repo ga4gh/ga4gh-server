@@ -219,6 +219,7 @@ class SchemaGenerator(object):
             url = '/{0}/search'.format(objname.lower())
             tup = (url, request, response)
             self.postSignatures.append(tup)
+        self.postSignatures.sort()
 
     def writeHeader(self, outputFile):
         """
