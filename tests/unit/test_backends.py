@@ -17,7 +17,7 @@ import subprocess
 
 import wormtable as wt
 
-import tests
+import tests.utils as utils
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.variants as variants
@@ -465,7 +465,7 @@ class TestVariants(TestWormtableBackend):
         for variantSet in self.getVariantSets():
             callSetIds = self.getCallSetIds(variantSet.id)
             # limit the subsets we check over to some small value.
-            for subset in tests.utils.powerset(callSetIds, 20):
+            for subset in utils.powerset(callSetIds, 20):
                 for referenceName in self.getReferenceNames(variantSet.id):
                     self.verifySearchByCallSetIds(
                         variantSet.id, referenceName, 0, 2 ** 32, subset)
