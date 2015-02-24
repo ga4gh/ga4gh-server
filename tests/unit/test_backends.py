@@ -31,6 +31,12 @@ class WormtableTestFixture(object):
     """
     def __init__(self):
         self.dataDir = tempfile.mkdtemp(prefix="ga4gh_wt")
+        self.variantsDir = os.path.join(self.dataDir, "variants")
+        self.referencesDir = os.path.join(self.dataDir, "references")
+        self.readsDir = os.path.join(self.dataDir, "reads")
+        subdirs = [self.variantsDir, self.referencesDir, self.readsDir]
+        for subdir in subdirs:
+            os.mkdir(subdir)
 
     def convertVariantSet(self, vcfFile):
         """
@@ -38,7 +44,7 @@ class WormtableTestFixture(object):
         the data directory.
         """
         variantSetid = vcfFile.split("/")[-1].split(".")[0]
-        wtDir = os.path.join(self.dataDir, variantSetid)
+        wtDir = os.path.join(self.variantsDir, variantSetid)
         # convert the vcf to wormtable format.
         cmd = ["vcf2wt", "-q", vcfFile, wtDir]
         subprocess.check_call(cmd)
@@ -93,11 +99,13 @@ class TestWormtableBackend(unittest.TestCase):
     def setUp(self):
         global _wormtableTestFixture
         self._dataDir = _wormtableTestFixture.dataDir
+        self._variantsDir = _wormtableTestFixture.variantsDir
         self._tables = {}
         self._chromIndexes = {}
         self._chromPosIndexes = {}
-        for relativePath in os.listdir(self._dataDir):
-            table = wt.open_table(os.path.join(self._dataDir, relativePath))
+        for relativePath in os.listdir(self._variantsDir):
+            table = wt.open_table(
+                os.path.join(self._variantsDir, relativePath))
             self._tables[relativePath] = table
             self._chromIndexes[relativePath] = table.open_index("CHROM")
             self._chromPosIndexes[relativePath] = table.open_index("CHROM+POS")

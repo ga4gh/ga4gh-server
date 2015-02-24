@@ -9,6 +9,8 @@ from __future__ import unicode_literals
 import os
 
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.references as references
+import ga4gh.datamodel.reads as reads
 
 
 class Backend(object):
@@ -18,14 +20,36 @@ class Backend(object):
     """
     def __init__(self, dataDir, variantSetClass):
         self._dataDir = dataDir
+        # TODO this code is very ugly and should be regarded as a temporary
+        # stop-gap until we deal with iterating over the data tree properly.
+        # Variants
         self._variantSetIdMap = {}
-        # All directories in datadir are assumed to correspond to VariantSets.
-        for variantSetId in os.listdir(self._dataDir):
-            relativePath = os.path.join(self._dataDir, variantSetId)
+        variantSetDir = os.path.join(self._dataDir, "variants")
+        for variantSetId in os.listdir(variantSetDir):
+            relativePath = os.path.join(variantSetDir, variantSetId)
             if os.path.isdir(relativePath):
                 self._variantSetIdMap[variantSetId] = variantSetClass(
                     variantSetId, relativePath)
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
+        # References
+        self._referenceSetIdMap = {}
+        referenceSetDir = os.path.join(self._dataDir, "references")
+        for referenceSetId in os.listdir(referenceSetDir):
+            relativePath = os.path.join(referenceSetDir, referenceSetId)
+            if os.path.isdir(relativePath):
+                referenceSet = references.ReferenceSet(
+                    referenceSetId, relativePath)
+                self._referenceSetIdMap[referenceSetId] = referenceSet
+        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
+        # Reads
+        self._readGroupSetIdMap = {}
+        readGroupSetDir = os.path.join(self._dataDir, "reads")
+        for readGroupSetId in os.listdir(readGroupSetDir):
+            relativePath = os.path.join(readGroupSetDir, readGroupSetId)
+            if os.path.isdir(relativePath):
+                readGroupSet = reads.ReadGroupSet(readGroupSetId, relativePath)
+                self._readGroupSetIdMap[readGroupSetId] = readGroupSet
+        self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
 
     def parsePageToken(self, pageToken, numValues):
         """
@@ -72,6 +96,46 @@ class Backend(object):
         self.endProfile()
         return response.toJsonString()
 
+    def searchReadGroupSets(self, request):
+        """
+        Returns a GASearchReadGroupSetsResponse for the specified
+        GASearchReadGroupSetsRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.GASearchReadGroupSetsRequest,
+            protocol.GASearchReadGroupSetsResponse, "readGroupSets",
+            self.readGroupSetsGenerator)
+
+    def searchReads(self, request):
+        """
+        Returns a GASearchReadsResponse for the specified
+        GASearchReadsRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.GASearchReadsRequest,
+            protocol.GASearchReadsResponse, "reads",
+            self.readsGenerator)
+
+    def searchReferenceSets(self, request):
+        """
+        Returns a GASearchReferenceSetsResponse for the specified
+        GASearchReferenceSetsRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.GASearchReferenceSetsRequest,
+            protocol.GASearchReferenceSetsResponse, "referenceSets",
+            self.referenceSetsGenerator)
+
+    def searchReferences(self, request):
+        """
+        Returns a GASearchReferencesResponse for the specified
+        GASearchReferencesRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.GASearchReferencesRequest,
+            protocol.GASearchReferencesResponse, "references",
+            self.referencesGenerator)
+
     def searchVariantSets(self, request):
         """
         Returns a GASearchVariantSetsResponse for the specified
@@ -92,25 +156,48 @@ class Backend(object):
             protocol.GASearchVariantsResponse, "variants",
             self.variantsGenerator)
 
-    def variantSetsGenerator(self, request):
+    # Iterators over the data hieararchy
+
+    def _topLevelObjectGenerator(self, request, idMap, idList):
         """
-        Returns a generator over the (variantSet, nextPageToken) pairs defined
-        by the speficied request.
+        Generalisation of the code to iterate over the objects at the top
+        of the data hierarchy.
         """
         currentIndex = 0
         if request.pageToken is not None:
             currentIndex, = self.parsePageToken(request.pageToken, 1)
-        while currentIndex < len(self._variantSetIds):
-            variantSet = protocol.GAVariantSet()
-            variantSet.id = self._variantSetIds[currentIndex]
-            variantSet.datasetId = "NotImplemented"
-            variantSet.metadata = self._variantSetIdMap[
-                variantSet.id].getMetadata()
+        while currentIndex < len(idList):
+            objectId = idList[currentIndex]
+            object_ = idMap[objectId]
             currentIndex += 1
             nextPageToken = None
-            if currentIndex < len(self._variantSetIds):
+            if currentIndex < len(idList):
                 nextPageToken = str(currentIndex)
-            yield variantSet, nextPageToken
+            yield object_.toProtocolElement(), nextPageToken
+
+    def readGroupSetsGenerator(self, request):
+        """
+        Returns a generator over the (readGroupSet, nextPageToken) pairs
+        defined by the specified request.
+        """
+        return self._topLevelObjectGenerator(
+            request, self._readGroupSetIdMap, self._readGroupSetIds)
+
+    def referenceSetsGenerator(self, request):
+        """
+        Returns a generator over the (referenceSet, nextPageToken) pairs
+        defined by the specified request.
+        """
+        return self._topLevelObjectGenerator(
+            request, self._referenceSetIdMap, self._referenceSetIds)
+
+    def variantSetsGenerator(self, request):
+        """
+        Returns a generator over the (variantSet, nextPageToken) pairs defined
+        by the specified request.
+        """
+        return self._topLevelObjectGenerator(
+                request, self._variantSetIdMap, self._variantSetIds)
 
     def variantsGenerator(self, request):
         """
