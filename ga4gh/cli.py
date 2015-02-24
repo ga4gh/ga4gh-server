@@ -17,6 +17,14 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel.variants as variants
 
 
+# the maximum value of a long type in avro = 2**63 - 1
+# (64 bit signed integer)
+# http://avro.apache.org/docs/1.7.7/spec.html#schema_primitive
+# AVRO_LONG_MAX = (1 << 63) - 1
+# TODO in the meantime, this is the max value wormtable can handle
+AVRO_LONG_MAX = (1 << 32) - 2
+
+
 def setCommaSeparatedAttribute(request, args, attr):
     attribute = getattr(args, attr)
     if attribute is not None:
@@ -122,11 +130,7 @@ class RequestFactory(object):
 ##############################################################################
 
 
-def server_main(parser=None):
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH reference server")
-    # Add global options
+def addGlobalOptions(parser):
     parser.add_argument(
         "--port", "-P", default=8000, type=int,
         help="The port to listen on")
@@ -137,32 +141,47 @@ def server_main(parser=None):
         "--config-file", "-F", type=str,
         help="The configuration file to use")
 
-    subparsers = parser.add_subparsers(title='subcommands',)
 
-    # help
+def addServerHelpParser(subparsers):
     subparsers.add_parser(
         "help",
         description="ga4gh_server help",
         help="show this help message and exit")
-    # Wormtable backend
-    wtbParser = subparsers.add_parser(
+
+
+def addWormtableParser(subparsers):
+    parser = subparsers.add_parser(
         "wormtable",
         description="Serve the API using a wormtable based backend.",
         help="Serve data from tables.")
-    wtbParser.add_argument(
+    parser.add_argument(
         "dataDir",
         help="The directory containing the wormtables to be served.")
-    wtbParser.set_defaults(variantSetClass=variants.WormtableVariantSet)
-    # Tabix
-    tabixParser = subparsers.add_parser(
+    parser.set_defaults(variantSetClass=variants.WormtableVariantSet)
+    return parser
+
+
+def addTabixParser(subparsers):
+    parser = subparsers.add_parser(
         "tabix",
         description="Serve the API using a tabix based backend.",
         help="Serve data from Tabix indexed VCFs")
-    tabixParser.add_argument(
+    parser.add_argument(
         "dataDir",
         help="The directory containing VCFs")
-    tabixParser.set_defaults(variantSetClass=variants.TabixVariantSet)
+    parser.set_defaults(variantSetClass=variants.TabixVariantSet)
+    return parser
 
+
+def server_main(parser=None):
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description="GA4GH reference server")
+    addGlobalOptions(parser)
+    subparsers = parser.add_subparsers(title='subcommands',)
+    addServerHelpParser(subparsers)
+    addWormtableParser(subparsers)
+    addTabixParser(subparsers)
     args = parser.parse_args()
     if "variantSetClass" not in args:
         parser.print_help()
@@ -171,6 +190,7 @@ def server_main(parser=None):
         frontend.app.backend = backend.Backend(
             args.dataDir, args.variantSetClass)
         frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
+
 
 ##############################################################################
 # Client
@@ -182,7 +202,9 @@ class AbstractQueryRunner(object):
     Abstract base class for runner classes
     """
     def __init__(self, args):
-        self._workarounds = set(args.workarounds.split(','))
+        self._workarounds = set()
+        if args.workarounds is not None:
+            self._workarounds = set(args.workarounds.split(','))
         self._key = args.key
         self._verbosity = args.verbose
         self._httpClient = client.HttpClient(
@@ -256,6 +278,15 @@ class SearchVariantsRunner(AbstractSearchRunner):
     def __init__(self, args):
         super(SearchVariantsRunner, self).__init__(args)
         request = RequestFactory(args).createGASearchVariantsRequest()
+        # if no variantSets have been specified, send a request to
+        # the server to grab all variantSets and then continue
+        if args.variantSetIds is None:
+            variantSetsRequest = protocol.GASearchVariantSetsRequest()
+            response = self._httpClient.searchVariantSets(variantSetsRequest)
+            variantSetIds = [variantSet.id for variantSet in response]
+            request.variantSetIds = variantSetIds
+        else:
+            setCommaSeparatedAttribute(request, args, 'variantSetIds')
         self._setRequest(request, args)
 
     def run(self):
@@ -456,7 +487,7 @@ def addVariantSearchOptions(parser):
 
 def addVariantSetIdsArgument(parser):
     parser.add_argument(
-        "--variantSetIds", "-V",
+        "--variantSetIds", "-V", default=None,
         help="The variant set id(s) to search over")
 
 
@@ -468,7 +499,7 @@ def addStartArgument(parser):
 
 def addEndArgument(parser):
     parser.add_argument(
-        "--end", "-e", default=1, type=int,
+        "--end", "-e", default=AVRO_LONG_MAX, type=int,
         help="The end of the search range (exclusive).")
 
 
@@ -521,7 +552,7 @@ def addNameArgument(parser):
 def addClientGlobalOptions(parser):
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument(
-        "--workarounds", "-w", default='', help="The workarounds to use")
+        "--workarounds", "-w", default=None, help="The workarounds to use")
     parser.add_argument(
         "--key", "-k", help="The auth key to use")
     parser.add_argument(

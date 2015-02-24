@@ -64,7 +64,7 @@ class TestClientArguments(unittest.TestCase):
     def testVariantsSearchArguments(self):
         self.cliInput = """variants-search --referenceName REFERENCENAME
         --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
-        --end 1 --pageSize 2"""
+        --end 1 --pageSize 2 --variantSetIds VARIANT,SET,IDS"""
 
     def testVariantSetsSearchArguments(self):
         self.cliInput = """variantsets-search --pageSize 1 --datasetIds
