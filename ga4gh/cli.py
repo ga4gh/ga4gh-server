@@ -229,6 +229,18 @@ def addTabixParser(subparsers):
     return parser
 
 
+def addHtslibParser(subparsers):
+    parser = subparsers.add_parser(
+        "htslib",
+        description="Serve the API using a tabix based backend.",
+        help="Serve data from Htslib indexed VCF/BCFs")
+    parser.add_argument(
+        "dataDir",
+        help="The directory containing VCF/BCFs")
+    parser.set_defaults(variantSetClass=variants.HtslibVariantSet)
+    return parser
+
+
 def server_main(parser=None):
     if parser is None:
         parser = argparse.ArgumentParser(
@@ -238,6 +250,7 @@ def server_main(parser=None):
     addServerHelpParser(subparsers)
     addWormtableParser(subparsers)
     addTabixParser(subparsers)
+    addHtslibParser(subparsers)
     args = parser.parse_args()
     if "variantSetClass" not in args:
         parser.print_help()
