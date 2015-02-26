@@ -11,6 +11,7 @@ import os
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
+import ga4gh.datamodel.variants as variants
 
 
 class Backend(object):
@@ -19,37 +20,46 @@ class Backend(object):
     protocol end points.
     """
     def __init__(self, dataDir, variantSetClass):
-        self._dataDir = dataDir
-        # TODO this code is very ugly and should be regarded as a temporary
-        # stop-gap until we deal with iterating over the data tree properly.
-        # Variants
-        self._variantSetIdMap = {}
-        variantSetDir = os.path.join(self._dataDir, "variants")
-        for variantSetId in os.listdir(variantSetDir):
-            relativePath = os.path.join(variantSetDir, variantSetId)
-            if os.path.isdir(relativePath):
-                self._variantSetIdMap[variantSetId] = variantSetClass(
-                    variantSetId, relativePath)
-        self._variantSetIds = sorted(self._variantSetIdMap.keys())
-        # References
-        self._referenceSetIdMap = {}
-        referenceSetDir = os.path.join(self._dataDir, "references")
-        for referenceSetId in os.listdir(referenceSetDir):
-            relativePath = os.path.join(referenceSetDir, referenceSetId)
-            if os.path.isdir(relativePath):
-                referenceSet = references.ReferenceSet(
-                    referenceSetId, relativePath)
-                self._referenceSetIdMap[referenceSetId] = referenceSet
-        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
-        # Reads
-        self._readGroupSetIdMap = {}
-        readGroupSetDir = os.path.join(self._dataDir, "reads")
-        for readGroupSetId in os.listdir(readGroupSetDir):
-            relativePath = os.path.join(readGroupSetDir, readGroupSetId)
-            if os.path.isdir(relativePath):
-                readGroupSet = reads.ReadGroupSet(readGroupSetId, relativePath)
-                self._readGroupSetIdMap[readGroupSetId] = readGroupSet
-        self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
+        if variantSetClass == variants.FakeVariantSet:
+            self._variantSetIdMap = {}
+            self._variantSetIds = []
+            self._referenceSetIdMap = {}
+            self._referenceSetIds = []
+            self._readGroupSetIdMap = {}
+            self._readGroupSetIds = []
+        else:
+            self._dataDir = dataDir
+            # TODO this code is very ugly and should be regarded as a temporary
+            # stop-gap until we deal with iterating over the data tree properly
+            # Variants
+            self._variantSetIdMap = {}
+            variantSetDir = os.path.join(self._dataDir, "variants")
+            for variantSetId in os.listdir(variantSetDir):
+                relativePath = os.path.join(variantSetDir, variantSetId)
+                if os.path.isdir(relativePath):
+                    self._variantSetIdMap[variantSetId] = variantSetClass(
+                        variantSetId, relativePath)
+            self._variantSetIds = sorted(self._variantSetIdMap.keys())
+            # References
+            self._referenceSetIdMap = {}
+            referenceSetDir = os.path.join(self._dataDir, "references")
+            for referenceSetId in os.listdir(referenceSetDir):
+                relativePath = os.path.join(referenceSetDir, referenceSetId)
+                if os.path.isdir(relativePath):
+                    referenceSet = references.ReferenceSet(
+                        referenceSetId, relativePath)
+                    self._referenceSetIdMap[referenceSetId] = referenceSet
+            self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
+            # Reads
+            self._readGroupSetIdMap = {}
+            readGroupSetDir = os.path.join(self._dataDir, "reads")
+            for readGroupSetId in os.listdir(readGroupSetDir):
+                relativePath = os.path.join(readGroupSetDir, readGroupSetId)
+                if os.path.isdir(relativePath):
+                    readGroupSet = reads.ReadGroupSet(
+                        readGroupSetId, relativePath)
+                    self._readGroupSetIdMap[readGroupSetId] = readGroupSet
+            self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
 
     def parsePageToken(self, pageToken, numValues):
         """
