@@ -28,8 +28,8 @@ f.close()
 ga4ghVersion = parseVersion("ga4gh/__init__.py")
 # Flask must come after all other requirements that have "flask" as a prefix
 # due to a setuptools bug.
-requirements = ["avro", "Flask-API", "flask-cors", "flask", "pysam",
-                "requests", "wormtable"]
+requirements = ["avro", "Flask-API", "flask-cors", "flask", "humanize",
+                "pysam", "requests", "wormtable"]
 
 setup(
     name="ga4gh",
