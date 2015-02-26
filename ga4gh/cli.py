@@ -229,6 +229,18 @@ def addTabixParser(subparsers):
     return parser
 
 
+def addFakeParser(subparsers):
+    parser = subparsers.add_parser(
+        "fake",
+        description="Serve the API using a fake backend.",
+        help="Serve 'data' without files")
+    parser.add_argument(
+        "--dataDir", default="fakeDir",
+        help="A nonexistent directory")
+    parser.set_defaults(variantSetClass=variants.FakeVariantSet)
+    return parser
+
+
 def server_main(parser=None):
     if parser is None:
         parser = argparse.ArgumentParser(
@@ -238,6 +250,7 @@ def server_main(parser=None):
     addServerHelpParser(subparsers)
     addWormtableParser(subparsers)
     addTabixParser(subparsers)
+    addFakeParser(subparsers)
     args = parser.parse_args()
     if "variantSetClass" not in args:
         parser.print_help()

@@ -65,6 +65,12 @@ class VariantSet(object):
         return protocolElement
 
 
+class FakeVariantSet(VariantSet):
+    """
+    A stand-in for a variant set
+    """
+
+
 class WormtableVariantSet(VariantSet):
     """
     Class representing a single variant set backed by a wormtable directory.
