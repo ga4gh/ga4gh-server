@@ -31,6 +31,7 @@ class Backend(object):
                 self._variantSetIdMap[variantSetId] = variantSetClass(
                     variantSetId, relativePath)
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
+
         # References
         self._referenceSetIdMap = {}
         referenceSetDir = os.path.join(self._dataDir, "references")
@@ -50,6 +51,22 @@ class Backend(object):
                 readGroupSet = reads.ReadGroupSet(readGroupSetId, relativePath)
                 self._readGroupSetIdMap[readGroupSetId] = readGroupSet
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
+
+        # callSets
+        self._callSetIdMap = {}
+        for variantSet in self._variantSetIdMap.values():
+            sampleNames = variantSet.getSampleNames()
+            variantSetId = variantSet.getVariantSetId()
+            for name in sampleNames:
+                if name not in self._callSetIdMap:
+                    self._callSetIdMap[name] = []
+                self._callSetIdMap[name].append(variantSetId)
+
+    def getVariantSetIdMap(self):
+        return self._variantSetIdMap
+
+    def getCallSetIdMap(self):
+        return self._callSetIdMap
 
     def parsePageToken(self, pageToken, numValues):
         """
@@ -156,6 +173,16 @@ class Backend(object):
             protocol.GASearchVariantsResponse, "variants",
             self.variantsGenerator)
 
+    def searchCallSets(self, request):
+        """
+        Returns a GASearchCallSetsResponse for the specified
+        GASearchCallSetsRequest Object.
+        """
+        return self.runSearchRequest(
+            request, protocol.GASearchCallSetsRequest,
+            protocol.GASearchCallSetsResponse, "callSets",
+            self.callSetsGenerator)
+
     # Iterators over the data hieararchy
 
     def _topLevelObjectGenerator(self, request, idMap, idList):
@@ -197,7 +224,7 @@ class Backend(object):
         by the specified request.
         """
         return self._topLevelObjectGenerator(
-                request, self._variantSetIdMap, self._variantSetIds)
+            request, self._variantSetIdMap, self._variantSetIds)
 
     def variantsGenerator(self, request):
         """
@@ -221,6 +248,37 @@ class Backend(object):
                     nextPageToken = "{0}:{1}".format(
                         variantSetIndex, variant.start + 1)
                     yield variant, nextPageToken
+
+    def callSetsGenerator(self, request):
+        """
+        Returns a generator over the (callSet, nextPageToken) pairs defined by
+        the specified request.
+        """
+        # if no variantSetIds are input from client,
+        # then set variantSetIds to all variantSetIds
+        if request.variantSetIds == []:
+            variantSetIds = self._variantSetIds
+        else:
+            variantSetIds = request.variantSetIds
+        name = request.name
+        if request.pageToken is not None:
+            startVariantSetIndex, startCallSetPosition = self.parsePageToken(
+                request.pageToken, 2)
+        else:
+            startVariantSetIndex = 0
+            startCallSetPosition = 0
+
+        for variantSetIndex in range(startVariantSetIndex, len(variantSetIds)):
+            variantSetId = variantSetIds[variantSetIndex]
+            if variantSetId in self._variantSetIdMap:
+                variantSet = self._variantSetIdMap[variantSetId]
+                callSetIterator = variantSet.getCallSets(
+                    name, startCallSetPosition)
+                for callSet, callSetPosition in callSetIterator:
+                    callSet.variantSetIds = self._callSetIdMap[callSet.name]
+                    nextPageToken = "{0}:{1}".format(
+                        variantSetIndex, callSetPosition + 1)
+                    yield callSet, nextPageToken
 
     def startProfile(self):
         pass

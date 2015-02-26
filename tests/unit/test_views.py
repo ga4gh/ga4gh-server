@@ -32,6 +32,12 @@ class TestFrontend(unittest.TestCase):
                              headers={'Content-type': 'application/json'},
                              data=data)
 
+    def sendCallSetsSearch(self, data):
+        path = utils.applyVersion('/callsets/search')
+        return self.app.post(path,
+                             headers={'Content-type': 'application/json'},
+                             data=data)
+
     def test404sReturnJson(self):
         path = utils.applyVersion('/doesNotExist')
         response = self.app.get(path)
@@ -85,7 +91,9 @@ class TestFrontend(unittest.TestCase):
 
     def testRouteCallsets(self):
         path = utils.applyVersion('/callsets/search')
-        self.assertEqual(404, self.app.post(path).status_code)
+        self.assertEqual(415, self.app.post(path).status_code)
+        self.assertEqual(200, self.app.options(path).status_code)
+        self.assertEqual(405, self.app.get(path).status_code)
 
     def testRouteReads(self):
         paths = ['/reads/search']
@@ -112,6 +120,13 @@ class TestFrontend(unittest.TestCase):
         responseData = protocol.GASearchVariantSetsResponse.fromJsonString(
             response.data)
         self.assertEqual(responseData.variantSets, [])
+
+    def testCallSetsSearch(self):
+        response = self.sendCallSetsSearch('{"callSetId": "xx"}')
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.GASearchCallSetsResponse.fromJsonString(
+            response.data)
+        self.assertEqual(responseData.callSets, [])
 
     def testWrongVersion(self):
         path = '/v0.1.2/variantsets/search'
