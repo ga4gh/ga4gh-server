@@ -282,6 +282,8 @@ class SchemaProcessor(object):
         string = "schemas-{0}".format(self.version[1:])
         self.schemaDir = os.path.join(self.tmpDir, string)
         self.avroJar = os.path.join(self.schemaDir, "avro-tools.jar")
+        self.sourceDir = args.inputSchemasDirectory
+        self.avroPath = "src/main/resources/avro"
 
     def cleanup(self):
         if self.verbosity > 1:
@@ -311,19 +313,44 @@ class SchemaProcessor(object):
             with open(os.devnull, 'w') as devnull:
                 subprocess.check_call(args, stdout=devnull, stderr=devnull)
 
-    def run(self):
-        url = "https://github.com/ga4gh/schemas/archive/{0}.tar.gz".format(
-            self.version)
-        self.download(url, self.sourceTar)
-        with tarfile.open(self.sourceTar, "r") as tarball:
-            tarball.extractall(self.tmpDir)
-        directory = os.path.join(self.schemaDir, "src/main/resources/avro")
+    def setupAvroJar(self):
         if self.avroJarPath is not None:
             self.avroJar = os.path.abspath(self.avroJarPath)
         else:
             url = "http://www.carfab.com/apachesoftware/avro/stable/java/"\
                 "avro-tools-1.7.7.jar"
             self.download(url, self.avroJar)
+
+    def getSchemaFromGitHub(self):
+        """
+        Downloads a tagged version of the schemas
+        from the official GitHub repo.
+        """
+        url = "https://github.com/ga4gh/schemas/archive/{0}.tar.gz".format(
+            self.version)
+        self.download(url, self.sourceTar)
+        with tarfile.open(self.sourceTar, "r") as tarball:
+            tarball.extractall(self.tmpDir)
+
+    def getSchemaFromLocal(self):
+        """
+        Copies schemas from a local directory.
+        """
+        destDir = os.path.join(self.schemaDir, self.avroPath)
+        if not os.path.exists(destDir):
+            os.makedirs(destDir)
+        avdlFiles = glob.iglob(os.path.join(self.sourceDir, "*.avdl"))
+        for avdlFile in avdlFiles:
+            if os.path.isfile(avdlFile):
+                shutil.copy2(avdlFile, destDir)
+
+    def run(self):
+        if self.sourceDir is None:
+            self.getSchemaFromGitHub()
+        else:
+            self.getSchemaFromLocal()
+        directory = os.path.join(self.schemaDir, self.avroPath)
+        self.setupAvroJar()
         cwd = os.getcwd()
         os.chdir(directory)
         for avdlFile in glob.glob("*.avdl"):
@@ -337,17 +364,28 @@ class SchemaProcessor(object):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Script to process GA4GH Avro schemas. Requires "
-        "java external command")
+        description="Script to process GA4GH Avro schemas, "
+        "Requires java external command to run. "
+        "By default, the version string is used to download the "
+        "corresponding tagged version of the Avro schemas from the "
+        "official ga4gh/schemas repository on GitHub. "
+        "If however the -i argument is provided, locally stored .avdl "
+        "(Avro definition) files in the specified directory are used "
+        "instead.")
     parser.add_argument(
         "--outputFile", "-o", default="ga4gh/_protocol_definitions.py",
         help="The file to output the protocol definitions to.")
     parser.add_argument(
         "version",
-        help="The tagged git release to process, e.g., v0.5.1")
+        help="The tagged git release to process, e.g., v0.5.1. "
+        "Ignored if --inputSchemasDirectory is specified.")
     parser.add_argument(
         "--avro-tools-jar", "-j",
         help="The path to a local avro-tools.jar", default=None)
+    parser.add_argument(
+        "--inputSchemasDirectory", "-i",
+        help="Path to local directory containing .avdl schema files.",
+        default=None)
     # TODO is this the right approach? Maybe we should be noisy be
     # default and add in an option to be quiet.
     parser.add_argument('--verbose', '-v', action='count', default=0)
