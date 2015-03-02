@@ -57,7 +57,10 @@ def ga2sam_main(parser=None):
     subparsers = parser.add_subparsers(title='subcommands',)
     addReadsSearchParser(subparsers)
     args = parser.parse_args()
-    workarounds = set(args.workarounds.split(','))
+    if args.workarounds is None:
+        workarounds = set()
+    else:
+        workarounds = set(args.workarounds.split(','))
     request = protocol.GASearchReadsRequest()
     if usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
         # google says referenceId not a valid field
@@ -106,7 +109,10 @@ class RequestFactory(object):
 
     def __init__(self, args):
         self.args = args
-        self.workarounds = set(self.args.workarounds.split(','))
+        if self.args.workarounds is None:
+            self.workarounds = set()
+        else:
+            self.workarounds = set(self.args.workarounds.split(','))
 
     def usingWorkaroundsFor(self, workaround):
         """
@@ -196,6 +202,9 @@ def addGlobalOptions(parser):
     parser.add_argument(
         "--config-file", "-F", type=str,
         help="The configuration file to use")
+    parser.add_argument(
+        "--dont-use-reloader", default=False, action="store_true",
+        help="Don't use the flask reloader")
 
 
 def addServerHelpParser(subparsers):
@@ -245,7 +254,10 @@ def server_main(parser=None):
         frontend.configure(args.config, args.config_file)
         frontend.app.backend = backend.Backend(
             args.dataDir, args.variantSetClass)
-        frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
+        print(args.dont_use_reloader)
+        frontend.app.run(
+            host="0.0.0.0", port=args.port, debug=True,
+            use_reloader=not args.dont_use_reloader)
 
 
 ##############################################################################
@@ -258,7 +270,10 @@ class AbstractQueryRunner(object):
     Abstract base class for runner classes
     """
     def __init__(self, args):
-        self._workarounds = set(args.workarounds.split(','))
+        if args.workarounds is None:
+            self._workarounds = set()
+        else:
+            self._workarounds = set(args.workarounds.split(','))
         self._key = args.key
         self._verbosity = args.verbose
         self._httpClient = client.HttpClient(
@@ -606,7 +621,7 @@ def addNameArgument(parser):
 def addClientGlobalOptions(parser):
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument(
-        "--workarounds", "-w", default="", help="The workarounds to use")
+        "--workarounds", "-w", default=None, help="The workarounds to use")
     parser.add_argument(
         "--key", "-k", help="The auth key to use")
     parser.add_argument(
