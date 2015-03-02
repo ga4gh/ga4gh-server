@@ -10,6 +10,8 @@ import subprocess
 
 import yaml
 
+import utils
+
 
 class TravisSimulator(object):
 
@@ -39,7 +41,7 @@ class TravisSimulator(object):
         return s.returncode
 
     def log(self, logStr):
-        print("{0} {1}".format(self.logStrPrefix, logStr))
+        utils.log("{0} {1}".format(self.logStrPrefix, logStr))
 
 
 if __name__ == '__main__':

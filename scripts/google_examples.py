@@ -1,7 +1,6 @@
 """
 End-to-end tests that run against the Google server
 """
-
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -10,6 +9,8 @@ import os
 import subprocess
 
 import yaml
+
+import utils
 
 
 def getKey():
@@ -64,9 +65,9 @@ def runTests():
         cmd = cmdStr.format(**cmdDict)
         splits = cmd.split()
         cleanCmd = ' '.join(splits)
-        print(separator)
-        print(cleanCmd)
-        print(separator)
+        utils.log(separator)
+        utils.log(cleanCmd)
+        utils.log(separator)
         subprocess.check_call(splits)
 
 
