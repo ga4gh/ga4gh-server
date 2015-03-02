@@ -5,13 +5,96 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import functools
 import itertools
 import random
+import signal
 import string
+import time
 
 import avro.schema
 
 import ga4gh.protocol as protocol
+
+
+class TimeoutException(Exception):
+    """
+    A process has taken too long to execute
+    """
+
+
+class Repeat(object):
+    """
+    A decorator to use for repeating a tagged function.
+    The tagged function should return true if it wants to run again,
+    and false if it wants to stop repeating.
+    """
+    defaultSleepSeconds = 1
+
+    def __init__(self, sleepSeconds=defaultSleepSeconds):
+        self.sleepSeconds = sleepSeconds
+
+    def __call__(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            while func(*args, **kwargs):
+                time.sleep(self.sleepSeconds)
+        return wrapper
+
+
+class Timeout(object):
+    """
+    A decorator to use for only allowing a function to run
+    for a limited amount of time
+    """
+    defaultTimeoutSeconds = 60
+
+    def __init__(self, timeoutSeconds=defaultTimeoutSeconds):
+        self.timeoutSeconds = timeoutSeconds
+
+    def __call__(self, func):
+
+        def _handle_timeout(signum, frame):
+            raise TimeoutException()
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                # set the alarm and execute func
+                signal.signal(signal.SIGALRM, _handle_timeout)
+                signal.alarm(self.timeoutSeconds)
+                return func(*args, **kwargs)
+            finally:
+                # clear the alarm
+                signal.alarm(0)
+        return wrapper
+
+
+class AssertRaises(object):
+    """
+    Decorator that asserts a type of error is raised in the test.
+    Must be placed on a method of a class that derives from
+    unittest.TestCase.
+    """
+    def __init__(self, exceptionType):
+        self.exceptionType = exceptionType
+
+    def __call__(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            exceptionRaised = False
+            testCaseSelf = args[0]
+            try:
+                func(*args, **kwargs)
+            except Exception as exception:
+                exceptionRaised = True
+            testCaseSelf.assertTrue(
+                exceptionRaised,
+                "Expected exception of type '{}' not raised".format(
+                    self.exceptionType))
+            testCaseSelf.assertEqual(
+                    self.exceptionType, exception.__class__)
+        return wrapper
 
 
 def applyVersion(route):

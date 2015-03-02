@@ -22,6 +22,12 @@ class Timed(object):
     """
     Decorator that times a method, reporting runtime at finish
     """
+    def __init__(self, callback=None):
+        if callback is None:
+            self.callback = self._defaultCallback
+        else:
+            self.callback = callback
+
     def __call__(self, func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -33,6 +39,9 @@ class Timed(object):
         return wrapper
 
     def _report(self):
+        self.callback(self.start, self.end)
+
+    def _defaultCallback(self, start, end):
         delta = self.end - self.start
         timeString = humanize.time.naturaldelta(delta)
         log("Finished in {} ({} seconds)".format(timeString, delta))
