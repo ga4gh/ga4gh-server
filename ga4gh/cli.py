@@ -11,12 +11,12 @@ import time
 import argparse
 import sys
 
-import ga4gh.frontend as frontend
-import ga4gh.client as client
 import ga4gh.backend as backend
-import ga4gh.protocol as protocol
-import ga4gh.datamodel.variants as variants
+import ga4gh.client as client
 import ga4gh.converters as converters
+import ga4gh.datamodel.variants as variants
+import ga4gh.frontend as frontend
+import ga4gh.protocol as protocol
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -295,8 +295,13 @@ def server_main(parser=None):
         parser.print_help()
     else:
         frontend.configure(args.config, args.config_file)
-        frontend.app.backend = backend.Backend(
+        theBackend = backend.Backend(
             args.dataDir, args.variantSetClass)
+        theBackend.setRequestValidation(
+            frontend.app.config["REQUEST_VALIDATION"])
+        theBackend.setResponseValidation(
+            frontend.app.config["RESPONSE_VALIDATION"])
+        frontend.app.backend = theBackend
         frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
 
 

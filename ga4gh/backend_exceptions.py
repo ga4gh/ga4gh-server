@@ -28,3 +28,15 @@ class CallSetNotInVariantSetException(BackendException):
     def toErrorMessage(self):
         return self.exceptionMessage.format(
             self.callSetId, self.variantSetId)
+
+
+class RequestValidationFailureException(BackendException):
+    """
+    A validation of the request data failed
+    """
+
+
+class ResponseValidationFailureException(BackendException):
+    """
+    A validation of the response data failed
+    """
