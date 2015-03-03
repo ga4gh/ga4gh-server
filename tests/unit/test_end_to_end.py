@@ -11,7 +11,6 @@ import unittest
 
 from tests.unit.test_backends import WormtableTestFixture
 import ga4gh.backend as backend
-import ga4gh.datamodel.variants as variants
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 import tests.utils as utils
@@ -26,10 +25,9 @@ class EndToEndWormtableTest(unittest.TestCase):
     def setUp(self):
         self._wtTestFixture = WormtableTestFixture()
         self._wtTestFixture.setUp()
-        self.setUpServer(backend.Backend(self._wtTestFixture.dataDir,
-                                         variants.WormtableVariantSet))
-        self._expectedVariantSetIds = ['example_1', 'example_2',
-                                       'example_3', 'example_4']
+        self.setUpServer(backend.Backend(self._wtTestFixture.dataDir))
+        self._expectedVariantSetIds = ['example_1.wt', 'example_2.wt',
+                                       'example_3.wt', 'example_4.wt']
 
     def tearDown(self):
         self._wtTestFixture.tearDown()
@@ -42,7 +40,8 @@ class EndToEndWormtableTest(unittest.TestCase):
     def testVariantSetsSearch(self):
         # TODO: Set up the test backend API to return these values rather than
         # hard-coding them here.
-        expectedIds = ['example_1', 'example_2', 'example_3', 'example_4']
+        expectedIds = ['example_1.wt', 'example_2.wt',
+                       'example_3.wt', 'example_4.wt']
         request = protocol.GASearchVariantSetsRequest()
         request.pageSize = len(expectedIds)
         path = utils.applyVersion('/variantsets/search')
@@ -63,7 +62,7 @@ class EndToEndWormtableTest(unittest.TestCase):
 
     def testVariantsSearch(self):
         # TODO: As above, get these from the test backend API
-        expectedIds = ['example_1']
+        expectedIds = ['example_1.wt']
         referenceName = '1'
 
         request = protocol.GASearchVariantsRequest()
@@ -123,7 +122,7 @@ class EndToEndWormtableTest(unittest.TestCase):
         self.assertEqual([], responseData.callSets)
 
         # if no callset name is given return all callsets
-        request.variantSetIds = ["example_1"]
+        request.variantSetIds = ["example_1.wt"]
         response = self.sendJSONPostRequest(
             path, request.toJsonString())
         self.assertEqual(200, response.status_code)
@@ -138,9 +137,10 @@ class EndToEndWormtableTest(unittest.TestCase):
         for callSet in responseData.callSets:
             self.assertIs(type(callSet.info), dict)
             self.assertIs(type(callSet.variantSetIds), list)
-            variantSetId = callSet.id.split(".")[0]
-            callSetName = callSet.id.split(".")[1]
-            self.assertTrue(variantSetId in callSet.variantSetIds)
+            splits = callSet.id.split(".")
+            variantSetId = '.'.join(splits[:2])
+            callSetName = splits[-1]
+            self.assertIn(variantSetId, callSet.variantSetIds)
             self.assertEqual(callSetName, callSet.name)
             self.assertEqual(callSetName, callSet.sampleId)
 

@@ -13,10 +13,10 @@ import sys
 
 import ga4gh.backend as backend
 import ga4gh.client as client
+import ga4gh.protocol as protocol
 import ga4gh.converters as converters
 import ga4gh.datamodel.variants as variants
 import ga4gh.frontend as frontend
-import ga4gh.protocol as protocol
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -248,37 +248,9 @@ def addGlobalOptions(parser):
     parser.add_argument(
         "--config-file", "-F", type=str,
         help="The configuration file to use")
-
-
-def addServerHelpParser(subparsers):
-    subparsers.add_parser(
-        "help",
-        description="ga4gh_server help",
-        help="show this help message and exit")
-
-
-def addWormtableParser(subparsers):
-    parser = subparsers.add_parser(
-        "wormtable",
-        description="Serve the API using a wormtable based backend.",
-        help="Serve data from tables.")
     parser.add_argument(
         "dataDir",
-        help="The directory containing the wormtables to be served.")
-    parser.set_defaults(variantSetClass=variants.WormtableVariantSet)
-    return parser
-
-
-def addTabixParser(subparsers):
-    parser = subparsers.add_parser(
-        "tabix",
-        description="Serve the API using a tabix based backend.",
-        help="Serve data from Tabix indexed VCFs")
-    parser.add_argument(
-        "dataDir",
-        help="The directory containing VCFs")
-    parser.set_defaults(variantSetClass=variants.TabixVariantSet)
-    return parser
+        help="The directory containing data")
 
 
 def addHtslibParser(subparsers):
@@ -298,18 +270,12 @@ def server_main(parser=None):
         parser = argparse.ArgumentParser(
             description="GA4GH reference server")
     addGlobalOptions(parser)
-    subparsers = parser.add_subparsers(title='subcommands',)
-    addServerHelpParser(subparsers)
-    addWormtableParser(subparsers)
-    addTabixParser(subparsers)
-    addHtslibParser(subparsers)
     args = parser.parse_args()
-    if "variantSetClass" not in args:
+    if 'dataDir' not in args:
         parser.print_help()
     else:
         frontend.configure(args.config, args.config_file)
-        theBackend = backend.Backend(
-            args.dataDir, args.variantSetClass)
+        theBackend = backend.Backend(args.dataDir)
         theBackend.setRequestValidation(
             frontend.app.config["REQUEST_VALIDATION"])
         theBackend.setResponseValidation(

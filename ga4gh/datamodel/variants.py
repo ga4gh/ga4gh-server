@@ -49,6 +49,13 @@ def convertVCFGenotype(vcfGenotype, vcfPhaseset):
     return genotype, phaseset
 
 
+def variantSetFactory(variantSetId, relativePath):
+    if variantSetId.endswith(".wt"):
+        return WormtableVariantSet(variantSetId, relativePath)
+    else:
+        return TabixVariantSet(variantSetId, relativePath)
+
+
 class VariantSet(object):
     """
     Class representing a single VariantSet in the GA4GH data model.

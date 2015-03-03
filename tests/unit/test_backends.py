@@ -43,7 +43,7 @@ class WormtableTestFixture(object):
         Converts the specified VCF file into wormtable format, storing it
         the data directory.
         """
-        variantSetid = vcfFile.split("/")[-1].split(".")[0]
+        variantSetid = vcfFile.split("/")[-1].split(".")[0] + '.wt'
         wtDir = os.path.join(self.variantsDir, variantSetid)
         # convert the vcf to wormtable format.
         cmd = ["vcf2wt", "-q", vcfFile, wtDir]
@@ -109,8 +109,7 @@ class TestWormtableBackend(unittest.TestCase):
             self._tables[relativePath] = table
             self._chromIndexes[relativePath] = table.open_index("CHROM")
             self._chromPosIndexes[relativePath] = table.open_index("CHROM+POS")
-        self._backend = backend.Backend(
-            self._dataDir, variants.WormtableVariantSet)
+        self._backend = backend.Backend(self._dataDir)
 
     def tearDown(self):
         for table in self._tables.values():
@@ -569,4 +568,12 @@ class TestCallSets(TestWormtableBackend):
                     allCallSetIdMap[callSetId] = []
                 allCallSetIdMap[callSetId].append(variantSetId)
         wormtableCallSetIdMap = self._backend.getCallSetIdMap()
-        self.assertEqual(allCallSetIdMap, wormtableCallSetIdMap)
+        # can't just call assertEqual on allCallSetIdMap and
+        # wormtableCallSetIdMap since their values (arrays)
+        # may have different orderings of the items
+        self.assertEqual(
+            sorted(allCallSetIdMap.keys()),
+            sorted(wormtableCallSetIdMap.keys()))
+        for key in allCallSetIdMap:
+            for value in allCallSetIdMap[key]:
+                self.assertIn(value, wormtableCallSetIdMap[key])
