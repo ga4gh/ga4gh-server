@@ -19,60 +19,6 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.converters as converters
 
 
-##############################################################################
-# ga2vcf
-##############################################################################
-
-
-def ga2vcf_main(parser=None):
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH VCF conversion tool")
-    addClientGlobalOptions(parser)
-    subparsers = parser.add_subparsers(title='subcommands',)
-    addVariantsSearchParser(subparsers)
-    args = parser.parse_args()
-    request = protocol.GASearchVariantsRequest()
-    setCommaSeparatedAttribute(request, args, 'datasetIds')
-    # TODO add outputFile cli argument
-    outputFile = sys.stdout
-    vcfConverter = converters.VcfConverter(request, outputFile)
-    vcfConverter.convert()
-
-
-##############################################################################
-# ga2sam
-##############################################################################
-
-
-def ga2sam_main(parser=None):
-
-    def usingWorkaroundsFor(workaround):
-        return workaround in workarounds
-
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH SAM conversion tool")
-    addClientGlobalOptions(parser)
-    subparsers = parser.add_subparsers(title='subcommands',)
-    addReadsSearchParser(subparsers)
-    args = parser.parse_args()
-    workarounds = set(args.workarounds.split(','))
-    request = protocol.GASearchReadsRequest()
-    if usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
-        # google says referenceId not a valid field
-        request = SearchReadsRunner.GASearchReadsRequestGoogle()
-    setCommaSeparatedAttribute(request, args, 'readGroupIds')
-    request.start = args.start
-    request.end = args.end
-    request.referenceId = args.referenceId
-    request.referenceName = args.referenceName
-    # TODO add outputFile cli argument
-    outputFile = sys.stdout
-    samConverter = converters.SamConverter(request, outputFile)
-    samConverter.convert()
-
-
 # the maximum value of a long type in avro = 2**63 - 1
 # (64 bit signed integer)
 # http://avro.apache.org/docs/1.7.7/spec.html#schema_primitive
@@ -106,7 +52,7 @@ class RequestFactory(object):
 
     def __init__(self, args):
         self.args = args
-        self.workarounds = set(self.args.workarounds.split(','))
+        self.workarounds = getWorkarounds(args)
 
     def usingWorkaroundsFor(self, workaround):
         """
@@ -179,6 +125,112 @@ class RequestFactory(object):
         request.start = self.args.start
         request.end = self.args.end
         return request
+
+
+def getWorkarounds(args):
+    if args.workarounds is None:
+        return set()
+    else:
+        return set(args.workarounds.split(','))
+
+
+##############################################################################
+# ga2vcf
+##############################################################################
+
+
+def addOutputFileArgument(parser):
+    parser.add_argument(
+        "--outputFile", "-o", default=None,
+        help="the file to write the output to")
+
+
+def ga2vcf_main(parser=None):
+    # parse args
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description="GA4GH VCF conversion tool")
+    addClientGlobalOptions(parser)
+    addOutputFileArgument(parser)
+    subparsers = parser.add_subparsers(title='subcommands',)
+    variantsSearchParser = addVariantsSearchParser(subparsers)
+    # TODO kinda ugly that we need to overload the parser with arguments
+    # to populate the searchVariantSetsRequest;
+    # this is a temporary workaround until we have getVariantSet
+    # in the protocol;
+    # also note both requests have a pageSize attribute
+    addDatasetIdsArgument(variantsSearchParser)
+    args = parser.parse_args()
+    if "runner" not in args:
+        parser.print_help()
+    else:
+        ga2vcf_run(args)
+
+
+def ga2vcf_run(args):
+    # instantiate params
+    searchVariantsRequest = RequestFactory(
+        args).createGASearchVariantsRequest()
+    searchVariantSetsRequest = RequestFactory(
+        args).createGASearchVariantSetsRequest()
+    if args.outputFile is None:
+        outputStream = sys.stdout
+    else:
+        outputStream = open(args.outputFile, 'w')
+    workarounds = getWorkarounds(args)
+    httpClient = client.HttpClient(
+        args.baseUrl, args.verbose, workarounds, args.key)
+
+    # do conversion
+    vcfConverter = converters.VcfConverter(
+        httpClient, outputStream,
+        searchVariantSetsRequest, searchVariantsRequest)
+    vcfConverter.convert()
+
+    # cleanup
+    if args.outputFile is not None:
+        outputStream.close()
+
+
+##############################################################################
+# ga2sam
+##############################################################################
+
+
+def ga2sam_main(parser=None):
+    # parse args
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description="GA4GH SAM conversion tool")
+    addClientGlobalOptions(parser)
+    addReadsSearchParserArguments(parser)
+    addBinaryOutputArgument(parser)
+    addOutputFileArgument(parser)
+    args = parser.parse_args()
+    if "baseUrl" not in args:
+        parser.print_help()
+    else:
+        ga2sam_run(args)
+
+
+def ga2sam_run(args):
+    # instantiate params
+    searchReadsRequest = RequestFactory(
+        args).createGASearchReadsRequest()
+    workarounds = getWorkarounds(args)
+    httpClient = client.HttpClient(
+        args.baseUrl, args.verbose, workarounds, args.key)
+
+    # do conversion
+    samConverter = converters.SamConverter(
+        httpClient, searchReadsRequest, args.outputFile, args.binaryOutput)
+    samConverter.convert()
+
+
+def addBinaryOutputArgument(parser):
+    parser.add_argument(
+        "--binaryOutput", "-b", default=False,
+        action="store_true", help="Output a BAM (binary) file")
 
 
 ##############################################################################
@@ -258,7 +310,7 @@ class AbstractQueryRunner(object):
     Abstract base class for runner classes
     """
     def __init__(self, args):
-        self._workarounds = set(args.workarounds.split(','))
+        self._workarounds = getWorkarounds(args)
         self._key = args.key
         self._verbosity = args.verbose
         self._httpClient = client.HttpClient(
@@ -717,6 +769,11 @@ def addReadsSearchParser(subparsers):
         description="Search for reads",
         help="Search for reads")
     parser.set_defaults(runner=SearchReadsRunner)
+    addReadsSearchParserArguments(parser)
+    return parser
+
+
+def addReadsSearchParserArguments(parser):
     addUrlArgument(parser)
     addPageSizeArgument(parser)
     addStartArgument(parser)
@@ -730,7 +787,6 @@ def addReadsSearchParser(subparsers):
     parser.add_argument(
         "--referenceName", default=None,
         help="The referenceName to search over")
-    return parser
 
 
 def addReferenceSetsGetParser(subparsers):
