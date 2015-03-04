@@ -375,7 +375,7 @@ class TabixVariantSet(VariantSet):
         if variantName is not None:
             raise NotImplementedError(
                 "Searching by variantName is not supported")
-        if len(callSetIds) != 0:
+        if callSetIds is not None:
             raise NotImplementedError(
                 "Specifying call set ids is not supported")
         if referenceName in self._chromTabixFileMap:

@@ -10,6 +10,7 @@ mock
 nose
 pep8
 pysam
+pyvcf
 pyyaml
 requests
 wormtable
