@@ -42,10 +42,14 @@ class TestExceptionHandler(unittest.TestCase):
         for originalExceptionClass, mappedExceptionClass in \
                 frontendExceptions.exceptionMap.items():
             # some exceptions require more than zero arguments to create
-            numInitArgs = len(inspect.getargspec(
-                originalExceptionClass.__init__).args) - 1
-            args = ['arg' for _ in range(numInitArgs)]
-            originalException = originalExceptionClass(*args)
+            try:
+                numInitArgs = len(inspect.getargspec(
+                    originalExceptionClass.__init__).args) - 1
+                args = ['arg' for _ in range(numInitArgs)]
+                originalException = originalExceptionClass(*args)
+            except TypeError:
+                # built-in python exceptions can't use inspect
+                originalException = originalExceptionClass()
             mappedException = mappedExceptionClass()
             response = frontend.handleException(originalException)
             self.assertEquals(response.status_code, mappedException.httpStatus)

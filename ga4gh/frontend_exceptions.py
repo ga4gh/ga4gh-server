@@ -112,6 +112,13 @@ class MethodNotAllowedException(FrontendException):
         self.code = 10
 
 
+class NotImplementedException(ServerException):
+
+    def __init__(self):
+        super(NotImplementedException, self).__init__()
+        self.message = "Not implemented"
+        self.code = 11
+
 # exceptions thrown by the underlying system that we want to
 # translate to exceptions that we define before they are
 # serialized and returned to the client
@@ -119,4 +126,5 @@ exceptionMap = {
     api.exceptions.UnsupportedMediaType: UnsupportedMediaTypeException,
     backendExceptions.BackendException: ServerException,
     backendExceptions.CallSetNotInVariantSetException: NotFoundException,
+    NotImplementedError: NotImplementedException
 }
