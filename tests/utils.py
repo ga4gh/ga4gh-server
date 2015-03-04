@@ -5,14 +5,50 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import functools
+import humanize
 import itertools
+import os
 import random
 import string
+import time
 
 import avro.schema
 
 import ga4gh.protocol as protocol
 import ga4gh.client as client
+
+
+packageName = 'ga4gh'
+
+
+class Timed(object):
+    """
+    Decorator that times a method, reporting runtime at finish
+    """
+    def __call__(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            self.start = time.time()
+            result = func(*args, **kwargs)
+            self.end = time.time()
+            self._report()
+            return result
+        return wrapper
+
+    def _report(self):
+        delta = self.end - self.start
+        timeString = humanize.time.naturaldelta(delta)
+        print("Finished in {} ({} seconds)".format(timeString, delta))
+
+
+def getProjectRootFilePath():
+    # assumes we're in a directory one level below the project root
+    return os.path.dirname(os.path.dirname(__file__))
+
+
+def getGa4ghFilePath():
+    return os.path.join(getProjectRootFilePath(), packageName)
 
 
 def makeHttpClient():
