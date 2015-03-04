@@ -56,7 +56,7 @@ class Backend(object):
         self._callSetIdMap = {}
         for variantSet in self._variantSetIdMap.values():
             sampleNames = variantSet.getSampleNames()
-            variantSetId = variantSet.getVariantSetId()
+            variantSetId = variantSet.getId()
             for name in sampleNames:
                 if name not in self._callSetIdMap:
                     self._callSetIdMap[name] = []

@@ -53,6 +53,9 @@ class VariantSet(object):
     Class representing a single VariantSet in the GA4GH data model.
     """
     # TODO abstract details shared by wormtable and tabix based backends.
+    def __init__(self):
+        self._sampleNames = []
+        self._variantSetId = None
 
     def toProtocolElement(self):
         """
@@ -63,6 +66,21 @@ class VariantSet(object):
         protocolElement.datasetId = "NotImplemented"
         protocolElement.metadata = self.getMetadata()
         return protocolElement
+
+    def getSampleNames(self):
+        """
+        Returns the sampleNames for the variants in this VariantSet.
+        """
+        return self._sampleNames
+
+    def getId(self):
+        """
+        Returns the ID of this VariantSet.
+
+        TODO: this should be pushed into a superclass, and use an
+        instance variant self._id.
+        """
+        return self._variantSetId
 
 
 class WormtableVariantSet(VariantSet):
@@ -138,12 +156,6 @@ class WormtableVariantSet(VariantSet):
                     self._sampleCols[sampleName] = []
                     self._sampleNames.append(sampleName)
                 self._sampleCols[sampleName].append((infoName, col))
-
-    def getSampleNames(self):
-        return self._sampleNames
-
-    def getVariantSetId(self):
-        return self._variantSetId
 
     def convertInfoField(self, value):
         """
@@ -318,6 +330,7 @@ class TabixVariantSet(VariantSet):
     """
     def __init__(self, variantSetId, vcfPath):
         self._variantSetId = variantSetId
+        self._sampleNames = []
         self._created = protocol.convertDatetime(datetime.datetime.now())
         self._chromTabixFileMap = {}
         for vcfFile in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
@@ -366,7 +379,9 @@ class TabixVariantSet(VariantSet):
                 "Specifying call set ids is not supported")
         if referenceName in self._chromTabixFileMap:
             tabixFile = self._chromTabixFileMap[referenceName]
-            cursor = tabixFile.fetch(referenceName, startPosition, endPosition)
+            encodedReferenceName = referenceName.encode()
+            cursor = tabixFile.fetch(
+                encodedReferenceName, startPosition, endPosition)
             for record in cursor:
                 yield self.convertVariant(record)
 
