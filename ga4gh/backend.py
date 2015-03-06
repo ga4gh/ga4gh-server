@@ -6,11 +6,13 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
 import os
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
+import ga4gh.backend_exceptions as backendExceptions
 
 
 class Backend(object):
@@ -20,6 +22,8 @@ class Backend(object):
     """
     def __init__(self, dataDir, variantSetClass):
         self._dataDir = dataDir
+        self._requestValidation = False
+        self._responseValidation = False
         # TODO this code is very ugly and should be regarded as a temporary
         # stop-gap until we deal with iterating over the data tree properly.
         # Variants
@@ -99,8 +103,9 @@ class Backend(object):
         any point using the nextPageToken attribute of the request object.
         """
         self.startProfile()
-        # TODO change this to fromJsonDict and validate
-        request = requestClass.fromJsonString(requestStr)
+        requestDict = json.loads(requestStr)
+        self.validateRequest(requestDict, requestClass)
+        request = requestClass.fromJsonDict(requestDict)
         pageList = []
         nextPageToken = None
         for obj, nextPageToken in objectGenerator(request):
@@ -110,6 +115,8 @@ class Backend(object):
         response = responseClass()
         response.nextPageToken = nextPageToken
         setattr(response, pageListName, pageList)
+        responseDict = response.toJsonDict()
+        self.validateResponse(responseDict, responseClass)
         self.endProfile()
         return response.toJsonString()
 
@@ -286,6 +293,36 @@ class Backend(object):
     def endProfile(self):
         pass
 
+    def validateRequest(self, jsonDict, requestClass):
+        """
+        Ensures the jsonDict corresponds to a valid instance of requestClass
+        Throws an error if the data is invalid
+        """
+        if self._requestValidation:
+            if not requestClass.validate(jsonDict):
+                raise backendExceptions.RequestValidationFailureException()
+
+    def validateResponse(self, jsonDict, responseClass):
+        """
+        Ensures the jsonDict corresponds to a valid instance of responseClass
+        Throws an error if the data is invalid
+        """
+        if self._responseValidation:
+            if not responseClass.validate(jsonDict):
+                raise backendExceptions.ResponseValidationFailureException()
+
+    def setRequestValidation(self, requestValidation):
+        """
+        Set enabling request validation
+        """
+        self._requestValidation = requestValidation
+
+    def setResponseValidation(self, responseValidation):
+        """
+        Set enabling response validation
+        """
+        self._responseValidation = responseValidation
+
 
 class MockBackend(Backend):
     """
@@ -298,3 +335,4 @@ class MockBackend(Backend):
         self._dataDir = None
         self._variantSetIdMap = {}
         self._variantSetIds = []
+        self._requestValidation = self._responseValidation = False

@@ -16,7 +16,7 @@ import tests.utils as utils
 class TestFrontend(unittest.TestCase):
 
     def setUp(self):
-        frontend.configure("TestConfig")
+        frontend.configure("TestWithoutValidationConfig")
         frontend.app.backend = backend.MockBackend()
         self.app = frontend.app.test_client()
 

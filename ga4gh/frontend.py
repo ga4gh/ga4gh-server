@@ -12,7 +12,6 @@ import traceback
 import datetime
 
 import flask
-import flask.ext.api as api
 import flask.ext.cors as cors
 import humanize
 
@@ -104,7 +103,7 @@ def handleHttpPost(request, endpoint):
     """
     mimetype = "application/json"
     if request.mimetype != mimetype:
-        raise api.exceptions.UnsupportedMediaType()
+        raise frontendExceptions.UnsupportedMediaTypeException()
     responseStr = endpoint(request.get_data())
     return flask.Response(responseStr, status=200, mimetype=mimetype)
 

@@ -126,5 +126,7 @@ exceptionMap = {
     api.exceptions.UnsupportedMediaType: UnsupportedMediaTypeException,
     backendExceptions.BackendException: ServerException,
     backendExceptions.CallSetNotInVariantSetException: NotFoundException,
-    NotImplementedError: NotImplementedException
+    NotImplementedError: NotImplementedException,
+    backendExceptions.RequestValidationFailureException: BadRequestException,
+    backendExceptions.ResponseValidationFailureException: ServerException,
 }
