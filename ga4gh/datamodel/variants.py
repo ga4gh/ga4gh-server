@@ -6,10 +6,11 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
-import glob
 import datetime
+import glob
 import itertools
+import os
+import random
 
 import pysam
 import wormtable as wt
@@ -56,9 +57,9 @@ def variantSetFactory(variantSetId, relativePath):
         return TabixVariantSet(variantSetId, relativePath)
 
 
-class VariantSet(object):
+class AbstractVariantSet(object):
     """
-    Class representing a single VariantSet in the GA4GH data model.
+    An abstract base class of a variant set
     """
     # TODO abstract details shared by wormtable and tabix based backends.
     def __init__(self):
@@ -91,7 +92,87 @@ class VariantSet(object):
         return self._variantSetId
 
 
-class WormtableVariantSet(VariantSet):
+class SimulatedVariantSet(AbstractVariantSet):
+    """
+    A variant set that doesn't derive from a data store.
+    Used mostly for testing.
+    """
+    def __init__(self, randomSeed, numCalls, variantDensity, variantSetId):
+        super(SimulatedVariantSet, self).__init__()
+        self._randomSeed = randomSeed
+        self._numCalls = numCalls
+        self._variantDensity = variantDensity
+        now = protocol.convertDatetime(datetime.datetime.now())
+        self._created = now
+        self._updated = now
+        self._variantSetId = variantSetId
+
+    def getMetadata(self):
+        ret = []
+        return ret
+
+    def getCallSets(self, name, startPosition):
+        for i in []:
+            yield i
+
+    def getVariants(self, referenceName, startPosition, endPosition,
+                    variantName, callSetIds):
+        randomNumberGenerator = random.Random()
+        i = startPosition
+        while i < endPosition:
+            randomNumberGenerator.seed(self._randomSeed + i)
+            if randomNumberGenerator.random() < self._variantDensity:
+                # TODO fix variant set IDS so we can have multiple
+                variant = self.generateVariant(
+                    self._variantSetId, referenceName,
+                    i, randomNumberGenerator)
+                yield variant
+            i += 1
+
+    def generateVariant(self, variantSetId, referenceName, position,
+                        randomNumberGenerator):
+        """
+        Generate a random variant for the specified position using the
+        specified random number generator. This generator should be seeded
+        with a value that is unique to this position so that the same variant
+        will always be produced regardless of the order it is generated in.
+        """
+        variant = protocol.GAVariant()
+        variant.variantSetId = variantSetId
+        # The id is the combination of the position, referenceName and variant
+        # set id; this allows us to generate the variant from the position and
+        # id.
+        variant.id = "{0}:{1}:{2}".format(
+            variant.variantSetId, referenceName, position)
+        variant.referenceName = referenceName
+        variant.names = []  # What's a good model to generate these?
+        variant.created = self._created
+        variant.updated = self._updated
+        variant.start = position
+        variant.end = position + 1  # SNPs only for now
+        bases = ["A", "C", "G", "T"]
+        ref = randomNumberGenerator.choice(bases)
+        variant.referenceBases = ref
+        alt = randomNumberGenerator.choice(
+            [base for base in bases if base != ref])
+        variant.alternateBases = [alt]
+        variant.calls = []
+        for _ in range(self._numCalls):
+            call = protocol.GACall()
+            # for now, the genotype is either [0,1], [1,1] or [1,0] with equal
+            # probability; probably will want to do something more
+            # sophisticated later.
+            randomChoice = randomNumberGenerator.choice(
+                [[0, 1], [1, 0], [1, 1]])
+            call.genotype = randomChoice
+            # TODO What is a reasonable model for generating these likelihoods?
+            # Are these log-scaled? Spec does not say.
+            call.genotypeLikelihood = [-100, -100, -100]
+            variant.calls.append(call)
+        return variant
+
+
+class WormtableVariantSet(AbstractVariantSet):
     """
     Class representing a single variant set backed by a wormtable directory.
     We assume that VCF data has been converted to wormtable format using
@@ -132,13 +213,13 @@ class WormtableVariantSet(VariantSet):
         Allocates a new WormtableVariantSet with the specified variantSetId
         based on the specified wormtable directory.
         """
+        super(WormtableVariantSet, self).__init__()
         self._variantSetId = variantSetId
         self._wtDir = wtDir
         self._table = wt.open_table(wtDir)
         self._chromPosIndex = self._table.open_index("CHROM+POS")
         self._chromIdIndex = self._table.open_index("CHROM+ID")
         self._sampleCols = {}
-        self._sampleNames = []
         self._infoCols = []
         self._firstSamplePosition = -1
         ctimeInMillis = int(os.path.getctime(wtDir) * 1000)
@@ -332,13 +413,13 @@ class WormtableVariantSet(VariantSet):
         return ret
 
 
-class TabixVariantSet(VariantSet):
+class TabixVariantSet(AbstractVariantSet):
     """
     Class representing a single variant set backed by a tabix directory.
     """
     def __init__(self, variantSetId, vcfPath):
+        super(TabixVariantSet, self).__init__()
         self._variantSetId = variantSetId
-        self._sampleNames = []
         self._created = protocol.convertDatetime(datetime.datetime.now())
         self._chromTabixFileMap = {}
         for vcfFile in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
@@ -414,13 +495,13 @@ def isEmptyIter(it):
     return next(it, _nothing) is _nothing
 
 
-class HtslibVariantSet(VariantSet):
+class HtslibVariantSet(AbstractVariantSet):
     """
     Class representing a single variant set backed by a directory of indexed
     VCF or BCF files.
     """
-
     def __init__(self, variantSetId, vcfPath, use_bcf=True):
+        super(HtslibVariantSet, self).__init__()
         self._variantSetId = variantSetId
         self._created = protocol.convertDatetime(datetime.datetime.now())
         self._chromFileMap = {}

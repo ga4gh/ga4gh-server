@@ -109,7 +109,7 @@ class TestWormtableBackend(unittest.TestCase):
             self._tables[relativePath] = table
             self._chromIndexes[relativePath] = table.open_index("CHROM")
             self._chromPosIndexes[relativePath] = table.open_index("CHROM+POS")
-        self._backend = backend.Backend(self._dataDir)
+        self._backend = backend.FileSystemBackend(self._dataDir)
 
     def tearDown(self):
         for table in self._tables.values():

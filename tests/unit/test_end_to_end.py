@@ -25,7 +25,8 @@ class EndToEndWormtableTest(unittest.TestCase):
     def setUp(self):
         self._wtTestFixture = WormtableTestFixture()
         self._wtTestFixture.setUp()
-        self.setUpServer(backend.Backend(self._wtTestFixture.dataDir))
+        self.setUpServer(backend.FileSystemBackend(
+            self._wtTestFixture.dataDir))
         self._expectedVariantSetIds = ['example_1.wt', 'example_2.wt',
                                        'example_3.wt', 'example_4.wt']
 

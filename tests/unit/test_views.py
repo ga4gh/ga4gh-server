@@ -17,7 +17,7 @@ class TestFrontend(unittest.TestCase):
 
     def setUp(self):
         frontend.configure("TestWithoutValidationConfig")
-        frontend.app.backend = backend.MockBackend()
+        frontend.app.backend = backend.SimulatedBackend()
         self.app = frontend.app.test_client()
 
     def sendVariantsSearch(self, data):
@@ -119,7 +119,7 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchVariantSetsResponse.fromJsonString(
             response.data)
-        self.assertEqual(responseData.variantSets, [])
+        self.assertEqual(len(responseData.variantSets), 1)
 
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch('{"callSetId": "xx"}')

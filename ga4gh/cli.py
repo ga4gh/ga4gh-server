@@ -275,7 +275,19 @@ def server_main(parser=None):
         parser.print_help()
     else:
         frontend.configure(args.config, args.config_file)
-        theBackend = backend.Backend(args.dataDir)
+        if args.dataDir == "simulated":
+            randomSeed = frontend.app.config[
+                "SIMULATED_BACKEND_RANDOM_SEED"]
+            numCalls = frontend.app.config[
+                "SIMULATED_BACKEND_NUM_CALLS"]
+            variantDensity = frontend.app.config[
+                "SIMULATED_BACKEND_VARIANT_DENSITY"]
+            numVariantSets = frontend.app.config[
+                "SIMULATED_BACKEND_NUM_VARIANT_SETS"]
+            theBackend = backend.SimulatedBackend(
+                randomSeed, numCalls, variantDensity, numVariantSets)
+        else:
+            theBackend = backend.FileSystemBackend(args.dataDir)
         theBackend.setRequestValidation(
             frontend.app.config["REQUEST_VALIDATION"])
         theBackend.setResponseValidation(

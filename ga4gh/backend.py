@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 import json
 import os
+import random
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
@@ -16,58 +17,22 @@ import ga4gh.backend_exceptions as backendExceptions
 import ga4gh.datamodel.variants as variants
 
 
-class Backend(object):
+class AbstractBackend(object):
     """
-    The GA4GH backend. This class provides methods for all of the GA4GH
-    protocol end points.
+    An abstract GA4GH backend.
+    This class provides methods for all of the GA4GH protocol end points.
     """
-    def __init__(self, dataDir):
-        self._dataDir = dataDir
+    def __init__(self):
+        self._variantSetIdMap = {}
+        self._variantSetIds = []
+        self._referenceSetIdMap = {}
+        self._referenceSetIds = []
+        self._readGroupSetIdMap = {}
+        self._readGroupSetIds = []
+        self._callSetIdMap = {}
+        self._callSetIds = []
         self._requestValidation = False
         self._responseValidation = False
-        # TODO this code is very ugly and should be regarded as a temporary
-        # stop-gap until we deal with iterating over the data tree properly.
-        # Variants
-        self._variantSetIdMap = {}
-        variantSetDir = os.path.join(self._dataDir, "variants")
-        for variantSetId in os.listdir(variantSetDir):
-            relativePath = os.path.join(variantSetDir, variantSetId)
-            if os.path.isdir(relativePath):
-                self._variantSetIdMap[variantSetId] = \
-                    variants.variantSetFactory(variantSetId, relativePath)
-        self._variantSetIds = sorted(self._variantSetIdMap.keys())
-
-        # References
-        self._referenceSetIdMap = {}
-        referenceSetDir = os.path.join(self._dataDir, "references")
-        for referenceSetId in os.listdir(referenceSetDir):
-            relativePath = os.path.join(referenceSetDir, referenceSetId)
-            if os.path.isdir(relativePath):
-                referenceSet = references.ReferenceSet(
-                    referenceSetId, relativePath)
-                self._referenceSetIdMap[referenceSetId] = referenceSet
-        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
-
-        # Reads
-        self._readGroupSetIdMap = {}
-        readGroupSetDir = os.path.join(self._dataDir, "reads")
-        for readGroupSetId in os.listdir(readGroupSetDir):
-            relativePath = os.path.join(readGroupSetDir, readGroupSetId)
-            if os.path.isdir(relativePath):
-                readGroupSet = reads.ReadGroupSet(
-                    readGroupSetId, relativePath)
-                self._readGroupSetIdMap[readGroupSetId] = readGroupSet
-        self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
-
-        # callSets
-        self._callSetIdMap = {}
-        for variantSet in self._variantSetIdMap.values():
-            sampleNames = variantSet.getSampleNames()
-            variantSetId = variantSet.getId()
-            for name in sampleNames:
-                if name not in self._callSetIdMap:
-                    self._callSetIdMap[name] = []
-                self._callSetIdMap[name].append(variantSetId)
 
     def getVariantSetIdMap(self):
         return self._variantSetIdMap
@@ -327,15 +292,68 @@ class Backend(object):
         self._responseValidation = responseValidation
 
 
-class MockBackend(Backend):
+class SimulatedBackend(AbstractBackend):
     """
-    A mock Backend class for testing.
+    A GA4GH backend backed by no data; used mostly for testing
     """
-    def __init__(self, dataDir=None):
-        # TODO make a superclass of backend that does this
-        # automatically without needing to know about the internal
-        # details of the backend.
-        self._dataDir = None
-        self._variantSetIdMap = {}
-        self._variantSetIds = []
-        self._requestValidation = self._responseValidation = False
+    def __init__(self, randomSeed=0, numCalls=1, variantDensity=0.5,
+                 numVariantSets=1):
+        super(SimulatedBackend, self).__init__()
+        self._randomSeed = randomSeed
+        self._randomGenerator = random.Random()
+        self._randomGenerator.seed(self._randomSeed)
+        for i in range(numVariantSets):
+            variantSetId = "simVs{}".format(i)
+            seed = self._randomGenerator.randint(0, 2**32 - 1)
+            variantSet = variants.SimulatedVariantSet(
+                seed, numCalls, variantDensity, variantSetId)
+            self._variantSetIdMap[variantSetId] = variantSet
+        self._variantSetIds = sorted(self._variantSetIdMap.keys())
+
+
+class FileSystemBackend(AbstractBackend):
+    """
+    A GA4GH backend backed by data on the file system
+    """
+    def __init__(self, dataDir):
+        super(FileSystemBackend, self).__init__()
+        self._dataDir = dataDir
+        # TODO this code is very ugly and should be regarded as a temporary
+        # stop-gap until we deal with iterating over the data tree properly.
+        # Variants
+        variantSetDir = os.path.join(self._dataDir, "variants")
+        for variantSetId in os.listdir(variantSetDir):
+            relativePath = os.path.join(variantSetDir, variantSetId)
+            if os.path.isdir(relativePath):
+                self._variantSetIdMap[variantSetId] = \
+                    variants.variantSetFactory(variantSetId, relativePath)
+        self._variantSetIds = sorted(self._variantSetIdMap.keys())
+
+        # References
+        referenceSetDir = os.path.join(self._dataDir, "references")
+        for referenceSetId in os.listdir(referenceSetDir):
+            relativePath = os.path.join(referenceSetDir, referenceSetId)
+            if os.path.isdir(relativePath):
+                referenceSet = references.ReferenceSet(
+                    referenceSetId, relativePath)
+                self._referenceSetIdMap[referenceSetId] = referenceSet
+        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
+
+        # Reads
+        readGroupSetDir = os.path.join(self._dataDir, "reads")
+        for readGroupSetId in os.listdir(readGroupSetDir):
+            relativePath = os.path.join(readGroupSetDir, readGroupSetId)
+            if os.path.isdir(relativePath):
+                readGroupSet = reads.ReadGroupSet(
+                    readGroupSetId, relativePath)
+                self._readGroupSetIdMap[readGroupSetId] = readGroupSet
+        self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
+
+        # callSets
+        for variantSet in self._variantSetIdMap.values():
+            sampleNames = variantSet.getSampleNames()
+            variantSetId = variantSet.getId()
+            for name in sampleNames:
+                if name not in self._callSetIdMap:
+                    self._callSetIdMap[name] = []
+                self._callSetIdMap[name].append(variantSetId)
