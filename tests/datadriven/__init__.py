@@ -78,6 +78,14 @@ class DataDrivenTest(object):
         """
         raise NotImplementedError()
 
+    def assertEqual(self, a, b):
+        """
+        Tests if a an b are equal. If not, output an error and raise
+        an assertion error.
+        """
+        if a != b:
+            raise AssertionError("{} != {}".format(a, b))
+
     def testProtocolElementValid(self):
         protocolElement = self._gaObject.toProtocolElement()
         jsonDict = protocolElement.toJsonDict()

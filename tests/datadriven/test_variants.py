@@ -47,7 +47,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self._referenceNames.add(record.CHROM)
 
     def getDataModelClass(self):
-        return variants.TabixVariantSet
+        return variants.HtslibVariantSet
 
     def getProtocolClass(self):
         return protocol.GAVariantSet
@@ -57,11 +57,25 @@ class VariantSetTest(datadriven.DataDrivenTest):
         Verifies that the lists of GA4GH variants and pyvcf variants
         are equivalent.
         """
-        assert len(gaVariants) == len(pyvcfVariants)
+        self.assertEqual(len(gaVariants), len(pyvcfVariants))
         for gaVariant, pyvcfVariant in zip(gaVariants, pyvcfVariants):
-            assert gaVariant.referenceName == pyvcfVariant.CHROM
-            assert gaVariant.referenceBases == pyvcfVariant.REF
-            # TODO: more tests!
+            pyvcfInfo = pyvcfVariant.INFO
+            self.assertEqual(gaVariant.referenceName, pyvcfVariant.CHROM)
+            self.assertEqual(gaVariant.referenceBases, pyvcfVariant.REF)
+            # pyvcf uses 1-based indexing.
+            self.assertEqual(gaVariant.start, pyvcfVariant.POS - 1)
+            # When an END info tag is present it takes precedence
+            end = pyvcfVariant.end
+            if "END" in pyvcfInfo:
+                end = pyvcfInfo["END"]
+            self.assertEqual(gaVariant.end, end)
+            alt = pyvcfVariant.ALT
+            # PyVCF does something funny when no ALT allele is provided.
+            # TODO we should clarify exactly what this means.
+            if len(alt) == 1 and alt[0] is None:
+                alt = []
+            self.assertEqual(gaVariant.alternateBases, alt)
+            # TODO check INFO fields
 
     def testSearchAllVariants(self):
         allVariants = []
@@ -73,4 +87,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
             localVariants = [
                 v for v in self._variants if v.CHROM == referenceName]
             self.verifyVariantsEqual(variants, localVariants)
-        assert len(allVariants) == len(self._variants)
+        self.assertEqual(len(allVariants), len(self._variants))
+
+    def testVariantSetMetadata(self):
+        # TODO get the metadata and test it.
+        pass

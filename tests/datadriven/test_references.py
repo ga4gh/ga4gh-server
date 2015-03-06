@@ -50,4 +50,4 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
 
     def testNumReferences(self):
         references = list(self._gaObject.getReferences())
-        assert len(self._idFastaFileMap) == len(references)
+        self.assertEqual(len(self._idFastaFileMap), len(references))
