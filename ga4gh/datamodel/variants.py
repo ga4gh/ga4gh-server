@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import os
 import glob
 import datetime
+import itertools
 
 import pysam
 import wormtable as wt
@@ -387,5 +388,118 @@ class TabixVariantSet(VariantSet):
 
     def getMetadata(self):
         # TODO: Implement this
+        ret = []
+        return ret
+
+
+def _encodeValue(value):
+    if isinstance(value, (list, tuple)):
+        return [str(v) for v in value]
+    else:
+        return [str(value)]
+
+
+_nothing = object()
+
+
+def isEmptyIter(it):
+    """Return True iff the iterator is empty or exhausted"""
+    return next(it, _nothing) is _nothing
+
+
+class HtslibVariantSet(VariantSet):
+    """
+    Class representing a single variant set backed by a directory of indexed
+    VCF or BCF files.
+    """
+
+    def __init__(self, variantSetId, vcfPath, use_bcf=True):
+        self._variantSetId = variantSetId
+        self._created = protocol.convertDatetime(datetime.datetime.now())
+        self._chromFileMap = {}
+        for pattern in ['*.bcf', '*.vcf.gz']:
+            for filename in glob.glob(os.path.join(vcfPath, pattern)):
+                self._addFile(filename)
+
+    def _addFile(self, filename):
+        varFile = pysam.VariantFile(filename)
+        if varFile.index is None:
+            raise Exception("VCF/BCF files must be indexed")
+        for chrom in varFile.index:
+            # Unlike Tabix indices, CSI indices include all contigs defined
+            # in the BCF header.  Thus we must test each one to see if
+            # records exist or else they are likely to trigger spurious
+            # overlapping errors.
+            if not isEmptyIter(varFile.fetch(chrom)):
+                if chrom in self._chromFileMap:
+                    raise Exception("cannot have overlapping VCF/BCF files.")
+                self._chromFileMap[chrom] = varFile
+
+    def convertVariant(self, record):
+        variant = protocol.GAVariant()
+        # N.B. record.pos is 1-based
+        #      also consider using record.start-record.stop
+        variant.id = "{0}:{1}:{2}".format(self._variantSetId,
+                                          record.contig,
+                                          record.pos)
+        # TODO How should we populate these from VCF?
+        variant.created = self._created
+        variant.updated = self._created
+        variant.variantSetId = self._variantSetId
+        variant.referenceName = record.contig
+        if record.id is not None:
+            variant.names = record.id.split(';')
+        variant.start = record.start          # 0-based inclusive
+        variant.end = record.stop             # 0-based exclusive
+        variant.referenceBases = record.ref
+        variant.alternateBases = list(record.alts)
+        # record.filter and record.qual are also available, when supported
+        # by GAVariant.
+        for key, value in record.info.iteritems():
+            if value is not None:
+                variant.info[key] = _encodeValue(value)
+        variant.calls = []
+        for name, call in record.samples.iteritems():
+            c = protocol.GACall()
+            c.genotype = _encodeValue(call.allele_indices)
+            for key, value in record.info.iteritems():
+                if key == 'GT':
+                    c.genotype = list(call.allele_indices)
+                elif key == 'GL' and value is not None:
+                    c.genotypeLikelihood = value
+                elif value is not None:
+                    c.info[key] = _encodeValue(value)
+            variant.calls.append(c)
+        return variant
+
+    def getVariants(self, referenceName, startPosition, endPosition,
+                    variantName, callSetIds):
+        """
+        Returns an iterator over the specified variants. The parameters
+        correspond to the attributes of a GASearchVariantsRequest object.
+        """
+        if variantName is not None:
+            raise NotImplementedError(
+                "Searching by variantName is not supported")
+        if len(callSetIds) != 0:
+            raise NotImplementedError(
+                "Specifying call set ids is not supported")
+        if referenceName in self._chromFileMap:
+            varFile = self._chromFileMap[referenceName]
+            cursor = varFile.fetch(referenceName, startPosition, endPosition)
+            return itertools.imap(self.convertVariant, cursor)
+        else:
+            return []
+
+    def getMetadata(self):
+        # TODO: Implement this
+        # All the metadata is available via each varFile.header, including:
+        #    records: header records
+        #    version: VCF version
+        #    samples
+        #    contigs
+        #    filters
+        #    info
+        #    formats
         ret = []
         return ret
