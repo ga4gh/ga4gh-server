@@ -13,6 +13,7 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
 import ga4gh.backend_exceptions as backendExceptions
+import ga4gh.datamodel.variants as variants
 
 
 class Backend(object):
@@ -20,7 +21,7 @@ class Backend(object):
     The GA4GH backend. This class provides methods for all of the GA4GH
     protocol end points.
     """
-    def __init__(self, dataDir, variantSetClass):
+    def __init__(self, dataDir):
         self._dataDir = dataDir
         self._requestValidation = False
         self._responseValidation = False
@@ -32,8 +33,8 @@ class Backend(object):
         for variantSetId in os.listdir(variantSetDir):
             relativePath = os.path.join(variantSetDir, variantSetId)
             if os.path.isdir(relativePath):
-                self._variantSetIdMap[variantSetId] = variantSetClass(
-                    variantSetId, relativePath)
+                self._variantSetIdMap[variantSetId] = \
+                    variants.variantSetFactory(variantSetId, relativePath)
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
         # References
@@ -46,13 +47,15 @@ class Backend(object):
                     referenceSetId, relativePath)
                 self._referenceSetIdMap[referenceSetId] = referenceSet
         self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
+
         # Reads
         self._readGroupSetIdMap = {}
         readGroupSetDir = os.path.join(self._dataDir, "reads")
         for readGroupSetId in os.listdir(readGroupSetDir):
             relativePath = os.path.join(readGroupSetDir, readGroupSetId)
             if os.path.isdir(relativePath):
-                readGroupSet = reads.ReadGroupSet(readGroupSetId, relativePath)
+                readGroupSet = reads.ReadGroupSet(
+                    readGroupSetId, relativePath)
                 self._readGroupSetIdMap[readGroupSetId] = readGroupSet
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
 
