@@ -94,7 +94,13 @@ def configure(config="DefaultConfig", config_file=None):
         app.config.from_pyfile(config_file)
     cors.CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
-
+    dataSets = app.config["DATASETS"]
+    assert len(dataSets) == 1, "Only one data set currently supported"
+    # Allocate the backend
+    theBackend = backend.Backend(dataSets[0])
+    theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
+    theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
+    app.backend = theBackend
 
 def handleHttpPost(request, endpoint):
     """

@@ -16,7 +16,13 @@ class DefaultConfig(object):
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
     REQUEST_VALIDATION = True
     RESPONSE_VALIDATION = True
+    DATASETS = []
 
+class DevelopmentConfig(DefaultConfig):
+    """
+    Configuration used for development.
+    """
+    DATASETS = ["ga4gh-example-data"]
 
 class TestConfig(DefaultConfig):
     """

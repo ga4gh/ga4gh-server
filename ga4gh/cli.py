@@ -253,17 +253,6 @@ def addGlobalOptions(parser):
         help="The directory containing data")
 
 
-def addHtslibParser(subparsers):
-    parser = subparsers.add_parser(
-        "htslib",
-        description="Serve the API using a tabix based backend.",
-        help="Serve data from Htslib indexed VCF/BCFs")
-    parser.add_argument(
-        "dataDir",
-        help="The directory containing VCF/BCFs")
-    parser.set_defaults(variantSetClass=variants.HtslibVariantSet)
-    return parser
-
 
 def server_main(parser=None):
     if parser is None:
@@ -275,12 +264,6 @@ def server_main(parser=None):
         parser.print_help()
     else:
         frontend.configure(args.config, args.config_file)
-        theBackend = backend.Backend(args.dataDir)
-        theBackend.setRequestValidation(
-            frontend.app.config["REQUEST_VALIDATION"])
-        theBackend.setResponseValidation(
-            frontend.app.config["RESPONSE_VALIDATION"])
-        frontend.app.backend = theBackend
         frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
 
 
