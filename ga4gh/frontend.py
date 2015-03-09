@@ -92,7 +92,6 @@ def configure(config="DefaultConfig", configFile=None):
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
         app.config.from_envvar('GA4GH_CONFIGURATION')
     if configFile is not None:
-        print("configFile = ", configFile)
         app.config.from_pyfile(configFile)
     cors.CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
