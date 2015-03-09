@@ -26,7 +26,7 @@ Our aims for this implementation are:
     The code is written in Python for maximum portability, and it
     should be possible to run on any modern computer/operating system (Windows
     compatibility should be possible, although this has not been tested). Our coding
-    guidelines specify using a subset of Python 3 which is backwards compatible with Python 2 
+    guidelines specify using a subset of Python 3 which is backwards compatible with Python 2
     following the current `best practices <http://python-future.org/compatible_idioms.html>`_.
     The project currently does not yet support Python 3, as support for it is lacking in several
     packages that we depend on. However, our eventual goal is to support both Python 2
@@ -34,9 +34,9 @@ Our aims for this implementation are:
 
 **Ease of use**
     The code follows the `Python Packaging User Guide
-    <http://python-packaging-user-guide.readthedocs.org/en/latest/>`_. 
-    Specifically, pip is used to handle python package dependencies (see below 
-    for details). This allows for easy installation of the ``ga4gh`` reference code 
+    <http://python-packaging-user-guide.readthedocs.org/en/latest/>`_.
+    Specifically, pip is used to handle python package dependencies (see below
+    for details). This allows for easy installation of the ``ga4gh`` reference code
     across a range of operating systems.
 
 
@@ -52,21 +52,21 @@ Prerequisites:
 
 General installation procedure:
 
-* Install Berkeley DB (version 4.8 or higher) using your system's preferred 
-  package manager, see the `wormtable help page 
+* Install Berkeley DB (version 4.8 or higher) using your system's preferred
+  package manager, see the `wormtable help page
   <https://pypi.python.org/pypi/wormtable>`_ for platform-specific details.
 
 * (On MacOS X, make sure the LDFLAGS and CFLAGS environment variables are set to
-  include the lib and include directories for the Berkeley DB install of your choice. 
+  include the lib and include directories for the Berkeley DB install of your choice.
   The wormtable help page cited above provides more detailed instructions, or
   see the `Appendix`_ to this README for an example install on that platform.)
 
-* Create a python sandbox directory using virtualenv, preferably 
+* Create a python sandbox directory using virtualenv, preferably
   *not* inside the ga4gh server directory. For an good introduction
   to using virtualenv, see the `Python Guide page
   <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_.
   On some systems, you may need to specify the --no-site-packages
-  option to ensure a clean dependency install. For example, to 
+  option to ensure a clean dependency install. For example, to
   create a sandbox named ``testenv``::
 
   $ virtualenv --no-site-packages testenv
@@ -85,9 +85,9 @@ General installation procedure:
   $ python setup.py install
   $ nosetests
 
-A successfull install should result in a clean run of all the tests, 
+A successfull install should result in a clean run of all the tests,
 resulting in a line of dots followed by ``OK``. If this still isn't working,
-you may want to check the `Appendix`_ at the end of this README for 
+you may want to check the `Appendix`_ at the end of this README for
 system-specific installation examples.
 
 ********************************
@@ -132,15 +132,15 @@ the downloaded datafile::
 
 To run queries against this server, we can use the ``ga4gh_client`` program;
 for example, here we run the ``variants/search`` method over the
-``1000g_2013`` variant set, where the reference name is ``1``
+``1000g_2013.wt`` variant set, where the reference name is ``1``
 and we only want calls returned for call set ID HG03279::
 
-    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013 -r 1 -c HG03279 | less -S
+    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013.wt -r 1 -c HG03279 | less -S
 
 We can also query against the *variant name*; here we return the variant that
 has variant name ``rs75454623``::
 
-    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013 -r 1 -n rs75454623  | less -S
+    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013.wt -r 1 -n rs75454623  | less -S
 
 +++++++++++++++++++++
 Converting 1000G data
@@ -230,10 +230,10 @@ like Apache and Nginx.
 
 Configuration parameters are specified in the file ga4gh/server/config.py;
 they can be overridden by setting the absolute path of a file containing
-new values in the environment variable GA4GH_CONFIGURATION. 
+new values in the environment variable GA4GH_CONFIGURATION.
 
 ********
-Appendix 
+Appendix
 ********
 
 **system specific install examples**
@@ -251,6 +251,6 @@ MacOS X (with MacPorts)::
   $ nosetests
 
 *TODO* Append examples of installs (using package managers if possible, no dependency
-installs from source) on the target platform of your choice. 
+installs from source) on the target platform of your choice.
 
 
