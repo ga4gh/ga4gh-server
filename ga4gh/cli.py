@@ -11,11 +11,9 @@ import time
 import argparse
 import sys
 
-import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.protocol as protocol
 import ga4gh.converters as converters
-import ga4gh.datamodel.variants as variants
 import ga4gh.frontend as frontend
 
 
@@ -243,15 +241,11 @@ def addGlobalOptions(parser):
         "--port", "-P", default=8000, type=int,
         help="The port to listen on")
     parser.add_argument(
-        "--config", "-C", default='DefaultConfig', type=str,
+        "--config", "-c", default='DevelopmentConfig', type=str,
         help="The configuration to use")
     parser.add_argument(
-        "--config-file", "-F", type=str,
+        "--config-file", "-f", type=str, default=None,
         help="The configuration file to use")
-    parser.add_argument(
-        "dataDir",
-        help="The directory containing data")
-
 
 
 def server_main(parser=None):
@@ -260,11 +254,8 @@ def server_main(parser=None):
             description="GA4GH reference server")
     addGlobalOptions(parser)
     args = parser.parse_args()
-    if 'dataDir' not in args:
-        parser.print_help()
-    else:
-        frontend.configure(args.config, args.config_file)
-        frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
+    frontend.configure(args.config, args.config_file)
+    frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
 
 
 ##############################################################################

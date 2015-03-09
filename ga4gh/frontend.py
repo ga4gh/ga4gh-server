@@ -16,6 +16,7 @@ import flask.ext.cors as cors
 import humanize
 
 import ga4gh.frontend_exceptions as frontendExceptions
+import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 
 
@@ -85,22 +86,32 @@ class ServerStatus(object):
         return urls
 
 
-def configure(config="DefaultConfig", config_file=None):
+def configure(config="DefaultConfig", configFile=None):
     configStr = 'ga4gh.serverconfig:{0}'.format(config)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
         app.config.from_envvar('GA4GH_CONFIGURATION')
-    if config_file is not None:
-        app.config.from_pyfile(config_file)
+    if configFile is not None:
+        print("configFile = ", configFile)
+        app.config.from_pyfile(configFile)
     cors.CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
-    dataSets = app.config["DATASETS"]
-    assert len(dataSets) == 1, "Only one data set currently supported"
     # Allocate the backend
-    theBackend = backend.Backend(dataSets[0])
+    # TODO is this a good way to determine what type of backend we should
+    # instantiate? We should think carefully about this. The approach of
+    # using the special strings __SIMULATED__ and __EMPTY__ seems OK for
+    # now, but is certainly not ideal.
+    dataSource = app.config["DATA_SOURCE"]
+    if dataSource == "__SIMULATED__":
+        raise NotImplementedError("Simulated dataset not implemented")
+    elif dataSource == "__EMPTY__":
+        theBackend = backend.MockBackend()
+    else:
+        theBackend = backend.Backend(dataSource)
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
     app.backend = theBackend
+
 
 def handleHttpPost(request, endpoint):
     """
