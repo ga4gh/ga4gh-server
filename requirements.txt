@@ -12,4 +12,5 @@ pep8
 pysam
 pyyaml
 requests
+snakefood
 wormtable
