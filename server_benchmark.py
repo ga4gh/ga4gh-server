@@ -20,7 +20,7 @@ import ga4gh.datamodel.variants as variants
 import guppy
 
 
-class HeapProfilerBackend(ga4gh.backend.Backend):
+class HeapProfilerBackend(ga4gh.backend.FileSystemBackend):
     def __init__(self, dataDir, variantSetClass):
         super(HeapProfilerBackend, self).__init__(dataDir, variantSetClass)
         self.profiler = guppy.hpy()
@@ -32,7 +32,7 @@ class HeapProfilerBackend(ga4gh.backend.Backend):
         print(self.profiler.heap())
 
 
-class CpuProfilerBackend(ga4gh.backend.Backend):
+class CpuProfilerBackend(ga4gh.backend.FileSystemBackend):
     def __init__(self, dataDir, variantSetClass):
         super(CpuProfilerBackend, self).__init__(dataDir, variantSetClass)
         self.profiler = cProfile.Profile()
@@ -132,7 +132,7 @@ if __name__ == '__main__':
                              'from each test case (default: %(default)s)')
     args = parser.parse_args()
 
-    backendClass = ga4gh.backend.Backend
+    backendClass = ga4gh.backend.FileSystemBackend
     if args.profile == 'heap':
         backendClass = HeapProfilerBackend
         args.repeatLimit = 1
