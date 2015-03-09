@@ -55,7 +55,7 @@ class WormtableTestFixture(object):
             subprocess.check_call(cmd)
 
     def setUp(self):
-        for filename in glob.glob("tests/data/*.vcf.gz"):
+        for filename in glob.glob("tests/data/variants/example_*/*.vcf.gz"):
             self.convertVariantSet(filename)
 
     def tearDown(self):

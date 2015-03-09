@@ -34,14 +34,25 @@ class ReferenceSet(object):
             self._referenceIdMap[referenceId] = reference
         self._referenceIds = sorted(self._referenceIdMap.keys())
 
+    def getReferences(self):
+        """
+        Returns the References in this ReferenceSet.
+        """
+        return self._referenceIdMap.values()
+
     def toProtocolElement(self):
         """
         Returns the GA4GH protocol representation of this ReferenceSet.
         """
-        referenceSet = protocol.GAReferenceSet()
-        referenceSet.id = self._id
-        # TODO fill out details
-        return referenceSet
+        ret = protocol.GAReferenceSet()
+        ret.id = self._id
+        ret.description = "TODO"
+        ret.sourceURI = None
+        ret.assemblyId = None
+        ret.md5checksum = "TODO"
+        ret.ncbiTaxonId = None
+        ret.sourceAccessions = []
+        return ret
 
 
 class Reference(object):
