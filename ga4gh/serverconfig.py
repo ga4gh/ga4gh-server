@@ -16,10 +16,20 @@ class DefaultConfig(object):
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
     REQUEST_VALIDATION = False
     RESPONSE_VALIDATION = False
+    DATA_SOURCE = "__EMPTY__"
+
+    # Options for the simulated backend.
     SIMULATED_BACKEND_RANDOM_SEED = 0
     SIMULATED_BACKEND_NUM_CALLS = 1
     SIMULATED_BACKEND_VARIANT_DENSITY = 0.5
     SIMULATED_BACKEND_NUM_VARIANT_SETS = 1
+
+
+class DevelopmentConfig(DefaultConfig):
+    """
+    Configuration used for development.
+    """
+    DATA_SOURCE = "ga4gh-example-data"
 
 
 class TestConfig(DefaultConfig):

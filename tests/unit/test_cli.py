@@ -16,7 +16,9 @@ import ga4gh.client as client
 
 class TestNoInput(unittest.TestCase):
     """
-    Test the cli as if there was no input; print_help should be called
+    Test the cli as if there was no input; print_help should be called.
+    The development server is a special case here, as it works without
+    arguments.
     """
     def setUp(self):
         self.parser = StubArgumentParser(self)
@@ -34,9 +36,6 @@ class TestNoInput(unittest.TestCase):
 
     def testGa2SamNoInput(self):
         cli.ga2sam_main(self.parser)
-
-    def testServerNoInput(self):
-        cli.server_main(self.parser)
 
     def testCliNoInput(self):
         cli.client_main(self.parser)
