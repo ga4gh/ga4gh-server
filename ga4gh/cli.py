@@ -11,11 +11,9 @@ import time
 import argparse
 import sys
 
-import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.protocol as protocol
 import ga4gh.converters as converters
-import ga4gh.datamodel.variants as variants
 import ga4gh.frontend as frontend
 
 
@@ -243,26 +241,11 @@ def addGlobalOptions(parser):
         "--port", "-P", default=8000, type=int,
         help="The port to listen on")
     parser.add_argument(
-        "--config", "-C", default='DefaultConfig', type=str,
+        "--config", "-c", default='DevelopmentConfig', type=str,
         help="The configuration to use")
     parser.add_argument(
-        "--config-file", "-F", type=str,
+        "--config-file", "-f", type=str, default=None,
         help="The configuration file to use")
-    parser.add_argument(
-        "dataDir",
-        help="The directory containing data")
-
-
-def addHtslibParser(subparsers):
-    parser = subparsers.add_parser(
-        "htslib",
-        description="Serve the API using a tabix based backend.",
-        help="Serve data from Htslib indexed VCF/BCFs")
-    parser.add_argument(
-        "dataDir",
-        help="The directory containing VCF/BCFs")
-    parser.set_defaults(variantSetClass=variants.HtslibVariantSet)
-    return parser
 
 
 def server_main(parser=None):
@@ -271,29 +254,8 @@ def server_main(parser=None):
             description="GA4GH reference server")
     addGlobalOptions(parser)
     args = parser.parse_args()
-    if 'dataDir' not in args:
-        parser.print_help()
-    else:
-        frontend.configure(args.config, args.config_file)
-        if args.dataDir == "simulated":
-            randomSeed = frontend.app.config[
-                "SIMULATED_BACKEND_RANDOM_SEED"]
-            numCalls = frontend.app.config[
-                "SIMULATED_BACKEND_NUM_CALLS"]
-            variantDensity = frontend.app.config[
-                "SIMULATED_BACKEND_VARIANT_DENSITY"]
-            numVariantSets = frontend.app.config[
-                "SIMULATED_BACKEND_NUM_VARIANT_SETS"]
-            theBackend = backend.SimulatedBackend(
-                randomSeed, numCalls, variantDensity, numVariantSets)
-        else:
-            theBackend = backend.FileSystemBackend(args.dataDir)
-        theBackend.setRequestValidation(
-            frontend.app.config["REQUEST_VALIDATION"])
-        theBackend.setResponseValidation(
-            frontend.app.config["RESPONSE_VALIDATION"])
-        frontend.app.backend = theBackend
-        frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
+    frontend.configure(args.config, args.config_file)
+    frontend.app.run(host="0.0.0.0", port=args.port, debug=True)
 
 
 ##############################################################################

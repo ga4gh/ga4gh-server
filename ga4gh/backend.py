@@ -292,6 +292,12 @@ class AbstractBackend(object):
         self._responseValidation = responseValidation
 
 
+class EmptyBackend(AbstractBackend):
+    """
+    A GA4GH backend that contains no data.
+    """
+
+
 class SimulatedBackend(AbstractBackend):
     """
     A GA4GH backend backed by no data; used mostly for testing
