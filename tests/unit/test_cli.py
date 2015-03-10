@@ -12,6 +12,7 @@ import mock
 import ga4gh.cli as cli
 import ga4gh.protocol as protocol
 import ga4gh.client as client
+import ga4gh.converters as converters  # NOQA
 
 
 class TestNoInput(unittest.TestCase):
