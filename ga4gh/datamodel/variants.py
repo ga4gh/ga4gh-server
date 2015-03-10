@@ -540,7 +540,8 @@ class HtslibVariantSet(AbstractVariantSet):
         variant.start = record.start          # 0-based inclusive
         variant.end = record.stop             # 0-based exclusive
         variant.referenceBases = record.ref
-        variant.alternateBases = list(record.alts)
+        if record.alts is not None:
+            variant.alternateBases = list(record.alts)
         # record.filter and record.qual are also available, when supported
         # by GAVariant.
         for key, value in record.info.iteritems():
@@ -569,7 +570,7 @@ class HtslibVariantSet(AbstractVariantSet):
         if variantName is not None:
             raise NotImplementedError(
                 "Searching by variantName is not supported")
-        if len(callSetIds) != 0:
+        if callSetIds is not None:
             raise NotImplementedError(
                 "Specifying call set ids is not supported")
         if referenceName in self._chromFileMap:
