@@ -9,7 +9,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-class DefaultConfig(object):
+class BaseConfig(object):
     """
     Simplest default server configuration.
     """
@@ -25,14 +25,25 @@ class DefaultConfig(object):
     SIMULATED_BACKEND_NUM_VARIANT_SETS = 1
 
 
-class DevelopmentConfig(DefaultConfig):
+class DevelopmentConfig(BaseConfig):
     """
     Configuration used for development.
     """
     DATA_SOURCE = "ga4gh-example-data"
+    DEBUG = True
 
 
-class TestConfig(DefaultConfig):
+class ProductionConfig(BaseConfig):
+    """
+    Configuration that is a good basis for production deployments.
+    """
+    REQUEST_VALIDATION = True
+    # We should complain loudly if data source is not set, rather than
+    # mysteriously serve no data.
+    DATA_SOURCE = None
+
+
+class TestConfig(BaseConfig):
     """
     Configuration used in frontend unit tests.
     """

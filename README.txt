@@ -39,10 +39,166 @@ Our aims for this implementation are:
     for details). This allows for easy installation of the ``ga4gh`` reference code
     across a range of operating systems.
 
+*************************************
+Configuration file and data hierarchy
+*************************************
 
-*******************************
-Installing the reference server
-*******************************
+The GA4GH reference server is a `Flask application <http://flask.pocoo.org/>`_
+and uses the standard `Flask configuration file mechanisms
+<http://flask.pocoo.org/docs/0.10/config/>`_. An example configuration file
+might look like::
+
+    DATA_SOURCE = "/path/to/data/root"
+    # TODO other example config
+
+Data is input to the GA4GH server as a directory hierarchy, in which
+the structure of data to be served is represented by the filesystem. For now,
+we support only one dataset, but this will be generalised to multiple
+datasets in later releases. An example data layout might be::
+
+    ga4gh-data/
+        /variants/
+            variantSet1/
+                chr1.vcf.gz
+                chr1.vcf.gz.tbi
+                chr2.vcf.gz
+                chr2.vcf.gz.tbi
+                # More VCFs
+            variantSet2/
+                chr1.bcf
+                chr1.bcf.csi
+                chr2.bcf
+                chr2.bcf.csi
+                # More VCFs
+        /reads/
+            readGroupSet1
+                # TODO fill in details for read data.
+
+************
+Installation
+************
+
+There are three different types of installation that we deal with here:
+`Deployment`_, `Client tools`_ and `Development`_ installations. A
+deployment installation is a production server, usually using Apache
+or another web server on a dedicated machine. A client tools installation
+creates a sandbox in which a user can easily try out the GA4GH client
+utilities, and run queries against arbitrary servers (specifically,
+any server running the correct version of the GA4GH API; not necessarily
+this implementation). Finally, a development installation is a local
+installation used for either development of GA4GH reference server itself,
+or client applications depending on the reference Python client libraries.
+
+----------
+Deployment
+----------
+
+To deploy on Apache on Debian/Ubuntu platforms, do the following.
+
+- Install some basic pre-requisite packages::
+
+  $ sudo apt-get install python-dev zlib1g-dev libdb-dev
+
+- Install Apache and mod_wsgi, and enable mod_wsgi::
+
+  $ sudo apt-get install apache2 libapache2-mod-wsgi
+  $ sudo a2enmod wsgi
+
+- Create the python egg cache directory, and make it writable by
+  www-data::
+
+  $ sudo mkdir /var/cache/apache2/python-egg-cache
+  $ sudo chown www-data:www-data /var/cache/apache2/python-egg-cache/
+
+- Create a directory to hold the GA4GH server code, configuration
+  and data. For convenience, we make this owned by the current user
+  (but make sure all the files are world-readable).::
+
+  $ sudo mkdir /srv/ga4gh
+  $ sudo chown $USER /srv/ga4gh
+  $ cd /srv/ga4gh
+
+- Make a virtualenv, and install the ga4gh package::
+
+  $ virtualenv ga4gh-server-env
+  $ source ga4gh-server-env/bin/activate
+  $ pip install --pre ga4gh  # We need the --pre because ga4gh is pre-release
+  $ deactivate
+
+- Download and unpack the example data::
+
+  $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar.gz
+  $ tar -zxf ga4gh-example-data.tar.gz
+
+- Create the WSGI file at ``/srv/ga4gh/application.wsgi`` and write the following
+  contents::
+
+    from ga4gh.frontend import app as application
+    import ga4gh.frontend as frontend
+    frontend.configure("/srv/ga4gh/config.py")
+
+- Create the configuration file at ``/srv/ga4gh/config.py``, and write the
+  following contents::
+
+    DATA_SOURCE = "/srv/ga4gh/ga4gh-example-data"
+
+- Configure Apache. Edit the file ``/etc/apache2/sites-enabled/000-default.conf``
+  and insert the following contents towards the end of the file
+  (*within* the ``<VirtualHost:80>...</VirtualHost>`` block)::
+
+    WSGIDaemonProcess ga4gh python-path=/srv/ga4gh/ga4gh-server-env/lib/python2.7/site-packages python-eggs=/var/cache/apache2/python-egg-cache
+    WSGIScriptAlias /ga4gh /srv/ga4gh/application.wsgi
+
+    <Directory /srv/ga4gh>
+        WSGIProcessGroup ga4gh
+        WSGIApplicationGroup %{GLOBAL}
+        Require all granted
+    </Directory>
+
+- Restart Apache::
+
+  $ sudo service apache restart
+
+- Test the installation by pointing a web-browser at the root URL; for example,
+  to test on the installation server use::
+
+    $ links http://localhost/ga4gh
+
+  To test the API, make a development installation and try running some
+  `Example client queries`_ against the server
+
+These instructions are just one way in which we can achieve the same thing.
+There are any number of different ways in which we can set up a WSGI
+application under Apache, which may be preferable in different installations.
+(In particular, the Apache configuration here may be specific to
+Ubuntu 14.04, where this was tested.)
+See the `mod_wsgi documentation <https://code.google.com/p/modwsgi/>` for
+more details. These instructions are also specific to Debian/Ubuntu and
+different commands and directory structures will be required on
+different platforms.
+
+The server can be deployed on any WSGI compliant web server. See the
+instructions in the `Flask documentation
+<http://flask.pocoo.org/docs/0.10/deploying/>` for more details on
+how to deploy on various other servers.
+
++++++++++++++++
+Troubleshooting
++++++++++++++++
+
+If you are encountering difficulties getting the above to work, it is helpful
+to turn on debugging output. Do this by adding the following line to your
+config file::
+
+    DEBUG = True
+
+When an error occurs, the details of this will then be printed to the web server's
+error log (in Apache on Debian/Ubuntu, for example, this is ``/var/log/apache2/error.log``).
+
+
+------------
+Client tools
+------------
 
 Prerequisites:
 
@@ -59,7 +215,8 @@ General installation procedure:
 * (On MacOS X, make sure the LDFLAGS and CFLAGS environment variables are set to
   include the lib and include directories for the Berkeley DB install of your choice.
   The wormtable help page cited above provides more detailed instructions, or
-  see the `Appendix`_ to this README for an example install on that platform.)
+  see the `System specific install examples`_ section for an example install
+  on that platform.)
 
 * Create a python sandbox directory using virtualenv, preferably
   *not* inside the ga4gh server directory. For an good introduction
@@ -87,32 +244,8 @@ General installation procedure:
 
 A successfull install should result in a clean run of all the tests,
 resulting in a line of dots followed by ``OK``. If this still isn't working,
-you may want to check the `Appendix`_ at the end of this README for
-system-specific installation examples.
+you may want to check the `System specific install examples`_ section.
 
-********************************
-Serving variants from a VCF file
-********************************
-
-Two implementations of the variants API are available that can serve data based
-on existing VCF files. These backends are based on tabix and `wormtable
-<http://www.biomedcentral.com/1471-2105/14/356>`_, which is a Python library to
-handle large scale tabular data. See `Wormtable backend`_ for instructions on
-serving VCF data from the GA4GH API.
-
-*****************
-Wormtable backend
-*****************
-
-The wormtable backend allows us to serve variants from an arbitrary VCF file.
-The VCF file must first be converted to wormtable format using the ``vcf2wt``
-utility (the `wormtable tutorial
-<http://pythonhosted.org/wormtable/tutorial.html>`_ discusses this process).
-A subset (1000 rows for each chromosome) of the 1000 Genomes VCF data (20110521
-and 20130502 releases) has been prepared and converted to wormtable format
-and made available `here <http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar.gz>`_.
-See `Converting 1000G data`_ for more information on converting 1000 genomes
-data into wormtable format.
 
 To run the server on this example dataset, follow the steps on
 installing the server, then download and unpack the example data ::
@@ -125,10 +258,22 @@ script, which will do these steps for you::
 
     $ python scripts/update_data.py
 
-You can now run the server, telling it to serve variants from the sets in
+You can now run the server, which will by default serve variants from the sets in
 the downloaded datafile::
 
-    $ ga4gh_server ga4gh-example-data
+    $ ga4gh_server
+
+To change the data that is served,  a configuration file can be specified using
+the ``-f <config_file>`` command line argument. Run::
+
+    $ ga4gh_server --help
+
+for details on the options for this program.
+
+
+++++++++++++++++++++++
+Example client queries
+++++++++++++++++++++++
 
 To run queries against this server, we can use the ``ga4gh_client`` program;
 for example, here we run the ``variants/search`` method over the
@@ -142,101 +287,11 @@ has variant name ``rs75454623``::
 
     $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013.wt -r 1 -n rs75454623  | less -S
 
-+++++++++++++++++++++
-Converting 1000G data
-+++++++++++++++++++++
-
-To duplicate the data for the above example, we must first create VCF files
-that contain the entire variant set of interest. The VCF files for the set
-mentioned above have been made `available
-<http://www.well.ox.ac.uk/~jk/ga4gh-example-source.tar.gz>`_. After downloading
-and extracting these files, we can build the wormtable using ``vcf2wt``::
-
-    $ vcf2wt 1000g_2013-subset.vcf -s schema-1000g_2013.xml -t 1000g_2013
-
-Schemas for the 2011 and 2013 1000G files have been provided as these do a
-more compact job of storing the data than the default auto-generated schemas.
-We must also truncate and remove some columns because of a current limitation
-in the length of strings that wormtable can handle.
-After building the table, we must create indexes on the ``POS`` and ``ID`` columns::
-
-    $ wtadmin add 1000g_2013 CHROM+POS
-    $ wtadmin add 1000g_2013 CHROM+ID
-
-The ``wtadmin`` program supports several
-commands to administer and examine the dataset; see ``wtadmin help`` for details.
-These commands and schemas also work for the full 1000G data; however, it is
-important to specify a sufficiently large `cache size
-<http://pythonhosted.org/wormtable/performance.html#cache-tuning>`_ when
-building and indexing such large tables.
-
-*************
-Tabix backend
-*************
-
-The tabix backend allows us to serve variants from an arbitrary VCF file.  The
-VCF file must first be indexed with `tabix
-<http://samtools.sourceforge.net/tabix.shtml>`_.  Many projects, including the
-`1000 genomes project
-<http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/>`_, release files
-with tabix indices already precomputed.  This backend can serve such datasets
-without any preprocessing via the command::
-
-    $ ga4gh_server DATADIR
-
-where DATADIR is a directory that contains subdirectories of tabix-indexed VCF
-file(s).  There cannot be more than one VCF file in any subdirectory that has
-data for the same reference contig.
-
-******
-Layout
-******
-
-The code for the project is held in the ``ga4gh`` package, which corresponds to
-the ``ga4gh`` directory in the project root. Within this package, the
-functionality is split between the ``client``, ``server``, ``protocol`` and
-``cli`` modules.  The ``cli`` module contains the definitions for the
-``ga4gh_client`` and ``ga4gh_server`` programs.
-
-For development purposes, it is useful to be able to run the command line
-programs directly without installing them. To do this, use the
-``server_dev.py`` and ``client_dev.py`` scripts. (These are just shims to
-facilitate development, and are not intended to be distributed.  The
-distributed versions of the programs are packaged using the setuptools
-``entry_point`` key word; see ``setup.py`` for details). For example, the run
-the server command simply run::
-
-    $ python server_dev.py
-    usage: server_dev.py [-h] [--port PORT] [--verbose] {help,wormtable,tabix} ...
-    server_dev.py: error: too few arguments
-
-++++++++++++
-Coding style
-++++++++++++
-
-The code follows the guidelines of `PEP 8
-<http://legacy.python.org/dev/peps/pep-0008>`_ in most cases. The only notable
-difference is the use of camel case over underscore delimited identifiers; this
-is done for consistency with the GA4GH API. Code should be checked for compliance
-using the `pep8 <https://pypi.python.org/pypi/pep8>`_ tool.
 
 
-**********
-Deployment
-**********
-
-*TODO* Give simple instructions for deploying the server on common platforms
-like Apache and Nginx.
-
-Configuration parameters are specified in the file ga4gh/server/config.py;
-they can be overridden by setting the absolute path of a file containing
-new values in the environment variable GA4GH_CONFIGURATION.
-
-********
-Appendix
-********
-
-**system specific install examples**
+++++++++++++++++++++++++++++++++
+System specific install examples
+++++++++++++++++++++++++++++++++
 
 MacOS X (with MacPorts)::
 
@@ -253,4 +308,41 @@ MacOS X (with MacPorts)::
 *TODO* Append examples of installs (using package managers if possible, no dependency
 installs from source) on the target platform of your choice.
 
+-----------
+Development
+-----------
 
+A development installation of the GA4GH reference implementation is a local
+copy of the ``server`` repo, along with all of the tools required for development.
+Please ensure that all the system requirements (as listed above) are installed, and
+clone a local copy of the repo. Install all of the required Python libraries
+into your Python user installation::
+
+    $ pip install -r requirements.txt --user
+
+All of the command line interface utilities have local scripts
+that simplify development: for example, we can run the local version of the
+``ga2sam`` program by using::
+
+    $ python ga2sam_dev.py
+
+To run the server locally in development mode, we can use the ``server_dev.py``
+script, e.g.::
+
+    $ python server_dev.py
+
+will run a server using the default configuration. This default configuration
+expects a data hierarchy to exist in the ``ga4gh-example-data`` directory.
+This default configuration can be changed by providing a (fully qualified)
+path to a configuration file (see the `Configuration file and data hierarchy`_
+section for details).
+
+++++++
+Layout
+++++++
+
+The code for the project is held in the ``ga4gh`` package, which corresponds to
+the ``ga4gh`` directory in the project root. Within this package, the
+functionality is split between the ``client``, ``server``, ``protocol`` and
+``cli`` modules.  The ``cli`` module contains the definitions for the
+``ga4gh_client`` and ``ga4gh_server`` programs.
