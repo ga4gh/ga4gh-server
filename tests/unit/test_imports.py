@@ -20,7 +20,7 @@ from snakefood.find import ERROR_IMPORT, ERROR_SYMBOL, ERROR_UNUSED
 from snakefood.fallback.collections import defaultdict
 from snakefood.roots import find_roots, relfile
 
-from tests import utils
+import tests.utils as utils
 
 
 graph = None
@@ -162,9 +162,9 @@ class ImportGraphLayerChecker(object):
     moduleGroupNames = {
         'cli': ['ga4gh/cli.py'],
         'client': ['ga4gh/client.py'],
-        'frontend': ['ga4gh/frontend.py', 'ga4gh/frontend_exceptions.py'],
+        'frontend': ['ga4gh/frontend.py'],
         'backend': ['ga4gh/backend.py'],
-        'backendExceptions': ['ga4gh/backend_exceptions.py'],
+        'exceptions': ['ga4gh/exceptions.py'],
         'datamodel': ['ga4gh/datamodel/reads.py',
                       'ga4gh/datamodel/references.py',
                       'ga4gh/datamodel/variants.py'],
@@ -180,7 +180,7 @@ class ImportGraphLayerChecker(object):
         ['frontend'],
         ['backend'],
         ['datamodel', 'libraries'],
-        ['backendExceptions'],
+        ['exceptions'],
         ['config'],
         ['protocol'],
     ]

@@ -13,7 +13,7 @@ import random
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
-import ga4gh.backend_exceptions as backendExceptions
+import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.variants as variants
 
 
@@ -268,7 +268,7 @@ class AbstractBackend(object):
         """
         if self._requestValidation:
             if not requestClass.validate(jsonDict):
-                raise backendExceptions.RequestValidationFailureException()
+                raise exceptions.RequestValidationFailureException()
 
     def validateResponse(self, jsonDict, responseClass):
         """
@@ -277,7 +277,7 @@ class AbstractBackend(object):
         """
         if self._responseValidation:
             if not responseClass.validate(jsonDict):
-                raise backendExceptions.ResponseValidationFailureException()
+                raise exceptions.ResponseValidationFailureException()
 
     def setRequestValidation(self, requestValidation):
         """
