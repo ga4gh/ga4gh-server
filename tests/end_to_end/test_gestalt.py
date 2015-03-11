@@ -5,9 +5,9 @@ An end to end test which tests:
 - client logging
 - server cmd line parsing
 - server operation
+- simulated variantSet backend
 - server logging
 """
-
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -17,13 +17,20 @@ import shlex
 import subprocess
 
 import ga4gh.protocol as protocol
-import test_server as testServer
+import server as server
 
 
-class TestGestalt(testServer.ServerTest):
+class TestGestalt(server.ServerTestConfigFile):
     """
     An end-to-end test of the client and server
     """
+    def setConfig(self):
+        self.config = """
+SIMULATED_BACKEND_NUM_VARIANT_SETS = 10
+SIMULATED_BACKEND_VARIANT_DENSITY = 1
+DATA_SOURCE = "__SIMULATED__"
+"""
+
     def setUp(self):
         self.client = None
         self.clientOutFile = None
@@ -48,7 +55,7 @@ class TestGestalt(testServer.ServerTest):
         self.clientErrFile.seek(0)
         serverOutLines = self.getServerOutLines()
         serverErrLines = self.getServerErrLines()
-        # clientOutLines = self.clientOutFile.readlines()
+        clientOutLines = self.clientOutFile.readlines()
         clientErrLines = self.clientErrFile.readlines()
 
         # nothing should be written to server stdout
@@ -67,12 +74,13 @@ class TestGestalt(testServer.ServerTest):
             "No successful server response logged to stderr")
 
         # client stdout should not be empty
-        # TODO uncomment when results actually returned
-        """
         self.assertNotEqual(
             [], clientOutLines,
             "Client stdout log is empty")
-        """
+
+        # num of client stdout should be twice the value of
+        # SIMULATED_BACKEND_NUM_VARIANT_SETS
+        self.assertEqual(len(clientOutLines), 20)
 
         # client stderr should log at least one post
         requestFound = False
@@ -86,7 +94,7 @@ class TestGestalt(testServer.ServerTest):
 
     def runRequest(self):
         clientCmdLine = """python client_dev.py -v -O variants-search
-            -V 1000g_2013 -r 1 -c HG03279 {}/v{}""".format(
+            -s0 -e2 {}/v{}""".format(
             self.serverUrl, protocol.version)
         splits = shlex.split(clientCmdLine)
         self.client = subprocess.check_call(
