@@ -24,4 +24,4 @@ script:
   - flake8 tests ga4gh scripts
   - coverage erase
   - nosetests --with-coverage --cover-package ga4gh
-              --cover-inclusive --cover-min-percentage 80
+              --cover-inclusive --cover-min-percentage 85
