@@ -19,12 +19,6 @@ class ServerTest(unittest.TestCase):
     """
     Manages server bootup and shutdown for a test
     """
-    serverCmdLine = """
-        python server_dev.py
-        --dont-use-reloader
-        --config TestConfig
-        --port {} """
-
     def run(self, *args, **kwargs):
         self.setupServer()
         try:
@@ -52,7 +46,7 @@ class ServerTest(unittest.TestCase):
     def startServer(self):
         self.serverOutFile = tempfile.TemporaryFile()
         self.serverErrFile = tempfile.TemporaryFile()
-        splits = shlex.split(self.serverCmdLine.format(self.port))
+        splits = shlex.split(self.getServerCmdLine())
         self.server = subprocess.Popen(
             splits, stdout=self.serverOutFile,
             stderr=self.serverErrFile)
@@ -79,8 +73,9 @@ class ServerTest(unittest.TestCase):
     def shutDownServer(self):
         if self._isServerRunning():
             self.server.kill()
-        self.server.wait()
-        self._assertServerShutdown()
+        if self.server is not None:
+            self.server.wait()
+            self._assertServerShutdown()
         self.serverOutFile.close()
         self.serverErrFile.close()
 
@@ -112,3 +107,39 @@ class ServerTest(unittest.TestCase):
         self.serverErrFile.seek(0)
         serverErrLines = self.serverErrFile.readlines()
         return serverErrLines
+
+    def getServerCmdLine(self):
+        serverCmdLine = """
+            python server_dev.py
+            --dont-use-reloader
+            --config TestConfig
+            --port {} """.format(self.port)
+        return serverCmdLine
+
+
+class ServerTestConfigFile(ServerTest):
+    """
+    Launch a server test, but with a custom configuration file
+    """
+    def run(self, *args, **kwargs):
+        self.config = None
+        self.configFile = None
+        self.configFilePath = None
+        super(ServerTestConfigFile, self).run(*args, **kwargs)
+
+    def setConfig(self):
+        raise NotImplementedError("ServerTestConfigFile must be subclassed")
+
+    def getServerCmdLine(self):
+        self.setConfig()
+        self.configFile = tempfile.NamedTemporaryFile()
+        self.configFile.write(self.config)
+        self.configFile.flush()
+        self.configFilePath = self.configFile.name
+        serverCmdLine = """
+            python server_dev.py
+            --dont-use-reloader
+            --config TestConfig
+            --config-file {}
+            --port {} """.format(self.configFilePath, self.port)
+        return serverCmdLine
