@@ -1,5 +1,5 @@
 """
-Convert a BAM file to a small SAM file
+Convert a BAM file to a small BAM file
 """
 from __future__ import division
 from __future__ import print_function
@@ -12,7 +12,7 @@ import utils
 def main():
     tool = utils.AlignmentFileTool(
         utils.AlignmentFileConstants.BAM,
-        utils.AlignmentFileConstants.SAM)
+        utils.AlignmentFileConstants.BAM)
     tool.parseArgs()
     tool.convert()
 
