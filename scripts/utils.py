@@ -7,11 +7,14 @@ from __future__ import unicode_literals
 
 import functools
 import os
+import shlex
+import subprocess
 import sys
 import time
 
 import humanize
 import requests
+import yaml
 
 
 def log(message):
@@ -92,3 +95,38 @@ class FileDownloader(object):
         self.stream.write(displayString.format(
             fileName, percentage, numerator, denominator))
         self.stream.flush()
+
+
+def runCommandSplits(splits, silent=False):
+    """
+    Run a shell command given the command's parsed command line
+    """
+    if silent:
+        with open(os.devnull, 'w') as devnull:
+            subprocess.check_call(splits, stdout=devnull, stderr=devnull)
+    else:
+        subprocess.check_call(splits)
+
+
+def runCommand(command, silent=False):
+    """
+    Run a shell command
+    """
+    splits = shlex.split(command)
+    runCommandSplits(splits, silent=silent)
+
+
+def getAuthValues(filePath='scripts/auth.yml'):
+    """
+    Return the script authentication file as a dictionary
+    """
+    return getYamlDocument(filePath)
+
+
+def getYamlDocument(filePath):
+    """
+    Return a yaml file's contents as a dictionary
+    """
+    with open(filePath) as stream:
+        doc = yaml.load(stream)
+        return doc
