@@ -54,14 +54,13 @@ def variantSetFactory(variantSetId, relativePath):
     if variantSetId.endswith(".wt"):
         return WormtableVariantSet(variantSetId, relativePath)
     else:
-        return TabixVariantSet(variantSetId, relativePath)
+        return HtslibVariantSet(variantSetId, relativePath)
 
 
 class AbstractVariantSet(object):
     """
     An abstract base class of a variant set
     """
-    # TODO abstract details shared by wormtable and tabix based backends.
     def __init__(self):
         self._sampleNames = []
         self._variantSetId = None
@@ -411,73 +410,6 @@ class WormtableVariantSet(AbstractVariantSet):
             for infoField, col in self._sampleCols[sampleName]:
                 if infoField != self.GENOTYPE_NAME:
                     ret.append(buildMetadata(infoField, col))
-        return ret
-
-
-class TabixVariantSet(AbstractVariantSet):
-    """
-    Class representing a single variant set backed by a tabix directory.
-    """
-    def __init__(self, variantSetId, vcfPath):
-        super(TabixVariantSet, self).__init__()
-        self._variantSetId = variantSetId
-        self._created = protocol.convertDatetime(datetime.datetime.now())
-        self._chromTabixFileMap = {}
-        for vcfFile in glob.glob(os.path.join(vcfPath, "*.vcf.gz")):
-            tabixFile = pysam.Tabixfile(vcfFile)
-            for chrom in tabixFile.contigs:
-                if chrom in self._chromTabixFileMap:
-                    raise Exception("cannot have overlapping VCF files.")
-                self._chromTabixFileMap[chrom] = tabixFile
-
-    def convertVariant(self, record):
-        """
-        Converts the specified pysam VCF Record into a GA4GH GAVariant
-        object.
-        """
-        variant = protocol.GAVariant()
-        record = record.split('\t')
-        position = int(record[1])
-        variant.id = "{0}:{1}:{2}".format(self._variantSetId,
-                                          record[0], position)
-        variant.variantSetId = self._variantSetId
-        variant.referenceName = record[0]
-        variant.names = []
-        variant.created = self._created
-        variant.updated = self._created
-        variant.start = position
-        variant.end = position + 1  # TODO support non SNP variants
-        variant.referenceBases = record[3]
-        variant.alternateBases = [record[4].split(",")]
-        for j in range(9, len(record)):
-            c = protocol.GACall()
-            c.genotype = record[j].split(":")[0].split("[\/\|]")
-            variant.calls.append(c)
-        return variant
-
-    def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName, callSetIds):
-        """
-        Returns an iterator over the specified variants. The parameters
-        correspond to the attributes of a GASearchVariantsRequest object.
-        """
-        if variantName is not None:
-            raise exceptions.NotImplementedException(
-                "Searching by variantName is not supported")
-        if callSetIds is not None:
-            raise exceptions.NotImplementedException(
-                "Specifying call set ids is not supported")
-        if referenceName in self._chromTabixFileMap:
-            tabixFile = self._chromTabixFileMap[referenceName]
-            encodedReferenceName = referenceName.encode()
-            cursor = tabixFile.fetch(
-                encodedReferenceName, startPosition, endPosition)
-            for record in cursor:
-                yield self.convertVariant(record)
-
-    def getMetadata(self):
-        # TODO: Implement this
-        ret = []
         return ret
 
 
