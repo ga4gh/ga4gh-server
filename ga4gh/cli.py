@@ -257,7 +257,7 @@ def server_main(parser=None):
             description="GA4GH reference server")
     addGlobalOptions(parser)
     args = parser.parse_args()
-    frontend.configure(args.config, args.config_file)
+    frontend.configure(args.config_file, args.config)
     frontend.app.run(
         host="0.0.0.0", port=args.port, debug=True,
         use_reloader=not args.dont_use_reloader)

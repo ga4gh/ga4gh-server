@@ -88,8 +88,12 @@ class ServerStatus(object):
         return urls
 
 
-def configure(config="DefaultConfig", configFile=None):
-    configStr = 'ga4gh.serverconfig:{0}'.format(config)
+def configure(configFile=None, baseConfig="ProductionConfig"):
+    """
+    TODO Document this critical function! What does it do? What does
+    it assume?
+    """
+    configStr = 'ga4gh.serverconfig:{0}'.format(baseConfig)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
         app.config.from_envvar('GA4GH_CONFIGURATION')
