@@ -27,18 +27,13 @@ class TravisSimulator(object):
     def runTests(self):
         testCommands = self.parseTestCommands()
         for command in testCommands:
-            returnCode = self.runCommand(command)
-            if returnCode != 0:
+            self.log('Running: "{0}"'.format(command))
+            try:
+                utils.runCommand(command)
+            except subprocess.CalledProcessError:
                 self.log('ERROR')
                 return
         self.log('SUCCESS')
-
-    def runCommand(self, command):
-        self.log('Running: "{0}"'.format(command))
-        splits = command.split()
-        s = subprocess.Popen(splits)
-        s.communicate()
-        return s.returncode
 
     def log(self, logStr):
         utils.log("{0} {1}".format(self.logStrPrefix, logStr))

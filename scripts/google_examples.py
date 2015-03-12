@@ -6,18 +6,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import subprocess
-
-import yaml
+import shlex
 
 import utils
 
 
 def getKey():
-    filepath = 'scripts/auth.yml'
-    with open(filepath) as stream:
-        doc = yaml.load(stream)
-        key = doc['google']['key']
+    doc = utils.getAuthValues()
+    key = doc['google']['key']
     return key
 
 
@@ -63,12 +59,12 @@ def runTests():
             "minimalOutput": minimalOutput,
         }
         cmd = cmdStr.format(**cmdDict)
-        splits = cmd.split()
+        splits = shlex.split(cmd)
         cleanCmd = ' '.join(splits)
         utils.log(separator)
         utils.log(cleanCmd)
         utils.log(separator)
-        subprocess.check_call(splits)
+        utils.runCommandSplits(splits)
 
 
 if __name__ == '__main__':

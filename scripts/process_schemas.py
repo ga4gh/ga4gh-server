@@ -15,7 +15,6 @@ import os.path
 import tarfile
 import tempfile
 import argparse
-import subprocess
 import textwrap
 import re
 
@@ -308,10 +307,9 @@ class SchemaProcessor(object):
         if self.verbosity > 1:
             utils.log("running: {}".format(" ".join(args)))
         if self.verbosity > 1:
-            subprocess.check_call(args)
+            utils.runCommandSplits(args)
         else:
-            with open(os.devnull, 'w') as devnull:
-                subprocess.check_call(args, stdout=devnull, stderr=devnull)
+            utils.runCommandSplits(args, silent=True)
 
     def setupAvroJar(self):
         if self.avroJarPath is not None:
