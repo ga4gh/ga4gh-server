@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import datetime
 import os
 import glob
 
@@ -39,7 +40,8 @@ class ReadGroupSet(object):
         readGroupSet.id = self._id
         readGroupSet.readGroups = [
             readGroup.toProtocolElement() for readGroup in self._readGroups]
-        # TODO fill out details
+        readGroupSet.name = None
+        readGroupSet.datasetId = None
         return readGroupSet
 
 
@@ -57,7 +59,19 @@ class ReadGroup(object):
         """
         Returns the GA4GH protocol representation of this ReadGroup.
         """
+        now = protocol.convertDatetime(datetime.datetime.now())
         readGroup = protocol.GAReadGroup()
         readGroup.id = self._id
-        # TODO fill out details
+        readGroup.created = now
+        readGroup.updated = now
+        # TODO fill the rest of these out
+        readGroup.datasetId = None
+        readGroup.description = None
+        readGroup.experiment = None
+        readGroup.info = {}
+        readGroup.name = None
+        readGroup.predictedInsertSize = None
+        readGroup.programs = []
+        readGroup.referenceSetId = None
+        readGroup.sampleId = None
         return readGroup
