@@ -9,11 +9,9 @@ from __future__ import unicode_literals
 import unittest
 import inspect
 
-import mock
-
-import ga4gh.frontend_exceptions as frontendExceptions
-import ga4gh.backend_exceptions as backendExceptions
+import ga4gh.exceptions as exceptions
 import ga4gh.frontend as frontend
+import ga4gh.protocol as protocol
 
 
 class TestExceptionHandler(unittest.TestCase):
@@ -23,101 +21,67 @@ class TestExceptionHandler(unittest.TestCase):
     class UnknownException(Exception):
         pass
 
-    class DummyFlask(object):
+    def getGa4ghException(self, data):
+        return protocol.GAException.fromJsonString(data)
 
-        def __call__(self, *args):
-            return TestExceptionHandler.DummyResponse()
-
-    class DummyResponse(object):
-        pass
-
-    def run(self, *args, **kwargs):
-        # patching is required because flask.jsonify throws an exception
-        # if not being called in a running app context
-        dummyFlask = self.DummyFlask()
-        with mock.patch('flask.jsonify', dummyFlask):
-            super(TestExceptionHandler, self).run(*args, **kwargs)
-
-    def testMappedException(self):
-        for originalExceptionClass, mappedExceptionClass in \
-                frontendExceptions.exceptionMap.items():
-            # some exceptions require more than zero arguments to create
-            try:
-                numInitArgs = len(inspect.getargspec(
-                    originalExceptionClass.__init__).args) - 1
-                args = ['arg' for _ in range(numInitArgs)]
-                originalException = originalExceptionClass(*args)
-            except TypeError:
-                # built-in python exceptions can't use inspect
-                originalException = originalExceptionClass()
-            mappedException = mappedExceptionClass()
-            response = frontend.handleException(originalException)
-            self.assertEquals(response.status_code, mappedException.httpStatus)
-
-    def testFrontendException(self):
-        exception = frontendExceptions.ObjectNotFoundException()
+    def testObjectNotFoundException(self):
+        exception = exceptions.ObjectNotFoundException()
         response = frontend.handleException(exception)
         self.assertEquals(response.status_code, 404)
 
-    def testBackendException(self):
-        exception = backendExceptions.CallSetNotInVariantSetException(
+    def testCallSetNotInVariantSetException(self):
+        exception = exceptions.CallSetNotInVariantSetException(
             'csId', 'vsId')
         response = frontend.handleException(exception)
         self.assertEquals(response.status_code, 404)
+        gaException = self.getGa4ghException(response.data)
+        self.assertGreater(len(gaException.message), 0)
 
     def testUnknownExceptionBecomesServerError(self):
         exception = self.UnknownException()
         response = frontend.handleException(exception)
         self.assertEquals(response.status_code, 500)
 
+    def testNotImplementedException(self):
+        message = "A string unlikely to occur at random."
+        exception = exceptions.NotImplementedException(message)
+        response = frontend.handleException(exception)
+        self.assertEquals(response.status_code, 501)
+        gaException = self.getGa4ghException(response.data)
+        self.assertEquals(gaException.message, message)
+
 
 def isClassAndExceptionSubclass(class_):
     return inspect.isclass(class_) and issubclass(class_, Exception)
 
 
-class TestFrontendExceptionConsistency(unittest.TestCase):
+class TestExceptionConsistency(unittest.TestCase):
     """
-    Ensure invariants of frontend exceptions:
-    - every frontend exception has a non-None error code
-        - except FrontendException, which does
-    - every frontend exception has a unique error code
-    - every value in exceptionMap
-        - is able to instantiate a new no-argument exception instance
-        - derives from the base frontend exception type
+    Ensure invariants of exceptions:
+    - every exception has a non-None error code
+    - every exception has a unique error code
+    - every exception can be instantiated successfully
     """
-    def _getFrontendExceptionClasses(self):
+    def _getExceptionClasses(self):
         classes = inspect.getmembers(
-            frontendExceptions, isClassAndExceptionSubclass)
+            exceptions, isClassAndExceptionSubclass)
         return [class_ for _, class_ in classes]
 
     def testCodeInvariants(self):
         codes = set()
-        for class_ in self._getFrontendExceptionClasses():
-            instance = class_()
-            self.assertTrue(instance.code not in codes)
-            codes.add(instance.code)
-            if class_ == frontendExceptions.FrontendException:
-                self.assertIsNone(instance.code)
-            else:
-                self.assertIsNotNone(instance.code)
+        for class_ in self._getExceptionClasses():
+            code = class_.getErrorCode()
+            self.assertNotIn(code, codes)
+            codes.add(code)
+            self.assertIsNotNone(code)
 
-    def testExceptionMap(self):
-        for exceptionClass in frontendExceptions.exceptionMap.values():
-            exception = exceptionClass()
-            self.assertIsInstance(
-                exception, frontendExceptions.FrontendException)
-
-
-class TestBackendExceptionConsistency(unittest.TestCase):
-    """
-    Ensure invariants of backend exceptions:
-    - every backend exception is mapped
-    """
-    def _getBackendExceptionClasses(self):
-        classes = inspect.getmembers(
-            backendExceptions, isClassAndExceptionSubclass)
-        return [class_ for _, class_ in classes]
-
-    def testBackendExceptionsMapped(self):
-        for exceptionClass in self._getBackendExceptionClasses():
-            self.assertTrue(exceptionClass in frontendExceptions.exceptionMap)
+    def testInstantiation(self):
+        for class_ in self._getExceptionClasses():
+            numInitArgs = len(inspect.getargspec(class_.__init__).args) - 1
+            args = ['arg' for _ in range(numInitArgs)]
+            instance = class_(*args)
+            self.assertIsInstance(instance, exceptions.BaseServerException)
+            message = instance.getMessage()
+            self.assertIsInstance(message, basestring)
+            self.assertGreater(len(message), 0)
+            self.assertEqual(instance.getErrorCode(), class_.getErrorCode())

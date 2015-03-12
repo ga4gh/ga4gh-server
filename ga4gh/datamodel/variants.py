@@ -16,7 +16,7 @@ import pysam
 import wormtable as wt
 
 import ga4gh.protocol as protocol
-import ga4gh.backend_exceptions as backendExceptions
+import ga4gh.exceptions as exceptions
 
 
 def convertVCFPhaseset(vcfPhaseset):
@@ -329,7 +329,7 @@ class WormtableVariantSet(AbstractVariantSet):
                 try:
                     cols = [col for name, col in self._sampleCols[callSetId]]
                 except KeyError:
-                    raise backendExceptions.CallSetNotInVariantSetException(
+                    raise exceptions.CallSetNotInVariantSetException(
                         callSetId, self._variantSetId)
                 readCols.extend(cols)
         # Now we get the row positions for the sample columns
@@ -367,7 +367,8 @@ class WormtableVariantSet(AbstractVariantSet):
         """
         # TODO: implement name string search after semantics is clarified
         if name is not None:
-            raise NotImplementedError()
+            raise exceptions.NotImplementedException(
+                "Searching by name not supported")
         else:
             callSetIds = self._sampleNames[startPosition:]
             for i in range(len(callSetIds)):
@@ -461,10 +462,10 @@ class TabixVariantSet(AbstractVariantSet):
         correspond to the attributes of a GASearchVariantsRequest object.
         """
         if variantName is not None:
-            raise NotImplementedError(
+            raise exceptions.NotImplementedException(
                 "Searching by variantName is not supported")
         if callSetIds is not None:
-            raise NotImplementedError(
+            raise exceptions.NotImplementedException(
                 "Specifying call set ids is not supported")
         if referenceName in self._chromTabixFileMap:
             tabixFile = self._chromTabixFileMap[referenceName]
@@ -568,10 +569,10 @@ class HtslibVariantSet(AbstractVariantSet):
         correspond to the attributes of a GASearchVariantsRequest object.
         """
         if variantName is not None:
-            raise NotImplementedError(
+            raise exceptions.NotImplementedException(
                 "Searching by variantName is not supported")
         if callSetIds is not None:
-            raise NotImplementedError(
+            raise exceptions.NotImplementedException(
                 "Specifying call set ids is not supported")
         if referenceName in self._chromFileMap:
             varFile = self._chromFileMap[referenceName]

@@ -15,9 +15,11 @@ import flask
 import flask.ext.cors as cors
 import humanize
 
-import ga4gh.frontend_exceptions as frontendExceptions
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
+import ga4gh.exceptions as exceptions
+
+MIMETYPE = "application/json"
 
 
 app = flask.Flask(__name__)
@@ -117,69 +119,63 @@ def configure(config="DefaultConfig", configFile=None):
     app.backend = theBackend
 
 
+def getFlaskResponse(responseString, httpStatus=200):
+    """
+    Returns a Flask response object for the specified data and HTTP status.
+    """
+    return flask.Response(responseString, status=httpStatus, mimetype=MIMETYPE)
+
+
 def handleHttpPost(request, endpoint):
     """
     Handles the specified HTTP POST request, which maps to the specified
     protocol handler handpoint and protocol request class.
     """
-    mimetype = "application/json"
-    if request.mimetype != mimetype:
-        raise frontendExceptions.UnsupportedMediaTypeException()
+    if request.mimetype != MIMETYPE:
+        raise exceptions.UnsupportedMediaTypeException()
     responseStr = endpoint(request.get_data())
-    return flask.Response(responseStr, status=200, mimetype=mimetype)
+    return getFlaskResponse(responseStr)
 
 
 def handleHttpOptions():
     """
     Handles the specified HTTP OPTIONS request.
     """
-    response = flask.Response("", mimetype="application/json")
+    response = getFlaskResponse("")
     response.headers.add("Access-Control-Request-Methods", "GET,POST,OPTIONS")
     return response
 
 
 @app.errorhandler(Exception)
 def handleException(exception):
-    # if the caught exception implements toErrorMessage, extract the
-    # message to be returned to the client at this point (because
-    # the exception object may get overwritten later in the method)
-    errorMessage = None
-    if hasattr(exception, 'toErrorMessage'):
-        errorMessage = exception.toErrorMessage()
-
-    # if the type of exception is one we have registered in the exceptionMap,
-    # convert the exception to one that we want to return to the client
-    exceptionClass = exception.__class__
-    if exceptionClass in frontendExceptions.exceptionMap:
-        newExceptionClass = frontendExceptions.exceptionMap[exceptionClass]
-        exception = newExceptionClass()
-
-    # if at this point the exception is still unrecognized
-    # send the client a 500 error
-    if not isinstance(exception, frontendExceptions.FrontendException):
-        if app.config['DEBUG']:
-            print(traceback.format_exc(exception))
-        exception = frontendExceptions.ServerException()
-
-    # serialize the exception
-    error = exception.toGaException()
-    if errorMessage is not None:
-        error.message = errorMessage
-    response = flask.jsonify(error.toJsonDict())
-    response.status_code = exception.httpStatus
-    return response
+    """
+    Handles an exception that occurs somewhere in the process of handling
+    a request.
+    """
+    if app.config['DEBUG']:
+        print(traceback.format_exc(exception))
+    serverException = exception
+    if not isinstance(exception, exceptions.BaseServerException):
+        serverException = exceptions.getServerError(exception)
+    responseStr = serverException.toProtocolElement().toJsonString()
+    return getFlaskResponse(responseStr, serverException.httpStatus)
 
 
 def handleFlaskPostRequest(version, flaskRequest, endpoint):
+    """
+    Handles the specified flask request for one of the POST URLS
+    at at the specified version. Invokes the specified endpoint to
+    generate a response.
+    """
     if Version.parseString(version) != Version.parseString(protocol.version):
-        raise frontendExceptions.VersionNotSupportedException()
+        raise exceptions.VersionNotSupportedException()
 
     if flaskRequest.method == "POST":
         return handleHttpPost(flaskRequest, endpoint)
     elif flaskRequest.method == "OPTIONS":
         return handleHttpOptions()
     else:
-        raise frontendExceptions.MethodNotAllowedException()
+        raise exceptions.MethodNotAllowedException()
 
 
 @app.route('/')
@@ -190,17 +186,17 @@ def index():
 
 @app.route('/<version>/references/<id>', methods=['GET'])
 def getReference(version, id):
-    raise frontendExceptions.PathNotFoundException()
+    raise exceptions.PathNotFoundException()
 
 
 @app.route('/<version>/references/<id>/bases', methods=['GET'])
 def getReferenceBases(version, id):
-    raise frontendExceptions.PathNotFoundException()
+    raise exceptions.PathNotFoundException()
 
 
 @app.route('/<version>/referencesets/<id>', methods=['GET'])
 def getReferenceSet(version, id):
-    raise frontendExceptions.PathNotFoundException()
+    raise exceptions.PathNotFoundException()
 
 
 @app.route('/<version>/callsets/search', methods=['POST'])
@@ -217,7 +213,7 @@ def searchReadGroupSets(version):
 
 @app.route('/<version>/reads/search', methods=['POST'])
 def searchReads(version):
-    raise frontendExceptions.PathNotFoundException()
+    raise exceptions.PathNotFoundException()
 
 
 @app.route('/<version>/referencesets/search', methods=['POST'])
@@ -228,7 +224,7 @@ def searchReferenceSets(version):
 
 @app.route('/<version>/references/search', methods=['POST'])
 def searchReferences(version):
-    raise frontendExceptions.PathNotFoundException()
+    raise exceptions.PathNotFoundException()
 
 
 @app.route('/<version>/variantsets/search', methods=['POST', 'OPTIONS'])
@@ -245,20 +241,11 @@ def searchVariants(version):
 
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html
-
-
 @app.errorhandler(404)
 def pathNotFoundHandler(errorString):
-    return handleHttpError(frontendExceptions.PathNotFoundException())
+    return handleException(exceptions.PathNotFoundException())
 
 
 @app.errorhandler(405)
 def methodNotAllowedHandler(errorString):
-    return handleHttpError(frontendExceptions.MethodNotAllowedException())
-
-
-def handleHttpError(exception):
-    error = exception.toGaException()
-    response = flask.jsonify(error.toJsonDict())
-    response.status_code = exception.httpStatus
-    return response
+    return handleException(exceptions.MethodNotAllowedException())
