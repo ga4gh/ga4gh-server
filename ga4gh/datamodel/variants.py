@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 import datetime
 import glob
-import itertools
 import os
 import random
 
@@ -438,9 +437,26 @@ class HtslibVariantSet(AbstractVariantSet):
         self._variantSetId = variantSetId
         self._created = protocol.convertDatetime(datetime.datetime.now())
         self._chromFileMap = {}
+        self._callSetIds = None
         for pattern in ['*.bcf', '*.vcf.gz']:
             for filename in glob.glob(os.path.join(vcfPath, pattern)):
                 self._addFile(filename)
+
+    def _updateCallSetIds(self, variantFile):
+        """
+        Updates the call set IDs based on the specified variant file.
+        """
+        checkConsistency = True
+        if self._callSetIds is None:
+            self._callSetIds = []
+            checkConsistency = False
+
+        for sample in variantFile.header.samples:
+            if checkConsistency:
+                if sample not in self._callSetIds:
+                    raise Exception("Inconsistent sample names in VCF")
+            else:
+                self._callSetIds.append(sample)
 
     def _addFile(self, filename):
         varFile = pysam.VariantFile(filename)
@@ -454,9 +470,15 @@ class HtslibVariantSet(AbstractVariantSet):
             if not isEmptyIter(varFile.fetch(chrom)):
                 if chrom in self._chromFileMap:
                     raise Exception("cannot have overlapping VCF/BCF files.")
+                self._updateCallSetIds(varFile)
                 self._chromFileMap[chrom] = varFile
 
-    def convertVariant(self, record):
+    def convertVariant(self, record, callSetIds):
+        """
+        Converts the specified pysam variant record into a GA4GH Variant
+        object. Only calls for the specified list of callSetIds will
+        be included.
+        """
         variant = protocol.GAVariant()
         # N.B. record.pos is 1-based
         #      also consider using record.start-record.stop
@@ -482,16 +504,17 @@ class HtslibVariantSet(AbstractVariantSet):
                 variant.info[key] = _encodeValue(value)
         variant.calls = []
         for name, call in record.samples.iteritems():
-            c = protocol.GACall()
-            c.genotype = _encodeValue(call.allele_indices)
-            for key, value in record.info.iteritems():
-                if key == 'GT':
-                    c.genotype = list(call.allele_indices)
-                elif key == 'GL' and value is not None:
-                    c.genotypeLikelihood = value
-                elif value is not None:
-                    c.info[key] = _encodeValue(value)
-            variant.calls.append(c)
+            if (name in callSetIds) and (sum(call.allele_indices) > 0):
+                c = protocol.GACall()
+                c.genotype = _encodeValue(call.allele_indices)
+                for key, value in record.info.iteritems():
+                    if key == 'GT':
+                        c.genotype = list(call.allele_indices)
+                    elif key == 'GL' and value is not None:
+                        c.genotypeLikelihood = value
+                    elif value is not None:
+                        c.info[key] = _encodeValue(value)
+                variant.calls.append(c)
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
@@ -503,15 +526,16 @@ class HtslibVariantSet(AbstractVariantSet):
         if variantName is not None:
             raise exceptions.NotImplementedException(
                 "Searching by variantName is not supported")
-        if callSetIds is not None:
-            raise exceptions.NotImplementedException(
-                "Specifying call set ids is not supported")
+        if callSetIds is None:  # This will get all Variants
+            callSetIds = self._callSetIds
+        ret = []
         if referenceName in self._chromFileMap:
             varFile = self._chromFileMap[referenceName]
-            cursor = varFile.fetch(referenceName, startPosition, endPosition)
-            return itertools.imap(self.convertVariant, cursor)
-        else:
-            return []
+            cursor = varFile.fetch(
+                referenceName, startPosition, endPosition)
+            for record in cursor:
+                ret.append(self.convertVariant(record, callSetIds))
+        return ret
 
     def getMetadata(self):
         # TODO: Implement this

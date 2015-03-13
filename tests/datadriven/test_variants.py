@@ -42,9 +42,10 @@ class VariantSetTest(datadriven.DataDrivenTest):
         store locally.
         """
         vcfReader = vcf.Reader(filename=vcfFileName)
+        self.vcfSamples = vcfReader.samples
         for record in vcfReader:
-            self._variants.append(record)
             self._referenceNames.add(record.CHROM)
+            self._variants.append(record)
 
     def getDataModelClass(self):
         return variants.HtslibVariantSet
@@ -52,7 +53,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
     def getProtocolClass(self):
         return protocol.GAVariantSet
 
-    def verifyVariantsEqual(self, gaVariants, pyvcfVariants):
+    def _verifyVariantsEqual(self, gaVariants, pyvcfVariants):
         """
         Verifies that the lists of GA4GH variants and pyvcf variants
         are equivalent.
@@ -77,17 +78,29 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self.assertEqual(gaVariant.alternateBases, alt)
             # TODO check INFO fields
 
-    def testSearchAllVariants(self):
-        allVariants = []
+    def _testSearchCallSetIds(self, sampleIds):
+        if sampleIds is None:
+            sampleIds = self.vcfSamples
+        callSetVariants = []
         for referenceName in self._referenceNames:
             end = 2**30  # TODO This is arbitrary, and pysam can choke. FIX!
             variants = list(self._gaObject.getVariants(
-                referenceName, 0, end, None, None))
-            allVariants += variants
+                referenceName, 0, end, None, sampleIds))
+            callSetVariants += variants
             localVariants = [
-                v for v in self._variants if v.CHROM == referenceName]
-            self.verifyVariantsEqual(variants, localVariants)
-        self.assertEqual(len(allVariants), len(self._variants))
+                v for v in self._variants if (v.CHROM == referenceName)]
+
+            self._verifyVariantsEqual(variants, localVariants)
+        self.assertEqual(len(callSetVariants), len(self._variants))
+
+    def testSearchAllVariants(self):
+        self._testSearchCallSetIds(sampleIds=None)
+
+    def testSearchCallSetIdsEmpty(self):
+        self._testSearchCallSetIds(sampleIds=[])
+
+    def testSearchCallSetIdsFirstId(self):
+        self._testSearchCallSetIds(sampleIds=[self.vcfSamples[0]])
 
     def testVariantSetMetadata(self):
         # TODO get the metadata and test it.
