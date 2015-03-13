@@ -27,7 +27,6 @@ class VariantSetTest(datadriven.DataDrivenTest):
     a variant set, and verifies that it is consistent with the model
     built by the variants.VariantSet object.
     """
-
     def __init__(self, variantSetId, baseDir):
         super(VariantSetTest, self).__init__(variantSetId, baseDir)
         self._variants = []

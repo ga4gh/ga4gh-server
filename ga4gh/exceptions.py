@@ -122,6 +122,10 @@ class RequestValidationFailureException(BadRequestException):
                 jsonDict, requestClass))
 
 
+class BadReadsSearchRequestBothRefs(BadRequestException):
+    message = "only one of referenceId and referenceName can be specified"
+
+
 class NotFoundException(BaseServerException):
     """
     The superclass of all exceptions in which some resource was not
