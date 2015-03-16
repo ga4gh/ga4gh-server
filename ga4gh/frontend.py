@@ -15,6 +15,7 @@ import flask
 import flask.ext.cors as cors
 import humanize
 
+import ga4gh
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -49,6 +50,17 @@ class Version(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    @classmethod
+    def getVersionForUrl(cls, versionString):
+        """
+        Returns the specfied version string in a form suitable for using
+        within a URL. This involved prefixing with 'v'.
+        """
+        ret = versionString
+        if not ret.startswith("v"):
+            ret = "v{}".format(versionString)
+        return ret
+
 
 class ServerStatus(object):
     """
@@ -57,35 +69,75 @@ class ServerStatus(object):
     def __init__(self):
         self.startupTime = datetime.datetime.now()
 
-    def getStatusInfo(self):
-        info = {
-            'urls': self._getUrls(),
-            'uptime': self._getUptime(),
-            'version': protocol.version,
-        }
-        return info
+    def getConfiguration(self):
+        """
+        Returns a list of configuration (key, value) tuples
+        that are useful for users to view on an information page.
+        Note that we should be careful here not to leak sensitive
+        information. For example, keys and paths of data files should
+        not be returned.
+        """
+        # TODO what other config keys are appropriate to export here?
+        keys = [
+            'DEBUG', 'REQUEST_VALIDATION', 'RESPONSE_VALIDATION'
+        ]
+        return [(k, app.config[k]) for k in keys]
 
-    def _getUptime(self):
-        uptime = {
-            'natural': humanize.naturaltime(self.startupTime),
-            'datetime': self.startupTime.strftime("%H:%M:%S %d %b %Y")
-        }
-        return uptime
+    def getPreciseUptime(self):
+        """
+        Returns the server precisely.
+        """
+        return self.startupTime.strftime("%H:%M:%S %d %b %Y")
 
-    def _getUrls(self):
+    def getNaturalUptime(self):
+        """
+        Returns the uptime in a human-readable format.
+        """
+        return humanize.naturaltime(self.startupTime)
+
+    def getProtocolVersion(self):
+        """
+        Returns the GA4GH protocol version we support.
+        """
+        return protocol.version
+
+    def getServerVersion(self):
+        """
+        Returns the software version of this server.
+        """
+        return ga4gh.__version__
+
+    def getUrls(self):
+        """
+        Returns the list of (httpMethod, URL) tuples that this server
+        supports.
+        """
         urls = []
         rules = app.url_map.iter_rules()
         excluded_methods = ('OPTIONS', 'HEAD')
         excluded_rules = (
             '/', '/flask-api/static/<path:filename>',
             '/static/<path:filename>')
+        version = Version.getVersionForUrl(protocol.version)
         for rule in rules:
             for method in rule.methods:
                 if (method not in excluded_methods and
                         rule.rule not in excluded_rules):
-                        urls.append((rule.rule, method))
+                    versionedRule = rule.rule.replace(
+                        "<version>", version)
+                    urls.append((versionedRule, method))
         urls.sort()
         return urls
+
+    def getVariantSetSummaries(self):
+        """
+        Returns a list of (variantSetId, numVariants) tuples for this
+        server.
+        """
+        ret = []
+        for variantSet in app.backend.getVariantSets():
+            ret.append((variantSet.getId(), str(variantSet.getNumVariants())))
+        return ret
 
 
 def configure(configFile=None, baseConfig="ProductionConfig"):
@@ -184,8 +236,7 @@ def handleFlaskPostRequest(version, flaskRequest, endpoint):
 
 @app.route('/')
 def index():
-    return flask.render_template(
-        'index.html', info=app.serverStatus.getStatusInfo())
+    return flask.render_template('index.html', info=app.serverStatus)
 
 
 @app.route('/<version>/references/<id>', methods=['GET'])

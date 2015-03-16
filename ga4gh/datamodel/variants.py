@@ -90,6 +90,12 @@ class AbstractVariantSet(object):
         """
         return self._variantSetId
 
+    def getNumVariants(self):
+        """
+        Returns the number of variants contained in this VariantSet.
+        """
+        raise NotImplementedError()
+
 
 class SimulatedVariantSet(AbstractVariantSet):
     """
@@ -105,6 +111,9 @@ class SimulatedVariantSet(AbstractVariantSet):
         self._created = now
         self._updated = now
         self._variantSetId = variantSetId
+
+    def getNumVariants(self):
+        return 0
 
     def getMetadata(self):
         ret = []
@@ -244,6 +253,9 @@ class WormtableVariantSet(AbstractVariantSet):
                     self._sampleCols[sampleName] = []
                     self._sampleNames.append(sampleName)
                 self._sampleCols[sampleName].append((infoName, col))
+
+    def getNumVariants(self):
+        return len(self._table)
 
     def convertInfoField(self, value):
         """
@@ -457,6 +469,13 @@ class HtslibVariantSet(AbstractVariantSet):
         else:
             if self._metadata != metadata:
                 raise Exception(expMsg)
+
+    def getNumVariants(self):
+        """
+        Returns the total number of variants in this VariantSet.
+        """
+        # TODO How do we get the number of records in a VariantFile?
+        return 0
 
     def _addFile(self, filename):
         varFile = pysam.VariantFile(filename)
