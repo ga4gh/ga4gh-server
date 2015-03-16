@@ -515,6 +515,33 @@ class HtslibVariantSet(AbstractVariantSet):
         object. Only calls for the specified list of callSetIds will
         be included.
         """
+        def _convertGaCall(recordId, recordInfo, call):
+            c = protocol.GACall()
+            """
+            callSetId
+            callSetName
+            genotype
+            phaseset
+            genotypeLikelihood
+            info
+            """
+            c.callSetId = recordId
+            c.callSetName = name
+            # c.genotype = _encodeValue(call.allele_indices)
+            # QUESTION: do not encode? as shown on
+            # http://ga4gh.org/documentation/api/v0.5.1/
+            # ga4gh_api.html#/schema/org.ga4gh.GACall
+            # says the genotype type is array of int?
+            c.genotype = list(call.allele_indices)
+            # TODO: phaseset is not set by pysam
+            c.phaseset = None
+            c.genotypeLikelihood = []
+            for key, value in call.iteritems():
+                if key == 'GL' and value is not None:
+                    c.genotypeLikelihood = value
+            c.info = recordInfo
+            return c
+
         variant = protocol.GAVariant()
         # N.B. record.pos is 1-based
         #      also consider using record.start-record.stop
@@ -535,22 +562,18 @@ class HtslibVariantSet(AbstractVariantSet):
             variant.alternateBases = list(record.alts)
         # record.filter and record.qual are also available, when supported
         # by GAVariant.
+
         for key, value in record.info.iteritems():
             if value is not None:
                 variant.info[key] = _encodeValue(value)
+
         variant.calls = []
         for name, call in record.samples.iteritems():
-            if (name in callSetIds) and (sum(call.allele_indices) > 0):
-                c = protocol.GACall()
-                c.genotype = _encodeValue(call.allele_indices)
-                for key, value in record.info.iteritems():
-                    if key == 'GT':
-                        c.genotype = list(call.allele_indices)
-                    elif key == 'GL' and value is not None:
-                        c.genotypeLikelihood = value
-                    elif value is not None:
-                        c.info[key] = _encodeValue(value)
-                variant.calls.append(c)
+            # Filtering out invariant calls
+            # if name in callSetIds and sum(call.allele_indices) > 0:
+            if name in callSetIds:
+                variant.calls.append(_convertGaCall(
+                    record.id, variant.info, call))
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
@@ -564,14 +587,13 @@ class HtslibVariantSet(AbstractVariantSet):
                 "Searching by variantName is not supported")
         if callSetIds is None:  # This will get all Variants
             callSetIds = self._callSetIds
-        ret = []
+
         if referenceName in self._chromFileMap:
             varFile = self._chromFileMap[referenceName]
             cursor = varFile.fetch(
                 referenceName, startPosition, endPosition)
             for record in cursor:
-                ret.append(self.convertVariant(record, callSetIds))
-        return ret
+                yield self.convertVariant(record, callSetIds)
 
     def getMetadata(self):
         return self._metadata
