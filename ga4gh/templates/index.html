@@ -1,25 +1,54 @@
 <html>
     <head>
-        <title>GA4GH reference server {{ info.version }}</title>
+        <title>GA4GH reference server {{ info.getServerVersion()}}</title>
     </head>
     <body>
-        <h2>GA4GH reference server {{ info.version }}</h2>
+        <h2>GA4GH reference server {{ info.getServerVersion() }}</h2>
+        <div>
+            <h3>Protocol version {{ info.getProtocolVersion() }}</h3>
+        </div>
         <div>
             <h3>Operations available</h3>
             <table>
                 <th>Method</th>
                 <th>Path</th>
-            {% for rule in info.urls %}
-            <tr>
-                <td>{{ rule[1] }}</td>
-                <td>{{ rule[0] }}</td>
-            </tr>
-            {% endfor %}
-        </table>
+                {% for rule in info.getUrls() %}
+                <tr>
+                    <td>{{ rule[1] }}</td>
+                    <td>{{ rule[0] }}</td>
+                </tr>
+                {% endfor %}
+            </table>
         </div>
         <div>
             <h3>Uptime</h3>
-            Running since {{ info.uptime.natural }} ({{ info.uptime.datetime }})
+            Running since {{ info.getNaturalUptime()}} ({{ info.getPreciseUptime()}})
+        </div>
+        <div>
+            <h3>Configuration</h3>
+            <table>
+                <th>Key</th>
+                <th>Value</th>
+                {% for key, value in info.getConfiguration() %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div>
+            <h3>Data</h3>
+            <table>
+                <th>VariantSetId</th>
+                <th>NumVariants</th>
+                {% for variantSetId, numVariants in info.getVariantSetSummaries() %}
+                <tr>
+                    <td>{{ variantSetId }}</td>
+                    <td>{{ numVariants }}</td>
+                </tr>
+                {% endfor %}
+            </table>
         </div>
     </body>
 </html>

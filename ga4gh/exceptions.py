@@ -92,6 +92,11 @@ class BadPageTokenException(BadRequestException):
     message = "Request page token invalid"
 
 
+class InvalidJsonException(BadRequestException):
+    def __init__(self, jsonString):
+        self.message = "Cannot parse JSON: '{}'".format(jsonString)
+
+
 class NotFoundException(BaseServerException):
     """
     The superclass of all exceptions in which some resource was not
