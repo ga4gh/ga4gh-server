@@ -50,8 +50,3 @@ class TestConfig(BaseConfig):
     TESTING = True
     REQUEST_VALIDATION = True
     RESPONSE_VALIDATION = True
-
-
-class TestWithoutValidationConfig(TestConfig):
-    REQUEST_VALIDATION = False
-    RESPONSE_VALIDATION = False

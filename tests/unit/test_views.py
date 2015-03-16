@@ -8,35 +8,68 @@ from __future__ import unicode_literals
 import unittest
 
 import ga4gh.frontend as frontend
-import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import tests.utils as utils
 
+_app = None
+
+
+def setUp(self):
+    config = {
+        "DATA_SOURCE": "__SIMULATED__",
+        "SIMULATED_BACKEND_RANDOM_SEED": 1111,
+        "SIMULATED_BACKEND_NUM_CALLS": 0,
+        "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
+        "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
+        # "DEBUG" : True
+    }
+    frontend.configure(
+        baseConfig="TestConfig", extraConfig=config)
+    global _app
+    _app = frontend.app.test_client()
+
+
+def tearDown(self):
+    global _app
+    _app = None
+
 
 class TestFrontend(unittest.TestCase):
+    """
+    Tests the basic routing and HTTP handling for the Flask app.
+    """
 
     def setUp(self):
-        frontend.configure(baseConfig="TestWithoutValidationConfig")
-        frontend.app.backend = backend.SimulatedBackend()
-        self.app = frontend.app.test_client()
+        global _app
+        self.app = _app
 
-    def sendVariantsSearch(self, data):
-        path = utils.applyVersion('/variants/search')
-        return self.app.post(path,
-                             headers={'Content-type': 'application/json'},
-                             data=data)
+    def sendRequest(self, path, request):
+        """
+        Sends the specified GA request object and returns the response.
+        """
+        versionedPath = utils.applyVersion(path)
+        return self.app.post(
+            versionedPath, headers={'Content-type': 'application/json'},
+            data=request.toJsonString())
 
-    def sendVariantSetsSearch(self, data):
-        path = utils.applyVersion('/variantsets/search')
-        return self.app.post(path,
-                             headers={'Content-type': 'application/json'},
-                             data=data)
+    def sendVariantsSearch(
+            self, variantSetIds=[""], referenceName="", start=0, end=0):
+        request = protocol.GASearchVariantsRequest()
+        request.variantSetIds = variantSetIds
+        request.referenceName = referenceName
+        request.start = start
+        request.end = end
+        return self.sendRequest('/variants/search', request)
 
-    def sendCallSetsSearch(self, data):
-        path = utils.applyVersion('/callsets/search')
-        return self.app.post(path,
-                             headers={'Content-type': 'application/json'},
-                             data=data)
+    def sendVariantSetsSearch(self, datasetIds=[""]):
+        request = protocol.GASearchVariantSetsRequest()
+        request.datasetIds = datasetIds
+        return self.sendRequest('/variantsets/search', request)
+
+    def sendCallSetsSearch(self, variantSetIds=[""]):
+        request = protocol.GASearchCallSetsRequest()
+        request.variantSetIds = variantSetIds
+        return self.sendRequest('/callsets/search', request)
 
     def test404sReturnJson(self):
         path = utils.applyVersion('/doesNotExist')
@@ -51,8 +84,8 @@ class TestFrontend(unittest.TestCase):
             self.assertTrue('Content-Type' in response.headers)
 
         assertHeaders(self.app.get('/'))
-        assertHeaders(self.sendVariantsSearch('{"variantSetIds": [1, 2]}'))
-        assertHeaders(self.sendVariantSetsSearch('{"dataSetIds": [1, 2]}'))
+        assertHeaders(self.sendVariantsSearch())
+        assertHeaders(self.sendVariantSetsSearch())
         # TODO: Test other methods as they are implemented
 
     def verifySearchRouting(self, path, getDefined=False):
@@ -116,21 +149,21 @@ class TestFrontend(unittest.TestCase):
         self.assertGreater(len(response.data), 0)
 
     def testVariantsSearch(self):
-        response = self.sendVariantsSearch('{"variantSetIds": [1, 2]}')
+        response = self.sendVariantsSearch()
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchVariantsResponse.fromJsonString(
             response.data)
         self.assertEqual(responseData.variants, [])
 
     def testVariantSetsSearch(self):
-        response = self.sendVariantSetsSearch('{"dataSetIds": [1, 2]}')
+        response = self.sendVariantSetsSearch()
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchVariantSetsResponse.fromJsonString(
             response.data)
         self.assertEqual(len(responseData.variantSets), 1)
 
     def testCallSetsSearch(self):
-        response = self.sendCallSetsSearch('{"callSetId": "xx"}')
+        response = self.sendCallSetsSearch()
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchCallSetsResponse.fromJsonString(
             response.data)

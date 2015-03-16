@@ -140,7 +140,7 @@ class ServerStatus(object):
         return ret
 
 
-def configure(configFile=None, baseConfig="ProductionConfig"):
+def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):
     """
     TODO Document this critical function! What does it do? What does
     it assume?
@@ -151,6 +151,8 @@ def configure(configFile=None, baseConfig="ProductionConfig"):
         app.config.from_envvar('GA4GH_CONFIGURATION')
     if configFile is not None:
         app.config.from_pyfile(configFile)
+    app.config.update(extraConfig.items())
+    # Setup CORS
     cors.CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
     # Allocate the backend
