@@ -42,6 +42,10 @@ class VariantSetTest(datadriven.DataDrivenTest):
         store locally.
         """
         vcfReader = vcf.Reader(filename=vcfFileName)
+        metadata = vcfReader.metadata
+        self._vcfVersion = metadata["fileformat"]
+        self._infos = vcfReader.infos
+        self._formats = vcfReader.formats
         for record in vcfReader:
             self._variants.append(record)
             self._referenceNames.add(record.CHROM)
@@ -74,7 +78,12 @@ class VariantSetTest(datadriven.DataDrivenTest):
             # TODO we should clarify exactly what this means.
             if len(alt) == 1 and alt[0] is None:
                 alt = []
-            self.assertEqual(gaVariant.alternateBases, alt)
+            if pyvcfVariant.is_sv:
+                self.assertEqual(len(alt), len(gaVariant.alternateBases))
+                for alt1, alt2 in zip(alt, gaVariant.alternateBases):
+                    self.assertEqual(str(alt1), str(alt2))
+            else:
+                self.assertEqual(gaVariant.alternateBases, alt)
             # TODO check INFO fields
 
     def testSearchAllVariants(self):
@@ -90,5 +99,42 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self.assertEqual(len(allVariants), len(self._variants))
 
     def testVariantSetMetadata(self):
-        # TODO get the metadata and test it.
-        pass
+        def convertPyvcfNumber(number):
+            if number == -1:
+                ret = "A"
+            elif number == -2:
+                ret = "G"
+            elif number is None:
+                ret = "."
+            else:
+                ret = str(number)
+            return ret
+
+        keyMap = {}
+        for metadata in self._gaObject.getMetadata():
+            keyMap[metadata.key] = metadata
+
+        metadata = keyMap["version"]
+        self.assertEqual(metadata.value, self._vcfVersion)
+
+        gtCounter = 0
+        for infoKey in self._infos.keys():
+            key = "INFO.{}".format(infoKey)
+            self.assertEqual(
+                keyMap[key].type, self._infos[infoKey].type)
+            self.assertEqual(keyMap[key].number, convertPyvcfNumber(
+                self._infos[infoKey].num))
+
+        for formatKey in self._formats.keys():
+            if formatKey == "GT":
+                gtCounter += 1
+            else:
+                key = "FORMAT.{}".format(formatKey)
+                self.assertEqual(
+                    keyMap[key].type, self._formats[formatKey].type)
+                self.assertEqual(keyMap[key].number, convertPyvcfNumber(
+                    self._formats[formatKey].num))
+
+        testMetaLength = (
+            1 + len(self._formats) + len(self._infos) - gtCounter)
+        self.assertEqual(len(keyMap), testMetaLength)

@@ -438,9 +438,25 @@ class HtslibVariantSet(AbstractVariantSet):
         self._variantSetId = variantSetId
         self._created = protocol.convertDatetime(datetime.datetime.now())
         self._chromFileMap = {}
+        self._metadata = None
         for pattern in ['*.bcf', '*.vcf.gz']:
             for filename in glob.glob(os.path.join(vcfPath, pattern)):
                 self._addFile(filename)
+
+    def _updateMetadata(self, variantFile):
+        """
+        Updates the metadata for his variant set based on the specified
+        variant file, and ensures that it is consistent with already
+        existing metadata.
+        """
+        expMsg = "Metadata of {} is not consistent".format(
+            variantFile.filename)
+        metadata = self._getMetadataFromVcf(variantFile)
+        if self._metadata is None:
+            self._metadata = metadata
+        else:
+            if self._metadata != metadata:
+                raise Exception(expMsg)
 
     def _addFile(self, filename):
         varFile = pysam.VariantFile(filename)
@@ -454,6 +470,7 @@ class HtslibVariantSet(AbstractVariantSet):
             if not isEmptyIter(varFile.fetch(chrom)):
                 if chrom in self._chromFileMap:
                     raise Exception("cannot have overlapping VCF/BCF files.")
+                self._updateMetadata(varFile)
                 self._chromFileMap[chrom] = varFile
 
     def convertVariant(self, record):
@@ -514,14 +531,44 @@ class HtslibVariantSet(AbstractVariantSet):
             return []
 
     def getMetadata(self):
-        # TODO: Implement this
+        return self._metadata
+
+    def _getMetadataFromVcf(self, varFile):
         # All the metadata is available via each varFile.header, including:
         #    records: header records
         #    version: VCF version
-        #    samples
-        #    contigs
-        #    filters
+        #    samples -- not immediately needed
+        #    contigs -- not immediately needed
+        #    filters -- not immediately needed
         #    info
         #    formats
+
+        def buildMetadata(
+                key, type="String", number="1", value="", id="",
+                description=""):  # All input are strings
+            metadata = protocol.GAVariantSetMetadata()
+            metadata.key = key
+            metadata.value = value
+            metadata.id = id
+            metadata.type = type
+            metadata.number = number
+            metadata.description = description
+            return metadata
+
         ret = []
+        header = varFile.header
+        ret.append(buildMetadata(key="version", value=header.version))
+        for formatKey, value in header.formats.items():
+            if formatKey != "GT":
+                ret.append(buildMetadata(
+                    key="FORMAT.{}".format(value.name), type=value.type,
+                    number="{}".format(value.number)))
+                # NOTE: description is not currently implemented as a member
+                # of VariantMetadata in pysam/cbcf.pyx
+        for infoKey, value in header.info.items():
+            ret.append(buildMetadata(
+                key="INFO.{}".format(value.name), type=value.type,
+                number="{}".format(value.number)))
+            # NOTE: description is not currently implemented as a member
+            # of VariantMetadata in pysam/cbcf.pyx
         return ret
