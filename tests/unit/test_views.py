@@ -70,10 +70,12 @@ class TestFrontend(unittest.TestCase):
             protocol.GAException.fromJsonString(getResponse.get_data())
             self.assertEqual(405, getResponse.status_code)
 
-        # TODO uncomment when error handling correctly implemented
-        # badResponse = self.app.post(
-        #     versionedPath, headers={'Content-type': 'application/json'})
-        # self.assertEqual(400, badResponse.status_code)
+        # Malformed requests should return 400
+        for badJson in ["", None, "JSON", "<xml/>", "{]"]:
+            badResponse = self.app.post(
+                versionedPath, data=badJson,
+                headers={'Content-type': 'application/json'})
+            self.assertEqual(400, badResponse.status_code)
 
         # OPTIONS should return success
         self.assertEqual(200, self.app.options(versionedPath).status_code)
@@ -106,6 +108,12 @@ class TestFrontend(unittest.TestCase):
     def testRouteVariants(self):
         for path in ['/variantsets/search', '/variants/search']:
             self.verifySearchRouting(path)
+
+    def testRouteIndex(self):
+        response = self.app.get("/")
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("text/html", response.mimetype)
+        self.assertGreater(len(response.data), 0)
 
     def testVariantsSearch(self):
         response = self.sendVariantsSearch('{"variantSetIds": [1, 2]}')

@@ -34,10 +34,18 @@ class AbstractBackend(object):
         self._requestValidation = False
         self._responseValidation = False
 
+    def getVariantSets(self):
+        """
+        Returns the list of VariantSets in this backend.
+        """
+        return list(self._variantSetIdMap.values())
+
     def getVariantSetIdMap(self):
+        # TODO remove this --- why do we need direct access to the map?
         return self._variantSetIdMap
 
     def getCallSetIdMap(self):
+        # TODO remove this --- why do we need direct access to the map?
         return self._callSetIdMap
 
     def parsePageToken(self, pageToken, numValues):
@@ -71,7 +79,10 @@ class AbstractBackend(object):
         any point using the nextPageToken attribute of the request object.
         """
         self.startProfile()
-        requestDict = json.loads(requestStr)
+        try:
+            requestDict = json.loads(requestStr)
+        except ValueError:
+            raise exceptions.InvalidJsonException(requestStr)
         self.validateRequest(requestDict, requestClass)
         request = requestClass.fromJsonDict(requestDict)
         pageList = []
