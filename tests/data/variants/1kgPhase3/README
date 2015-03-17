@@ -1,0 +1,4 @@
+These are subsets of the 1000G phase3 VCFs. For simplicity, the number of samples
+has been reduced using bcftools, e.g.
+
+bcftools view -sHG00531,HG00533,HG00534,HG00536,HG00537,HG00542,HG00543,HG00553,HG00554,HG00556,HG00557 $DATADIR/ALL.chr1.phase3_shapeit2_mvncall_integrated_v4.20130502.genotypes.vcf.gz | head -n 347 | bgzip > chr1.vcf.gz
