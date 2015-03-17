@@ -172,6 +172,7 @@ def configure(configFile=None, baseConfig="ProductionConfig"):
         theBackend = backend.FileSystemBackend(dataSource)
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
+    theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])
     app.backend = theBackend
 
 

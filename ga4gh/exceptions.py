@@ -6,9 +6,23 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
 import zlib
+import inspect
 
 import ga4gh.protocol as protocol
+
+
+def getExceptionClass(errorCode):
+    """
+    Converts the specified error code into the corresponding class object.
+    Raises a KeyError if the errorCode is not found.
+    """
+    classMap = {}
+    for name, class_ in inspect.getmembers(sys.modules[__name__]):
+        if inspect.isclass(class_) and issubclass(class_, Exception):
+            classMap[class_.getErrorCode()] = class_
+    return classMap[errorCode]
 
 
 def getServerError(exception):
@@ -85,7 +99,8 @@ class BadRequestException(BaseServerException):
 
 
 class BadPageSizeException(BadRequestException):
-    message = "Request page size invalid"
+    def __init__(self, pageSize):
+        self.message = "Request page size '{}' is invalid".format(pageSize)
 
 
 class BadPageTokenException(BadRequestException):
@@ -95,6 +110,16 @@ class BadPageTokenException(BadRequestException):
 class InvalidJsonException(BadRequestException):
     def __init__(self, jsonString):
         self.message = "Cannot parse JSON: '{}'".format(jsonString)
+
+
+class RequestValidationFailureException(BadRequestException):
+    """
+    A validation of the request data failed
+    """
+    def __init__(self, jsonDict, requestClass):
+        self.message = (
+            "Request '{}' is not a valid instance of {}".format(
+                jsonDict, requestClass))
 
 
 class NotFoundException(BaseServerException):
@@ -138,17 +163,6 @@ class NotImplementedException(BaseServerException):
         self.message = message
 
 
-class RequestValidationFailureException(BaseServerException):
-    """
-    A validation of the request data failed
-    """
-    def getMessage(self):
-        message = (
-            "Malformed request: JSON does not conform to the GA4GH"
-            "protocol version {}".format(protocol.version))
-        return message
-
-
 class CallSetNotInVariantSetException(NotFoundException):
     """
     Indicates a request was made for a callSet not in the actual variantSet
@@ -180,6 +194,8 @@ class ResponseValidationFailureException(ServerError):
     """
     A validation of the response data failed
     """
-    message = (
-        "Validation of the generated response failed. "
-        "Please file a bug report")
+    def __init__(self, jsonDict, requestClass):
+        self.message = (
+            "Response '{}' is not a valid instance of {}. "
+            "Please file a bug report.".format(
+                jsonDict, requestClass))
