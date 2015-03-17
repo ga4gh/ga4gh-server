@@ -207,4 +207,4 @@ class AlignmentFileTool(object):
             indexFilePath = "{}.{}".format(
                 outputFilePath, AlignmentFileConstants.BAI.lower())
             log("Creating index file '{}'".format(indexFilePath))
-            runCommand("samtools index {}".format(outputFilePath))
+            pysam.index(outputFilePath)
