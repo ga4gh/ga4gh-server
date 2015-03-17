@@ -11,16 +11,18 @@ import glob
 
 import pysam
 
+import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 
 
-class ReferenceSet(object):
+class ReferenceSet(datamodel.DataModelObject):
     """
     Class representing ReferenceSets. A ReferenceSet is a set of
     References which typically comprise a reference assembly, such as
     GRCh38.
     """
     def __init__(self, id_, dataDir):
+        super(ReferenceSet, self).__init__()
         self._id = id_
         self._dataDir = dataDir
         self._referenceIdMap = {}

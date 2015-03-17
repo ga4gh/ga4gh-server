@@ -15,6 +15,7 @@ import random
 import pysam
 import wormtable as wt
 
+import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
@@ -57,11 +58,12 @@ def variantSetFactory(variantSetId, relativePath):
         return HtslibVariantSet(variantSetId, relativePath)
 
 
-class AbstractVariantSet(object):
+class AbstractVariantSet(datamodel.DataModelObject):
     """
     An abstract base class of a variant set
     """
     def __init__(self):
+        super(AbstractVariantSet, self).__init__()
         self._sampleNames = []
         self._variantSetId = None
 
@@ -453,7 +455,8 @@ class HtslibVariantSet(AbstractVariantSet):
         self._metadata = None
         for pattern in ['*.bcf', '*.vcf.gz']:
             for filename in glob.glob(os.path.join(vcfPath, pattern)):
-                self._addFile(filename)
+                with self.suppressLowLevelOutput():
+                    self._addFile(filename)
 
     def _updateMetadata(self, variantFile):
         """

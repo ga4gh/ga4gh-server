@@ -12,14 +12,16 @@ import glob
 
 import pysam
 
+import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 
 
-class ReadGroupSet(object):
+class ReadGroupSet(datamodel.DataModelObject):
     """
     Class representing a logical collection ReadGroups.
     """
     def __init__(self, id_, dataDir):
+        super(ReadGroupSet, self).__init__()
         self._id = id_
         self._dataDir = dataDir
         self._readGroups = []
