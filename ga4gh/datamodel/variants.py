@@ -538,7 +538,7 @@ class HtslibVariantSet(AbstractVariantSet):
             c.genotypeLikelihood = []
             for key, value in call.iteritems():
                 if key == 'GL' and value is not None:
-                    c.genotypeLikelihood = value
+                    c.genotypeLikelihood = [v for v in value]
             c.info = recordInfo
             return c
 

@@ -108,6 +108,14 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 self.assertNotIn("GL", pyvcfCall.data)
             self._verifyInfoEqual(gaCall.info, pyvcfInfo)
 
+        def _verifyVariantCalls(gaVariantCalls, pyvcfCallMap, pyvcfInfo):
+            for gaCall in gaVariantCalls:
+                self.assertTrue(protocol.GACall.validate(
+                    gaCall.toJsonDict()))
+                self.assertIn(gaCall.callSetName, pyvcfCallMap)
+                pyvcfCall = pyvcfCallMap[gaCall.callSetName]
+                _verifyVariantCallEqual(gaCall, pyvcfCall, pyvcfInfo)
+
         self.assertEqual(len(gaVariants), len(pyvcfVariants))
         for gaVariant, pyvcfVariant in zip(gaVariants, pyvcfVariants):
             pyvcfInfo = pyvcfVariant.INFO
@@ -135,17 +143,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             pyvcfCallMap = {}
             for call in pyvcfVariant:
                 pyvcfCallMap[call.sample] = call
-            for gaCall in gaVariant.calls:
-                if (protocol.GACall.validate(gaCall.toJsonDict() == False)):
-                    #print(gaCall)
-                    print(pyvcfCallMap)
-                else:
-                    raise Exception("look prevsious")
-                self.assertTrue(protocol.GACall.validate(
-                    gaCall.toJsonDict()))
-                self.assertIn(gaCall.callSetName, pyvcfCallMap)
-                pyvcfCall = pyvcfCallMap[gaCall.callSetName]
-                _verifyVariantCallEqual(gaCall, pyvcfCall, pyvcfInfo)
+            _verifyVariantCalls(gaVariant.calls, pyvcfCallMap, pyvcfInfo)
             self._verifyInfoEqual(gaVariant.info, pyvcfInfo)
 
     def _verifyGaVariantsSample(self, gaVariants, sampleIds):
@@ -195,26 +193,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
         for referenceName in self._referenceNames:
             iterator = self._gaObject.getVariants(
                 referenceName, 0, end, None, None)
-            #for gaVariant in iterator:
-                #if (protocol.GAVariant.validate(
-                  #gaVariant.toJsonDict()) == False):
-                    #print ("Error")
-                    #print(gaVariant.id)
-                    #print(gaVariant.variantSetId)
-                    #print(gaVariant.names)
-                    #print(gaVariant.created)
-                    #print(gaVariant.updated)
-                    #print(gaVariant.referenceName)
-                    #print(gaVariant.start)
-                    #print(gaVariant.end)
-                    #print(gaVariant.referenceBases)
-                    #print(gaVariant.alternateBases)
-                    #print(gaVariant.info)
-                    ##print(gaVariant.calls)
-                    
-                    ##print (gaVariant.toJsonDict())
-                #self.assertTrue(protocol.GAVariant.validate(
-                    #gaVariant.toJsonDict()))
+            for gaVariant in iterator:
+                self.assertTrue(protocol.GAVariant.validate(
+                    gaVariant.toJsonDict()))
 
     def testVariantSetMetadata(self):
         def convertPyvcfNumber(number):
