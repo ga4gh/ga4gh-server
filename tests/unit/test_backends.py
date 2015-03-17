@@ -20,7 +20,6 @@ import wormtable as wt
 import tests.utils as utils
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
-import ga4gh.datamodel.variants as variants
 
 
 class WormtableTestFixture(object):
@@ -275,62 +274,6 @@ class TestVariants(TestWormtableBackend):
     """
     Tests the searchVariants end point.
     """
-
-    def verifyGenotypeConversion(self, vcfGenotype, vcfPhaseset,
-                                 callGenotype, callPhaseset):
-        """
-        Verifies that the convertGenotype function properly converts the vcf
-        genotype and phaseset values into the desired call genotype and
-        phaseset values.
-        """
-        self.assertEqual((callGenotype, callPhaseset),
-                         variants.convertVCFGenotype(vcfGenotype, vcfPhaseset))
-
-    def testGenotypeUnphasedNoCall(self):
-        self.verifyGenotypeConversion("./.", "0", [-1], None)
-
-    def testGenotypeUnphasedSecondHalfCall(self):
-        self.verifyGenotypeConversion("./0", "25", [-1], None)
-
-    def testGenotypeUnphasedFirstHalfCall(self):
-        self.verifyGenotypeConversion("0/.", "", [-1], None)
-
-    def testGenotypeUnphasedRefRef(self):
-        self.verifyGenotypeConversion("0/0", "3124234", [0, 0], None)
-
-    def testGenotypeUnphasedAltRef(self):
-        self.verifyGenotypeConversion("1/0", "-56809", [1, 0], None)
-
-    def testGenotypeUnphasedRefAlt(self):
-        self.verifyGenotypeConversion("0/1", "134965", [0, 1], None)
-
-    def testGenotypePhasedNoCall(self):
-        self.verifyGenotypeConversion(".|.", "36", [-1], "36")
-
-    def testGenotypePhasedSecondHalfCall(self):
-        self.verifyGenotypeConversion(".|0", "45032", [-1], "45032")
-
-    def testGenotypePhasedFirstHalfCall(self):
-        self.verifyGenotypeConversion("0|.", "645", [-1], "645")
-
-    def testGenotypePhasedRefRef(self):
-        self.verifyGenotypeConversion("0|0", ".", [0, 0], "*")
-
-    def testGenotypePhasedRefAlt(self):
-        self.verifyGenotypeConversion("0|1", "45", [0, 1], "45")
-
-    def testGenotypePhasedAltAlt(self):
-        self.verifyGenotypeConversion("1|1", ".", [1, 1], "*")
-
-    def testGenotypePhasedDiffAlt(self):
-        self.verifyGenotypeConversion("2|1", "245624", [2, 1], "245624")
-
-    def testPhasesetZero(self):
-        self.verifyGenotypeConversion("3|0", "0", [3, 0], "0")
-
-    def testGenotypeHaploid(self):
-        self.verifyGenotypeConversion("1", "376", [1], None)
-
     def verifyGenotype(self, call, vcfString):
         """
         Verifies the specified Call object has the correct interpretation of
