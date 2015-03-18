@@ -59,17 +59,18 @@ class ReadGroup(object):
         """
         Returns the GA4GH protocol representation of this ReadGroup.
         """
+        # TODO this is very incomplete, but we don't have the
+        # implementation to fill out the rest of the fields currently
         now = protocol.convertDatetime(datetime.datetime.now())
         readGroup = protocol.GAReadGroup()
         readGroup.id = self._id
         readGroup.created = now
         readGroup.updated = now
-        # TODO fill the rest of these out
         readGroup.datasetId = None
         readGroup.description = None
         readGroup.experiment = None
         readGroup.info = {}
-        readGroup.name = None
+        readGroup.name = readGroup.id
         readGroup.predictedInsertSize = None
         readGroup.programs = []
         readGroup.referenceSetId = None
