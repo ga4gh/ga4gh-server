@@ -33,6 +33,7 @@ class AbstractBackend(object):
         self._callSetIds = []
         self._requestValidation = False
         self._responseValidation = False
+        self._defaultPageSize = 100
 
     def getVariantSets(self):
         """
@@ -85,6 +86,10 @@ class AbstractBackend(object):
             raise exceptions.InvalidJsonException(requestStr)
         self.validateRequest(requestDict, requestClass)
         request = requestClass.fromJsonDict(requestDict)
+        if request.pageSize is None:
+            request.pageSize = self._defaultPageSize
+        if request.pageSize <= 0:
+            raise exceptions.BadPageSizeException(request.pageSize)
         pageList = []
         nextPageToken = None
         for obj, nextPageToken in objectGenerator(request):
@@ -279,7 +284,8 @@ class AbstractBackend(object):
         """
         if self._requestValidation:
             if not requestClass.validate(jsonDict):
-                raise exceptions.RequestValidationFailureException()
+                raise exceptions.RequestValidationFailureException(
+                    jsonDict, requestClass)
 
     def validateResponse(self, jsonDict, responseClass):
         """
@@ -288,7 +294,8 @@ class AbstractBackend(object):
         """
         if self._responseValidation:
             if not responseClass.validate(jsonDict):
-                raise exceptions.ResponseValidationFailureException()
+                raise exceptions.ResponseValidationFailureException(
+                    jsonDict, responseClass)
 
     def setRequestValidation(self, requestValidation):
         """
@@ -301,6 +308,12 @@ class AbstractBackend(object):
         Set enabling response validation
         """
         self._responseValidation = responseValidation
+
+    def setDefaultPageSize(self, defaultPageSize):
+        """
+        Sets the default page size for request to the specified value.
+        """
+        self._defaultPageSize = defaultPageSize
 
 
 class EmptyBackend(AbstractBackend):
