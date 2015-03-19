@@ -67,23 +67,13 @@ class SamFlags(object):
         flagAttr |= flag
 
 
-class ReadGroupSet(object):
+class AbstractReadGroupSet(object):
     """
-    Class representing a logical collection ReadGroups.
+    The base class of a read group set
     """
-    def __init__(self, id_, dataDir):
+    def __init__(self, id_):
         self._id = id_
-        self._dataDir = dataDir
         self._readGroups = []
-        # we only support BAM files right now;
-        # SAM files (which can't have index files) would be too slow
-        pattern = "*.bam"
-        for path in glob.glob(os.path.join(self._dataDir, pattern)):
-            filename = os.path.basename(path)
-            localId = os.path.splitext(filename)[0]
-            readGroupId = "{}:{}".format(self._id, localId)
-            readGroup = ReadGroup(readGroupId, path)
-            self._readGroups.append(readGroup)
 
     def getReadGroups(self):
         """
@@ -104,28 +94,49 @@ class ReadGroupSet(object):
         return readGroupSet
 
 
-class ReadGroup(object):
+class SimulatedReadGroupSet(AbstractReadGroupSet):
+    """
+    A simulated read group set
+    """
+    def __init__(self, id_):
+        super(SimulatedReadGroupSet, self).__init__(id_)
+        readGroupId = "{}:one".format(id_)
+        readGroup = SimulatedReadGroup(readGroupId)
+        self._readGroups.append(readGroup)
+
+
+class HtslibReadGroupSet(AbstractReadGroupSet):
+    """
+    Class representing a logical collection ReadGroups.
+    """
+    def __init__(self, id_, dataDir):
+        super(HtslibReadGroupSet, self).__init__(id_)
+        self._dataDir = dataDir
+        # we only support BAM files right now;
+        # SAM files (which can't have index files) would be too slow
+        pattern = "*.bam"
+        for path in glob.glob(os.path.join(self._dataDir, pattern)):
+            filename = os.path.split(path)[1]
+            localId = os.path.splitext(filename)[0]
+            readGroupId = "{}:{}".format(self._id, localId)
+            readGroup = HtslibReadGroup(readGroupId, path)
+            self._readGroups.append(readGroup)
+
+
+class AbstractReadGroup(object):
     """
     Class representing a ReadGroup. A ReadGroup is all the data that's
     processed the same way by the sequencer.  There are typically 1-10
     ReadGroups in a ReadGroupSet.
     """
-    def __init__(self, id_, dataFile):
+    def __init__(self, id_):
         self._id = id_
-        self._samFilePath = dataFile
-        self._samFile = pysam.AlignmentFile(dataFile)
 
     def getId(self):
         """
         Returns the id of the read group
         """
         return self._id
-
-    def getSamFilePath(self):
-        """
-        Returns the file path of the sam file
-        """
-        return self._samFilePath
 
     def toProtocolElement(self):
         """
@@ -149,6 +160,64 @@ class ReadGroup(object):
         readGroup.sampleId = None
         return readGroup
 
+
+class SimulatedReadGroup(AbstractReadGroup):
+    """
+    A simulated readgroup
+    """
+    def __init__(self, id_):
+        super(SimulatedReadGroup, self).__init__(id_)
+
+    def getReadAlignments(self, referenceName=None, referenceId=None,
+                          start=None, end=None):
+        for i in range(2):
+            alignment = self._createReadAlignment(i)
+            yield alignment
+
+    def _createReadAlignment(self, i):
+        # TODO fill out a bit more
+        id_ = "{}:simulated{}".format(self._id, i)
+        alignment = protocol.GAReadAlignment()
+        alignment.alignedQuality = [1, 2, 3]
+        alignment.alignedSequence = "ACT"
+        gaPosition = protocol.GAPosition()
+        gaPosition.position = 0
+        gaPosition.referenceName = "whatevs"
+        gaPosition.reverseStrand = False
+        gaLinearAlignment = protocol.GALinearAlignment()
+        gaLinearAlignment.position = gaPosition
+        alignment.alignment = gaLinearAlignment
+        alignment.duplicateFragment = False
+        alignment.failedVendorQualityChecks = False
+        alignment.fragmentLength = 3
+        alignment.fragmentName = id_
+        alignment.id = id_
+        alignment.info = {}
+        alignment.nextMatePosition = None
+        alignment.numberReads = None
+        alignment.properPlacement = False
+        alignment.readGroupId = self._id
+        alignment.readNumber = None
+        alignment.secondaryAlignment = False
+        alignment.supplementaryAlignment = False
+        return alignment
+
+
+class HtslibReadGroup(AbstractReadGroup):
+    """
+    A readgroup based on htslib's reading of a given file
+    """
+    def __init__(self, id_, dataFile):
+        super(HtslibReadGroup, self).__init__(id_)
+        self._samFilePath = dataFile
+        self._samFile = pysam.AlignmentFile(dataFile)
+
+    def getSamFilePath(self):
+        """
+        Returns the file path of the sam file
+        """
+        return self._samFilePath
+
     def getReadAlignments(self, referenceName=None, referenceId=None,
                           start=None, end=None):
         """
@@ -170,7 +239,7 @@ class ReadGroup(object):
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.GAReadAlignment()
-        ret.alignedQuality = read.query_qualities
+        ret.alignedQuality = list(read.query_qualities)
         ret.alignedSequence = read.query_sequence
         ret.alignment = protocol.GALinearAlignment()
         ret.alignment.mappingQuality = read.mapping_quality
@@ -190,7 +259,7 @@ class ReadGroup(object):
             read.flag, SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
         ret.fragmentLength = read.template_length
         ret.fragmentName = read.query_name
-        ret.id = None  # TODO
+        ret.id = "{}:{}".format(self._id, read.query_name)
         ret.info = dict(read.tags)
         ret.nextMatePosition = protocol.GAPosition()
         ret.nextMatePosition.position = read.next_reference_start

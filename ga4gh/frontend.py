@@ -8,7 +8,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import traceback
 import datetime
 
 import flask
@@ -213,7 +212,7 @@ def handleException(exception):
     a request.
     """
     if app.config['DEBUG']:
-        print(traceback.format_exc(exception))
+        app.log_exception(exception)
     serverException = exception
     if not isinstance(exception, exceptions.BaseServerException):
         serverException = exceptions.getServerError(exception)
@@ -270,9 +269,10 @@ def searchReadGroupSets(version):
         version, flask.request, app.backend.searchReadGroupSets)
 
 
-@app.route('/<version>/reads/search', methods=['POST'])
+@app.route('/<version>/reads/search', methods=['POST', 'OPTIONS'])
 def searchReads(version):
-    raise exceptions.PathNotFoundException()
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchReads)
 
 
 @app.route('/<version>/referencesets/search', methods=['POST'])

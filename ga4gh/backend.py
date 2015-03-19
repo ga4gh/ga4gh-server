@@ -29,6 +29,8 @@ class AbstractBackend(object):
         self._referenceSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetIds = []
+        self._readGroupIds = []
+        self._readGroupIdMap = {}
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
@@ -205,6 +207,68 @@ class AbstractBackend(object):
         return self._topLevelObjectGenerator(
             request, self._variantSetIdMap, self._variantSetIds)
 
+    def readsGenerator(self, request):
+        # Local utility functions to save some typing
+        def getPosition(readAlignment):
+            return readAlignment.alignment.position.position
+
+        def getEndPosition(readAlignment):
+            return getPosition(readAlignment) + \
+                len(readAlignment.alignedSequence)
+
+        if len(request.readGroupIds) != 1:
+            raise exceptions.NotImplementedException(
+                "Read search over multiple readGroups not supported")
+        readGroupId = request.readGroupIds[0]
+        try:
+            readGroup = self._readGroupIdMap[request.readGroupIds[0]]
+        except KeyError:
+            raise exceptions.ReadGroupNotFoundException(readGroupId)
+        startPosition = request.start
+        equalPositionsToSkip = 0
+        if request.pageToken is not None:
+            startPosition, equalPositionsToSkip = self.parsePageToken(
+                request.pageToken, 2)
+        iterator = readGroup.getReadAlignments(
+            request.referenceName, request.referenceId, startPosition,
+            request.end)
+        readAlignment = next(iterator, None)
+        if request.pageToken is not None:
+            # First, skip any reads with position < startPosition
+            # or endPosition < request.start
+            while (getPosition(readAlignment) < startPosition or
+                   getEndPosition(readAlignment) < request.start):
+                readAlignment = next(iterator, None)
+                if readAlignment is None:
+                    raise exceptions.BadPageTokenException(
+                        "Inconsistent page token provided")
+            # Now, skip equalPositionsToSkip records which have position
+            # == startPosition
+            equalPositionsSkipped = 0
+            while equalPositionsSkipped < equalPositionsToSkip:
+                if getPosition(readAlignment) != startPosition:
+                    raise exceptions.BadPageTokenException(
+                        "Inconsistent page token provided")
+                equalPositionsSkipped += 1
+                readAlignment = next(iterator, None)
+                if readAlignment is None:
+                    raise exceptions.BadPageTokenException(
+                        "Inconsistent page token provided")
+        # The iterator is now positioned at the correct place.
+        while readAlignment is not None:
+            nextReadAlignment = next(iterator, None)
+            nextPageToken = None
+            if nextReadAlignment is not None:
+                if getPosition(readAlignment) == \
+                        getPosition(nextReadAlignment):
+                    equalPositionsToSkip += 1
+                else:
+                    equalPositionsToSkip = 0
+                nextPageToken = "{}:{}".format(
+                    getPosition(nextReadAlignment), equalPositionsToSkip)
+            yield readAlignment, nextPageToken
+            readAlignment = nextReadAlignment
+
     def variantsGenerator(self, request):
         """
         Returns a generator over the (variant, nextPageToken) pairs defined by
@@ -332,6 +396,15 @@ class SimulatedBackend(AbstractBackend):
             self._variantSetIdMap[variantSetId] = variantSet
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
+        # Reads
+        readGroupSetId = "aReadGroupSet"
+        readGroupSet = reads.SimulatedReadGroupSet(readGroupSetId)
+        self._readGroupSetIdMap[readGroupSetId] = readGroupSet
+        for readGroup in readGroupSet.getReadGroups():
+            self._readGroupIdMap[readGroup.getId()] = readGroup
+        self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
+        self._readGroupIds = sorted(self._readGroupIdMap.keys())
+
 
 class FileSystemBackend(AbstractBackend):
     """
@@ -366,7 +439,10 @@ class FileSystemBackend(AbstractBackend):
         for readGroupSetId in os.listdir(readGroupSetDir):
             relativePath = os.path.join(readGroupSetDir, readGroupSetId)
             if os.path.isdir(relativePath):
-                readGroupSet = reads.ReadGroupSet(
+                readGroupSet = reads.HtslibReadGroupSet(
                     readGroupSetId, relativePath)
                 self._readGroupSetIdMap[readGroupSetId] = readGroupSet
+                for readGroup in readGroupSet.getReadGroups():
+                    self._readGroupIdMap[readGroup.getId()] = readGroup
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
+        self._readGroupIds = sorted(self._readGroupIdMap.keys())
