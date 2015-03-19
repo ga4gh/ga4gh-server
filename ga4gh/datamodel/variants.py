@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 import datetime
 import glob
-import itertools
 import os
 import random
 
@@ -450,10 +449,27 @@ class HtslibVariantSet(AbstractVariantSet):
         self._variantSetId = variantSetId
         self._created = protocol.convertDatetime(datetime.datetime.now())
         self._chromFileMap = {}
+        self._callSetIds = None
         self._metadata = None
         for pattern in ['*.bcf', '*.vcf.gz']:
             for filename in glob.glob(os.path.join(vcfPath, pattern)):
                 self._addFile(filename)
+
+    def _updateCallSetIds(self, variantFile):
+        """
+        Updates the call set IDs based on the specified variant file.
+        """
+        checkConsistency = True
+        if self._callSetIds is None:
+            self._callSetIds = []
+            checkConsistency = False
+
+        for sample in variantFile.header.samples:
+            if checkConsistency:
+                if sample not in self._callSetIds:
+                    raise Exception("Inconsistent sample names in VCF")
+            else:
+                self._callSetIds.append(sample)
 
     def _updateMetadata(self, variantFile):
         """
@@ -489,10 +505,43 @@ class HtslibVariantSet(AbstractVariantSet):
             if not isEmptyIter(varFile.fetch(chrom)):
                 if chrom in self._chromFileMap:
                     raise Exception("cannot have overlapping VCF/BCF files.")
+                self._updateCallSetIds(varFile)
                 self._updateMetadata(varFile)
                 self._chromFileMap[chrom] = varFile
 
-    def convertVariant(self, record):
+    def convertVariant(self, record, callSetIds):
+        """
+        Converts the specified pysam variant record into a GA4GH Variant
+        object. Only calls for the specified list of callSetIds will
+        be included.
+        """
+        def _convertGaCall(recordId, recordInfo, call):
+            c = protocol.GACall()
+            """
+            callSetId
+            callSetName
+            genotype
+            phaseset
+            genotypeLikelihood
+            info
+            """
+            c.callSetId = recordId
+            c.callSetName = name
+            # c.genotype = _encodeValue(call.allele_indices)
+            # QUESTION: do not encode? as shown on
+            # http://ga4gh.org/documentation/api/v0.5.1/
+            # ga4gh_api.html#/schema/org.ga4gh.GACall
+            # says the genotype type is array of int?
+            c.genotype = list(call.allele_indices)
+            # TODO: phaseset is not set by pysam
+            c.phaseset = None
+            c.genotypeLikelihood = []
+            for key, value in call.iteritems():
+                if key == 'GL' and value is not None:
+                    c.genotypeLikelihood = [v for v in value]
+            c.info = recordInfo
+            return c
+
         variant = protocol.GAVariant()
         # N.B. record.pos is 1-based
         #      also consider using record.start-record.stop
@@ -513,21 +562,18 @@ class HtslibVariantSet(AbstractVariantSet):
             variant.alternateBases = list(record.alts)
         # record.filter and record.qual are also available, when supported
         # by GAVariant.
+
         for key, value in record.info.iteritems():
             if value is not None:
                 variant.info[key] = _encodeValue(value)
+
         variant.calls = []
         for name, call in record.samples.iteritems():
-            c = protocol.GACall()
-            c.genotype = _encodeValue(call.allele_indices)
-            for key, value in record.info.iteritems():
-                if key == 'GT':
-                    c.genotype = list(call.allele_indices)
-                elif key == 'GL' and value is not None:
-                    c.genotypeLikelihood = value
-                elif value is not None:
-                    c.info[key] = _encodeValue(value)
-            variant.calls.append(c)
+            # Filtering out invariant calls
+            # if name in callSetIds and sum(call.allele_indices) > 0:
+            if name in callSetIds:
+                variant.calls.append(_convertGaCall(
+                    record.id, variant.info, call))
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
@@ -539,15 +585,15 @@ class HtslibVariantSet(AbstractVariantSet):
         if variantName is not None:
             raise exceptions.NotImplementedException(
                 "Searching by variantName is not supported")
-        if callSetIds is not None:
-            raise exceptions.NotImplementedException(
-                "Specifying call set ids is not supported")
+        if callSetIds is None:  # This will get all Variants
+            callSetIds = self._callSetIds
+
         if referenceName in self._chromFileMap:
             varFile = self._chromFileMap[referenceName]
-            cursor = varFile.fetch(referenceName, startPosition, endPosition)
-            return itertools.imap(self.convertVariant, cursor)
-        else:
-            return []
+            cursor = varFile.fetch(
+                referenceName, startPosition, endPosition)
+            for record in cursor:
+                yield self.convertVariant(record, callSetIds)
 
     def getMetadata(self):
         return self._metadata
