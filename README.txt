@@ -157,7 +157,7 @@ To deploy on Apache on Debian/Ubuntu platforms, do the following.
 
 - Restart Apache::
 
-  $ sudo service apache restart
+  $ sudo service apache2 restart
 
 - Test the installation by pointing a web-browser at the root URL; for example,
   to test on the installation server use::
