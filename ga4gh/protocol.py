@@ -8,8 +8,24 @@ from __future__ import unicode_literals
 import json
 import datetime
 import itertools
+import sys
+import inspect
 
 import avro.io
+
+
+def getProtocolClasses():
+    """
+    Return a list of all subclasses of ProtocolElement
+    """
+    thisModule = sys.modules[__name__]
+    subclasses = []
+    for name, class_ in inspect.getmembers(thisModule):
+        if (inspect.isclass(class_) and
+                issubclass(class_, ProtocolElement) and
+                class_ is not ProtocolElement):
+            subclasses.append(class_)
+    return subclasses
 
 
 def convertDatetime(t):
