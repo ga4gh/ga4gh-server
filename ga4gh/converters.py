@@ -10,7 +10,7 @@ import collections
 
 import pysam
 
-import ga4gh.protocol as protocol
+import ga4gh.datamodel.reads as reads
 
 
 class AbstractConverter(object):
@@ -95,20 +95,6 @@ class SamLine(object):
     """
     _encoding = 'utf8'
 
-    # see http://pysam.readthedocs.org/en/latest/api.html
-    # #pysam.AlignedSegment.cigartuples
-    _cigarMap = {
-        protocol.GACigarOperation.ALIGNMENT_MATCH: 0,
-        protocol.GACigarOperation.INSERT: 1,
-        protocol.GACigarOperation.DELETE: 2,
-        protocol.GACigarOperation.SKIP: 3,
-        protocol.GACigarOperation.CLIP_SOFT: 4,
-        protocol.GACigarOperation.CLIP_HARD: 5,
-        protocol.GACigarOperation.PAD: 6,
-        protocol.GACigarOperation.SEQUENCE_MATCH: 7,
-        protocol.GACigarOperation.SEQUENCE_MISMATCH: 8,
-    }
-
     # see tables in SAM spec, section 1.5
     _tagReservedFieldPrefixes = set(["X", "Y", "Z", ])
     _tagIntegerFields = set([
@@ -157,27 +143,35 @@ class SamLine(object):
     def toSamFlag(cls, read):
         flag = 0
         if read.numberReads:
-            flag += 0x1
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.NUMBER_READS)
         if read.properPlacement:
-            flag += 0x2
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.PROPER_PLACEMENT)
         if read.readNumber:
-            flag += 0x40
-            flag += 0x80
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.READ_NUMBER_ONE)
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.READ_NUMBER_TWO)
         if read.secondaryAlignment:
-            flag += 0x100
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.SECONDARY_ALIGNMENT)
         if read.failedVendorQualityChecks:
-            flag += 0x200
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
         if read.duplicateFragment:
-            flag += 0x400
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.DUPLICATE_FRAGMENT)
         if read.supplementaryAlignment:
-            flag += 0x800
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.SUPPLEMENTARY_ALIGNMENT)
         return flag
 
     @classmethod
     def toCigar(cls, read):
         cigarTuples = []
         for gaCigarUnit in read.alignment.cigar:
-            operation = cls._cigarMap[gaCigarUnit.operation]
+            operation = reads.SamCigar.ga2int(gaCigarUnit.operation)
             length = int(gaCigarUnit.operationLength)
             cigarTuple = (operation, length)
             cigarTuples.append(cigarTuple)
