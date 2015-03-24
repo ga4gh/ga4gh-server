@@ -18,6 +18,7 @@ import pysam
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
+import ga4gh.datamodel as datamodel
 
 
 def convertVCFPhaseset(vcfPhaseset):
@@ -82,11 +83,12 @@ class CallSet(object):
         return gaCallSet
 
 
-class AbstractVariantSet(object):
+class AbstractVariantSet(datamodel.DatamodelObject):
     """
     An abstract base class of a variant set
     """
     def __init__(self, id_):
+        super(AbstractVariantSet, self).__init__()
         self._id = id_
         self._callSetIdMap = {}
         self._callSetIds = []
@@ -274,7 +276,7 @@ def _cleanupHtslibsMess(indexDir):
     shutil.rmtree(indexDir)
 
 
-class HtslibVariantSet(AbstractVariantSet):
+class HtslibVariantSet(datamodel.PysamSanitizer, AbstractVariantSet):
     """
     Class representing a single variant set backed by a directory of indexed
     VCF or BCF files.
@@ -367,6 +369,7 @@ class HtslibVariantSet(AbstractVariantSet):
             # in the BCF header.  Thus we must test each one to see if
             # records exist or else they are likely to trigger spurious
             # overlapping errors.
+            chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
             if not isEmptyIter(varFile.fetch(chrom)):
                 if chrom in self._chromFileMap:
                     raise exceptions.OverlappingVcfException(filename, chrom)
@@ -473,6 +476,9 @@ class HtslibVariantSet(AbstractVariantSet):
             callSetIds = self._callSetIds
         if referenceName in self._chromFileMap:
             varFile = self._chromFileMap[referenceName]
+            referenceName, startPosition, endPosition = \
+                self.sanitizeVariantFileFetch(
+                    referenceName, startPosition, endPosition)
             cursor = varFile.fetch(
                 referenceName, startPosition, endPosition)
             for record in cursor:

@@ -14,6 +14,7 @@ import pysam
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
+import ga4gh.datamodel as datamodel
 
 
 class SamCigar(object):
@@ -67,7 +68,7 @@ class SamFlags(object):
         flagAttr |= flag
 
 
-class AbstractReadGroupSet(object):
+class AbstractReadGroupSet(datamodel.DatamodelObject):
     """
     The base class of a read group set
     """
@@ -109,7 +110,7 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
         self._readGroups.append(readGroup)
 
 
-class HtslibReadGroupSet(AbstractReadGroupSet):
+class HtslibReadGroupSet(datamodel.PysamSanitizer, AbstractReadGroupSet):
     """
     Class representing a logical collection ReadGroups.
     """
@@ -207,7 +208,7 @@ class SimulatedReadGroup(AbstractReadGroup):
         return alignment
 
 
-class HtslibReadGroup(AbstractReadGroup):
+class HtslibReadGroup(datamodel.PysamSanitizer, AbstractReadGroup):
     """
     A readgroup based on htslib's reading of a given file
     """
@@ -231,6 +232,8 @@ class HtslibReadGroup(AbstractReadGroup):
             raise exceptions.BadReadsSearchRequestBothRefs()
         if referenceId is not None:
             referenceName = self._samFile.getrname(referenceId)
+        referenceName, start, end = self.sanitizeAlignmentFileFetch(
+                referenceName, start, end)
         # TODO deal with errors from htslib
         readAlignments = self._samFile.fetch(referenceName, start, end)
         for readAlignment in readAlignments:
