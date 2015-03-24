@@ -57,16 +57,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
     def getProtocolClass(self):
         return protocol.GAVariantSet
 
-    def _floatsAgreeWithinTolerance(self, a, b, decimalPoints=7):
-        afloat = float(a)
-        bfloat = float(b)
-        return (abs(afloat - bfloat) <= 10**(-decimalPoints) * abs(bfloat))
-
     def _compareTwoListFloats(self, a, b):
         for ai, bi in zip(a, b):
-            if not self._floatsAgreeWithinTolerance(ai, bi):
-                return False
-        return True
+            self.assertAlmostEqual(float(ai), float(bi), 5)
 
     def _verifyInfoEqual(self, gaObjectInfo, pyvcfInfo):
         def _assertEquivalentGaVCFValues(gaValue, pyvcfValue):
@@ -75,7 +68,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             elif isinstance(pyvcfValue, (int, bool)):
                 self.assertEqual(gaValue, str(pyvcfValue))
             elif isinstance(pyvcfValue, float):
-                self._floatsAgreeWithinTolerance(gaValue, pyvcfValue)
+                self.assertAlmostEqual(float(gaValue), float(pyvcfValue))
             elif pyvcfValue is None:
                 self.assertEqual(gaValue, ".")
             else:
@@ -102,8 +95,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
         # gaCall.phaseset is currently not implemented?
         # self.assertEqual(gaCall.phaseset,phaseset)
         if len(gaCall.genotypeLikelihood) > 0:
-            self.assertTrue(self._compareTwoListFloats(
-                gaCall.genotypeLikelihood, pyvcfCall.data.GL))
+            self._compareTwoListFloats(
+                gaCall.genotypeLikelihood, pyvcfCall.data.GL)
         else:
             self.assertNotIn("GL", pyvcfCall.data)
         for key, value in gaCall.info.items():
