@@ -259,7 +259,7 @@ def server_main(parser=None):
     args = parser.parse_args()
     frontend.configure(args.config_file, args.config)
     frontend.app.run(
-        host="0.0.0.0", port=args.port, debug=True,
+        host="0.0.0.0", port=args.port,
         use_reloader=not args.dont_use_reloader)
 
 
