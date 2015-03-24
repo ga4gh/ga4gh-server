@@ -49,6 +49,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self.vcfSamples = vcfReader.samples
         for record in vcfReader:
             self._referenceNames.add(record.CHROM)
+            # When an END info tag is present it takes precedence
+            if "END" in record.INFO:
+                record.end = record.INFO["END"]
             self._variantRecords.append(record)
 
     def getDataModelClass(self):
@@ -135,11 +138,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self.assertEqual(gaVariant.referenceBases, pyvcfVariant.REF)
             # pyvcf uses 1-based indexing.
             self.assertEqual(gaVariant.start, pyvcfVariant.POS - 1)
-            # When an END info tag is present it takes precedence
-            end = pyvcfVariant.end
-            if "END" in pyvcfInfo:
-                end = pyvcfInfo["END"]
-            self.assertEqual(gaVariant.end, end)
+            self.assertEqual(gaVariant.end, pyvcfVariant.end)
             self._verifyInfoEqual(gaVariant.info, pyvcfInfo)
             alt = pyvcfVariant.ALT
             # PyVCF does something funny when no ALT allele is provided.
@@ -197,6 +196,119 @@ class VariantSetTest(datadriven.DataDrivenTest):
             for gaVariant in iterator:
                 self.assertTrue(protocol.GAVariant.validate(
                     gaVariant.toJsonDict()))
+
+    def _getPyvcfVariants(
+            self, referenceName, startPosition=0, endPosition=2**30):
+        """
+        variants with in interval [startPosition, endPosition)
+        """
+        localVariants = []
+        for variant in self._variantRecords:
+            case1 = (variant.start <= startPosition and
+                     variant.end > startPosition)
+            case2 = (variant.start > startPosition and
+                     variant.start < endPosition)
+            if (variant.CHROM == referenceName) and (case1 or case2):
+                localVariants.append(variant)
+        return localVariants
+
+    def _assertEmptyVariant(self, referenceName, startPosition, endPosition):
+        gaVariants = list(self._gaObject.getVariants(
+            referenceName, startPosition, endPosition, None, []))
+        self.assertEqual(len(gaVariants), 0)
+        pyvcfVariants = self._getPyvcfVariants(
+          referenceName, startPosition, endPosition)
+        self.assertEqual(len(pyvcfVariants), 0)
+
+    def _assertVariantsEqualInRange(
+            self, referenceName, startPosition, endPosition):
+        gaVariants = list(self._gaObject.getVariants(
+            referenceName, startPosition, endPosition, None, []))
+        pyvcfVariants = self._getPyvcfVariants(
+            referenceName, startPosition, endPosition)
+        self.assertGreaterEqual(len(gaVariants), 0)
+        self._verifyVariantsEqual(gaVariants, pyvcfVariants)
+
+    def testVariantInSegments(self):
+        for referenceName in self._referenceNames:
+            localVariants = self._getPyvcfVariants(referenceName)
+            mini = localVariants[0].start
+            # NOTE, the end of the last variant may not reflect the END
+            maxi = max([v.end for v in localVariants])
+            seglen = int(maxi-mini) // 3
+            seg1 = mini + seglen
+            seg2 = seg1 + seglen
+            self._assertEmptyVariant(referenceName, -1, mini)
+            self._assertEmptyVariant(referenceName, maxi, maxi+100)
+            self._assertVariantsEqualInRange(referenceName, mini, seg1)
+            self._assertVariantsEqualInRange(referenceName, seg1, seg2)
+            self._assertVariantsEqualInRange(referenceName, seg2, maxi)
+
+    def _gaVariantEqualsPyvcfVariant(self, gaVariant, pyvcfVariant):
+        if gaVariant.start != pyvcfVariant.start:
+            return False
+        if gaVariant.end != pyvcfVariant.end:
+            return False
+        alt = pyvcfVariant.ALT
+        if len(alt) == 1 and alt[0] is None:
+            alt = []
+        if not pyvcfVariant.is_sv and gaVariant.alternateBases != alt:
+            return False
+        self._verifyVariantsEqual([gaVariant], [pyvcfVariant])
+        return True
+
+    def _pyvcfVariantIsInGaVarants(
+            self, pyvcfVariant, intervalStart, intervalEnd):
+        isIn = False
+        gaVariants = list(self._gaObject.getVariants(
+            pyvcfVariant.CHROM, intervalStart, intervalEnd, None, []))
+        for gaVariant in gaVariants:
+            if self._gaVariantEqualsPyvcfVariant(gaVariant, pyvcfVariant):
+                isIn = True
+                break
+        return isIn
+
+    def testVariantFromToEveryVariant(self):
+        for variant in self._variantRecords:
+            variantStart = variant.start
+            variantEnd = variant.end
+            # Cases of search interval does not overlap with variant
+            # interval on the left
+
+            self.assertFalse(self._pyvcfVariantIsInGaVarants(
+                variant, variantStart-2, variantStart-1))
+            self.assertFalse(self._pyvcfVariantIsInGaVarants(
+                variant, variantStart-1, variantStart))
+            # interval on the right
+            self.assertFalse(self._pyvcfVariantIsInGaVarants(
+                variant, variantEnd, variantEnd+1))
+            self.assertFalse(self._pyvcfVariantIsInGaVarants(
+                variant, variantEnd+1, variantEnd+2))
+            # case of search interval is within variant
+
+            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                variant, variantStart, variantEnd))
+            if (variantEnd - variantStart) != 1:
+                self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                    variant, variantStart, variantEnd-1))
+                self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                    variant, variantStart+1, variantEnd))
+
+            # case of search interval contains variant
+            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                variant, variantStart-1, variantEnd+1))
+            # cases of search interval intersec with variant
+            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                variant, variantStart-1, variantStart+1))
+            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                variant, variantStart, variantStart+1))
+            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                variant, variantEnd-1, variantEnd))
+            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                variant, variantEnd-1, variantEnd+1))
+
+    def testVariantFromToInRange(self):
+        pass
 
     def testVariantSetMetadata(self):
         def convertPyvcfNumber(number):
