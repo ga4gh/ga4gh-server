@@ -38,6 +38,7 @@ class TestFrontend(unittest.TestCase):
     """
     Tests the basic routing and HTTP handling for the Flask app.
     """
+    exampleUrl = 'www.example.com'
 
     def setUp(self):
         global _app
@@ -48,8 +49,12 @@ class TestFrontend(unittest.TestCase):
         Sends the specified GA request object and returns the response.
         """
         versionedPath = utils.applyVersion(path)
+        headers = {
+            'Content-type': 'application/json',
+            'Origin': self.exampleUrl,
+        }
         return self.app.post(
-            versionedPath, headers={'Content-type': 'application/json'},
+            versionedPath, headers=headers,
             data=request.toJsonString())
 
     def sendVariantsSearch(
@@ -79,13 +84,10 @@ class TestFrontend(unittest.TestCase):
 
     def testCors(self):
         def assertHeaders(response):
-            # TODO Fix this test. In earlier versions of Flask-CORS this worked
-            # fine, but now it's broken. Why?
-            # self.assertEqual('*',
-            #                  response.headers['Access-Control-Allow-Origin'])
+            self.assertEqual(self.exampleUrl,
+                             response.headers['Access-Control-Allow-Origin'])
             self.assertTrue('Content-Type' in response.headers)
 
-        assertHeaders(self.app.get('/'))
         assertHeaders(self.sendVariantsSearch())
         assertHeaders(self.sendVariantSetsSearch())
         # TODO: Test other methods as they are implemented
