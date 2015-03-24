@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import copy
+import fnmatch
 import itertools
 import logging
 import operator
@@ -157,6 +158,9 @@ class ImportGraphLayerChecker(object):
     but as it stands the time for these tests is dominated by file
     operations and and parsing the ASTs
     """
+    excludedPythonFilenames = set([
+        '__init__.py',
+    ])
 
     # each file/module is in one and only one moduleGroup
     moduleGroupNames = {
@@ -168,7 +172,7 @@ class ImportGraphLayerChecker(object):
         'datamodel': ['ga4gh/datamodel/reads.py',
                       'ga4gh/datamodel/references.py',
                       'ga4gh/datamodel/variants.py'],
-        'libraries': ['ga4gh/converters.py'],
+        'libraries': ['ga4gh/converters.py', 'ga4gh/avrotools.py'],
         'protocol': ['ga4gh/protocol.py', 'ga4gh/_protocol_definitions.py'],
         'config': ['ga4gh/serverconfig.py'],
     }
@@ -214,6 +218,23 @@ class ImportGraphLayerChecker(object):
         return modules
 
     def _checkConfiguration(self):
+        # each module that exists in the file tree appears in moduleGroupNames
+        pythonFiles = []
+        for root, dirnames, filenames in os.walk(utils.getGa4ghFilePath()):
+            for filename in fnmatch.filter(filenames, '*.py'):
+                pythonFilename = os.path.relpath(
+                    os.path.join(root, filename))
+                if (pythonFilename not in self.excludedPythonFilenames and
+                        filename not in self.excludedPythonFilenames):
+                    pythonFiles.append(pythonFilename)
+        modules = self._allModules()
+        moduleSet = set(modules)
+        for pythonFile in pythonFiles:
+            if pythonFile not in moduleSet:
+                message = "file {} is not listed in moduleGroupNames".format(
+                    pythonFile)
+                raise ConfigurationException(message)
+
         # each module should only appear once in moduleGroupNames
         modules = self._allModules()
         moduleSet = set(modules)
