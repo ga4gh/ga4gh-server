@@ -20,7 +20,7 @@ import guppy
 
 
 class HeapProfilerBackend(ga4gh.backend.FileSystemBackend):
-    def __init__(self, dataDir, variantSetClass):
+    def __init__(self, dataDir):
         super(HeapProfilerBackend, self).__init__(dataDir)
         self.profiler = guppy.hpy()
 

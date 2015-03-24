@@ -175,6 +175,7 @@ def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])
+    theBackend.setMaxResponseLength(app.config["MAX_RESPONSE_LENGTH"])
     app.backend = theBackend
 
 

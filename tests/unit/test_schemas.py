@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 
 import string
 import random
-import inspect
 import unittest
 
 import avro.schema
@@ -40,17 +39,6 @@ class SchemaTest(unittest.TestCase):
     }
 
     instanceGenerator = utils.InstanceGenerator()
-
-    def getProtocolClasses(self):
-        """
-        Returns all the protocol classes defined by the schema.
-        """
-        for name, obj in inspect.getmembers(protocol):
-            if inspect.isclass(obj):
-                # We're only interested in sublasses of ProtocolElement
-                pe = protocol.ProtocolElement
-                if issubclass(obj, pe) and obj is not pe:
-                    yield obj
 
     def getAvroSchema(self, cls, fieldName):
         """
@@ -182,7 +170,7 @@ class EqualityTest(SchemaTest):
     def testSameClasses(self):
         factories = [self.getDefaultInstance, self.getTypicalInstance,
                      self.getRandomInstance]
-        for cls in self.getProtocolClasses():
+        for cls in protocol.getProtocolClasses():
             for factory in factories:
                 i1 = factory(cls)
                 i2 = cls.fromJsonDict(i1.toJsonDict())
@@ -193,7 +181,7 @@ class EqualityTest(SchemaTest):
             return cls()
         factories = [factory, self.getTypicalInstance, self.getDefaultInstance,
                      self.getRandomInstance]
-        classes = list(self.getProtocolClasses())
+        classes = list(protocol.getProtocolClasses())
         c1 = classes[0]
         for c2 in classes[1:]:
             for factory in factories:
@@ -214,7 +202,7 @@ class SerialisationTest(SchemaTest):
     Tests the serialisation and deserialisation code for the schema classes
     """
     def validateClasses(self, factory):
-        for cls in self.getProtocolClasses():
+        for cls in protocol.getProtocolClasses():
             instance = factory(cls)
             jsonStr = instance.toJsonString()
             otherInstance = cls.fromJsonString(jsonStr)
@@ -241,7 +229,7 @@ class ValidatorTest(SchemaTest):
     instances that do match the schema
     """
     def validateClasses(self, factory):
-        for cls in self.getProtocolClasses():
+        for cls in protocol.getProtocolClasses():
             instance = factory(cls)
             jsonDict = instance.toJsonDict()
             self.assertTrue(cls.validate(jsonDict))
@@ -256,7 +244,7 @@ class ValidatorTest(SchemaTest):
         self.validateClasses(self.getRandomInstance)
 
     def testValidateBadValues(self):
-        for cls in self.getProtocolClasses():
+        for cls in protocol.getProtocolClasses():
             instance = self.getTypicalInstance(cls)
             jsonDict = instance.toJsonDict()
             self.assertFalse(cls.validate(None))
@@ -273,3 +261,117 @@ class ValidatorTest(SchemaTest):
                     for f in c:
                         dct[f] = self.getInvalidValue(cls, f)
                     self.assertFalse(cls.validate(dct))
+
+
+class GetProtocolClassesTest(SchemaTest):
+    """
+    Tests the protocol.getProtocolClasses() function to ensure it
+    works correctly.
+    """
+    def testAllClasses(self):
+        classes = protocol.getProtocolClasses()
+        assert len(classes) > 0
+        for class_ in classes:
+            self.assertTrue(issubclass(class_, protocol.ProtocolElement))
+
+    def testRequestAndResponseClasses(self):
+        requestClasses = protocol.getProtocolClasses(protocol.SearchRequest)
+        responseClasses = protocol.getProtocolClasses(protocol.SearchResponse)
+        self.assertEqual(len(requestClasses), len(responseClasses))
+        self.assertGreater(len(requestClasses), 0)
+        for class_ in requestClasses:
+            self.assertTrue(issubclass(class_, protocol.SearchRequest))
+        for class_ in responseClasses:
+            self.assertTrue(issubclass(class_, protocol.SearchResponse))
+            valueListName = class_.getValueListName()
+            self.assertGreater(len(valueListName), 0)
+
+
+class SearchResponseBuilderTest(SchemaTest):
+    """
+    Tests the SearchResponseBuilder class to ensure that it behaves
+    correctly.
+    """
+    def testIntegrity(self):
+        # Verifies that the values we put in are exactly what we get
+        # back across all subclasses of SearchResponse
+        for class_ in protocol.getProtocolClasses(protocol.SearchResponse):
+            instances = [
+                self.getTypicalInstance(class_),
+                self.getRandomInstance(class_)]
+            for instance in instances:
+                valueList = getattr(instance, class_.getValueListName())
+                builder = protocol.SearchResponseBuilder(
+                    class_, len(valueList), 2**32)
+                for value in valueList:
+                    builder.addValue(value)
+                builder.setNextPageToken(instance.nextPageToken)
+                otherInstance = class_.fromJsonString(builder.getJsonString())
+                self.assertEqual(instance,  otherInstance)
+
+    def testPageSizeOverflow(self):
+        # Verifies that the page size behaviour is correct when we keep
+        # filling after full is True.
+        responseClass = protocol.GASearchVariantsResponse
+        valueClass = protocol.GAVariant
+        for pageSize in range(1, 10):
+            builder = protocol.SearchResponseBuilder(
+                responseClass, pageSize, 2**32)
+            self.assertEqual(builder.getPageSize(), pageSize)
+            self.assertFalse(builder.isFull())
+            for listLength in range(1, 2 * pageSize):
+                builder.addValue(self.getTypicalInstance(valueClass))
+                instance = responseClass.fromJsonString(
+                    builder.getJsonString())
+                valueList = getattr(
+                    instance, responseClass.getValueListName())
+                self.assertEqual(len(valueList), listLength)
+                if listLength < pageSize:
+                    self.assertFalse(builder.isFull())
+                else:
+                    self.assertTrue(builder.isFull())
+
+    def testPageSizeExactFill(self):
+        responseClass = protocol.GASearchVariantsResponse
+        valueClass = protocol.GAVariant
+        for pageSize in range(1, 10):
+            builder = protocol.SearchResponseBuilder(
+                responseClass, pageSize, 2**32)
+            self.assertEqual(builder.getPageSize(), pageSize)
+            while not builder.isFull():
+                builder.addValue(self.getTypicalInstance(valueClass))
+            instance = responseClass.fromJsonString(builder.getJsonString())
+            valueList = getattr(instance, responseClass.getValueListName())
+            self.assertEqual(len(valueList), pageSize)
+
+    def testMaxResponseLengthOverridesPageSize(self):
+        responseClass = protocol.GASearchVariantsResponse
+        valueClass = protocol.GAVariant
+        typicalValue = self.getTypicalInstance(valueClass)
+        typicalValueLength = len(typicalValue.toJsonString())
+        for numValues in range(1, 10):
+            maxResponseLength = numValues * typicalValueLength
+            builder = protocol.SearchResponseBuilder(
+                responseClass, 1000, maxResponseLength)
+            self.assertEqual(
+                maxResponseLength, builder.getMaxResponseLength())
+            while not builder.isFull():
+                builder.addValue(typicalValue)
+            instance = responseClass.fromJsonString(builder.getJsonString())
+            valueList = getattr(instance, responseClass.getValueListName())
+            self.assertEqual(len(valueList), numValues)
+
+    def testNextPageToken(self):
+        responseClass = protocol.GASearchVariantsResponse
+        builder = protocol.SearchResponseBuilder(
+            responseClass, 100, 2**32)
+        # If not set, pageToken should be None
+        self.assertIsNone(builder.getNextPageToken())
+        instance = responseClass.fromJsonString(builder.getJsonString())
+        self.assertIsNone(instance.nextPageToken)
+        # page tokens can be None or any string.
+        for nextPageToken in [None, "", "string"]:
+            builder.setNextPageToken(nextPageToken)
+            self.assertEqual(nextPageToken, builder.getNextPageToken())
+            instance = responseClass.fromJsonString(builder.getJsonString())
+            self.assertEqual(nextPageToken, instance.nextPageToken)
