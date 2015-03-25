@@ -95,6 +95,12 @@ class AbstractVariantSet(object):
         """
         raise NotImplementedError()
 
+    # TODO trivial implementation to pass unit tests, remove once proper
+    # implementation written in HtslibVariantSet (issue #286)
+    def getCallSets(self, name, startPosition):
+        for i in []:
+            yield i
+
 
 class SimulatedVariantSet(AbstractVariantSet):
     """
@@ -117,10 +123,6 @@ class SimulatedVariantSet(AbstractVariantSet):
     def getMetadata(self):
         ret = []
         return ret
-
-    def getCallSets(self, name, startPosition):
-        for i in []:
-            yield i
 
     def getVariants(self, referenceName, startPosition, endPosition,
                     variantName, callSetIds):
