@@ -170,6 +170,9 @@ class TestCase(object):
                 "{} is not less than or equal to {}".format(a, b))
 
     def assertRaises(self, exceptionType, func=None, *args, **kwargs):
+        """
+        Tests that calling func raises an exception of type exceptionType
+        """
         if func is None:
             return self.assertRaisesWith(exceptionType)
         exceptionRaised = False
@@ -184,6 +187,9 @@ class TestCase(object):
 
     @contextlib.contextmanager
     def assertRaisesWith(self, exceptionType):
+        """
+        Tests that a block of code raises an exception of type exceptionType
+        """
         exceptionRaised = False
         try:
             yield
@@ -193,6 +199,24 @@ class TestCase(object):
             raise AssertionError(
                 "exception of type {} not raised".format(
                     exceptionType.__name__))
+
+    def assertAlmostEqual(self, a, b, ndigits=7):
+        """
+        Assert that a and b are equal within ndigits digits
+        """
+        if round(a-b, ndigits) != 0:
+            message = "{} and {} not equal within {} digits".format(
+                a, b, ndigits)
+            raise AssertionError(message)
+
+    def assertNotAlmostEqual(self, a, b, ndigits=7):
+        """
+        Assert that a and b are not equal within ndigits digits
+        """
+        if round(a-b, ndigits) == 0:
+            message = "{} and {} equal within {} digits".format(
+                a, b, ndigits)
+            raise AssertionError(message)
 
 
 class DataDrivenTest(TestCase):
