@@ -98,9 +98,10 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self.assertEqual(gaCall.callSetId, pyvcfCall.site.ID)
         self.assertEqual(gaCall.callSetName, pyvcfCall.sample)
         self.assertEqual(gaCall.genotype, genotype)
-        # TODO: Need to check the phaseset!
-        # gaCall.phaseset is currently not implemented?
-        # self.assertEqual(gaCall.phaseset,phaseset)
+        phaseset = None
+        if pyvcfCall.phased:
+            phaseset = "*"
+        self.assertEqual(gaCall.phaseset, phaseset)
         if len(gaCall.genotypeLikelihood) > 0:
             self.assertTrue(self._compareTwoListFloats(
                 gaCall.genotypeLikelihood, pyvcfCall.data.GL))
