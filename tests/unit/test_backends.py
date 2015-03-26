@@ -115,11 +115,6 @@ class TestAbstractBackend(unittest.TestCase):
         variantSetMap = self._backend._variantSetIdMap
         self.assertEqual(variantSetMapFromGetter, variantSetMap)
 
-    def testGetCallSetIdMap(self):
-        callSetMapFromGetter = self._backend.getCallSetIdMap()
-        callSetMap = self._backend._callSetIdMap
-        self.assertEqual(callSetMapFromGetter, callSetMap)
-
     def testParsePageToken(self):
         goodPageToken = "12:34:567:8:9000"
         parsedToken = self._backend.parsePageToken(goodPageToken, 5)
@@ -153,7 +148,10 @@ class TestAbstractBackend(unittest.TestCase):
             isinstance(response, protocol.GASearchVariantsResponse))
 
     def testSearchCallSets(self):
+        variantSetIds = [
+            variantSet.id for variantSet in self.getVariantSets(pageSize=1)]
         request = protocol.GASearchCallSetsRequest()
+        request.variantSetIds = variantSetIds[:1]
         responseStr = self._backend.searchCallSets(request.toJsonString())
         response = protocol.GASearchCallSetsResponse.fromJsonString(
             responseStr)
@@ -573,20 +571,6 @@ class TestWormtableCallSets(TestWormtableBackend):
         ga4ghCallSets = list(self.getCallSets(variantSetId))
         wormtableCallSets = list(self.getWormtableCallSetIds(variantSetId))
         self.assertEqual(len(ga4ghCallSets), len(wormtableCallSets))
-        for ga4ghCallSet, wormtableCallSet in zip(
-                ga4ghCallSets, wormtableCallSets):
-            self.verifyCallSetsEqual(
-                variantSetId, ga4ghCallSet, wormtableCallSet)
-
-    def verifyCallSetsEqual(
-            self, variantSetId, ga4ghCallSet, wormtableCallSet):
-        """
-        Verifies that the ga4ghCallSet Ojbect is equal to the wormtable column.
-        """
-        self.assertEqual(ga4ghCallSet.id,
-                         "{0}.{1}".format(variantSetId, wormtableCallSet))
-        self.assertEqual(ga4ghCallSet.name, wormtableCallSet)
-        self.assertEqual(ga4ghCallSet.sampleId, wormtableCallSet)
 
     def testSearchAllCallSets(self):
         for variantSet in self.getVariantSets():
@@ -596,17 +580,6 @@ class TestWormtableCallSets(TestWormtableBackend):
         # TODO implement after schemas on name string search is determined
         pass
 
-    def testCallSetIds(self):
-        # verify that callSetIds are equal to sample columns in wormtable
-        variantSetIdMap = self._backend.getVariantSetIdMap()
-        for variantSetId in self.getVariantSetIds():
-            callSetIds = set(self.getWormtableCallSetIds(variantSetId))
-            variantSets = variantSetIdMap[variantSetId]
-            sampleNames = set(variantSets.getSampleNames())
-            self.assertEqual(callSetIds, sampleNames)
-            self.assertIsNotNone(callSetIds)
-            self.assertIsNotNone(sampleNames)
-
     def testUniqueCallSetIds(self):
         # verify that all callSetIds are unique
         for variantSetId in self.getVariantSetIds():
@@ -614,22 +587,3 @@ class TestWormtableCallSets(TestWormtableBackend):
             for callSetId in self.getWormtableCallSetIds(variantSetId):
                 self.assertTrue(callSetId not in callSetIds)
                 callSetIds.add(callSetId)
-
-    def testVariantSetIds(self):
-        # test the VariantSetId field of GACallSet object is correct
-        allCallSetIdMap = dict()
-        for variantSetId in self.getVariantSetIds():
-            for callSetId in self.getWormtableCallSetIds(variantSetId):
-                if callSetId not in allCallSetIdMap:
-                    allCallSetIdMap[callSetId] = []
-                allCallSetIdMap[callSetId].append(variantSetId)
-        wormtableCallSetIdMap = self._backend.getCallSetIdMap()
-        # can't just call assertEqual on allCallSetIdMap and
-        # wormtableCallSetIdMap since their values (arrays)
-        # may have different orderings of the items
-        self.assertEqual(
-            sorted(allCallSetIdMap.keys()),
-            sorted(wormtableCallSetIdMap.keys()))
-        for key in allCallSetIdMap:
-            for value in allCallSetIdMap[key]:
-                self.assertIn(value, wormtableCallSetIdMap[key])

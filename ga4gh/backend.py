@@ -6,8 +6,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import json
 import os
+import json
 import random
 
 import ga4gh.protocol as protocol
@@ -29,8 +29,6 @@ class AbstractBackend(object):
         self._referenceSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetIds = []
-        self._callSetIdMap = {}
-        self._callSetIds = []
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
@@ -45,10 +43,6 @@ class AbstractBackend(object):
     def getVariantSetIdMap(self):
         # TODO remove this --- why do we need direct access to the map?
         return self._variantSetIdMap
-
-    def getCallSetIdMap(self):
-        # TODO remove this --- why do we need direct access to the map?
-        return self._callSetIdMap
 
     def parsePageToken(self, pageToken, numValues):
         """
@@ -243,31 +237,20 @@ class AbstractBackend(object):
         Returns a generator over the (callSet, nextPageToken) pairs defined by
         the specified request.
         """
-        # if no variantSetIds are input from client,
-        # then set variantSetIds to all variantSetIds
-        if request.variantSetIds == []:
-            variantSetIds = self._variantSetIds
-        else:
-            variantSetIds = request.variantSetIds
-        name = request.name
-        if request.pageToken is not None:
-            startVariantSetIndex, startCallSetPosition = self.parsePageToken(
-                request.pageToken, 2)
-        else:
-            startVariantSetIndex = 0
-            startCallSetPosition = 0
-
-        for variantSetIndex in range(startVariantSetIndex, len(variantSetIds)):
-            variantSetId = variantSetIds[variantSetIndex]
-            if variantSetId in self._variantSetIdMap:
-                variantSet = self._variantSetIdMap[variantSetId]
-                callSetIterator = variantSet.getCallSets(
-                    name, startCallSetPosition)
-                for callSet, callSetPosition in callSetIterator:
-                    callSet.variantSetIds = self._callSetIdMap[callSet.name]
-                    nextPageToken = "{0}:{1}".format(
-                        variantSetIndex, callSetPosition + 1)
-                    yield callSet, nextPageToken
+        if len(request.variantSetIds) != 1:
+            raise exceptions.NotImplementedException(
+                "Searching over multiple variantSets is not supported.")
+        if request.name is not None:
+            raise exceptions.NotImplementedException(
+                "Searching over names is not supported")
+        variantSetId = request.variantSetIds[0]
+        try:
+            variantSet = self._variantSetIdMap[variantSetId]
+        except KeyError:
+            raise exceptions.VariantSetNotFound(variantSetId)
+        return self._topLevelObjectGenerator(
+            request, variantSet.getCallSetIdMap(),
+            variantSet.getCallSetIds())
 
     def startProfile(self):
         """
@@ -391,12 +374,3 @@ class FileSystemBackend(AbstractBackend):
                     readGroupSetId, relativePath)
                 self._readGroupSetIdMap[readGroupSetId] = readGroupSet
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
-
-        # callSets
-        for variantSet in self._variantSetIdMap.values():
-            sampleNames = variantSet.getSampleNames()
-            variantSetId = variantSet.getId()
-            for name in sampleNames:
-                if name not in self._callSetIdMap:
-                    self._callSetIdMap[name] = []
-                self._callSetIdMap[name].append(variantSetId)

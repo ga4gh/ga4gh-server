@@ -142,6 +142,12 @@ class ObjectNotFoundException(NotFoundException):
     message = "The requested object was not found"
 
 
+class VariantSetNotFound(NotFoundException):
+    def __init__(self, variantSetId):
+        self.message = "The requested VariantSet '{}' was not found".format(
+            variantSetId)
+
+
 class UnsupportedMediaTypeException(BaseServerException):
     httpStatus = 415
     message = "Unsupported media type"
