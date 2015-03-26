@@ -52,10 +52,10 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.assertEqual(
             self.variantDensity, self.simulatedVariantSet._variantDensity)
         self.assertEqual(
-            self.variantSetId, self.simulatedVariantSet._variantSetId)
+            self.variantSetId, self.simulatedVariantSet._id)
         self.assertEqual(
-            self.simulatedVariantSet._created,
-            self.simulatedVariantSet._updated)
+            self.simulatedVariantSet.getCreationTime(),
+            self.simulatedVariantSet.getUpdatedTime())
 
     def testGetVariants(self):
         # calling getVariants should produce the expected results

@@ -18,7 +18,7 @@ def setUp(self):
     config = {
         "DATA_SOURCE": "__SIMULATED__",
         "SIMULATED_BACKEND_RANDOM_SEED": 1111,
-        "SIMULATED_BACKEND_NUM_CALLS": 0,
+        "SIMULATED_BACKEND_NUM_CALLS": 1,
         "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
         "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
         # "DEBUG" : True
@@ -71,9 +71,12 @@ class TestFrontend(unittest.TestCase):
         request.datasetIds = datasetIds
         return self.sendRequest('/variantsets/search', request)
 
-    def sendCallSetsSearch(self, variantSetIds=[""]):
+    def sendCallSetsSearch(self):
+        response = self.sendVariantSetsSearch()
+        variantSets = protocol.GASearchVariantSetsResponse().fromJsonString(
+            response.data).variantSets
         request = protocol.GASearchCallSetsRequest()
-        request.variantSetIds = variantSetIds
+        request.variantSetIds = [variantSets[0].id]
         return self.sendRequest('/callsets/search', request)
 
     def test404sReturnJson(self):
@@ -171,7 +174,7 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchCallSetsResponse.fromJsonString(
             response.data)
-        self.assertEqual(responseData.callSets, [])
+        self.assertEqual(len(responseData.callSets), 1)
 
     def testWrongVersion(self):
         path = '/v0.1.2/variantsets/search'
