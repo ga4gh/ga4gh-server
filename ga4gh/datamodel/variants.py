@@ -518,13 +518,28 @@ class HtslibVariantSet(AbstractVariantSet):
                 self._updateCallSetIds(varFile)
                 self._chromFileMap[chrom] = varFile
 
-    def _convertGaCall(self, recordId, name, pysamCall):
+    def _convertGaCall(self, recordId, name, pysamCall, genotypeData):
         call = protocol.GACall()
         call.callSetId = recordId
         call.callSetName = name
-        call.genotype = list(pysamCall.allele_indices)
-        # TODO: phaseset is not set by pysam
+
+        # TODO:
+        # NOTE: THE FOLLOWING TWO LINES IS NOT THE INTENED IMPLEMENTATION,
+        ###########################################
         call.phaseset = None
+        call.genotype, call.phaseset = convertVCFGenotype(
+            genotypeData, call.phaseset)
+        ###########################################
+
+        # THEY SHOULD BE REPLACED BY THE FOLLOWING, ONCE NEW PYSAM
+        # RELEASE SUPPORTS phaseset. AS WELL AS REMOVING genotypeData
+        # FROM THE FUNCTION CALL
+
+        ###########################################
+        # call.genotype = list(pysamCall.allele_indices)
+        # call.phaseset = pysamCall.phaseset
+        ###########################################
+
         call.genotypeLikelihood = []
         for key, value in pysamCall.iteritems():
             if key == 'GL' and value is not None:
@@ -559,16 +574,23 @@ class HtslibVariantSet(AbstractVariantSet):
             variant.alternateBases = list(record.alts)
         # record.filter and record.qual are also available, when supported
         # by GAVariant.
-
         for key, value in record.info.iteritems():
             if value is not None:
                 variant.info[key] = _encodeValue(value)
 
+        # NOTE: THE LABELED LINES SHOULD BE REMOVED ONCE PYSAM SUPPORTS
+        # phaseset
+
+        sampleData = record.__str__().split()[9:]  # REMOVAL
         variant.calls = []
+        sampleIterator = 0  # REMOVAL
         for name, call in record.samples.iteritems():
             if name in callSetIds:
+                genotypeData = sampleData[sampleIterator].split(
+                    ":")[0]  # REMOVAL
                 variant.calls.append(self._convertGaCall(
-                    record.id, name, call))
+                    record.id, name, call, genotypeData))  # REPLACE
+            sampleIterator += 1  # REMOVAL
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
