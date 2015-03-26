@@ -33,7 +33,6 @@ def getServerError(exception):
     """
     assert not isinstance(exception, BaseServerException)
     serverException = ServerError()
-    serverException.message = str(exception)
     return serverException
 
 
@@ -192,6 +191,7 @@ class ServerError(BaseServerException):
     Superclass of all exceptions that indicate a bug has occured.
     """
     httpStatus = 500
+    message = "Internal Server Error"
 
 
 class ResponseValidationFailureException(ServerError):

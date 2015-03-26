@@ -41,6 +41,8 @@ class TestExceptionHandler(unittest.TestCase):
         exception = self.UnknownException()
         response = frontend.handleException(exception)
         self.assertEquals(response.status_code, 500)
+        gaException = self.getGa4ghException(response.data)
+        self.assertEquals(gaException.message, exceptions.ServerError.message)
 
     def testNotImplementedException(self):
         message = "A string unlikely to occur at random."
