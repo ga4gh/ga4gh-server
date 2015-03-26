@@ -1,7 +1,5 @@
 """
 Stand-alone benchmark for the GA4GH reference implementation.
-
-Assumes that wormtable sample data is installed at ./ga4gh-example-data.
 """
 from __future__ import division
 from __future__ import print_function
