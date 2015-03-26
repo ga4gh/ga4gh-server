@@ -6,6 +6,9 @@ you need to update the GA4GH protocol classes, please run the script
 on the appropriate schema version.
 """
 from protocol import ProtocolElement
+from protocol import SearchRequest
+from protocol import SearchResponse
+
 import avro.schema
 
 version = '0.5.1'
@@ -890,7 +893,7 @@ coordinate space for comparing reference-aligned experimental data.
         self.sourceURI = None
 
 
-class GASearchCallSetsRequest(ProtocolElement):
+class GASearchCallSetsRequest(SearchRequest):
     """
 This request maps to the body of `POST /callsets/search` as JSON.
     """
@@ -925,7 +928,7 @@ This request maps to the body of `POST /callsets/search` as JSON.
         self.variantSetIds = []
 
 
-class GASearchCallSetsResponse(ProtocolElement):
+class GASearchCallSetsResponse(SearchResponse):
     """
 This is the response from `POST /callsets/search` expressed as JSON.
     """
@@ -947,6 +950,7 @@ null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
+    _valueListName = "callSets"
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -969,7 +973,7 @@ null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
         self.nextPageToken = None
 
 
-class GASearchReadGroupSetsRequest(ProtocolElement):
+class GASearchReadGroupSetsRequest(SearchRequest):
     """
 This request maps to the body of `POST /readgroupsets/search` as JSON.
     """
@@ -1004,7 +1008,7 @@ This request maps to the body of `POST /readgroupsets/search` as JSON.
         self.pageToken = None
 
 
-class GASearchReadGroupSetsResponse(ProtocolElement):
+class GASearchReadGroupSetsResponse(SearchResponse):
     """
 This is the response from `POST /readgroupsets/search` expressed as JSON.
     """
@@ -1049,6 +1053,7 @@ null, "doc": "", "type": ["null", "string"], "name": "version"}],
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
+    _valueListName = "readGroupSets"
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1071,7 +1076,7 @@ null, "doc": "", "type": ["null", "string"], "name": "version"}],
         self.readGroupSets = []
 
 
-class GASearchReadsRequest(ProtocolElement):
+class GASearchReadsRequest(SearchRequest):
     """
 This request maps to the body of `POST /reads/search` as JSON.
 
@@ -1117,7 +1122,7 @@ specified, all `GAReadGroup`s must be aligned to the same `GAReferenceSet`.
         self.start = 0
 
 
-class GASearchReadsResponse(ProtocolElement):
+class GASearchReadsResponse(SearchResponse):
     """
 This is the response from `POST /reads/search` expressed as JSON.
     """
@@ -1165,6 +1170,7 @@ false, "doc": "", "type": ["null", "boolean"], "name":
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
+    _valueListName = "alignments"
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1187,7 +1193,7 @@ false, "doc": "", "type": ["null", "boolean"], "name":
         self.nextPageToken = None
 
 
-class GASearchReferenceSetsRequest(ProtocolElement):
+class GASearchReferenceSetsRequest(SearchRequest):
     """
 This request maps to the body of `POST /referencesets/search`
 as JSON.
@@ -1227,7 +1233,7 @@ as JSON.
         self.pageToken = None
 
 
-class GASearchReferenceSetsResponse(ProtocolElement):
+class GASearchReferenceSetsResponse(SearchResponse):
     """
 This is the response from `POST /referencesets/search`
 expressed as JSON.
@@ -1252,6 +1258,7 @@ null, "doc": "", "type": ["null", "string"], "name": "sourceURI"},
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
+    _valueListName = "referenceSets"
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1274,7 +1281,7 @@ null, "doc": "", "type": ["null", "string"], "name": "sourceURI"},
         self.referenceSets = []
 
 
-class GASearchReferencesRequest(ProtocolElement):
+class GASearchReferencesRequest(SearchRequest):
     """
 This request maps to the body of `POST /references/search`
 as JSON.
@@ -1310,7 +1317,7 @@ as JSON.
         self.pageToken = None
 
 
-class GASearchReferencesResponse(ProtocolElement):
+class GASearchReferencesResponse(SearchResponse):
     """
 This is the response from `POST /references/search` expressed as JSON.
     """
@@ -1332,6 +1339,7 @@ null, "doc": "", "type": ["null", "int"], "name": "ncbiTaxonId"}]},
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
+    _valueListName = "references"
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1354,7 +1362,7 @@ null, "doc": "", "type": ["null", "int"], "name": "ncbiTaxonId"}]},
         self.references = []
 
 
-class GASearchVariantSetsRequest(ProtocolElement):
+class GASearchVariantSetsRequest(SearchRequest):
     """
 This request maps to the body of `POST /variantsets/search` as JSON.
     """
@@ -1387,7 +1395,7 @@ This request maps to the body of `POST /variantsets/search` as JSON.
         self.pageToken = None
 
 
-class GASearchVariantSetsResponse(ProtocolElement):
+class GASearchVariantSetsResponse(SearchResponse):
     """
 This is the response from `POST /variantsets/search` expressed as JSON.
     """
@@ -1411,6 +1419,7 @@ This is the response from `POST /variantsets/search` expressed as JSON.
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
+    _valueListName = "variantSets"
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1433,7 +1442,7 @@ This is the response from `POST /variantsets/search` expressed as JSON.
         self.variantSets = []
 
 
-class GASearchVariantsRequest(ProtocolElement):
+class GASearchVariantsRequest(SearchRequest):
     """
 This request maps to the body of `POST /variants/search` as JSON.
     """
@@ -1481,7 +1490,7 @@ This request maps to the body of `POST /variants/search` as JSON.
         self.variantSetIds = []
 
 
-class GASearchVariantsResponse(ProtocolElement):
+class GASearchVariantsResponse(SearchResponse):
     """
 This is the response from `POST /variants/search` expressed as JSON.
     """
@@ -1517,6 +1526,7 @@ This is the response from `POST /variants/search` expressed as JSON.
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
+    _valueListName = "variants"
 
     @classmethod
     def isEmbeddedType(cls, fieldName):

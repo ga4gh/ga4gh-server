@@ -5,27 +5,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
 import json
+import inspect
 import datetime
 import itertools
-import sys
-import inspect
+from cStringIO import StringIO
 
 import avro.io
-
-
-def getProtocolClasses():
-    """
-    Return a list of all subclasses of ProtocolElement
-    """
-    thisModule = sys.modules[__name__]
-    subclasses = []
-    for name, class_ in inspect.getmembers(thisModule):
-        if (inspect.isclass(class_) and
-                issubclass(class_, ProtocolElement) and
-                class_ is not ProtocolElement):
-            subclasses.append(class_)
-    return subclasses
 
 
 def convertDatetime(t):
@@ -37,6 +24,94 @@ def convertDatetime(t):
     delta = t - epoch
     millis = delta.total_seconds() * 1000
     return int(millis)
+
+
+class SearchResponseBuilder(object):
+    """
+    A class to allow sequential building of SearchResponse objects.
+    This is a performance tweak which allows us to substantially
+    reduce the number of live objects we require in the server when
+    we are building responses, as we write the JSON representation
+    of ProtocolElements directly to a buffer.
+    """
+    def __init__(self, responseClass, pageSize, maxResponseLength):
+        """
+        Allocates a new SearchResponseBuilder for the specified
+        subclass of SearchResponse, with the specified
+        user-requested pageSize and the system mandated
+        maxResponseLength (in bytes). The maxResponseLength is an
+        approximate limit on the overall length of the JSON
+        response.
+        """
+        self._responseClass = responseClass
+        self._pageSize = pageSize
+        self._maxResponseLength = maxResponseLength
+        self._valueListBuffer = StringIO()
+        self._numElements = 0
+        self._nextPageToken = None
+
+    def getPageSize(self):
+        """
+        Returns the page size for this SearchResponseBuilder. This is the
+        user-requested maximum size for the number of elements in the
+        value list.
+        """
+        return self._pageSize
+
+    def getMaxResponseLength(self):
+        """
+        Returns the approximate maximum response length. More precisely,
+        this is the total length (in bytes) of the concatenated JSON
+        representations of the values in the value list after which
+        we consider the buffer to be full.
+        """
+        return self._maxResponseLength
+
+    def getNextPageToken(self):
+        """
+        Returns the value of the nextPageToken for this
+        SearchResponseBuilder.
+        """
+        return self._nextPageToken
+
+    def setNextPageToken(self, nextPageToken):
+        """
+        Sets the nextPageToken to the specified value.
+        """
+        self._nextPageToken = nextPageToken
+
+    def addValue(self, protocolElement):
+        """
+        Appends the specified protocolElement to the value list for this
+        response.
+        """
+        if self._numElements > 0:
+            self._valueListBuffer.write(", ")
+        self._numElements += 1
+        self._valueListBuffer.write(protocolElement.toJsonString())
+
+    def isFull(self):
+        """
+        Returns True if the response buffer is full, and False otherwise.
+        The buffer is full if either (1) the number of items in the value
+        list is >= pageSize or (2) the total length of the serialised
+        elements in the page is >= maxResponseLength.
+        """
+        return (
+            self._numElements >= self._pageSize or
+            self._valueListBuffer.tell() >= self._maxResponseLength)
+
+    def getJsonString(self):
+        """
+        Returns a string version of the SearchResponse that has
+        been built by this SearchResponseBuilder. This is a fully
+        formed JSON document, and consists of the pageToken and
+        the value list.
+        """
+        pageListString = "[{}]".format(self._valueListBuffer.getvalue())
+        return '{{"nextPageToken": {},"{}": {}}}'.format(
+            json.dumps(self._nextPageToken),
+            self._responseClass.getValueListName(), pageListString)
 
 
 class ProtocolElementEncoder(json.JSONEncoder):
@@ -57,11 +132,6 @@ class ProtocolElement(object):
     correspondence with the Avro definitions, and provide the basic elements
     of the on-the-wire protocol.
     """
-    # TODO We need to think the API for this through a little better.
-    # Should the JSON converters return strings or dicts, or do we
-    # need both? The equality operators also need some work and more
-    # rigorous testing.
-
     def __str__(self):
         return "{0}({1})".format(self.__class__.__name__, self.toJsonString())
 
@@ -69,9 +139,6 @@ class ProtocolElement(object):
         """
         Returns True if all fields in this protocol element are equal to the
         fields in the specified protocol element.
-
-        TODO This feature is experimental and requires more testing; use
-        with caution!!
         """
         if type(other) != type(self):
             return False
@@ -85,9 +152,6 @@ class ProtocolElement(object):
     def toJsonString(self):
         """
         Returns a JSON encoded string representation of this ProtocolElement.
-
-        TODO is this a good API? Should we just let the client call the
-        appropriate json method and use ProtocolElementEncoder?
         """
         return json.dumps(self, cls=ProtocolElementEncoder)
 
@@ -157,6 +221,47 @@ class ProtocolElement(object):
             return list(embeddedType.fromJsonDict(elem) for elem in val)
         else:
             return embeddedType.fromJsonDict(val)
+
+
+class SearchRequest(ProtocolElement):
+    """
+    The superclass of all SearchRequest classes in the protocol.
+    """
+
+
+class SearchResponse(ProtocolElement):
+    """
+    The superclass of all SearchResponse classes in the protocol.
+    """
+    @classmethod
+    def getValueListName(cls):
+        """
+        Returns the name of the list used to store the values held
+        in a page of results.
+        """
+        return cls._valueListName
+
+
+def getProtocolClasses(superclass=ProtocolElement):
+    """
+    Returns all the protocol classes that are subclasses of the
+    specified superclass. Only 'leaf' classes are returned,
+    corresponding directly to the classes defined in the protocol.
+    """
+    # We keep a manual list of the superclasses that we define here
+    # so we can filter them out when we're getting the protocol
+    # classes.
+    superclasses = set([
+        ProtocolElement, SearchRequest, SearchResponse])
+    thisModule = sys.modules[__name__]
+    subclasses = []
+    for name, class_ in inspect.getmembers(thisModule):
+        if ((inspect.isclass(class_) and
+                issubclass(class_, superclass) and
+                class_ not in superclasses)):
+            subclasses.append(class_)
+    return subclasses
+
 
 # We can now import the definitions of the protocol elements from the
 # generated file.

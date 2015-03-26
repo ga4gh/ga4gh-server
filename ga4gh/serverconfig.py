@@ -14,6 +14,7 @@ class BaseConfig(object):
     Simplest default server configuration.
     """
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
+    MAX_RESPONSE_LENGTH = 1024 * 1024  # 1MB
     REQUEST_VALIDATION = False
     RESPONSE_VALIDATION = False
     DEFAULT_PAGE_SIZE = 100

@@ -34,6 +34,7 @@ class AbstractBackend(object):
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
+        self._maxResponseLength = 2**20  # 1 MiB
 
     def getVariantSets(self):
         """
@@ -67,12 +68,10 @@ class AbstractBackend(object):
         return values
 
     def runSearchRequest(
-            self, requestStr, requestClass, responseClass, pageListName,
-            objectGenerator):
+            self, requestStr, requestClass, responseClass, objectGenerator):
         """
         Runs the specified request. The request is a string containing
-        a JSON representation of an instance of the specified requestClass
-        in which the page list variable has the specified pageListName.
+        a JSON representation of an instance of the specified requestClass.
         We return a string representation of an instance of the specified
         responseClass in JSON format. Objects are filled into the page list
         using the specified object generator, which must return
@@ -90,19 +89,18 @@ class AbstractBackend(object):
             request.pageSize = self._defaultPageSize
         if request.pageSize <= 0:
             raise exceptions.BadPageSizeException(request.pageSize)
-        pageList = []
+        responseBuilder = protocol.SearchResponseBuilder(
+            responseClass, request.pageSize, self._maxResponseLength)
         nextPageToken = None
         for obj, nextPageToken in objectGenerator(request):
-            pageList.append(obj)
-            if len(pageList) >= request.pageSize:
+            responseBuilder.addValue(obj)
+            if responseBuilder.isFull():
                 break
-        response = responseClass()
-        response.nextPageToken = nextPageToken
-        setattr(response, pageListName, pageList)
-        responseDict = response.toJsonDict()
-        self.validateResponse(responseDict, responseClass)
+        responseBuilder.setNextPageToken(nextPageToken)
+        responseString = responseBuilder.getJsonString()
+        self.validateResponse(responseString, responseClass)
         self.endProfile()
-        return response.toJsonString()
+        return responseString
 
     def searchReadGroupSets(self, request):
         """
@@ -111,7 +109,7 @@ class AbstractBackend(object):
         """
         return self.runSearchRequest(
             request, protocol.GASearchReadGroupSetsRequest,
-            protocol.GASearchReadGroupSetsResponse, "readGroupSets",
+            protocol.GASearchReadGroupSetsResponse,
             self.readGroupSetsGenerator)
 
     def searchReads(self, request):
@@ -121,7 +119,7 @@ class AbstractBackend(object):
         """
         return self.runSearchRequest(
             request, protocol.GASearchReadsRequest,
-            protocol.GASearchReadsResponse, "reads",
+            protocol.GASearchReadsResponse,
             self.readsGenerator)
 
     def searchReferenceSets(self, request):
@@ -131,7 +129,7 @@ class AbstractBackend(object):
         """
         return self.runSearchRequest(
             request, protocol.GASearchReferenceSetsRequest,
-            protocol.GASearchReferenceSetsResponse, "referenceSets",
+            protocol.GASearchReferenceSetsResponse,
             self.referenceSetsGenerator)
 
     def searchReferences(self, request):
@@ -141,7 +139,7 @@ class AbstractBackend(object):
         """
         return self.runSearchRequest(
             request, protocol.GASearchReferencesRequest,
-            protocol.GASearchReferencesResponse, "references",
+            protocol.GASearchReferencesResponse,
             self.referencesGenerator)
 
     def searchVariantSets(self, request):
@@ -151,7 +149,7 @@ class AbstractBackend(object):
         """
         return self.runSearchRequest(
             request, protocol.GASearchVariantSetsRequest,
-            protocol.GASearchVariantSetsResponse, "variantSets",
+            protocol.GASearchVariantSetsResponse,
             self.variantSetsGenerator)
 
     def searchVariants(self, request):
@@ -161,7 +159,7 @@ class AbstractBackend(object):
         """
         return self.runSearchRequest(
             request, protocol.GASearchVariantsRequest,
-            protocol.GASearchVariantsResponse, "variants",
+            protocol.GASearchVariantsResponse,
             self.variantsGenerator)
 
     def searchCallSets(self, request):
@@ -171,7 +169,7 @@ class AbstractBackend(object):
         """
         return self.runSearchRequest(
             request, protocol.GASearchCallSetsRequest,
-            protocol.GASearchCallSetsResponse, "callSets",
+            protocol.GASearchCallSetsResponse,
             self.callSetsGenerator)
 
     # Iterators over the data hieararchy
@@ -272,9 +270,16 @@ class AbstractBackend(object):
                     yield callSet, nextPageToken
 
     def startProfile(self):
+        """
+        Profiling hook. Called at the start of the runSearchRequest method
+        and allows for detailed profiling of search performance.
+        """
         pass
 
     def endProfile(self):
+        """
+        Profiling hook. Called at the end of the runSearchRequest method.
+        """
         pass
 
     def validateRequest(self, jsonDict, requestClass):
@@ -287,12 +292,13 @@ class AbstractBackend(object):
                 raise exceptions.RequestValidationFailureException(
                     jsonDict, requestClass)
 
-    def validateResponse(self, jsonDict, responseClass):
+    def validateResponse(self, jsonString, responseClass):
         """
         Ensures the jsonDict corresponds to a valid instance of responseClass
         Throws an error if the data is invalid
         """
         if self._responseValidation:
+            jsonDict = json.loads(jsonString)
             if not responseClass.validate(jsonDict):
                 raise exceptions.ResponseValidationFailureException(
                     jsonDict, responseClass)
@@ -314,6 +320,13 @@ class AbstractBackend(object):
         Sets the default page size for request to the specified value.
         """
         self._defaultPageSize = defaultPageSize
+
+    def setMaxResponseLength(self, maxResponseLength):
+        """
+        Sets the approximate maximum response length to the specified
+        value.
+        """
+        self._maxResponseLength = maxResponseLength
 
 
 class EmptyBackend(AbstractBackend):

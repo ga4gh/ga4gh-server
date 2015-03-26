@@ -50,6 +50,33 @@ class SchemaClass(object):
         """
         return sorted(self.schema.fields, key=lambda f: f.name)
 
+    def isSearchRequest(self):
+        """
+        Returns True if the class we are converting is a subclass of
+        SearchRequest, and False otherwise.
+        """
+        return re.search('Search.+Request', self.name) is not None
+
+    def isSearchResponse(self):
+        """
+        Returns True if the class we are converting is a subclass of
+        SearchResponse, and False otherwise.
+        """
+        return re.search('Search.+Response', self.name) is not None
+
+    def getValueListName(self):
+        """
+        Returns the name of the list used to store values in a page for
+        a SearchRequest subclass.
+        """
+        assert self.isSearchResponse()
+        names = [field.name for field in self.getFields()]
+        # We assume that there are exactly two fields in every
+        # SearchResponse: nextPageToken and the value list.
+        names.remove('nextPageToken')
+        assert len(names) == 1
+        return names[0]
+
     def getEmbeddedTypes(self):
         """
         Returns the set of embedded types in this class.
@@ -170,6 +197,10 @@ class SchemaClass(object):
         superclass = "ProtocolElement"
         if isinstance(self.schema, avro.schema.EnumSchema):
             superclass = "object"
+        elif self.isSearchRequest():
+            superclass = "SearchRequest"
+        elif self.isSearchResponse():
+            superclass = "SearchResponse"
         string = "\n\nclass {0}({1}):".format(self.schema.name, superclass)
         print(string, file=outputFile)
         doc = self.schema.doc
@@ -186,6 +217,10 @@ class SchemaClass(object):
             string = '    requiredFields = {0}'.format(
                 self.formatRequiredFields())
             print(string, file=outputFile)
+            if self.isSearchResponse():
+                string = '    _valueListName = "{0}"'.format(
+                    self.getValueListName())
+                print(string, file=outputFile)
             print(file=outputFile)
             self.writeEmbeddedTypesClassMethods(outputFile)
             self.writeConstructor(outputFile)
@@ -207,15 +242,13 @@ class SchemaGenerator(object):
         self.classes = []
         for avscFile in glob.glob(os.path.join(self.schemaDir, "*.avsc")):
             self.classes.append(SchemaClass(avscFile))
-        self.requestClassNames = [
-            cls.name for cls in self.classes
-            if re.search('Search.+Request', cls.name)]
-        self.responseClassNames = [
-            cls.name for cls in self.classes
-            if re.search('Search.+Response', cls.name)]
+        requestClassNames = [
+            cls.name for cls in self.classes if cls.isSearchRequest()]
+        responseClassNames = [
+            cls.name for cls in self.classes if cls.isSearchResponse()]
         self.postSignatures = []
         for request, response in zip(
-                self.requestClassNames, self.responseClassNames):
+                requestClassNames, responseClassNames):
             objname = re.search('Search(.+)Request', request).groups()[0]
             url = '/{0}/search'.format(objname.lower())
             tup = (url, request, response)
@@ -228,6 +261,9 @@ class SchemaGenerator(object):
         """
         print('"""{0}"""'.format(HEADER_COMMENT), file=outputFile)
         print("from protocol import ProtocolElement", file=outputFile)
+        print("from protocol import SearchRequest", file=outputFile)
+        print("from protocol import SearchResponse", file=outputFile)
+        print(file=outputFile)
         print("import avro.schema", file=outputFile)
         print(file=outputFile)
         versionStr = self.version[1:]  # Strip off leading 'v'

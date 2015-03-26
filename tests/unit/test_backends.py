@@ -129,7 +129,7 @@ class TestAbstractBackend(unittest.TestCase):
         request = protocol.GASearchVariantSetsRequest()
         responseStr = self._backend.runSearchRequest(
             request.toJsonString(), protocol.GASearchVariantSetsRequest,
-            protocol.GASearchVariantSetsResponse, "variantSets",
+            protocol.GASearchVariantSetsResponse,
             self._backend.variantSetsGenerator)
         response = protocol.GASearchVariantSetsResponse.fromJsonString(
             responseStr)
