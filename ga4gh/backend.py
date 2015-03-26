@@ -40,10 +40,6 @@ class AbstractBackend(object):
         """
         return list(self._variantSetIdMap.values())
 
-    def getVariantSetIdMap(self):
-        # TODO remove this --- why do we need direct access to the map?
-        return self._variantSetIdMap
-
     def parsePageToken(self, pageToken, numValues):
         """
         Parses the specified pageToken and returns a list of the specified
@@ -352,7 +348,7 @@ class FileSystemBackend(AbstractBackend):
             relativePath = os.path.join(variantSetDir, variantSetId)
             if os.path.isdir(relativePath):
                 self._variantSetIdMap[variantSetId] = \
-                    variants.variantSetFactory(variantSetId, relativePath)
+                    variants.HtslibVariantSet(variantSetId, relativePath)
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
         # References
