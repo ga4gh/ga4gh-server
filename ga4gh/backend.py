@@ -191,6 +191,28 @@ class AbstractBackend(object):
                 nextPageToken = str(currentIndex)
             yield object_.toProtocolElement(), nextPageToken
 
+    def _lookAheadObjectGenerator(self, request, generator):
+        """
+        Ensures that when the generator has exhausted its objects a
+        null pageToken is returned to the client.
+        """
+        iterator = generator(request)
+        obj = None
+        nextObj = None
+        pageToken = None
+        nextPageToken = None
+        try:
+            while True:
+                if nextObj is not None:
+                    obj, pageToken = nextObj, nextPageToken
+                else:
+                    obj, pageToken = iterator.next()
+                nextObj, nextPageToken = iterator.next()
+                yield obj, pageToken
+        except StopIteration:
+            if obj is not None:
+                yield obj, None
+
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
@@ -220,6 +242,21 @@ class AbstractBackend(object):
         Returns a generator over the (variant, nextPageToken) pairs defined by
         the specified request.
         """
+        return self._lookAheadObjectGenerator(
+            request, self._variantsGenerator)
+
+    def callSetsGenerator(self, request):
+        """
+        Returns a generator over the (callSet, nextPageToken) pairs defined by
+        the specified request.
+        """
+        return self._lookAheadObjectGenerator(
+            request, self._callSetsGenerator)
+
+    def _variantsGenerator(self, request):
+        """
+        Internal variants generator; returns (variant, nextPageToken) pairs
+        """
         variantSetIds = request.variantSetIds
         startVariantSetIndex = 0
         startPosition = request.start
@@ -238,10 +275,9 @@ class AbstractBackend(object):
                         variantSetIndex, variant.start + 1)
                     yield variant, nextPageToken
 
-    def callSetsGenerator(self, request):
+    def _callSetsGenerator(self, request):
         """
-        Returns a generator over the (callSet, nextPageToken) pairs defined by
-        the specified request.
+        Internal callSets generator; returns (callSet, nextPageToken) pairs
         """
         # if no variantSetIds are input from client,
         # then set variantSetIds to all variantSetIds
@@ -256,7 +292,6 @@ class AbstractBackend(object):
         else:
             startVariantSetIndex = 0
             startCallSetPosition = 0
-
         for variantSetIndex in range(startVariantSetIndex, len(variantSetIds)):
             variantSetId = variantSetIds[variantSetIndex]
             if variantSetId in self._variantSetIdMap:
