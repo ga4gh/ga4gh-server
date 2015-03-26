@@ -22,6 +22,7 @@ import ga4gh.frontend as frontend
 # http://avro.apache.org/docs/1.7.7/spec.html#schema_primitive
 # AVRO_LONG_MAX = (1 << 63) - 1
 # TODO in the meantime, this is the max value wormtable can handle
+# TODO change this now that wormtable has been removed?
 AVRO_LONG_MAX = (1 << 32) - 2
 
 

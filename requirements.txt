@@ -14,4 +14,3 @@ pyvcf
 pyyaml
 requests
 snakefood
-wormtable
