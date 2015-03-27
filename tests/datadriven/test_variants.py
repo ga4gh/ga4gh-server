@@ -176,17 +176,20 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self.assertEqual(len(gaCallSetVariants), len(self._variantRecords))
 
     def testSearchAllVariants(self):
-        self._verifyVariantsCallSetIds(None, [])
+        self._verifyVariantsCallSetIds(None, self.vcfSamples[:1])
 
     def testSearchCallSetIdsSystematic(self):
         for sampleIds in utils.powerset(self.vcfSamples, maxSets=10):
+            # TODO remove this for protocol 0.6
+            if len(sampleIds) == 0:
+                sampleIds = self.vcfSamples
             self._verifyVariantsCallSetIds(None, list(sampleIds))
 
     def testVariantsValid(self):
         end = 2**30  # TODO This is arbitrary, and pysam can choke. FIX!
         for referenceName in self._referenceNames:
             iterator = self._gaObject.getVariants(
-                referenceName, 0, end, None, None)
+                referenceName, 0, end)
             for gaVariant in iterator:
                 self.assertTrue(protocol.GAVariant.validate(
                     gaVariant.toJsonDict()))
