@@ -83,14 +83,14 @@ class VariantSetTest(datadriven.DataDrivenTest):
             if isinstance(value, list):
                 self.assertEqual(len(gaObjectInfo[key]), len(value))
                 for gaValue, pyvcfValue in zip(
-                  gaObjectInfo[key], pyvcfInfo[key]):
+                        gaObjectInfo[key], pyvcfInfo[key]):
                     _assertEquivalentGaVCFValues(gaValue, pyvcfValue)
             else:
                 self.assertEqual(len(gaObjectInfo[key]), 1)
 
     def _verifyVariantCallEqual(self, gaCall, pyvcfCall):
         genotype, phaseset = variants.convertVCFGenotype(
-                pyvcfCall.data.GT, pyvcfCall.phased)
+            pyvcfCall.data.GT, pyvcfCall.phased)
         self.assertEqual(gaCall.callSetId, pyvcfCall.site.ID)
         self.assertEqual(gaCall.callSetName, pyvcfCall.sample)
         self.assertEqual(gaCall.genotype, genotype)
@@ -214,7 +214,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             referenceName, startPosition, endPosition, None, []))
         self.assertEqual(len(gaVariants), 0)
         pyvcfVariants = self._getPyvcfVariants(
-          referenceName, startPosition, endPosition)
+            referenceName, startPosition, endPosition)
         self.assertEqual(len(pyvcfVariants), 0)
 
     def _assertVariantsEqualInRange(

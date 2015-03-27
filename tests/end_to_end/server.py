@@ -40,6 +40,7 @@ class ServerTest(unittest.TestCase):
 
         # init test vars
         self.server = None
+        self.serverCmdLine = None
         self.serverOutFile = None
         self.serverErrFile = None
 
@@ -109,12 +110,12 @@ class ServerTest(unittest.TestCase):
         return serverErrLines
 
     def getServerCmdLine(self):
-        serverCmdLine = """
-            python server_dev.py
-            --dont-use-reloader
-            --config TestConfig
-            --port {} """.format(self.port)
-        return serverCmdLine
+        self.serverCmdLine = """
+python server_dev.py
+--dont-use-reloader
+--config TestConfig
+--port {} """.format(self.port)
+        return self.serverCmdLine
 
 
 class ServerTestConfigFile(ServerTest):
@@ -136,10 +137,10 @@ class ServerTestConfigFile(ServerTest):
         self.configFile.write(self.config)
         self.configFile.flush()
         self.configFilePath = self.configFile.name
-        serverCmdLine = """
-            python server_dev.py
-            --dont-use-reloader
-            --config TestConfig
-            --config-file {}
-            --port {} """.format(self.configFilePath, self.port)
-        return serverCmdLine
+        self.serverCmdLine = """
+python server_dev.py
+--dont-use-reloader
+--config TestConfig
+--config-file {}
+--port {} """.format(self.configFilePath, self.port)
+        return self.serverCmdLine

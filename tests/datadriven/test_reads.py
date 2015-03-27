@@ -59,7 +59,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         self._readGroupInfos[samFileName] = readGroupInfo
 
     def getDataModelClass(self):
-        return reads.ReadGroupSet
+        return reads.HtslibReadGroupSet
 
     def getProtocolClass(self):
         return protocol.GAReadGroupSet
@@ -167,7 +167,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                               readGroupInfo):
         self.assertEqual(
             gaAlignment.alignedQuality,
-            pysamAlignment.query_qualities)
+            list(pysamAlignment.query_qualities))
         self.assertEqual(
             gaAlignment.alignedSequence,
             pysamAlignment.query_sequence)
@@ -195,7 +195,9 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         self.assertEqual(
             gaAlignment.fragmentName,
             pysamAlignment.query_name)
-        self.assertIsNone(gaAlignment.id)
+        self.assertEqual(
+            gaAlignment.id,
+            "{}:{}".format(readGroupInfo.id, pysamAlignment.query_name))
         self.assertEqual(
             gaAlignment.info,
             dict(pysamAlignment.tags))

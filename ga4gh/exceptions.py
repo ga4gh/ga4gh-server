@@ -148,6 +148,11 @@ class VariantSetNotFound(NotFoundException):
             variantSetId)
 
 
+class ReadGroupNotFoundException(ObjectNotFoundException):
+    def __init__(self, readGroupId):
+        self.message = "readGroupId '{}' not found".format(readGroupId)
+
+
 class UnsupportedMediaTypeException(BaseServerException):
     httpStatus = 415
     message = "Unsupported media type"
