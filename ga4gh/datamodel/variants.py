@@ -195,7 +195,7 @@ class SimulatedVariantSet(AbstractVariantSet):
         return ret
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName, callSetIds):
+                    variantName=None, callSetIds=None):
         randomNumberGenerator = random.Random()
         i = startPosition
         while i < endPosition:
@@ -406,7 +406,7 @@ class HtslibVariantSet(AbstractVariantSet):
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName, callSetIds):
+                    variantName=None, callSetIds=None):
         """
         Returns an iterator over the specified variants. The parameters
         correspond to the attributes of a GASearchVariantsRequest object.
@@ -414,9 +414,17 @@ class HtslibVariantSet(AbstractVariantSet):
         if variantName is not None:
             raise exceptions.NotImplementedException(
                 "Searching by variantName is not supported")
+        # For v0.5.1, callSetIds=[] actually means return all callSets.
+        # In v0.6+, callSetIds=[] means return no call sets, and
+        # callSetIds=None means return all call sets. For forward
+        # compatibility, we use the 0.6 interface for this function but
+        # we translate back to the 0.5 interface while we support this.
+        # TODO Remove this comment and workaround once we transition to
+        # protocol version 0.6
         if callSetIds is None:
-            callSetIds = self._callSetIdMap.keys()
-
+            callSetIds = []
+        if len(callSetIds) == 0:
+            callSetIds = self._callSetIds
         if referenceName in self._chromFileMap:
             varFile = self._chromFileMap[referenceName]
             cursor = varFile.fetch(
