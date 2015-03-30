@@ -362,12 +362,19 @@ class SearchVariantsRunner(AbstractSearchRunner):
         self._setRequest(request, args)
 
     def run(self):
-        if self._minimalOutput:
-            self._run(self._httpClient.searchVariants, 'id')
-        else:
-            results = self._httpClient.searchVariants(self._request)
-            for result in results:
-                self.printVariant(result)
+        # TODO this is a hack until we make a nicer interface to deal with
+        # multiple requests. The server does not support multiple values
+        # so we send of sequential requests instead.
+        request = self._request
+        variantSetIds = request.variantSetIds
+        for variantSetId in variantSetIds:
+            request.variantSetIds = [variantSetId]
+            if self._minimalOutput:
+                self._run(self._httpClient.searchVariants, 'id')
+            else:
+                results = self._httpClient.searchVariants(self._request)
+                for result in results:
+                    self.printVariant(result)
 
     def printVariant(self, variant):
         """

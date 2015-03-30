@@ -274,23 +274,30 @@ class AbstractBackend(object):
         Returns a generator over the (variant, nextPageToken) pairs defined by
         the specified request.
         """
-        variantSetIds = request.variantSetIds
-        startVariantSetIndex = 0
+        # TODO this method should also use the interval search semantics
+        # in the readsGenerator above.
+        if len(request.variantSetIds) != 1:
+            raise exceptions.NotImplementedException(
+                "VariantSearch search over multiple variantSets not supported")
+        variantSetId = request.variantSetIds[0]
+        try:
+            variantSet = self._variantSetIdMap[request.variantSetIds[0]]
+        except KeyError:
+            raise exceptions.VariantSetNotFoundException(variantSetId)
         startPosition = request.start
         if request.pageToken is not None:
-            startVariantSetIndex, startPosition = self.parsePageToken(
-                request.pageToken, 2)
-        for variantSetIndex in range(startVariantSetIndex, len(variantSetIds)):
-            variantSetId = variantSetIds[variantSetIndex]
-            if variantSetId in self._variantSetIdMap:
-                variantSet = self._variantSetIdMap[variantSetId]
-                iterator = variantSet.getVariants(
-                    request.referenceName, startPosition, request.end,
-                    request.variantName, request.callSetIds)
-                for variant in iterator:
-                    nextPageToken = "{0}:{1}".format(
-                        variantSetIndex, variant.start + 1)
-                    yield variant, nextPageToken
+            startPosition, = self.parsePageToken(request.pageToken, 1)
+        iterator = variantSet.getVariants(
+            request.referenceName, startPosition, request.end,
+            request.variantName, request.callSetIds)
+        variant = next(iterator, None)
+        while variant is not None:
+            nextVariant = next(iterator, None)
+            nextPageToken = None
+            if nextVariant is not None:
+                nextPageToken = "{}".format(nextVariant.start)
+            yield variant, nextPageToken
+            variant = nextVariant
 
     def callSetsGenerator(self, request):
         """
