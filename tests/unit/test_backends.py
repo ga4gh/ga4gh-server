@@ -117,7 +117,10 @@ class TestAbstractBackend(unittest.TestCase):
             isinstance(response, protocol.GASearchVariantSetsResponse))
 
     def testSearchVariants(self):
+        variantSetIds = [
+            variantSet.id for variantSet in self.getVariantSets(pageSize=1)]
         request = protocol.GASearchVariantsRequest()
+        request.variantSetIds = variantSetIds[:1]
         responseStr = self._backend.searchVariants(request.toJsonString())
         response = protocol.GASearchVariantsResponse.fromJsonString(
             responseStr)

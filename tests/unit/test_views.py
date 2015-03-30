@@ -57,13 +57,15 @@ class TestFrontend(unittest.TestCase):
             versionedPath, headers=headers,
             data=request.toJsonString())
 
-    def sendVariantsSearch(
-            self, variantSetIds=[""], referenceName="", start=0, end=0):
+    def sendVariantsSearch(self):
+        response = self.sendVariantSetsSearch()
+        variantSets = protocol.GASearchVariantSetsResponse().fromJsonString(
+            response.data).variantSets
         request = protocol.GASearchVariantsRequest()
-        request.variantSetIds = variantSetIds
-        request.referenceName = referenceName
-        request.start = start
-        request.end = end
+        request.variantSetIds = [variantSets[0].id]
+        request.referenceName = "1"
+        request.start = 0
+        request.end = 1
         return self.sendRequest('/variants/search', request)
 
     def sendVariantSetsSearch(self, datasetIds=[""]):
@@ -165,7 +167,7 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         responseData = protocol.GASearchVariantsResponse.fromJsonString(
             response.data)
-        self.assertEqual(responseData.variants, [])
+        self.assertEqual(len(responseData.variants), 1)
 
     def testVariantSetsSearch(self):
         response = self.sendVariantSetsSearch()
