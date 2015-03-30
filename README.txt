@@ -97,7 +97,7 @@ To deploy on Apache on Debian/Ubuntu platforms, do the following.
 
 - Install some basic pre-requisite packages::
 
-  $ sudo apt-get install python-dev zlib1g-dev libdb-dev
+  $ sudo apt-get install python-dev zlib1g-dev
 
 - Install Apache and mod_wsgi, and enable mod_wsgi::
 
@@ -203,20 +203,9 @@ Client tools
 Prerequisites:
 
 * Python 2.7,
-* Berkeley DB together with include and lib files (version 4.8 or higher),
 * Virtualenv (or another python sandboxing tool) is highly recommended.
 
 General installation procedure:
-
-* Install Berkeley DB (version 4.8 or higher) using your system's preferred
-  package manager, see the `wormtable help page
-  <https://pypi.python.org/pypi/wormtable>`_ for platform-specific details.
-
-* (On MacOS X, make sure the LDFLAGS and CFLAGS environment variables are set to
-  include the lib and include directories for the Berkeley DB install of your choice.
-  The wormtable help page cited above provides more detailed instructions, or
-  see the `System specific install examples`_ section for an example install
-  on that platform.)
 
 * Create a python sandbox directory using virtualenv, preferably
   *not* inside the ga4gh server directory. For an good introduction
@@ -277,17 +266,10 @@ Example client queries
 
 To run queries against this server, we can use the ``ga4gh_client`` program;
 for example, here we run the ``variants/search`` method over the
-``1000g_2013.wt`` variant set, where the reference name is ``1``
-and we only want calls returned for call set ID HG03279::
+``1000g_2013`` variant set, where the reference name is ``1``
+and we only want calls returned for call set ID `1000g_2013.HG03279`::
 
-    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013.wt -r 1 -c HG03279 | less -S
-
-We can also query against the *variant name*; here we return the variant that
-has variant name ``rs75454623``::
-
-    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013.wt -r 1 -n rs75454623  | less -S
-
-
+    $ ga4gh_client variants-search http://localhost:8000/v0.5.1 -V 1000g_2013 -r 1 -c 1000g_2011.HG03279 | less -S
 
 ++++++++++++++++++++++++++++++++
 System specific install examples
@@ -295,8 +277,6 @@ System specific install examples
 
 MacOS X (with MacPorts)::
 
-  $ sudo port install db48
-  $ export CFLAGS=-I/opt/local/include/db48/  LDFLAGS=-L/opt/local/lib/db48/
   $ cd [some working directory outside the ga4gh server directory tree]
   $ virtualenv --no-site-packages testenv
   $ source testenv/bin/activate
