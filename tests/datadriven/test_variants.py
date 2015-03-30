@@ -91,7 +91,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
     def _verifyVariantCallEqual(self, gaCall, pyvcfCall):
         genotype, phaseset = variants.convertVCFGenotype(
             pyvcfCall.data.GT, pyvcfCall.phased)
-        self.assertEqual(gaCall.callSetId, pyvcfCall.site.ID)
+        # callSetId information is not available in pyvcf.model._Call
+        self.assertIn(pyvcfCall.sample, gaCall.callSetId)
         self.assertEqual(gaCall.callSetName, pyvcfCall.sample)
         self.assertEqual(gaCall.genotype, genotype)
         phaseset = None
@@ -163,10 +164,13 @@ class VariantSetTest(datadriven.DataDrivenTest):
         leaving searchSampleIds will get all samples.
         """
         gaCallSetVariants = []
+        gaId = self._gaObject.getId()
         for referenceName in self._referenceNames:
             end = 2**30  # TODO This is arbitrary, and pysam can choke. FIX!
+            gaSearchId = ["{}.{}".format(
+                gaId, sampleId) for sampleId in searchsampleIds]
             gaVariants = list(self._gaObject.getVariants(
-                referenceName, 0, end, searchVariants, searchsampleIds))
+                referenceName, 0, end, searchVariants, gaSearchId))
             self._verifyGaVariantsSample(gaVariants, searchsampleIds)
             gaCallSetVariants += gaVariants
             localVariants = filter(

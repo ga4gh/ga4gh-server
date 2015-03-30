@@ -182,13 +182,8 @@ class CallSetNotInVariantSetException(NotFoundException):
     Indicates a request was made for a callSet not in the actual variantSet
     """
     def __init__(self, callSetId, variantSetId):
-        self.callSetId = callSetId
-        self.variantSetId = variantSetId
-
-    def getMessage(self):
-        message = "callSet '{0}' not in variantSet '{1}'".format(
-            self.callSetId, self.variantSetId)
-        return message
+        self.message = "callSet '{0}' not in variantSet '{1}'".format(
+            callSetId, variantSetId)
 
 ###############################################################
 #
