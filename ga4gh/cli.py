@@ -21,9 +21,10 @@ import ga4gh.frontend as frontend
 # (64 bit signed integer)
 # http://avro.apache.org/docs/1.7.7/spec.html#schema_primitive
 # AVRO_LONG_MAX = (1 << 63) - 1
-# TODO in the meantime, this is the max value wormtable can handle
-# TODO change this now that wormtable has been removed?
-AVRO_LONG_MAX = (1 << 32) - 2
+# TODO in the meantime, this is the max value pysam can handle
+# This should be removed once pysam input sanitisation has been
+# implemented.
+AVRO_LONG_MAX = 2**31 - 1
 
 
 def setCommaSeparatedAttribute(request, args, attr):
