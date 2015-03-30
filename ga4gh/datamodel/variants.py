@@ -6,11 +6,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import atexit
 import datetime
 import glob
+import json
 import os
 import random
-
+import shutil
+import tempfile
 import pysam
 
 import ga4gh.protocol as protocol
@@ -259,6 +262,15 @@ def isEmptyIter(it):
     return next(it, _nothing) is _nothing
 
 
+def _cleanupHtslibsMess(indexDir):
+    """
+    Cleanup the mess that htslib has left behind with the index files.
+    This is a temporary measure until we get a good interface for
+    dealing with indexes for remote files.
+    """
+    shutil.rmtree(indexDir)
+
+
 class HtslibVariantSet(AbstractVariantSet):
     """
     Class representing a single variant set backed by a directory of indexed
@@ -275,6 +287,24 @@ class HtslibVariantSet(AbstractVariantSet):
         for pattern in ['*.bcf', '*.vcf.gz']:
             for filename in glob.glob(os.path.join(vcfPath, pattern)):
                 self._addFile(filename)
+        # This is a temporary workaround to allow us to use htslib's
+        # facility for working with remote files. The urls.json is
+        # definitely not a good idea and will be replaced later.
+        # We make a temporary file for each process so that it
+        # downloads its own copy and we are sure it's not overwriting
+        # the copy of another process. We then register a cleanup
+        # handler to get rid of these files on exit.
+        urlSource = os.path.join(vcfPath, "urls.json")
+        if os.path.exists(urlSource):
+            with open(urlSource) as jsonFile:
+                urls = json.load(jsonFile)["urls"]
+            indexDir = tempfile.mkdtemp(prefix="htslib_mess.")
+            cwd = os.getcwd()
+            os.chdir(indexDir)
+            for url in urls:
+                self._addFile(url)
+            os.chdir(cwd)
+            atexit.register(_cleanupHtslibsMess, indexDir)
 
     def _updateMetadata(self, variantFile):
         """
