@@ -284,9 +284,13 @@ class HtslibVariantSet(AbstractVariantSet):
         self._updatedTime = ctimeInMillis
         self._chromFileMap = {}
         self._metadata = None
+        numVariantFiles = 0
         for pattern in ['*.bcf', '*.vcf.gz']:
             for filename in glob.glob(os.path.join(vcfPath, pattern)):
                 self._addFile(filename)
+                numVariantFiles += 1
+        if numVariantFiles == 0:
+            raise exceptions.EmptyDirException()
         # This is a temporary workaround to allow us to use htslib's
         # facility for working with remote files. The urls.json is
         # definitely not a good idea and will be replaced later.
@@ -312,15 +316,13 @@ class HtslibVariantSet(AbstractVariantSet):
         variant file, and ensures that it is consistent with already
         existing metadata.
         """
-        expMsg = "Metadata of {} is not consistent".format(
-            variantFile.filename)
         metadata = self._getMetadataFromVcf(variantFile)
         if self._metadata is None:
             self._metadata = metadata
         else:
             if self._metadata != metadata:
-                # TODO CHANGE EXCEPTION
-                raise Exception(expMsg)
+                raise exceptions.InconsistentMetaDataException(
+                    variantFile.filename)
 
     def getNumVariants(self):
         """
@@ -343,14 +345,13 @@ class HtslibVariantSet(AbstractVariantSet):
                 self.getCallSetId(sample)
                 for sample in variantFile.header.samples])
             if callSetIds != set(self._callSetIdMap.keys()):
-                # TODO CHANGE EXCEPTION
-                raise Exception("Inconsistent sample names in VCF")
+                raise exceptions.InconsistentCallSetIdException(
+                    variantFile.filename)
 
     def _addFile(self, filename):
         varFile = pysam.VariantFile(filename)
         if varFile.index is None:
-            # TODO CHANGE EXCEPTION
-            raise Exception("VCF/BCF files must be indexed")
+            raise exceptions.NotIndexedException(filename)
         for chrom in varFile.index:
             # Unlike Tabix indices, CSI indices include all contigs defined
             # in the BCF header.  Thus we must test each one to see if
@@ -358,8 +359,7 @@ class HtslibVariantSet(AbstractVariantSet):
             # overlapping errors.
             if not isEmptyIter(varFile.fetch(chrom)):
                 if chrom in self._chromFileMap:
-                    # TODO CHANGE EXCEPTION
-                    raise Exception("cannot have overlapping VCF/BCF files.")
+                    raise exceptions.OverlappingVcfException(filename, chrom)
                 self._updateMetadata(varFile)
                 self._updateCallSetIds(varFile)
                 self._chromFileMap[chrom] = varFile
