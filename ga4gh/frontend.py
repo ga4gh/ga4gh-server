@@ -128,15 +128,17 @@ class ServerStatus(object):
         urls.sort()
         return urls
 
-    def getVariantSetSummaries(self):
+    def getVariantSets(self):
         """
-        Returns a list of (variantSetId, numVariants) tuples for this
-        server.
+        Returns the list of variant sets for this server.
         """
-        ret = []
-        for variantSet in app.backend.getVariantSets():
-            ret.append((variantSet.getId(), str(variantSet.getNumVariants())))
-        return ret
+        return app.backend.getVariantSets()
+
+    def getReadGroupSets(self):
+        """
+        Returns the list of ReadGroupSets for this server.
+        """
+        return app.backend.getReadGroupSets()
 
 
 def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):

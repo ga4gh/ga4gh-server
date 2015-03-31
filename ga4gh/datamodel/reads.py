@@ -75,6 +75,10 @@ class AbstractReadGroupSet(object):
         self._id = id_
         self._readGroups = []
 
+    def getId(self):
+        # TODO move into the superclass
+        return self._id
+
     def getReadGroups(self):
         """
         Returns the read groups in this read group set

@@ -40,15 +40,27 @@
         </div>
         <div>
             <h3>Data</h3>
+            <h4>VariantSets</h4>
             <table>
-                <th>VariantSetId</th>
-                <th>NumVariants</th>
-                {% for variantSetId, numVariants in info.getVariantSetSummaries() %}
+                {% for variantSet in info.getVariantSets() %}
                 <tr>
-                    <td>{{ variantSetId }}</td>
-                    <td>{{ numVariants }}</td>
+                    <td>{{ variantSet.getId() }}</td>
                 </tr>
                 {% endfor %}
+            </table>
+            <h4>ReadGroupSets</h4>
+            <table>
+                {% for readGroupSet in info.getReadGroupSets() %}
+                <tr>
+                    <td>{{ readGroupSet.getId() }}</td>
+                </tr>
+                    {% for readGroup in readGroupSet.getReadGroups() %}
+                <tr>
+                    <td></td>
+                    <td>{{ readGroup.getId() }}</td>
+                </tr>
+                {% endfor %}
+            {% endfor %}
             </table>
         </div>
     </body>
