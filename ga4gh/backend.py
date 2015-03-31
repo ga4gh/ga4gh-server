@@ -214,66 +214,14 @@ class AbstractBackend(object):
             request, self._variantSetIdMap, self._variantSetIds)
 
     def readsGenerator(self, request):
-        # Local utility functions to save some typing
-        def getPosition(readAlignment):
-            return readAlignment.alignment.position.position
-
-        def getEndPosition(readAlignment):
-            return getPosition(readAlignment) + \
-                len(readAlignment.alignedSequence)
-
-        if len(request.readGroupIds) != 1:
-            raise exceptions.NotImplementedException(
-                "Read search over multiple readGroups not supported")
-        readGroupId = request.readGroupIds[0]
-        try:
-            readGroup = self._readGroupIdMap[request.readGroupIds[0]]
-        except KeyError:
-            raise exceptions.ReadGroupNotFoundException(readGroupId)
-        startPosition = request.start
-        equalPositionsToSkip = 0
-        if request.pageToken is not None:
-            startPosition, equalPositionsToSkip = self.parsePageToken(
-                request.pageToken, 2)
+        readGroup = self._getReadGroup(request)
+        startPosition, equalPositionsToSkip = self._getCounters(request)
         iterator = readGroup.getReadAlignments(
             request.referenceName, request.referenceId, startPosition,
             request.end)
-        readAlignment = next(iterator, None)
-        if request.pageToken is not None:
-            # First, skip any reads with position < startPosition
-            # or endPosition < request.start
-            while (getPosition(readAlignment) < startPosition or
-                   getEndPosition(readAlignment) < request.start):
-                readAlignment = next(iterator, None)
-                if readAlignment is None:
-                    raise exceptions.BadPageTokenException(
-                        "Inconsistent page token provided")
-            # Now, skip equalPositionsToSkip records which have position
-            # == startPosition
-            equalPositionsSkipped = 0
-            while equalPositionsSkipped < equalPositionsToSkip:
-                if getPosition(readAlignment) != startPosition:
-                    raise exceptions.BadPageTokenException(
-                        "Inconsistent page token provided")
-                equalPositionsSkipped += 1
-                readAlignment = next(iterator, None)
-                if readAlignment is None:
-                    raise exceptions.BadPageTokenException(
-                        "Inconsistent page token provided")
-        # The iterator is now positioned at the correct place.
-        while readAlignment is not None:
-            nextReadAlignment = next(iterator, None)
-            nextPageToken = None
-            if nextReadAlignment is not None:
-                if getPosition(readAlignment) == \
-                        getPosition(nextReadAlignment):
-                    equalPositionsToSkip += 1
-                else:
-                    equalPositionsToSkip = 0
-                nextPageToken = "{}:{}".format(
-                    getPosition(nextReadAlignment), equalPositionsToSkip)
-            yield readAlignment, nextPageToken
-            readAlignment = nextReadAlignment
+        readAlignment = self._positionIterator(
+            request, iterator, startPosition, equalPositionsToSkip)
+        return self._yieldReads(iterator, readAlignment, equalPositionsToSkip)
 
     def variantsGenerator(self, request):
         """
@@ -282,14 +230,7 @@ class AbstractBackend(object):
         """
         # TODO this method should also use the interval search semantics
         # in the readsGenerator above.
-        if len(request.variantSetIds) != 1:
-            raise exceptions.NotImplementedException(
-                "VariantSearch search over multiple variantSets not supported")
-        variantSetId = request.variantSetIds[0]
-        try:
-            variantSet = self._variantSetIdMap[request.variantSetIds[0]]
-        except KeyError:
-            raise exceptions.VariantSetNotFoundException(variantSetId)
+        variantSet = self._getVariantSet(request)
         startPosition = request.start
         if request.pageToken is not None:
             startPosition, = self.parsePageToken(request.pageToken, 1)
@@ -310,17 +251,10 @@ class AbstractBackend(object):
         Returns a generator over the (callSet, nextPageToken) pairs defined by
         the specified request.
         """
-        if len(request.variantSetIds) != 1:
-            raise exceptions.NotImplementedException(
-                "Searching over multiple variantSets is not supported.")
         if request.name is not None:
             raise exceptions.NotImplementedException(
                 "Searching over names is not supported")
-        variantSetId = request.variantSetIds[0]
-        try:
-            variantSet = self._variantSetIdMap[variantSetId]
-        except KeyError:
-            raise exceptions.VariantSetNotFound(variantSetId)
+        variantSet = self._getVariantSet(request)
         return self._topLevelObjectGenerator(
             request, variantSet.getCallSetIdMap(),
             variantSet.getCallSetIds())
@@ -383,6 +317,95 @@ class AbstractBackend(object):
         value.
         """
         self._maxResponseLength = maxResponseLength
+
+    # private methods used to implement readsGenerator
+
+    def _getPosition(self, readAlignment):
+        return readAlignment.alignment.position.position
+
+    def _getEndPosition(self, readAlignment):
+        return self._getPosition(readAlignment) + \
+            len(readAlignment.alignedSequence)
+
+    def _getReadGroup(self, request):
+        if len(request.readGroupIds) != 1:
+            if len(request.readGroupIds) == 0:
+                msg = "Read search requires a readGroup to be specified"
+            else:
+                msg = "Read search over multiple readGroups not supported"
+            raise exceptions.NotImplementedException(msg)
+        readGroupId = request.readGroupIds[0]
+        try:
+            readGroup = self._readGroupIdMap[request.readGroupIds[0]]
+        except KeyError:
+            raise exceptions.ReadGroupNotFoundException(readGroupId)
+        return readGroup
+
+    def _getCounters(self, request):
+        startPosition = request.start
+        equalPositionsToSkip = 0
+        if request.pageToken is not None:
+            startPosition, equalPositionsToSkip = self.parsePageToken(
+                request.pageToken, 2)
+        return startPosition, equalPositionsToSkip
+
+    def _positionIterator(self, request, iterator, startPosition,
+                          equalPositionsToSkip):
+        readAlignment = next(iterator, None)
+        if request.pageToken is not None:
+            # First, skip any reads with position < startPosition
+            # or endPosition < request.start
+            while (self._getPosition(readAlignment) < startPosition or
+                   self._getEndPosition(readAlignment) < request.start):
+                readAlignment = next(iterator, None)
+                if readAlignment is None:
+                    raise exceptions.BadPageTokenException(
+                        "Inconsistent page token provided")
+            # Now, skip equalPositionsToSkip records which have position
+            # == startPosition
+            equalPositionsSkipped = 0
+            while equalPositionsSkipped < equalPositionsToSkip:
+                if self._getPosition(readAlignment) != startPosition:
+                    raise exceptions.BadPageTokenException(
+                        "Inconsistent page token provided")
+                equalPositionsSkipped += 1
+                readAlignment = next(iterator, None)
+                if readAlignment is None:
+                    raise exceptions.BadPageTokenException(
+                        "Inconsistent page token provided")
+        return readAlignment
+
+    def _yieldReads(self, iterator, readAlignment, equalPositionsToSkip):
+        while readAlignment is not None:
+            nextReadAlignment = next(iterator, None)
+            nextPageToken = None
+            if nextReadAlignment is not None:
+                if self._getPosition(readAlignment) == \
+                        self._getPosition(nextReadAlignment):
+                    equalPositionsToSkip += 1
+                else:
+                    equalPositionsToSkip = 0
+                nextPageToken = "{}:{}".format(
+                    self._getPosition(nextReadAlignment), equalPositionsToSkip)
+            yield readAlignment, nextPageToken
+            readAlignment = nextReadAlignment
+
+    # private methods used to implement variantsGenerator
+
+    def _getVariantSet(self, request):
+        if len(request.variantSetIds) != 1:
+            if len(request.variantSetIds) == 0:
+                msg = "Variant search requires specifying a variantSet"
+            else:
+                msg = ("Variant search over multiple variantSets "
+                       "not supported")
+            raise exceptions.NotImplementedException(msg)
+        variantSetId = request.variantSetIds[0]
+        try:
+            variantSet = self._variantSetIdMap[variantSetId]
+        except KeyError:
+            raise exceptions.VariantSetNotFoundException(variantSetId)
+        return variantSet
 
 
 class EmptyBackend(AbstractBackend):
