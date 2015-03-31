@@ -41,7 +41,6 @@ class BaseServerException(Exception):
     Superclass of all exceptions that can occur in the GA4GH reference
     server.
     """
-    httpStatus = -1
     message = "Error code not set in exception; this is a bug."
 
     def __init__(self, *args, **kwargs):
@@ -72,6 +71,21 @@ class BaseServerException(Exception):
         code = zlib.crc32(cls.__name__) & 0xffffffff
         return code
 
+
+#####################################################################
+#
+# Exceptions that occur in the normal operation of the server
+#
+#####################################################################
+
+
+class RuntimeException(BaseServerException):
+    """
+    exceptions that can occur during the processing of a client request
+    """
+    httpStatus = -1
+    message = "Error code not set in exception; this is a bug."
+
     def toProtocolElement(self):
         """
         Converts this exception into the GA4GH protocol type so that
@@ -82,14 +96,8 @@ class BaseServerException(Exception):
         error.message = self.getMessage()
         return error
 
-#####################################################################
-#
-# Exceptions that occur in the normal operation of the server
-#
-#####################################################################
 
-
-class BadRequestException(BaseServerException):
+class BadRequestException(RuntimeException):
     """
     A request that we don't like was sent to the server.
     """
@@ -125,7 +133,7 @@ class BadReadsSearchRequestBothRefs(BadRequestException):
     message = "only one of referenceId and referenceName can be specified"
 
 
-class NotFoundException(BaseServerException):
+class NotFoundException(RuntimeException):
     """
     The superclass of all exceptions in which some resource was not
     found.
@@ -153,7 +161,7 @@ class ReadGroupNotFoundException(ObjectNotFoundException):
         self.message = "readGroupId '{}' not found".format(readGroupId)
 
 
-class UnsupportedMediaTypeException(BaseServerException):
+class UnsupportedMediaTypeException(RuntimeException):
     httpStatus = 415
     message = "Unsupported media type"
 
@@ -162,12 +170,12 @@ class VersionNotSupportedException(NotFoundException):
     message = "API version not supported"
 
 
-class MethodNotAllowedException(BaseServerException):
+class MethodNotAllowedException(RuntimeException):
     httpStatus = 405
     message = "Method not allowed"
 
 
-class NotImplementedException(BaseServerException):
+class NotImplementedException(RuntimeException):
     """
     Exception raised when a part of the API has not been implemented.
     """
@@ -185,6 +193,85 @@ class CallSetNotInVariantSetException(NotFoundException):
         self.message = "callSet '{0}' not in variantSet '{1}'".format(
             callSetId, variantSetId)
 
+
+class DataException(BaseServerException):
+    """
+    Exceptions thrown during the server startup, and processing faulty VCFs
+    """
+    message = "Faulty data found or data file is missing."
+
+
+class EmptyDirException(DataException):
+    message = "Diretory empty, no VCF/BCF file was found"
+
+
+class MalformedException(DataException):
+    """
+    A base exception class for exceptions thrown when faulty VCF file
+    was found, which stops the server to processed variant search.
+    """
+    message = "Faulty entry found in data file."
+
+
+class NotIndexedException(MalformedException):
+    """
+    VCF/BCF files must be indexed, with the same prefix.
+    """
+    def __init__(self, fileName):
+        self.message = (
+            "Indexing file is missing, File {} must be"
+            " indexed.".format(fileName))
+
+
+class OverlappingVcfException(MalformedException):
+    """
+    Exception thrown when two VCF files within a VariantSet directory
+    contain records for the same contig.
+    """
+    def __init__(self, fileName, contig):
+        self.message = (
+            "VCF file '{}' contains records for contig '{}'. Other files"
+            " in this VariantSet have records for this contig, and overlapping"
+            " VCFs are not permitted.".format(fileName, contig))
+
+
+class InconsistentMetaDataException(MalformedException):
+    """
+    Exception thrown when two VCF files within a VariantSet direcotry
+    contain different metadata entries.
+    """
+    def __init__(self, fileName):
+        self.fileName = fileName
+        self.message = (
+            "Metadata of {} is not consistent with other files"
+            " in this VariantSet, and inconsistent metadata is not"
+            " permitted".format(self.fileName))
+
+
+class DuplicateCallSetIdException(MalformedException):
+    """
+    Exception thrown when the same sample ID occurs multiple times in
+    one VCF file
+    """
+    def __init__(self, fileName, callSetId):
+        self.callSetId = callSetId
+        self.message = (
+            "CallSetId: {} appeared multiple times in file {}. Duplicated"
+            " sample ID is not permitted".format(self.callSetId, fileName))
+
+
+class InconsistentCallSetIdException(MalformedException):
+    """
+    Exception thrown when two VCF files contain different sample IDs
+    within a VariantSet directory.
+    """
+    def __init__(self, fileName):
+        self.message = (
+            "Inconsistent sample names found in {}. Sample IDs must be"
+            " consistent within the same VariantSet"
+            " directory.".format(fileName))
+
+
 ###############################################################
 #
 # Internal errors. These are exceptions that we regard as bugs.
@@ -192,7 +279,7 @@ class CallSetNotInVariantSetException(NotFoundException):
 ###############################################################
 
 
-class ServerError(BaseServerException):
+class ServerError(RuntimeException):
     """
     Superclass of all exceptions that indicate a bug has occured.
     """
