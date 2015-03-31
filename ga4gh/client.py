@@ -12,9 +12,6 @@ import logging
 
 import ga4gh.protocol as protocol
 
-# suppress warning about using https without cert verification
-requests.packages.urllib3.disable_warnings()
-
 
 class HttpClient(object):
     """
@@ -30,6 +27,9 @@ class HttpClient(object):
         self._key = key
 
         # logging config
+        # TODO we need to revisit this logging setup so that we can
+        # disentangle our logs from urllib3's.
+        logging.basicConfig()
         self._logger = logging.getLogger(__name__)
         if self._debugLevel == 0:
             logLevel = logging.WARN
@@ -38,10 +38,13 @@ class HttpClient(object):
         else:
             logLevel = logging.DEBUG
         self._logger.setLevel(logLevel)
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)s: %(message)s')
-        handler.setFormatter(formatter)
-        self._logger.addHandler(handler)
+
+        requestsLog = logging.getLogger("requests.packages.urllib3")
+        requestsLog.setLevel(logLevel)
+        if self._debugLevel == 0:
+            # suppress warning about using https without cert verification
+            requests.packages.urllib3.disable_warnings()
+        requestsLog.propagate = True
 
     def getBytesRead(self):
         """
@@ -130,7 +133,7 @@ class HttpClient(object):
         return self._deserializeResponse(response, protocolResponseClass)
 
     def runSearchRequest(self, protocolRequest, objectName,
-                         protocolResponseClass, listAttr):
+                         protocolResponseClass):
         """
         Runs the specified request at the specified objectName and instantiates
         an object of the specified class. We yield each object in listAttr.
@@ -143,7 +146,10 @@ class HttpClient(object):
             data = protocolRequest.toJsonString()
             responseObject = self._doRequest(
                 'POST', fullUrl, protocolResponseClass, httpData=data)
-            for extract in getattr(responseObject, listAttr):
+            valueList = getattr(
+                responseObject, protocolResponseClass.getValueListName())
+            self._logger.info("Response pageSize={}".format(len(valueList)))
+            for extract in valueList:
                 yield extract
             notDone = self._updateNotDone(responseObject, protocolRequest)
 
@@ -200,8 +206,7 @@ class HttpClient(object):
         Returns an iterator over the Variants from the server
         """
         return self.runSearchRequest(
-            protocolRequest, "variants",
-            protocol.GASearchVariantsResponse, "variants")
+            protocolRequest, "variants", protocol.GASearchVariantsResponse)
 
     def searchVariantSets(self, protocolRequest):
         """
@@ -209,7 +214,7 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "variantsets",
-            protocol.GASearchVariantSetsResponse, "variantSets")
+            protocol.GASearchVariantSetsResponse)
 
     def searchReferenceSets(self, protocolRequest):
         """
@@ -217,23 +222,21 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "referencesets",
-            protocol.GASearchReferenceSetsResponse, "referenceSets")
+            protocol.GASearchReferenceSetsResponse)
 
     def searchReferences(self, protocolRequest):
         """
         Returns an iterator over the References from the server
         """
         return self.runSearchRequest(
-            protocolRequest, "references",
-            protocol.GASearchReferencesResponse, "references")
+            protocolRequest, "references", protocol.GASearchReferencesResponse)
 
     def searchCallSets(self, protocolRequest):
         """
         Returns an iterator over the CallSets from the server
         """
         return self.runSearchRequest(
-            protocolRequest, "callsets",
-            protocol.GASearchCallSetsResponse, "callSets")
+            protocolRequest, "callsets", protocol.GASearchCallSetsResponse)
 
     def searchReadGroupSets(self, protocolRequest):
         """
@@ -241,12 +244,11 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "readgroupsets",
-            protocol.GASearchReadGroupSetsResponse, "readGroupSets")
+            protocol.GASearchReadGroupSetsResponse)
 
     def searchReads(self, protocolRequest):
         """
         Returns an iterator over the Reads from the server
         """
         return self.runSearchRequest(
-            protocolRequest, "reads",
-            protocol.GASearchReadsResponse, "alignments")
+            protocolRequest, "reads", protocol.GASearchReadsResponse)

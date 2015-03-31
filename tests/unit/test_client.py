@@ -74,43 +74,43 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.searchVariants(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "variants",
-            protocol.GASearchVariantsResponse, "variants")
+            protocol.GASearchVariantsResponse)
 
     def testSearchVariantSets(self):
         self.httpClient.searchVariantSets(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "variantsets",
-            protocol.GASearchVariantSetsResponse, "variantSets")
+            protocol.GASearchVariantSetsResponse)
 
     def testSearchReferenceSets(self):
         self.httpClient.searchReferenceSets(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "referencesets",
-            protocol.GASearchReferenceSetsResponse, "referenceSets")
+            protocol.GASearchReferenceSetsResponse)
 
     def testSearchReferences(self):
         self.httpClient.searchReferences(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "references",
-            protocol.GASearchReferencesResponse, "references")
+            protocol.GASearchReferencesResponse)
 
     def testSearchReadGroupSets(self):
         self.httpClient.searchReadGroupSets(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "readgroupsets",
-            protocol.GASearchReadGroupSetsResponse, "readGroupSets")
+            protocol.GASearchReadGroupSetsResponse)
 
     def testSearchCallSets(self):
         self.httpClient.searchCallSets(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "callsets",
-            protocol.GASearchCallSetsResponse, "callSets")
+            protocol.GASearchCallSetsResponse)
 
     def testSearchReads(self):
         self.httpClient.searchReads(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "reads",
-            protocol.GASearchReadsResponse, "alignments")
+            protocol.GASearchReadsResponse)
 
     def testGetReferenceSet(self):
         self.httpClient.getReferenceSet(self._id)
@@ -144,12 +144,10 @@ class TestRunRequest(unittest.TestCase):
             protocolRequest = DummyRequest()
             objectName = "referencesets"
             protocolResponseClass = protocol.GASearchReferenceSetsResponse
-            listAttr = "referenceSets"
 
             # invoke SUT
             result = [refSet for refSet in self.httpClient.runSearchRequest(
-                protocolRequest, objectName,
-                protocolResponseClass, listAttr)]
+                protocolRequest, objectName, protocolResponseClass)]
 
             # verify results of invocation
             self.assertEqual(len(result), 2)
