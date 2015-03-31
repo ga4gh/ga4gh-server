@@ -42,6 +42,12 @@ class AbstractBackend(object):
         """
         return list(self._variantSetIdMap.values())
 
+    def getReadGroupSets(self):
+        """
+        Returns the list of ReadGroupSets in this backend.
+        """
+        return list(self._readGroupSetIdMap.values())
+
     def parsePageToken(self, pageToken, numValues):
         """
         Parses the specified pageToken and returns a list of the specified
