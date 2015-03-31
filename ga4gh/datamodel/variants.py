@@ -65,6 +65,9 @@ class CallSet(object):
         # TODO this should be in the superclass, DatamodelObject.
         return self._id
 
+    def getSampleName(self):
+        return self._sampleName
+
     def toProtocolElement(self):
         """
         Returns the representation of this CallSet as the corresponding
@@ -329,6 +332,13 @@ class HtslibVariantSet(AbstractVariantSet):
         # TODO How do we get the number of records in a VariantFile?
         return 0
 
+    def getCallSet(self, sampleName):
+        """
+        Returns the CallSet object for the specified sample name.
+        """
+        callSetId = self.getCallSetId(sampleName)
+        return self._callSetIdMap[callSetId]
+
     def _updateCallSetIds(self, variantFile):
         """
         Updates the call set IDs based on the specified variant file.
@@ -365,10 +375,11 @@ class HtslibVariantSet(AbstractVariantSet):
                 self._chromFileMap[chrom] = varFile
 
     def _convertGaCall(self, recordId, name, pysamCall, genotypeData):
+        callSet = self.getCallSet(name)
         call = protocol.GACall()
-        call.callSetId = recordId
-        call.callSetName = name
-
+        call.callSetId = callSet.getId()
+        call.callSetName = callSet.getSampleName()
+        call.sampleId = callSet.getSampleName()
         # TODO:
         # NOTE: THE FOLLOWING TWO LINES IS NOT THE INTENED IMPLEMENTATION,
         ###########################################
@@ -427,7 +438,7 @@ class HtslibVariantSet(AbstractVariantSet):
         variant.calls = []
         sampleIterator = 0  # REMOVAL
         for name, call in record.samples.iteritems():
-            if name in callSetIds:
+            if self.getCallSetId(name) in callSetIds:
                 genotypeData = sampleData[sampleIterator].split(
                     ":")[0]  # REMOVAL
                 variant.calls.append(self._convertGaCall(
@@ -453,6 +464,11 @@ class HtslibVariantSet(AbstractVariantSet):
         # protocol version 0.6
         if callSetIds is None:
             callSetIds = []
+        else:
+            for callSetId in callSetIds:
+                if callSetId not in self._callSetIds:
+                    raise exceptions.CallSetNotInVariantSetException(
+                        callSetId, self.getId())
         if len(callSetIds) == 0:
             callSetIds = self._callSetIds
         if referenceName in self._chromFileMap:
