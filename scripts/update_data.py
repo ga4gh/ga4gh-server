@@ -14,12 +14,12 @@ import utils
 
 
 dataDirPath = 'ga4gh-example-data'
-zipFilePath = 'ga4gh-example-data.tar.gz'
+tarballPath = 'ga4gh-example-data.tar'
 archivePath = 'ga4gh-example-data-archive'
 
 
 def archiveExistingData():
-    paths = [dataDirPath, zipFilePath]
+    paths = [dataDirPath, tarballPath]
     archiveExists = os.path.exists(archivePath)
     archiveFolderCreated = False
     for path in paths:
@@ -41,15 +41,15 @@ def archiveExistingData():
 
 
 def downloadData():
-    url = "http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar.gz"
-    fileDownloader = utils.FileDownloader(url, zipFilePath)
+    url = "http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar"
+    fileDownloader = utils.FileDownloader(url, tarballPath)
     fileDownloader.download()
     utils.log("Downloading finished")
 
 
 def extractData():
-    utils.log("Extracting {}".format(zipFilePath))
-    tar = tarfile.open(zipFilePath)
+    utils.log("Extracting {}".format(tarballPath))
+    tar = tarfile.open(tarballPath)
     tar.extractall()
     tar.close()
     utils.log("Extracting finished")
