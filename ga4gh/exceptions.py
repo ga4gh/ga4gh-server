@@ -133,6 +133,13 @@ class BadReadsSearchRequestBothRefs(BadRequestException):
     message = "only one of referenceId and referenceName can be specified"
 
 
+class DatamodelValidationException(BadRequestException):
+    """
+    Some bad data was passed to us by the client that made no sense
+    in the context of a particular datamodel object
+    """
+
+
 class NotFoundException(RuntimeException):
     """
     The superclass of all exceptions in which some resource was not
