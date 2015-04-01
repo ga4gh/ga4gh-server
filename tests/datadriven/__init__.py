@@ -11,6 +11,8 @@ import contextlib
 import os
 import inspect
 
+import ga4gh.avrotools as avrotools
+
 
 def _wrapTestMethod(method):
     """
@@ -254,7 +256,21 @@ class DataDrivenTest(TestCase):
         """
         raise NotImplementedError()
 
+    def assertValid(self, protocolClass, jsonDict):
+        """
+        Asserts that the specified JSON dictionary is a valid instance
+        of the specified protocol class.
+        """
+        if not protocolClass.validate(jsonDict):
+            invalidFields = avrotools.ValidationTool.getInvalidFields(
+                protocolClass, jsonDict)
+            message = (
+                "{} is not a valid instance of {}. "
+                "Invalid fields = {}".format(
+                    jsonDict, protocolClass, invalidFields))
+            assert False, message
+
     def testProtocolElementValid(self):
-        protocolElement = self._gaObject.toProtocolElement()
-        jsonDict = protocolElement.toJsonDict()
-        assert self.getProtocolClass().validate(jsonDict)
+        self.assertValid(
+            self.getProtocolClass(),
+            self._gaObject.toProtocolElement().toJsonDict())

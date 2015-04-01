@@ -120,8 +120,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         """
         def _verifyVariantCalls():
             for gaCall in gaVariant.calls:
-                self.assertTrue(protocol.GACall.validate(
-                    gaCall.toJsonDict()))
+                self.assertValid(protocol.GACall, gaCall.toJsonDict())
                 self.assertIn(gaCall.callSetName, pyvcfCallMap)
                 pyvcfCall = pyvcfCallMap[gaCall.callSetName]
                 self._verifyVariantCallEqual(gaCall, pyvcfCall)
@@ -195,8 +194,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             iterator = self._gaObject.getVariants(
                 referenceName, 0, end)
             for gaVariant in iterator:
-                self.assertTrue(protocol.GAVariant.validate(
-                    gaVariant.toJsonDict()))
+                self.assertValid(protocol.GAVariant, gaVariant.toJsonDict())
 
     def _getPyvcfVariants(
             self, referenceName, startPosition=0, endPosition=2**30):
