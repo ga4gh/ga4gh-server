@@ -95,11 +95,10 @@ coverage.xml
 *.log
 
 # Sphinx documentation
-docs/_build/
+docs/source/ga4ghDocsBuild/
 
 # PyBuilder
 target/
 
 # Pycharm
 .idea/
-docs/source/_build/

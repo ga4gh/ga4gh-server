@@ -1,5 +1,5 @@
 
-.. image:: http://genomicsandhealth.org/files/logo_ga.png
+.. image:: _static/logo_ga.png
 
 ==============================
 GA4GH Reference Implementation
