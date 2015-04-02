@@ -238,8 +238,11 @@ script, e.g.::
 will run a server using the default configuration. This default configuration
 expects a data hierarchy to exist in the ``ga4gh-example-data`` directory.
 This default configuration can be changed by providing a (fully qualified)
-path to a configuration file (see the `Configuration file and data hierarchy`_
-section for details).
+path to a configuration file (see the `Configuration file and data hierarchy
+<http://ga4gh-reference-implementation.readthedocs.org/en/latest/introduction.html#configuration-file-and-data-hierarchy>`_ section for details).
+
+..
+  This is a hack for the link to Configuration file and data hierarchy in the introduction.rst file
 
 ++++++
 Layout

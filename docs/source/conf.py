@@ -228,7 +228,7 @@ latex_documents = [
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
-#latex_logo = None
+latex_logo = "_static/logo_ga.png"
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
@@ -267,7 +267,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   (master_doc, 'GA4GH', u'GA4GH Documentation',
-   author, 'GA4GH', 'One line description of project.',
+   author, 'GA4GH', 'A reference implementation of the ga4gh API.',
    'Miscellaneous'),
 ]
 
