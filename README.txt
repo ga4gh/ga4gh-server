@@ -78,8 +78,8 @@ datasets in later releases. An example data layout might be::
 Installation
 ************
 
-There are three different types of installation that we deal with here:
-`Deployment`_, `Client tools`_ and `Development`_ installations. A
+There are four different types of installation that we deal with here:
+`Deployment`_, `Deployment with Docker`_, `Client tools`_ and `Development`_ installations. A
 deployment installation is a production server, usually using Apache
 or another web server on a dedicated machine. A client tools installation
 creates a sandbox in which a user can easily try out the GA4GH client
@@ -194,6 +194,28 @@ config file::
 
 When an error occurs, the details of this will then be printed to the web server's
 error log (in Apache on Debian/Ubuntu, for example, this is ``/var/log/apache2/error.log``).
+
+
+----------------------
+Deployment with Docker
+----------------------
+
+It is also possible to deploy the server using Docker.
+
+- First build the Docker Image.  From the server/scripts folder run::
+
+  $ docker build .
+
+- Find the id of the recently built image by running::
+
+  $ docker images
+
+- Use that id to launch the server::
+
+  $ docker run -d -p 8888:80 <id>
+
+This will run the docker container in the background, and translate calls from your host environment
+port 8888 to the docker container port 80. At that point you should be able to access it like a normal website.
 
 
 ------------
