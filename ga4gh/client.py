@@ -19,7 +19,7 @@ class HttpClient(object):
     """
     workaroundGoogle = 'google'
 
-    def __init__(self, urlPrefix, debugLevel, workarounds, key):
+    def __init__(self, urlPrefix, debugLevel=0, workarounds=[], key=None):
         self._urlPrefix = urlPrefix
         self._debugLevel = debugLevel
         self._bytesRead = 0
