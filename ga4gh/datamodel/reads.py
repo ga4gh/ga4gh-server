@@ -233,7 +233,7 @@ class HtslibReadGroup(datamodel.PysamSanitizer, AbstractReadGroup):
         if referenceId is not None:
             referenceName = self._samFile.getrname(referenceId)
         referenceName, start, end = self.sanitizeAlignmentFileFetch(
-                referenceName, start, end)
+            referenceName, start, end)
         # TODO deal with errors from htslib
         readAlignments = self._samFile.fetch(referenceName, start, end)
         for readAlignment in readAlignments:
