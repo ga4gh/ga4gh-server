@@ -5,20 +5,20 @@ GA4GH API Demo
 **************
 
 In this demo, we'll install a copy of the GA4GH reference
-implementation and run a local copy of the server using some example
+implementation and run a local version of the server using some example
 data. We then run some example queries on this server using various
 different methods to illustrate the basics of the protocol.
-The server can, of course, be run on any machine on network
-but for simplicity, we assume that the client and the server are running
+The server can, of course, be run on any machine on the network,
+but for simplicity we assume that the client and the server are running
 on your local machine during this demo.
 
 The instructions for installation here
-are not intended to be used in a production deployment. See [link to
-deployment] for a detailed guide on production installation.
+are not intended to be used in a production deployment. See
+the :ref:`installation` section for a detailed guide on production installation.
 To run the demo, you will need a working installation of
 `Python 2.7 <https://www.python.org/download/releases/2.7/>`_
 and also have `virtualenv <https://virtualenv.pypa.io/en/latest/>`_
-installed. We also need to have `zlib <http://www.zlib.net/>`
+installed. We also need to have `zlib <http://www.zlib.net/>`_
 installed so that we can build some of the packages that the
 reference server depends on.
 
@@ -40,7 +40,7 @@ rest of the system, and then activate it:
 Now, install the `ga4gh package <https://pypi.python.org/pypi/ga4gh>`_
 from the `Python package index <https://pypi.python.org/pypi>`_. This
 will take some time, as some upstream packages will need to be built and
-installed:
+installed.
 
 .. code-block:: bash
 
@@ -65,11 +65,11 @@ After extracting the data, we can then run the ``ga4gh_server`` application:
     * Restarting with stat
 
 (The server is using a default configuration which assumes the
-existence of the ``ga4gh-example-data`` for simplicity here; see
-[configuration] for detailed information on how we configure the
+existence of the ``ga4gh-example-data`` directory for simplicity here; see
+the :ref:`configuration` section for detailed information on how we configure the
 server.) We now have a server running in the foreground. When it receives requests,
 it will print out log entries to the terminal.
-Now, leave the server running and open another terminal to complete the
+Leave the server running and open another terminal to complete the
 rest of the demo.
 
 To try out the server, we must send some requests to it using the `GA4GH
