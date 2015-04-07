@@ -4,7 +4,7 @@
 ga4gh-example-data*
 scripts/auth.yml
 
-# Below taken from https://gist.github.com/octocat/9257657
+# Below based off of https://gist.github.com/octocat/9257657
 # and https://github.com/github/gitignore/blob/master/Python.gitignore
 
 # Compiled source #
@@ -95,7 +95,7 @@ coverage.xml
 *.log
 
 # Sphinx documentation
-docs/source/ga4ghDocsBuild/
+docs/source/_build/
 
 # PyBuilder
 target/
