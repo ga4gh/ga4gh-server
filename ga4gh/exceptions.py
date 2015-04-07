@@ -209,7 +209,11 @@ class DataException(BaseServerException):
 
 
 class EmptyDirException(DataException):
-    message = "Diretory empty, no VCF/BCF file was found"
+
+    def __init__(self, dirname):
+        msg = "Directory '{}' empty, no VCF/BCF file was found".format(
+            dirname)
+        super(EmptyDirException, self).__init__(msg)
 
 
 class MalformedException(DataException):
