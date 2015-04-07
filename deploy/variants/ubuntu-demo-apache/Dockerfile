@@ -1,6 +1,9 @@
 # Base image
 FROM ubuntu
 
+# Originally created by Steve Hershman GitHub @hershman
+MAINTAINER Steve Hershman
+
 # Update the sources list
 RUN apt-get update
 
