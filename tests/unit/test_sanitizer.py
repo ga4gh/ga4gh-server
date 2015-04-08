@@ -11,7 +11,7 @@ import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
 
 
-class TestPysamSanitizer(datamodel.PysamSanitizer, unittest.TestCase):
+class TestPysamSanitizer(datamodel.PysamDatamodelMixin, unittest.TestCase):
     """
     Test the pysam sanitizer
     """

@@ -6,14 +6,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import atexit
 import datetime
-import glob
-import json
-import os
 import random
-import shutil
-import tempfile
+
 import pysam
 
 import ga4gh.protocol as protocol
@@ -267,54 +262,17 @@ def isEmptyIter(it):
     return next(it, _nothing) is _nothing
 
 
-def _cleanupHtslibsMess(indexDir):
-    """
-    Cleanup the mess that htslib has left behind with the index files.
-    This is a temporary measure until we get a good interface for
-    dealing with indexes for remote files.
-    """
-    shutil.rmtree(indexDir)
-
-
-class HtslibVariantSet(datamodel.PysamSanitizer, AbstractVariantSet):
+class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
     """
     Class representing a single variant set backed by a directory of indexed
     VCF or BCF files.
     """
-    def __init__(self, variantSetId, vcfPath):
-        super(HtslibVariantSet, self).__init__(variantSetId)
-        # ctime is in seconds, and we want milliseconds since the epoch
-        ctimeInMillis = int(os.path.getctime(vcfPath) * 1000)
-        self._creationTime = ctimeInMillis
-        self._updatedTime = ctimeInMillis
+    def __init__(self, id_, dataDir):
+        super(HtslibVariantSet, self).__init__(id_)
+        self._setAccessTimes(dataDir)
         self._chromFileMap = {}
         self._metadata = None
-        numVariantFiles = 0
-        for pattern in ['*.bcf', '*.vcf.gz']:
-            for filename in glob.glob(os.path.join(vcfPath, pattern)):
-                self._addFile(filename)
-                numVariantFiles += 1
-        # This is a temporary workaround to allow us to use htslib's
-        # facility for working with remote files. The urls.json is
-        # definitely not a good idea and will be replaced later.
-        # We make a temporary file for each process so that it
-        # downloads its own copy and we are sure it's not overwriting
-        # the copy of another process. We then register a cleanup
-        # handler to get rid of these files on exit.
-        urlSource = os.path.join(vcfPath, "urls.json")
-        if os.path.exists(urlSource):
-            with open(urlSource) as jsonFile:
-                urls = json.load(jsonFile)["urls"]
-            indexDir = tempfile.mkdtemp(prefix="htslib_mess.")
-            cwd = os.getcwd()
-            os.chdir(indexDir)
-            for url in urls:
-                self._addFile(url)
-                numVariantFiles += 1
-            os.chdir(cwd)
-            atexit.register(_cleanupHtslibsMess, indexDir)
-        if numVariantFiles == 0:
-            raise exceptions.EmptyDirException(vcfPath)
+        self._scanDataFiles(dataDir, ['*.bcf', '*.vcf.gz'])
 
     def _updateMetadata(self, variantFile):
         """
@@ -361,7 +319,7 @@ class HtslibVariantSet(datamodel.PysamSanitizer, AbstractVariantSet):
                 raise exceptions.InconsistentCallSetIdException(
                     variantFile.filename)
 
-    def _addFile(self, filename):
+    def _addDataFile(self, filename):
         varFile = pysam.VariantFile(filename)
         if varFile.index is None:
             raise exceptions.NotIndexedException(filename)
