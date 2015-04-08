@@ -294,8 +294,6 @@ class HtslibVariantSet(datamodel.PysamSanitizer, AbstractVariantSet):
             for filename in glob.glob(os.path.join(vcfPath, pattern)):
                 self._addFile(filename)
                 numVariantFiles += 1
-        if numVariantFiles == 0:
-            raise exceptions.EmptyDirException()
         # This is a temporary workaround to allow us to use htslib's
         # facility for working with remote files. The urls.json is
         # definitely not a good idea and will be replaced later.
@@ -312,8 +310,11 @@ class HtslibVariantSet(datamodel.PysamSanitizer, AbstractVariantSet):
             os.chdir(indexDir)
             for url in urls:
                 self._addFile(url)
+                numVariantFiles += 1
             os.chdir(cwd)
             atexit.register(_cleanupHtslibsMess, indexDir)
+        if numVariantFiles == 0:
+            raise exceptions.EmptyDirException(vcfPath)
 
     def _updateMetadata(self, variantFile):
         """
