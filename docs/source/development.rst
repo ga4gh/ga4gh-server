@@ -110,7 +110,7 @@ All development is done against the ``develop`` branch.  The ``master``
 branch is meant to be kept stable since it is the branch releases are
 based on -- don't touch it!  These are the two mainline branches.
 Our branching model is loosely based on the one described
-`here <http://nvie.com/posts/a-successful-git-branching-model/>`_.
+`here <http://nvie.com/posts/a-successful-git-branching-model/>`__.
 
 All development should be done in a topic branch.  That is, a branch
 that the developer creates him or herself.  These steps will create
@@ -137,7 +137,7 @@ making commits:
 
     $ git commit -m 'Awesome changes'
 
-(You can also pass the ``--amend`` flag to ``git commit`` if you want to 
+(You can also pass the ``--amend`` flag to ``git commit`` if you want to
 incorporate staged changes into the most recent commit.)
 
 Once you have changes that you want to share with others, push your
@@ -154,7 +154,7 @@ At this point, other developers will weigh in on your changes and will
 likely suggest modifications before the change can be merged into
 ``develop``.  When you get around to incorporating these suggestions,
 it is likely that more commits will have been added to the ``develop``
-branch.  Since you (almost) always want to be developing off of the 
+branch.  Since you (almost) always want to be developing off of the
 latest version of the code, you need to perform a rebase to incorporate
 the most recent changes from ``develop`` into your branch.
 
@@ -169,10 +169,10 @@ the most recent changes from ``develop`` into your branch.
 At this point, several things could happen.  In the best case, the rebase
 will complete without problems and you can continue developing.  In other
 cases, the rebase will stop midway and report a merge conflict.  That is,
-git has determined that it is impossible for it to determine how to 
+git has determined that it is impossible for it to determine how to
 combine the changes from the new commits in the ``develop`` branch and
 your changes in your topic branch and needs manual intervention to
-proceed.  GitHub has some 
+proceed.  GitHub has some
 `documentation <https://help.github.com/articles/resolving-merge-conflicts-after-a-git-rebase/>`_ on how to resolve rebase merge conflicts.
 
 Once you have updated your branch to the point where you think that you
@@ -224,8 +224,8 @@ the final commit message is clean (best practice is to give a short
 summary of the change on the first line, a blank line, and then a more
 detailed description of the change following, with the issue number
 -- if there is one -- in the detailed description).  More information
-about the interactive rebase process can be found 
-`here <https://help.github.com/articles/about-git-rebase/>`_.
+about the interactive rebase process can be found
+`here <https://help.github.com/articles/about-git-rebase/>`__.
 Once the commits are to your liking, you can push the branch to your
 remote repository (which will require a force push if you reordered
 or deleted commits that existed in the remote version of the branch).
