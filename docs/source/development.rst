@@ -106,7 +106,7 @@ are making:
 
     $ git remote add upstream https://github.com/ga4gh/server.git
 
-All development is done against the ``develop`` branch.  The ``master``
+All development is done against the ``develop`` branch.  The ``stable``
 branch is meant to be kept stable since it is the branch releases are
 based on -- don't touch it!  These are the two mainline branches.
 Our branching model is loosely based on the one described
@@ -195,7 +195,7 @@ exactly what a force push does.
 .. warning::
 
     Never use the force flag to push to ``upstream``.  Never use the force
-    flag to push to ``develop`` or ``master``.  Only use the force flag on
+    flag to push to ``develop`` or ``stable``.  Only use the force flag on
     your repository and on your topic branches.  Otherwise you run the risk of
     screwing up the mainline branches, which will require manual
     intervention by a senior developer and manual changes by every
