@@ -1,146 +1,216 @@
 """
-Assists in executing tests with a running server on localhost
+Servers to assist in testing
 """
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
-import requests
-import shlex
-import subprocess
+import os
+import random
 import tempfile
-import unittest
+import shlex
+import string
+import subprocess
+
+import requests
 
 import tests.utils as utils
 
 
-class ServerTest(unittest.TestCase):
-    """
-    Manages server bootup and shutdown for a test
-    """
-    def run(self, *args, **kwargs):
-        self.setupServer()
-        try:
-            self.startServer()
-            super(ServerTest, self).run(*args, **kwargs)
-        finally:
-            self.shutDownServer()
+ga4ghPort = 8001
+remotePort = 8002
 
-    def setupServer(self):
+
+class ServerForTesting(object):
+    """
+    The base class of a test server
+    """
+    def __init__(self, port):
         # suppress requests package log messages
         logging.getLogger("requests").setLevel(logging.CRITICAL)
-
-        # ensure another server isn't running, bail if it is
-        self.port = 8001
-        self.serverUrl = "http://localhost:{}".format(self.port)
-        self.assertFalse(
-            self._isServerRunning(),
-            "Another server is running")
-
-        # init test vars
+        self.port = port
+        self.outFile = None
+        self.errFile = None
         self.server = None
-        self.serverCmdLine = None
-        self.serverOutFile = None
-        self.serverErrFile = None
+        self.serverUrl = "http://localhost:{}".format(self.port)
 
-    def startServer(self):
-        self.serverOutFile = tempfile.TemporaryFile()
-        self.serverErrFile = tempfile.TemporaryFile()
-        splits = shlex.split(self.getServerCmdLine())
+    def getUrl(self):
+        """
+        Return the url at which the server is configured to run
+        """
+        return self.serverUrl
+
+    def getCmdLine(self):
+        """
+        Return the command line string used to launch the server.
+        Subclasses must override this method.
+        """
+        raise NotImplementedError()
+
+    def start(self):
+        """
+        Start the server
+        """
+        assert not self.isRunning(), "Another server is running"
+        self.outFile = tempfile.TemporaryFile()
+        self.errFile = tempfile.TemporaryFile()
+        splits = shlex.split(self.getCmdLine())
         self.server = subprocess.Popen(
-            splits, stdout=self.serverOutFile,
-            stderr=self.serverErrFile)
+            splits, stdout=self.outFile,
+            stderr=self.errFile)
         self._waitForServerStartup()
+
+    def shutdown(self):
+        """
+        Shut down the server
+        """
+        if self.isRunning():
+            self.server.kill()
+        if self.server is not None:
+            self.server.wait()
+            self._assertServerShutdown()
+        if self.outFile is not None:
+            self.outFile.close()
+        if self.errFile is not None:
+            self.errFile.close()
+
+    def restart(self):
+        """
+        Restart the server
+        """
+        self.shutdown()
+        self.start()
+
+    def isRunning(self):
+        """
+        Returns true if the server is running, false otherwise
+        """
+        try:
+            response = self.ping()
+            if response.status_code != 200:
+                msg = ("Ping of server returned non-200 status code "
+                       "({})").format(response.status_code)
+                assert False, msg
+            return True
+        except requests.ConnectionError:
+            return False
+
+    def ping(self):
+        """
+        Pings the server by doing a GET request to /
+        """
+        response = requests.get(self.serverUrl)
+        return response
+
+    def getOutLines(self):
+        """
+        Return the lines of the server stdout file
+        """
+        return utils.getLinesFromLogFile(self.outFile)
+
+    def getErrLines(self):
+        """
+        Return the lines of the server stderr file
+        """
+        return utils.getLinesFromLogFile(self.errFile)
+
+    def printDebugInfo(self):
+        """
+        Print debugging information about the server
+        """
+        className = self.__class__.__name__
+        print('\n')
+        print('*** {} CMD ***'.format(className))
+        print(self.getCmdLine())
+        print('*** {} STDOUT ***'.format(className))
+        print(''.join(self.getOutLines()))
+        print('*** {} STDERR ***'.format(className))
+        print(''.join(self.getErrLines()))
 
     @utils.Timeout()
     @utils.Repeat()
     def _waitForServerStartup(self):
         self.server.poll()
         if self.server.returncode is not None:
-            self._waitForServerErrLines()
+            self._waitForErrLines()
             message = "Server process unexpectedly died; stderr: {0}"
-            failMessage = message.format(self.getServerErrLines())
-            self.fail(failMessage)
-        return not self._isServerRunning()
+            failMessage = message.format(''.join(self.getErrLines()))
+            assert False, failMessage
+        return not self.isRunning()
 
     @utils.Timeout()
     @utils.Repeat()
-    def _waitForServerErrLines(self):
+    def _waitForErrLines(self):
         # not sure why there's some delay in getting the server
-        # process' stderr...
-        return self.getServerErrLines() == []
-
-    def shutDownServer(self):
-        if self._isServerRunning():
-            self.server.kill()
-        if self.server is not None:
-            self.server.wait()
-            self._assertServerShutdown()
-        self.serverOutFile.close()
-        self.serverErrFile.close()
+        # process' stderr (at least for the ga4gh server)...
+        return self.getErrLines() == []
 
     def _assertServerShutdown(self):
         shutdownString = "Server did not shut down correctly"
-        self.assertIsNotNone(self.server.returncode, shutdownString)
-        self.assertFalse(self._isServerRunning(), shutdownString)
-
-    def _isServerRunning(self):
-        try:
-            response = self._pingServer()
-            self.assertEqual(response.status_code, 200)
-            return True
-        except requests.ConnectionError:
-            return False
-
-    def _pingServer(self):
-        response = requests.get(self.serverUrl)
-        return response
-
-    def getServerOutLines(self):
-        self.serverOutFile.flush()
-        self.serverOutFile.seek(0)
-        serverOutLines = self.serverOutFile.readlines()
-        return serverOutLines
-
-    def getServerErrLines(self):
-        self.serverErrFile.flush()
-        self.serverErrFile.seek(0)
-        serverErrLines = self.serverErrFile.readlines()
-        return serverErrLines
-
-    def getServerCmdLine(self):
-        self.serverCmdLine = """
-python server_dev.py
---dont-use-reloader
---config TestConfig
---port {} """.format(self.port)
-        return self.serverCmdLine
+        assert self.server.returncode is not None, shutdownString
+        assert not self.isRunning(), shutdownString
 
 
-class ServerTestConfigFile(ServerTest):
+class Ga4ghServerForTesting(ServerForTesting):
     """
-    Launch a server test, but with a custom configuration file
+    A ga4gh test server
     """
-    def run(self, *args, **kwargs):
-        self.config = None
+    def __init__(self):
+        super(Ga4ghServerForTesting, self).__init__(ga4ghPort)
         self.configFile = None
-        self.configFilePath = None
-        super(ServerTestConfigFile, self).run(*args, **kwargs)
 
-    def setConfig(self):
-        raise NotImplementedError("ServerTestConfigFile must be subclassed")
+    def getConfig(self):
+        config = """
+SIMULATED_BACKEND_NUM_VARIANT_SETS = 10
+SIMULATED_BACKEND_VARIANT_DENSITY = 1
+DATA_SOURCE = "__SIMULATED__"
+DEBUG = True"""
+        return config
 
-    def getServerCmdLine(self):
-        self.setConfig()
-        self.configFile = tempfile.NamedTemporaryFile()
-        self.configFile.write(self.config)
+    def getCmdLine(self):
+        if self.configFile is None:
+            self.configFile = tempfile.NamedTemporaryFile()
+        config = self.getConfig()
+        self.configFile.write(config)
         self.configFile.flush()
-        self.configFilePath = self.configFile.name
-        self.serverCmdLine = """
+        configFilePath = self.configFile.name
+        cmdLine = """
 python server_dev.py
 --dont-use-reloader
 --config TestConfig
 --config-file {}
---port {} """.format(self.configFilePath, self.port)
-        return self.serverCmdLine
+--port {} """.format(configFilePath, self.port)
+        return cmdLine
+
+    def shutdown(self):
+        super(Ga4ghServerForTesting, self).shutdown()
+        if self.configFile is not None:
+            self.configFile.close()
+
+    def printDebugInfo(self):
+        super(Ga4ghServerForTesting, self).printDebugInfo()
+        className = self.__class__.__name__
+        print('*** {} CONFIG ***'.format(className))
+        print(self.getConfig())
+
+
+class RemoteServerForTesting(ServerForTesting):
+    """
+    Simulates a remote server on localhost
+    """
+    def __init__(self, path):
+        super(RemoteServerForTesting, self).__init__(remotePort)
+        self.path = path
+        self.pidFileName = \
+            ''.join(random.sample(string.letters, 10)) + '.pid'
+
+    def getCmdLine(self):
+        cmdLine = "twistd  --pidfile={} -no web -p {} --path={}".format(
+            self.pidFileName, self.port, self.path)
+        return cmdLine
+
+    def shutdown(self):
+        super(RemoteServerForTesting, self).shutdown()
+        if os.path.exists(self.pidFileName):
+            os.remove(self.pidFileName)

@@ -13,6 +13,7 @@ import pysam
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
+import ga4gh.exceptions as exceptions
 
 
 class SamCigar(object):
@@ -114,6 +115,7 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     """
     def __init__(self, id_, dataDir):
         super(HtslibReadGroupSet, self).__init__(id_)
+        self._dataDir = dataDir
         self._readGroups = []
         self._setAccessTimes(dataDir)
         self._scanDataFiles(dataDir, ["*.bam"])
@@ -213,9 +215,11 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     """
     def __init__(self, id_, dataFile):
         super(HtslibReadGroup, self).__init__(id_)
-        self._setAccessTimes(dataFile)
         self._samFilePath = dataFile
-        self._samFile = pysam.AlignmentFile(dataFile)
+        try:
+            self._samFile = pysam.AlignmentFile(dataFile)
+        except ValueError:
+            raise exceptions.FileOpenFailedException(dataFile)
 
     def getSamFilePath(self):
         """

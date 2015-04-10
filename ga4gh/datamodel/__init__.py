@@ -6,14 +6,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh.exceptions as exceptions
-
-import atexit
 import glob
-import json
 import os
-import shutil
+import json
 import tempfile
+import shutil
+import atexit
+
+import ga4gh.exceptions as exceptions
 
 
 def _cleanupHtslibsMess(indexDir):
@@ -22,7 +22,8 @@ def _cleanupHtslibsMess(indexDir):
     This is a temporary measure until we get a good interface for
     dealing with indexes for remote files.
     """
-    shutil.rmtree(indexDir)
+    if os.path.exists(indexDir):
+        shutil.rmtree(indexDir)
 
 
 class DatamodelObject(object):
@@ -111,7 +112,6 @@ class PysamDatamodelMixin(object):
         DatamodelObject. This is derived from the ctime of the specified
         directoryPath.
         """
-        # ctime is in seconds, and we want milliseconds since the epoch
         ctimeInMillis = int(os.path.getctime(directoryPath) * 1000)
         self._creationTime = ctimeInMillis
         self._updatedTime = ctimeInMillis
@@ -147,4 +147,4 @@ class PysamDatamodelMixin(object):
             os.chdir(cwd)
             atexit.register(_cleanupHtslibsMess, indexDir)
         if numDataFiles == 0:
-            raise exceptions.EmptyDirException(dataDir)
+            raise exceptions.EmptyDirException(dataDir, patterns)

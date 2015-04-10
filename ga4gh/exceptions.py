@@ -208,11 +208,18 @@ class DataException(BaseServerException):
     message = "Faulty data found or data file is missing."
 
 
+class FileOpenFailedException(DataException):
+
+    def __init__(self, filename):
+        msg = "Failed to open file '{}'".format(filename)
+        super(FileOpenFailedException, self).__init__(msg)
+
+
 class EmptyDirException(DataException):
 
-    def __init__(self, dirname):
-        msg = "Directory '{}' empty, no VCF/BCF file was found".format(
-            dirname)
+    def __init__(self, dirname, filetype):
+        msg = "Directory '{}' empty, no {} file was found".format(
+            dirname, filetype)
         super(EmptyDirException, self).__init__(msg)
 
 

@@ -1,6 +1,7 @@
 Flask
 Flask-API
 Flask-Cors
+Twisted
 avro
 coverage
 flake8==2.3.0  # Set due to conflict with pep8 in version 2.4.0

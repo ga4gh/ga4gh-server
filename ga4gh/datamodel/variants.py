@@ -271,6 +271,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
     """
     def __init__(self, id_, dataDir):
         super(HtslibVariantSet, self).__init__(id_)
+        self._dataDir = dataDir
         self._setAccessTimes(dataDir)
         self._chromFileMap = {}
         self._metadata = None
