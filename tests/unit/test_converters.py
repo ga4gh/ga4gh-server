@@ -28,7 +28,7 @@ class TestSamConverter(unittest.TestCase):
         lines = readsFile.readlines()
         reads = []
         for line in lines:
-            read = protocol.GAReadAlignment.fromJsonString(line)
+            read = protocol.ReadAlignment.fromJsonString(line)
             reads.append(read)
         return reads
 
@@ -38,7 +38,7 @@ class TestSamConverter(unittest.TestCase):
         return httpClient
 
     def getSearchReadsRequest(self):
-        request = protocol.GASearchReadsRequest()
+        request = protocol.SearchReadsRequest()
         return request
 
     def getSearchReadsResponse(self, request):

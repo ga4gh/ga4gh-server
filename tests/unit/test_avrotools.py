@@ -36,6 +36,7 @@ class TestValidationTool(unittest.TestCase):
                 avrotools.ValidationTool.getInvalidFields(
                     class_, jsonDict)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testGeneratedObjects(self):
         # Test that generated objects pass validation
         instanceGenerator = utils.InstanceGenerator()

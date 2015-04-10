@@ -12,7 +12,6 @@ import os
 import pysam
 
 import ga4gh.protocol as protocol
-import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
 
 
@@ -23,15 +22,15 @@ class SamCigar(object):
     # see http://pysam.readthedocs.org/en/latest/api.html
     # #pysam.AlignedSegment.cigartuples
     cigarStrings = [
-        protocol.GACigarOperation.ALIGNMENT_MATCH,
-        protocol.GACigarOperation.INSERT,
-        protocol.GACigarOperation.DELETE,
-        protocol.GACigarOperation.SKIP,
-        protocol.GACigarOperation.CLIP_SOFT,
-        protocol.GACigarOperation.CLIP_HARD,
-        protocol.GACigarOperation.PAD,
-        protocol.GACigarOperation.SEQUENCE_MATCH,
-        protocol.GACigarOperation.SEQUENCE_MISMATCH,
+        protocol.CigarOperation.ALIGNMENT_MATCH,
+        protocol.CigarOperation.INSERT,
+        protocol.CigarOperation.DELETE,
+        protocol.CigarOperation.SKIP,
+        protocol.CigarOperation.CLIP_SOFT,
+        protocol.CigarOperation.CLIP_HARD,
+        protocol.CigarOperation.PAD,
+        protocol.CigarOperation.SEQUENCE_MATCH,
+        protocol.CigarOperation.SEQUENCE_MISMATCH,
     ]
 
     @classmethod
@@ -89,7 +88,7 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         """
         Returns the GA4GH protocol representation of this ReadGroupSet.
         """
-        readGroupSet = protocol.GAReadGroupSet()
+        readGroupSet = protocol.ReadGroupSet()
         readGroupSet.id = self._id
         readGroupSet.readGroups = [
             readGroup.toProtocolElement() for readGroup in self._readGroups]
@@ -151,7 +150,7 @@ class AbstractReadGroup(object):
         """
         # TODO this is very incomplete, but we don't have the
         # implementation to fill out the rest of the fields currently
-        readGroup = protocol.GAReadGroup()
+        readGroup = protocol.ReadGroup()
         readGroup.id = self._id
         readGroup.created = self._creationTime
         readGroup.updated = self._updateTime
@@ -174,8 +173,7 @@ class SimulatedReadGroup(AbstractReadGroup):
     def __init__(self, id_):
         super(SimulatedReadGroup, self).__init__(id_)
 
-    def getReadAlignments(self, referenceName=None, referenceId=None,
-                          start=None, end=None):
+    def getReadAlignments(self, referenceId=None, start=None, end=None):
         for i in range(2):
             alignment = self._createReadAlignment(i)
             yield alignment
@@ -183,14 +181,14 @@ class SimulatedReadGroup(AbstractReadGroup):
     def _createReadAlignment(self, i):
         # TODO fill out a bit more
         id_ = "{}:simulated{}".format(self._id, i)
-        alignment = protocol.GAReadAlignment()
+        alignment = protocol.ReadAlignment()
         alignment.alignedQuality = [1, 2, 3]
         alignment.alignedSequence = "ACT"
-        gaPosition = protocol.GAPosition()
+        gaPosition = protocol.Position()
         gaPosition.position = 0
         gaPosition.referenceName = "whatevs"
         gaPosition.reverseStrand = False
-        gaLinearAlignment = protocol.GALinearAlignment()
+        gaLinearAlignment = protocol.LinearAlignment()
         gaLinearAlignment.position = gaPosition
         alignment.alignment = gaLinearAlignment
         alignment.duplicateFragment = False
@@ -225,13 +223,13 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         """
         return self._samFilePath
 
-    def getReadAlignments(self, referenceName=None, referenceId=None,
-                          start=None, end=None):
+    def getReadAlignments(self, referenceId=None, start=None, end=None):
         """
         Returns an iterator over the specified reads
         """
-        if referenceName is not None and referenceId is not None:
-            raise exceptions.BadReadsSearchRequestBothRefs()
+        # TODO If referenceId is None, return against all references,
+        # including unmapped reads.
+        referenceName = ""
         if referenceId is not None:
             referenceName = self._samFile.getrname(referenceId)
         referenceName, start, end = self.sanitizeAlignmentFileFetch(
@@ -243,23 +241,23 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
 
     def convertReadAlignment(self, read):
         """
-        Convert a pysam ReadAlignment to a GAReadAlignment
+        Convert a pysam ReadAlignment to a GA4GH ReadAlignment
         """
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
-        ret = protocol.GAReadAlignment()
+        ret = protocol.ReadAlignment()
         ret.alignedQuality = list(read.query_qualities)
         ret.alignedSequence = read.query_sequence
-        ret.alignment = protocol.GALinearAlignment()
+        ret.alignment = protocol.LinearAlignment()
         ret.alignment.mappingQuality = read.mapping_quality
-        ret.alignment.position = protocol.GAPosition()
+        ret.alignment.position = protocol.Position()
         ret.alignment.position.referenceName = self._samFile.getrname(
             read.reference_id)
         ret.alignment.position.position = read.reference_start
         ret.alignment.position.reverseStrand = False  # TODO fix this!
         ret.alignment.cigar = []
         for operation, length in read.cigar:
-            gaCigarUnit = protocol.GACigarUnit()
+            gaCigarUnit = protocol.CigarUnit()
             gaCigarUnit.operation = SamCigar.int2ga(operation)
             gaCigarUnit.operationLength = length
             gaCigarUnit.referenceSequence = None  # TODO fix this!
@@ -274,7 +272,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.info = {key: [str(value)] for key, value in read.tags}
         ret.nextMatePosition = None
         if read.next_reference_id != -1:
-            ret.nextMatePosition = protocol.GAPosition()
+            ret.nextMatePosition = protocol.Position()
             ret.nextMatePosition.referenceName = self._samFile.getrname(
                 read.next_reference_id)
             ret.nextMatePosition.position = read.next_reference_start

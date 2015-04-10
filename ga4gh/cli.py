@@ -37,7 +37,7 @@ class RequestFactory(object):
     """
     Provides methods for easy inititalization of request objects
     """
-    class GASearchReadsRequestGoogle(protocol.ProtocolElement):
+    class SearchReadsRequestGoogle(protocol.ProtocolElement):
 
         __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds',
                      'referenceName', 'start']
@@ -60,15 +60,15 @@ class RequestFactory(object):
         """
         return workaround in self.workarounds
 
-    def createGASearchVariantSetsRequest(self):
-        request = protocol.GASearchVariantSetsRequest()
+    def createSearchVariantSetsRequest(self):
+        request = protocol.SearchVariantSetsRequest()
         setCommaSeparatedAttribute(request, self.args, 'datasetIds')
         request.pageSize = self.args.pageSize
         request.pageToken = None
         return request
 
-    def createGASearchVariantsRequest(self):
-        request = protocol.GASearchVariantsRequest()
+    def createSearchVariantsRequest(self):
+        request = protocol.SearchVariantsRequest()
         request.referenceName = self.args.referenceName
         request.variantName = self.args.variantName
         request.start = self.args.start
@@ -86,35 +86,35 @@ class RequestFactory(object):
         setCommaSeparatedAttribute(request, self.args, 'variantSetIds')
         return request
 
-    def createGASearchReferenceSetsRequest(self):
-        request = protocol.GASearchReferenceSetsRequest()
+    def createSearchReferenceSetsRequest(self):
+        request = protocol.SearchReferenceSetsRequest()
         setCommaSeparatedAttribute(request, self.args, 'accessions')
         setCommaSeparatedAttribute(request, self.args, 'md5checksums')
         return request
 
-    def createGASearchReferencesRequest(self):
-        request = protocol.GASearchReferencesRequest()
+    def createSearchReferencesRequest(self):
+        request = protocol.SearchReferencesRequest()
         setCommaSeparatedAttribute(request, self.args, 'accessions')
         setCommaSeparatedAttribute(request, self.args, 'md5checksums')
         return request
 
-    def createGASearchReadGroupSetsRequest(self):
-        request = protocol.GASearchReadGroupSetsRequest()
+    def createSearchReadGroupSetsRequest(self):
+        request = protocol.SearchReadGroupSetsRequest()
         setCommaSeparatedAttribute(request, self.args, 'datasetIds')
         request.name = self.args.name
         return request
 
-    def createGASearchCallSetsRequest(self):
-        request = protocol.GASearchCallSetsRequest()
+    def createSearchCallSetsRequest(self):
+        request = protocol.SearchCallSetsRequest()
         setCommaSeparatedAttribute(request, self.args, 'variantSetIds')
         request.name = self.args.name
         return request
 
-    def createGASearchReadsRequest(self):
-        request = protocol.GASearchReadsRequest()
+    def createSearchReadsRequest(self):
+        request = protocol.SearchReadsRequest()
         if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
             # google says referenceId not a valid field
-            request = self.GASearchReadsRequestGoogle()
+            request = self.SearchReadsRequestGoogle()
         setCommaSeparatedAttribute(request, self.args, 'readGroupIds')
         request.start = self.args.start
         request.end = self.args.end
@@ -122,8 +122,8 @@ class RequestFactory(object):
         request.referenceName = self.args.referenceName
         return request
 
-    def createGAListReferenceBasesRequest(self):
-        request = protocol.GAListReferenceBasesRequest()
+    def createListReferenceBasesRequest(self):
+        request = protocol.ListReferenceBasesRequest()
         request.start = self.args.start
         request.end = self.args.end
         return request
@@ -172,9 +172,9 @@ def ga2vcf_main(parser=None):
 def ga2vcf_run(args):
     # instantiate params
     searchVariantsRequest = RequestFactory(
-        args).createGASearchVariantsRequest()
+        args).createSearchVariantsRequest()
     searchVariantSetsRequest = RequestFactory(
-        args).createGASearchVariantSetsRequest()
+        args).createSearchVariantSetsRequest()
     if args.outputFile is None:
         outputStream = sys.stdout
     else:
@@ -218,7 +218,7 @@ def ga2sam_main(parser=None):
 def ga2sam_run(args):
     # instantiate params
     searchReadsRequest = RequestFactory(
-        args).createGASearchReadsRequest()
+        args).createSearchReadsRequest()
     workarounds = getWorkarounds(args)
     httpClient = client.HttpClient(
         args.baseUrl, args.verbose, workarounds, args.key)
@@ -312,7 +312,7 @@ class AbstractSearchRunner(AbstractQueryRunner):
         """
         self._minimalOutput = args.minimalOutput
         if 'pageSize' in args:
-            # GAListReferenceBasesRequest does not have a pageSize attr
+            # ListReferenceBasesRequest does not have a pageSize attr
             request.pageSize = args.pageSize
         self._request = request
 
@@ -337,7 +337,7 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchVariantSetsRunner, self).__init__(args)
-        request = RequestFactory(args).createGASearchVariantSetsRequest()
+        request = RequestFactory(args).createSearchVariantSetsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -350,11 +350,11 @@ class SearchVariantsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchVariantsRunner, self).__init__(args)
-        request = RequestFactory(args).createGASearchVariantsRequest()
+        request = RequestFactory(args).createSearchVariantsRequest()
         # if no variantSets have been specified, send a request to
         # the server to grab all variantSets and then continue
         if args.variantSetIds is None:
-            variantSetsRequest = protocol.GASearchVariantSetsRequest()
+            variantSetsRequest = protocol.SearchVariantSetsRequest()
             response = self._httpClient.searchVariantSets(variantSetsRequest)
             variantSetIds = [variantSet.id for variantSet in response]
             request.variantSetIds = variantSetIds
@@ -379,7 +379,7 @@ class SearchVariantsRunner(AbstractSearchRunner):
 
     def printVariant(self, variant):
         """
-        Prints out the specified GAVariant object in a VCF-like form.
+        Prints out the specified Variant object in a VCF-like form.
         """
         print(
             variant.id, variant.variantSetId, variant.names,
@@ -402,7 +402,7 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReferenceSetsRunner, self).__init__(args)
-        request = RequestFactory(args).createGASearchReferenceSetsRequest()
+        request = RequestFactory(args).createSearchReferenceSetsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -415,7 +415,7 @@ class SearchReferencesRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReferencesRunner, self).__init__(args)
-        request = RequestFactory(args).createGASearchReferencesRequest()
+        request = RequestFactory(args).createSearchReferencesRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -428,7 +428,7 @@ class SearchReadGroupSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReadGroupSetsRunner, self).__init__(args)
-        request = RequestFactory(args).createGASearchReadGroupSetsRequest()
+        request = RequestFactory(args).createSearchReadGroupSetsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -441,7 +441,7 @@ class SearchCallSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchCallSetsRunner, self).__init__(args)
-        request = RequestFactory(args).createGASearchCallSetsRequest()
+        request = RequestFactory(args).createSearchCallSetsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -452,7 +452,7 @@ class SearchReadsRunner(AbstractSearchRunner):
     """
     Runner class for the reads/search method
     """
-    class GASearchReadsRequestGoogle(protocol.ProtocolElement):
+    class SearchReadsRequestGoogle(protocol.ProtocolElement):
 
         __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds',
                      'referenceName', 'start']
@@ -467,7 +467,7 @@ class SearchReadsRunner(AbstractSearchRunner):
 
     def __init__(self, args):
         super(SearchReadsRunner, self).__init__(args)
-        request = RequestFactory(args).createGASearchReadsRequest()
+        request = RequestFactory(args).createSearchReadsRequest()
         self._setRequest(request, args)
 
     def run(self):
@@ -480,7 +480,7 @@ class ListReferenceBasesRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(ListReferenceBasesRunner, self).__init__(args)
-        request = RequestFactory(args).createGAListReferenceBasesRequest()
+        request = RequestFactory(args).createListReferenceBasesRequest()
         self._id = args.id
         self._setRequest(request, args)
 

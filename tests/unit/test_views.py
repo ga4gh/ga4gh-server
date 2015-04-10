@@ -59,9 +59,9 @@ class TestFrontend(unittest.TestCase):
 
     def sendVariantsSearch(self):
         response = self.sendVariantSetsSearch()
-        variantSets = protocol.GASearchVariantSetsResponse().fromJsonString(
+        variantSets = protocol.SearchVariantSetsResponse().fromJsonString(
             response.data).variantSets
-        request = protocol.GASearchVariantsRequest()
+        request = protocol.SearchVariantsRequest()
         request.variantSetIds = [variantSets[0].id]
         request.referenceName = "1"
         request.start = 0
@@ -69,22 +69,22 @@ class TestFrontend(unittest.TestCase):
         return self.sendRequest('/variants/search', request)
 
     def sendVariantSetsSearch(self, datasetIds=[""]):
-        request = protocol.GASearchVariantSetsRequest()
+        request = protocol.SearchVariantSetsRequest()
         request.datasetIds = datasetIds
         return self.sendRequest('/variantsets/search', request)
 
     def sendCallSetsSearch(self):
         response = self.sendVariantSetsSearch()
-        variantSets = protocol.GASearchVariantSetsResponse().fromJsonString(
+        variantSets = protocol.SearchVariantSetsResponse().fromJsonString(
             response.data).variantSets
-        request = protocol.GASearchCallSetsRequest()
+        request = protocol.SearchCallSetsRequest()
         request.variantSetIds = [variantSets[0].id]
         return self.sendRequest('/callsets/search', request)
 
     def sendReadsSearch(self, readGroupIds=None):
         if readGroupIds is None:
             readGroupIds = ['aReadGroupSet:one']
-        request = protocol.GASearchReadsRequest()
+        request = protocol.SearchReadsRequest()
         request.readGroupIds = readGroupIds
         return self.sendRequest('/reads/search', request)
 
@@ -165,28 +165,29 @@ class TestFrontend(unittest.TestCase):
     def testVariantsSearch(self):
         response = self.sendVariantsSearch()
         self.assertEqual(200, response.status_code)
-        responseData = protocol.GASearchVariantsResponse.fromJsonString(
+        responseData = protocol.SearchVariantsResponse.fromJsonString(
             response.data)
         self.assertEqual(len(responseData.variants), 1)
 
     def testVariantSetsSearch(self):
         response = self.sendVariantSetsSearch()
         self.assertEqual(200, response.status_code)
-        responseData = protocol.GASearchVariantSetsResponse.fromJsonString(
+        responseData = protocol.SearchVariantSetsResponse.fromJsonString(
             response.data)
         self.assertEqual(len(responseData.variantSets), 1)
 
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch()
         self.assertEqual(200, response.status_code)
-        responseData = protocol.GASearchCallSetsResponse.fromJsonString(
+        responseData = protocol.SearchCallSetsResponse.fromJsonString(
             response.data)
         self.assertEqual(len(responseData.callSets), 1)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testReadsSearch(self):
         response = self.sendReadsSearch()
         self.assertEqual(200, response.status_code)
-        responseData = protocol.GASearchReadsResponse.fromJsonString(
+        responseData = protocol.SearchReadsResponse.fromJsonString(
             response.data)
         self.assertEqual(len(responseData.alignments), 2)
         self.assertEqual(

@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import collections
 import glob
 import os
+import unittest
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -62,8 +63,9 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         return reads.HtslibReadGroupSet
 
     def getProtocolClass(self):
-        return protocol.GAReadGroupSet
+        return protocol.ReadGroupSet
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testGetReadAlignmentsBothRefs(self):
         # test that querying by both referenceName and referenceId fails
         with self.assertRaises(exceptions.BadReadsSearchRequestBothRefs):
@@ -78,18 +80,20 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self.assertAlignmentsEqual(
                 gaAlignment, pysamAlignment, readGroupInfo)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testValidateObjects(self):
         # test that validation works on read groups and reads
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
             self.assertValid(
-                protocol.GAReadGroup,
+                protocol.ReadGroup,
                 readGroup.toProtocolElement().toJsonDict())
             for gaAlignment in readGroup.getReadAlignments():
                 self.assertValid(
-                    protocol.GAReadAlignment,
+                    protocol.ReadAlignment,
                     gaAlignment.toJsonDict())
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testGetReadAlignmentsRefName(self):
         # test that searching with a reference name succeeds
         readGroupSet = self._gaObject
@@ -115,6 +119,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                     self.assertAlignmentsEqual(
                         gaAlignment, pysamAlignment, readGroupInfo)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testGetReadAlignmentsStartEnd(self):
         # test that searching with start and end coords succeeds
         readGroupSet = self._gaObject
@@ -129,6 +134,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                     self.assertAlignmentsEqual(
                         gaAlignment, pysamAlignment, readGroupInfo)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testGetReadAlignmentSearchRanges(self):
         # test that various range searches work
         readGroupSet = self._gaObject

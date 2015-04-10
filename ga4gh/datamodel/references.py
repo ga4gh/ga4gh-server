@@ -44,7 +44,7 @@ class ReferenceSet(object):
         """
         Returns the GA4GH protocol representation of this ReferenceSet.
         """
-        ret = protocol.GAReferenceSet()
+        ret = protocol.ReferenceSet()
         ret.id = self._id
         ret.description = "TODO"
         ret.sourceURI = None
@@ -70,7 +70,7 @@ class Reference(object):
         """
         Returns the GA4GH protocol representation of this Reference.
         """
-        reference = protocol.GAReference()
+        reference = protocol.Reference()
         reference.id = self._id
         # TODO fill out details
         return reference

@@ -58,7 +58,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         return variants.HtslibVariantSet
 
     def getProtocolClass(self):
-        return protocol.GAVariantSet
+        return protocol.VariantSet
 
     def _compareTwoListFloats(self, a, b):
         for ai, bi in zip(a, b):
@@ -120,7 +120,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         """
         def _verifyVariantCalls():
             for gaCall in gaVariant.calls:
-                self.assertValid(protocol.GACall, gaCall.toJsonDict())
+                self.assertValid(protocol.Call, gaCall.toJsonDict())
                 self.assertIn(gaCall.callSetName, pyvcfCallMap)
                 pyvcfCall = pyvcfCallMap[gaCall.callSetName]
                 self._verifyVariantCallEqual(gaCall, pyvcfCall)
@@ -194,7 +194,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             iterator = self._gaObject.getVariants(
                 referenceName, 0, end)
             for gaVariant in iterator:
-                self.assertValid(protocol.GAVariant, gaVariant.toJsonDict())
+                self.assertValid(protocol.Variant, gaVariant.toJsonDict())
 
     def _getPyvcfVariants(
             self, referenceName, startPosition=0, endPosition=2**30):
