@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 import datetime
 import os
-import glob
 
 import pysam
 
@@ -110,22 +109,22 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
         self._readGroups.append(readGroup)
 
 
-class HtslibReadGroupSet(datamodel.PysamSanitizer, AbstractReadGroupSet):
+class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     """
     Class representing a logical collection ReadGroups.
     """
     def __init__(self, id_, dataDir):
         super(HtslibReadGroupSet, self).__init__(id_)
-        self._dataDir = dataDir
-        # we only support BAM files right now;
-        # SAM files (which can't have index files) would be too slow
-        pattern = "*.bam"
-        for path in glob.glob(os.path.join(self._dataDir, pattern)):
-            filename = os.path.split(path)[1]
-            localId = os.path.splitext(filename)[0]
-            readGroupId = "{}:{}".format(self._id, localId)
-            readGroup = HtslibReadGroup(readGroupId, path)
-            self._readGroups.append(readGroup)
+        self._readGroups = []
+        self._setAccessTimes(dataDir)
+        self._scanDataFiles(dataDir, ["*.bam"])
+
+    def _addDataFile(self, path):
+        filename = os.path.split(path)[1]
+        localId = os.path.splitext(filename)[0]
+        readGroupId = "{}:{}".format(self._id, localId)
+        readGroup = HtslibReadGroup(readGroupId, path)
+        self._readGroups.append(readGroup)
 
 
 class AbstractReadGroup(object):
@@ -136,6 +135,9 @@ class AbstractReadGroup(object):
     """
     def __init__(self, id_):
         self._id = id_
+        now = protocol.convertDatetime(datetime.datetime.now())
+        self._creationTime = now
+        self._updateTime = now
 
     def getId(self):
         """
@@ -149,11 +151,10 @@ class AbstractReadGroup(object):
         """
         # TODO this is very incomplete, but we don't have the
         # implementation to fill out the rest of the fields currently
-        now = protocol.convertDatetime(datetime.datetime.now())
         readGroup = protocol.GAReadGroup()
         readGroup.id = self._id
-        readGroup.created = now
-        readGroup.updated = now
+        readGroup.created = self._creationTime
+        readGroup.updated = self._updateTime
         readGroup.datasetId = None
         readGroup.description = None
         readGroup.experiment = None
@@ -208,12 +209,13 @@ class SimulatedReadGroup(AbstractReadGroup):
         return alignment
 
 
-class HtslibReadGroup(datamodel.PysamSanitizer, AbstractReadGroup):
+class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     """
     A readgroup based on htslib's reading of a given file
     """
     def __init__(self, id_, dataFile):
         super(HtslibReadGroup, self).__init__(id_)
+        self._setAccessTimes(dataFile)
         self._samFilePath = dataFile
         self._samFile = pysam.AlignmentFile(dataFile)
 
