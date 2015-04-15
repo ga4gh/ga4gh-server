@@ -158,4 +158,25 @@ error log (in Apache on Debian/Ubuntu, for example, this is ``/var/log/apache2/e
 Deployment on Docker
 --------------------
 
-**TODO**
+It is also possible to deploy the server using Docker.
+
+First build the Docker Image.  From the ``deploy`` folder run:
+
+.. code-block:: bash
+
+  $ docker build .
+
+Find the ``id`` of the recently built image by running
+
+.. code-block:: bash
+
+  $ docker images
+
+Use that ``id`` to launch the server
+
+.. code-block:: bash
+
+  $ docker run -d -p 8888:80 <id>
+
+This will run the docker container in the background, and translate calls from your host environment
+port 8888 to the docker container port 80. At that point you should be able to access it like a normal website.
