@@ -61,7 +61,7 @@ information about the methodology used.
 "name": "description"}, {"default": null, "doc": "", "type": ["null",
 "long"], "name": "created"}, {"default": null, "doc": "", "type":
 ["null", "long"], "name": "updated"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "type"}, {"default": null, "doc":
+"type": ["null", "string"], "name": "type"}, {"default": [], "doc":
 "", "type": {"items": "string", "type": "array"}, "name": "software"},
 {"default": {}, "doc": "", "type": {"values": {"items": "string",
 "type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
@@ -88,7 +88,7 @@ information about the methodology used.
         self.id = None
         self.info = {}
         self.name = None
-        self.software = None
+        self.software = []
         self.type = None
         self.updated = None
 
@@ -627,18 +627,33 @@ ErrorResource
 
 class Experiment(ProtocolElement):
     """
-No documentation
+An experimental preparation of a `Sample`.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
-"Experiment", "fields": [{"default": null, "doc": "", "type": ["null",
-"string"], "name": "libraryId"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "platformUnit"}, {"doc": "", "type":
-["null", "string"], "name": "sequencingCenter"}, {"doc": "", "type":
-["null", "string"], "name": "instrumentModel"}]}
+"Experiment", "fields": [{"doc": "", "type": "string", "name": "id"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"default": null, "doc": "", "type": ["null",
+"long"], "name": "created"}, {"default": null, "doc": "", "type":
+["null", "long"], "name": "updated"}, {"default": null, "doc": "",
+"type": ["null", "long"], "name": "runDate"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "molecule"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "strategy"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"selection"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "library"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "libraryLayout"}, {"doc": "", "type": ["null",
+"string"], "name": "instrumentModel"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "instrumentDataFile"}, {"doc": "",
+"type": ["null", "string"], "name": "sequencingCenter"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "platformUnit"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
+        "id",
         "instrumentModel",
         "sequencingCenter",
     ])
@@ -653,14 +668,29 @@ No documentation
         embeddedTypes = {}
         return embeddedTypes[fieldName]
 
-    __slots__ = ['instrumentModel', 'libraryId', 'platformUnit',
-                 'sequencingCenter']
+    __slots__ = ['created', 'description', 'id', 'info', 'instrumentDataFile',
+                 'instrumentModel', 'library',
+                 'libraryLayout', 'molecule', 'name',
+                 'platformUnit', 'runDate', 'selection',
+                 'sequencingCenter', 'strategy', 'updated']
 
     def __init__(self):
+        self.created = None
+        self.description = None
+        self.id = None
+        self.info = {}
+        self.instrumentDataFile = None
         self.instrumentModel = None
-        self.libraryId = None
+        self.library = None
+        self.libraryLayout = None
+        self.molecule = None
+        self.name = None
         self.platformUnit = None
+        self.runDate = None
+        self.selection = None
         self.sequencingCenter = None
+        self.strategy = None
+        self.updated = None
 
 
 class GAException(ProtocolElement):
@@ -727,9 +757,9 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
 "string", "name": "ontologySource"}, {"doc": "", "type": "string",
 "name": "id"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "name"}]}], "name": "species"}, {"default": null,
-"doc": "", "type": {"symbols": ["FEMALE", "MALE", "OTHER",
+"doc": "", "type": ["null", {"symbols": ["FEMALE", "MALE", "OTHER",
 "MIXED_SAMPLE", "NOT_APPLICABLE"], "doc": "", "type": "enum", "name":
-"GeneticSex"}, "name": "sex"}, {"default": null, "doc": "", "type":
+"GeneticSex"}], "name": "sex"}, {"default": null, "doc": "", "type":
 ["null", "OntologyTerm"], "name": "developmentalStage"}, {"default":
 null, "doc": "", "type": ["null", "long"], "name": "dateOfBirth"},
 {"default": [], "doc": "", "type": {"items": "OntologyTerm", "type":
@@ -2001,9 +2031,9 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
 "string", "name": "ontologySource"}, {"doc": "", "type": "string",
 "name": "id"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "name"}]}], "name": "species"}, {"default": null,
-"doc": "", "type": {"symbols": ["FEMALE", "MALE", "OTHER",
+"doc": "", "type": ["null", {"symbols": ["FEMALE", "MALE", "OTHER",
 "MIXED_SAMPLE", "NOT_APPLICABLE"], "doc": "", "type": "enum", "name":
-"GeneticSex"}, "name": "sex"}, {"default": null, "doc": "", "type":
+"GeneticSex"}], "name": "sex"}, {"default": null, "doc": "", "type":
 ["null", "OntologyTerm"], "name": "developmentalStage"}, {"default":
 null, "doc": "", "type": ["null", "long"], "name": "dateOfBirth"},
 {"default": [], "doc": "", "type": {"items": "OntologyTerm", "type":
