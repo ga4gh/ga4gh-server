@@ -46,7 +46,7 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         return references.ReferenceSet
 
     def getProtocolClass(self):
-        return protocol.GAReferenceSet
+        return protocol.ReferenceSet
 
     def testNumReferences(self):
         references = list(self._gaObject.getReferences())

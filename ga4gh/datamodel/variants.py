@@ -69,7 +69,7 @@ class CallSet(object):
         Returns the representation of this CallSet as the corresponding
         ProtocolElement.
         """
-        gaCallSet = protocol.GACallSet()
+        gaCallSet = protocol.CallSet()
         gaCallSet.created = self._variantSet.getCreationTime()
         gaCallSet.updated = self._variantSet.getUpdatedTime()
         gaCallSet.id = self._id
@@ -89,6 +89,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._callSetIds = []
         self._creationTime = None
         self._updatedTime = None
+        self._referenceSetId = ""
 
     def getCreationTime(self):
         """
@@ -141,9 +142,10 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         Converts this VariantSet into its GA4GH protocol equivalent.
         """
-        protocolElement = protocol.GAVariantSet()
+        protocolElement = protocol.VariantSet()
         protocolElement.id = self._id
         protocolElement.datasetId = "NotImplemented"
+        protocolElement.referenceSetId = self._referenceSetId
         protocolElement.metadata = self.getMetadata()
         return protocolElement
 
@@ -167,7 +169,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         Convenience method to set the common fields in a GA Variant
         object from this variant set.
         """
-        ret = protocol.GAVariant()
+        ret = protocol.Variant()
         ret.created = self._creationTime
         ret.updated = self._updatedTime
         ret.variantSetId = self.getId()
@@ -232,7 +234,7 @@ class SimulatedVariantSet(AbstractVariantSet):
         variant.alternateBases = [alt]
         variant.calls = []
         for callSet in self.getCallSets():
-            call = protocol.GACall()
+            call = protocol.Call()
             call.callSetId = callSet.getId()
             # for now, the genotype is either [0,1], [1,1] or [1,0] with equal
             # probability; probably will want to do something more
@@ -338,7 +340,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
 
     def _convertGaCall(self, recordId, name, pysamCall, genotypeData):
         callSet = self.getCallSet(name)
-        call = protocol.GACall()
+        call = protocol.Call()
         call.callSetId = callSet.getId()
         call.callSetName = callSet.getSampleName()
         call.sampleId = callSet.getSampleName()
@@ -459,7 +461,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         def buildMetadata(
                 key, type="String", number="1", value="", id="",
                 description=""):  # All input are strings
-            metadata = protocol.GAVariantSetMetadata()
+            metadata = protocol.VariantSetMetadata()
             metadata.key = key
             metadata.value = value
             metadata.id = id

@@ -43,9 +43,9 @@ class TestFrontendErrors(unittest.TestCase):
         # the correct API endpoints and classes. That is, we shouldn't
         # use protocol.postMethods directly, but instead call a function.
         supportedMethods = set([
-            protocol.GASearchCallSetsRequest,
-            protocol.GASearchVariantSetsRequest,
-            protocol.GASearchVariantsRequest,
+            protocol.SearchCallSetsRequest,
+            protocol.SearchVariantSetsRequest,
+            protocol.SearchVariantsRequest,
         ])
         self.endPointMap = {}
         for endPoint, requestClass, responseClass in protocol.postMethods:

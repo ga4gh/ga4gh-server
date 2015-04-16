@@ -52,10 +52,10 @@ class TestAbstractBackend(unittest.TestCase):
         Returns an iterator over the variantSets, abstracting away
         the details of the pageSize.
         """
-        request = protocol.GASearchVariantSetsRequest()
+        request = protocol.SearchVariantSetsRequest()
         return self.resultIterator(
             request, pageSize, self._backend.searchVariantSets,
-            protocol.GASearchVariantSetsResponse, "variantSets")
+            protocol.SearchVariantSetsResponse, "variantSets")
 
     def getVariants(
             self, variantSetIds, referenceName, start=0, end=2 ** 32,
@@ -64,7 +64,7 @@ class TestAbstractBackend(unittest.TestCase):
         Returns an iterator over the specified list of variants,
         abstracting out paging details.
         """
-        request = protocol.GASearchVariantsRequest()
+        request = protocol.SearchVariantsRequest()
         request.variantSetIds = variantSetIds
         request.referenceName = referenceName
         request.start = start
@@ -72,18 +72,18 @@ class TestAbstractBackend(unittest.TestCase):
         request.callSetIds = callSetIds
         return self.resultIterator(
             request, pageSize, self._backend.searchVariants,
-            protocol.GASearchVariantsResponse, "variants")
+            protocol.SearchVariantsResponse, "variants")
 
     def getCallSets(self, variantSetId, pageSize=100):
         """
         Returns an iterator over the callsets in a specified
         variant set.
         """
-        request = protocol.GASearchCallSetsRequest()
+        request = protocol.SearchCallSetsRequest()
         request.variantSetIds = [variantSetId]
         return self.resultIterator(
             request, pageSize, self._backend.searchCallSets,
-            protocol.GASearchCallSetsResponse, "callSets")
+            protocol.SearchCallSetsResponse, "callSets")
 
     def testGetVariantSets(self):
         sortedVariantSetsFromGetter = sorted(self._backend.getVariantSets())
@@ -98,45 +98,45 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertEqual(parsedToken[2], 567)
 
     def testRunSearchRequest(self):
-        request = protocol.GASearchVariantSetsRequest()
+        request = protocol.SearchVariantSetsRequest()
         responseStr = self._backend.runSearchRequest(
-            request.toJsonString(), protocol.GASearchVariantSetsRequest,
-            protocol.GASearchVariantSetsResponse,
+            request.toJsonString(), protocol.SearchVariantSetsRequest,
+            protocol.SearchVariantSetsResponse,
             self._backend.variantSetsGenerator)
-        response = protocol.GASearchVariantSetsResponse.fromJsonString(
+        response = protocol.SearchVariantSetsResponse.fromJsonString(
             responseStr)
         self.assertTrue(
-            isinstance(response, protocol.GASearchVariantSetsResponse))
+            isinstance(response, protocol.SearchVariantSetsResponse))
 
     def testSearchVariantSets(self):
-        request = protocol.GASearchVariantSetsRequest()
+        request = protocol.SearchVariantSetsRequest()
         responseStr = self._backend.searchVariantSets(request.toJsonString())
-        response = protocol.GASearchVariantSetsResponse.fromJsonString(
+        response = protocol.SearchVariantSetsResponse.fromJsonString(
             responseStr)
         self.assertTrue(
-            isinstance(response, protocol.GASearchVariantSetsResponse))
+            isinstance(response, protocol.SearchVariantSetsResponse))
 
     def testSearchVariants(self):
         variantSetIds = [
             variantSet.id for variantSet in self.getVariantSets(pageSize=1)]
-        request = protocol.GASearchVariantsRequest()
+        request = protocol.SearchVariantsRequest()
         request.variantSetIds = variantSetIds[:1]
         responseStr = self._backend.searchVariants(request.toJsonString())
-        response = protocol.GASearchVariantsResponse.fromJsonString(
+        response = protocol.SearchVariantsResponse.fromJsonString(
             responseStr)
         self.assertTrue(
-            isinstance(response, protocol.GASearchVariantsResponse))
+            isinstance(response, protocol.SearchVariantsResponse))
 
     def testSearchCallSets(self):
         variantSetIds = [
             variantSet.id for variantSet in self.getVariantSets(pageSize=1)]
-        request = protocol.GASearchCallSetsRequest()
+        request = protocol.SearchCallSetsRequest()
         request.variantSetIds = variantSetIds[:1]
         responseStr = self._backend.searchCallSets(request.toJsonString())
-        response = protocol.GASearchCallSetsResponse.fromJsonString(
+        response = protocol.SearchCallSetsResponse.fromJsonString(
             responseStr)
         self.assertTrue(
-            isinstance(response, protocol.GASearchCallSetsResponse))
+            isinstance(response, protocol.SearchCallSetsResponse))
 
     def testVariantSetPagination(self):
         results = []

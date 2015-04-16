@@ -87,7 +87,7 @@ class ValidationTool(object):
         if fieldName == "nextMatePosition":
             new = cls._createNewFieldsValue(schemaJson, fieldName)
             gaPositionSchemaSource = \
-                json.loads(protocol.GAPosition._schemaSource)
+                json.loads(protocol.Position._schemaSource)
             new['type'] = [u'null', gaPositionSchemaSource]
             schemaJson['fields'] = [new]
         else:

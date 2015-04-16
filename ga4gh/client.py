@@ -184,14 +184,14 @@ class HttpClient(object):
         Returns a referenceSet from the server
         """
         return self.runGetRequest(
-            "referencesets", protocol.GAReferenceSet, id_)
+            "referencesets", protocol.ReferenceSet, id_)
 
     def getReference(self, id_):
         """
         Returns a reference from the server
         """
         return self.runGetRequest(
-            "references", protocol.GAReference, id_)
+            "references", protocol.Reference, id_)
 
     def listReferenceBases(self, protocolRequest, id_):
         """
@@ -199,14 +199,14 @@ class HttpClient(object):
         """
         return self.runListRequest(
             protocolRequest, "references/{id}/bases",
-            protocol.GAListReferenceBasesResponse, id_)
+            protocol.ListReferenceBasesResponse, id_)
 
     def searchVariants(self, protocolRequest):
         """
         Returns an iterator over the Variants from the server
         """
         return self.runSearchRequest(
-            protocolRequest, "variants", protocol.GASearchVariantsResponse)
+            protocolRequest, "variants", protocol.SearchVariantsResponse)
 
     def searchVariantSets(self, protocolRequest):
         """
@@ -214,7 +214,7 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "variantsets",
-            protocol.GASearchVariantSetsResponse)
+            protocol.SearchVariantSetsResponse)
 
     def searchReferenceSets(self, protocolRequest):
         """
@@ -222,21 +222,21 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "referencesets",
-            protocol.GASearchReferenceSetsResponse)
+            protocol.SearchReferenceSetsResponse)
 
     def searchReferences(self, protocolRequest):
         """
         Returns an iterator over the References from the server
         """
         return self.runSearchRequest(
-            protocolRequest, "references", protocol.GASearchReferencesResponse)
+            protocolRequest, "references", protocol.SearchReferencesResponse)
 
     def searchCallSets(self, protocolRequest):
         """
         Returns an iterator over the CallSets from the server
         """
         return self.runSearchRequest(
-            protocolRequest, "callsets", protocol.GASearchCallSetsResponse)
+            protocolRequest, "callsets", protocol.SearchCallSetsResponse)
 
     def searchReadGroupSets(self, protocolRequest):
         """
@@ -244,11 +244,11 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "readgroupsets",
-            protocol.GASearchReadGroupSetsResponse)
+            protocol.SearchReadGroupSetsResponse)
 
     def searchReads(self, protocolRequest):
         """
         Returns an iterator over the Reads from the server
         """
         return self.runSearchRequest(
-            protocolRequest, "reads", protocol.GASearchReadsResponse)
+            protocolRequest, "reads", protocol.SearchReadsResponse)

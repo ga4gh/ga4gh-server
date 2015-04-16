@@ -74,59 +74,59 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.searchVariants(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "variants",
-            protocol.GASearchVariantsResponse)
+            protocol.SearchVariantsResponse)
 
     def testSearchVariantSets(self):
         self.httpClient.searchVariantSets(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "variantsets",
-            protocol.GASearchVariantSetsResponse)
+            protocol.SearchVariantSetsResponse)
 
     def testSearchReferenceSets(self):
         self.httpClient.searchReferenceSets(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "referencesets",
-            protocol.GASearchReferenceSetsResponse)
+            protocol.SearchReferenceSetsResponse)
 
     def testSearchReferences(self):
         self.httpClient.searchReferences(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "references",
-            protocol.GASearchReferencesResponse)
+            protocol.SearchReferencesResponse)
 
     def testSearchReadGroupSets(self):
         self.httpClient.searchReadGroupSets(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "readgroupsets",
-            protocol.GASearchReadGroupSetsResponse)
+            protocol.SearchReadGroupSetsResponse)
 
     def testSearchCallSets(self):
         self.httpClient.searchCallSets(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "callsets",
-            protocol.GASearchCallSetsResponse)
+            protocol.SearchCallSetsResponse)
 
     def testSearchReads(self):
         self.httpClient.searchReads(self.protocolRequest)
         self.httpClient.runSearchRequest.assert_called_once_with(
             self.protocolRequest, "reads",
-            protocol.GASearchReadsResponse)
+            protocol.SearchReadsResponse)
 
     def testGetReferenceSet(self):
         self.httpClient.getReferenceSet(self._id)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "referencesets", protocol.GAReferenceSet, self._id)
+            "referencesets", protocol.ReferenceSet, self._id)
 
     def testGetReference(self):
         self.httpClient.getReference(self._id)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "references", protocol.GAReference, self._id)
+            "references", protocol.Reference, self._id)
 
     def testListReferenceBases(self):
         self.httpClient.listReferenceBases(self.protocolRequest, self._id)
         self.httpClient.runListRequest.assert_called_once_with(
             self.protocolRequest, "references/{id}/bases",
-            protocol.GAListReferenceBasesResponse, self._id)
+            protocol.ListReferenceBasesResponse, self._id)
 
 
 class TestRunRequest(unittest.TestCase):
@@ -143,7 +143,7 @@ class TestRunRequest(unittest.TestCase):
             mockPost.side_effect = [DummyResponse(), DummyResponse('{}')]
             protocolRequest = DummyRequest()
             objectName = "referencesets"
-            protocolResponseClass = protocol.GASearchReferenceSetsResponse
+            protocolResponseClass = protocol.SearchReferenceSetsResponse
 
             # invoke SUT
             result = [refSet for refSet in self.httpClient.runSearchRequest(
@@ -173,7 +173,7 @@ class TestRunRequest(unittest.TestCase):
             }
             mockGet.side_effect = [DummyResponse(json.dumps(text))]
             objectName = "reference"
-            protocolResponseClass = protocol.GAReference
+            protocolResponseClass = protocol.Reference
             id_ = 'anId'
 
             # invoke SUT
@@ -204,11 +204,11 @@ class TestRunRequest(unittest.TestCase):
             }
             mockGet.side_effect = [
                 DummyResponse(json.dumps(text)), DummyResponse('{}')]
-            protocolRequest = protocol.GAListReferenceBasesRequest()
+            protocolRequest = protocol.ListReferenceBasesRequest()
             protocolRequest.start = 1
             protocolRequest.end = 5
             url = "references/{id}/bases"
-            protocolResponseClass = protocol.GAListReferenceBasesResponse
+            protocolResponseClass = protocol.ListReferenceBasesResponse
             id_ = 'myId'
 
             # invoke SUT
