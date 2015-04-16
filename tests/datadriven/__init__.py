@@ -10,8 +10,10 @@ from __future__ import unicode_literals
 import contextlib
 import os
 import inspect
+import unittest
 
 import ga4gh.avrotools as avrotools
+import ga4gh.protocol as protocol
 
 
 def _wrapTestMethod(method):
@@ -270,6 +272,7 @@ class DataDrivenTest(TestCase):
                     jsonDict, protocolClass, invalidFields))
             assert False, message
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testProtocolElementValid(self):
         self.assertValid(
             self.getProtocolClass(),

@@ -14,6 +14,7 @@ import ga4gh.protocol as protocol
 
 
 class HttpClient(object):
+
     """
     GA4GH Http Client
     """
@@ -168,15 +169,19 @@ class HttpClient(object):
             yield responseObject
             notDone = self._updateNotDone(responseObject, protocolRequest)
 
-    def runGetRequest(self, objectName, protocolResponseClass, id_):
+    def runGetRequest(self, objectName, protocolResponseClass, id_,
+                      postfix=None):
         """
         Requests an object from the server and returns the object of
         type protocolResponseClass that has id id_.
         Used for requests where a single object is the expected response.
         """
         url = "{objectName}/{id}"
+        if postfix is not None:
+            url += "/{postfix}"
         fullUrl = posixpath.join(
-            self._urlPrefix, url).format(id=id_, objectName=objectName)
+            self._urlPrefix, url).format(id=id_, objectName=objectName,
+                                         postfix=postfix)
         return self._doRequest('GET', fullUrl, protocolResponseClass)
 
     def getReferenceSet(self, id_):
@@ -230,6 +235,34 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "references", protocol.SearchReferencesResponse)
+
+    def searchSequences(self, protocolRequest):
+        """
+        Returns Sequences from the server
+        """
+        return self.runSearchRequest(
+            protocolRequest, "sequences", protocol.SearchSequencesResponse)
+
+    def searchJoins(self, protocolRequest):
+        """
+        Returns Joins from the server
+        """
+        return self.runSearchRequest(
+            protocolRequest, "joins", protocol.SearchJoinsResponse)
+
+    def getSequenceBases(self, id_):
+        """
+        Returns a string of bases for the given sequence id
+        """
+        return self.runGetRequest(
+            "sequences", protocol.GetSequenceBasesResponse, id_, "bases")
+
+    def getAllele(self, id_):
+        """
+        Returns an allele by ID
+        """
+        return self.runGetRequest(
+            "alleles", protocol.Allele, id_)
 
     def searchCallSets(self, protocolRequest):
         """

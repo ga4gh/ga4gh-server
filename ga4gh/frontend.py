@@ -26,6 +26,7 @@ app = flask.Flask(__name__)
 
 
 class Version(object):
+
     """
     A major/minor/revision version tag
     """
@@ -62,9 +63,11 @@ class Version(object):
 
 
 class ServerStatus(object):
+
     """
     Generates information about the status of the server for display
     """
+
     def __init__(self):
         self.startupTime = datetime.datetime.now()
 
@@ -285,7 +288,8 @@ def searchReferenceSets(version):
 
 @app.route('/<version>/references/search', methods=['POST'])
 def searchReferences(version):
-    raise exceptions.PathNotFoundException()
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchReferences)
 
 
 @app.route('/<version>/variantsets/search', methods=['POST', 'OPTIONS'])
@@ -300,8 +304,53 @@ def searchVariants(version):
         version, flask.request, app.backend.searchVariants)
 
 
+@app.route('/<version>/sequences/search', methods=['POST'])
+def searchSequences(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchSequences)
+
+
+@app.route('/<version>/joins/search', methods=['POST'])
+def searchJoins(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchJoins)
+
+
+@app.route('/<version>/sequences/<id>/bases', methods=['GET'])
+def getSequenceBases(version, id):
+    try:
+        start = int(flask.request.args.get('start', 0))
+    except:
+        raise Exception("Start needs to be an integer")
+    end = flask.request.args.get('end', None)
+    if end is not None:
+        try:
+            end = int(end)
+        except:
+            raise Exception("End needs to be an integer")
+    responseString = app.backend.getSequenceBases(id, start, end)
+    return getFlaskResponse(responseString)
+
+
+@app.route('/<version>/mode/<mode>', methods=['GET'])
+# FIXME Since there's no general GET response mechanism yet,
+# this is an utter and unforgivable hack. It may not even be correct,
+# as it's unclear to me what a boolean AVRO method should be returning
+# (0/1? "True"/"False"? something else entirely?)
+def sendsMode(version, mode):
+    responseString = 'true' if mode.lower() == 'graph' else 'false'
+    return getFlaskResponse(responseString)
+
+
+@app.route('/<version>/alleles/<id>', methods=['GET'])
+def getAllele(version, id):
+    responseString = app.backend.getAllele(id)
+    return getFlaskResponse(responseString)
+
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html
+
+
 @app.errorhandler(404)
 def pathNotFoundHandler(errorString):
     return handleException(exceptions.PathNotFoundException())

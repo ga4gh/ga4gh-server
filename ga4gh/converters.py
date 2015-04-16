@@ -119,19 +119,19 @@ class SamLine(object):
         # FLAG
         ret.flag = cls.toSamFlag(read)
         # RNAME
-        refName = read.alignment.position.referenceName
+        refName = read.alignment.position.base.referenceName
         ret.reference_id = targetIds[refName]
         # POS
-        ret.reference_start = int(read.alignment.position.position)
+        ret.reference_start = int(read.alignment.position.base.position)
         # MAPQ
         ret.mapping_quality = read.alignment.mappingQuality
         # CIGAR
         ret.cigar = cls.toCigar(read)
         # RNEXT
-        nextRefName = read.nextMatePosition.referenceName
+        nextRefName = read.nextMatePosition.base.referenceName
         ret.next_reference_id = targetIds[nextRefName]
         # PNEXT
-        ret.next_reference_start = int(read.nextMatePosition.position)
+        ret.next_reference_start = int(read.nextMatePosition.base.position)
         # TLEN
         ret.template_length = read.fragmentLength
         # QUAL

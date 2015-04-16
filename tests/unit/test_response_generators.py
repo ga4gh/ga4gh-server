@@ -26,7 +26,7 @@ class MockVariantSet(variants.AbstractVariantSet):
         self.numVariants = numVariants
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+                    name=None, callSetIds=None):
         for i in range(self.numVariants):
             yield generateVariant()
 
@@ -95,8 +95,9 @@ class TestVariantsGenerator(unittest.TestCase):
 def generateReadAlignment(position=0, sequence='abc'):
     alignment = protocol.ReadAlignment()
     alignment.alignment = protocol.LinearAlignment()
-    alignment.alignment.position = protocol.Position()
-    alignment.alignment.position.position = position
+    alignment.alignment.position = protocol.Side()
+    alignment.alignment.position.base = protocol.Position()
+    alignment.alignment.position.base.position = position
     alignment.alignedSequence = sequence
     return alignment
 
@@ -203,7 +204,7 @@ class TestReadsIntervalIteratorClassMethods(unittest.TestCase):
 
     def testGetReadStart(self):
         result = self.intervalIterator._getStart(self.read)
-        self.assertEqual(self.read.alignment.position.position, result)
+        self.assertEqual(self.read.alignment.position.base.position, result)
 
     def testGetReadEnd(self):
         result = self.intervalIterator._getEnd(self.read)

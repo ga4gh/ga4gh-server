@@ -70,7 +70,7 @@ class RequestFactory(object):
     def createSearchVariantsRequest(self):
         request = protocol.SearchVariantsRequest()
         request.referenceName = self.args.referenceName
-        request.variantName = self.args.variantName
+        request.name = self.args.name
         request.start = self.args.start
         request.end = self.args.end
         if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
@@ -96,6 +96,15 @@ class RequestFactory(object):
         request = protocol.SearchReferencesRequest()
         setCommaSeparatedAttribute(request, self.args, 'accessions')
         setCommaSeparatedAttribute(request, self.args, 'md5checksums')
+        request.referenceSetId = self.args.referenceSetName
+        return request
+
+    def createSearchSequencesRequest(self):
+        request = protocol.SearchSequencesRequest()
+        return request
+
+    def createSearchJoinsRequest(self):
+        request = protocol.SearchJoinsRequest()
         return request
 
     def createSearchReadGroupSetsRequest(self):
@@ -294,9 +303,13 @@ class AbstractGetRunner(AbstractQueryRunner):
         self._httpClient = client.HttpClient(
             args.baseUrl, args.verbose, self._workarounds, self._key)
 
-    def _run(self, method):
-        response = method(self._id)
-        print(response.id)
+    def _run(self, method, attrName=None):
+        result = method(self._id)
+        if attrName is None:
+            print(result)
+        else:
+            attr = getattr(result, attrName)
+            print(attr)
 
 
 class AbstractSearchRunner(AbstractQueryRunner):
@@ -422,6 +435,54 @@ class SearchReferencesRunner(AbstractSearchRunner):
         self._run(self._httpClient.searchReferences, 'id')
 
 
+class SearchSequencesRunner(AbstractSearchRunner):
+    """
+    Runner class for the sequences/search method
+    """
+    def __init__(self, args):
+        super(SearchSequencesRunner, self).__init__(args)
+        request = RequestFactory(args).createSearchSequencesRequest()
+        self._setRequest(request, args)
+
+    def run(self):
+        self._run(self._httpClient.searchSequences)
+
+
+class SearchJoinsRunner(AbstractSearchRunner):
+    """
+    Runner class for the joins/search method
+    """
+    def __init__(self, args):
+        super(SearchJoinsRunner, self).__init__(args)
+        request = RequestFactory(args).createSearchJoinsRequest()
+        self._setRequest(request, args)
+
+    def run(self):
+        self._run(self._httpClient.searchJoins)
+
+
+class GetSequenceBasesRunner(AbstractGetRunner):
+    """
+    Runner class for the sequences/{id}/bases method
+    """
+    def __init__(self, args):
+        super(GetSequenceBasesRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.getSequenceBases)
+
+
+class GetAllelesRunner(AbstractGetRunner):
+    """
+    Runner class for the alleles/{id} method
+    """
+    def __init__(self, args):
+        super(GetAllelesRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.getAllele)
+
+
 class SearchReadGroupSetsRunner(AbstractSearchRunner):
     """
     Runner class for the readgroupsets/search method
@@ -512,6 +573,17 @@ class GetReferenceRunner(AbstractGetRunner):
         self._run(self._httpClient.getReference)
 
 
+class GetModeRunner(AbstractGetRunner):
+    """
+    Runner class for the mode/{mode} method
+    """
+    def __init__(self, args):
+        super(GetModeRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.sendsMode)
+
+
 class BenchmarkRunner(SearchVariantsRunner):
     """
     Runner class for the client side benchmarking. This is intended to give
@@ -547,7 +619,7 @@ def addVariantSearchOptions(parser):
         "--referenceName", "-r", default="1",
         help="Only return variants on this reference.")
     parser.add_argument(
-        "--variantName", "-n", default=None,
+        "--name", "-n", default=None,
         help="Only return variants which have exactly this name.")
     parser.add_argument(
         "--callSetIds", "-c", default=[],
@@ -628,6 +700,12 @@ def addNameArgument(parser):
         help="The name to search over")
 
 
+def addReferenceSetNameArgument(parser):
+    parser.add_argument(
+        "--referenceSetName", default=None,
+        help="The reference set name to search over")
+
+
 def addClientGlobalOptions(parser):
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument(
@@ -704,10 +782,55 @@ def addReferencesSearchParser(subparsers):
         help="Search for references")
     parser.set_defaults(runner=SearchReferencesRunner)
     addUrlArgument(parser)
+    addReferenceSetNameArgument(parser)
     addPageSizeArgument(parser)
     addAccessionsArgument(parser)
     addMd5ChecksumsArgument(parser)
     return parser
+
+
+def addSequencesSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "sequences-search",
+        description="Search for sequences",
+        help="Search for sequences")
+    parser.set_defaults(runner=SearchSequencesRunner)
+    addUrlArgument(parser)
+    addReferenceSetNameArgument(parser)
+    addVariantSetIdsArgument(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addJoinsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "joins-search",
+        description="Search for joins",
+        help="Search for joins")
+    parser.set_defaults(runner=SearchJoinsRunner)
+    addUrlArgument(parser)
+    addReferenceSetNameArgument(parser)
+    addVariantSetIdsArgument(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addSequencesGetBasesParser(subparsers):
+    parser = subparsers.add_parser(
+        "sequences-get-bases",
+        description="Get bases for a given sequence",
+        help="Get bases for a given sequence")
+    parser.set_defaults(runner=GetSequenceBasesRunner)
+    addGetArguments(parser)
+
+
+def addAllelesGetParser(subparsers):
+    parser = subparsers.add_parser(
+        "alleles-get",
+        description="Get an allele",
+        help="Get an allele")
+    parser.set_defaults(runner=GetAllelesRunner)
+    addGetArguments(parser)
 
 
 def addReadGroupSetsSearchParser(subparsers):
@@ -803,6 +926,10 @@ def client_main(parser=None):
     addVariantSetsSearchParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)
+    addSequencesSearchParser(subparsers)
+    addJoinsSearchParser(subparsers)
+    addAllelesGetParser(subparsers)
+    addSequencesGetBasesParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
     addCallsetsSearchParser(subparsers)
     addReadsSearchParser(subparsers)

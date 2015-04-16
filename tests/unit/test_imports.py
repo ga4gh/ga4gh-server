@@ -160,10 +160,12 @@ class ImportGraphLayerChecker(object):
         'exceptions': ['ga4gh/exceptions.py'],
         'datamodel': ['ga4gh/datamodel/reads.py',
                       'ga4gh/datamodel/references.py',
-                      'ga4gh/datamodel/variants.py'],
+                      'ga4gh/datamodel/variants.py',
+                      'ga4gh/datamodel/graphs.py'],
         'libraries': ['ga4gh/converters.py', 'ga4gh/avrotools.py'],
         'protocol': ['ga4gh/protocol.py', 'ga4gh/_protocol_definitions.py'],
         'config': ['ga4gh/serverconfig.py'],
+        'sidegraph': ['ga4gh/sidegraph.py'],
     }
 
     # each moduleGroupName has one and only one entry here
@@ -177,6 +179,7 @@ class ImportGraphLayerChecker(object):
         ['exceptions'],
         ['config'],
         ['protocol'],
+        ['sidegraph']
     ]
 
     def __init__(self, graph):

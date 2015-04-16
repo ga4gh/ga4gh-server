@@ -47,6 +47,7 @@ class TestSimulatedStack(unittest.TestCase):
             path, headers={'Content-type': 'application/json'},
             data=data)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testVariantSetsSearch(self):
         expectedIds = self.variantSetIds
         request = protocol.SearchVariantSetsRequest()
@@ -67,6 +68,7 @@ class TestSimulatedStack(unittest.TestCase):
         for variantSet in responseData.variantSets:
             self.assertTrue(variantSet.id in expectedIds)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testVariantsSearch(self):
         expectedIds = self.variantSetIds[:1]
         referenceName = '1'

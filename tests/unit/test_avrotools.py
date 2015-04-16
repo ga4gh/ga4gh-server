@@ -16,17 +16,21 @@ class TestValidationTool(unittest.TestCase):
     """
     Tests the ValidationTool
     """
+
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testNonProtocolElement(self):
         # Throws an exception when class_ is not a subclass of ProtocolElement
         with self.assertRaises(avrotools.ValidationToolException):
             avrotools.ValidationTool.getInvalidFields(object, {})
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testLessFields(self):
         # Throws an exception when there are fields missing from the jsonDict
         for class_ in protocol.getProtocolClasses():
             with self.assertRaises(avrotools.ValidationToolException):
                 avrotools.ValidationTool.getInvalidFields(class_, {})
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testMoreFields(self):
         # Throws an exception when there are extra fields in the jsonDict
         for class_ in protocol.getProtocolClasses():
