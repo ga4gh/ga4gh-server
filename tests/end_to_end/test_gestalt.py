@@ -15,7 +15,6 @@ from __future__ import unicode_literals
 import tempfile
 import shlex
 import subprocess
-import unittest
 
 import ga4gh.protocol as protocol
 import server as server
@@ -37,7 +36,6 @@ DEBUG = True
         self.clientOutFile = None
         self.clientErrFile = None
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testEndToEnd(self):
         self.createLogFiles()
         self.runVariantSetRequest()
