@@ -8,10 +8,8 @@ from __future__ import unicode_literals
 import collections
 import glob
 import os
-import unittest
 
 import ga4gh.protocol as protocol
-import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.reads as reads
 import tests.datadriven as datadriven
 
@@ -65,14 +63,6 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     def getProtocolClass(self):
         return protocol.ReadGroupSet
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
-    def testGetReadAlignmentsBothRefs(self):
-        # test that querying by both referenceName and referenceId fails
-        with self.assertRaises(exceptions.BadReadsSearchRequestBothRefs):
-            readGroupSet = self._gaObject
-            for readGroup in readGroupSet.getReadGroups():
-                list(readGroup.getReadAlignments("a", 5, 0))
-
     def testGetReadAlignments(self):
         # test that searching with no arguments succeeds
         for gaAlignment, pysamAlignment, readGroup, readGroupInfo in \
@@ -80,7 +70,6 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self.assertAlignmentsEqual(
                 gaAlignment, pysamAlignment, readGroupInfo)
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testValidateObjects(self):
         # test that validation works on read groups and reads
         readGroupSet = self._gaObject
@@ -92,19 +81,6 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 self.assertValid(
                     protocol.ReadAlignment,
                     gaAlignment.toJsonDict())
-
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
-    def testGetReadAlignmentsRefName(self):
-        # test that searching with a reference name succeeds
-        readGroupSet = self._gaObject
-        for readGroup in readGroupSet.getReadGroups():
-            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
-            for refName, refNameReads in readGroupInfo.refNames.items():
-                alignments = list(readGroup.getReadAlignments(refName))
-                for gaAlignment, pysamAlignment in zip(
-                        alignments, refNameReads):
-                    self.assertAlignmentsEqual(
-                        gaAlignment, pysamAlignment, readGroupInfo)
 
     def testGetReadAlignmentsRefId(self):
         # test that searching with a reference id succeeds
@@ -119,29 +95,27 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                     self.assertAlignmentsEqual(
                         gaAlignment, pysamAlignment, readGroupInfo)
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testGetReadAlignmentsStartEnd(self):
         # test that searching with start and end coords succeeds
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
             readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
-            for refName, refNameReads in readGroupInfo.refNames.items():
+            for refId, refIdReads in readGroupInfo.refIds.items():
                 bigNumThatPysamWontChokeOn = 2**30
                 alignments = list(readGroup.getReadAlignments(
-                    refName, None, 0, bigNumThatPysamWontChokeOn))
+                    refId, 0, bigNumThatPysamWontChokeOn))
                 for gaAlignment, pysamAlignment in zip(
-                        alignments, refNameReads):
+                        alignments, refIdReads):
                     self.assertAlignmentsEqual(
                         gaAlignment, pysamAlignment, readGroupInfo)
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testGetReadAlignmentSearchRanges(self):
         # test that various range searches work
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
             readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
-            for refName, refNameReads in readGroupInfo.refNames.items():
-                alignments = list(readGroup.getReadAlignments(refName))
+            for refId, refIdReads in readGroupInfo.refIds.items():
+                alignments = list(readGroup.getReadAlignments(refId))
                 length = len(alignments)
                 if length < 2:
                     continue
@@ -153,22 +127,22 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 beginLength = len(alignments[0].alignedSequence)
                 end = positions[-1]
                 self.assertGetReadAlignmentsRangeResult(
-                    readGroup, refName, begin, end + 1, length)
+                    readGroup, refId, begin, end + 1, length)
                 self.assertGetReadAlignmentsRangeResult(
-                    readGroup, refName, begin, end, length - 1)
+                    readGroup, refId, begin, end, length - 1)
                 self.assertGetReadAlignmentsRangeResult(
-                    readGroup, refName, begin, begin, 0)
+                    readGroup, refId, begin, begin, 0)
                 self.assertGetReadAlignmentsRangeResult(
-                    readGroup, refName, begin + beginLength,
+                    readGroup, refId, begin + beginLength,
                     end + 1, length - 1)
                 self.assertGetReadAlignmentsRangeResult(
-                    readGroup, refName, begin + beginLength,
+                    readGroup, refId, begin + beginLength,
                     end, length - 2)
 
-    def assertGetReadAlignmentsRangeResult(self, readGroup, refName,
+    def assertGetReadAlignmentsRangeResult(self, readGroup, refId,
                                            start, end, result):
         alignments = list(readGroup.getReadAlignments(
-            refName, None, start, end))
+            refId, start, end))
         self.assertEqual(len(alignments), result)
 
     def assertAlignmentsEqual(self, gaAlignment, pysamAlignment,

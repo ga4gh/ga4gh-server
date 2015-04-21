@@ -187,7 +187,7 @@ class SimulatedReadGroup(AbstractReadGroup):
         gaPosition = protocol.Position()
         gaPosition.position = 0
         gaPosition.referenceName = "whatevs"
-        gaPosition.reverseStrand = False
+        gaPosition.strand = protocol.Strand.POS_STRAND
         gaLinearAlignment = protocol.LinearAlignment()
         gaLinearAlignment.position = gaPosition
         alignment.alignment = gaLinearAlignment
@@ -254,7 +254,8 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.alignment.position.referenceName = self._samFile.getrname(
             read.reference_id)
         ret.alignment.position.position = read.reference_start
-        ret.alignment.position.reverseStrand = False  # TODO fix this!
+        ret.alignment.position.strand = \
+            protocol.Strand.POS_STRAND  # TODO fix this!
         ret.alignment.cigar = []
         for operation, length in read.cigar:
             gaCigarUnit = protocol.CigarUnit()
@@ -276,7 +277,8 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
             ret.nextMatePosition.referenceName = self._samFile.getrname(
                 read.next_reference_id)
             ret.nextMatePosition.position = read.next_reference_start
-            ret.nextMatePosition.reverseStrand = False  # TODO fix this!
+            ret.nextMatePosition.strand = \
+                protocol.Strand.POS_STRAND  # TODO fix this!
         # TODO Is this the correct mapping between numberReads and
         # sam flag 0x1? What about the mapping between numberReads
         # and 0x40 and 0x80?
