@@ -8,33 +8,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import unittest
-from nose.tools import nottest  # TODO remove when we fix Calls
 
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 import tests.utils as utils
-
-
-_app = None
-
-
-def setUp(self):
-    config = {
-        "DATA_SOURCE": "__SIMULATED__",
-        "SIMULATED_BACKEND_RANDOM_SEED": 1111,
-        "SIMULATED_BACKEND_NUM_CALLS": 0,
-        "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
-        "SIMULATED_BACKEND_NUM_VARIANT_SETS": 10,
-    }
-    frontend.configure(
-        baseConfig="TestConfig", extraConfig=config)
-    global _app
-    _app = frontend.app.test_client()
-
-
-def tearDown(self):
-    global _app
-    _app = None
 
 
 class TestSimulatedStack(unittest.TestCase):
@@ -42,9 +19,24 @@ class TestSimulatedStack(unittest.TestCase):
     Tests the full stack for the Simulated backend by using the Flask
     testing client.
     """
+    @classmethod
+    def setUpClass(cls):
+        config = {
+            "DATA_SOURCE": "__SIMULATED__",
+            "SIMULATED_BACKEND_RANDOM_SEED": 1111,
+            "SIMULATED_BACKEND_NUM_CALLS": 0,
+            "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
+            "SIMULATED_BACKEND_NUM_VARIANT_SETS": 10,
+        }
+        frontend.configure(
+            baseConfig="TestConfig", extraConfig=config)
+        cls.app = frontend.app.test_client()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.app = None
+
     def setUp(self):
-        global _app
-        self.app = _app
         self.backend = frontend.app.backend
         self.variantSetIds = [
             variantSet.getId() for variantSet in
@@ -119,9 +111,9 @@ class TestSimulatedStack(unittest.TestCase):
 
         # TODO: Add test cases for other methods when they are implemented.
 
-    @nottest
+    @unittest.skipIf(True, "")
     def testCallSetsSearch(self):
-        # TODO remove the @nottest decorator here once calls have been
+        # TODO remove the @skipIf decorator here once calls have been
         # properly implemented in the simulator.
         request = protocol.SearchCallSetsRequest()
         request.name = None

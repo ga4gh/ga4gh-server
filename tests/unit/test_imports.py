@@ -24,27 +24,16 @@ from snakefood.roots import find_roots, relfile
 import tests.utils as utils
 
 
-graph = None
-
-
-def globalSetUp():
-    # the import graph should only be generated once;
-    # subsequent tests can reuse it
-    global graph
-    if graph is None:
-        snakefoodScanner = SnakefoodScanner()
-        graph = snakefoodScanner.scan()
-    return graph
-
-
 class TestImports(unittest.TestCase):
     """
     Tests that the import graph:
     - doesn't contain any cycles
     - doesn't violate layering constraints
     """
-    def setUp(self):
-        self.graph = globalSetUp()
+    @classmethod
+    def setUpClass(cls):
+        snakefoodScanner = SnakefoodScanner()
+        cls.graph = snakefoodScanner.scan()
 
     def testNoCycles(self):
         checker = ImportGraphCycleChecker(self.graph)
