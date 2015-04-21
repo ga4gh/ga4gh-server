@@ -94,7 +94,7 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testParsePageToken(self):
         goodPageToken = "12:34:567:8:9000"
-        parsedToken = self._backend.parsePageToken(goodPageToken, 5)
+        parsedToken = backend._parsePageToken(goodPageToken, 5)
         self.assertEqual(parsedToken[2], 567)
 
     def testRunSearchRequest(self):
