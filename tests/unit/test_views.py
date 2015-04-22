@@ -11,28 +11,6 @@ import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 import tests.utils as utils
 
-_app = None
-
-
-def setUp(self):
-    config = {
-        "DATA_SOURCE": "__SIMULATED__",
-        "SIMULATED_BACKEND_RANDOM_SEED": 1111,
-        "SIMULATED_BACKEND_NUM_CALLS": 1,
-        "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
-        "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
-        # "DEBUG" : True
-    }
-    frontend.configure(
-        baseConfig="TestConfig", extraConfig=config)
-    global _app
-    _app = frontend.app.test_client()
-
-
-def tearDown(self):
-    global _app
-    _app = None
-
 
 class TestFrontend(unittest.TestCase):
     """
@@ -40,9 +18,23 @@ class TestFrontend(unittest.TestCase):
     """
     exampleUrl = 'www.example.com'
 
-    def setUp(self):
-        global _app
-        self.app = _app
+    @classmethod
+    def setUpClass(cls):
+        config = {
+            "DATA_SOURCE": "__SIMULATED__",
+            "SIMULATED_BACKEND_RANDOM_SEED": 1111,
+            "SIMULATED_BACKEND_NUM_CALLS": 1,
+            "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
+            "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
+            # "DEBUG" : True
+        }
+        frontend.configure(
+            baseConfig="TestConfig", extraConfig=config)
+        cls.app = frontend.app.test_client()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.app = None
 
     def sendRequest(self, path, request):
         """

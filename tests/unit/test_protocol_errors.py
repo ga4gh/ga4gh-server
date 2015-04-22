@@ -12,22 +12,6 @@ import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import tests.utils as utils
 
-_app = None
-
-
-def setUp():
-    """
-    Set up the test Flask app.
-    """
-    global _app
-    frontend.configure(baseConfig="TestConfig")
-    _app = frontend.app.test_client()
-
-
-def tearDown():
-    global _app
-    _app = None
-
 
 class TestFrontendErrors(unittest.TestCase):
     """
@@ -35,8 +19,16 @@ class TestFrontendErrors(unittest.TestCase):
     that the correct exception was raised by the error code sent
     back.
     """
+    @classmethod
+    def setUpClass(cls):
+        frontend.configure(baseConfig="TestConfig")
+        cls.app = frontend.app.test_client()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.app = None
+
     def setUp(self):
-        self.app = _app
         # TODO replace this with ALL post methods once the rest of the
         # end points have been implemented. This should also add an API
         # to protocol.py to simplify and document the process of getting
