@@ -16,20 +16,21 @@ version = '3c8be4'
 
 class Allele(ProtocolElement):
     """
-`Allele`s are the key component of the "allelic" model of variation:
-they are single objects that are present in some copy number.  An
-`Allele` is a contiguous piece of sequence that we will want to say is
-present (in general at some copy number) or absent in a sample. Very
-often it will just be a single `Segment` covering the entirety of a
-novel `Sequence`, but it is also common for it to be a mix of
-`Segment`s on reference and novel `Sequence`s, or in general to be any
-contiguous path through the augmented sequence graph.  `Allele`s
-belong to `VariantSet`s. `Allele`s can also be used to represent the
-reference and alternate alleles of `Variant`s.  Note that `Path`s
-cannot follow `Join`s not represented in the augmented sequence graph.
-For example, if  an `Allele` that spans a novel deletion is required,
-a new `Join` should exist to describe that deletion, available through
-`searchJoins()`.
+    `Allele`s are the key component of the "allelic" model of
+    variation: they are single objects that are present in some copy
+    number.  An `Allele` is a contiguous piece of sequence that we
+    will want to say is present (in general at some copy number) or
+    absent in a sample. Very often it will just be a single `Segment`
+    covering the entirety of a novel `Sequence`, but it is also common
+    for it to be a mix of `Segment`s on reference and novel
+    `Sequence`s, or in general to be any contiguous path through the
+    augmented sequence graph.  `Allele`s belong to `VariantSet`s.
+    `Allele`s can also be used to represent the reference and
+    alternate alleles of `Variant`s.  Note that `Path`s cannot follow
+    `Join`s not represented in the augmented sequence graph. For
+    example, if  an `Allele` that spans a novel deletion is required,
+    a new `Join` should exist to describe that deletion, available
+    through `searchJoins()`.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Allele",
@@ -68,6 +69,7 @@ a new `Join` should exist to describe that deletion, available through
         embeddedTypes = {
             'path': Path,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -82,14 +84,14 @@ a new `Join` should exist to describe that deletion, available through
 
 class AlleleCall(ProtocolElement):
     """
-An `AlleleCall` represents the determination of the copy number of a
-particular `Allele`, possibly within a certain `Variant`.  It may
-include associated information such as quality and phasing.  The
-`Allele` copy numbers described by an `AlleleCall` must be consistent
-with those implied by the `genotype`s of any `Call`s in the same
-`CallSet`. If a server supports "graph" mode, it must provide
-`Variant`-associated `AlleleCall`s for any `Variant` with a `Call` in
-the `CallSet`.
+    An `AlleleCall` represents the determination of the copy number of
+    a particular `Allele`, possibly within a certain `Variant`.  It
+    may include associated information such as quality and phasing.
+    The `Allele` copy numbers described by an `AlleleCall` must be
+    consistent with those implied by the `genotype`s of any `Call`s in
+    the same `CallSet`. If a server supports "graph" mode, it must
+    provide `Variant`-associated `AlleleCall`s for any `Variant` with
+    a `Call` in the `CallSet`.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -118,6 +120,7 @@ the `CallSet`.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -136,9 +139,9 @@ the `CallSet`.
 
 class Analysis(ProtocolElement):
     """
-An analysis contains an interpretation of one or several experiments.
-(e.g. SNVs, copy number variations, methylation status) together with
-information about the methodology used.
+    An analysis contains an interpretation of one or several
+    experiments. (e.g. SNVs, copy number variations, methylation
+    status) together with information about the methodology used.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -154,7 +157,9 @@ information about the methodology used.
 "type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["id"])
+    requiredFields = set([
+        "id",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -164,6 +169,7 @@ information about the methodology used.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -184,11 +190,12 @@ information about the methodology used.
 
 class Attributes(ProtocolElement):
     """
-Type defining a collection of attributes associated with various
-protocol   records.  Each attribute is a name that maps to an array of
-one or more   values.  Values can be strings, external identifiers, or
-ontology terms.   Values should be split into the array elements
-instead of using a separator   syntax that needs to parsed.
+    Type defining a collection of attributes associated with various
+    protocol   records.  Each attribute is a name that maps to an
+    array of one or more   values.  Values can be strings, external
+    identifiers, or ontology terms.   Values should be split into the
+    array elements instead of using a separator   syntax that needs to
+    parsed.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -214,6 +221,7 @@ instead of using a separator   syntax that needs to parsed.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -226,7 +234,7 @@ instead of using a separator   syntax that needs to parsed.
 
 class BeaconInformationResource(ProtocolElement):
     """
-BeaconInformationResource
+    BeaconInformationResource
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -278,6 +286,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]},
         embeddedTypes = {
             'datasets': DataSetResource,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -299,7 +308,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]},
 
 class BeaconResponseResource(ProtocolElement):
     """
-The response from the Beacon
+    The response from the Beacon
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -343,6 +352,7 @@ null, "doc": "", "type": ["null", "string"], "name":
             'query': QueryResource,
             'response': ResponseResource,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -357,14 +367,15 @@ null, "doc": "", "type": ["null", "string"], "name":
 
 class Call(ProtocolElement):
     """
-A `Call` represents the determination of genotype with respect to a
-particular `Variant`.  It may include associated information such as
-quality and phasing. For example, a call might assign a probability of
-0.32 to the occurrence of a SNP named rs1234 in a call set with the
-name NA12345.  The genotypes described by `Call`s must be consistent
-with any `AlleleCall`s in the same `CallSet`. If a server supports
-"classic" mode, it must provide `Call`s for all `Variant`s that have
-associated `AlleleCall`s in the `CallSet`.
+    A `Call` represents the determination of genotype with respect to
+    a particular `Variant`.  It may include associated information
+    such as quality and phasing. For example, a call might assign a
+    probability of 0.32 to the occurrence of a SNP named rs1234 in a
+    call set with the name NA12345.  The genotypes described by
+    `Call`s must be consistent with any `AlleleCall`s in the same
+    `CallSet`. If a server supports "classic" mode, it must provide
+    `Call`s for all `Variant`s that have associated `AlleleCall`s in
+    the `CallSet`.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Call",
@@ -393,6 +404,7 @@ associated `AlleleCall`s in the `CallSet`.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -412,8 +424,9 @@ associated `AlleleCall`s in the `CallSet`.
 
 class CallSet(ProtocolElement):
     """
-A `CallSet` is a collection of variant calls for a particular sample.
-It belongs to a `VariantSet`. This is equivalent to one column in VCF.
+    A `CallSet` is a collection of variant calls for a particular
+    sample. It belongs to a `VariantSet`. This is equivalent to one
+    column in VCF.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "CallSet",
@@ -441,6 +454,7 @@ null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -460,43 +474,45 @@ null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
 
 class CigarOperation(object):
     """
-An enum for the different types of CIGAR alignment operations that
-exist. Used wherever CIGAR alignments are used. The different
-enumerated values have the following usage:  * `ALIGNMENT_MATCH`: An
-alignment match indicates that a sequence can be   aligned to the
-reference without evidence of an INDEL. Unlike the   `SEQUENCE_MATCH`
-and `SEQUENCE_MISMATCH` operators, the `ALIGNMENT_MATCH`   operator
-does not indicate whether the reference and read sequences are an
-exact match. This operator is equivalent to SAM's `M`. * `INSERT`: The
-insert operator indicates that the read contains evidence of   bases
-being inserted into the reference. This operator is equivalent to
-SAM's `I`. * `DELETE`: The delete operator indicates that the read
-contains evidence of   bases being deleted from the reference. This
-operator is equivalent to   SAM's `D`. * `SKIP`: The skip operator
-indicates that this read skips a long segment of   the reference, but
-the bases have not been deleted. This operator is   commonly used when
-working with RNA-seq data, where reads may skip long   segments of the
-reference between exons. This operator is equivalent to   SAM's 'N'. *
-`CLIP_SOFT`: The soft clip operator indicates that bases at the
-start/end   of a read have not been considered during alignment. This
-may occur if the   majority of a read maps, except for low quality
-bases at the start/end of   a read. This operator is equivalent to
-SAM's 'S'. Bases that are soft clipped   will still be stored in the
-read. * `CLIP_HARD`: The hard clip operator indicates that bases at
-the start/end of   a read have been omitted from this alignment. This
-may occur if this linear   alignment is part of a chimeric alignment,
-or if the read has been trimmed   (e.g., during error correction, or
-to trim poly-A tails for RNA-seq). This   operator is equivalent to
-SAM's 'H'. * `PAD`: The pad operator indicates that there is padding
-in an alignment.   This operator is equivalent to SAM's 'P'. *
-`SEQUENCE_MATCH`: This operator indicates that this portion of the
-aligned   sequence exactly matches the reference (e.g., all bases are
-equal to the   reference bases). This operator is equivalent to SAM's
-'='. * `SEQUENCE_MISMATCH`: This operator indicates that this portion
-of the   aligned sequence is an alignment match to the reference, but
-a sequence   mismatch (e.g., the bases are not equal to the
-reference). This can   indicate a SNP or a read error. This operator
-is equivalent to SAM's 'X'.
+    An enum for the different types of CIGAR alignment operations that
+    exist. Used wherever CIGAR alignments are used. The different
+    enumerated values have the following usage:  * `ALIGNMENT_MATCH`:
+    An alignment match indicates that a sequence can be   aligned to
+    the reference without evidence of an INDEL. Unlike the
+    `SEQUENCE_MATCH` and `SEQUENCE_MISMATCH` operators, the
+    `ALIGNMENT_MATCH`   operator does not indicate whether the
+    reference and read sequences are an   exact match. This operator
+    is equivalent to SAM's `M`. * `INSERT`: The insert operator
+    indicates that the read contains evidence of   bases being
+    inserted into the reference. This operator is equivalent to
+    SAM's `I`. * `DELETE`: The delete operator indicates that the read
+    contains evidence of   bases being deleted from the reference.
+    This operator is equivalent to   SAM's `D`. * `SKIP`: The skip
+    operator indicates that this read skips a long segment of   the
+    reference, but the bases have not been deleted. This operator is
+    commonly used when working with RNA-seq data, where reads may skip
+    long   segments of the reference between exons. This operator is
+    equivalent to   SAM's 'N'. * `CLIP_SOFT`: The soft clip operator
+    indicates that bases at the start/end   of a read have not been
+    considered during alignment. This may occur if the   majority of a
+    read maps, except for low quality bases at the start/end of   a
+    read. This operator is equivalent to SAM's 'S'. Bases that are
+    soft clipped   will still be stored in the read. * `CLIP_HARD`:
+    The hard clip operator indicates that bases at the start/end of
+    a read have been omitted from this alignment. This may occur if
+    this linear   alignment is part of a chimeric alignment, or if the
+    read has been trimmed   (e.g., during error correction, or to trim
+    poly-A tails for RNA-seq). This   operator is equivalent to SAM's
+    'H'. * `PAD`: The pad operator indicates that there is padding in
+    an alignment.   This operator is equivalent to SAM's 'P'. *
+    `SEQUENCE_MATCH`: This operator indicates that this portion of the
+    aligned   sequence exactly matches the reference (e.g., all bases
+    are equal to the   reference bases). This operator is equivalent
+    to SAM's '='. * `SEQUENCE_MISMATCH`: This operator indicates that
+    this portion of the   aligned sequence is an alignment match to
+    the reference, but a sequence   mismatch (e.g., the bases are not
+    equal to the reference). This can   indicate a SNP or a read
+    error. This operator is equivalent to SAM's 'X'.
     """
     ALIGNMENT_MATCH = "ALIGNMENT_MATCH"
     INSERT = "INSERT"
@@ -511,7 +527,7 @@ is equivalent to SAM's 'X'.
 
 class CigarUnit(ProtocolElement):
     """
-A structure for an instance of a CIGAR operation.
+    A structure for an instance of a CIGAR operation.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -537,6 +553,7 @@ null, "doc": "", "type": ["null", "string"], "name":
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -551,7 +568,7 @@ null, "doc": "", "type": ["null", "string"], "name":
 
 class DataSetResource(ProtocolElement):
     """
-DataSetResource
+    DataSetResource
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -595,6 +612,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]},
             'data_use': DataUseResource,
             'size': DataSizeResource,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -614,7 +632,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]},
 
 class DataSizeResource(ProtocolElement):
     """
-DataSetSizeResource
+    DataSetSizeResource
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -636,6 +654,7 @@ DataSetSizeResource
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -649,7 +668,7 @@ DataSetSizeResource
 
 class DataUseRequirementResource(ProtocolElement):
     """
-DataUseRequirementResource
+    DataUseRequirementResource
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -658,7 +677,9 @@ DataUseRequirementResource
 "string"], "name": "description"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["name"])
+    requiredFields = set([
+        "name",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -668,6 +689,7 @@ DataUseRequirementResource
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -681,7 +703,7 @@ DataUseRequirementResource
 
 class DataUseResource(ProtocolElement):
     """
-DataUseResource
+    DataUseResource
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -694,7 +716,9 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]},
 "type": "array"}, "name": "requirements"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["category"])
+    requiredFields = set([
+        "category",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -708,6 +732,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]},
         embeddedTypes = {
             'requirements': DataUseRequirementResource,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -722,7 +747,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]},
 
 class Dataset(ProtocolElement):
     """
-No documentation
+    No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Dataset",
@@ -730,7 +755,9 @@ No documentation
 null, "doc": "", "type": ["null", "string"], "name": "description"}]}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["id"])
+    requiredFields = set([
+        "id",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -740,6 +767,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]}
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -753,7 +781,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"}]}
 
 class ErrorResource(ProtocolElement):
     """
-ErrorResource
+    ErrorResource
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -762,7 +790,9 @@ ErrorResource
 "name": "description"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["name"])
+    requiredFields = set([
+        "name",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -772,6 +802,7 @@ ErrorResource
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -785,7 +816,7 @@ ErrorResource
 
 class Experiment(ProtocolElement):
     """
-An experimental preparation of a `Sample`.
+    An experimental preparation of a `Sample`.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -824,6 +855,7 @@ null, "doc": "", "type": ["null", "string"], "name": "platformUnit"},
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -854,7 +886,7 @@ null, "doc": "", "type": ["null", "string"], "name": "platformUnit"},
 
 class ExternalIdentifier(ProtocolElement):
     """
-Identifier from a public database
+    Identifier from a public database
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -877,6 +909,7 @@ Identifier from a public database
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -891,13 +924,13 @@ Identifier from a public database
 
 class ExtractSubgraphJoinsRequest(ProtocolElement):
     """
-This request maps to the body of `POST /subgraph/joins` as JSON.
-Specifies a`Position` and a radius (in bases), and requests all
-`Join`s reachable within that number of bases from that position.
-Starting at the specified `Position`, and with a 0 radius denoting
-only that `Position`, walk outwards this many bases along all possible
-paths, traversing `Join`s only if necessary. All `Join`s traversed
-during this walk should be returned.
+    This request maps to the body of `POST /subgraph/joins` as JSON.
+    Specifies a`Position` and a radius (in bases), and requests all
+    `Join`s reachable within that number of bases from that position.
+    Starting at the specified `Position`, and with a 0 radius denoting
+    only that `Position`, walk outwards this many bases along all
+    possible paths, traversing `Join`s only if necessary. All `Join`s
+    traversed during this walk should be returned.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -932,6 +965,7 @@ null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
         embeddedTypes = {
             'position': Position,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -950,7 +984,8 @@ null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
 
 class ExtractSubgraphJoinsResponse(ProtocolElement):
     """
-This is the response from `POST /subgraph/joins` expressed as JSON.
+    This is the response from `POST /subgraph/joins` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -984,6 +1019,7 @@ null, "doc": "", "type": ["null", "string"], "name":
         embeddedTypes = {
             'joins': Join,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -997,13 +1033,14 @@ null, "doc": "", "type": ["null", "string"], "name":
 
 class ExtractSubgraphSegmentsRequest(ProtocolElement):
     """
-This request maps to the body of `POST /subgraph/sequences` as JSON.
-Specifies a`Position` and a radius (in bases), and requests all
-`Segment`s reachable within that number of bases from that position.
-Starting at the specified `Position`, and with a 0 radius denoting
-only that `Position`, walk outwards this many bases along all possible
-paths, traversing `Join`s only if necessary. All `Segment`s covering
-all bases visited during this walk should be returned.
+    This request maps to the body of `POST /subgraph/sequences` as
+    JSON. Specifies a`Position` and a radius (in bases), and requests
+    all `Segment`s reachable within that number of bases from that
+    position.  Starting at the specified `Position`, and with a 0
+    radius denoting only that `Position`, walk outwards this many
+    bases along all possible paths, traversing `Join`s only if
+    necessary. All `Segment`s covering all bases visited during this
+    walk should be returned.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1038,6 +1075,7 @@ null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
         embeddedTypes = {
             'position': Position,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1056,7 +1094,8 @@ null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
 
 class ExtractSubgraphSegmentsResponse(ProtocolElement):
     """
-This is the response from `POST /subgraph/segments` expressed as JSON.
+    This is the response from `POST /subgraph/segments` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1090,6 +1129,7 @@ This is the response from `POST /subgraph/segments` expressed as JSON.
         embeddedTypes = {
             'segments': Segment,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1103,8 +1143,8 @@ This is the response from `POST /subgraph/segments` expressed as JSON.
 
 class Feature(ProtocolElement):
     """
-Node in the annotation graph that annotates a contiguous region of a
-sequence.
+    Node in the annotation graph that annotates a contiguous region of
+    a   sequence.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Feature",
@@ -1162,6 +1202,7 @@ sequence.
             'featureType': OntologyTerm,
             'path': Path,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1180,7 +1221,7 @@ sequence.
 
 class FeatureSet(ProtocolElement):
     """
-No documentation
+    No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1220,6 +1261,7 @@ No documentation
         embeddedTypes = {
             'attributes': Attributes,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1238,9 +1280,9 @@ No documentation
 
 class Fragment(ProtocolElement):
     """
-A fragment represents a contiguous stretch of a DNA or RNA molecule.
-Reads can be associated with a fragment to specify they derive from
-the same molecule.
+    A fragment represents a contiguous stretch of a DNA or RNA
+    molecule. Reads can be associated with a fragment to specify they
+    derive from the same molecule.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1248,7 +1290,9 @@ the same molecule.
 "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["id"])
+    requiredFields = set([
+        "id",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1258,6 +1302,7 @@ the same molecule.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1270,7 +1315,7 @@ the same molecule.
 
 class GAException(ProtocolElement):
     """
-A general exception type.
+    A general exception type.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "error", "name":
@@ -1279,7 +1324,9 @@ A general exception type.
 "errorCode"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["message"])
+    requiredFields = set([
+        "message",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1289,6 +1336,7 @@ A general exception type.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1302,9 +1350,9 @@ A general exception type.
 
 class GetSequenceBasesRequest(ProtocolElement):
     """
-The query parameters for a request to `GET /sequence/{id}`, for
-example:  `GET /sequence/c95d4520-8c63-45f1-924d-
-6a9604a919fb?start=100&end=200`
+    The query parameters for a request to `GET /sequence/{id}`, for
+    example:  `GET /sequence/c95d4520-8c63-45f1-924d-
+    6a9604a919fb?start=100&end=200`
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1324,6 +1372,7 @@ example:  `GET /sequence/c95d4520-8c63-45f1-924d-
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1338,7 +1387,7 @@ example:  `GET /sequence/c95d4520-8c63-45f1-924d-
 
 class GetSequenceBasesResponse(ProtocolElement):
     """
-The response from `GET /sequence/{id}` expressed as JSON.
+    The response from `GET /sequence/{id}` expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1348,7 +1397,9 @@ The response from `GET /sequence/{id}` expressed as JSON.
 "string"], "name": "nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["sequence"])
+    requiredFields = set([
+        "sequence",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1358,6 +1409,7 @@ The response from `GET /sequence/{id}` expressed as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1372,19 +1424,20 @@ The response from `GET /sequence/{id}` expressed as JSON.
 
 class GraphAlignment(ProtocolElement):
     """
-A string-to-reference-graph alignment can be represented by one CIGAR
-string and one `Path` through multiple `Reference`s, against which the
-CIGAR string is interpreted.  Note that `Path`s in `GraphAlignment`s
-are restricted to visiting `Reference`s and following reference
-adjacencies. If a read needs to be aligned to sequences that are not
-present in a `ReferenceSet`, it needs to be aligned to a new
-`ReferenceSet` with those sequences. If a read needs to follow
-adjacencies that are not present in the `ReferenceSet` it's being
-aligned to, it should be represented as a "chimeric" alignment, and
-should use multiple `ReadAlignment`s and the supplementaryAlignment
-flag instead of a single `GraphAlignment`.  Some especially large
-deletions could be represented just as well as a large deletion in the
-CIGAR string, or as a chimeric alignment.
+    A string-to-reference-graph alignment can be represented by one
+    CIGAR string and one `Path` through multiple `Reference`s, against
+    which the CIGAR string is interpreted.  Note that `Path`s in
+    `GraphAlignment`s are restricted to visiting `Reference`s and
+    following reference adjacencies. If a read needs to be aligned to
+    sequences that are not present in a `ReferenceSet`, it needs to be
+    aligned to a new `ReferenceSet` with those sequences. If a read
+    needs to follow adjacencies that are not present in the
+    `ReferenceSet` it's being aligned to, it should be represented as
+    a "chimeric" alignment, and should use multiple `ReadAlignment`s
+    and the supplementaryAlignment flag instead of a single
+    `GraphAlignment`.  Some especially large deletions could be
+    represented just as well as a large deletion in the CIGAR string,
+    or as a chimeric alignment.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1413,7 +1466,9 @@ null, "doc": "", "type": ["null", "string"], "name":
 ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["path"])
+    requiredFields = set([
+        "path",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1429,6 +1484,7 @@ null, "doc": "", "type": ["null", "string"], "name":
             'cigar': CigarUnit,
             'path': Path,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1443,8 +1499,8 @@ null, "doc": "", "type": ["null", "string"], "name":
 
 class Individual(ProtocolElement):
     """
-An individual (or subject) typically corresponds to an individual
-human or other organism.
+    An individual (or subject) typically corresponds to an individual
+    human or other organism.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1475,7 +1531,9 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
 ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["id"])
+    requiredFields = set([
+        "id",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1497,6 +1555,7 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
             'sex': OntologyTerm,
             'species': OntologyTerm,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1527,7 +1586,7 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
 
 class IndividualGroup(ProtocolElement):
     """
-Represents a group of individuals. (e.g. a trio)
+    Represents a group of individuals. (e.g. a trio)
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1542,7 +1601,9 @@ Represents a group of individuals. (e.g. a trio)
 "array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["id"])
+    requiredFields = set([
+        "id",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1552,6 +1613,7 @@ Represents a group of individuals. (e.g. a trio)
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1571,11 +1633,11 @@ Represents a group of individuals. (e.g. a trio)
 
 class Join(ProtocolElement):
     """
-A `Join` is simply a pair of `Side` objects. The are logically
-unordered (i.e. swapping makes no difference), but we require a rank
-on the Sequences, and so implicitly on the sides, so to avoid
-ambiguity we require that the side for side1 is less than that for
-side2.
+    A `Join` is simply a pair of `Side` objects. The are logically
+    unordered (i.e. swapping makes no difference), but we require a
+    rank on the Sequences, and so implicitly on the sides, so to avoid
+    ambiguity we require that the side for side1 is less than that for
+    side2.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Join",
@@ -1609,6 +1671,7 @@ side2.
             'side1': Side,
             'side2': Side,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1622,7 +1685,7 @@ side2.
 
 class LinearAlignment(ProtocolElement):
     """
-A linear alignment can be represented by one CIGAR string.
+    A linear alignment can be represented by one CIGAR string.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1646,7 +1709,9 @@ A linear alignment can be represented by one CIGAR string.
 "array"}, "name": "cigar"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["position"])
+    requiredFields = set([
+        "position",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1662,6 +1727,7 @@ A linear alignment can be represented by one CIGAR string.
             'cigar': CigarUnit,
             'position': Side,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1676,8 +1742,9 @@ A linear alignment can be represented by one CIGAR string.
 
 class ListReferenceBasesRequest(ProtocolElement):
     """
-The query parameters for a request to `GET /references/{id}/bases`,
-for example:  `GET /references/{id}/bases?start=100&end=200`
+    The query parameters for a request to `GET
+    /references/{id}/bases`, for example:  `GET
+    /references/{id}/bases?start=100&end=200`
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1697,6 +1764,7 @@ for example:  `GET /references/{id}/bases?start=100&end=200`
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1711,7 +1779,7 @@ for example:  `GET /references/{id}/bases?start=100&end=200`
 
 class ListReferenceBasesResponse(ProtocolElement):
     """
-The response from `GET /references/{id}/bases` expressed as JSON.
+    The response from `GET /references/{id}/bases` expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1721,7 +1789,9 @@ The response from `GET /references/{id}/bases` expressed as JSON.
 "string"], "name": "nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["sequence"])
+    requiredFields = set([
+        "sequence",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1731,6 +1801,7 @@ The response from `GET /references/{id}/bases` expressed as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1745,8 +1816,8 @@ The response from `GET /references/{id}/bases` expressed as JSON.
 
 class OntologyTerm(ProtocolElement):
     """
-An ontology term describing an attribute. (e.g. the phenotype
-attribute 'polydactyly' from HPO)
+    An ontology term describing an attribute. (e.g. the phenotype
+    attribute 'polydactyly' from HPO)
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1769,6 +1840,7 @@ attribute 'polydactyly' from HPO)
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1783,9 +1855,9 @@ attribute 'polydactyly' from HPO)
 
 class Path(ProtocolElement):
     """
-A `Path` is an ordered list of `Segment`s. In general any contiguous
-path through a sequence graph, with no novel adjacencies, can be
-represented by a `Path`.
+    A `Path` is an ordered list of `Segment`s. In general any
+    contiguous path through a sequence graph, with no novel
+    adjacencies, can be represented by a `Path`.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Path",
@@ -1817,6 +1889,7 @@ represented by a `Path`.
         embeddedTypes = {
             'segments': Segment,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1829,9 +1902,9 @@ represented by a `Path`.
 
 class Position(ProtocolElement):
     """
-A `Position` is an unoriented base in some already known sequence. A
-`Position` is represented by a sequence name or ID, and a base number
-on that sequence (0-based).
+    A `Position` is an unoriented base in some already known sequence.
+    A `Position` is represented by a sequence name or ID, and a base
+    number on that sequence (0-based).
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1841,7 +1914,9 @@ on that sequence (0-based).
 "long", "name": "position"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["position"])
+    requiredFields = set([
+        "position",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -1851,6 +1926,7 @@ on that sequence (0-based).
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1865,7 +1941,7 @@ on that sequence (0-based).
 
 class Program(ProtocolElement):
     """
-No documentation
+    No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Program",
@@ -1887,6 +1963,7 @@ null, "doc": "", "type": ["null", "string"], "name": "version"}]}
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1903,7 +1980,7 @@ null, "doc": "", "type": ["null", "string"], "name": "version"}]}
 
 class QueryResource(ProtocolElement):
     """
-A request for information about a specific site
+    A request for information about a specific site
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -1931,6 +2008,7 @@ A request for information about a specific site
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -1949,9 +2027,9 @@ A request for information about a specific site
 
 class ReadAlignment(ProtocolElement):
     """
-Each read alignment describes an alignment with additional information
-about the fragment and the read. A read alignment object is equivalent
-to a line in a SAM file.
+    Each read alignment describes an alignment with additional
+    information about the fragment and the read. A read alignment
+    object is equivalent to a line in a SAM file.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -2026,6 +2104,7 @@ null, "doc": "", "type": ["null", {"doc": "", "type": "record",
             'alignment': LinearAlignment,
             'nextMatePosition': Side,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2059,7 +2138,7 @@ null, "doc": "", "type": ["null", {"doc": "", "type": "record",
 
 class ReadGroup(ProtocolElement):
     """
-No documentation
+    No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -2133,6 +2212,7 @@ null, "doc": "", "type": ["null", "string"], "name": "name"},
             'programs': Program,
             'stats': ReadStats,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2159,7 +2239,7 @@ null, "doc": "", "type": ["null", "string"], "name": "name"},
 
 class ReadGroupSet(ProtocolElement):
     """
-No documentation
+    No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -2217,7 +2297,9 @@ null, "doc": "", "type": ["null", "string"], "name": "name"},
 "ReadGroup"}, "type": "array"}, "name": "readGroups"}]}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["id"])
+    requiredFields = set([
+        "id",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -2233,6 +2315,7 @@ null, "doc": "", "type": ["null", "string"], "name": "name"},
             'readGroups': ReadGroup,
             'stats': ReadStats,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2249,7 +2332,7 @@ null, "doc": "", "type": ["null", "string"], "name": "name"},
 
 class ReadStats(ProtocolElement):
     """
-No documentation
+    No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -2269,6 +2352,7 @@ null, "doc": "", "type": ["null", "long"], "name": "baseCount"}]}
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2283,15 +2367,15 @@ null, "doc": "", "type": ["null", "long"], "name": "baseCount"}]}
 
 class Reference(ProtocolElement):
     """
-A `Reference` is a canonical assembled contig, intended to act as a
-reference coordinate space for other genomic annotations. A single
-`Reference` might represent the human chromosome 1, for instance.
-`Reference`s are designed to be immutable. When extending a
-`ReferenceSet` with new `Reference`s, the existing `References` should
-not be changed. Newly added `Reference` `Sequence`s may be children of
-existing `Reference` `Sequence`s, but existing `Reference` `Sequence`s
-should not be made to be children of newly added `Reference`
-`Sequence`s.
+    A `Reference` is a canonical assembled contig, intended to act as
+    a reference coordinate space for other genomic annotations. A
+    single `Reference` might represent the human chromosome 1, for
+    instance.  `Reference`s are designed to be immutable. When
+    extending a `ReferenceSet` with new `Reference`s, the existing
+    `References` should not be changed. Newly added `Reference`
+    `Sequence`s may be children of existing `Reference` `Sequence`s,
+    but existing `Reference` `Sequence`s should not be made to be
+    children of newly added `Reference` `Sequence`s.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -2327,6 +2411,7 @@ should not be made to be children of newly added `Reference`
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2352,15 +2437,16 @@ should not be made to be children of newly added `Reference`
 
 class ReferenceSet(ProtocolElement):
     """
-A `ReferenceSet` is a set of `Reference`s which typically comprise a
-reference assembly, such as `GRCh38`. A `ReferenceSet` defines a
-common coordinate space for comparing reference-aligned experimental
-data.  `ReferenceSet`s are composeable: a `ReferenceSet` may
-incorporate all of the `Reference`s and `Join`s from one or more other
-`ReferenceSet`s via the `includedReferenceSet`s array.  In classic
-mode, this is just a set of sequences.  In graph mode, there are both
-sequences and joins, but we only access the joins via method
-getReferenceJoins().
+    A `ReferenceSet` is a set of `Reference`s which typically comprise
+    a reference assembly, such as `GRCh38`. A `ReferenceSet` defines a
+    common coordinate space for comparing reference-aligned
+    experimental data.  `ReferenceSet`s are composeable: a
+    `ReferenceSet` may incorporate all of the `Reference`s and `Join`s
+    from one or more other `ReferenceSet`s via the
+    `includedReferenceSet`s array.  In classic mode, this is just a
+    set of sequences.  In graph mode, there are both sequences and
+    joins, but we only access the joins via method
+    getReferenceJoins().
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -2393,6 +2479,7 @@ getReferenceJoins().
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2416,9 +2503,9 @@ getReferenceJoins().
 
 class Region(ProtocolElement):
     """
-An abstraction for referring to a genomic region, in relation to some
-already  known reference. This will require some significant rework as
-we move to graph coordinates.
+    An abstraction for referring to a genomic region, in relation to
+    some already  known reference. This will require some significant
+    rework as we move to graph coordinates.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Region",
@@ -2447,6 +2534,7 @@ we move to graph coordinates.
         embeddedTypes = {
             'start': Position,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2460,7 +2548,7 @@ we move to graph coordinates.
 
 class ResponseResource(ProtocolElement):
     """
-The response to the Beacon query
+    The response to the Beacon query
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.beacon", "type": "record", "name":
@@ -2492,6 +2580,7 @@ null, "doc": "", "type": ["null", "string"], "name":
         embeddedTypes = {
             'err': ErrorResource,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2508,8 +2597,8 @@ null, "doc": "", "type": ["null", "string"], "name":
 
 class Sample(ProtocolElement):
     """
-A biological sample used in an experiment. (e.g. whole blood from an
-affected individual)
+    A biological sample used in an experiment. (e.g. whole blood from
+    an affected individual)
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Sample",
@@ -2537,7 +2626,9 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
 "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["id"])
+    requiredFields = set([
+        "id",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -2555,6 +2646,7 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
             'cellType': OntologyTerm,
             'organismPart': OntologyTerm,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2584,7 +2676,8 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
 
 class SearchAlleleCallsRequest(SearchRequest):
     """
-This request maps to the body of `POST /allelecalls/search` as JSON.
+    This request maps to the body of `POST /allelecalls/search` as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2609,6 +2702,7 @@ This request maps to the body of `POST /allelecalls/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2627,8 +2721,8 @@ This request maps to the body of `POST /allelecalls/search` as JSON.
 
 class SearchAlleleCallsResponse(SearchResponse):
     """
-This is the response from `POST /allelecalls/search` expressed as
-JSON.
+    This is the response from `POST /allelecalls/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2660,6 +2754,7 @@ JSON.
         embeddedTypes = {
             'alleleCalls': AlleleCall,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2673,7 +2768,7 @@ JSON.
 
 class SearchAllelesRequest(SearchRequest):
     """
-This request maps to the body of `POST /alleles/search` as JSON.
+    This request maps to the body of `POST /alleles/search` as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2700,6 +2795,7 @@ This request maps to the body of `POST /alleles/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2718,7 +2814,8 @@ This request maps to the body of `POST /alleles/search` as JSON.
 
 class SearchAllelesResponse(SearchResponse):
     """
-This is the response from `POST /alleles/search` expressed as JSON.
+    This is the response from `POST /alleles/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2758,6 +2855,7 @@ This is the response from `POST /alleles/search` expressed as JSON.
         embeddedTypes = {
             'alleles': Allele,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2771,7 +2869,7 @@ This is the response from `POST /alleles/search` expressed as JSON.
 
 class SearchAnalysesRequest(SearchRequest):
     """
-This request maps to the body of `POST /analyses/search` as JSON.
+    This request maps to the body of `POST /analyses/search` as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2792,6 +2890,7 @@ This request maps to the body of `POST /analyses/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2806,7 +2905,8 @@ This request maps to the body of `POST /analyses/search` as JSON.
 
 class SearchAnalysesResponse(SearchResponse):
     """
-This is the response from `POST /analyses/search` expressed as JSON.
+    This is the response from `POST /analyses/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2841,6 +2941,7 @@ This is the response from `POST /analyses/search` expressed as JSON.
         embeddedTypes = {
             'analyses': Analysis,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2854,7 +2955,7 @@ This is the response from `POST /analyses/search` expressed as JSON.
 
 class SearchCallSetsRequest(SearchRequest):
     """
-This request maps to the body of `POST /callsets/search` as JSON.
+    This request maps to the body of `POST /callsets/search` as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2876,6 +2977,7 @@ This request maps to the body of `POST /callsets/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2891,7 +2993,8 @@ This request maps to the body of `POST /callsets/search` as JSON.
 
 class SearchCallSetsResponse(SearchResponse):
     """
-This is the response from `POST /callsets/search` expressed as JSON.
+    This is the response from `POST /callsets/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2925,6 +3028,7 @@ This is the response from `POST /callsets/search` expressed as JSON.
         embeddedTypes = {
             'callSets': CallSet,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2938,7 +3042,7 @@ This is the response from `POST /callsets/search` expressed as JSON.
 
 class SearchCallsRequest(SearchRequest):
     """
-This request maps to the body of `POST /calls/search` as JSON.
+    This request maps to the body of `POST /calls/search` as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2962,6 +3066,7 @@ This request maps to the body of `POST /calls/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -2979,7 +3084,7 @@ This request maps to the body of `POST /calls/search` as JSON.
 
 class SearchCallsResponse(SearchResponse):
     """
-This is the response from `POST /calls/search` expressed as JSON.
+    This is the response from `POST /calls/search` expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3014,6 +3119,7 @@ This is the response from `POST /calls/search` expressed as JSON.
         embeddedTypes = {
             'calls': Call,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3027,7 +3133,7 @@ This is the response from `POST /calls/search` expressed as JSON.
 
 class SearchDatasetsRequest(SearchRequest):
     """
-This request maps to the body of `POST /datasets/search` as JSON.
+    This request maps to the body of `POST /datasets/search` as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3046,6 +3152,7 @@ This request maps to the body of `POST /datasets/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3059,7 +3166,8 @@ This request maps to the body of `POST /datasets/search` as JSON.
 
 class SearchDatasetsResponse(SearchResponse):
     """
-This is the response from `POST /datasets/search` expressed as JSON.
+    This is the response from `POST /datasets/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3087,6 +3195,7 @@ This is the response from `POST /datasets/search` expressed as JSON.
         embeddedTypes = {
             'datasets': Dataset,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3100,7 +3209,8 @@ This is the response from `POST /datasets/search` expressed as JSON.
 
 class SearchExperimentsRequest(SearchRequest):
     """
-This request maps to the body of `POST /experiments/search` as JSON.
+    This request maps to the body of `POST /experiments/search` as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3121,6 +3231,7 @@ This request maps to the body of `POST /experiments/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3135,8 +3246,8 @@ This request maps to the body of `POST /experiments/search` as JSON.
 
 class SearchExperimentsResponse(SearchResponse):
     """
-This is the response from `POST /experiments/search` expressed as
-JSON.
+    This is the response from `POST /experiments/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3181,6 +3292,7 @@ null, "doc": "", "type": ["null", "string"], "name": "molecule"},
         embeddedTypes = {
             'experiments': Experiment,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3194,7 +3306,7 @@ null, "doc": "", "type": ["null", "string"], "name": "molecule"},
 
 class SearchFeaturesRequest(SearchRequest):
     """
-This request maps to the body of `POST /features/search` as JSON.
+    This request maps to the body of `POST /features/search` as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3241,6 +3353,7 @@ This request maps to the body of `POST /features/search` as JSON.
             'features': OntologyTerm,
             'range': Path,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3259,7 +3372,8 @@ This request maps to the body of `POST /features/search` as JSON.
 
 class SearchFeaturesResponse(SearchResponse):
     """
-This is the response from `POST /features/search` expressed as JSON.
+    This is the response from `POST /features/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3311,6 +3425,7 @@ This is the response from `POST /features/search` expressed as JSON.
         embeddedTypes = {
             'features': Feature,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3324,8 +3439,8 @@ This is the response from `POST /features/search` expressed as JSON.
 
 class SearchIndividualGroupsRequest(SearchRequest):
     """
-This request maps to the body of `POST /individualgroups/search` as
-JSON.
+    This request maps to the body of `POST /individualgroups/search`
+    as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3346,6 +3461,7 @@ null, "doc": "", "type": ["null", "string"], "name": "pageToken"}],
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3360,8 +3476,8 @@ null, "doc": "", "type": ["null", "string"], "name": "pageToken"}],
 
 class SearchIndividualGroupsResponse(SearchResponse):
     """
-This is the response from `POST /individualgroups/search` expressed as
-JSON.
+    This is the response from `POST /individualgroups/search`
+    expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3396,6 +3512,7 @@ null, "doc": "", "type": ["null", "string"], "name": "type"},
         embeddedTypes = {
             'individualGroups': IndividualGroup,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3409,7 +3526,8 @@ null, "doc": "", "type": ["null", "string"], "name": "type"},
 
 class SearchIndividualsRequest(SearchRequest):
     """
-This request maps to the body of `POST /individuals/search` as JSON.
+    This request maps to the body of `POST /individuals/search` as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3431,6 +3549,7 @@ This request maps to the body of `POST /individuals/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3446,8 +3565,8 @@ This request maps to the body of `POST /individuals/search` as JSON.
 
 class SearchIndividualsResponse(SearchResponse):
     """
-This is the response from `POST /individuals/search` expressed as
-JSON.
+    This is the response from `POST /individuals/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3497,6 +3616,7 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
         embeddedTypes = {
             'individuals': Individual,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3510,9 +3630,9 @@ null, "doc": "", "type": ["null", "long"], "name": "updated"},
 
 class SearchJoinsRequest(SearchRequest):
     """
-This request maps to the body of `POST /joins/search` as JSON.
-Specifies a number of filters, all of which must be satisfied by each
-result returned.
+    This request maps to the body of `POST /joins/search` as JSON.
+    Specifies a number of filters, all of which must be satisfied by
+    each result returned.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3540,6 +3660,7 @@ result returned.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3560,7 +3681,7 @@ result returned.
 
 class SearchJoinsResponse(SearchResponse):
     """
-This is the response from `POST /joins/search` expressed as JSON.
+    This is the response from `POST /joins/search` expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3594,6 +3715,7 @@ This is the response from `POST /joins/search` expressed as JSON.
         embeddedTypes = {
             'joins': Join,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3607,7 +3729,8 @@ This is the response from `POST /joins/search` expressed as JSON.
 
 class SearchReadGroupSetsRequest(SearchRequest):
     """
-This request maps to the body of `POST /readgroupsets/search` as JSON.
+    This request maps to the body of `POST /readgroupsets/search` as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3629,6 +3752,7 @@ This request maps to the body of `POST /readgroupsets/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3644,8 +3768,8 @@ This request maps to the body of `POST /readgroupsets/search` as JSON.
 
 class SearchReadGroupSetsResponse(SearchResponse):
     """
-This is the response from `POST /readgroupsets/search` expressed as
-JSON.
+    This is the response from `POST /readgroupsets/search` expressed
+    as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3723,6 +3847,7 @@ null, "doc": "", "type": ["null", "string"], "name":
         embeddedTypes = {
             'readGroupSets': ReadGroupSet,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3736,11 +3861,11 @@ null, "doc": "", "type": ["null", "string"], "name":
 
 class SearchReadsRequest(SearchRequest):
     """
-This request maps to the body of `POST /reads/search` as JSON.  If a
-reference is specified, all queried `ReadGroup`s must be aligned to
-`ReferenceSet`s containing that same `Reference`. If no reference is
-specified, all `ReadGroup`s must be aligned to the same
-`ReferenceSet`.
+    This request maps to the body of `POST /reads/search` as JSON.  If
+    a reference is specified, all queried `ReadGroup`s must be aligned
+    to `ReferenceSet`s containing that same `Reference`. If no
+    reference is specified, all `ReadGroup`s must be aligned to the
+    same `ReferenceSet`.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3764,6 +3889,7 @@ specified, all `ReadGroup`s must be aligned to the same
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3782,7 +3908,7 @@ specified, all `ReadGroup`s must be aligned to the same
 
 class SearchReadsResponse(SearchResponse):
     """
-This is the response from `POST /reads/search` expressed as JSON.
+    This is the response from `POST /reads/search` expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3855,6 +3981,7 @@ null, "doc": "", "type": ["null", {"doc": "", "type": "record",
         embeddedTypes = {
             'alignments': ReadAlignment,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3868,7 +3995,8 @@ null, "doc": "", "type": ["null", {"doc": "", "type": "record",
 
 class SearchReferenceSetsRequest(SearchRequest):
     """
-This request maps to the body of `POST /referencesets/search` as JSON.
+    This request maps to the body of `POST /referencesets/search` as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3892,6 +4020,7 @@ This request maps to the body of `POST /referencesets/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3909,8 +4038,8 @@ This request maps to the body of `POST /referencesets/search` as JSON.
 
 class SearchReferenceSetsResponse(SearchResponse):
     """
-This is the response from `POST /referencesets/search` expressed as
-JSON.
+    This is the response from `POST /referencesets/search` expressed
+    as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3948,6 +4077,7 @@ JSON.
         embeddedTypes = {
             'referenceSets': ReferenceSet,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -3961,7 +4091,8 @@ JSON.
 
 class SearchReferencesRequest(SearchRequest):
     """
-This request maps to the body of `POST /references/search` as JSON.
+    This request maps to the body of `POST /references/search` as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -3987,6 +4118,7 @@ This request maps to the body of `POST /references/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4006,7 +4138,8 @@ This request maps to the body of `POST /references/search` as JSON.
 
 class SearchReferencesResponse(SearchResponse):
     """
-This is the response from `POST /references/search` expressed as JSON.
+    This is the response from `POST /references/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4044,6 +4177,7 @@ null, "doc": "", "type": ["null", "int"], "name": "ncbiTaxonId"},
         embeddedTypes = {
             'references': Reference,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4057,7 +4191,7 @@ null, "doc": "", "type": ["null", "int"], "name": "ncbiTaxonId"},
 
 class SearchSamplesRequest(SearchRequest):
     """
-This request maps to the body of `POST /samples/search` as JSON.
+    This request maps to the body of `POST /samples/search` as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4079,6 +4213,7 @@ This request maps to the body of `POST /samples/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4094,7 +4229,8 @@ This request maps to the body of `POST /samples/search` as JSON.
 
 class SearchSamplesResponse(SearchResponse):
     """
-This is the response from `POST /samples/search` expressed as JSON.
+    This is the response from `POST /samples/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4142,6 +4278,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"},
         embeddedTypes = {
             'samples': Sample,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4155,9 +4292,9 @@ null, "doc": "", "type": ["null", "string"], "name": "description"},
 
 class SearchSequencesRequest(SearchRequest):
     """
-This request maps to the body of `POST /sequences/search` as JSON.
-Specifies a number of filters, all of which must be satisfied by each
-result returned.
+    This request maps to the body of `POST /sequences/search` as JSON.
+    Specifies a number of filters, all of which must be satisfied by
+    each result returned.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4179,6 +4316,7 @@ null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4194,7 +4332,8 @@ null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
 
 class SearchSequencesResponse(SearchResponse):
     """
-This is the response from `POST /sequences/search` expressed as JSON.
+    This is the response from `POST /sequences/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4221,6 +4360,7 @@ This is the response from `POST /sequences/search` expressed as JSON.
         embeddedTypes = {
             'sequences': Sequence,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4234,7 +4374,8 @@ This is the response from `POST /sequences/search` expressed as JSON.
 
 class SearchVariantSetsRequest(SearchRequest):
     """
-This request maps to the body of `POST /variantsets/search` as JSON.
+    This request maps to the body of `POST /variantsets/search` as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4255,6 +4396,7 @@ This request maps to the body of `POST /variantsets/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4269,8 +4411,8 @@ This request maps to the body of `POST /variantsets/search` as JSON.
 
 class SearchVariantSetsResponse(SearchResponse):
     """
-This is the response from `POST /variantsets/search` expressed as
-JSON.
+    This is the response from `POST /variantsets/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4307,6 +4449,7 @@ null, "doc": "", "type": ["null", "string"], "name":
         embeddedTypes = {
             'variantSets': VariantSet,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4320,7 +4463,7 @@ null, "doc": "", "type": ["null", "string"], "name":
 
 class SearchVariantsRequest(SearchRequest):
     """
-This request maps to the body of `POST /variants/search` as JSON.
+    This request maps to the body of `POST /variants/search` as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4350,6 +4493,7 @@ This request maps to the body of `POST /variants/search` as JSON.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4371,7 +4515,8 @@ This request maps to the body of `POST /variants/search` as JSON.
 
 class SearchVariantsResponse(SearchResponse):
     """
-This is the response from `POST /variants/search` expressed as JSON.
+    This is the response from `POST /variants/search` expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -4424,6 +4569,7 @@ null, "doc": "", "type": ["null", "long"], "name": "start"},
         embeddedTypes = {
             'variants': Variant,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4437,15 +4583,16 @@ null, "doc": "", "type": ["null", "long"], "name": "start"},
 
 class Segment(ProtocolElement):
     """
-A `Segment` is a range on a `Sequence`. It does not include any base
-data. (The bases for a `Sequence` are available through the
-`getSequenceBases()` API call.)  In the sequence "GTGG", the `Segment`
-starting at index 1 on the forward strand with length 2 is the "TG" on
-the forward strand. The length-2 `Segment` starting at index 1 on the
-reverse strand is "AC", corresponding to the first two base pairs of
-the sequence, or the last two bases of the reverse complement.  A
-`Segment` has a left and a right end, in its local orientation (i.e.
-taking `Segment.start.strand` to be the `Segment`'s forward strand).
+    A `Segment` is a range on a `Sequence`. It does not include any
+    base data. (The bases for a `Sequence` are available through the
+    `getSequenceBases()` API call.)  In the sequence "GTGG", the
+    `Segment` starting at index 1 on the forward strand with length 2
+    is the "TG" on the forward strand. The length-2 `Segment` starting
+    at index 1 on the reverse strand is "AC", corresponding to the
+    first two base pairs of the sequence, or the last two bases of the
+    reverse complement.  A `Segment` has a left and a right end, in
+    its local orientation (i.e. taking `Segment.start.strand` to be
+    the `Segment`'s forward strand).
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Segment",
@@ -4477,6 +4624,7 @@ taking `Segment.start.strand` to be the `Segment`'s forward strand).
         embeddedTypes = {
             'start': Side,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4490,11 +4638,11 @@ taking `Segment.start.strand` to be the `Segment`'s forward strand).
 
 class Sequence(ProtocolElement):
     """
-Represents a sequence in a sequence graph. May be joined onto parent
-`Sequence`(s) at the left and/or right endpoints, and may have other
-`Sequence`s as children.  Does not include any base data. The bases
-for a `Sequence` are available through the `getSequenceBases()` API
-call.
+    Represents a sequence in a sequence graph. May be joined onto
+    parent `Sequence`(s) at the left and/or right endpoints, and may
+    have other `Sequence`s as children.  Does not include any base
+    data. The bases for a `Sequence` are available through the
+    `getSequenceBases()` API call.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -4515,6 +4663,7 @@ call.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4528,21 +4677,22 @@ call.
 
 class Side(ProtocolElement):
     """
-A `Side` is an oriented base in some already known sequence. A `Side`
-is represented by a sequence name or ID, a base number on that
-sequence (0-based), and a `Strand` to indicate the forward or reverse-
-complement orientation.  For example, given the sequence "GTGG", the
-`Side` on that sequence at offset 1 in the forward orientation would
-be the left side of the T/A base pair. The base at this `Side` is "T".
-Alternately, for offset 1 in the reverse orientation, the `Side` would
-be the right side of the T/A base pair, and the base at the `Side` is
-"A".  Offsets added to a `Side` are interpreted as reading along its
-strand; adding to a reverse strand side actually subtracts from its
-`base.position` member.  There is a total ordering on sides, assuming
-a total ordering on `Sequence`s. Sides are sorted by their `Sequence`
-(as specified by `sequenceId` and/or `referenceName`), then within a
-`Sequence` by their `position` offsets, and then finally by `Strand`,
-with `NEG_STRAND` first, then `POS_STRAND`.
+    A `Side` is an oriented base in some already known sequence. A
+    `Side` is represented by a sequence name or ID, a base number on
+    that sequence (0-based), and a `Strand` to indicate the forward or
+    reverse-complement orientation.  For example, given the sequence
+    "GTGG", the `Side` on that sequence at offset 1 in the forward
+    orientation would be the left side of the T/A base pair. The base
+    at this `Side` is "T". Alternately, for offset 1 in the reverse
+    orientation, the `Side` would be the right side of the T/A base
+    pair, and the base at the `Side` is "A".  Offsets added to a
+    `Side` are interpreted as reading along its strand; adding to a
+    reverse strand side actually subtracts from its `base.position`
+    member.  There is a total ordering on sides, assuming a total
+    ordering on `Sequence`s. Sides are sorted by their `Sequence` (as
+    specified by `sequenceId` and/or `referenceName`), then within a
+    `Sequence` by their `position` offsets, and then finally by
+    `Strand`, with `NEG_STRAND` first, then `POS_STRAND`.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Side",
@@ -4572,6 +4722,7 @@ with `NEG_STRAND` first, then `POS_STRAND`.
         embeddedTypes = {
             'base': Position,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4585,8 +4736,9 @@ with `NEG_STRAND` first, then `POS_STRAND`.
 
 class Strand(object):
     """
-Indicates the DNA strand associate for some data item. * `NEG_STRAND`:
-The negative (-) strand. * `POS_STRAND`:  The postive (+) strand.
+    Indicates the DNA strand associate for some data item. *
+    `NEG_STRAND`: The negative (-) strand. * `POS_STRAND`:  The
+    postive (+) strand.
     """
     NEG_STRAND = "NEG_STRAND"
     POS_STRAND = "POS_STRAND"
@@ -4594,10 +4746,10 @@ The negative (-) strand. * `POS_STRAND`:  The postive (+) strand.
 
 class Variant(ProtocolElement):
     """
-A `Variant` represents a change in DNA sequence relative to some
-reference. For example, a variant could represent a SNP or an
-insertion. Variants belong to a `VariantSet`. This is equivalent to a
-row in VCF.
+    A `Variant` represents a change in DNA sequence relative to some
+    reference. For example, a variant could represent a SNP or an
+    insertion. Variants belong to a `VariantSet`. This is equivalent
+    to a row in VCF.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Variant",
@@ -4644,6 +4796,7 @@ null, "doc": "", "type": ["null", "string", {"items": "string",
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4670,11 +4823,12 @@ null, "doc": "", "type": ["null", "string", {"items": "string",
 
 class VariantSet(ProtocolElement):
     """
-`Variant` and `CallSet` both belong to a `VariantSet`. `VariantSet`
-belongs to a `Dataset`. The variant set is equivalent to a VCF file.
-A `VariantSet` can contain novel `Sequence`s, which are used to
-augment the sequence graph of its `ReferenceSet`, creating the
-augmented sequence graph against which `Allele`s are interpreted.
+    `Variant` and `CallSet` both belong to a `VariantSet`.
+    `VariantSet` belongs to a `Dataset`. The variant set is equivalent
+    to a VCF file.  A `VariantSet` can contain novel `Sequence`s,
+    which are used to augment the sequence graph of its
+    `ReferenceSet`, creating the augmented sequence graph against
+    which `Allele`s are interpreted.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -4710,6 +4864,7 @@ augmented sequence graph against which `Allele`s are interpreted.
         embeddedTypes = {
             'metadata': VariantSetMetadata,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4725,7 +4880,7 @@ augmented sequence graph against which `Allele`s are interpreted.
 
 class VariantSetMetadata(ProtocolElement):
     """
-This metadata represents VCF header information.
+    This metadata represents VCF header information.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -4755,6 +4910,7 @@ This metadata represents VCF header information.
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {}
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4773,7 +4929,7 @@ This metadata represents VCF header information.
 
 class Wiggle(ProtocolElement):
     """
-Continuous numerical annotation along a path.
+    Continuous numerical annotation along a path.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Wiggle",
@@ -4793,7 +4949,9 @@ Continuous numerical annotation along a path.
 {"items": "float", "type": "array"}, "name": "values"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set(["path"])
+    requiredFields = set([
+        "path",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -4807,6 +4965,7 @@ Continuous numerical annotation along a path.
         embeddedTypes = {
             'path': Path,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [
@@ -4820,7 +4979,7 @@ Continuous numerical annotation along a path.
 
 class WiggleSet(ProtocolElement):
     """
-No documentation
+    No documentation
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -4855,6 +5014,7 @@ No documentation
         embeddedTypes = {
             'attributes': Attributes,
         }
+
         return embeddedTypes[fieldName]
 
     __slots__ = [

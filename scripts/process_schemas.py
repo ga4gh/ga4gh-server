@@ -127,27 +127,23 @@ class SchemaClass(object):
         output = "\n".join(textwrap.wrap(jsonData)) + "\n"
         return output
 
-    def formatRequiredFields(self):
+    def writeRequiredFields(self, outputFile):
         """
-        Returns a string encoding the set of required fields (i.e those
-        fields that do not have a default value.
+        Writes a string encoding the set of required fields (i.e those
+        fields that do not have a default value)
         """
         fields = []
         for field in self.getFields():
             if not field.has_default:
                 fields.append(field)
-
-        if len(fields) < 2:
-            string = "set(["
-            for field in fields:
-                string += '"{0}"'.format(field.name)
-            string += "])"
+        if len(fields) < 1:
+            self._writeWithIndent('requiredFields = set([])', outputFile)
         else:
-            string = "set([\n"
+            self._writeWithIndent('requiredFields = set([', outputFile)
             for field in fields:
-                string += (" " * 8) + '"{0}",\n'.format(field.name)
-            string += (" " * 4) + "])"
-        return string
+                string_ = '"{0}",'.format(field.name)
+                self._writeWithIndent(string_, outputFile, 2)
+            self._writeWithIndent('])', outputFile)
 
     def writeConstructor(self, outputFile):
         # Force using slots to avoid the overhead of a dict per object;
@@ -155,17 +151,14 @@ class SchemaClass(object):
         # save a hundred megabytes or more.
         slotString = "'" + "', '".join(
             [field.name for field in self.getFields()]) + "'"
-        indent = " " * 8
-        wrappedSlotString = textwrap.fill(
-            slotString, initial_indent=indent, subsequent_indent=indent)
-        print("    __slots__ = [", file=outputFile)
-        print(wrappedSlotString, file=outputFile)
-        print("    ]", file=outputFile)
-        print(file=outputFile)
-        print("    def __init__(self):", file=outputFile)
+        self._writeWithIndent("__slots__ = [", outputFile)
+        self._writeWrappedWithIndent(slotString, outputFile, 2)
+        self._writeWithIndent("]", outputFile)
+        self._writeNewline(outputFile)
+        self._writeWithIndent("def __init__(self):", outputFile)
         for field in self.getFields():
-            print("        self.{0} = {1}".format(
-                field.name, field.default), file=outputFile)
+            string_ = "self.{0} = {1}".format(field.name, field.default)
+            self._writeWithIndent(string_, outputFile, 2)
 
     def writeEmbeddedTypesClassMethods(self, outputFile):
         """
@@ -174,24 +167,34 @@ class SchemaClass(object):
         approach to more efficient and type-safe methods that we want
         to transition to.
         """
-        print("    @classmethod", file=outputFile)
-        print("    def isEmbeddedType(cls, fieldName):", file=outputFile)
-        et = self.getEmbeddedTypes()
-        if len(et) == 0:
-            string = (" " * 8) + "embeddedTypes = {}"
-        else:
-            string = (" " * 8) + "embeddedTypes = {\n"
-            for fn, ft in self.getEmbeddedTypes():
-                string += (" " * 12) + "'{0}': {1},\n".format(fn, ft)
-            string += (" " * 8) + "}"
-        print(string, file=outputFile)
-        print(" " * 8 + "return fieldName in embeddedTypes", file=outputFile)
-        print(file=outputFile)
-        print("    @classmethod", file=outputFile)
-        print("    def getEmbeddedType(cls, fieldName):", file=outputFile)
-        print(string, file=outputFile)
-        print(" " * 8 + "return embeddedTypes[fieldName]", file=outputFile)
-        print(file=outputFile)
+        def writeEmbeddedTypes():
+            et = self.getEmbeddedTypes()
+            if len(et) == 0:
+                string = "embeddedTypes = {}"
+                self._writeWithIndent(string, outputFile, 2)
+            else:
+                string = "embeddedTypes = {"
+                self._writeWithIndent(string, outputFile, 2)
+                for fn, ft in self.getEmbeddedTypes():
+                    string = "'{0}': {1},".format(fn, ft)
+                    self._writeWithIndent(string, outputFile, 3)
+                self._writeWithIndent("}", outputFile, 2)
+
+        self._writeWithIndent("@classmethod", outputFile)
+        self._writeWithIndent("def isEmbeddedType(cls, fieldName):",
+                              outputFile)
+        writeEmbeddedTypes()
+        self._writeWithIndent("return fieldName in embeddedTypes",
+                              outputFile, 2)
+        self._writeNewline(outputFile)
+        self._writeWithIndent("@classmethod", outputFile)
+        self._writeWithIndent("def getEmbeddedType(cls, fieldName):",
+                              outputFile)
+        writeEmbeddedTypes()
+        self._writeNewline(outputFile)
+        self._writeWithIndent("return embeddedTypes[fieldName]",
+                              outputFile, 2)
+        self._writeNewline(outputFile)
 
     def write(self, outputFile):
         """
@@ -204,35 +207,49 @@ class SchemaClass(object):
             superclass = "SearchRequest"
         elif self.isSearchResponse():
             superclass = "SearchResponse"
-        string = "\n\nclass {0}({1}):".format(self.schema.name, superclass)
+        self._writeNewline(outputFile, 2)
+        string = "class {0}({1}):".format(self.schema.name, superclass)
         print(string, file=outputFile)
         doc = self.schema.doc
         if doc is None:
             doc = "No documentation"
-        doc = textwrap.fill(doc)
-        string = '    """\n{0}\n    """'.format(doc)
-        print(string, file=outputFile)
+        self._writeWithIndent('"""', outputFile)
+        self._writeWrappedWithIndent(doc, outputFile)
+        self._writeWithIndent('"""', outputFile)
         if isinstance(self.schema, avro.schema.RecordSchema):
-            string = '    _schemaSource = """\n{0}"""'.format(
+            string = '_schemaSource = """\n{0}"""'.format(
                 self.formatSchema())
-            print(string, file=outputFile)
-            string = '    schema = avro.schema.parse(_schemaSource)'
-            print(string, file=outputFile)
-            string = '    requiredFields = {0}'.format(
-                self.formatRequiredFields())
-            print(string, file=outputFile)
+            self._writeWithIndent(string, outputFile)
+            string = 'schema = avro.schema.parse(_schemaSource)'
+            self._writeWithIndent(string, outputFile)
+            self.writeRequiredFields(outputFile)
             if self.isSearchResponse():
-                string = '    _valueListName = "{0}"'.format(
+                string = '_valueListName = "{0}"'.format(
                     self.getValueListName())
-                print(string, file=outputFile)
-            print(file=outputFile)
+                self._writeWithIndent(string, outputFile)
+            self._writeNewline(outputFile)
             self.writeEmbeddedTypesClassMethods(outputFile)
             self.writeConstructor(outputFile)
         elif isinstance(self.schema, avro.schema.EnumSchema):
             # TODO make a proper Python enum here using the Python 3.4 enum?
             for symbol in self.schema.symbols:
-                string = '    {0} = "{0}"'.format(symbol, symbol)
-                print(string, file=outputFile)
+                string = '{0} = "{0}"'.format(symbol, symbol)
+                self._writeWithIndent(string, outputFile)
+
+    def _writeWithIndent(self, string_, outputFile, indentLevel=1):
+        indent = " " * (indentLevel * 4)
+        toWrite = "{}{}".format(indent, string_)
+        print(toWrite, file=outputFile)
+
+    def _writeWrappedWithIndent(self, string_, outputFile, indentLevel=1):
+        indent = " " * (indentLevel * 4)
+        toWrite = textwrap.fill(
+            string_, initial_indent=indent, subsequent_indent=indent)
+        print(toWrite, file=outputFile)
+
+    def _writeNewline(self, outputFile, numNewlines=1):
+        toWrite = "\n" * (numNewlines - 1)
+        print(toWrite, file=outputFile)
 
 
 class SchemaGenerator(object):
