@@ -153,11 +153,14 @@ class SchemaClass(object):
         # Force using slots to avoid the overhead of a dict per object;
         # when a query returns hundreds of thousands of calls this can
         # save a hundred megabytes or more.
-        print("    __slots__ = ['",
-              textwrap.fill(
-                  "', '".join([field.name for field in self.getFields()]),
-                  62, subsequent_indent='                 '), "']",
-              sep='', file=outputFile)
+        slotString = "'" + "', '".join(
+            [field.name for field in self.getFields()]) + "'"
+        indent = " " * 8
+        wrappedSlotString = textwrap.fill(
+            slotString, initial_indent=indent, subsequent_indent=indent)
+        print("    __slots__ = [", file=outputFile)
+        print(wrappedSlotString, file=outputFile)
+        print("    ]", file=outputFile)
         print(file=outputFile)
         print("    def __init__(self):", file=outputFile)
         for field in self.getFields():
@@ -206,6 +209,7 @@ class SchemaClass(object):
         doc = self.schema.doc
         if doc is None:
             doc = "No documentation"
+        doc = textwrap.fill(doc)
         string = '    """\n{0}\n    """'.format(doc)
         print(string, file=outputFile)
         if isinstance(self.schema, avro.schema.RecordSchema):
@@ -235,10 +239,11 @@ class SchemaGenerator(object):
     """
     Class that generates a schema in Python code from Avro definitions.
     """
-    def __init__(self, version, schemaDir, outputFile):
+    def __init__(self, version, schemaDir, outputFile, verbosity):
         self.version = version
         self.schemaDir = schemaDir
         self.outputFile = outputFile
+        self.verbosity = verbosity
         self.classes = []
         for avscFile in glob.glob(os.path.join(self.schemaDir, "*.avsc")):
             self.classes.append(SchemaClass(avscFile))
@@ -279,6 +284,8 @@ class SchemaGenerator(object):
             names = [cls.name for cls in self.classes]
             classes = dict([(cls.name, cls) for cls in self.classes])
             for name in sorted(names):
+                if self.verbosity > 1:
+                    utils.log(name)
                 cls = classes[name]
                 cls.write(outputFile)
 
@@ -392,7 +399,8 @@ class SchemaProcessor(object):
         os.chdir(cwd)
         if self.verbosity > 0:
             utils.log("Writing schemas to {}".format(self.destinationFile))
-        sg = SchemaGenerator(self.version, directory, self.destinationFile)
+        sg = SchemaGenerator(
+            self.version, directory, self.destinationFile, self.verbosity)
         sg.write()
 
 
