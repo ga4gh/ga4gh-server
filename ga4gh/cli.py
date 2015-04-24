@@ -122,6 +122,14 @@ class RequestFactory(object):
         request.referenceName = self.args.referenceName
         return request
 
+    def createSearchFeaturesRequest(self):
+        request = protocol.SearchFeaturesRequest()
+        setCommaSeparatedAttribute(request, self.args, 'featureSetIds')
+        setCommaSeparatedAttribute(request, self.args, 'features')
+        setCommaSeparatedAttribute(request, self.args, 'parentIds')
+        setCommaSeparatedAttribute(request, self.args, 'range')
+        return request
+
     def createListReferenceBasesRequest(self):
         request = protocol.ListReferenceBasesRequest()
         request.start = self.args.start
@@ -474,6 +482,19 @@ class SearchReadsRunner(AbstractSearchRunner):
         self._run(self._httpClient.searchReads, 'id')
 
 
+class SearchFeaturesRunner(AbstractSearchRunner):
+    """
+    Runner class for the features/search method
+    """
+    def __init__(self, args):
+        super(SearchFeaturesRunner, self).__init__(args)
+        request = RequestFactory(args).createSearchFeaturesRequest()
+        self._setRequest(request, args)
+
+    def run(self):
+        self._run(self._httpClient.searchFeatures, 'id')
+
+
 class ListReferenceBasesRunner(AbstractSearchRunner):
     """
     Runner class for the references/{id}/bases method
@@ -510,6 +531,17 @@ class GetReferenceRunner(AbstractGetRunner):
 
     def run(self):
         self._run(self._httpClient.getReference)
+
+
+class GetFeatureRunner(AbstractGetRunner):
+    """
+    Runner class for the feature/{id} method
+    """
+    def __init__(self, args):
+        super(GetFeatureRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.getFeature)
 
 
 class BenchmarkRunner(SearchVariantsRunner):
@@ -762,12 +794,47 @@ def addReadsSearchParserArguments(parser):
         help="The referenceName to search over")
 
 
+def addFeaturesSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "features-search",
+        description="Search for features",
+        help="Search for features")
+    parser.set_defaults(runner=SearchFeaturesRunner)
+    addFeaturesSearchParserArguments(parser)
+    return parser
+
+
+def addFeaturesSearchParserArguments(parser):
+    parser.add_argument(
+        "--featureSetIds", default=None,
+        help="The featureSetIds to search over")
+    parser.add_argument(
+        "--features", default=None,
+        help="The features to search over")
+    parser.add_argument(
+        "--parentIds", default=None,
+        help="The parentIds to search over")
+    parser.add_argument(
+        "--range", default=None,
+        help="The range to search over")
+    addUrlArgument(parser)
+
+
 def addReferenceSetsGetParser(subparsers):
     parser = subparsers.add_parser(
         "referencesets-get",
         description="Get a referenceset",
         help="Get a referenceset")
     parser.set_defaults(runner=GetReferenceSetRunner)
+    addGetArguments(parser)
+
+
+def addFeaturesGetParser(subparsers):
+    parser = subparsers.add_parser(
+        "features-get",
+        description="Get a feature",
+        help="Get a feature")
+    parser.set_defaults(runner=GetFeatureRunner)
     addGetArguments(parser)
 
 
@@ -806,7 +873,9 @@ def client_main(parser=None):
     addReadGroupSetsSearchParser(subparsers)
     addCallsetsSearchParser(subparsers)
     addReadsSearchParser(subparsers)
+    addFeaturesSearchParser(subparsers)
     addReferenceSetsGetParser(subparsers)
+    addFeaturesGetParser(subparsers)
     addReferencesGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
 

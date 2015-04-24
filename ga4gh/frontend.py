@@ -300,6 +300,17 @@ def searchVariants(version):
         version, flask.request, app.backend.searchVariants)
 
 
+@app.route('/<version>/features/<id>', methods=['GET'])
+def getFeature(version, id):
+    raise exceptions.PathNotFoundException()
+
+
+@app.route('/<version>/features/search', methods=['POST', 'OPTIONS'])
+def searchFeatures(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchFeatures)
+
+
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html
 @app.errorhandler(404)

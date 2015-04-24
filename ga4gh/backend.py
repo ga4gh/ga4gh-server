@@ -246,8 +246,8 @@ class AbstractBackend(object):
 
     def searchReadGroupSets(self, request):
         """
-        Returns a GASearchReadGroupSetsResponse for the specified
-        GASearchReadGroupSetsRequest object.
+        Returns a SearchReadGroupSetsResponse for the specified
+        SearchReadGroupSetsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchReadGroupSetsRequest,
@@ -256,8 +256,8 @@ class AbstractBackend(object):
 
     def searchReads(self, request):
         """
-        Returns a GASearchReadsResponse for the specified
-        GASearchReadsRequest object.
+        Returns a SearchReadsResponse for the specified
+        SearchReadsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchReadsRequest,
@@ -266,8 +266,8 @@ class AbstractBackend(object):
 
     def searchReferenceSets(self, request):
         """
-        Returns a GASearchReferenceSetsResponse for the specified
-        GASearchReferenceSetsRequest object.
+        Returns a SearchReferenceSetsResponse for the specified
+        SearchReferenceSetsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchReferenceSetsRequest,
@@ -276,8 +276,8 @@ class AbstractBackend(object):
 
     def searchReferences(self, request):
         """
-        Returns a GASearchReferencesResponse for the specified
-        GASearchReferencesRequest object.
+        Returns a SearchReferencesResponse for the specified
+        SearchReferencesRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchReferencesRequest,
@@ -286,8 +286,8 @@ class AbstractBackend(object):
 
     def searchVariantSets(self, request):
         """
-        Returns a GASearchVariantSetsResponse for the specified
-        GASearchVariantSetsRequest object.
+        Returns a SearchVariantSetsResponse for the specified
+        SearchVariantSetsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchVariantSetsRequest,
@@ -296,8 +296,8 @@ class AbstractBackend(object):
 
     def searchVariants(self, request):
         """
-        Returns a GASearchVariantsResponse for the specified
-        GASearchVariantsRequest object.
+        Returns a SearchVariantsResponse for the specified
+        SearchVariantsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchVariantsRequest,
@@ -306,13 +306,21 @@ class AbstractBackend(object):
 
     def searchCallSets(self, request):
         """
-        Returns a GASearchCallSetsResponse for the specified
-        GASearchCallSetsRequest Object.
+        Returns a SearchCallSetsResponse for the specified
+        SearchCallSetsRequest Object.
         """
         return self.runSearchRequest(
             request, protocol.SearchCallSetsRequest,
             protocol.SearchCallSetsResponse,
             self.callSetsGenerator)
+
+    def searchFeatures(self, request):
+        """
+        Returns a SearchFeaturesResponse for the specified
+        SearchFeaturesRequest object.
+        """
+        # TODO
+        raise exceptions.NotImplementedException("Implement me!")
 
     # Iterators over the data hieararchy
 

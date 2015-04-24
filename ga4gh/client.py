@@ -193,6 +193,13 @@ class HttpClient(object):
         return self.runGetRequest(
             "references", protocol.Reference, id_)
 
+    def getFeature(self, id_):
+        """
+        Returns a feature from the server
+        """
+        return self.runGetRequest(
+            "features", protocol.Feature, id_)
+
     def listReferenceBases(self, protocolRequest, id_):
         """
         Returns an iterator over the bases from the server
@@ -252,3 +259,12 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "reads", protocol.SearchReadsResponse)
+
+    def searchFeatures(self, protocolRequest):
+        """
+        Returns an iterator over the Features from the server
+        """
+        return self.runSearchRequest(
+            protocolRequest, "features", protocol.SearchFeaturesResponse)
+
+
