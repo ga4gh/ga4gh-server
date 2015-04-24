@@ -288,7 +288,10 @@ class SchemaGenerator(object):
         print(file=outputFile)
         print("import avro.schema", file=outputFile)
         print(file=outputFile)
-        versionStr = self.version[1:]  # Strip off leading 'v'
+        if self.version[1] == '.':
+            versionStr = self.version[1:]  # Strip off leading 'v'
+        else:
+            versionStr = self.version
         print("version = '{0}'".format(versionStr), file=outputFile)
 
     def write(self):
@@ -437,7 +440,7 @@ def main():
     parser.add_argument(
         "version",
         help="The tagged git release to process, e.g., v0.5.1. "
-        "Ignored if --inputSchemasDirectory is specified.")
+        "Taken literally if --inputSchemasDirectory is specified.")
     parser.add_argument(
         "--avro-tools-jar", "-j",
         help="The path to a local avro-tools.jar", default=None)
