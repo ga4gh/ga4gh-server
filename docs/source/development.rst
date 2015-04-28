@@ -292,3 +292,19 @@ the ``ga4gh`` directory in the project root. Within this package, the
 functionality is split between the ``client``, ``server``, ``protocol`` and
 ``cli`` modules.  The ``cli`` module contains the definitions for the
 ``ga4gh_client`` and ``ga4gh_server`` programs.
+
+An important file in the project is ``ga4gh/_protocol_definitions.py``.
+This file defines the classes for the GA4GH protocol.
+The file is generated using the ``scripts/process_schemas.py`` script,
+which takes input data from the
+`GA4GH schemas repo <https://github.com/ga4gh/schemas>`_.
+To generate a new ``_protocol_definitions.py`` file, use
+
+.. code-block:: bash
+
+   $ python scripts/process_schemas.py -i path/to/schemas desiredVersion
+
+Where ``desiredVersion`` is the version that will be written to the 
+``_protocol_definitions.py`` file.  This version must be in the form
+``major.minor.revision`` where major, minor and revision can be any
+alphanumeric string.
