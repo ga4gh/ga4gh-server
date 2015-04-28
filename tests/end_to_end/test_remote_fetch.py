@@ -5,50 +5,26 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
-
 import client as client
 import server as server
 import server_test as server_test
 
 
-baseDir = "tests/end_to_end/"
-dataDir = os.path.join(baseDir, "remoteTestData")
-remoteDataDir = "tests/data/reads/wgBam/"
-
-
-class Ga4ghServerForTestingDataSource(server.Ga4ghServerForTesting):
+class RemoteServerTestReads(server_test.RemoteServerTest):
     """
-    A test server that reads data from a data source
+    Configures a RemoteServerTest subclass with read data
     """
-    def getConfig(self):
-        config = """
-DATA_SOURCE = "{}"
-DEBUG = True""".format(dataDir)
-        return config
-
-
-class RemoteServerTest(server_test.ServerTest):
-    """
-    A test that uses the data source server
-    """
-    def otherSetup(self):
-        self.remoteServer = server.RemoteServerForTesting(remoteDataDir)
-        self.remoteServer.start()
-
-    def otherTeardown(self):
-        self.remoteServer.shutdown()
-
-    def otherExceptionHandling(self):
-        self.remoteServer.printDebugInfo()
+    def getRemoteDataDir(self):
+        return "tests/data/reads/wgBam/"
 
     def getServer(self):
-        return Ga4ghServerForTestingDataSource()
+        dataDir = "tests/end_to_end/remoteTestDataReads"
+        return server.Ga4ghServerForTestingDataSource(dataDir)
 
 
-class TestRemoteFetch(RemoteServerTest):
+class TestRemoteFetchReads(RemoteServerTestReads):
     """
-    Tests fetching genomics data from files on a remote server
+    Tests fetching read data from files on a remote server
     """
     def testBamFetch(self):
         self.client = client.ClientForTesting(self.server.getUrl())
@@ -64,5 +40,30 @@ class TestRemoteFetch(RemoteServerTest):
     def _assertLogsWritten(self):
         # client should have gotten some reads back
         self.assertEqual(len(self.client.getOutLines()), 10)
-        # hard to know what else to test here since the
-        # remote server logs are out of our control
+
+
+class RemoteServerTestVariants(server_test.RemoteServerTest):
+    """
+    Configures a RemoteServerTest subclass with variant data
+    """
+    def getRemoteDataDir(self):
+        return "tests/data/variants/1kgPhase1"
+
+    def getServer(self):
+        dataDir = "tests/end_to_end/remoteTestDataVariants"
+        return server.Ga4ghServerForTestingDataSource(dataDir)
+
+
+class TestRemoteFetchVariants(RemoteServerTestVariants):
+    """
+    Tests fetching variant data from files on a remote server
+    """
+    def testVcfFetch(self):
+        self.client = client.ClientForTesting(self.server.getUrl())
+        self.runClientCmd(self.client, "variants-search")
+        self._assertLogsWritten()
+        self.client.cleanup()
+
+    def _assertLogsWritten(self):
+        # client should have gotten some variants back
+        self.assertEqual(len(self.client.getOutLines()), 100)
