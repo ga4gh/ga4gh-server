@@ -23,6 +23,13 @@ import ga4gh.client as client
 packageName = 'ga4gh'
 
 
+def getLinesFromLogFile(stream):
+    stream.flush()
+    stream.seek(0)
+    lines = stream.readlines()
+    return lines
+
+
 class Timed(object):
     """
     Decorator that times a method, reporting runtime at finish

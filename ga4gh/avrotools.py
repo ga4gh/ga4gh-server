@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import ga4gh.protocol as protocol
 
 
+# constants from avro
 INT_MIN_VALUE = -(1 << 31)
 INT_MAX_VALUE = (1 << 31) - 1
 LONG_MIN_VALUE = -(1 << 63)
