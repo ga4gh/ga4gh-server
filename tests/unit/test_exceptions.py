@@ -79,11 +79,56 @@ class TestExceptionConsistency(unittest.TestCase):
 
     def testInstantiation(self):
         for class_ in self._getExceptionClasses():
-            numInitArgs = len(inspect.getargspec(class_.__init__).args) - 1
-            args = ['arg' for _ in range(numInitArgs)]
+            # some exceptions are becoming too complicated to instantiate
+            # like the rest of the exceptions; just do them manually
+            if class_ == exceptions.RequestValidationFailureException:
+                wrongString = "thisIsWrong"
+                objClass = protocol.SearchReadsRequest
+                obj = objClass()
+                obj.start = wrongString
+                jsonDict = obj.toJsonDict()
+                args = (jsonDict, objClass)
+            elif class_ == exceptions.ResponseValidationFailureException:
+                objClass = protocol.SearchReadsResponse
+                obj = objClass()
+                obj.alignments = [protocol.ReadAlignment()]
+                obj.alignments[0].alignment = protocol.LinearAlignment()
+                obj.alignments[0].alignment.mappingQuality = wrongString
+                jsonDict = obj.toJsonDict()
+                args = (jsonDict, objClass)
+            else:
+                numInitArgs = len(inspect.getargspec(
+                    class_.__init__).args) - 1
+                args = ['arg' for _ in range(numInitArgs)]
             instance = class_(*args)
             self.assertIsInstance(instance, exceptions.BaseServerException)
             message = instance.getMessage()
             self.assertIsInstance(message, basestring)
             self.assertGreater(len(message), 0)
             self.assertEqual(instance.getErrorCode(), class_.getErrorCode())
+
+    def testValidationFailureExceptionMessages(self):
+        # RequestValidationFailureException
+        wrongString = "thisIsWrong"
+        objClass = protocol.SearchReadsRequest
+        obj = objClass()
+        obj.start = wrongString
+        jsonDict = obj.toJsonDict()
+        instance = exceptions.RequestValidationFailureException(
+            jsonDict, objClass)
+        self.assertIn(
+            "invalid fields: {u'start': u'thisIsWrong'}",
+            instance.message)
+        self.assertEqual(instance.message.count(wrongString), 2)
+
+        # ResponseValidationFailureException
+        objClass = protocol.SearchReadsResponse
+        obj = objClass()
+        obj.alignments = [protocol.ReadAlignment()]
+        obj.alignments[0].alignment = protocol.LinearAlignment()
+        obj.alignments[0].alignment.mappingQuality = wrongString
+        jsonDict = obj.toJsonDict()
+        instance = exceptions.ResponseValidationFailureException(
+            jsonDict, objClass)
+        self.assertIn("Invalid fields", instance.message)
+        self.assertEqual(instance.message.count(wrongString), 2)

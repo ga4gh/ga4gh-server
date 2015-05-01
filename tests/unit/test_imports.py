@@ -161,9 +161,10 @@ class ImportGraphLayerChecker(object):
         'datamodel': ['ga4gh/datamodel/reads.py',
                       'ga4gh/datamodel/references.py',
                       'ga4gh/datamodel/variants.py'],
-        'libraries': ['ga4gh/converters.py', 'ga4gh/avrotools.py'],
+        'libraries': ['ga4gh/converters.py'],
         'protocol': ['ga4gh/protocol.py', 'ga4gh/_protocol_definitions.py'],
         'config': ['ga4gh/serverconfig.py'],
+        'avrotools': ['ga4gh/avrotools.py'],
     }
 
     # each moduleGroupName has one and only one entry here
@@ -175,6 +176,7 @@ class ImportGraphLayerChecker(object):
         ['libraries'],
         ['datamodel'],
         ['exceptions'],
+        ['avrotools'],
         ['config'],
         ['protocol'],
     ]
