@@ -7,32 +7,27 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import glob
 
 import pysam
 
+import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
+import ga4gh.exceptions as exceptions
 
 
-class ReferenceSet(object):
+class AbstractReferenceSet(object):
     """
     Class representing ReferenceSets. A ReferenceSet is a set of
     References which typically comprise a reference assembly, such as
     GRCh38.
     """
-    def __init__(self, id_, dataDir):
+    def __init__(self, id_):
         self._id = id_
-        self._dataDir = dataDir
         self._referenceIdMap = {}
-        # TODO get metadata from a file within dataDir? How else will we
-        # fill in the fields like ncbiTaxonId etc?
-        for relativePath in glob.glob(os.path.join(self._dataDir, "*.fa.gz")):
-            filename = os.path.split(relativePath)[1]
-            localId = filename.split(".")[0]
-            referenceId = "{}:{}".format(self._id, localId)
-            reference = Reference(referenceId, relativePath)
-            self._referenceIdMap[referenceId] = reference
-        self._referenceIds = sorted(self._referenceIdMap.keys())
+        self._referenceIds = []
+
+    def getId(self):
+        return self._id
 
     def getReferences(self):
         """
@@ -45,26 +40,73 @@ class ReferenceSet(object):
         Returns the GA4GH protocol representation of this ReferenceSet.
         """
         ret = protocol.ReferenceSet()
-        ret.id = self._id
-        ret.description = "TODO"
-        ret.sourceURI = None
         ret.assemblyId = None
-        ret.md5checksum = "TODO"
+        ret.description = None
+        ret.id = self._id
+        ret.isDerived = False
+        ret.md5checksum = self._generateMd5Checksum()
         ret.ncbiTaxonId = None
+        ret.referenceIds = self._referenceIds
         ret.sourceAccessions = []
+        ret.sourceURI = None
         return ret
 
+    def _generateMd5Checksum(self):
+        return "TODO"
+        """
+        references = sorted(
+            self.getReferences(),
+            key=lambda ref: ref.getMd5Checksum())
+        checksums = [ref.getMd5Checksum() for ref in references]
+        checksumsString = ''.join(checksums)
+        md5checksum = hashlib.md5(checksumsString).hexdigest()
+        return md5checksum
+        """
 
-class Reference(object):
+
+class SimulatedReferenceSet(AbstractReferenceSet):
+    """
+    A simulated referenceSet
+    """
+    def __init__(self, id_):
+        super(SimulatedReferenceSet, self).__init__(id_)
+        referenceId = "{}:srsone".format(id_)
+        reference = SimulatedReference(referenceId)
+        self._referenceIdMap[referenceId] = reference
+
+
+class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
+    """
+    A referenceSet based on data on a file system
+    """
+    def __init__(self, id_, dataDir):
+        super(HtslibReferenceSet, self).__init__(id_)
+        self._dataDir = dataDir
+        # TODO get metadata from a file within dataDir? How else will we
+        # fill in the fields like ncbiTaxonId etc?
+        self._scanDataFiles(dataDir, ["*.fa.gz"])
+        self._referenceIds = sorted(self._referenceIdMap.keys())
+
+    def _addDataFile(self, path):
+        filename = os.path.split(path)[1]
+        localId = filename.split(".")[0]
+        referenceId = "{}:{}".format(self._id, localId)
+        reference = HtslibReference(referenceId, path)
+        self._referenceIdMap[referenceId] = reference
+
+
+class AbstractReference(object):
     """
     Class representing References. A Reference is a canonical
     assembled contig, intended to act as a reference coordinate space
     for other genomic annotations. A single Reference might represent
     the human chromosome 1, for instance.
     """
-    def __init__(self, id_, dataFile):
+    def __init__(self, id_):
         self._id = id_
-        self._fastaFile = pysam.FastaFile(dataFile)
+
+    def getId(self):
+        return self._id
 
     def toProtocolElement(self):
         """
@@ -72,5 +114,71 @@ class Reference(object):
         """
         reference = protocol.Reference()
         reference.id = self._id
-        # TODO fill out details
+        reference.isDerived = False
+        reference.length = self.getLength()
+        reference.md5checksum = self.getMd5Checksum()
+        reference.name = self.getName()
+        reference.ncbiTaxonId = None
+        reference.sourceAccessions = []
+        reference.sourceDivergence = None
+        reference.sourceURI = None
         return reference
+
+    def getMd5Checksum(self):
+        """
+        Returns the md5 checksum
+        """
+        return self._md5checksum
+
+
+class SimulatedReference(AbstractReference):
+    """
+    A simulated reference
+    """
+    def __init__(self, id_):
+        super(SimulatedReference, self).__init__(id_)
+        self.bases = "AGCT" * 50
+        self._md5checksum = "lol"
+
+    def getBases(self, start=None, end=None):
+        return self.bases[start:end]
+
+    def getLength(self):
+        return len(self.bases)
+
+    def getName(self):
+        return 'someRef'
+
+
+class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
+    """
+    A reference based on data stored in a file on the file system
+    """
+    def __init__(self, id_, dataFile):
+        super(HtslibReference, self).__init__(id_)
+        self._fastaFilePath = dataFile
+        self._fastaFile = pysam.FastaFile(dataFile)
+        numReferences = len(self._fastaFile.references)
+        if numReferences != 1:
+            raise exceptions.NotExactlyOneReferenceException(
+                self._id, numReferences)
+        self._refName = self._fastaFile.references[0]
+        # refData = self._fastaFile.fetch(self._refName)
+        self._md5checksum = "TODO"  # hashlib.md5(refData).hexdigest()
+
+    def getFastaFilePath(self):
+        """
+        Returns the file path of the fasta file
+        """
+        return self._fastaFilePath
+
+    def getBases(self, start=None, end=None):
+        start, end = self.sanitizeFastaFileFetch(start, end)
+        bases = self._fastaFile.fetch(self._refName, start, end)
+        return bases
+
+    def getLength(self):
+        return self._fastaFile.lengths[0]
+
+    def getName(self):
+        return self._fastaFile.references[0]

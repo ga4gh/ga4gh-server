@@ -25,6 +25,7 @@ class TestGestalt(server_test.ServerTest):
         self.runVariantSetRequest()
         self.assertLogsWritten()
         self.runReadsRequest()
+        self.runReferencesRequest()
         self.client.cleanup()
 
     def assertLogsWritten(self):
@@ -73,4 +74,18 @@ class TestGestalt(server_test.ServerTest):
 
     def runReadsRequest(self):
         cmd = "reads-search --readGroupIds 'aReadGroupSet:one'"
+        self.runClientCmd(self.client, cmd)
+
+    def runReferencesRequest(self):
+        referenceSetId = 'aReferenceSet'
+        referenceId = 'aReferenceSet:srsone'
+        cmd = "referencesets-search"
+        self.runClientCmd(self.client, cmd)
+        cmd = "references-search"
+        self.runClientCmd(self.client, cmd)
+        cmd = "referencesets-get {}".format(referenceSetId)
+        self.runClientCmd(self.client, cmd)
+        cmd = "references-get {}".format(referenceId)
+        self.runClientCmd(self.client, cmd)
+        cmd = "references-list-bases {}".format(referenceId)
         self.runClientCmd(self.client, cmd)

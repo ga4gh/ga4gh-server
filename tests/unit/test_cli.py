@@ -145,13 +145,13 @@ class TestClientArguments(unittest.TestCase):
         --referenceName REFERENCENAME"""
 
     def testReferenceSetGetArguments(self):
-        self.cliInput = """referencesets-get --id ID"""
+        self.cliInput = """referencesets-get ID"""
 
     def testReferenceGetArguments(self):
-        self.cliInput = """references-get --id ID"""
+        self.cliInput = """references-get ID"""
 
     def testReferenceBasesListArguments(self):
-        self.cliInput = """references-list-bases --id ID
+        self.cliInput = """references-list-bases ID
         --start 1 --end 2"""
 
 

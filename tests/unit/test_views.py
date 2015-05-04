@@ -36,7 +36,7 @@ class TestFrontend(unittest.TestCase):
     def tearDownClass(cls):
         cls.app = None
 
-    def sendRequest(self, path, request):
+    def sendPostRequest(self, path, request):
         """
         Sends the specified GA request object and returns the response.
         """
@@ -58,12 +58,12 @@ class TestFrontend(unittest.TestCase):
         request.referenceName = "1"
         request.start = 0
         request.end = 1
-        return self.sendRequest('/variants/search', request)
+        return self.sendPostRequest('/variants/search', request)
 
     def sendVariantSetsSearch(self, datasetIds=[""]):
         request = protocol.SearchVariantSetsRequest()
         request.datasetIds = datasetIds
-        return self.sendRequest('/variantsets/search', request)
+        return self.sendPostRequest('/variantsets/search', request)
 
     def sendCallSetsSearch(self):
         response = self.sendVariantSetsSearch()
@@ -71,14 +71,60 @@ class TestFrontend(unittest.TestCase):
             response.data).variantSets
         request = protocol.SearchCallSetsRequest()
         request.variantSetIds = [variantSets[0].id]
-        return self.sendRequest('/callsets/search', request)
+        return self.sendPostRequest('/callsets/search', request)
 
     def sendReadsSearch(self, readGroupIds=None):
         if readGroupIds is None:
             readGroupIds = ['aReadGroupSet:one']
         request = protocol.SearchReadsRequest()
         request.readGroupIds = readGroupIds
-        return self.sendRequest('/reads/search', request)
+        return self.sendPostRequest('/reads/search', request)
+
+    def sendGetRequest(self, path):
+        versionedPath = utils.applyVersion(path)
+        headers = {
+            'Origin': self.exampleUrl,
+        }
+        response = self.app.get(versionedPath, headers=headers)
+        return response
+
+    def sendReferencesGet(self, id_=None):
+        if id_ is None:
+            id_ = 'simple:simple'
+        path = "/references/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
+    def sendReferenceSetsGet(self, id_=None):
+        if id_ is None:
+            id_ = 'simple'
+        path = "/referencesets/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
+    def sendReferencesSearch(self):
+        path = "/references/search"
+        request = protocol.SearchReferencesRequest()
+        response = self.sendPostRequest(path, request)
+        return response
+
+    def sendListRequest(self, path, request):
+        versionedPath = utils.applyVersion(path)
+        headers = {
+            'Origin': self.exampleUrl,
+        }
+        data = request.toJsonDict()
+        response = self.app.get(
+            versionedPath, data=data, headers=headers)
+        return response
+
+    def sendReferenceBasesList(self, id_=None):
+        if id_ is None:
+            id_ = 'simple:simple'
+        path = "/references/{}/bases".format(id_)
+        request = protocol.ListReferenceBasesRequest()
+        response = self.sendListRequest(path, request)
+        return response
 
     def test404sReturnJson(self):
         path = utils.applyVersion('/doesNotExist')
@@ -95,13 +141,17 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendVariantsSearch())
         assertHeaders(self.sendVariantSetsSearch())
         assertHeaders(self.sendReadsSearch())
+        assertHeaders(self.sendReferencesGet())
+        assertHeaders(self.sendReferenceSetsGet())
+        assertHeaders(self.sendReferencesSearch())
+        assertHeaders(self.sendReferenceBasesList())
         # TODO: Test other methods as they are implemented
 
     def verifySearchRouting(self, path, getDefined=False):
         """
-        Verifies that the specified path has the correct routing for a search
-        command. If getDefined is False we check to see if it returns the
-        correct status code.
+        Verifies that the specified path has the correct routing for a
+        search command. If getDefined is False we check to see if it
+        returns the correct status code.
         """
         versionedPath = utils.applyVersion(path)
         response = self.app.post(versionedPath)
@@ -123,15 +173,20 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, self.app.options(versionedPath).status_code)
 
     def testRouteReferences(self):
-        paths = ['/references/1', 'references/1/bases', 'referencesets/1']
+        referenceId = "aReferenceSet:srsone"
+        paths = ['/references/{}', '/references/{}/bases']
         for path in paths:
+            path = path.format(referenceId)
             versionedPath = utils.applyVersion(path)
-            self.assertEqual(404, self.app.get(versionedPath).status_code)
-        paths = ['/references/search']
+            self.assertEqual(200, self.app.get(versionedPath).status_code)
+        referenceSetId = "aReferenceSet"
+        paths = ['/referencesets/{}']
         for path in paths:
+            path = path.format(referenceSetId)
             versionedPath = utils.applyVersion(path)
-            self.assertEqual(404, self.app.get(versionedPath).status_code)
+            self.assertEqual(200, self.app.get(versionedPath).status_code)
         self.verifySearchRouting('/referencesets/search', True)
+        self.verifySearchRouting('/references/search', True)
 
     def testRouteCallsets(self):
         path = utils.applyVersion('/callsets/search')

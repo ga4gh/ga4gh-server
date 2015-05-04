@@ -15,6 +15,7 @@ import pysam
 
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.references as references
 
 
 class TestAbstractBackend(unittest.TestCase):
@@ -108,6 +109,19 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertTrue(
             isinstance(response, protocol.SearchVariantSetsResponse))
 
+    def testRunGetRequest(self):
+        id_ = "anId"
+        obj = references.SimulatedReferenceSet(id_)
+        idMap = {id_: obj}
+        responseStr = self._backend.runGetRequest(idMap, id_)
+        class_ = protocol.ReferenceSet
+        response = class_.fromJsonString(responseStr)
+        self.assertTrue(isinstance(response, class_))
+
+    def testRunListReferenceBases(self):
+        id_ = "aReferenceSet:srsone"
+        self.runListReferenceBases(id_)
+
     def testSearchVariantSets(self):
         request = protocol.SearchVariantSetsRequest()
         responseStr = self._backend.searchVariantSets(request.toJsonString())
@@ -148,6 +162,14 @@ class TestAbstractBackend(unittest.TestCase):
         for result in results[1:]:
             self.assertEqual(result, results[0])
 
+    def runListReferenceBases(self, id_):
+        requestArgs = {"start": 5, "end": 10, "pageToken": "0"}
+        responseStr = self._backend.listReferenceBases(id_, requestArgs)
+        response = protocol.ListReferenceBasesResponse.fromJsonString(
+            responseStr)
+        self.assertTrue(
+            isinstance(response, protocol.ListReferenceBasesResponse))
+
 
 class TestFileSystemBackend(TestAbstractBackend):
     """
@@ -157,6 +179,7 @@ class TestFileSystemBackend(TestAbstractBackend):
     def setUp(self):
         self._dataDir = os.path.join("tests", "data")
         self._variantsDir = os.path.join(self._dataDir, "variants")
+        self._referencesDir = os.path.join(self._dataDir, "references")
         self._vcfs = {}
         self._variants = []
         self._referenceNames = set()
@@ -178,6 +201,10 @@ class TestFileSystemBackend(TestAbstractBackend):
         self.assertEqual(len(variantSets), len(self._vcfs))
         ids = set(variantSet.id for variantSet in variantSets)
         self.assertEqual(ids, set(self._vcfs.keys()))
+
+    def testRunListReferenceBases(self):
+        id_ = "example_1:simple"
+        self.runListReferenceBases(id_)
 
 
 class TestTopLevelObjectGenerator(unittest.TestCase):

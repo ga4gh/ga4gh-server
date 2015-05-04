@@ -15,6 +15,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel as datamodel
 
 
 def _parsePageToken(pageToken, numValues):
@@ -26,12 +27,14 @@ def _parsePageToken(pageToken, numValues):
     exception.
     """
     tokens = pageToken.split(":")
-    # TODO define exceptions.InvalidPageToken and raise here.
     if len(tokens) != numValues:
-        raise Exception("Invalid number of values in page token")
-    # TODO catch a ValueError here when bad integers are passed and
-    # convert this into the appropriate InvalidPageToken exception.
-    values = map(int, tokens)
+        msg = "Invalid number of values in page token"
+        raise exceptions.BadPageTokenException(msg)
+    try:
+        values = map(int, tokens)
+    except ValueError:
+        msg = "Malformed integers in page token"
+        raise exceptions.BadPageTokenException(msg)
     return values
 
 
@@ -188,6 +191,8 @@ class AbstractBackend(object):
         self._variantSetIds = []
         self._referenceSetIdMap = {}
         self._referenceSetIds = []
+        self._referenceIdMap = {}
+        self._referenceIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetIds = []
         self._readGroupIds = []
@@ -208,6 +213,83 @@ class AbstractBackend(object):
         Returns the list of ReadGroupSets in this backend.
         """
         return list(self._readGroupSetIdMap.values())
+
+    def getReferenceSets(self):
+        """
+        Returns the list of ReferenceSets in this backend
+        """
+        return list(self._referenceSetIdMap.values())
+
+    def getReference(self, id_):
+        """
+        Returns a reference with the given id_
+        """
+        return self.runGetRequest(self._referenceIdMap, id_)
+
+    def getReferenceSet(self, id_):
+        """
+        Returns a referenceSet with the given id_
+        """
+        return self.runGetRequest(self._referenceSetIdMap, id_)
+
+    def listReferenceBases(self, id_, requestArgs):
+        # parse arguments
+        try:
+            reference = self._referenceIdMap[id_]
+        except KeyError:
+            raise exceptions.ObjectWithIdNotFoundException(id_)
+        start = 0
+        end = datamodel.PysamDatamodelMixin.fastaMax
+        if 'start' in requestArgs:
+            startString = requestArgs['start']
+            try:
+                start = int(startString)
+            except ValueError:
+                raise exceptions.BadRequestIntegerException(
+                    'start', startString)
+        if 'end' in requestArgs:
+            endString = requestArgs['end']
+            try:
+                end = int(endString)
+            except ValueError:
+                raise exceptions.BadRequestIntegerException(
+                    'end', endString)
+        if 'pageToken' in requestArgs:
+            pageTokenStr = requestArgs['pageToken']
+            start = _parsePageToken(pageTokenStr, 1)[0]
+        chunkSize = self._maxResponseLength
+
+        # get reference bases
+        gbEnd = min(start + chunkSize, end)
+        sequence = reference.getBases(start, gbEnd)
+
+        # determine nextPageToken
+        if len(sequence) == chunkSize:
+            nextPageToken = start + chunkSize
+        elif len(sequence) > chunkSize:
+            raise exceptions.ServerError()  # should never happen
+        else:
+            nextPageToken = None
+
+        # build response
+        response = protocol.ListReferenceBasesResponse()
+        response.offset = start
+        response.sequence = sequence
+        response.nextPageToken = nextPageToken
+        return response.toJsonString()
+
+    def runGetRequest(self, idMap, id_):
+        """
+        Runs a get request by indexing into the provided idMap and
+        returning a json string of that object
+        """
+        try:
+            obj = idMap[id_]
+        except KeyError:
+            raise exceptions.ObjectWithIdNotFoundException(id_)
+        protocolElement = obj.toProtocolElement()
+        jsonString = protocolElement.toJsonString()
+        return jsonString
 
     def runSearchRequest(
             self, requestStr, requestClass, responseClass, objectGenerator):
@@ -349,6 +431,14 @@ class AbstractBackend(object):
         return self._topLevelObjectGenerator(
             request, self._referenceSetIdMap, self._referenceSetIds)
 
+    def referencesGenerator(self, request):
+        """
+        Returns a generator over the (reference, nextPageToken) pairs
+        defined by the specified request.
+        """
+        return self._topLevelObjectGenerator(
+            request, self._referenceIdMap, self._referenceIds)
+
     def variantSetsGenerator(self, request):
         """
         Returns a generator over the (variantSet, nextPageToken) pairs defined
@@ -481,6 +571,16 @@ class SimulatedBackend(AbstractBackend):
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
         self._readGroupIds = sorted(self._readGroupIdMap.keys())
 
+        # References
+        referenceSetId = "aReferenceSet"
+        referenceSet = references.SimulatedReferenceSet(referenceSetId)
+        self._referenceSetIdMap[referenceSetId] = referenceSet
+        for reference in referenceSet.getReferences():
+            referenceId = reference.getId()
+            self._referenceIdMap[referenceId] = reference
+        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
+        self._referenceIds = sorted(self._referenceIdMap.keys())
+
 
 class FileSystemBackend(AbstractBackend):
     """
@@ -505,10 +605,14 @@ class FileSystemBackend(AbstractBackend):
         for referenceSetId in os.listdir(referenceSetDir):
             relativePath = os.path.join(referenceSetDir, referenceSetId)
             if os.path.isdir(relativePath):
-                referenceSet = references.ReferenceSet(
+                referenceSet = references.HtslibReferenceSet(
                     referenceSetId, relativePath)
                 self._referenceSetIdMap[referenceSetId] = referenceSet
+                for reference in referenceSet.getReferences():
+                    referenceId = reference.getId()
+                    self._referenceIdMap[referenceId] = reference
         self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
+        self._referenceIds = sorted(self._referenceIdMap.keys())
 
         # Reads
         readGroupSetDir = os.path.join(self._dataDir, "reads")

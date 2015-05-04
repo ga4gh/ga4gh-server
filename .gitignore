@@ -3,7 +3,8 @@
 *.swo
 ga4gh-example-data*
 scripts/auth.yml
-twistd.pid
+*.pid
+*.fa
 *.fai
 *.gzi
 
