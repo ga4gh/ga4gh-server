@@ -29,6 +29,15 @@ class Version(object):
     """
     A major/minor/revision version tag
     """
+    currentString = "current"
+
+    @classmethod
+    def isCurrentVersion(cls, versionString):
+        if versionString == cls.currentString:
+            return True
+        return (Version.parseString(versionString) ==
+                Version.parseString(protocol.version))
+
     @classmethod
     def parseString(cls, versionString):
         versions = versionString.strip('vV').split('.')
@@ -228,9 +237,8 @@ def handleFlaskPostRequest(version, flaskRequest, endpoint):
     at at the specified version. Invokes the specified endpoint to
     generate a response.
     """
-    if Version.parseString(version) != Version.parseString(protocol.version):
+    if not Version.isCurrentVersion(version):
         raise exceptions.VersionNotSupportedException()
-
     if flaskRequest.method == "POST":
         return handleHttpPost(flaskRequest, endpoint)
     elif flaskRequest.method == "OPTIONS":

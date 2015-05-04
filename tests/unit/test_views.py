@@ -191,3 +191,8 @@ class TestFrontend(unittest.TestCase):
     def testWrongVersion(self):
         path = '/v0.1.2/variantsets/search'
         self.assertEqual(404, self.app.options(path).status_code)
+
+    def testCurrentVersion(self):
+        path = '/{}/variantsets/search'.format(
+            frontend.Version.currentString)
+        self.assertEqual(200, self.app.options(path).status_code)
