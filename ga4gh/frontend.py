@@ -244,6 +244,11 @@ def index():
     return flask.render_template('index.html', info=app.serverStatus)
 
 
+@app.route('/<version>')
+def indexRedirect(version):
+    return index()
+
+
 @app.route('/<version>/references/<id>', methods=['GET'])
 def getReference(version, id):
     raise exceptions.PathNotFoundException()
