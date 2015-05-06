@@ -33,7 +33,6 @@ twistd.pid
 # Logs and databases #
 ######################
 *.log
-*.sql
 *.sqlite
  
 # OS generated files #
@@ -66,6 +65,7 @@ lib64/
 parts/
 sdist/
 var/
+docs/source/_build/
 *.egg-info/
 .installed.cfg
 *.egg
@@ -103,3 +103,7 @@ target/
 
 # Pycharm
 .idea/
+
+# FASTA generated index files
+*.fa.flat
+*.fa.gdx

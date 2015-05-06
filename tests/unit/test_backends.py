@@ -116,6 +116,7 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertTrue(
             isinstance(response, protocol.SearchVariantSetsResponse))
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testSearchVariants(self):
         variantSetIds = [
             variantSet.id for variantSet in self.getVariantSets(pageSize=1)]

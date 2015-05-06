@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import os
 import glob
+import unittest
 
 import vcf
 
@@ -178,9 +179,11 @@ class VariantSetTest(datadriven.DataDrivenTest):
         if searchVariants is None:
             self.assertEqual(len(gaCallSetVariants), len(self._variantRecords))
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testSearchAllVariants(self):
         self._verifyVariantsCallSetIds(None, self.vcfSamples[:1])
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testSearchCallSetIdsSystematic(self):
         for sampleIds in utils.powerset(self.vcfSamples, maxSets=10):
             # TODO remove this for protocol 0.6
@@ -188,6 +191,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 sampleIds = self.vcfSamples
             self._verifyVariantsCallSetIds(None, list(sampleIds))
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testVariantsValid(self):
         end = 2**30  # TODO This is arbitrary, and pysam can choke. FIX!
         for referenceName in self._referenceNames:
@@ -228,6 +232,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self.assertGreaterEqual(len(gaVariants), 0)
         self._verifyVariantsEqual(gaVariants, pyvcfVariants)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testVariantInSegments(self):
         for referenceName in self._referenceNames:
             localVariants = self._getPyvcfVariants(referenceName)
@@ -267,6 +272,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 break
         return isIn
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testVariantFromToEveryVariant(self):
         for variant in self._variantRecords:
             variantStart = variant.start

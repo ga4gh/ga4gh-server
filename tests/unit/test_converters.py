@@ -49,6 +49,7 @@ class TestSamConverterLogic(TestSamConverter):
     """
     Test the SamConverter logic
     """
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testSamConverter(self):
         mockPysam = mock.Mock()
         with mock.patch('pysam.AlignmentFile', mockPysam):
@@ -82,8 +83,10 @@ class TestSamConverterRoundTrip(TestSamConverter):
             # TODO more in-depth testing
             samfile.close()
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testPlainText(self):
         self._testRoundTrip(False)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testBinary(self):
         self._testRoundTrip(True)

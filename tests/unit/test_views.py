@@ -86,6 +86,7 @@ class TestFrontend(unittest.TestCase):
         protocol.GAException.fromJsonString(response.get_data())
         self.assertEqual(404, response.status_code)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testCors(self):
         def assertHeaders(response):
             self.assertEqual(self.exampleUrl,
@@ -122,6 +123,7 @@ class TestFrontend(unittest.TestCase):
         # OPTIONS should return success
         self.assertEqual(200, self.app.options(versionedPath).status_code)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testRouteReferences(self):
         paths = ['/references/1', 'references/1/bases', 'referencesets/1']
         for path in paths:
@@ -154,6 +156,7 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual("text/html", response.mimetype)
         self.assertGreater(len(response.data), 0)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testVariantsSearch(self):
         response = self.sendVariantsSearch()
         self.assertEqual(200, response.status_code)
@@ -161,6 +164,7 @@ class TestFrontend(unittest.TestCase):
             response.data)
         self.assertEqual(len(responseData.variants), 1)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testVariantSetsSearch(self):
         response = self.sendVariantSetsSearch()
         self.assertEqual(200, response.status_code)
@@ -168,6 +172,7 @@ class TestFrontend(unittest.TestCase):
             response.data)
         self.assertEqual(len(responseData.variantSets), 1)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch()
         self.assertEqual(200, response.status_code)

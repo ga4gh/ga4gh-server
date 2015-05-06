@@ -11,10 +11,10 @@ import json
 import random
 
 import ga4gh.protocol as protocol
-import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.graphs as graphs
 
 
 def _parsePageToken(pageToken, numValues):
@@ -52,10 +52,12 @@ def _getVariantSet(request, variantSetIdMap):
 
 
 class IntervalIterator(object):
+
     """
     Implements generator logic for types which accept a start/end
     range to search for the object
     """
+
     def __init__(self, request, containerIdMap):
         self._request = request
         self._containerIdMap = containerIdMap
@@ -122,9 +124,11 @@ class IntervalIterator(object):
 
 
 class ReadsIntervalIterator(IntervalIterator):
+
     """
     An interval iterator for reads
     """
+
     def _getContainer(self):
         if len(self._request.readGroupIds) != 1:
             if len(self._request.readGroupIds) == 0:
@@ -147,7 +151,7 @@ class ReadsIntervalIterator(IntervalIterator):
 
     @classmethod
     def _getStart(cls, readAlignment):
-        return readAlignment.alignment.position.position
+        return readAlignment.alignment.position.base.position
 
     @classmethod
     def _getEnd(cls, readAlignment):
@@ -156,16 +160,18 @@ class ReadsIntervalIterator(IntervalIterator):
 
 
 class VariantsIntervalIterator(IntervalIterator):
+
     """
     An interval iterator for variants
     """
+
     def _getContainer(self):
         return _getVariantSet(self._request, self._containerIdMap)
 
     def _getIterator(self):
         iterator = self._container.getVariants(
             self._request.referenceName, self._startPosition,
-            self._request.end, self._request.variantName,
+            self._request.end, self._request.name,
             self._request.callSetIds)
         return iterator
 
@@ -178,16 +184,35 @@ class VariantsIntervalIterator(IntervalIterator):
         return variant.end
 
 
+class QueryResultsIterator(object):
+
+    """
+    Iterator for results from a method that can take explicit start and end
+    positions, and that has a matching method capable of returning the count
+    of all results.
+    """
+
+    def __init__(self, request):
+        self._generator = self._iterator()
+
+    def __iter__(self):
+        return self._generator
+
+    def _iterator(self):
+        yield ''
+
+
 class AbstractBackend(object):
+
     """
     An abstract GA4GH backend.
     This class provides methods for all of the GA4GH protocol end points.
     """
+
     def __init__(self):
+        self._graphs = None
         self._variantSetIdMap = {}
         self._variantSetIds = []
-        self._referenceSetIdMap = {}
-        self._referenceSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetIds = []
         self._readGroupIds = []
@@ -195,7 +220,7 @@ class AbstractBackend(object):
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
-        self._maxResponseLength = 2**20  # 1 MiB
+        self._maxResponseLength = 2 ** 31
 
     def getVariantSets(self):
         """
@@ -246,8 +271,8 @@ class AbstractBackend(object):
 
     def searchReadGroupSets(self, request):
         """
-        Returns a GASearchReadGroupSetsResponse for the specified
-        GASearchReadGroupSetsRequest object.
+        Returns a SearchReadGroupSetsResponse for the specified
+        SearchReadGroupSetsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchReadGroupSetsRequest,
@@ -256,8 +281,8 @@ class AbstractBackend(object):
 
     def searchReads(self, request):
         """
-        Returns a GASearchReadsResponse for the specified
-        GASearchReadsRequest object.
+        Returns a SearchReadsResponse for the specified
+        SearchReadsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchReadsRequest,
@@ -266,8 +291,8 @@ class AbstractBackend(object):
 
     def searchReferenceSets(self, request):
         """
-        Returns a GASearchReferenceSetsResponse for the specified
-        GASearchReferenceSetsRequest object.
+        Returns a SearchReferenceSetsResponse for the specified
+        SearchReferenceSetsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchReferenceSetsRequest,
@@ -276,8 +301,8 @@ class AbstractBackend(object):
 
     def searchReferences(self, request):
         """
-        Returns a GASearchReferencesResponse for the specified
-        GASearchReferencesRequest object.
+        Returns a SearchReferencesResponse for the specified
+        SearchReferencesRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchReferencesRequest,
@@ -286,8 +311,8 @@ class AbstractBackend(object):
 
     def searchVariantSets(self, request):
         """
-        Returns a GASearchVariantSetsResponse for the specified
-        GASearchVariantSetsRequest object.
+        Returns a SearchVariantSetsResponse for the specified
+        SearchVariantSetsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchVariantSetsRequest,
@@ -296,8 +321,8 @@ class AbstractBackend(object):
 
     def searchVariants(self, request):
         """
-        Returns a GASearchVariantsResponse for the specified
-        GASearchVariantsRequest object.
+        Returns a SearchVariantsResponse for the specified
+        SearchVariantsRequest object.
         """
         return self.runSearchRequest(
             request, protocol.SearchVariantsRequest,
@@ -306,13 +331,115 @@ class AbstractBackend(object):
 
     def searchCallSets(self, request):
         """
-        Returns a GASearchCallSetsResponse for the specified
-        GASearchCallSetsRequest Object.
+        Returns a SearchCallSetsResponse for the specified
+        SearchCallSetsRequest Object.
         """
         return self.runSearchRequest(
             request, protocol.SearchCallSetsRequest,
             protocol.SearchCallSetsResponse,
             self.callSetsGenerator)
+
+    def searchSequences(self, requestStr):
+        """
+        Returns a SearchSequencesResponse object.
+        The page token in this case is the start position
+        to limit the query by.
+        """
+        self.startProfile()
+        requestClass = protocol.SearchSequencesRequest
+        responseClass = protocol.SearchSequencesResponse
+        try:
+            requestDict = json.loads(requestStr)
+        except ValueError:
+            raise exceptions.InvalidJsonException(requestStr)
+        self.validateRequest(requestDict, requestClass)
+        request = requestClass.fromJsonDict(requestDict)
+        if request.pageSize is None:
+            request.pageSize = self._defaultPageSize
+        if request.pageSize <= 0:
+            raise exceptions.BadPageSizeException(request.pageSize)
+
+        start = int(request.pageToken) if request.pageToken is not None else 0
+        end = start + int(request.pageSize)
+
+        # TODO implement search by referenceSetId and variantSetId
+        (count, protocolObjects) = self._graphs.searchSequences(
+            start=start, end=end)
+        responseBuilder = protocol.SearchResponseBuilder(
+            responseClass, request.pageSize, self._maxResponseLength)
+
+        for i, protocolObject in enumerate(protocolObjects):
+            responseBuilder.addValue(protocolObject)
+            if responseBuilder.isFull():
+                break
+        npt = start + i + 1
+        nextPageToken = npt if npt < count else None
+        responseBuilder.setNextPageToken(nextPageToken)
+
+        responseString = responseBuilder.getJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
+
+    def searchJoins(self, requestStr):
+        """
+        Returns a SearchJoinsResponse object.
+        The page token in this case is the start position
+        to limit the query by.
+        """
+        self.startProfile()
+        requestClass = protocol.SearchJoinsRequest
+        responseClass = protocol.SearchJoinsResponse
+        try:
+            requestDict = json.loads(requestStr)
+        except ValueError:
+            raise exceptions.InvalidJsonException(requestStr)
+        self.validateRequest(requestDict, requestClass)
+        request = requestClass.fromJsonDict(requestDict)
+        if request.pageSize is None:
+            request.pageSize = self._defaultPageSize
+        if request.pageSize <= 0:
+            raise exceptions.BadPageSizeException(request.pageSize)
+
+        start = int(request.pageToken) if request.pageToken is not None else 0
+        end = start + int(request.pageSize)
+        # TODO implement search by referenceSetId and variantSetId
+        (count, protocolObjects) = self._graphs.searchJoins(
+            start=start, end=end)
+        responseBuilder = protocol.SearchResponseBuilder(
+            responseClass, request.pageSize, self._maxResponseLength)
+
+        for i, protocolObject in enumerate(protocolObjects):
+            responseBuilder.addValue(protocolObject)
+            if responseBuilder.isFull():
+                break
+        npt = start + i + 1
+        nextPageToken = npt if npt < count else None
+        responseBuilder.setNextPageToken(nextPageToken)
+
+        responseString = responseBuilder.getJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
+
+    def getSequenceBases(self, sequenceId, start, end):
+        self.startProfile()
+        responseClass = protocol.GetSequenceBasesResponse
+        protocolObject = self._graphs.getSequenceBases(
+            sequenceId, start, end)
+        responseString = protocolObject.toJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
+
+    def getAllele(self, alleleId):
+        self.startProfile()
+        responseClass = protocol.Allele
+        protocolObject = self._graphs.getAllele(alleleId)
+        responseString = protocolObject.toJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
 
     # Iterators over the data hieararchy
 
@@ -340,14 +467,6 @@ class AbstractBackend(object):
         """
         return self._topLevelObjectGenerator(
             request, self._readGroupSetIdMap, self._readGroupSetIds)
-
-    def referenceSetsGenerator(self, request):
-        """
-        Returns a generator over the (referenceSet, nextPageToken) pairs
-        defined by the specified request.
-        """
-        return self._topLevelObjectGenerator(
-            request, self._referenceSetIdMap, self._referenceSetIds)
 
     def variantSetsGenerator(self, request):
         """
@@ -449,15 +568,18 @@ class AbstractBackend(object):
 
 
 class EmptyBackend(AbstractBackend):
+
     """
     A GA4GH backend that contains no data.
     """
 
 
 class SimulatedBackend(AbstractBackend):
+
     """
     A GA4GH backend backed by no data; used mostly for testing
     """
+
     def __init__(self, randomSeed=0, numCalls=1, variantDensity=0.5,
                  numVariantSets=1):
         super(SimulatedBackend, self).__init__()
@@ -466,7 +588,7 @@ class SimulatedBackend(AbstractBackend):
         self._randomGenerator.seed(self._randomSeed)
         for i in range(numVariantSets):
             variantSetId = "simVs{}".format(i)
-            seed = self._randomGenerator.randint(0, 2**32 - 1)
+            seed = self._randomGenerator.randint(0, 2 ** 32 - 1)
             variantSet = variants.SimulatedVariantSet(
                 seed, numCalls, variantDensity, variantSetId)
             self._variantSetIdMap[variantSetId] = variantSet
@@ -483,9 +605,11 @@ class SimulatedBackend(AbstractBackend):
 
 
 class FileSystemBackend(AbstractBackend):
+
     """
     A GA4GH backend backed by data on the file system
     """
+
     def __init__(self, dataDir):
         super(FileSystemBackend, self).__init__()
         self._dataDir = dataDir
@@ -500,15 +624,9 @@ class FileSystemBackend(AbstractBackend):
                     variants.HtslibVariantSet(variantSetId, relativePath)
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
-        # References
-        referenceSetDir = os.path.join(self._dataDir, "references")
-        for referenceSetId in os.listdir(referenceSetDir):
-            relativePath = os.path.join(referenceSetDir, referenceSetId)
-            if os.path.isdir(relativePath):
-                referenceSet = references.ReferenceSet(
-                    referenceSetId, relativePath)
-                self._referenceSetIdMap[referenceSetId] = referenceSet
-        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
+        # Graph References
+        graphDir = os.path.join(self._dataDir, "graphs")
+        self._graphs = graphs.GraphDatabase(graphDir)
 
         # Reads
         readGroupSetDir = os.path.join(self._dataDir, "reads")

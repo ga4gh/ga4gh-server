@@ -164,7 +164,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         raise NotImplementedError()
 
-    def _createGaVariant(self):
+    def _createVariant(self):
         """
         Convenience method to set the common fields in a GA Variant
         object from this variant set.
@@ -200,7 +200,7 @@ class SimulatedVariantSet(AbstractVariantSet):
         return ret
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+                    name=None, callSetIds=None):
         randomNumberGenerator = random.Random()
         i = startPosition
         while i < endPosition:
@@ -219,7 +219,7 @@ class SimulatedVariantSet(AbstractVariantSet):
         with a value that is unique to this position so that the same variant
         will always be produced regardless of the order it is generated in.
         """
-        variant = self._createGaVariant()
+        variant = self._createVariant()
         variant.names = []
         variant.referenceName = referenceName
         variant.id = "{0}:{1}:{2}".format(
@@ -376,7 +376,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         object. Only calls for the specified list of callSetIds will
         be included.
         """
-        variant = self._createGaVariant()
+        variant = self._createVariant()
         # N.B. record.pos is 1-based
         #      also consider using record.start-record.stop
         variant.id = "{0}:{1}:{2}".format(self._id,
@@ -412,14 +412,14 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+                    name=None, callSetIds=None):
         """
         Returns an iterator over the specified variants. The parameters
         correspond to the attributes of a GASearchVariantsRequest object.
         """
-        if variantName is not None:
+        if name is not None:
             raise exceptions.NotImplementedException(
-                "Searching by variantName is not supported")
+                "Searching by variant name is not supported")
         # For v0.5.1, callSetIds=[] actually means return all callSets.
         # In v0.6+, callSetIds=[] means return no call sets, and
         # callSetIds=None means return all call sets. For forward
