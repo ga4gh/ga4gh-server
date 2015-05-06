@@ -178,3 +178,39 @@ class TestFileSystemBackend(TestAbstractBackend):
         self.assertEqual(len(variantSets), len(self._vcfs))
         ids = set(variantSet.id for variantSet in variantSets)
         self.assertEqual(ids, set(self._vcfs.keys()))
+
+
+class TestTopLevelObjectGenerator(unittest.TestCase):
+    """
+    Tests the generator used for top level objects
+    """
+    def setUp(self):
+        class FakeRequest(object):
+            pass
+
+        class FakeTopLevelObject(object):
+            def toProtocolElement(self):
+                return self
+
+        self.request = FakeRequest()
+        self.request.pageToken = None
+        self.idMap = {
+            "a": FakeTopLevelObject(),
+            "b": FakeTopLevelObject(),
+            "c": FakeTopLevelObject(),
+        }
+        self.idList = sorted(self.idMap.keys())
+        self.backend = backend.AbstractBackend()
+
+    def testPageToken(self):
+        self.request.pageToken = "1"
+        self._assertNumItems(2)
+
+    def testPageTokenNone(self):
+        self._assertNumItems(3)
+
+    def _assertNumItems(self, numItems):
+        iterator = self.backend._topLevelObjectGenerator(
+            self.request, self.idMap, self.idList)
+        items = list(iterator)
+        self.assertEqual(len(items), numItems)
