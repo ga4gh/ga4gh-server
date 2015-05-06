@@ -149,7 +149,13 @@ class TestFrontend(unittest.TestCase):
             self.verifySearchRouting(path)
 
     def testRouteIndex(self):
-        response = self.app.get("/")
+        self._routeIndex("/")
+
+    def testRouteIndexRedirect(self):
+        self._routeIndex("/{}".format(protocol.version))
+
+    def _routeIndex(self, path):
+        response = self.app.get(path)
         self.assertEqual(200, response.status_code)
         self.assertEqual("text/html", response.mimetype)
         self.assertGreater(len(response.data), 0)
