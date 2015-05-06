@@ -10,6 +10,7 @@ import unittest
 import ga4gh.frontend as frontend
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.avrotools as avrotools
 import tests.utils as utils
 
 
@@ -49,7 +50,9 @@ class TestFrontendErrors(unittest.TestCase):
         """
         Returns a valid instance of the specified class.
         """
-        return utils.InstanceGenerator().generateInstance(requestClass)
+        tool = avrotools.SchemaTool(requestClass)
+        instance = tool.getTypicalInstance()
+        return instance
 
     def assertRawRequestRaises(self, exceptionClass, url, requestString):
         """

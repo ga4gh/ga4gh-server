@@ -12,6 +12,7 @@ import unittest
 import avro.schema
 
 import ga4gh.protocol as protocol
+import ga4gh.avrotools as avrotools
 import tests.utils as utils
 
 
@@ -38,8 +39,6 @@ class SchemaTest(unittest.TestCase):
         "float": 0.25
     }
 
-    instanceGenerator = utils.InstanceGenerator()
-
     def getAvroSchema(self, cls, fieldName):
         """
         Returns the avro schema for the specified field.
@@ -57,9 +56,11 @@ class SchemaTest(unittest.TestCase):
         fieldType = self.getAvroSchema(cls, fieldName).type
         if isinstance(fieldType, avro.schema.UnionSchema):
             types = list(t.type for t in fieldType.schemas)
-            val = self.instanceGenerator.generateInvalidateTypeValue(*types)
+            val = avrotools.RandomInstanceGenerator.generateInvalidTypeValue(
+                *types)
         else:
-            val = self.instanceGenerator.generateInvalidateTypeValue(fieldType)
+            val = avrotools.RandomInstanceGenerator.generateInvalidTypeValue(
+                fieldType)
         return val
 
     def getTypicalValue(self, cls, fieldName):
@@ -118,10 +119,8 @@ class SchemaTest(unittest.TestCase):
         """
         Returns a typical instance of the specified protocol class.
         """
-        instance = cls()
-        for field in cls.schema.fields:
-            setattr(instance, field.name,
-                    self.getTypicalValue(cls, field.name))
+        tool = avrotools.SchemaTool(cls)
+        instance = tool.getTypicalInstance()
         return instance
 
     def getRandomInstance(self, cls):
@@ -129,23 +128,16 @@ class SchemaTest(unittest.TestCase):
         Returns an instance of the specified class with randomly generated
         values conforming to the schema.
         """
-        return self.instanceGenerator.generateInstance(cls)
-
-    def setRequiredValues(self, instance):
-        """
-        Sets the required values in the specified instance to typical values.
-        """
-        for key in instance.__slots__:
-            if key in instance.requiredFields:
-                value = self.getTypicalValue(type(instance), key)
-                setattr(instance, key, value)
+        tool = avrotools.SchemaTool(cls)
+        instance = tool.getRandomInstance()
+        return instance
 
     def getDefaultInstance(self, cls):
         """
         Returns a new instance with the required values set.
         """
-        instance = cls()
-        self.setRequiredValues(instance)
+        tool = avrotools.SchemaTool(cls)
+        instance = tool.getDefaultInstance()
         return instance
 
 
