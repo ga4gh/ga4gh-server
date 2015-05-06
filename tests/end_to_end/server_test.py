@@ -53,3 +53,34 @@ class ServerTest(unittest.TestCase):
         except subprocess.CalledProcessError as error:
             self.server.printDebugInfo()
             raise error
+
+
+class RemoteServerTest(ServerTest):
+    """
+    A test that uses both the ga4gh server and a remote server
+    that serves data files
+    """
+    def otherSetup(self):
+        remoteDataDir = self.getRemoteDataDir()
+        self.remoteServer = server.RemoteServerForTesting(remoteDataDir)
+        self.remoteServer.start()
+
+    def otherTeardown(self):
+        self.remoteServer.shutdown()
+
+    def otherExceptionHandling(self):
+        self.remoteServer.printDebugInfo()
+
+    def getRemoteDataDir(self):
+        raise NotImplementedError("Must subclass RemoteServerTest")
+
+    def getServer(self):
+        raise NotImplementedError("Must subclass RemoteServerTest")
+
+    def runClientCmd(self, client, command):
+        try:
+            client.runCommand(command)
+        except subprocess.CalledProcessError as error:
+            self.server.printDebugInfo()
+            self.remoteServer.printDebugInfo()
+            raise error

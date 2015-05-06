@@ -195,6 +195,21 @@ python server_dev.py
         print(self.getConfig())
 
 
+class Ga4ghServerForTestingDataSource(Ga4ghServerForTesting):
+    """
+    A test server that reads data from a data source
+    """
+    def __init__(self, dataDir):
+        super(Ga4ghServerForTestingDataSource, self).__init__()
+        self.dataDir = dataDir
+
+    def getConfig(self):
+        config = """
+DATA_SOURCE = "{}"
+DEBUG = True""".format(self.dataDir)
+        return config
+
+
 class RemoteServerForTesting(ServerForTesting):
     """
     Simulates a remote server on localhost
