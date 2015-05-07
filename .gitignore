@@ -95,7 +95,7 @@ coverage.xml
 *.log
 
 # Sphinx documentation
-docs/source/ga4ghDocsBuild/
+docs/source/_build/
 
 # PyBuilder
 target/
