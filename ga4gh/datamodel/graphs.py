@@ -13,6 +13,14 @@ import ga4gh.protocol as protocol
 import ga4gh.sidegraph as sidegraph
 
 
+def makeLimits(start=0,end=None):
+    limits = None
+    if type(end) is int:
+        if start >= 0 and end > start:
+            limits = (start, end)
+    return limits
+
+
 class GraphDatabase(object):
 
     """
@@ -28,7 +36,56 @@ class GraphDatabase(object):
         # TODO: Throw exception if directory contains != 1 database file
         self._dbFile = glob.glob(os.path.join(self._dataDir, "*.db"))[0]
 
-    def getReferences(self):
+    def searchReferences(self):
+        """
+        """
+        # TODO: Refactor into non-iterator SQL backed convention.
+        pass
+
+    def searchReferenceSets(self, md5checksums=None, accessions=None,
+                            assemblyId=None, start=0, end=None):
+        """
+        Returns a list of dictionaries holding reference set info.
+        """
+        # TODO: For now, just returns all reference sets, ignores arguments.
+        limits = makeLimits(start, end)
+        with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
+            count = sg.searchReferenceSetsCount()
+            referenceSetDicts = sg.searchReferenceSets(limits)
+        referenceSets = []
+        for rsdict in referenceSetDicts:
+            referenceSet = protocol.ReferenceSet()
+            referenceSet.id = rsdict['ID']
+            referenceSet.includedReferenceSets = []
+            referenceSets.append(referenceSet)
+        return (count, referenceSets)
+
+    def searchVariantSets(self, datasetIds=None, start=0, end=None):
+        """
+        Returns a list of dictionaries holding variant set info.
+        """
+        # TODO: For now, just returns all variant sets, ignores arguments.
+        limits = makeLimits(start, end)
+        with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
+            count = sg.searchVariantSetsCount()
+            variantSetDicts = sg.searchVariantSets(limits)
+        variantSets = []
+        for vsdict in variantSetDicts:
+            variantSet = protocol.VariantSet()
+            variantSet.id = vsdict['ID']
+            variantSet.datasetId = ""  # TODO
+            variantSet.referenceSetId = ""
+            variantSet.metadata = []
+            variantSets.append(variantSet)
+        return (count, variantSets)
+
+    def searchVariants(self):
+        """
+        """
+        # TODO: Refactor into non-iterator SQL backed convention.
+        pass
+
+    def searchCallSets(self):
         """
         """
         # TODO: Refactor into non-iterator SQL backed convention.
@@ -47,10 +104,7 @@ class GraphDatabase(object):
         does not follow iterator convention.
         """
         # TODO search by referenceSetId and variantSetId not yet implemented.
-        limits = None
-        if type(end) is int:
-            if start >= 0 and end > start:
-                limits = (start, end)
+        limits = makeLimits(start, end)
         count = 0
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchSequencesCount()
@@ -77,11 +131,7 @@ class GraphDatabase(object):
         """
         # TODO search by referenceSetId and variantSetId not yet implemented.
         # not to mention by sequenceId!
-        limits = None
-        if type(end) is int:
-            if start >= 0 and end > start:
-                limits = (start, end)
-
+        limits = makeLimits(start, end)
         count = 0
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchJoinsCount()

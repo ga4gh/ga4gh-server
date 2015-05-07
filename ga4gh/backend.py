@@ -348,41 +348,10 @@ class AbstractBackend(object):
         The page token in this case is the start position
         to limit the query by.
         """
-        self.startProfile()
-        requestClass = protocol.SearchSequencesRequest
-        responseClass = protocol.SearchSequencesResponse
-        try:
-            requestDict = json.loads(requestStr)
-        except ValueError:
-            raise exceptions.InvalidJsonException(requestStr)
-        self.validateRequest(requestDict, requestClass)
-        request = requestClass.fromJsonDict(requestDict)
-        if request.pageSize is None:
-            request.pageSize = self._defaultPageSize
-        if request.pageSize <= 0:
-            raise exceptions.BadPageSizeException(request.pageSize)
-
-        start = int(request.pageToken) if request.pageToken is not None else 0
-        end = start + int(request.pageSize)
-
-        # TODO implement search by referenceSetId and variantSetId
-        (count, protocolObjects) = self._graphs.searchSequences(
-            start=start, end=end)
-        responseBuilder = protocol.SearchResponseBuilder(
-            responseClass, request.pageSize, self._maxResponseLength)
-
-        for i, protocolObject in enumerate(protocolObjects):
-            responseBuilder.addValue(protocolObject)
-            if responseBuilder.isFull():
-                break
-        npt = start + i + 1
-        nextPageToken = npt if npt < count else None
-        responseBuilder.setNextPageToken(nextPageToken)
-
-        responseString = responseBuilder.getJsonString()
-        self.validateResponse(responseString, responseClass)
-        self.endProfile()
-        return responseString
+        return self.runSearchRequest(
+            requestStr, protocol.SearchSequencesRequest,
+            protocol.SearchSequencesResponse,
+            self.sequencesGenerator)
 
     def searchJoins(self, requestStr):
         """
@@ -390,40 +359,10 @@ class AbstractBackend(object):
         The page token in this case is the start position
         to limit the query by.
         """
-        self.startProfile()
-        requestClass = protocol.SearchJoinsRequest
-        responseClass = protocol.SearchJoinsResponse
-        try:
-            requestDict = json.loads(requestStr)
-        except ValueError:
-            raise exceptions.InvalidJsonException(requestStr)
-        self.validateRequest(requestDict, requestClass)
-        request = requestClass.fromJsonDict(requestDict)
-        if request.pageSize is None:
-            request.pageSize = self._defaultPageSize
-        if request.pageSize <= 0:
-            raise exceptions.BadPageSizeException(request.pageSize)
-
-        start = int(request.pageToken) if request.pageToken is not None else 0
-        end = start + int(request.pageSize)
-        # TODO implement search by referenceSetId and variantSetId
-        (count, protocolObjects) = self._graphs.searchJoins(
-            start=start, end=end)
-        responseBuilder = protocol.SearchResponseBuilder(
-            responseClass, request.pageSize, self._maxResponseLength)
-
-        for i, protocolObject in enumerate(protocolObjects):
-            responseBuilder.addValue(protocolObject)
-            if responseBuilder.isFull():
-                break
-        npt = start + i + 1
-        nextPageToken = npt if npt < count else None
-        responseBuilder.setNextPageToken(nextPageToken)
-
-        responseString = responseBuilder.getJsonString()
-        self.validateResponse(responseString, responseClass)
-        self.endProfile()
-        return responseString
+        return self.runSearchRequest(
+            requestStr, protocol.SearchJoinsRequest,
+            protocol.SearchJoinsResponse,
+            self.joinsGenerator)
 
     def getSequenceBases(self, sequenceId, start, end):
         self.startProfile()
@@ -665,3 +604,55 @@ class GraphBackend(AbstractBackend):
         self._dataDir = dataDir
         graphDir = os.path.join(self._dataDir, "graphs")
         self._graphs = graphs.GraphDatabase(graphDir)
+
+        self.referenceSetsGenerator = self._graphs.searchReferenceSets
+        self.referencesGenerator = self._graphs.searchReferences
+        self.variantSetsGenerator = self._graphs.searchVariantSets
+        self.variantsGenerator = self._graphs.searchVariants
+        self.callSetsGenerator = self._graphs.searchCallSets
+        self.sequencesGenerator = self._graphs.searchSequences
+        self.joinsGenerator = self._graphs.searchJoins
+
+    def runSearchRequest(
+        self, requestStr, requestClass, responseClass, objectGenerator):
+        """
+        Overrides AbstractBackend's runSearchRequest.
+
+        For graph backends, the objectGenerator is a method in graphs.py
+        that returns (count, array of entityObjects)
+        where count is the TOTAL number of available entityObjects,
+        and the array of objects is of size requested by pagination or less
+        (if at or near end of the list).
+        """
+        self.startProfile()
+        try:
+            requestDict = json.loads(requestStr)
+        except ValueError:
+            raise exceptions.InvalidJsonException(requestStr)
+        self.validateRequest(requestDict, requestClass)
+        request = requestClass.fromJsonDict(requestDict)
+        if request.pageSize is None:
+            request.pageSize = self._defaultPageSize
+        if request.pageSize <= 0:
+            raise exceptions.BadPageSizeException(request.pageSize)
+
+        start = int(request.pageToken) if request.pageToken is not None else 0
+        end = start + int(request.pageSize)
+        # TODO implement other search fields
+        (count, protocolObjects) = objectGenerator(
+            start=start, end=end)
+        responseBuilder = protocol.SearchResponseBuilder(
+            responseClass, request.pageSize, self._maxResponseLength)
+
+        for i, protocolObject in enumerate(protocolObjects):
+            responseBuilder.addValue(protocolObject)
+            if responseBuilder.isFull():
+                break
+        npt = start + i + 1
+        nextPageToken = npt if npt < count else None
+        responseBuilder.setNextPageToken(nextPageToken)
+
+        responseString = responseBuilder.getJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
