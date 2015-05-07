@@ -643,7 +643,7 @@ class GraphBackend(AbstractBackend):
             start=start, end=end)
         responseBuilder = protocol.SearchResponseBuilder(
             responseClass, request.pageSize, self._maxResponseLength)
-
+        i = 0
         for i, protocolObject in enumerate(protocolObjects):
             responseBuilder.addValue(protocolObject)
             if responseBuilder.isFull():

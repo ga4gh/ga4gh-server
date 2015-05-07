@@ -50,6 +50,52 @@ class SideGraph(object):
     def __exit__(self, type, value, traceback):
         self._graphDb.close()
 
+    def searchReferenceSetsCount(self):
+        """
+        Returns the total number of results for a ReferenceSets search.
+        """
+        query = self._graphDb.execute("SELECT count(*) from ReferenceSet")
+        count = int(query.fetchone()[0])
+        return count
+
+    def searchReferenceSets(self, limits=None):
+        """
+        Returns an array of dictionaries, each one encoding key-value
+        information about a reference set.
+        Limits, if provided, need to be a pair of ints: (start,end)
+        end can be a value past the end of the resultset.
+        """
+        sql = """SELECT id FROM ReferenceSet ORDER BY ID"""
+        if limits is not None and len(limits) > 1:
+            start = int(limits[0])
+            end = int(limits[1])
+            sql += " LIMIT {}, {}".format(start, end)
+        query = self._graphDb.execute(sql)
+        return sqliteRows2dicts(query.fetchall())
+
+    def searchVariantSetsCount(self):
+        """
+        Returns the total number of results for a variant set search.
+        """
+        query = self._graphDb.execute("SELECT count(*) from VariantSet")
+        count = int(query.fetchone()[0])
+        return count
+
+    def searchVariantSets(self, limits=None):
+        """
+        Returns an array of dictionaries, each one encoding key-value
+        information about a variant set.
+        Limits, if provided, need to be a pair of ints: (start,end)
+        end can be a value past the end of the resultset.
+        """
+        sql = """SELECT id FROM VariantSet ORDER BY ID"""
+        if limits is not None and len(limits) > 1:
+            start = int(limits[0])
+            end = int(limits[1])
+            sql += " LIMIT {}, {}".format(start, end)
+        query = self._graphDb.execute(sql)
+        return sqliteRows2dicts(query.fetchall())
+
     def searchSequencesCount(self):
         """
         Returns the total number of results for a given sequences search.
