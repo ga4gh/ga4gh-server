@@ -476,15 +476,23 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         ret.append(buildMetadata(key="version", value=header.version))
         for formatKey, value in header.formats.items():
             if formatKey != "GT":
-                ret.append(buildMetadata(
-                    key="FORMAT.{}".format(value.name), type=value.type,
-                    number="{}".format(value.number)))
+                attrs = dict(value.header.attrs)
                 # NOTE: description is not currently implemented as a member
                 # of VariantMetadata in pysam/cbcf.pyx
+                description = attrs.get('Description', '').strip('"')
+                ret.append(buildMetadata(
+                    key="FORMAT.{}".format(value.name),
+                    type=value.type,
+                    number="{}".format(value.number),
+                    description=description))
         for infoKey, value in header.info.items():
-            ret.append(buildMetadata(
-                key="INFO.{}".format(value.name), type=value.type,
-                number="{}".format(value.number)))
+            attrs = dict(value.header.attrs)
             # NOTE: description is not currently implemented as a member
             # of VariantMetadata in pysam/cbcf.pyx
+            description = attrs.get('Description', '').strip('"')
+            ret.append(buildMetadata(
+                key="INFO.{}".format(value.name),
+                type=value.type,
+                number="{}".format(value.number),
+                description=description))
         return ret
