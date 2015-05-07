@@ -40,7 +40,7 @@ INSERT INTO Reference VALUES (3, 'chr3', date('now'), 5, 0, NULL, NULL, NULL, NU
 INSERT INTO Reference VALUES (4, 'chr1snp1', date('now'), 2, 0, NULL, NULL, NULL, NULL, NULL, 'FALSE');
 INSERT INTO Reference VALUES (5, 'chr2ins1', date('now'), 8, 0, NULL, NULL, NULL, NULL, NULL, 'FALSE');
 --
--- Bundle the abvove into a ReferenceSet. 
+-- Bundle the above into a ReferenceSet. 
 INSERT INTO ReferenceSet VALUES (1, NULL, NULL, 'normal', 'FALSE');
 
 INSERT INTO Reference_ReferenceSet_Join VALUES (1, 1);

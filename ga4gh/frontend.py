@@ -175,7 +175,7 @@ def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):
     elif dataSource == "__EMPTY__":
         theBackend = backend.EmptyBackend()
     else:
-        theBackend = backend.FileSystemBackend(dataSource)
+        theBackend = backend.GraphBackend(dataSource)
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])

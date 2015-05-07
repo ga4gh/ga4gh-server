@@ -14,6 +14,7 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel.reads as reads
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.references as references
 import ga4gh.datamodel.graphs as graphs
 
 
@@ -217,6 +218,8 @@ class AbstractBackend(object):
         self._readGroupSetIds = []
         self._readGroupIds = []
         self._readGroupIdMap = {}
+        self._referenceSetIdMap = {}
+        self._referenceSetIds = []
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
@@ -605,11 +608,9 @@ class SimulatedBackend(AbstractBackend):
 
 
 class FileSystemBackend(AbstractBackend):
-
     """
     A GA4GH backend backed by data on the file system
     """
-
     def __init__(self, dataDir):
         super(FileSystemBackend, self).__init__()
         self._dataDir = dataDir
@@ -624,9 +625,15 @@ class FileSystemBackend(AbstractBackend):
                     variants.HtslibVariantSet(variantSetId, relativePath)
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
-        # Graph References
-        graphDir = os.path.join(self._dataDir, "graphs")
-        self._graphs = graphs.GraphDatabase(graphDir)
+        # References
+        referenceSetDir = os.path.join(self._dataDir, "references")
+        for referenceSetId in os.listdir(referenceSetDir):
+            relativePath = os.path.join(referenceSetDir, referenceSetId)
+            if os.path.isdir(relativePath):
+                referenceSet = references.LinearReferenceSet(
+                    referenceSetId, relativePath)
+                self._referenceSetIdMap[referenceSetId] = referenceSet
+        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
 
         # Reads
         readGroupSetDir = os.path.join(self._dataDir, "reads")
@@ -640,3 +647,21 @@ class FileSystemBackend(AbstractBackend):
                     self._readGroupIdMap[readGroup.getId()] = readGroup
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
         self._readGroupIds = sorted(self._readGroupIdMap.keys())
+
+
+class GraphBackend(AbstractBackend):
+
+    """
+    A GA4GH backend backed by genome graphs 
+    as stored in an SQLite database
+
+    (see tests/data/graphs/graphSQL_v0xx.sql for the schema,
+    and tests/data/graphs/graphData_v0xx.sql for an example graphs
+    in this format)
+    """
+
+    def __init__(self, dataDir):
+        super(GraphBackend, self).__init__()
+        self._dataDir = dataDir
+        graphDir = os.path.join(self._dataDir, "graphs")
+        self._graphs = graphs.GraphDatabase(graphDir)

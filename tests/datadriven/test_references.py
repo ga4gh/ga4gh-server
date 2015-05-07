@@ -29,7 +29,7 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
     """
     Data drive test class for reference sets. Builds an alternative model of
     a reference set, and verifies that it is consistent with the model
-    built by the references.ReferenceSet object.
+    built by the references.LinearReferenceSet object.
     """
     def __init__(self, referenceSetId, baseDir):
         super(ReferenceSetTest, self).__init__(referenceSetId, baseDir)
