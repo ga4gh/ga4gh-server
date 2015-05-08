@@ -50,100 +50,63 @@ class SideGraph(object):
     def __exit__(self, type, value, traceback):
         self._graphDb.close()
 
+    def _countRows(self, tableName):
+        """
+        Returns the total number of rows in the named table.
+        """
+        # TODO ensure tableName is alphanumeric+_ only.
+        query = self._graphDb.execute(
+            "SELECT count(*) from {}".format(tableName))
+        return int(query.fetchone()[0])
+
+    def _getRowsAsDicts(self, tableName, limits=None):
+        """
+        Returns an array of dictionaries, each one encoding key-value
+        information about each row of the requested table.
+        Limits, if provided, need to be a pair of ints: (start,end)
+        end can be a value past the end of the resultset.
+
+        It is assumed that the table has an ID field that provides
+        a canonical ordering on the table's rows.
+        """
+        # TODO ensure tableName is alphanumeric+_ only.
+        sql = """SELECT * FROM {} ORDER BY ID""".format(tableName)
+        if limits is not None and len(limits) > 1:
+            start = int(limits[0])
+            end = int(limits[1])
+            sql += " LIMIT {}, {}".format(start, end)
+        query = self._graphDb.execute(sql)
+        return sqliteRows2dicts(query.fetchall())
+
     def searchReferenceSetsCount(self):
-        """
-        Returns the total number of results for a ReferenceSets search.
-        """
-        query = self._graphDb.execute("SELECT count(*) from ReferenceSet")
-        count = int(query.fetchone()[0])
-        return count
+        return self._countRows("ReferenceSet")
 
     def searchReferenceSets(self, limits=None):
-        """
-        Returns an array of dictionaries, each one encoding key-value
-        information about a reference set.
-        Limits, if provided, need to be a pair of ints: (start,end)
-        end can be a value past the end of the resultset.
-        """
-        sql = """SELECT id FROM ReferenceSet ORDER BY ID"""
-        if limits is not None and len(limits) > 1:
-            start = int(limits[0])
-            end = int(limits[1])
-            sql += " LIMIT {}, {}".format(start, end)
-        query = self._graphDb.execute(sql)
-        return sqliteRows2dicts(query.fetchall())
+        return self._getRowsAsDicts("ReferenceSet", limits)
+
+    def searchReferencesCount(self):
+        return self._countRows("Reference")
+
+    def searchReferences(self, limits=None):
+        return self._getRowsAsDicts("Reference", limits)
 
     def searchVariantSetsCount(self):
-        """
-        Returns the total number of results for a variant set search.
-        """
-        query = self._graphDb.execute("SELECT count(*) from VariantSet")
-        count = int(query.fetchone()[0])
-        return count
+        return self._countRows("VariantSet")
 
     def searchVariantSets(self, limits=None):
-        """
-        Returns an array of dictionaries, each one encoding key-value
-        information about a variant set.
-        Limits, if provided, need to be a pair of ints: (start,end)
-        end can be a value past the end of the resultset.
-        """
-        sql = """SELECT id FROM VariantSet ORDER BY ID"""
-        if limits is not None and len(limits) > 1:
-            start = int(limits[0])
-            end = int(limits[1])
-            sql += " LIMIT {}, {}".format(start, end)
-        query = self._graphDb.execute(sql)
-        return sqliteRows2dicts(query.fetchall())
+        return self._getRowsAsDicts("VariantSet", limits)
 
     def searchSequencesCount(self):
-        """
-        Returns the total number of results for a given sequences search.
-        """
-        query = self._graphDb.execute("SELECT count(*) from Sequence")
-        count = int(query.fetchone()[0])
-        return count
+        return self._countRows("Sequence")
 
     def searchSequences(self, limits=None):
-        """
-        Returns an array of dictionaries, each one encoding key-value
-        information about a sequence.
-        Limits, if provided, need to be a pair of ints: (start,end)
-        end can be a value past the end of the resultset.
-        """
-        sql = """SELECT id, length FROM Sequence ORDER BY ID"""
-        if limits is not None and len(limits) > 1:
-            start = int(limits[0])
-            end = int(limits[1])
-            sql += " LIMIT {}, {}".format(start, end)
-        query = self._graphDb.execute(sql)
-        return sqliteRows2dicts(query.fetchall())
+        return self._getRowsAsDicts("Sequence", limits)
 
     def searchJoinsCount(self):
-        """
-        Returns the total number of results for a given joins search.
-        """
-        cursor = self._graphDb.cursor()
-        query = cursor.execute("SELECT count(*) from GraphJoin")
-        count = int(query.fetchone()[0])
-        return count
+        return self._countRows("GraphJoin")
 
     def searchJoins(self, limits=None):
-        """
-        Returns an array of dictionaries, each one encoding key-value
-        information about a sequence.
-        Limits, if provided, need to be a pair of ints: (start,end)
-        end can be a value past the end of the resultset.
-        """
-        sql = """SELECT side1SequenceID, side1Position, side1StrandIsForward,
-            side2SequenceID, side2Position, side2StrandIsForward
-            FROM GraphJoin ORDER BY ID"""
-        if limits is not None and len(limits) > 1:
-            start = int(limits[0])
-            end = int(limits[1])
-            sql += " LIMIT {}, {}".format(start, end)
-        query = self._graphDb.execute(sql)
-        return sqliteRows2dicts(query.fetchall())
+        return self._getRowsAsDicts("GraphJoin", limits)
 
     def getSequenceBases(self, id, start=0, end=None):
         """
@@ -187,6 +150,13 @@ class SideGraph(object):
         """.format(alleleID)
         query = self._graphDb.execute(sql)
         return sqliteRows2dicts(query.fetchall())
+
+#
+# Everything below this point is legacy 
+# from my first implementation attempt
+#
+# It will all need to be changed significantly.
+#
 
     def getRefNames(self):
         """
