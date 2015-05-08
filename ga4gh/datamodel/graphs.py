@@ -36,11 +36,19 @@ class GraphDatabase(object):
         # TODO: Throw exception if directory contains != 1 database file
         self._dbFile = glob.glob(os.path.join(self._dataDir, "*.db"))[0]
 
-    def searchReferences(self):
+    def searchReferences(self, referenceSetId=None, start=0, end=None):
         """
         """
-        # TODO: Refactor into non-iterator SQL backed convention.
-        pass
+        limits = makeLimits(start, end)
+        with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
+            count = sg.searchReferencesCount()
+            referenceDicts = sg.searchReferences(limits)
+        references = []
+        for rdict in referenceDicts:
+            reference = protocol.Reference()
+            reference.id = rdict['ID']
+            references.append(reference)
+        return (count, references)
 
     def searchReferenceSets(self, md5checksums=None, accessions=None,
                             assemblyId=None, start=0, end=None):
