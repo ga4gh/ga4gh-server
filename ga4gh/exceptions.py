@@ -128,10 +128,9 @@ class RequestValidationFailureException(BadRequestException):
         messageString = (
             "Request '{}' is not a valid instance of {}; "
             "invalid fields: {}")
+        schemaTool = avrotools.SchemaTool(requestClass)
         self.message = messageString.format(
-            jsonDict, requestClass,
-            avrotools.ValidationTool.getInvalidFields(
-                requestClass, jsonDict))
+            jsonDict, requestClass, schemaTool.getInvalidFields(jsonDict))
 
 
 class BadReadsSearchRequestBothRefs(BadRequestException):
@@ -315,10 +314,9 @@ class ResponseValidationFailureException(ServerError):
     A validation of the response data failed
     """
     def __init__(self, jsonDict, requestClass):
+        schemaTool = avrotools.SchemaTool(requestClass)
         self.message = (
             "Response '{}' is not a valid instance of {}. "
             "Invalid fields: {} "
             "Please file a bug report.".format(
-                jsonDict, requestClass,
-                avrotools.ValidationTool.getInvalidFields(
-                    requestClass, jsonDict)))
+                jsonDict, requestClass, schemaTool.getInvalidFields(jsonDict)))
