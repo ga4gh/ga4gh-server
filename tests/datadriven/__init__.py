@@ -262,8 +262,8 @@ class DataDrivenTest(TestCase):
         of the specified protocol class.
         """
         if not protocolClass.validate(jsonDict):
-            invalidFields = avrotools.ValidationTool.getInvalidFields(
-                protocolClass, jsonDict)
+            tool = avrotools.SchemaTool(protocolClass)
+            invalidFields = tool.getInvalidFields(jsonDict)
             message = (
                 "{} is not a valid instance of {}. "
                 "Invalid fields = {}".format(
