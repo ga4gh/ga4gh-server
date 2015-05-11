@@ -13,7 +13,7 @@ import ga4gh.protocol as protocol
 import ga4gh.sidegraph as sidegraph
 
 
-def makeLimits(start=0,end=None):
+def makeLimits(start=0, end=None):
     limits = None
     if type(end) is int:
         if start >= 0 and end > start:

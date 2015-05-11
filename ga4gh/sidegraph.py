@@ -152,7 +152,7 @@ class SideGraph(object):
         return sqliteRows2dicts(query.fetchall())
 
 #
-# Everything below this point is legacy 
+# Everything below this point is legacy
 # from my first implementation attempt
 #
 # It will all need to be changed significantly.
