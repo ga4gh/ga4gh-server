@@ -50,8 +50,8 @@ class TestFrontendErrors(unittest.TestCase):
         """
         Returns a valid instance of the specified class.
         """
-        tool = avrotools.SchemaTool(requestClass)
-        instance = tool.getTypicalInstance()
+        creator = avrotools.Creator(requestClass)
+        instance = creator.getTypicalInstance()
         return instance
 
     def assertRawRequestRaises(self, exceptionClass, url, requestString):

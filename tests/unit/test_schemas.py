@@ -53,15 +53,8 @@ class SchemaTest(unittest.TestCase):
         """
         Returns a value that should trigger a schema validation failure.
         """
-        fieldType = self.getAvroSchema(cls, fieldName).type
-        if isinstance(fieldType, avro.schema.UnionSchema):
-            types = list(t.type for t in fieldType.schemas)
-            val = avrotools.RandomInstanceGenerator.generateInvalidTypeValue(
-                *types)
-        else:
-            val = avrotools.RandomInstanceGenerator.generateInvalidTypeValue(
-                fieldType)
-        return val
+        value = avrotools.Creator(cls).getInvalidField(fieldName)
+        return value
 
     def getTypicalValue(self, cls, fieldName):
         """
@@ -119,7 +112,7 @@ class SchemaTest(unittest.TestCase):
         """
         Returns a typical instance of the specified protocol class.
         """
-        tool = avrotools.SchemaTool(cls)
+        tool = avrotools.Creator(cls)
         instance = tool.getTypicalInstance()
         return instance
 
@@ -128,7 +121,7 @@ class SchemaTest(unittest.TestCase):
         Returns an instance of the specified class with randomly generated
         values conforming to the schema.
         """
-        tool = avrotools.SchemaTool(cls)
+        tool = avrotools.Creator(cls)
         instance = tool.getRandomInstance()
         return instance
 
@@ -136,7 +129,7 @@ class SchemaTest(unittest.TestCase):
         """
         Returns a new instance with the required values set.
         """
-        tool = avrotools.SchemaTool(cls)
+        tool = avrotools.Creator(cls)
         instance = tool.getDefaultInstance()
         return instance
 
