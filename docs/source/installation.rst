@@ -168,13 +168,13 @@ If you already have a dataset on your machine, you can download and deploy the a
 
 .. code-block:: bash
 
-  $ docker run -e GA4GH_DATA_SOURCE=/data -v /my/ga4gh_data/:/data:ro -itd -p 8000:80 --name ga4gh_server afirth/ga4gh_apache_server:prod
+  $ docker run -e GA4GH_DATA_SOURCE=/data -v /my/ga4gh_data/:/data:ro -d -p 8000:80 --name ga4gh_server afirth/ga4gh-server:latest
 
 Replace ``/my/ga4gh_data/`` with the path to your data.
 
 This will:
 
-* pull the automatically built image from `Dockerhub <https://registry.hub.docker.com/u/afirth/ga4gh_server_apache/>`_
+* pull the automatically built image from `Dockerhub <https://registry.hub.docker.com/u/afirth/ga4gh-server/>`_
 * start an apache server running mod_wsgi on container port 80
 * mount your data read-only to the docker container 
 * assign a name to the container
@@ -188,13 +188,42 @@ If you do not have a dataset yet, you can deploy a container which includes the 
 
 .. code-block:: bash
 
-  $ docker run -itd -p 8000:80 --name ga4gh_demo afirth/ga4gh_server_apache:demo
+  $ docker run -d -p 8000:80 --name ga4gh_demo afirth/ga4gh-server:develop-demo
 
 This is identical to the production container, except that a copy of the demo data is included and appropriate defaults are set. 
 
+**Developing Client Code: Run a Client Container and a Server**
+
+In this example you run a server as a daemon in one container, and the client as an ephemeral instance in another container. 
+From the client, the server is accessible at ``http://server/``, and the ``/tmp/mydev`` directory is mounted at ``/app/mydev/``. Any changes you make to scripts in ``mydev`` will be reflected on the host and container and persist even after the container dies.
+
+.. code-block:: bash
+
+  #make a development dir and place the example client script in it
+  $ mkdir /tmp/mydev
+  $ curl https://raw.githubusercontent.com/ga4gh/server/develop/scripts/demo_example.py > /tmp/mydev/demo_example.py
+  $ chmod +x /tmp/mydev/demo_example.py
+
+  # start the server daemon
+  # assumes the demo data on host at /my/ga4gh_data
+  $ docker run -e GA4GH_DEBUG=True -e GA4GH_DATA_SOURCE=/data -v /my/ga4gh_data/:/data:ro -d --name ga4gh_server afirth/ga4gh-server:latest
+
+  # start the client and drop into a bash shell, with mydev/ mounted read/write
+  # --link adds a host entry for server, and --rm destroys the container when you exit
+  $ docker run -e GA4GH_DEBUG=True -v /tmp/mydev/:/app/mydev:rw -it --name ga4gh_client --link ga4gh_server:server --entrypoint=/bin/bash --rm afirth/ga4gh-server:latest
+
+  # call the client code script
+  root@md5:/app# ./mydev/demo_example.py
+
+  # call the command line client 
+  root@md5:/app# ga4gh_client variantsets-search http://server/current
+
+  #exit and destroy the client container
+  root@md5:/app# exit
+
 **Ports**
 
-This will run the docker container in the background, and translate calls from your host environment
+The ``-p 8000:80`` argument to ``docker run`` will run the docker container in the background, and translate calls from your host environment
 port 8000 to the docker container port 80. At that point you should be able to access it like a normal website, albeit on port 8000.
 Running in `boot2docker <http://boot2docker.io/>`_, you will need to forward the port from the boot2docker VM to the host.
 From a terminal on the host to forward traffic from localhost:8000 to the VM 8000 on OSX:
@@ -209,7 +238,7 @@ For more info on port forwarding see `the VirtualBox manual <https://www.virtual
 Advanced
 ++++++++
 
-If you want to build the images yourself, that is possible. The `afirth/ga4gh_server_apache repo <https://registry.hub.docker.com/u/afirth/ga4gh_server_apache/>`_
+If you want to build the images yourself, that is possible. The `afirth/ga4gh-server repo <https://registry.hub.docker.com/u/afirth/ga4gh-server/>`_
 builds automatically on new commits, so this is only needed if you want to modify the Dockerfiles, or build from a different source.
 
 The prod and demo builds are based off of `mod_wsgi-docker <https://github.com/GrahamDumpleton/mod_wsgi-docker>`_, a project from the author of mod_wsgi.
@@ -268,7 +297,7 @@ To enable DEBUG on your docker server, call docker run with ``-e GA4GH_DEBUG=Tru
 
 .. code-block:: bash
 
-  $ docker run -itd -p 8000:80 --name ga4gh_demo -e GA4GH_DEBUG=True afirth/ga4gh_server_apache:demo
+  $ docker run -itd -p 8000:80 --name ga4gh_demo -e GA4GH_DEBUG=True afirth/ga4gh-server:develop-demo
 
 This will set the environment variable which is read by config.py
 
