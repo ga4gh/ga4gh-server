@@ -474,17 +474,23 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         ret = []
         header = varFile.header
         ret.append(buildMetadata(key="version", value=header.version))
-        for formatKey, value in header.formats.items():
-            if formatKey != "GT":
-                ret.append(buildMetadata(
-                    key="FORMAT.{}".format(value.name), type=value.type,
-                    number="{}".format(value.number)))
-                # NOTE: description is not currently implemented as a member
-                # of VariantMetadata in pysam/cbcf.pyx
-        for infoKey, value in header.info.items():
-            ret.append(buildMetadata(
-                key="INFO.{}".format(value.name), type=value.type,
-                number="{}".format(value.number)))
-            # NOTE: description is not currently implemented as a member
-            # of VariantMetadata in pysam/cbcf.pyx
+        formats = header.formats.items()
+        infos = header.info.items()
+        # TODO: currently ALT field is not implemented through pysam
+        # NOTE: contigs field is different between vcf files,
+        # so it's not included in metadata
+        # NOTE: filters in not included in metadata unless needed
+        for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
+            for contentKey, value in content:
+                attrs = dict(value.header.attrs)
+                # TODO: refactor description at next pysam release
+                # since description will be implemented as a member of
+                # VariantMetadata
+                description = attrs.get('Description', '').strip('"')
+                key = "{0}.{1}".format(prefix, value.name)
+                if key != "FORMAT.GT":
+                    ret.append(buildMetadata(
+                        key=key, type=value.type,
+                        number="{}".format(value.number),
+                        description=description))
         return ret

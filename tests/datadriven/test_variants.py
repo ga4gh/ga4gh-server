@@ -329,23 +329,19 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self.assertEqual(metadata.value, self._vcfVersion)
 
         gtCounter = 0
-        for infoKey in self._infos.keys():
-            key = "INFO.{}".format(infoKey)
-            self.assertEqual(
-                keyMap[key].type, self._infos[infoKey].type)
-            self.assertEqual(keyMap[key].number, convertPyvcfNumber(
-                self._infos[infoKey].num))
-
-        for formatKey in self._formats.keys():
-            if formatKey == "GT":
-                gtCounter += 1
-            else:
-                key = "FORMAT.{}".format(formatKey)
-                self.assertEqual(
-                    keyMap[key].type, self._formats[formatKey].type)
-                self.assertEqual(keyMap[key].number, convertPyvcfNumber(
-                    self._formats[formatKey].num))
-
+        for prefix, content in [("FORMAT", self._formats),
+                                ("INFO", self._infos)]:
+            for contentKey in content.keys():
+                key = "{0}.{1}".format(prefix, contentKey)
+                if key == "FORMAT.GT":
+                    gtCounter += 1
+                else:
+                    self.assertEqual(
+                        keyMap[key].type, content[contentKey].type)
+                    self.assertEqual(keyMap[key].number, convertPyvcfNumber(
+                        content[contentKey].num))
+                    self.assertEqual(
+                        keyMap[key].description, content[contentKey].desc)
         testMetaLength = (
             1 + len(self._formats) + len(self._infos) - gtCounter)
         self.assertEqual(len(keyMap), testMetaLength)
