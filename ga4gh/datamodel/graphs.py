@@ -87,12 +87,6 @@ class GraphDatabase(object):
             variantSets.append(variantSet)
         return (count, variantSets)
 
-    def searchVariants(self):
-        """
-        """
-        # TODO: Refactor into non-iterator SQL backed convention.
-        pass
-
     def searchCallSets(self):
         """
         """

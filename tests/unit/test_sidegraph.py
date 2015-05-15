@@ -133,7 +133,7 @@ class TestCase(unittest.TestCase):
     @unittest.skip("not yet implemented")
     def getVariantSetIdForAllele(self):
         pass
-
+        
     def testGetJoins(self):
         expected = [
             {'side2Position': '0',
