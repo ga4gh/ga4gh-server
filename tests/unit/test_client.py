@@ -192,12 +192,13 @@ class TestRunRequest(unittest.TestCase):
 
             # verify requests.get called correctly
             url = "http://example.com/reference/anId"
-            params = {}
+            params = {'key': 'KEY'}
             httpMethod = 'GET'
             headers = {}
             data = None
             mockGet.assert_called_once_with(
-                httpMethod, url, params=params, data=data, headers=headers)
+                httpMethod, url, params=params, headers=headers, data=data,
+                verify=False)
 
     def testRunListRequest(self):
         # setup

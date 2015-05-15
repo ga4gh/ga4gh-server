@@ -167,6 +167,43 @@ using:
 
     (ga4gh-env) $ python ga4gh-demo.py
 
+---------
+With OIDC
+---------
+
+If we want authentication, we must have an OIDC authentication provider.
+One can be found in ``oidc-provider``, and run with the ``run.sh`` script.
+We can then use this with the ``LocalOidConfig`` server configuration. So:
+
+.. code-block:: bash
+
+  $ cd oidc-provider && ./run.sh
+
+In another shell on the same machine
+
+.. code-block:: bash
+
+  $ python server_dev.py -c LocalOidConfig
+
+Make sure you know the hostname the server is running on. It can be found with
+
+.. code-block:: bash
+
+  $ python -c 'import socket; print socket.gethostname()'
+
+With a web browser, go to ``https://<server hostname>:<server port>``. You may
+need to accept the security warnings as there are probably self-signed
+certificates. You will be taken through an authentication flow. When asked
+for a username and password, try ``upper`` and ``crust``. You will find
+yourself back at the ga4gh server homepage. On the homepage will be a
+'session token' This is the key to access the server with the client tool
+as follows:
+
+.. code-block:: bash
+
+    (ga4gh-env) $ ga4gh_client --key <key from homepage> variantsets-search --datasetIds XXXX https://localhost:8000/current
+    1kg-phase1
+    1kg-phase3
 
 **TODO**
 

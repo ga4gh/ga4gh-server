@@ -29,6 +29,7 @@ class TestFrontend(unittest.TestCase):
             "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
             # "DEBUG" : True
         }
+        reload(frontend)
         frontend.configure(
             baseConfig="TestConfig", extraConfig=config)
         cls.app = frontend.app.test_client()
@@ -320,3 +321,8 @@ class TestFrontend(unittest.TestCase):
             runRequest(self.app.get, path)
         for path in pathsNotImplementedPost:
             runRequest(self.app.post, path)
+
+    def testNoAuthentication(self):
+        path = '/oauth2callback'.format(
+            frontend.Version.currentString)
+        self.assertEqual(501, self.app.get(path).status_code)

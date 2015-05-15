@@ -41,6 +41,7 @@ class TestSimulatedStack(unittest.TestCase):
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP":
                 cls.numAlignmentsPerReadGroup,
         }
+        reload(frontend)
         frontend.configure(
             baseConfig="TestConfig", extraConfig=config)
         cls.app = frontend.app.test_client()

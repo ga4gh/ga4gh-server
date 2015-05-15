@@ -38,6 +38,13 @@ class DevelopmentConfig(BaseConfig):
     DEBUG = True
 
 
+class LocalOidConfig(DevelopmentConfig):
+    """
+    Configuration used for developing against a local OIDC server
+    """
+    OIDC_PROVIDER = "https://localhost:8443"
+
+
 class ProductionConfig(BaseConfig):
     """
     Configuration that is a good basis for production deployments.
@@ -48,6 +55,17 @@ class ProductionConfig(BaseConfig):
     DATA_SOURCE = None
 
 
+class GoogleOidcConfig(ProductionConfig):
+    """
+    Configuration that is a good basis for production deployments using
+    Google as the authentication provider.
+    """
+    OIDC_PROVIDER = "https://accounts.google.com"
+    OIDC_REDIRECT_URI = "https://localhost/oauth2callback"
+    OIDC_CLIENT_ID = "XXX"
+    OIDC_CLIENT_SECRET = "XXX"
+
+
 class TestConfig(BaseConfig):
     """
     Configuration used in frontend unit tests.
@@ -55,3 +73,12 @@ class TestConfig(BaseConfig):
     TESTING = True
     REQUEST_VALIDATION = True
     RESPONSE_VALIDATION = True
+
+
+class TestOidcConfig(TestConfig):
+    OIDC_PROVIDER = "https://accounts.example.com"
+    OIDC_CLIENT_ID = "XXX"
+    OIDC_CLIENT_SECRET = "XXX"
+    OIDC_AUTHZ_ENDPOINT = "https://accounts.example.com/auth"
+    OIDC_TOKEN_ENDPOINT = "https://accounts.example.com/token"
+    OIDC_TOKEN_REV_ENDPOINT = "https://accounts.example.com/revoke"
