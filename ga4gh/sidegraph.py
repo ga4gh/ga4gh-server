@@ -13,6 +13,13 @@ import logging
 
 import pyfasta
 import sqlite3
+import re
+
+
+# use as follows:
+# if findBadChars.search(input) is not None:
+# Handle error - invalid characters found
+findBadChars = re.compile('[\W]')
 
 
 def sqliteRows2dicts(sqliteRows):
@@ -54,12 +61,14 @@ class SideGraph(object):
         """
         Returns the total number of rows in the named table.
         """
-        # TODO ensure tableName is alphanumeric+_ only.
+        if findBadChars.search(tableName):
+            raise Exception("table name contains invalid characters")
+
         query = self._graphDb.execute(
             "SELECT count(*) from {}".format(tableName))
         return int(query.fetchone()[0])
 
-    def _getRowsAsDicts(self, tableName, limits=None):
+    def _getRowsAsDicts(self, tableName, limits=None, **whereClauses):
         """
         Returns an array of dictionaries, each one encoding key-value
         information about each row of the requested table.
@@ -69,14 +78,38 @@ class SideGraph(object):
         It is assumed that the table has an ID field that provides
         a canonical ordering on the table's rows.
         """
-        # TODO ensure tableName is alphanumeric+_ only.
-        sql = """SELECT * FROM {} ORDER BY ID""".format(tableName)
+        if findBadChars.search(tableName):
+            raise Exception("table name contains invalid characters")
+
+        sql = "SELECT * FROM {}".format(tableName)
+        if whereClauses is not None:
+            # wc is an array of "key ='value'" strings from whereClauses,
+            # with all entries where value = None removed.
+            wc = ["{} = '{}'".format(k, whereClauses[k])
+                  for k in whereClauses.keys()
+                  if whereClauses[k] is not None]
+            if len(wc) > 0:
+                sql += " WHERE " + " AND ".join(wc)
+        sql += " ORDER BY ID"
         if limits is not None and len(limits) > 1:
             start = int(limits[0])
             end = int(limits[1])
             sql += " LIMIT {}, {}".format(start, end)
         query = self._graphDb.execute(sql)
         return sqliteRows2dicts(query.fetchall())
+
+    def _getRowByIdAsDict(self, tableName, id):
+        """
+        Returns a single row of the table as a dictionary.
+        It's assumed that the table has ID as its primary key.
+        """
+        if findBadChars.search(tableName):
+            raise Exception("table name contains invalid characters")
+
+        sql = """SELECT * FROM {} WHERE ID='{}'""".format(
+            tableName, id)
+        query = self._graphDb.execute(sql)
+        return sqliteRows2dicts(query.fetchall())[0]
 
     def searchReferenceSetsCount(self):
         return self._countRows("ReferenceSet")
@@ -96,6 +129,18 @@ class SideGraph(object):
     def searchVariantSets(self, limits=None):
         return self._getRowsAsDicts("VariantSet", limits)
 
+    def searchCallSetsCount(self):
+        return self._countRows("CallSet")
+
+    def searchCallSets(self, limits=None):
+        callSets = self._getRowsAsDicts("CallSet", limits)
+        for cs in callSets:
+            sql = """SELECT variantSetID FROM VariantSet_CallSet_Join
+                WHERE callSetID='{}'""".format(cs["ID"])
+            cs["variantSetIds"] = \
+                [str(vs[0]) for vs in self._graphDb.execute(sql).fetchall()]
+        return callSets
+
     def searchSequencesCount(self):
         return self._countRows("Sequence")
 
@@ -114,6 +159,9 @@ class SideGraph(object):
         the start and end positions (or to end of string if end isn't
         specified).
         """
+        if findBadChars.search(str(id)):
+            raise Exception("ID contains invalid characters")
+
         sql = """SELECT F.fastaURI, S.sequenceRecordName
             FROM Sequence S
             JOIN FASTA F ON S.fastaID=F.ID
@@ -122,6 +170,7 @@ class SideGraph(object):
         fetched = query.fetchone()
         if fetched is None:
             raise Exception("sequence id not found")
+
         fastaURI, recordName = fetched
         fastaFileName = os.path.join(self._fastaDir,
                                      os.path.basename(fastaURI))
@@ -131,11 +180,10 @@ class SideGraph(object):
 
     def getVariantSetIdForAllele(self, alleleID):
         """
-        returns variantSet ID for a given allele ID
+        Returns variantSet ID for a given allele ID
         """
-        query = self._graphDb.execute("""SELECT variantSetID
-            FROM Allele where ID='{}'""".format(alleleID))
-        return str(query.fetchone()[0])
+        allele = self._getRowByIdAsDict("Allele", alleleID)
+        return allele["variantSetID"]
 
     def getAllelePathItems(self, alleleID):
         """
@@ -144,6 +192,9 @@ class SideGraph(object):
         where isForward is a boolean indicating if segment should
         be read in the formward (from 5' to 3') direction.
         """
+        if findBadChars.search(alleleID):
+            raise Exception("alleleID contains invalid characters")
+
         sql = """SELECT sequenceID, start, length, strandIsForward
             FROM AllelePathItem WHERE alleleID = '{}'
             ORDER BY pathItemIndex
@@ -151,109 +202,45 @@ class SideGraph(object):
         query = self._graphDb.execute(sql)
         return sqliteRows2dicts(query.fetchall())
 
-#
-# Everything below this point is legacy 
-# from my first implementation attempt
-#
-# It will all need to be changed significantly.
-#
+    def getSequence(self, id):
+        return self._getRowByIdAsDict("Sequence", id)
 
-    def getRefNames(self):
-        """
-        Return a list of all sequence names in the side graph,
-        ordered by reference ID.
-        """
-        query = self._graphDb.execute("SELECT name FROM Reference ORDER BY ID")
-        return list(map(lambda x: x[0], query.fetchall()))
-
-    def getReference(self, name):
-        """
-        Returns a dictionary containing all known info about
-        a particular reference. I'd make an object, but c'mon, this
-        is simple key-value data, people.
-        For now start=0 (TODO: Fix this as soon as SQL is fixed)
-        """
-        if name not in self.getRefNames():
-            return None
-
-        refSQL = """SELECT R.ID, R.name, S.sequenceRecordName, 0, S.length,
-                S.md5checksum, R.isDerived, R.sourceDivergence,
-                R.ncbiTaxonID
-            FROM Reference R
-            JOIN Sequence S ON R.sequenceID=S.ID
-            WHERE R.name = '{}'
-            ORDER BY R.ID
-            LIMIT {}, {}
-            """.format(name)
-        r = {}
-        (referenceId,
-            r['name'],
-            r['sequenceId'],
-            r['start'],
-            r['length'],
-            r['md5checksum'],
-            r['isDerived'],
-            r['sourceDivergence'],
-            r['ncbiTaxonId']) = self._graphDb.execute(refSQL).fetchone()
-
-        # add the list of source accessions from a separate table
-        accSQL = """SELECT accessionID FROM ReferenceAccession
-            WHERE referenceID={}
-            """.format(referenceId)
-        acc = self._graphDb.execute(accSQL).fetchall()
-        r['sourceAccessions'] = [] if len(acc) == 0\
-            else [a[0] for a in acc]
-        return r
-
-    def getJoins(self, refName=None, start=0, end=None):
+    def getJoins(self, seqId, start=0, end=None):
         """
         Return a list of all joins in the side graph adjacent to
-        reference sequence 'refName' in the specified interval.
-        If no refname is given, return all joins.
+        the requested sequence in the specified interval.
         If no valid interval is given,
-        return all joins adjacent to that reference.
-        Specifying an interval without a refName is invalid and
-        should result in an error.
-        Each join is represented by a tuple:
-        (seq1Name, seq1Pos, seq1Strand, seq2Name, seq2Pos, seq2Strand)
-        where strand is 'F' for forward, 'R' for reverse.
+        return all joins adjacent to the sequence.
+        Joins are returned as a list of dicts, as usual.
         """
-        joinsSQL = """SELECT L.name, J.side1position,
-                (CASE J.side1StrandIsForward WHEN 'TRUE'
-                    THEN 'F' ELSE 'R' END),
-                   R.name, J.side2position,
-                (CASE J.side2StrandIsForward WHEN 'TRUE'
-                    THEN 'F' ELSE 'R' END)
-            FROM GraphJoin J
-            JOIN Reference L ON J.side1SequenceID = L.sequenceID
-            JOIN Reference R ON J.side2SequenceID = R.sequenceID
-            """
-        if refName is not None and refName in self.getRefNames():
-            if type(end) is int:
-                joinsSQL += """
-                    fWHERE (L.name = '{0}'
-                        AND J.side1Position >= {1}
-                        AND J.side1Position <= {2})
-                    OR (R.name = '{0}'
-                        AND J.side2Position >= {1}
-                        AND J.side2Position <= {2})
-                    """.format(refName, start, end)
-            else:  # only constrain start, which defaults to 0
-                joinsSQL += """
-                    WHERE (L.name = '{0}' AND J.side1Position >= {1})
-                    OR (R.name = '{0}' AND J.side2Position >= {1})
-                    """.format(refName, start)
-        joinsCursor = self._graphDb.cursor()
-        return joinsCursor.execute(joinsSQL).fetchall()
+        if findBadChars.search(str(seqId)):
+            raise Exception("input contains invalid characters")
 
-    def getSubgraph(self, refName=None, seedPosition=0, radius=0):
+        joinsSQL = "SELECT * from GraphJoin"
+        if type(end) is int:
+            joinsSQL += """
+                WHERE (side1SequenceId = '{0}'
+                    AND side1Position >= {1}
+                    AND side1Position <= {2})
+                OR (side2SequenceId = '{0}'
+                    AND side2Position >= {1}
+                    AND side2Position <= {2})
+                """.format(seqId, int(start), int(end))
+        else:  # only constrain start, which defaults to 0
+            joinsSQL += """
+                WHERE (side1SequenceId = '{0}' AND side1Position >= {1})
+                OR (side2SequenceId = '{0}' AND side2Position >= {1})
+                """.format(seqId, int(start))
+
+        return sqliteRows2dicts(self._graphDb.execute(joinsSQL).fetchall())
+
+    def getSubgraph(self, seedSequenceId, seedPosition=0, radius=0,
+                    referenceSet=None):
         """
         Returns the sepcified subgraph as a pair, (segments, joins)
-        with segment represented by a triple (name, start, length)
-        and each join a sextuple as returned by yieldJoins above.
-
-        TODO: Current algorithm is recursive. This may overflow the stack
-        with large subgraphs.
+        with segment represented by a dictionary with keys
+        (id, start, length) and each join as a typical join dictionary.
+        Note: All segments returned are assumed forward strand.
         """
         # recursive method: segments, joins are arrays of already
         # traversed elements. Assume half-open interval notation.
@@ -262,23 +249,45 @@ class SideGraph(object):
         # segments and joins are the arrays being built up,
         # and joinTaken, when not null, is the join just traversed
         # to arrive at the current position.
-        segments = []
-        joins = []
+        def _getSubgraph(seqId, pos, fwd, rad,
+                         segments, joins,
+                         joinTaken=None):
+            """
+            Inputs:
+            First three describe current search "head":
+              seqId - sequence id
+              pos - position on sequence
+              fwd - boolean: if true, walking forward, else reverse.
+            Next two describe accumulated lists of segments and joins
+              found so far.
+            Final argument encodes which join was taken to arrive
+              at current position, if any.
 
-        def _getSubgraph(refName, pos, rad, segments, joins, joinTaken):
-            self._logger.debug("at {}:{}~{} via {}".format(
-                refName, pos, rad, joinTaken))
-            if rad <= 0 or refName not in self.getRefNames():
-                self._logger.debug("not a valid leaf")
+            Nothing is returned: it's a tail recursion, with the result
+            being built up in the segments and joins arrays passed in.
+            """
+            self._logger.debug("at {}:{}{}{} via {}".format(
+                seqId, pos, ">" if fwd else "<", rad, joinTaken))
+            if rad <= 0:
+                self._logger.debug("radius reached zero")
                 return
             if joinTaken is not None and joinTaken not in joins:
                 joins.append(joinTaken)
 
-            ref = self.getReference(refName)
-            refStart = ref.get("start", 0)
-            refLength = ref.get("length")
-            segStart = max(refStart, pos - rad)
-            segEnd = min(refStart + refLength, pos + rad)
+            # TODO - limit to reference set logic
+            # There is nothing stopping a reference from sourcing several
+            # noncontiguous segments of the same sequence, but it would
+            # SERIOUSLY screw up any implementation of the below. I suggest
+            # we disallow that by fiat.
+            sq = self.getSequence(seqId)
+            sqStart = 0
+            sqLength = int(sq["length"])
+            segStart = segEnd = pos
+            if fwd:
+                segEnd = min(sqLength, pos + rad)
+            else:
+                segStart = max(sqStart, pos - rad)
+
             # the specified segment to explore may already be inside
             # another segment, or may partially intersect one or more
             # other segments. In the former case, just exit.
@@ -287,9 +296,9 @@ class SideGraph(object):
             intersectingSegs = []
             unionStart = segStart
             unionEnd = segEnd
-            for i, (irefName, iStart, iLen) in enumerate(segments):
+            for i, (iSeqId, iStart, iLen) in enumerate(segments):
                 iEnd = iStart + iLen
-                if refName == irefName:
+                if seqId == iSeqId:
                     if iStart <= segStart and iEnd >= segEnd:
                         self._logger.debug("nothing new here")
                         return
@@ -302,34 +311,53 @@ class SideGraph(object):
             for i in intersectingSegs[::-1]:
                 del segments[i]
             # replace them with the unified new segment
-            segments.append((refName, unionStart, unionEnd - unionStart))
+            segments.append((seqId, unionStart, unionEnd - unionStart))
             # With segments adjusted, now explore joins...
-            foundJoins = self.getJoins(refName, segStart, segEnd)
+            foundJoins = self.getJoins(seqId, segStart, segEnd)
+            self._logger.debug("looking for joins on seqId {} {}-{}".format(
+                seqId, segStart, segEnd))
+
             for foundJoin in foundJoins:
                 self._logger.debug("found join {}".format(foundJoin))
-                (lref, lpos, lstr, rref, rpos, rstr) = foundJoin
-                # make the recursive calls to follow all joins
-                # encountered on the segment
-                if lref == refName:
-                    if lstr == 'R' and pos <= lpos <= segEnd:
-                        _getSubgraph(
-                            rref, rpos, rad - lpos + pos - 1, segments, joins,
-                            foundJoin)
-                    elif lstr == 'F' and segStart <= lpos <= pos:
-                        _getSubgraph(
-                            rref, rpos, rad - pos + lpos - 1, segments, joins,
-                            foundJoin)
-                if rref == refName:
-                    if rstr == 'R' and pos <= rpos <= segEnd:
-                        _getSubgraph(
-                            lref, lpos, rad - rpos + pos - 1, segments, joins,
-                            foundJoin)
-                    elif rstr == 'F' and segStart <= rpos <= pos:
-                        _getSubgraph(
-                            lref, lpos, rad - pos + rpos - 1, segments, joins,
-                            foundJoin)
-            self._logger.debug("end {}:{}~{} via {}".format(
-                refName, pos, rad, joinTaken))
+                seq1 = foundJoin["side1SequenceID"]
+                pos1 = int(foundJoin["side1Position"])
+                fwd1 = foundJoin["side1StrandIsForward"] == "TRUE"
 
-        _getSubgraph(refName, seedPosition, radius, segments, joins, None)
+                seq2 = foundJoin["side2SequenceID"]
+                pos2 = int(foundJoin["side2Position"])
+                fwd2 = foundJoin["side2StrandIsForward"] == "TRUE"
+                # make recursive calls to follow all joins
+                # encountered on the segment
+                if seq1 == seqId and segStart <= pos1 <= segEnd:
+                    # check 1st side of join
+                    if fwd and not fwd1:  # walking forward
+                        _getSubgraph(
+                            seq2, pos2, fwd2, rad - pos1 + pos - 1,
+                            segments, joins, foundJoin)
+                    elif not fwd and fwd1:  # walking reverse
+                        _getSubgraph(
+                            seq2, pos2, fwd2, rad - pos + pos1 - 1,
+                            segments, joins, foundJoin)
+                if seq2 == seqId and segStart <= pos2 <= segEnd:
+                    # check 2nd side of join
+                    if fwd and not fwd2:  # walking forward
+                        _getSubgraph(
+                            seq1, pos1, fwd1, rad - pos2 + pos - 1,
+                            segments, joins, foundJoin)
+                    elif not fwd and fwd2:  # walking reverse
+                        _getSubgraph(
+                            seq1, pos1, fwd1, rad - pos + pos2 - 1,
+                            segments, joins, foundJoin)
+            self._logger.debug("end {}:{}~{} via {}".format(
+                seqId, pos, rad, joinTaken))
+
+        segments = []
+        joins = []
+        # recursively fill out subgraph walking forward
+        _getSubgraph(str(seedSequenceId), seedPosition, True,
+                     radius, segments, joins, None)
+        # and back
+        _getSubgraph(str(seedSequenceId), seedPosition, False,
+                     radius, segments, joins, None)
+
         return (segments, joins)

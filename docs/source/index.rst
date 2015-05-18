@@ -19,5 +19,7 @@ Contents
     installation
     configuration
     development
+    
+    graphs
 
 

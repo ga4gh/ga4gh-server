@@ -591,7 +591,7 @@ class FileSystemBackend(AbstractBackend):
 class GraphBackend(AbstractBackend):
 
     """
-    A GA4GH backend backed by genome graphs 
+    A GA4GH backend backed by genome graphs
     as stored in an SQLite database
 
     (see tests/data/graphs/graphSQL_v0xx.sql for the schema,
@@ -608,13 +608,13 @@ class GraphBackend(AbstractBackend):
         self.referenceSetsGenerator = self._graphs.searchReferenceSets
         self.referencesGenerator = self._graphs.searchReferences
         self.variantSetsGenerator = self._graphs.searchVariantSets
-        self.variantsGenerator = self._graphs.searchVariants
+        # self.allelesGenerator = self._graphs.searchAlleles
         self.callSetsGenerator = self._graphs.searchCallSets
         self.sequencesGenerator = self._graphs.searchSequences
         self.joinsGenerator = self._graphs.searchJoins
 
     def runSearchRequest(
-        self, requestStr, requestClass, responseClass, objectGenerator):
+            self, requestStr, requestClass, responseClass, objectGenerator):
         """
         Overrides AbstractBackend's runSearchRequest.
 
