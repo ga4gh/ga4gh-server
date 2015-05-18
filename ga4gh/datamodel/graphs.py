@@ -87,11 +87,23 @@ class GraphDatabase(object):
             variantSets.append(variantSet)
         return (count, variantSets)
 
-    def searchCallSets(self):
+    def searchCallSets(self, datasetIds=None, start=0, end=None):
         """
         """
-        # TODO: Refactor into non-iterator SQL backed convention.
-        pass
+        # TODO: For now, just returns all variant sets, ignores arguments.
+        limits = makeLimits(start, end)
+        with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
+            count = sg.searchCallSetsCount()
+            callSetDicts = sg.searchCallSets(limits)
+        callSets = []
+        for vsdict in callSetDicts:
+            callSet = protocol.CallSet()
+            callSet.id = vsdict['ID']
+            callSet.sampleId =  vsdict['sampleID']
+            callSet.variantSetIds = vsdict['variantSetIds']
+            callSet.metadata = []
+            callSets.append(callSet)
+        return (count, callSets)
 
     def searchSequences(self, referenceSetId=None, variantSetId=None,
                         start=0, end=None):
@@ -199,3 +211,14 @@ class GraphDatabase(object):
             ret.path.segments = map(self.makeSegment,
                                     sg.getAllelePathItems(alleleId))
         return ret
+
+    def extractSubgraph(self, seedSequenceId, seedPosition, radius):
+        """
+        Takes a starting (seed) position on a sequence and a radius to
+        define a subgraph of all bases and joins reachable by walking 
+        radius bases (over all allowed joins) from the seed position.
+
+        Returns a pair of arrays: the first of GA4GH-formatted segments,
+        the second of GA4GH-formatted joins, which together comprise
+        the requested subgraph. 
+        """

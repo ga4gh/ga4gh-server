@@ -127,6 +127,18 @@ class SideGraph(object):
     def searchVariantSets(self, limits=None):
         return self._getRowsAsDicts("VariantSet", limits)
 
+    def searchCallSetsCount(self):
+        return self._countRows("CallSet")
+
+    def searchCallSets(self, limits=None):
+        callSets = self._getRowsAsDicts("CallSet", limits)
+        for cs in callSets:
+            sql = """SELECT variantSetID FROM VariantSet_CallSet_Join 
+                WHERE callSetID='{}'""".format(cs["ID"])
+            cs["variantSetIds"] = \
+                [str(vs[0]) for vs in self._graphDb.execute(sql).fetchall()]
+        return callSets
+
     def searchSequencesCount(self):
         return self._countRows("Sequence")
 
@@ -168,12 +180,8 @@ class SideGraph(object):
         """
         Returns variantSet ID for a given allele ID
         """
-        if findBadChars.search(str(alleleID)):
-            raise Exception("alleleID contains invalid characters")
-
-        query = self._graphDb.execute("""SELECT variantSetID
-            FROM Allele where ID='{}'""".format(alleleID))
-        return str(query.fetchone()[0])
+        allele = self._getRowByIdAsDict("Allele", alleleID)
+        return allele["variantSetID"]
 
     def getAllelePathItems(self, alleleID):
         """

@@ -506,7 +506,7 @@ class SearchCallSetsRunner(AbstractSearchRunner):
         self._setRequest(request, args)
 
     def run(self):
-        self._run(self._httpClient.searchCallSets, 'id')
+        self._run(self._httpClient.searchCallSets)
 
 
 class SearchReadsRunner(AbstractSearchRunner):
