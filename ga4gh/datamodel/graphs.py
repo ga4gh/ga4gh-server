@@ -99,7 +99,7 @@ class GraphDatabase(object):
         for vsdict in callSetDicts:
             callSet = protocol.CallSet()
             callSet.id = vsdict['ID']
-            callSet.sampleId =  vsdict['sampleID']
+            callSet.sampleId = vsdict['sampleID']
             callSet.variantSetIds = vsdict['variantSetIds']
             callSet.metadata = []
             callSets.append(callSet)
@@ -215,10 +215,10 @@ class GraphDatabase(object):
     def extractSubgraph(self, seedSequenceId, seedPosition, radius):
         """
         Takes a starting (seed) position on a sequence and a radius to
-        define a subgraph of all bases and joins reachable by walking 
+        define a subgraph of all bases and joins reachable by walking
         radius bases (over all allowed joins) from the seed position.
 
         Returns a pair of arrays: the first of GA4GH-formatted segments,
         the second of GA4GH-formatted joins, which together comprise
-        the requested subgraph. 
+        the requested subgraph.
         """

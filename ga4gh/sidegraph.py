@@ -16,10 +16,11 @@ import sqlite3
 import re
 
 
-# use as follows: 
+# use as follows:
 # if findBadChars.search(input) is not None:
-#     # Handle error - invalid characters found
+# Handle error - invalid characters found
 findBadChars = re.compile('[\W]')
+
 
 def sqliteRows2dicts(sqliteRows):
     """
@@ -27,6 +28,7 @@ def sqliteRows2dicts(sqliteRows):
     into an array of simple dicts.
     """
     return map(lambda r: dict(zip(r.keys(), map(str, r))), sqliteRows)
+
 
 class SideGraph(object):
 
@@ -81,12 +83,12 @@ class SideGraph(object):
 
         sql = "SELECT * FROM {}".format(tableName)
         if whereClauses is not None:
-            # wc is an array of "key ='value'" strings from whereClauses, 
+            # wc is an array of "key ='value'" strings from whereClauses,
             # with all entries where value = None removed.
-            wc = ["{} = '{}'".format(k, whereClauses[k])\
-                for k in whereClauses.keys()\
-                if whereClauses[k] is not None]
-            if len(wc)>0:
+            wc = ["{} = '{}'".format(k, whereClauses[k])
+                  for k in whereClauses.keys()
+                  if whereClauses[k] is not None]
+            if len(wc) > 0:
                 sql += " WHERE " + " AND ".join(wc)
         sql += " ORDER BY ID"
         if limits is not None and len(limits) > 1:
@@ -133,7 +135,7 @@ class SideGraph(object):
     def searchCallSets(self, limits=None):
         callSets = self._getRowsAsDicts("CallSet", limits)
         for cs in callSets:
-            sql = """SELECT variantSetID FROM VariantSet_CallSet_Join 
+            sql = """SELECT variantSetID FROM VariantSet_CallSet_Join
                 WHERE callSetID='{}'""".format(cs["ID"])
             cs["variantSetIds"] = \
                 [str(vs[0]) for vs in self._graphDb.execute(sql).fetchall()]
@@ -232,8 +234,8 @@ class SideGraph(object):
 
         return sqliteRows2dicts(self._graphDb.execute(joinsSQL).fetchall())
 
-    def getSubgraph(self, seedSequenceId, seedPosition=0, radius=0, 
-            referenceSet=None):
+    def getSubgraph(self, seedSequenceId, seedPosition=0, radius=0,
+                    referenceSet=None):
         """
         Returns the sepcified subgraph as a pair, (segments, joins)
         with segment represented by a dictionary with keys
@@ -247,11 +249,11 @@ class SideGraph(object):
         # segments and joins are the arrays being built up,
         # and joinTaken, when not null, is the join just traversed
         # to arrive at the current position.
-        def _getSubgraph(seqId, pos, fwd, rad, 
-                segments, joins, 
-                joinTaken=None):
+        def _getSubgraph(seqId, pos, fwd, rad,
+                         segments, joins,
+                         joinTaken=None):
             """
-            Inputs: 
+            Inputs:
             First three describe current search "head":
               seqId - sequence id
               pos - position on sequence
@@ -274,12 +276,12 @@ class SideGraph(object):
 
             # TODO - limit to reference set logic
             # There is nothing stopping a reference from sourcing several
-            # noncontiguous segments of the same sequence, but it would 
+            # noncontiguous segments of the same sequence, but it would
             # SERIOUSLY screw up any implementation of the below. I suggest
             # we disallow that by fiat.
             sq = self.getSequence(seqId)
             sqStart = 0
-            sqLength= int(sq["length"])
+            sqLength = int(sq["length"])
             segStart = segEnd = pos
             if fwd:
                 segEnd = min(sqLength, pos + rad)
@@ -326,25 +328,25 @@ class SideGraph(object):
                 fwd2 = foundJoin["side2StrandIsForward"] == "TRUE"
                 # make recursive calls to follow all joins
                 # encountered on the segment
-                if seq1 == seqId and segStart <= pos1 <= segEnd:  
+                if seq1 == seqId and segStart <= pos1 <= segEnd:
                     # check 1st side of join
                     if fwd and not fwd1:  # walking forward
                         _getSubgraph(
-                            seq2, pos2, fwd2, rad - pos1 + pos - 1, 
+                            seq2, pos2, fwd2, rad - pos1 + pos - 1,
                             segments, joins, foundJoin)
-                    elif not fwd and fwd1:  # walking reverse 
+                    elif not fwd and fwd1:  # walking reverse
                         _getSubgraph(
-                            seq2, pos2, fwd2, rad - pos + pos1 - 1, 
+                            seq2, pos2, fwd2, rad - pos + pos1 - 1,
                             segments, joins, foundJoin)
-                if seq2 == seqId and segStart <= pos2 <= segEnd:   
+                if seq2 == seqId and segStart <= pos2 <= segEnd:
                     # check 2nd side of join
                     if fwd and not fwd2:  # walking forward
                         _getSubgraph(
-                            seq1, pos1, fwd1, rad - pos2 + pos - 1, 
+                            seq1, pos1, fwd1, rad - pos2 + pos - 1,
                             segments, joins, foundJoin)
                     elif not fwd and fwd2:  # walking reverse
                         _getSubgraph(
-                            seq1, pos1, fwd1, rad - pos + pos2 - 1, 
+                            seq1, pos1, fwd1, rad - pos + pos2 - 1,
                             segments, joins, foundJoin)
             self._logger.debug("end {}:{}~{} via {}".format(
                 seqId, pos, rad, joinTaken))
@@ -352,10 +354,10 @@ class SideGraph(object):
         segments = []
         joins = []
         # recursively fill out subgraph walking forward
-        _getSubgraph(str(seedSequenceId), seedPosition, True, 
-                radius, segments, joins, None)
+        _getSubgraph(str(seedSequenceId), seedPosition, True,
+                     radius, segments, joins, None)
         # and back
-        _getSubgraph(str(seedSequenceId), seedPosition, False, 
-                radius, segments, joins, None)
+        _getSubgraph(str(seedSequenceId), seedPosition, False,
+                     radius, segments, joins, None)
 
         return (segments, joins)
