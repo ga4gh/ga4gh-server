@@ -342,6 +342,16 @@ class AbstractBackend(object):
             protocol.SearchCallSetsResponse,
             self.callSetsGenerator)
 
+    def searchAlleleCalls(self, request):
+        """
+        Returns a SearchAlleleCallsResponse for the specified
+        SearchAlleleCallsRequest Object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchAlleleCallsRequest,
+            protocol.SearchAlleleCallsResponse,
+            self.alleleCallsGenerator)
+
     def searchSequences(self, requestStr):
         """
         Returns a SearchSequencesResponse object.
@@ -608,7 +618,7 @@ class GraphBackend(AbstractBackend):
         self.referenceSetsGenerator = self._graphs.searchReferenceSets
         self.referencesGenerator = self._graphs.searchReferences
         self.variantSetsGenerator = self._graphs.searchVariantSets
-        # self.allelesGenerator = self._graphs.searchAlleles
+        self.alleleCallsGenerator = self._graphs.searchAlleleCalls
         self.callSetsGenerator = self._graphs.searchCallSets
         self.sequencesGenerator = self._graphs.searchSequences
         self.joinsGenerator = self._graphs.searchJoins

@@ -271,6 +271,14 @@ class HttpClient(object):
         return self.runSearchRequest(
             protocolRequest, "callsets", protocol.SearchCallSetsResponse)
 
+
+    def searchAlleleCalls(self, protocolRequest):
+        """
+        Returns an iterator over the AlleleCalls from the server
+        """
+        return self.runSearchRequest(
+            protocolRequest, "allelecalls", protocol.SearchAlleleCallsResponse)
+
     def searchReadGroupSets(self, protocolRequest):
         """
         Returns an iterator over the ReadGroupSets from the server

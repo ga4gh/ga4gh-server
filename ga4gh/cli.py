@@ -119,6 +119,12 @@ class RequestFactory(object):
         request.name = self.args.name
         return request
 
+    def createSearchAlleleCallsRequest(self):
+        request = protocol.SearchAlleleCallsRequest()
+        # setCommaSeparatedAttribute(request, self.args, 'alleleIds')
+        # setCommaSeparatedAttribute(request, self.args, 'callSetIds')
+        return request
+
     def createSearchReadsRequest(self):
         request = protocol.SearchReadsRequest()
         if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
@@ -509,6 +515,19 @@ class SearchCallSetsRunner(AbstractSearchRunner):
         self._run(self._httpClient.searchCallSets)
 
 
+class SearchAlleleCallsRunner(AbstractSearchRunner):
+    """
+    Runner class for the callsets/search method
+    """
+    def __init__(self, args):
+        super(SearchAlleleCallsRunner, self).__init__(args)
+        request = RequestFactory(args).createSearchAlleleCallsRequest()
+        self._setRequest(request, args)
+
+    def run(self):
+        self._run(self._httpClient.searchAlleleCalls)
+
+
 class SearchReadsRunner(AbstractSearchRunner):
     """
     Runner class for the reads/search method
@@ -859,6 +878,17 @@ def addCallsetsSearchParser(subparsers):
     return parser
 
 
+def addAlleleCallsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "allelecalls-search",
+        description="Search for allele calls",
+        help="Search for allele calls")
+    parser.set_defaults(runner=SearchAlleleCallsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
 def addReadsSearchParser(subparsers):
     parser = subparsers.add_parser(
         "reads-search",
@@ -932,6 +962,7 @@ def client_main(parser=None):
     addSequencesGetBasesParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
     addCallsetsSearchParser(subparsers)
+    addAlleleCallsSearchParser(subparsers)
     addReadsSearchParser(subparsers)
     addReferenceSetsGetParser(subparsers)
     addReferencesGetParser(subparsers)

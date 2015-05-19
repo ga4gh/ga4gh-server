@@ -96,14 +96,31 @@ class GraphDatabase(object):
             count = sg.searchCallSetsCount()
             callSetDicts = sg.searchCallSets(limits)
         callSets = []
-        for vsdict in callSetDicts:
+        for csdict in callSetDicts:
             callSet = protocol.CallSet()
-            callSet.id = vsdict['ID']
-            callSet.sampleId = vsdict['sampleID']
-            callSet.variantSetIds = vsdict['variantSetIds']
+            callSet.id = csdict['ID']
+            callSet.sampleId = csdict['sampleID']
+            callSet.variantSetIds = csdict['variantSetIds']
             callSet.metadata = []
             callSets.append(callSet)
         return (count, callSets)
+
+    def searchAlleleCalls(self, alleleId=None,
+            callSetId=None, variantSet=None, start=0, end=None):
+        limits = makeLimits(start, end)
+        with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
+            count = sg.searchAlleleCallsCount(
+                alleleId=alleleId, callSetId=callSetId, variantSet=variantSet)
+            alleleCallsDicts = sg.searchAlleleCalls(limits=limits,
+                alleleId=alleleId, callSetId=callSetId, variantSet=variantSet)
+        alleleCalls = []
+        for ac in alleleCallsDicts:
+            alleleCall = protocol.AlleleCall()
+            alleleCall.callSetId = ac['callSetID']
+            alleleCall.alleleId = ac['alleleID']
+            alleleCall.totalCopies = ac['ploidy']
+            alleleCalls.append(alleleCall)
+        return (count, alleleCalls)
 
     def searchSequences(self, referenceSetId=None, variantSetId=None,
                         start=0, end=None):
