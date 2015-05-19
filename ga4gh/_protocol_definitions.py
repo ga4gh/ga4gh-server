@@ -11,7 +11,7 @@ from protocol import SearchResponse
 
 import avro.schema
 
-version = '0.6.0567b29a'
+version = '.6.1'
 
 
 class Allele(ProtocolElement):
@@ -1150,31 +1150,22 @@ class Feature(ProtocolElement):
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Feature",
 "fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
 "type": {"items": "string", "type": "array"}, "name": "parentIds"},
-{"doc": "", "type": "string", "name": "featureSetId"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Path", "fields":
-[{"default": [], "doc": "", "type": {"items": {"doc": "", "type":
-"record", "name": "Segment", "fields": [{"doc": "", "type": {"doc":
-"", "type": "record", "name": "Side", "fields": [{"doc": "", "type":
-{"doc": "", "type": "record", "name": "Position", "fields":
-[{"default": null, "doc": "", "type": ["null", "string"], "name":
-"sequenceId"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceName"}, {"doc": "", "type": "long",
-"name": "position"}]}, "name": "base"}, {"doc": "", "type":
-{"symbols": ["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum",
-"name": "Strand"}, "name": "strand"}]}, "name": "start"}, {"doc": "",
-"type": "long", "name": "length"}]}, "type": "array"}, "name":
-"segments"}]}, "name": "path"}, {"doc": "", "type": {"doc": "",
-"type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
-"type": "string", "name": "ontologySource"}, {"doc": "", "type":
-"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "featureType"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Attributes", "fields":
-[{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
-"type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
-"type": "string", "name": "database"}, {"doc": "", "type": "string",
-"name": "identifier"}, {"doc": "", "type": "string", "name":
-"version"}]}, "OntologyTerm"], "type": "array"}, "type": "map"},
-"name": "vals"}]}, "name": "attributes"}], "doc": ""}
+{"doc": "", "type": "string", "name": "featureSetId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "referenceName"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"start"}, {"default": null, "doc": "", "type": ["null", "long"],
+"name": "end"}, {"doc": "", "type": {"doc": "", "type": "record",
+"name": "OntologyTerm", "fields": [{"doc": "", "type": "string",
+"name": "ontologySource"}, {"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}]}, "name": "featureType"}, {"doc": "", "type": {"doc":
+"", "type": "record", "name": "Attributes", "fields": [{"default": {},
+"type": {"values": {"items": ["string", {"doc": "", "type": "record",
+"name": "ExternalIdentifier", "fields": [{"doc": "", "type": "string",
+"name": "database"}, {"doc": "", "type": "string", "name":
+"identifier"}, {"doc": "", "type": "string", "name": "version"}]},
+"OntologyTerm"], "type": "array"}, "type": "map"}, "name": "vals"}]},
+"name": "attributes"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1183,7 +1174,6 @@ class Feature(ProtocolElement):
         "featureType",
         "id",
         "parentIds",
-        "path",
     ])
 
     @classmethod
@@ -1191,7 +1181,6 @@ class Feature(ProtocolElement):
         embeddedTypes = {
             'attributes': Attributes,
             'featureType': OntologyTerm,
-            'path': Path,
         }
         return fieldName in embeddedTypes
 
@@ -1200,23 +1189,24 @@ class Feature(ProtocolElement):
         embeddedTypes = {
             'attributes': Attributes,
             'featureType': OntologyTerm,
-            'path': Path,
         }
 
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'attributes', 'featureSetId', 'featureType', 'id',
-        'parentIds', 'path'
+        'attributes', 'end', 'featureSetId', 'featureType', 'id',
+        'parentIds', 'referenceName', 'start'
     ]
 
     def __init__(self):
         self.attributes = None
+        self.end = None
         self.featureSetId = None
         self.featureType = None
         self.id = None
         self.parentIds = None
-        self.path = None
+        self.referenceName = None
+        self.start = None
 
 
 class FeatureSet(ProtocolElement):
@@ -3314,36 +3304,28 @@ class SearchFeaturesRequest(SearchRequest):
 {"items": "string", "type": "array"}, "name": "featureSetIds"},
 {"default": [], "doc": "", "type": {"items": "string", "type":
 "array"}, "name": "parentIds"}, {"default": null, "doc": "", "type":
-["null", {"namespace": "org.ga4gh.models", "type": "record", "name":
-"Path", "fields": [{"default": [], "doc": "", "type": {"items":
-{"doc": "", "type": "record", "name": "Segment", "fields": [{"doc":
-"", "type": {"doc": "", "type": "record", "name": "Side", "fields":
-[{"doc": "", "type": {"doc": "", "type": "record", "name": "Position",
-"fields": [{"default": null, "doc": "", "type": ["null", "string"],
-"name": "sequenceId"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceName"}, {"doc": "", "type": "long",
-"name": "position"}]}, "name": "base"}, {"doc": "", "type":
-{"symbols": ["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum",
-"name": "Strand"}, "name": "strand"}]}, "name": "start"}, {"doc": "",
-"type": "long", "name": "length"}]}, "type": "array"}, "name":
-"segments"}], "doc": ""}], "name": "range"}, {"default": [], "doc":
-"", "type": {"items": {"namespace": "org.ga4gh.models", "type":
-"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "ontologySource"}, {"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}], "doc": ""}, "type": "array"}, "name":
-"features"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "pageToken"}], "doc": ""}
+["null", "string"], "name": "referenceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceId"}, {"doc": "",
+"type": "long", "name": "start"}, {"doc": "", "type": "long", "name":
+"end"}, {"default": [], "doc": "", "type": {"items": {"namespace":
+"org.ga4gh.models", "type": "record", "name": "OntologyTerm",
+"fields": [{"doc": "", "type": "string", "name": "ontologySource"},
+{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "name"}], "doc": ""}, "type":
+"array"}, "name": "features"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([])
+    requiredFields = set([
+        "end",
+        "start",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
         embeddedTypes = {
             'features': OntologyTerm,
-            'range': Path,
         }
         return fieldName in embeddedTypes
 
@@ -3351,23 +3333,25 @@ class SearchFeaturesRequest(SearchRequest):
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {
             'features': OntologyTerm,
-            'range': Path,
         }
 
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'featureSetIds', 'features', 'pageSize', 'pageToken',
-        'parentIds', 'range'
+        'end', 'featureSetIds', 'features', 'pageSize', 'pageToken',
+        'parentIds', 'referenceId', 'referenceName', 'start'
     ]
 
     def __init__(self):
+        self.end = None
         self.featureSetIds = []
         self.features = []
         self.pageSize = None
         self.pageToken = None
         self.parentIds = []
-        self.range = None
+        self.referenceId = None
+        self.referenceName = None
+        self.start = None
 
 
 class SearchFeaturesResponse(SearchResponse):
@@ -3382,30 +3366,21 @@ class SearchFeaturesResponse(SearchResponse):
 "name": "Feature", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"doc": "", "type": {"items": "string", "type": "array"},
 "name": "parentIds"}, {"doc": "", "type": "string", "name":
-"featureSetId"}, {"doc": "", "type": {"doc": "", "type": "record",
-"name": "Path", "fields": [{"default": [], "doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "Segment", "fields":
-[{"doc": "", "type": {"doc": "", "type": "record", "name": "Side",
-"fields": [{"doc": "", "type": {"doc": "", "type": "record", "name":
-"Position", "fields": [{"default": null, "doc": "", "type": ["null",
-"string"], "name": "sequenceId"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "referenceName"}, {"doc": "", "type":
-"long", "name": "position"}]}, "name": "base"}, {"doc": "", "type":
-{"symbols": ["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum",
-"name": "Strand"}, "name": "strand"}]}, "name": "start"}, {"doc": "",
-"type": "long", "name": "length"}]}, "type": "array"}, "name":
-"segments"}]}, "name": "path"}, {"doc": "", "type": {"doc": "",
-"type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
-"type": "string", "name": "ontologySource"}, {"doc": "", "type":
-"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "featureType"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Attributes", "fields":
-[{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
-"type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
-"type": "string", "name": "database"}, {"doc": "", "type": "string",
-"name": "identifier"}, {"doc": "", "type": "string", "name":
-"version"}]}, "OntologyTerm"], "type": "array"}, "type": "map"},
-"name": "vals"}]}, "name": "attributes"}], "doc": ""}, "type":
+"featureSetId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "referenceName"}, {"default": null, "doc": "",
+"type": ["null", "long"], "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "long"], "name": "end"}, {"doc": "", "type":
+{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
+[{"doc": "", "type": "string", "name": "ontologySource"}, {"doc": "",
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}]}, "name": "featureType"}, {"doc":
+"", "type": {"doc": "", "type": "record", "name": "Attributes",
+"fields": [{"default": {}, "type": {"values": {"items": ["string",
+{"doc": "", "type": "record", "name": "ExternalIdentifier", "fields":
+[{"doc": "", "type": "string", "name": "database"}, {"doc": "",
+"type": "string", "name": "identifier"}, {"doc": "", "type": "string",
+"name": "version"}]}, "OntologyTerm"], "type": "array"}, "type":
+"map"}, "name": "vals"}]}, "name": "attributes"}], "doc": ""}, "type":
 "array"}, "name": "features"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "nextPageToken"}], "doc": ""}
 """
@@ -4933,47 +4908,35 @@ class Wiggle(ProtocolElement):
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Wiggle",
-"fields": [{"doc": "", "type": {"doc": "", "type": "record", "name":
-"Path", "fields": [{"default": [], "doc": "", "type": {"items":
-{"doc": "", "type": "record", "name": "Segment", "fields": [{"doc":
-"", "type": {"doc": "", "type": "record", "name": "Side", "fields":
-[{"doc": "", "type": {"doc": "", "type": "record", "name": "Position",
 "fields": [{"default": null, "doc": "", "type": ["null", "string"],
-"name": "sequenceId"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceName"}, {"doc": "", "type": "long",
-"name": "position"}]}, "name": "base"}, {"doc": "", "type":
-{"symbols": ["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum",
-"name": "Strand"}, "name": "strand"}]}, "name": "start"}, {"doc": "",
-"type": "long", "name": "length"}]}, "type": "array"}, "name":
-"segments"}]}, "name": "path"}, {"default": [], "doc": "", "type":
-{"items": "float", "type": "array"}, "name": "values"}], "doc": ""}
+"name": "referenceName"}, {"default": null, "doc": "", "type":
+["null", "long"], "name": "start"}, {"default": null, "doc": "",
+"type": ["null", "long"], "name": "end"}, {"default": [], "doc": "",
+"type": {"items": "float", "type": "array"}, "name": "values"}],
+"doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([
-        "path",
-    ])
+    requiredFields = set([])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'path': Path,
-        }
+        embeddedTypes = {}
         return fieldName in embeddedTypes
 
     @classmethod
     def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'path': Path,
-        }
+        embeddedTypes = {}
 
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'path', 'values'
+        'end', 'referenceName', 'start', 'values'
     ]
 
     def __init__(self):
-        self.path = None
+        self.end = None
+        self.referenceName = None
+        self.start = None
         self.values = []
 
 
@@ -5028,58 +4991,58 @@ class WiggleSet(ProtocolElement):
 postMethods = \
     [('/allelecalls/search',
       SearchAlleleCallsRequest,
-      SearchAlleleCallsResponse),
+      SearchVariantSetsResponse),
      ('/alleles/search',
       SearchAllelesRequest,
-      SearchAllelesResponse),
+      SearchReadGroupSetsResponse),
      ('/analyses/search',
       SearchAnalysesRequest,
-      SearchAnalysesResponse),
+      SearchSequencesResponse),
      ('/calls/search',
       SearchCallsRequest,
-      SearchCallsResponse),
+      SearchSamplesResponse),
      ('/callsets/search',
       SearchCallSetsRequest,
-      SearchCallSetsResponse),
+      SearchExperimentsResponse),
      ('/datasets/search',
       SearchDatasetsRequest,
-      SearchDatasetsResponse),
+      SearchAlleleCallsResponse),
      ('/experiments/search',
       SearchExperimentsRequest,
-      SearchExperimentsResponse),
+      SearchAllelesResponse),
      ('/features/search',
       SearchFeaturesRequest,
-      SearchFeaturesResponse),
+      SearchIndividualsResponse),
      ('/individualgroups/search',
       SearchIndividualGroupsRequest,
-      SearchIndividualGroupsResponse),
+      SearchReadsResponse),
      ('/individuals/search',
       SearchIndividualsRequest,
-      SearchIndividualsResponse),
+      SearchFeaturesResponse),
      ('/joins/search',
       SearchJoinsRequest,
-      SearchJoinsResponse),
+      SearchIndividualGroupsResponse),
      ('/readgroupsets/search',
       SearchReadGroupSetsRequest,
-      SearchReadGroupSetsResponse),
+      SearchCallSetsResponse),
      ('/reads/search',
       SearchReadsRequest,
-      SearchReadsResponse),
+      SearchJoinsResponse),
      ('/references/search',
       SearchReferencesRequest,
-      SearchReferencesResponse),
+      SearchCallsResponse),
      ('/referencesets/search',
       SearchReferenceSetsRequest,
-      SearchReferenceSetsResponse),
+      SearchAnalysesResponse),
      ('/samples/search',
       SearchSamplesRequest,
-      SearchSamplesResponse),
+      SearchReferenceSetsResponse),
      ('/sequences/search',
       SearchSequencesRequest,
-      SearchSequencesResponse),
+      SearchDatasetsResponse),
      ('/variants/search',
       SearchVariantsRequest,
-      SearchVariantsResponse),
+      SearchReferencesResponse),
      ('/variantsets/search',
       SearchVariantSetsRequest,
-      SearchVariantSetsResponse)]
+      SearchVariantsResponse)]

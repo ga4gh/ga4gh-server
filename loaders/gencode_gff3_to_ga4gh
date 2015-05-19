@@ -1,0 +1,40 @@
+"""
+Convert GENCODE GFF3 files to GA4GH Avro/JOSN.
+"""
+
+import argparse
+import containers
+import uuid
+from ga4gh import gff3
+from ga4gh import protocol
+
+
+
+def parseArgs():
+    description = """Convert a GENCODE GFF3 file to GA4GH JSON.
+    GENCODE provide evidence-based human and mouse gene annotations
+    available from http://gencodegenes.org/
+    """
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("gencodeGff3", help="input GENCODE GFF3 input file")
+    parser.add_argument("seqAnnJson", help="GA4GH sequenceAnnotation format data")
+    return parser.parse_args()
+
+
+class Gff3ToGa4gh(object):
+    def __init__(self):
+        # allocates a new UUID on first access
+        self.featureIdUuidMap = containers.defaultdict(uuid.uuid1)
+        self.featureSetId = uuid.uuid1()
+
+    def 
+
+    def __convertFeature(self, gff3Feature):
+        gaFeature = 
+        
+def main():
+    args = parseArgs()
+    gff3Parser = gff3.Gff3Parser(args.gencodeGff3)
+    gff3Parser.parse()
+
+main()
