@@ -40,7 +40,7 @@ class TestSimulatedStack(unittest.TestCase):
         self.backend = frontend.app.backend
         self.variantSetIds = [
             variantSet.getId() for variantSet in
-            self.backend.getVariantSets()]
+            self.backend.getDataset().getVariantSets()]
 
     def sendJsonPostRequest(self, path, data):
         return self.app.post(

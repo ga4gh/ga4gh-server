@@ -142,13 +142,13 @@ class ServerStatus(object):
         """
         Returns the list of variant sets for this server.
         """
-        return app.backend.getVariantSets()
+        return app.backend.getDataset().getVariantSets()
 
     def getReadGroupSets(self):
         """
         Returns the list of ReadGroupSets for this server.
         """
-        return app.backend.getReadGroupSets()
+        return app.backend.getDataset().getReadGroupSets()
 
     def getReferenceSets(self):
         """

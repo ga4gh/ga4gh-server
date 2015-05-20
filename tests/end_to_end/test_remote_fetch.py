@@ -15,7 +15,7 @@ class RemoteServerTestReads(server_test.RemoteServerTest):
     Configures a RemoteServerTest subclass with read data
     """
     def getRemoteDataDir(self):
-        return "tests/data/reads/wgBam/"
+        return "tests/data/dataset1/reads/wgBam/"
 
     def getServer(self):
         dataDir = "tests/end_to_end/remoteTestDataReads"
@@ -47,7 +47,7 @@ class RemoteServerTestVariants(server_test.RemoteServerTest):
     Configures a RemoteServerTest subclass with variant data
     """
     def getRemoteDataDir(self):
-        return "tests/data/variants/1kgPhase1"
+        return "tests/data/dataset1/variants/1kgPhase1"
 
     def getServer(self):
         dataDir = "tests/end_to_end/remoteTestDataVariants"
