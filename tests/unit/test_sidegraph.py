@@ -191,5 +191,31 @@ class TestCase(unittest.TestCase):
         with sidegraph.SideGraph(self._db, self._files) as sg:
             self.assertEquals(sg.searchCallSets(), expected)
 
+    def testSearchAlleleCallsByAlleleId(self):
+        expected = [{'alleleID': '1',
+                     'ploidy': '1',
+                     'callSetID': '1'},
+                    {'alleleID': '1',
+                     'ploidy': '0',
+                     'callSetID': '2'},
+                    {'alleleID': '1',
+                     'ploidy': '0',
+                     'callSetID': '3'}]
+        with sidegraph.SideGraph(self._db, self._files) as sg:
+            self.assertEquals(sg.searchAlleleCalls(alleleId=1), expected)
+
+    def testSearchAlleleCallsByCallSetId(self):
+        expected = [{'alleleID': '1',
+                     'ploidy': '1',
+                     'callSetID': '1'},
+                    {'alleleID': '2',
+                     'ploidy': '0',
+                     'callSetID': '1'},
+                    {'alleleID': '3',
+                     'ploidy': '0',
+                     'callSetID': '1'}]
+        with sidegraph.SideGraph(self._db, self._files) as sg:
+            self.assertEquals(sg.searchAlleleCalls(callSetId=1), expected)
+
 if __name__ == '__main__':
     unittest.main()

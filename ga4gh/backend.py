@@ -342,47 +342,6 @@ class AbstractBackend(object):
             protocol.SearchCallSetsResponse,
             self.callSetsGenerator)
 
-    def searchSequences(self, requestStr):
-        """
-        Returns a SearchSequencesResponse object.
-        The page token in this case is the start position
-        to limit the query by.
-        """
-        return self.runSearchRequest(
-            requestStr, protocol.SearchSequencesRequest,
-            protocol.SearchSequencesResponse,
-            self.sequencesGenerator)
-
-    def searchJoins(self, requestStr):
-        """
-        Returns a SearchJoinsResponse object.
-        The page token in this case is the start position
-        to limit the query by.
-        """
-        return self.runSearchRequest(
-            requestStr, protocol.SearchJoinsRequest,
-            protocol.SearchJoinsResponse,
-            self.joinsGenerator)
-
-    def getSequenceBases(self, sequenceId, start, end):
-        self.startProfile()
-        responseClass = protocol.GetSequenceBasesResponse
-        protocolObject = self._graphs.getSequenceBases(
-            sequenceId, start, end)
-        responseString = protocolObject.toJsonString()
-        self.validateResponse(responseString, responseClass)
-        self.endProfile()
-        return responseString
-
-    def getAllele(self, alleleId):
-        self.startProfile()
-        responseClass = protocol.Allele
-        protocolObject = self._graphs.getAllele(alleleId)
-        responseString = protocolObject.toJsonString()
-        self.validateResponse(responseString, responseClass)
-        self.endProfile()
-        return responseString
-
     # Iterators over the data hieararchy
 
     def _topLevelObjectGenerator(self, request, idMap, idList):
@@ -547,9 +506,11 @@ class SimulatedBackend(AbstractBackend):
 
 
 class FileSystemBackend(AbstractBackend):
+
     """
     A GA4GH backend backed by data on the file system
     """
+
     def __init__(self, dataDir):
         super(FileSystemBackend, self).__init__()
         self._dataDir = dataDir
@@ -608,7 +569,7 @@ class GraphBackend(AbstractBackend):
         self.referenceSetsGenerator = self._graphs.searchReferenceSets
         self.referencesGenerator = self._graphs.searchReferences
         self.variantSetsGenerator = self._graphs.searchVariantSets
-        # self.allelesGenerator = self._graphs.searchAlleles
+        self.alleleCallsGenerator = self._graphs.searchAlleleCalls
         self.callSetsGenerator = self._graphs.searchCallSets
         self.sequencesGenerator = self._graphs.searchSequences
         self.joinsGenerator = self._graphs.searchJoins
@@ -653,6 +614,82 @@ class GraphBackend(AbstractBackend):
         responseBuilder.setNextPageToken(nextPageToken)
 
         responseString = responseBuilder.getJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
+
+    def searchAlleleCalls(self, request):
+        """
+        Returns a SearchAlleleCallsResponse for the specified
+        SearchAlleleCallsRequest Object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchAlleleCallsRequest,
+            protocol.SearchAlleleCallsResponse,
+            self.alleleCallsGenerator)
+
+    def searchSequences(self, requestStr):
+        """
+        Returns a SearchSequencesResponse object.
+        The page token in this case is the start position
+        to limit the query by.
+        """
+        return self.runSearchRequest(
+            requestStr, protocol.SearchSequencesRequest,
+            protocol.SearchSequencesResponse,
+            self.sequencesGenerator)
+
+    def searchJoins(self, requestStr):
+        """
+        Returns a SearchJoinsResponse object.
+        The page token in this case is the start position
+        to limit the query by.
+        """
+        return self.runSearchRequest(
+            requestStr, protocol.SearchJoinsRequest,
+            protocol.SearchJoinsResponse,
+            self.joinsGenerator)
+
+    def getSequenceBases(self, sequenceId, start, end):
+        self.startProfile()
+        responseClass = protocol.GetSequenceBasesResponse
+        protocolObject = self._graphs.getSequenceBases(
+            sequenceId, start, end)
+        responseString = protocolObject.toJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
+
+    def getAllele(self, alleleId):
+        self.startProfile()
+        responseClass = protocol.Allele
+        protocolObject = self._graphs.getAllele(alleleId)
+        responseString = protocolObject.toJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
+
+    def extractSubgraph(self, requestStr):
+        """
+        Returns an ExtractSubgraphResponse object.
+        No page tokens are returned, as this endpoint
+        is not paginated - its results must be computed
+        on the fly, not read off from a previously indexed dataset.
+        """
+        self.startProfile()
+        requestClass = protocol.ExtractSubgraphRequest
+        try:
+            requestDict = json.loads(requestStr)
+        except ValueError:
+            raise exceptions.InvalidJsonException(requestStr)
+        self.validateRequest(requestDict, requestClass)
+        request = requestClass.fromJsonDict(requestDict)
+
+        responseClass = protocol.ExtractSubgraphResponse
+        protocolObject = self._graphs.extractSubgraph(
+            request.position.sequenceId, int(request.position.position),
+            int(request.radius), request.referenceSetId, request.variantSetId)
+        responseString = protocolObject.toJsonString()
         self.validateResponse(responseString, responseClass)
         self.endProfile()
         return responseString

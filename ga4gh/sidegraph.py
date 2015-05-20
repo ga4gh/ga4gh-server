@@ -22,12 +22,34 @@ import re
 findBadChars = re.compile('[\W]')
 
 
-def sqliteRows2dicts(sqliteRows):
+def _sqliteRows2dicts(sqliteRows):
     """
     unpacks sqlite rows as returned by fetchall
     into an array of simple dicts.
     """
     return map(lambda r: dict(zip(r.keys(), map(str, r))), sqliteRows)
+
+
+def _limitsSql(limits):
+    if limits is not None and len(limits) > 1:
+        start = int(limits[0])
+        end = int(limits[1])
+        return " LIMIT {}, {}".format(start, end)
+    else:
+        return ""
+
+
+def _whereClauseSql(**whereClauses):
+    if whereClauses is not None:
+        # wc is an array of "key ='value'" strings from whereClauses,
+        # with all entries where value = None removed.
+        wc = ["{} = '{}'".format(k, whereClauses[k])
+              for k in whereClauses.keys()
+              if whereClauses[k] is not None]
+    if len(wc) > 0:
+        return " WHERE " + " AND ".join(wc)
+    else:
+        return ""
 
 
 class SideGraph(object):
@@ -57,16 +79,16 @@ class SideGraph(object):
     def __exit__(self, type, value, traceback):
         self._graphDb.close()
 
-    def _countRows(self, tableName):
+    def _countRows(self, tableName, **whereClauses):
         """
         Returns the total number of rows in the named table.
         """
         if findBadChars.search(tableName):
             raise Exception("table name contains invalid characters")
 
-        query = self._graphDb.execute(
-            "SELECT count(*) from {}".format(tableName))
-        return int(query.fetchone()[0])
+        sql = "SELECT count(*) from {}".format(tableName)
+        sql += _whereClauseSql(**whereClauses)
+        return int(self._graphDb.execute(sql).fetchone()[0])
 
     def _getRowsAsDicts(self, tableName, limits=None, **whereClauses):
         """
@@ -82,21 +104,11 @@ class SideGraph(object):
             raise Exception("table name contains invalid characters")
 
         sql = "SELECT * FROM {}".format(tableName)
-        if whereClauses is not None:
-            # wc is an array of "key ='value'" strings from whereClauses,
-            # with all entries where value = None removed.
-            wc = ["{} = '{}'".format(k, whereClauses[k])
-                  for k in whereClauses.keys()
-                  if whereClauses[k] is not None]
-            if len(wc) > 0:
-                sql += " WHERE " + " AND ".join(wc)
+        sql += _whereClauseSql(**whereClauses)
         sql += " ORDER BY ID"
-        if limits is not None and len(limits) > 1:
-            start = int(limits[0])
-            end = int(limits[1])
-            sql += " LIMIT {}, {}".format(start, end)
+        sql += _limitsSql(limits)
         query = self._graphDb.execute(sql)
-        return sqliteRows2dicts(query.fetchall())
+        return _sqliteRows2dicts(query.fetchall())
 
     def _getRowByIdAsDict(self, tableName, id):
         """
@@ -109,7 +121,7 @@ class SideGraph(object):
         sql = """SELECT * FROM {} WHERE ID='{}'""".format(
             tableName, id)
         query = self._graphDb.execute(sql)
-        return sqliteRows2dicts(query.fetchall())[0]
+        return _sqliteRows2dicts(query.fetchall())[0]
 
     def searchReferenceSetsCount(self):
         return self._countRows("ReferenceSet")
@@ -140,6 +152,25 @@ class SideGraph(object):
             cs["variantSetIds"] = \
                 [str(vs[0]) for vs in self._graphDb.execute(sql).fetchall()]
         return callSets
+
+    def searchAlleleCallsCount(self, alleleId=None,
+                               callSetId=None, variantSet=None):
+        return self._countRows("AlleleCall",
+                               alleleId=alleleId, callSetId=callSetId)
+
+    def searchAlleleCalls(self, limits=None,
+                          alleleId=None, callSetId=None, variantSet=None):
+        """
+        Can't use the regular _getRowsAsDicts mechanism as it has two
+        primary keys, not ID. Ordering is by those, lexicographic.
+        """
+        # TODO: restrict by variantSet
+        sql = "SELECT * FROM AlleleCall"
+        sql += _whereClauseSql(alleleID=alleleId, callSetID=callSetId)
+        sql += " ORDER BY alleleID, callSetID"
+        sql += _limitsSql(limits)
+        query = self._graphDb.execute(sql)
+        return _sqliteRows2dicts(query.fetchall())
 
     def searchSequencesCount(self):
         return self._countRows("Sequence")
@@ -200,7 +231,7 @@ class SideGraph(object):
             ORDER BY pathItemIndex
         """.format(alleleID)
         query = self._graphDb.execute(sql)
-        return sqliteRows2dicts(query.fetchall())
+        return _sqliteRows2dicts(query.fetchall())
 
     def getSequence(self, id):
         return self._getRowByIdAsDict("Sequence", id)
@@ -232,10 +263,10 @@ class SideGraph(object):
                 OR (side2SequenceId = '{0}' AND side2Position >= {1})
                 """.format(seqId, int(start))
 
-        return sqliteRows2dicts(self._graphDb.execute(joinsSQL).fetchall())
+        return _sqliteRows2dicts(self._graphDb.execute(joinsSQL).fetchall())
 
     def getSubgraph(self, seedSequenceId, seedPosition=0, radius=0,
-                    referenceSet=None):
+                    referenceSetId=None):
         """
         Returns the sepcified subgraph as a pair, (segments, joins)
         with segment represented by a dictionary with keys
@@ -296,7 +327,10 @@ class SideGraph(object):
             intersectingSegs = []
             unionStart = segStart
             unionEnd = segEnd
-            for i, (iSeqId, iStart, iLen) in enumerate(segments):
+            for i, segDict in enumerate(segments):
+                iSeqId = segDict["sequenceID"]
+                iStart = segDict["start"]
+                iLen = segDict["length"]
                 iEnd = iStart + iLen
                 if seqId == iSeqId:
                     if iStart <= segStart and iEnd >= segEnd:
@@ -311,7 +345,11 @@ class SideGraph(object):
             for i in intersectingSegs[::-1]:
                 del segments[i]
             # replace them with the unified new segment
-            segments.append((seqId, unionStart, unionEnd - unionStart))
+            segments.append(dict(
+                sequenceID=seqId,
+                start=unionStart,
+                length=unionEnd - unionStart,
+                strandIsForward='TRUE'))
             # With segments adjusted, now explore joins...
             foundJoins = self.getJoins(seqId, segStart, segEnd)
             self._logger.debug("looking for joins on seqId {} {}-{}".format(

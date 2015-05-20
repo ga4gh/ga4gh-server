@@ -180,6 +180,7 @@ class TestFrontend(unittest.TestCase):
             response.data)
         self.assertEqual(len(responseData.callSets), 1)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testReadsSearch(self):
         response = self.sendReadsSearch()
         self.assertEqual(200, response.status_code)

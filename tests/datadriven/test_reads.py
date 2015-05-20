@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import collections
 import glob
 import os
+import unittest
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.reads as reads
@@ -70,6 +71,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self.assertAlignmentsEqual(
                 gaAlignment, pysamAlignment, readGroupInfo)
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testValidateObjects(self):
         # test that validation works on read groups and reads
         readGroupSet = self._gaObject
