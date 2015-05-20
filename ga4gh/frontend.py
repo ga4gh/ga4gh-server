@@ -244,19 +244,9 @@ def index():
     return flask.render_template('index.html', info=app.serverStatus)
 
 
-@app.route('/<version>/references/<id>', methods=['GET'])
-def getReference(version, id):
-    raise exceptions.PathNotFoundException()
-
-
-@app.route('/<version>/references/<id>/bases', methods=['GET'])
-def getReferenceBases(version, id):
-    raise exceptions.PathNotFoundException()
-
-
-@app.route('/<version>/referencesets/<id>', methods=['GET'])
-def getReferenceSet(version, id):
-    raise exceptions.PathNotFoundException()
+@app.route('/<version>')
+def indexRedirect(version):
+    return index()
 
 
 @app.route('/<version>/callsets/search', methods=['POST'])
@@ -281,11 +271,6 @@ def searchReads(version):
 def searchReferenceSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchReferenceSets)
-
-
-@app.route('/<version>/references/search', methods=['POST'])
-def searchReferences(version):
-    raise exceptions.PathNotFoundException()
 
 
 @app.route('/<version>/variantsets/search', methods=['POST', 'OPTIONS'])
