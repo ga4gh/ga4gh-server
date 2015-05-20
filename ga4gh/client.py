@@ -185,7 +185,7 @@ class HttpClient(object):
         return self._doRequest('GET', fullUrl, protocolResponseClass)
 
     def runPostRequest(self, protocolRequest, objectName,
-                         protocolResponseClass):
+                       protocolResponseClass):
         """
         Runs the specified request at the specified objectName and instantiates
         an object of the specified class. No frills, no chills.
@@ -282,7 +282,6 @@ class HttpClient(object):
         return self.runSearchRequest(
             protocolRequest, "callsets", protocol.SearchCallSetsResponse)
 
-
     def searchAlleleCalls(self, protocolRequest):
         """
         Returns an iterator over the AlleleCalls from the server
@@ -310,7 +309,5 @@ class HttpClient(object):
         Returns an ExtractSubgraphResponse object
         """
         return self.runPostRequest(
-            protocolRequest, "subgraph/extract", 
+            protocolRequest, "subgraph/extract",
             protocol.ExtractSubgraphResponse)
-
-

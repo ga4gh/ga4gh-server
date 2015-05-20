@@ -29,6 +29,7 @@ def _sqliteRows2dicts(sqliteRows):
     """
     return map(lambda r: dict(zip(r.keys(), map(str, r))), sqliteRows)
 
+
 def _limitsSql(limits):
     if limits is not None and len(limits) > 1:
         start = int(limits[0])
@@ -36,6 +37,7 @@ def _limitsSql(limits):
         return " LIMIT {}, {}".format(start, end)
     else:
         return ""
+
 
 def _whereClauseSql(**whereClauses):
     if whereClauses is not None:
@@ -48,7 +50,6 @@ def _whereClauseSql(**whereClauses):
         return " WHERE " + " AND ".join(wc)
     else:
         return ""
-
 
 
 class SideGraph(object):
@@ -153,12 +154,12 @@ class SideGraph(object):
         return callSets
 
     def searchAlleleCallsCount(self, alleleId=None,
-            callSetId=None, variantSet=None):
-        return self._countRows("AlleleCall", 
-            alleleId=alleleId, callSetId=callSetId)
+                               callSetId=None, variantSet=None):
+        return self._countRows("AlleleCall",
+                               alleleId=alleleId, callSetId=callSetId)
 
     def searchAlleleCalls(self, limits=None,
-            alleleId=None, callSetId=None, variantSet=None):
+                          alleleId=None, callSetId=None, variantSet=None):
         """
         Can't use the regular _getRowsAsDicts mechanism as it has two
         primary keys, not ID. Ordering is by those, lexicographic.
@@ -327,9 +328,9 @@ class SideGraph(object):
             unionStart = segStart
             unionEnd = segEnd
             for i, segDict in enumerate(segments):
-                iSeqId = segDict["sequenceID"] 
+                iSeqId = segDict["sequenceID"]
                 iStart = segDict["start"]
-                iLen = segDict["length"] 
+                iLen = segDict["length"]
                 iEnd = iStart + iLen
                 if seqId == iSeqId:
                     if iStart <= segStart and iEnd >= segEnd:
@@ -345,8 +346,8 @@ class SideGraph(object):
                 del segments[i]
             # replace them with the unified new segment
             segments.append(dict(
-                sequenceID=seqId, 
-                start=unionStart, 
+                sequenceID=seqId,
+                start=unionStart,
                 length=unionEnd - unionStart,
                 strandIsForward='TRUE'))
             # With segments adjusted, now explore joins...

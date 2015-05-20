@@ -342,7 +342,6 @@ class AbstractBackend(object):
             protocol.SearchCallSetsResponse,
             self.callSetsGenerator)
 
-
     # Iterators over the data hieararchy
 
     def _topLevelObjectGenerator(self, request, idMap, idList):
@@ -507,9 +506,11 @@ class SimulatedBackend(AbstractBackend):
 
 
 class FileSystemBackend(AbstractBackend):
+
     """
     A GA4GH backend backed by data on the file system
     """
+
     def __init__(self, dataDir):
         super(FileSystemBackend, self).__init__()
         self._dataDir = dataDir
@@ -686,7 +687,7 @@ class GraphBackend(AbstractBackend):
 
         responseClass = protocol.ExtractSubgraphResponse
         protocolObject = self._graphs.extractSubgraph(
-            request.position.sequenceId, int(request.position.position), 
+            request.position.sequenceId, int(request.position.position),
             int(request.radius), request.referenceSetId, request.variantSetId)
         responseString = protocolObject.toJsonString()
         self.validateResponse(responseString, responseClass)

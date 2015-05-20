@@ -151,13 +151,16 @@ class GraphDatabase(object):
         return (count, callSets)
 
     def searchAlleleCalls(self, alleleId=None,
-            callSetId=None, variantSet=None, start=0, end=None):
+                          callSetId=None, variantSet=None, start=0, end=None):
         limits = _makeLimits(start, end)
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchAlleleCallsCount(
                 alleleId=alleleId, callSetId=callSetId, variantSet=variantSet)
-            alleleCallsDicts = sg.searchAlleleCalls(limits=limits,
-                alleleId=alleleId, callSetId=callSetId, variantSet=variantSet)
+            alleleCallsDicts = sg.searchAlleleCalls(
+                limits=limits,
+                alleleId=alleleId,
+                callSetId=callSetId,
+                variantSet=variantSet)
         alleleCalls = []
         for ac in alleleCallsDicts:
             alleleCall = protocol.AlleleCall()
@@ -241,7 +244,7 @@ class GraphDatabase(object):
         return ret
 
     def extractSubgraph(self, seedSequenceId, seedPosition, radius,
-            referenceSetId=None, variantSetId=None):
+                        referenceSetId=None, variantSetId=None):
         """
         Takes a starting (seed) position on a sequence and a radius to
         define a subgraph of all bases and joins reachable by walking
@@ -258,5 +261,3 @@ class GraphDatabase(object):
             ret.segments = map(_makeSegment, segments)
             ret.joins = map(_makeJoin, joins)
         return ret
-
-
