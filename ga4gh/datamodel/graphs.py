@@ -13,12 +13,57 @@ import ga4gh.protocol as protocol
 import ga4gh.sidegraph as sidegraph
 
 
-def makeLimits(start=0, end=None):
+def _makeLimits(start=0, end=None):
     limits = None
     if type(end) is int:
         if start >= 0 and end > start:
             limits = (start, end)
     return limits
+
+
+def _makeSegment(segmentDict):
+    """
+    returns a properly formatted protocol.Segment object.
+    The input, segmentDict, is a dictionary with keys:
+    {sequenceID, start, length, strandIsForward}
+    """
+    ret = protocol.Segment()
+    ret.length = segmentDict["length"]
+    ret.start = protocol.Side()
+    ret.start.strand = protocol.Strand.POS_STRAND\
+        if segmentDict["strandIsForward"] == 'TRUE'\
+        else protocol.Strand.NEG_STRAND
+    ret.start.base = protocol.Position()
+    ret.start.base.sequenceId = segmentDict["sequenceID"]
+    ret.start.base.position = segmentDict["start"]
+    return ret
+
+
+def _makeJoin(joinDict):
+    """
+    returns a properly formatted protocol.Join object.
+    The input, joinDict, is a dictionary with keys:
+    {side1SequenceID, side1Position, side1StrandIsForward,
+     side2SequenceID, side2Position, side2StrandIsForward}
+    """
+    join = protocol.Join()
+    # deep pile of objecty dodo
+    join.side1 = protocol.Side()
+    join.side1.base = protocol.Position()
+    join.side1.strand = protocol.Strand.POS_STRAND\
+        if joinDict['side1StrandIsForward'] == 'TRUE'\
+        else protocol.Strand.NEG_STRAND
+    join.side1.base.position = joinDict['side1Position']
+    join.side1.base.sequenceId = joinDict['side1SequenceID']
+
+    join.side2 = protocol.Side()
+    join.side2.base = protocol.Position()
+    join.side2.strand = protocol.Strand.POS_STRAND\
+        if joinDict['side2StrandIsForward'] == 'TRUE'\
+        else protocol.Strand.NEG_STRAND
+    join.side2.base.position = joinDict['side2Position']
+    join.side2.base.sequenceId = joinDict['side2SequenceID']
+    return join
 
 
 class GraphDatabase(object):
@@ -39,7 +84,7 @@ class GraphDatabase(object):
     def searchReferences(self, referenceSetId=None, start=0, end=None):
         """
         """
-        limits = makeLimits(start, end)
+        limits = _makeLimits(start, end)
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchReferencesCount()
             referenceDicts = sg.searchReferences(limits)
@@ -56,7 +101,7 @@ class GraphDatabase(object):
         Returns a list of dictionaries holding reference set info.
         """
         # TODO: For now, just returns all reference sets, ignores arguments.
-        limits = makeLimits(start, end)
+        limits = _makeLimits(start, end)
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchReferenceSetsCount()
             referenceSetDicts = sg.searchReferenceSets(limits)
@@ -73,7 +118,7 @@ class GraphDatabase(object):
         Returns a list of dictionaries holding variant set info.
         """
         # TODO: For now, just returns all variant sets, ignores arguments.
-        limits = makeLimits(start, end)
+        limits = _makeLimits(start, end)
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchVariantSetsCount()
             variantSetDicts = sg.searchVariantSets(limits)
@@ -91,7 +136,7 @@ class GraphDatabase(object):
         """
         """
         # TODO: For now, just returns all variant sets, ignores arguments.
-        limits = makeLimits(start, end)
+        limits = _makeLimits(start, end)
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchCallSetsCount()
             callSetDicts = sg.searchCallSets(limits)
@@ -107,7 +152,7 @@ class GraphDatabase(object):
 
     def searchAlleleCalls(self, alleleId=None,
             callSetId=None, variantSet=None, start=0, end=None):
-        limits = makeLimits(start, end)
+        limits = _makeLimits(start, end)
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchAlleleCallsCount(
                 alleleId=alleleId, callSetId=callSetId, variantSet=variantSet)
@@ -135,7 +180,7 @@ class GraphDatabase(object):
         does not follow iterator convention.
         """
         # TODO search by referenceSetId and variantSetId not yet implemented.
-        limits = makeLimits(start, end)
+        limits = _makeLimits(start, end)
         count = 0
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchSequencesCount()
@@ -162,31 +207,14 @@ class GraphDatabase(object):
         """
         # TODO search by referenceSetId and variantSetId not yet implemented.
         # not to mention by sequenceId!
-        limits = makeLimits(start, end)
+        limits = _makeLimits(start, end)
         count = 0
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchJoinsCount()
             rawJoins = sg.searchJoins(limits)
         joins = []
         for rj in rawJoins:
-            join = protocol.Join()
-            # deep pile of objecty dodo
-            join.side1 = protocol.Side()
-            join.side1.base = protocol.Position()
-            join.side1.strand = protocol.Strand.POS_STRAND\
-                if rj['side1StrandIsForward'] == 'TRUE'\
-                else protocol.Strand.NEG_STRAND
-            join.side1.base.position = rj['side1Position']
-            join.side1.base.sequenceId = rj['side1SequenceID']
-
-            join.side2 = protocol.Side()
-            join.side2.base = protocol.Position()
-            join.side2.strand = protocol.Strand.POS_STRAND\
-                if rj['side2StrandIsForward'] == 'TRUE'\
-                else protocol.Strand.NEG_STRAND
-            join.side2.base.position = rj['side2Position']
-            join.side2.base.sequenceId = rj['side2SequenceID']
-
+            join = _makeJoin(rj)
             joins.append(join)
         return (count, joins)
 
@@ -196,23 +224,6 @@ class GraphDatabase(object):
         ret.nextPageToken = None
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             ret.sequence = sg.getSequenceBases(sequenceId, start, end)
-        return ret
-
-    def makeSegment(self, segmentDict):
-        """
-        returns a properly formatted protocol.Segment object.
-        The input, segmentDict, a dictionary with keys:
-        {sequenceID, start, length, strandIsForward}
-        """
-        ret = protocol.Segment()
-        ret.length = segmentDict["length"]
-        ret.start = protocol.Side()
-        ret.start.strand = protocol.Strand.POS_STRAND\
-            if segmentDict["strandIsForward"] == 'TRUE'\
-            else protocol.Strand.NEG_STRAND
-        ret.start.base = protocol.Position()
-        ret.start.base.sequenceId = segmentDict["sequenceID"]
-        ret.start.base.position = segmentDict["start"]
         return ret
 
     def getAllele(self, alleleId):
@@ -225,11 +236,12 @@ class GraphDatabase(object):
             ret.id = alleleId
             ret.variantSetId = sg.getVariantSetIdForAllele(alleleId)
             ret.path = protocol.Path()
-            ret.path.segments = map(self.makeSegment,
+            ret.path.segments = map(_makeSegment,
                                     sg.getAllelePathItems(alleleId))
         return ret
 
-    def extractSubgraph(self, seedSequenceId, seedPosition, radius):
+    def extractSubgraph(self, seedSequenceId, seedPosition, radius,
+            referenceSetId=None, variantSetId=None):
         """
         Takes a starting (seed) position on a sequence and a radius to
         define a subgraph of all bases and joins reachable by walking
@@ -239,3 +251,12 @@ class GraphDatabase(object):
         the second of GA4GH-formatted joins, which together comprise
         the requested subgraph.
         """
+        ret = protocol.ExtractSubgraphResponse()
+        with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
+            segments, joins = sg.getSubgraph(
+                seedSequenceId, seedPosition, radius, referenceSetId)
+            ret.segments = map(_makeSegment, segments)
+            ret.joins = map(_makeJoin, joins)
+        return ret
+
+

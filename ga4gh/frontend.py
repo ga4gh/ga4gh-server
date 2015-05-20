@@ -274,16 +274,16 @@ def searchAlleleCalls(version):
         version, flask.request, app.backend.searchAlleleCalls)
 
 
-@app.route('/<version>/readgroupsets/search', methods=['POST'])
-def searchReadGroupSets(version):
-    return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchReadGroupSets)
+# @app.route('/<version>/readgroupsets/search', methods=['POST'])
+# def searchReadGroupSets(version):
+#     return handleFlaskPostRequest(
+#         version, flask.request, app.backend.searchReadGroupSets)
 
 
-@app.route('/<version>/reads/search', methods=['POST', 'OPTIONS'])
-def searchReads(version):
-    return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchReads)
+# @app.route('/<version>/reads/search', methods=['POST', 'OPTIONS'])
+# def searchReads(version):
+#     return handleFlaskPostRequest(
+#         version, flask.request, app.backend.searchReads)
 
 
 @app.route('/<version>/referencesets/search', methods=['POST'])
@@ -353,9 +353,15 @@ def getAllele(version, id):
     responseString = app.backend.getAllele(id)
     return getFlaskResponse(responseString)
 
+
+@app.route('/<version>/subgraph/extract', methods=['POST'])
+def extractSubgraph(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.extractSubgraph)
+
+
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html
-
 
 @app.errorhandler(404)
 def pathNotFoundHandler(errorString):

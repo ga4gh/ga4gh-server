@@ -125,6 +125,14 @@ class RequestFactory(object):
         # setCommaSeparatedAttribute(request, self.args, 'callSetIds')
         return request
 
+    def createExtractSubgraphRequest(self):
+        request = protocol.ExtractSubgraphRequest()
+        request.position = protocol.Position()
+        request.position.position = self.args.position
+        request.position.sequenceId = self.args.sequenceId
+        request.radius = self.args.radius
+        return request
+
     def createSearchReadsRequest(self):
         request = protocol.SearchReadsRequest()
         if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
@@ -297,6 +305,14 @@ class AbstractQueryRunner(object):
         self._verbosity = args.verbose
         self._httpClient = client.HttpClient(
             args.baseUrl, args.verbose, self._workarounds, self._key)
+
+    def _run(self, method, attrName=None):
+        result = method(self._request)
+        if attrName is None:
+            print(result)
+        else:
+            attr = getattr(result, attrName)
+            print(attr)
 
 
 class AbstractGetRunner(AbstractQueryRunner):
@@ -487,6 +503,20 @@ class GetAllelesRunner(AbstractGetRunner):
 
     def run(self):
         self._run(self._httpClient.getAllele)
+
+
+class ExtractSubgraphRunner(AbstractQueryRunner):
+    """
+    Runner class for the subgraph/extract method
+    """
+    def __init__(self, args):
+        super(ExtractSubgraphRunner, self).__init__(args)
+        request = RequestFactory(args).createExtractSubgraphRequest()
+        self._minimalOutput = args.minimalOutput
+        self._request = request
+
+    def run(self):
+        self._run(self._httpClient.extractSubgraph)
 
 
 class SearchReadGroupSetsRunner(AbstractSearchRunner):
@@ -725,6 +755,24 @@ def addReferenceSetNameArgument(parser):
         help="The reference set name to search over")
 
 
+def addPositionArgument(parser):
+    parser.add_argument(
+        "--position", default=0,
+        help="Base position on the sequence")
+
+
+def addSequenceIdArgument(parser):
+    parser.add_argument(
+        "--sequenceId", default=0,
+        help="Sequence ID")
+
+
+def addRadiusArgument(parser):
+    parser.add_argument(
+        "--radius", default=0,
+        help="radius")
+
+
 def addClientGlobalOptions(parser):
     parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument(
@@ -852,6 +900,22 @@ def addAllelesGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addSubgraphExtractParser(subparsers):
+    parser = subparsers.add_parser(
+        "subgraph-extract",
+        description="Extract subgraph",
+        help="""Extract subgraph reachable within a given radius
+        from a given starting position""")
+    parser.set_defaults(runner=ExtractSubgraphRunner)
+    addUrlArgument(parser)
+    addReferenceSetNameArgument(parser)
+    addVariantSetIdsArgument(parser)
+    addPositionArgument(parser)
+    addSequenceIdArgument(parser)
+    addRadiusArgument(parser)
+    return parser
+
+
 def addReadGroupSetsSearchParser(subparsers):
     parser = subparsers.add_parser(
         "readgroupsets-search",
@@ -959,6 +1023,7 @@ def client_main(parser=None):
     addSequencesSearchParser(subparsers)
     addJoinsSearchParser(subparsers)
     addAllelesGetParser(subparsers)
+    addSubgraphExtractParser(subparsers)
     addSequencesGetBasesParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
     addCallsetsSearchParser(subparsers)

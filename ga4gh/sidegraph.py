@@ -265,7 +265,7 @@ class SideGraph(object):
         return _sqliteRows2dicts(self._graphDb.execute(joinsSQL).fetchall())
 
     def getSubgraph(self, seedSequenceId, seedPosition=0, radius=0,
-                    referenceSet=None):
+                    referenceSetId=None):
         """
         Returns the sepcified subgraph as a pair, (segments, joins)
         with segment represented by a dictionary with keys
@@ -326,7 +326,10 @@ class SideGraph(object):
             intersectingSegs = []
             unionStart = segStart
             unionEnd = segEnd
-            for i, (iSeqId, iStart, iLen) in enumerate(segments):
+            for i, segDict in enumerate(segments):
+                iSeqId = segDict["sequenceID"] 
+                iStart = segDict["start"]
+                iLen = segDict["length"] 
                 iEnd = iStart + iLen
                 if seqId == iSeqId:
                     if iStart <= segStart and iEnd >= segEnd:
@@ -341,7 +344,11 @@ class SideGraph(object):
             for i in intersectingSegs[::-1]:
                 del segments[i]
             # replace them with the unified new segment
-            segments.append((seqId, unionStart, unionEnd - unionStart))
+            segments.append(dict(
+                sequenceID=seqId, 
+                start=unionStart, 
+                length=unionEnd - unionStart,
+                strandIsForward='TRUE'))
             # With segments adjusted, now explore joins...
             foundJoins = self.getJoins(seqId, segStart, segEnd)
             self._logger.debug("looking for joins on seqId {} {}-{}".format(

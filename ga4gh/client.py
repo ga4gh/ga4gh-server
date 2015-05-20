@@ -184,6 +184,17 @@ class HttpClient(object):
                                          postfix=postfix)
         return self._doRequest('GET', fullUrl, protocolResponseClass)
 
+    def runPostRequest(self, protocolRequest, objectName,
+                         protocolResponseClass):
+        """
+        Runs the specified request at the specified objectName and instantiates
+        an object of the specified class. No frills, no chills.
+        """
+        fullUrl = posixpath.join(self._urlPrefix, objectName)
+        data = protocolRequest.toJsonString()
+        return self._doRequest(
+            'POST', fullUrl, protocolResponseClass, httpData=data)
+
     def getReferenceSet(self, id_):
         """
         Returns a referenceSet from the server
@@ -293,3 +304,13 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "reads", protocol.SearchReadsResponse)
+
+    def extractSubgraph(self, protocolRequest):
+        """
+        Returns an ExtractSubgraphResponse object
+        """
+        return self.runPostRequest(
+            protocolRequest, "subgraph/extract", 
+            protocol.ExtractSubgraphResponse)
+
+
