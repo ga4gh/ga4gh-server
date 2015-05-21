@@ -26,6 +26,17 @@ class TestCase(unittest.TestCase):
     def tearDown(self):
         self._conn.close()
 
+    def setOfDicts(self, arrayOfDicts):
+        """
+        Returns a set of frozensets of key,value pairs from each dictionary
+        in the array of dictionaries passed in.
+
+        Useful for comparing unordered arrays of dictionaries.
+        """
+        frozenArray = map(lambda d: frozenset([(x, d[x]) for x in d.keys()]),
+                          arrayOfDicts)
+        return set(frozenArray)
+
     def testSearchSequencesCount(self):
         with sidegraph.SideGraph(self._db, self._files) as sg:
             self.assertEquals(sg.searchSequencesCount(), 5)
@@ -151,29 +162,45 @@ class TestCase(unittest.TestCase):
             self.assertEquals(sg.getJoins(2), expected)
 
     def testGetSubgraph(self):
-        expected = ([('2', 0, 1), ('1', 65, 20)],
-                    [{'side2Position': '0',
-                      'side2StrandIsForward': 'TRUE',
-                      'side2SequenceID': '2',
-                      'side1SequenceID': '1', 'ID': '1',
-                      'side1Position': '79',
-                      'side1StrandIsForward': 'FALSE'},
-                     {'side2Position': '0',
-                        'side2StrandIsForward': 'FALSE',
-                        'side2SequenceID': '2',
-                        'side1SequenceID': '1',
-                        'ID': '2',
-                        'side1Position': '81',
-                        'side1StrandIsForward': 'TRUE'},
-                     {'side2Position': '85',
-                        'side2StrandIsForward': 'FALSE',
-                        'side2SequenceID': '1',
-                        'side1SequenceID': '1',
-                        'ID': '3',
-                        'side1Position': '72',
-                        'side1StrandIsForward': 'TRUE'}])
+        # getSubgraph returns a pair of arrays, the elements of which
+        # are NOT guaranteed to be in any order. Thus the set comparison.
+        expectedSegmentsArray = [
+            {'strandIsForward': u'TRUE',
+                'start': 0,
+                'length': 1,
+                'sequenceID': '2'},
+            {'strandIsForward': u'TRUE',
+                'start': 65,
+                'length': 20,
+                'sequenceID': '1'}]
+        expectedSegmentsSet = self.setOfDicts(expectedSegmentsArray)
+        expectedJoinsArray = [
+            {'side2Position': '0',
+                'side2StrandIsForward': 'TRUE',
+                'side2SequenceID': '2',
+                'side1SequenceID': '1',
+                'ID': '1',
+                'side1Position': '79',
+                'side1StrandIsForward': 'FALSE'},
+            {'side2Position': '0',
+                'side2StrandIsForward': 'FALSE',
+                'side2SequenceID': '2',
+                'side1SequenceID': '1',
+                'ID': '2',
+                'side1Position': '81',
+                'side1StrandIsForward': 'TRUE'},
+            {'side2Position': '85',
+                'side2StrandIsForward': 'FALSE',
+                'side2SequenceID': '1',
+                'side1SequenceID': '1',
+                'ID': '3',
+                'side1Position': '72',
+                'side1StrandIsForward': 'TRUE'}]
+        expectedJoinsSet = self.setOfDicts(expectedJoinsArray)
         with sidegraph.SideGraph(self._db, self._files) as sg:
-            self.assertEquals(sg.getSubgraph(1, 75, 10), expected)
+            segments, joins = sg.getSubgraph(1, 75, 10)
+        self.assertEquals(self.setOfDicts(segments), expectedSegmentsSet)
+        self.assertEquals(self.setOfDicts(joins), expectedJoinsSet)
 
     def testSearchCallSets(self):
         expected = [{'sampleID': 'UCSC01',
