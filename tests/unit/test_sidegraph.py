@@ -15,7 +15,6 @@ import os
 import ga4gh.sidegraph as sidegraph
 
 
-
 class TestCase(unittest.TestCase):
 
     def setUp(self):
@@ -34,8 +33,8 @@ class TestCase(unittest.TestCase):
 
         Useful for comparing unordered arrays of dictionaries.
         """
-        frozenArray = map(lambda d: frozenset([(x,d[x]) for x in d.keys()]),
-            arrayOfDicts)
+        frozenArray = map(lambda d: frozenset([(x, d[x]) for x in d.keys()]),
+                          arrayOfDicts)
         return set(frozenArray)
 
     def testSearchSequencesCount(self):
@@ -165,30 +164,32 @@ class TestCase(unittest.TestCase):
     def testGetSubgraph(self):
         # getSubgraph returns a pair of arrays, the elements of which
         # are NOT guaranteed to be in any order. Thus the set comparison.
-        expectedSegmentsArray = [{'strandIsForward': u'TRUE',
+        expectedSegmentsArray = [
+            {'strandIsForward': u'TRUE',
                 'start': 0,
                 'length': 1,
                 'sequenceID': '2'},
-                {'strandIsForward': u'TRUE',
+            {'strandIsForward': u'TRUE',
                 'start': 65,
                 'length': 20,
                 'sequenceID': '1'}]
         expectedSegmentsSet = self.setOfDicts(expectedSegmentsArray)
-        expectedJoinsArray = [{'side2Position': '0',
+        expectedJoinsArray = [
+            {'side2Position': '0',
                 'side2StrandIsForward': 'TRUE',
                 'side2SequenceID': '2',
                 'side1SequenceID': '1',
                 'ID': '1',
                 'side1Position': '79',
                 'side1StrandIsForward': 'FALSE'},
-                {'side2Position': '0',
+            {'side2Position': '0',
                 'side2StrandIsForward': 'FALSE',
                 'side2SequenceID': '2',
                 'side1SequenceID': '1',
                 'ID': '2',
                 'side1Position': '81',
                 'side1StrandIsForward': 'TRUE'},
-                {'side2Position': '85',
+            {'side2Position': '85',
                 'side2StrandIsForward': 'FALSE',
                 'side2SequenceID': '1',
                 'side1SequenceID': '1',

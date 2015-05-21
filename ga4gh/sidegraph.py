@@ -163,7 +163,7 @@ class SideGraph(object):
                                alleleId=alleleId, callSetId=callSetId)
 
     def searchAlleleCalls(self, limits=None,
-                          alleleId=None, callSetId=None, variantSet=None):        
+                          alleleId=None, callSetId=None, variantSet=None):
         # Can't use the regular _getRowsAsDicts mechanism as it has two
         # primary keys, not ID. Ordering is by those, lexicographic.
         # TODO: restrict by variantSet
