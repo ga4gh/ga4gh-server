@@ -30,9 +30,10 @@ def _makeSegment(segmentDict):
     ret = protocol.Segment()
     ret.length = segmentDict["length"]
     ret.start = protocol.Side()
-    ret.start.strand = protocol.Strand.POS_STRAND\
-        if segmentDict["strandIsForward"] == 'TRUE'\
-        else protocol.Strand.NEG_STRAND
+    if segmentDict["strandIsForward"] == sidegraph.SIDEGRAPH_TRUE:
+        ret.start.strand = protocol.Strand.POS_STRAND
+    else:
+        ret.start.strand = protocol.Strand.NEG_STRAND
     ret.start.base = protocol.Position()
     ret.start.base.sequenceId = segmentDict["sequenceID"]
     ret.start.base.position = segmentDict["start"]
@@ -50,24 +51,25 @@ def _makeJoin(joinDict):
     # deep pile of objecty dodo
     join.side1 = protocol.Side()
     join.side1.base = protocol.Position()
-    join.side1.strand = protocol.Strand.POS_STRAND\
-        if joinDict['side1StrandIsForward'] == 'TRUE'\
-        else protocol.Strand.NEG_STRAND
+    if joinDict['side1StrandIsForward'] == sidegraph.SIDEGRAPH_TRUE:
+        join.side1.strand = protocol.Strand.POS_STRAND
+    else:
+        join.side1.strand = protocol.Strand.NEG_STRAND
     join.side1.base.position = joinDict['side1Position']
     join.side1.base.sequenceId = joinDict['side1SequenceID']
 
     join.side2 = protocol.Side()
     join.side2.base = protocol.Position()
-    join.side2.strand = protocol.Strand.POS_STRAND\
-        if joinDict['side2StrandIsForward'] == 'TRUE'\
-        else protocol.Strand.NEG_STRAND
+    if joinDict['side2StrandIsForward'] == sidegraph.SIDEGRAPH_TRUE:
+        join.side2.strand = protocol.Strand.POS_STRAND
+    else:
+        join.side2.strand = protocol.Strand.NEG_STRAND
     join.side2.base.position = joinDict['side2Position']
     join.side2.base.sequenceId = joinDict['side2SequenceID']
     return join
 
 
 class GraphDatabase(object):
-
     """
     Implements graph reference sets: Reference sequences together with
     joins, as well as some helper methods to deal with complex queries.
@@ -93,7 +95,7 @@ class GraphDatabase(object):
             reference = protocol.Reference()
             reference.id = rdict['ID']
             references.append(reference)
-        return (count, references)
+        return count, references
 
     def searchReferenceSets(self, md5checksums=None, accessions=None,
                             assemblyId=None, start=0, end=None):
@@ -111,7 +113,7 @@ class GraphDatabase(object):
             referenceSet.id = rsdict['ID']
             referenceSet.includedReferenceSets = []
             referenceSets.append(referenceSet)
-        return (count, referenceSets)
+        return count, referenceSets
 
     def searchVariantSets(self, datasetIds=None, start=0, end=None):
         """
@@ -130,7 +132,7 @@ class GraphDatabase(object):
             variantSet.referenceSetId = ""
             variantSet.metadata = []
             variantSets.append(variantSet)
-        return (count, variantSets)
+        return count, variantSets
 
     def searchCallSets(self, datasetIds=None, start=0, end=None):
         """
@@ -148,7 +150,7 @@ class GraphDatabase(object):
             callSet.variantSetIds = csdict['variantSetIds']
             callSet.metadata = []
             callSets.append(callSet)
-        return (count, callSets)
+        return count, callSets
 
     def searchAlleleCalls(self, alleleId=None,
                           callSetId=None, variantSet=None, start=0, end=None):
@@ -168,7 +170,7 @@ class GraphDatabase(object):
             alleleCall.alleleId = ac['alleleID']
             alleleCall.totalCopies = ac['ploidy']
             alleleCalls.append(alleleCall)
-        return (count, alleleCalls)
+        return count, alleleCalls
 
     def searchSequences(self, referenceSetId=None, variantSetId=None,
                         start=0, end=None):
@@ -194,7 +196,7 @@ class GraphDatabase(object):
             seq.id = rawSeq['ID']
             seq.length = rawSeq['length']
             sequences.append(seq)
-        return (count, sequences)
+        return count, sequences
 
     def searchJoins(self, referenceSetId=None, variantSetId=None,
                     sequenceId=None, start=0, end=None):
@@ -219,7 +221,7 @@ class GraphDatabase(object):
         for rj in rawJoins:
             join = _makeJoin(rj)
             joins.append(join)
-        return (count, joins)
+        return count, joins
 
     def getSequenceBases(self, sequenceId, start=0, end=None):
         ret = protocol.GetSequenceBasesResponse()

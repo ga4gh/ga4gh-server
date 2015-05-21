@@ -14,7 +14,6 @@ import ga4gh.datamodel as datamodel
 
 
 class AbstractReferenceSet(datamodel.DatamodelObject):
-
     """
     Class representing either linear or graph ReferenceSets.
     """
@@ -59,7 +58,6 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
 
 
 class LinearReferenceSet(AbstractReferenceSet):
-
     """
     Class implementing linear ReferenceSets. Such a ReferenceSet is
     a set of LinearReferences which typically comprise a reference

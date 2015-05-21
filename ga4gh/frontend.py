@@ -26,7 +26,6 @@ app = flask.Flask(__name__)
 
 
 class Version(object):
-
     """
     A major/minor/revision version tag
     """
@@ -63,7 +62,6 @@ class Version(object):
 
 
 class ServerStatus(object):
-
     """
     Generates information about the status of the server for display
     """

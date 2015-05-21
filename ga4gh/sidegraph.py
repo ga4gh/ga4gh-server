@@ -15,10 +15,12 @@ import pyfasta
 import sqlite3
 import re
 
+SIDEGRAPH_TRUE = 'TRUE'
+SIDEGRAPH_FALSE = 'FALSE'
 
-# use as follows:
+# Use the following regular expression to check
 # if findBadChars.search(input) is not None:
-# Handle error - invalid characters found
+# In which case, handle error - invalid characters found
 findBadChars = re.compile('[\W]')
 
 
@@ -53,9 +55,9 @@ def _whereClauseSql(**whereClauses):
 
 
 class SideGraph(object):
-
     """
     Graph reference set based on a Sqlite file.
+
     Any named FASTA files without a fully qualified URL need to be
     located in the fastaDir.
     """
@@ -94,6 +96,7 @@ class SideGraph(object):
         """
         Returns an array of dictionaries, each one encoding key-value
         information about each row of the requested table.
+
         Limits, if provided, need to be a pair of ints: (start,end)
         end can be a value past the end of the resultset.
 
@@ -113,6 +116,7 @@ class SideGraph(object):
     def _getRowByIdAsDict(self, tableName, id):
         """
         Returns a single row of the table as a dictionary.
+
         It's assumed that the table has ID as its primary key.
         """
         if findBadChars.search(tableName):
@@ -159,11 +163,9 @@ class SideGraph(object):
                                alleleId=alleleId, callSetId=callSetId)
 
     def searchAlleleCalls(self, limits=None,
-                          alleleId=None, callSetId=None, variantSet=None):
-        """
-        Can't use the regular _getRowsAsDicts mechanism as it has two
-        primary keys, not ID. Ordering is by those, lexicographic.
-        """
+                          alleleId=None, callSetId=None, variantSet=None):        
+        # Can't use the regular _getRowsAsDicts mechanism as it has two
+        # primary keys, not ID. Ordering is by those, lexicographic.
         # TODO: restrict by variantSet
         sql = "SELECT * FROM AlleleCall"
         sql += _whereClauseSql(alleleID=alleleId, callSetID=callSetId)
@@ -219,7 +221,7 @@ class SideGraph(object):
     def getAllelePathItems(self, alleleID):
         """
         Returns n array of dicts with keys
-        {sequenceID, start, length, strandIsForward}
+        {sequenceID, start, length, strandIsForward},
         where isForward is a boolean indicating if segment should
         be read in the formward (from 5' to 3') direction.
         """
@@ -240,6 +242,7 @@ class SideGraph(object):
         """
         Return a list of all joins in the side graph adjacent to
         the requested sequence in the specified interval.
+
         If no valid interval is given,
         return all joins adjacent to the sequence.
         Joins are returned as a list of dicts, as usual.
@@ -271,6 +274,7 @@ class SideGraph(object):
         Returns the sepcified subgraph as a pair, (segments, joins)
         with segment represented by a dictionary with keys
         (id, start, length) and each join as a typical join dictionary.
+
         Note: All segments returned are assumed forward strand.
         """
         # recursive method: segments, joins are arrays of already
@@ -284,8 +288,7 @@ class SideGraph(object):
                          segments, joins,
                          joinTaken=None):
             """
-            Inputs:
-            First three describe current search "head":
+            First three inputs describe current search "head":
               seqId - sequence id
               pos - position on sequence
               fwd - boolean: if true, walking forward, else reverse.
@@ -349,7 +352,7 @@ class SideGraph(object):
                 sequenceID=seqId,
                 start=unionStart,
                 length=unionEnd - unionStart,
-                strandIsForward='TRUE'))
+                strandIsForward=SIDEGRAPH_TRUE))
             # With segments adjusted, now explore joins...
             foundJoins = self.getJoins(seqId, segStart, segEnd)
             self._logger.debug("looking for joins on seqId {} {}-{}".format(
@@ -359,11 +362,11 @@ class SideGraph(object):
                 self._logger.debug("found join {}".format(foundJoin))
                 seq1 = foundJoin["side1SequenceID"]
                 pos1 = int(foundJoin["side1Position"])
-                fwd1 = foundJoin["side1StrandIsForward"] == "TRUE"
+                fwd1 = foundJoin["side1StrandIsForward"] == SIDEGRAPH_TRUE
 
                 seq2 = foundJoin["side2SequenceID"]
                 pos2 = int(foundJoin["side2Position"])
-                fwd2 = foundJoin["side2StrandIsForward"] == "TRUE"
+                fwd2 = foundJoin["side2StrandIsForward"] == SIDEGRAPH_TRUE
                 # make recursive calls to follow all joins
                 # encountered on the segment
                 if seq1 == seqId and segStart <= pos1 <= segEnd:

@@ -14,7 +14,6 @@ import ga4gh.protocol as protocol
 
 
 class HttpClient(object):
-
     """
     GA4GH Http Client
     """
@@ -170,18 +169,18 @@ class HttpClient(object):
             notDone = self._updateNotDone(responseObject, protocolRequest)
 
     def runGetRequest(self, objectName, protocolResponseClass, id_,
-                      postfix=None):
+                      suffix=None):
         """
         Requests an object from the server and returns the object of
         type protocolResponseClass that has id id_.
         Used for requests where a single object is the expected response.
         """
         url = "{objectName}/{id}"
-        if postfix is not None:
-            url += "/{postfix}"
+        if suffix is not None:
+            url += "/{suffix}"
         fullUrl = posixpath.join(
             self._urlPrefix, url).format(id=id_, objectName=objectName,
-                                         postfix=postfix)
+                                         suffix=suffix)
         return self._doRequest('GET', fullUrl, protocolResponseClass)
 
     def runPostRequest(self, protocolRequest, objectName,

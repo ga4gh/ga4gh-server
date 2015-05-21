@@ -53,7 +53,6 @@ def _getVariantSet(request, variantSetIdMap):
 
 
 class IntervalIterator(object):
-
     """
     Implements generator logic for types which accept a start/end
     range to search for the object
@@ -125,7 +124,6 @@ class IntervalIterator(object):
 
 
 class ReadsIntervalIterator(IntervalIterator):
-
     """
     An interval iterator for reads
     """
@@ -161,7 +159,6 @@ class ReadsIntervalIterator(IntervalIterator):
 
 
 class VariantsIntervalIterator(IntervalIterator):
-
     """
     An interval iterator for variants
     """
@@ -186,7 +183,6 @@ class VariantsIntervalIterator(IntervalIterator):
 
 
 class QueryResultsIterator(object):
-
     """
     Iterator for results from a method that can take explicit start and end
     positions, and that has a matching method capable of returning the count
@@ -204,7 +200,6 @@ class QueryResultsIterator(object):
 
 
 class AbstractBackend(object):
-
     """
     An abstract GA4GH backend.
     This class provides methods for all of the GA4GH protocol end points.
@@ -469,14 +464,12 @@ class AbstractBackend(object):
 
 
 class EmptyBackend(AbstractBackend):
-
     """
     A GA4GH backend that contains no data.
     """
 
 
 class SimulatedBackend(AbstractBackend):
-
     """
     A GA4GH backend backed by no data; used mostly for testing
     """
@@ -506,7 +499,6 @@ class SimulatedBackend(AbstractBackend):
 
 
 class FileSystemBackend(AbstractBackend):
-
     """
     A GA4GH backend backed by data on the file system
     """
@@ -550,7 +542,6 @@ class FileSystemBackend(AbstractBackend):
 
 
 class GraphBackend(AbstractBackend):
-
     """
     A GA4GH backend backed by genome graphs
     as stored in an SQLite database
@@ -600,7 +591,7 @@ class GraphBackend(AbstractBackend):
         start = int(request.pageToken) if request.pageToken is not None else 0
         end = start + int(request.pageSize)
         # TODO implement other search fields
-        (count, protocolObjects) = objectGenerator(
+        count, protocolObjects = objectGenerator(
             start=start, end=end)
         responseBuilder = protocol.SearchResponseBuilder(
             responseClass, request.pageSize, self._maxResponseLength)
