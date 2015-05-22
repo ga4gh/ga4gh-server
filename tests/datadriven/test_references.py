@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import os
 import glob
+import hashlib
 
 # TODO it may be a bit circular to use pysam as our interface for
 # accessing reference information, since this is the method we use
@@ -31,23 +32,90 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
     a reference set, and verifies that it is consistent with the model
     built by the references.ReferenceSet object.
     """
-    def __init__(self, referenceSetId, baseDir):
-        super(ReferenceSetTest, self).__init__(referenceSetId, baseDir)
-        # Read in all the FASTA files in dataDir. Each reference within
-        # the reference set maps to a single FASTA file.
-        self._idFastaFileMap = {}
-        for path in glob.glob(os.path.join(self._dataDir, "*.fa.gz")):
-            filename = os.path.split(path)[1]
+    class ReferenceInfo(object):
+        """
+        Container class for information about a reference
+        """
+        def __init__(self, referenceSetId, fastaFileName):
+            filename = os.path.split(fastaFileName)[1]
             referenceId = "{}:{}".format(
                 referenceSetId, filename.split(".")[0])
-            self._idFastaFileMap[referenceId] = pysam.FastaFile(path)
+            self.id = referenceId
+            self.fastaFile = pysam.FastaFile(fastaFileName)
+            self.bases = self.fastaFile.fetch(self.fastaFile.references[0])
+
+    def __init__(self, referenceSetId, baseDir):
+        super(ReferenceSetTest, self).__init__(referenceSetId, baseDir)
+        self._referenceInfos = {}
+        for fastaFileName in glob.glob(
+                os.path.join(self._dataDir, "*.fa.gz")):
+            self._readFasta(referenceSetId, fastaFileName)
+
+    def _readFasta(self, referenceSetId, fastaFileName):
+        referenceInfo = self.ReferenceInfo(referenceSetId, fastaFileName)
+        self._referenceInfos[fastaFileName] = referenceInfo
 
     def getDataModelClass(self):
-        return references.ReferenceSet
+        return references.HtslibReferenceSet
 
     def getProtocolClass(self):
         return protocol.ReferenceSet
 
-    def testNumReferences(self):
-        references = list(self._gaObject.getReferences())
-        self.assertEqual(len(self._idFastaFileMap), len(references))
+    def testValidateObjects(self):
+        # test that validation works on reference sets and references
+        referenceSet = self._gaObject
+        referenceSetPe = referenceSet.toProtocolElement()
+        self.assertValid(
+            protocol.ReferenceSet, referenceSetPe.toJsonDict())
+        self.assertGreater(len(referenceSetPe.referenceIds), 0)
+        for gaReference in referenceSet.getReferences():
+            reference = gaReference.toProtocolElement().toJsonDict()
+            self.assertValid(protocol.Reference, reference)
+
+    def testGetBases(self):
+        # test searching with no arguments succeeds
+        referenceSet = self._gaObject
+        for gaReference in referenceSet.getReferences():
+            pysamReference = self._referenceInfos[
+                gaReference.getFastaFilePath()]
+            self.assertReferencesEqual(gaReference, pysamReference)
+
+    def testGetBasesStart(self):
+        # test searching with start only succeeds
+        self.doRangeTest(5, None)
+
+    def testGetBasesEnd(self):
+        # test searching with end only succeeds
+        self.doRangeTest(None, 5)
+
+    def testGetBasesRanges(self):
+        # test searching with start and end succeeds
+        self.doRangeTest(5, 10)
+
+    def testMd5checksums(self):
+        referenceSet = self._gaObject
+        referenceMd5s = []
+        for gaReference in referenceSet.getReferences():
+            pysamReference = self._referenceInfos[
+                gaReference.getFastaFilePath()]
+            basesChecksum = hashlib.md5(pysamReference.bases).hexdigest()
+            self.assertEqual("TODO", gaReference.getMd5Checksum())
+            referenceMd5s.append(basesChecksum)
+        # checksumsString = ''.join(referenceMd5s)
+        # md5checksum = hashlib.md5(checksumsString).hexdigest()
+        referenceSetMd5 = referenceSet._generateMd5Checksum()
+        self.assertEqual("TODO", referenceSetMd5)
+
+    def doRangeTest(self, start=None, end=None):
+        referenceSet = self._gaObject
+        for gaReference in referenceSet.getReferences():
+            pysamReference = self._referenceInfos[
+                gaReference.getFastaFilePath()]
+            self.assertReferencesEqual(
+                gaReference, pysamReference, start, end)
+
+    def assertReferencesEqual(
+            self, gaReference, pysamReference, start=None, end=None):
+        gaBases = gaReference.getBases(start, end)
+        pysamBases = pysamReference.bases[start:end]
+        self.assertEqual(gaBases, pysamBases)

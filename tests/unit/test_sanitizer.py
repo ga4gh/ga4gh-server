@@ -80,3 +80,10 @@ class TestPysamSanitizer(datamodel.PysamDatamodelMixin, unittest.TestCase):
             referenceNameArg[:self.maxStringLength], referenceName)
         self.assertEqual(start, self.samMin)
         self.assertEqual(end, self.samMaxEnd)
+
+    def testSanitizeFastaFileFetch(self):
+        startArg = self.fastaMin - 1
+        endArg = self.fastaMax + 1
+        start, end = self.sanitizeFastaFileFetch(startArg, endArg)
+        self.assertEqual(start, self.fastaMin)
+        self.assertEqual(end, self.fastaMax)

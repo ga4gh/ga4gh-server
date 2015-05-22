@@ -20,6 +20,7 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
 MIMETYPE = "application/json"
+SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
 
 
 app = flask.Flask(__name__)
@@ -149,6 +150,12 @@ class ServerStatus(object):
         """
         return app.backend.getReadGroupSets()
 
+    def getReferenceSets(self):
+        """
+        Returns the list of ReferenceSets for this server.
+        """
+        return app.backend.getReferenceSets()
+
 
 def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):
     """
@@ -199,11 +206,28 @@ def getFlaskResponse(responseString, httpStatus=200):
 def handleHttpPost(request, endpoint):
     """
     Handles the specified HTTP POST request, which maps to the specified
-    protocol handler handpoint and protocol request class.
+    protocol handler endpoint and protocol request class.
     """
     if request.mimetype != MIMETYPE:
         raise exceptions.UnsupportedMediaTypeException()
     responseStr = endpoint(request.get_data())
+    return getFlaskResponse(responseStr)
+
+
+def handleList(id_, endpoint, request):
+    """
+    Handles the specified HTTP GET request, mapping to a list request
+    """
+    responseStr = endpoint(id_, request.args)
+    return getFlaskResponse(responseStr)
+
+
+def handleHttpGet(id_, endpoint):
+    """
+    Handles the specified HTTP GET request, which maps to the specified
+    protocol handler endpoint and protocol request class
+    """
+    responseStr = endpoint(id_)
     return getFlaskResponse(responseStr)
 
 
@@ -231,14 +255,44 @@ def handleException(exception):
     return getFlaskResponse(responseStr, serverException.httpStatus)
 
 
+def assertCorrectVersion(version):
+    if not Version.isCurrentVersion(version):
+        raise exceptions.VersionNotSupportedException()
+
+
+def handleFlaskGetRequest(version, id_, flaskRequest, endpoint):
+    """
+    Handles the specified flask request for one of the GET URLs
+    at the specified version.  Invokes the specified endpoint to
+    generate a response.
+    """
+    assertCorrectVersion(version)
+    if flaskRequest.method == "GET":
+        return handleHttpGet(id_, endpoint)
+    else:
+        raise exceptions.MethodNotAllowedException()
+
+
+def handleFlaskListRequest(version, id_, flaskRequest, endpoint):
+    """
+    Handles the specified flask list request for one of the GET URLs
+    at the specified version.  Invokes the specified endpoint to
+    generate a response.
+    """
+    assertCorrectVersion(version)
+    if flaskRequest.method == "GET":
+        return handleList(id_, endpoint, flaskRequest)
+    else:
+        raise exceptions.MethodNotAllowedException()
+
+
 def handleFlaskPostRequest(version, flaskRequest, endpoint):
     """
     Handles the specified flask request for one of the POST URLS
-    at at the specified version. Invokes the specified endpoint to
+    at the specified version. Invokes the specified endpoint to
     generate a response.
     """
-    if not Version.isCurrentVersion(version):
-        raise exceptions.VersionNotSupportedException()
+    assertCorrectVersion(version)
     if flaskRequest.method == "POST":
         return handleHttpPost(flaskRequest, endpoint)
     elif flaskRequest.method == "OPTIONS":
@@ -257,37 +311,61 @@ def indexRedirect(version):
     return index()
 
 
-@app.route('/<version>/callsets/search', methods=['POST'])
+@app.route('/<version>/references/<id>')
+def getReference(version, id):
+    return handleFlaskGetRequest(
+        version, id, flask.request, app.backend.getReference)
+
+
+@app.route('/<version>/referencesets/<id>')
+def getReferenceSet(version, id):
+    return handleFlaskGetRequest(
+        version, id, flask.request, app.backend.getReferenceSet)
+
+
+@app.route('/<version>/references/<id>/bases')
+def listReferenceBases(version, id):
+    return handleFlaskListRequest(
+        version, id, flask.request, app.backend.listReferenceBases)
+
+
+@app.route('/<version>/callsets/search', methods=SEARCH_ENDPOINT_METHODS)
 def searchCallSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchCallSets)
 
 
-@app.route('/<version>/readgroupsets/search', methods=['POST'])
+@app.route('/<version>/readgroupsets/search', methods=SEARCH_ENDPOINT_METHODS)
 def searchReadGroupSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchReadGroupSets)
 
 
-@app.route('/<version>/reads/search', methods=['POST', 'OPTIONS'])
+@app.route('/<version>/reads/search', methods=SEARCH_ENDPOINT_METHODS)
 def searchReads(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchReads)
 
 
-@app.route('/<version>/referencesets/search', methods=['POST'])
+@app.route('/<version>/referencesets/search', methods=SEARCH_ENDPOINT_METHODS)
 def searchReferenceSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchReferenceSets)
 
 
-@app.route('/<version>/variantsets/search', methods=['POST', 'OPTIONS'])
+@app.route('/<version>/references/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchReferences(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchReferences)
+
+
+@app.route('/<version>/variantsets/search', methods=SEARCH_ENDPOINT_METHODS)
 def searchVariantSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchVariantSets)
 
 
-@app.route('/<version>/variants/search', methods=['POST', 'OPTIONS'])
+@app.route('/<version>/variants/search', methods=SEARCH_ENDPOINT_METHODS)
 def searchVariants(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchVariants)

@@ -37,11 +37,8 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self.id = readGroupId
             self.samFile = pysam.AlignmentFile(samFileName)
             self.reads = []
-            self.refNames = collections.defaultdict(list)
             self.refIds = collections.defaultdict(list)
             for read in self.samFile:
-                refName = self.samFile.getrname(read.reference_id)
-                self.refNames[refName].append(read)
                 refId = read.reference_id
                 self.refIds[refId].append(read)
                 self.reads.append(read)

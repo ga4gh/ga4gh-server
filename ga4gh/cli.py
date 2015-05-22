@@ -583,7 +583,7 @@ def addEndArgument(parser):
 
 
 def addIdArgument(parser):
-    parser.add_argument("--id", default=None, help="The id of the object")
+    parser.add_argument("id", default=None, help="The id of the object")
 
 
 def addGetArguments(parser):

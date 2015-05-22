@@ -9,10 +9,12 @@ import os
 import unittest
 
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
+import ga4gh.protocol as protocol
 
 
-class FaultyDataTest(unittest.TestCase):
+class FaultyVariantDataTest(unittest.TestCase):
     def setUp(self):
         self.testDataDir = "tests/faultydata/variants"
 
@@ -20,7 +22,7 @@ class FaultyDataTest(unittest.TestCase):
         return os.path.join(self.testDataDir, variantSetId)
 
 
-class TestVariantSetNoIndexedVcf(FaultyDataTest):
+class TestVariantSetNoIndexedVcf(FaultyVariantDataTest):
     setIds = ["no_indexed_vcf"]
 
     def testInstantiation(self):
@@ -31,7 +33,7 @@ class TestVariantSetNoIndexedVcf(FaultyDataTest):
                 variants.HtslibVariantSet, variantSetId, path)
 
 
-class TestInconsistentMetaData(FaultyDataTest):
+class TestInconsistentMetaData(FaultyVariantDataTest):
     setIds = ["inconsist_meta"]
 
     def testInstantiation(self):
@@ -42,7 +44,7 @@ class TestInconsistentMetaData(FaultyDataTest):
                 variants.HtslibVariantSet, variantSetId, path)
 
 
-class TestInconsistentCallSetId(FaultyDataTest):
+class TestInconsistentCallSetId(FaultyVariantDataTest):
     setIds = ["inconsist_sampleid", "inconsist_sampleid2"]
 
     def testInstantiation(self):
@@ -53,7 +55,7 @@ class TestInconsistentCallSetId(FaultyDataTest):
                 variants.HtslibVariantSet, variantSetId, path)
 
 
-class TestOverlappingVcfVariants(FaultyDataTest):
+class TestOverlappingVcfVariants(FaultyVariantDataTest):
     setIds = ["overlapping_vcf"]
 
     def testInstantiation(self):
@@ -64,7 +66,7 @@ class TestOverlappingVcfVariants(FaultyDataTest):
                 variants.HtslibVariantSet, variantSetId, path)
 
 
-class TestEmptyDirException(FaultyDataTest):
+class TestEmptyDirException(FaultyVariantDataTest):
     setIds = ["empty_dir"]
 
     def testInstantiation(self):
@@ -75,7 +77,7 @@ class TestEmptyDirException(FaultyDataTest):
                 variants.HtslibVariantSet, variantSetId, path)
 
 
-class TestDuplicateCallSetId(FaultyDataTest):
+class TestDuplicateCallSetId(FaultyVariantDataTest):
     """
     THIS SECTION IS CURRENTLY NOT WORKING
     It returns the following error:
@@ -90,12 +92,28 @@ class TestDuplicateCallSetId(FaultyDataTest):
     """
     setIds = ["duplicated_sampleid"]
 
+    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testInstantiation(self):
-        """
         for variantSetId in self.setIds:
             path = self.getFullPath(variantSetId)
             self.assertRaises(
                 exceptions.DuplicateCallSetIdException,
                 variants.HtslibVariantSet, variantSetId, path)
-        """
-        pass
+
+
+class FaultyReferenceDataTest(unittest.TestCase):
+    def setUp(self):
+        self.testDataDir = "tests/faultydata/references"
+
+    def getFullPath(self, referenceSetId):
+        return os.path.join(self.testDataDir, referenceSetId)
+
+
+class TestTwoReferences(FaultyReferenceDataTest):
+    setIds = ["two_references"]
+
+    def testInstantiation(self):
+        for referenceSetId in self.setIds:
+            path = self.getFullPath(referenceSetId)
+            with self.assertRaises(exceptions.NotExactlyOneReferenceException):
+                references.HtslibReferenceSet(referenceSetId, path)

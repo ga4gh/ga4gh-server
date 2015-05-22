@@ -48,6 +48,9 @@ class PysamDatamodelMixin(object):
     vcfMin = -2**31
     vcfMax = 2**31 - 1
 
+    fastaMin = 0
+    fastaMax = 2**30 - 1
+
     maxStringLength = 2**10  # arbitrary
 
     @classmethod
@@ -75,6 +78,18 @@ class PysamDatamodelMixin(object):
         if start is not None and end is not None:
             cls.assertValidRange(start, end, 'start', 'end')
         return referenceName, start, end
+
+    @classmethod
+    def sanitizeFastaFileFetch(cls, start=None, end=None):
+        if start is not None:
+            start = cls.sanitizeInt(
+                start, cls.fastaMin, cls.fastaMax, 'start')
+        if end is not None:
+            end = cls.sanitizeInt(
+                end, cls.fastaMin, cls.fastaMax, 'end')
+        if start is not None and end is not None:
+            cls.assertValidRange(start, end, 'start', 'end')
+        return start, end
 
     @classmethod
     def assertValidRange(cls, start, end, startName, endName):
@@ -124,7 +139,8 @@ class PysamDatamodelMixin(object):
         """
         numDataFiles = 0
         for pattern in patterns:
-            for filename in glob.glob(os.path.join(dataDir, pattern)):
+            scanPath = os.path.join(dataDir, pattern)
+            for filename in glob.glob(scanPath):
                 self._addDataFile(filename)
                 numDataFiles += 1
         # This is a temporary workaround to allow us to use htslib's

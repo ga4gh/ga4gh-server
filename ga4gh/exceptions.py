@@ -106,6 +106,13 @@ class BadRequestException(RuntimeException):
     message = "Bad request"
 
 
+class BadRequestIntegerException(BadRequestException):
+    def __init__(self, attrName, intString):
+        self.message = \
+            "{} argument '{}' could not be parsed as an integer".format(
+                attrName, intString)
+
+
 class BadPageSizeException(BadRequestException):
     def __init__(self, pageSize):
         self.message = "Request page size '{}' is invalid".format(pageSize)
@@ -170,6 +177,12 @@ class VariantSetNotFoundException(NotFoundException):
 class ReadGroupNotFoundException(ObjectNotFoundException):
     def __init__(self, readGroupId):
         self.message = "readGroupId '{}' not found".format(readGroupId)
+
+
+class ObjectWithIdNotFoundException(ObjectNotFoundException):
+    def __init__(self, objectId):
+        self.message = "No object of this type exists with id '{}'".format(
+            objectId)
 
 
 class UnsupportedMediaTypeException(RuntimeException):
@@ -292,6 +305,16 @@ class InconsistentCallSetIdException(MalformedException):
             "Inconsistent sample names found in {}. Sample IDs must be"
             " consistent within the same VariantSet"
             " directory.".format(fileName))
+
+
+class NotExactlyOneReferenceException(MalformedException):
+    """
+    A FASTA file has a reference count not equal to one
+    """
+    def __init__(self, id_, numReferences):
+        self.message = (
+            "FASTA files must have one and only one reference.  "
+            "File {} has {} references.".format(id_, numReferences))
 
 
 ###############################################################

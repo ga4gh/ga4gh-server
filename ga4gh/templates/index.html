@@ -62,6 +62,20 @@
                 {% endfor %}
             {% endfor %}
             </table>
+            <h4>ReferenceSets</h4>
+            <table>
+                {% for referenceSet in info.getReferenceSets() %}
+                <tr>
+                    <td>{{ referenceSet.getId() }}</td>
+                </tr>
+                    {% for reference in referenceSet.getReferences() %}
+                <tr>
+                    <td></td>
+                    <td>{{ reference.getId() }}</td>
+                </tr>
+                {% endfor %}
+            {% endfor %}
+            </table>
         </div>
     </body>
 </html>
