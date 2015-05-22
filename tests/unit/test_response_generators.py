@@ -88,7 +88,8 @@ class TestVariantsGenerator(unittest.TestCase):
 
     def _initVariantSet(self, numVariants):
         variantSet = MockVariantSet(self.variantSetId, numVariants)
-        self.backend._variantSetIdMap = {self.variantSetId: variantSet}
+        self.backend.getDataset()._variantSetIdMap = {
+            self.variantSetId: variantSet}
         self.request.variantSetIds = [self.variantSetId]
 
 
@@ -170,7 +171,8 @@ class TestReadsGenerator(unittest.TestCase):
 
     def _initReadGroup(self, numAlignments):
         readGroup = MockReadGroup(self.readGroupId, numAlignments)
-        self.backend._readGroupIdMap = {self.readGroupId: readGroup}
+        self.backend.getDataset()._readGroupIdMap = {
+            self.readGroupId: readGroup}
         self.request.readGroupIds = [self.readGroupId]
 
 

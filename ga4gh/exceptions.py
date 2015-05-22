@@ -225,6 +225,12 @@ class DataException(BaseServerException):
     message = "Faulty data found or data file is missing."
 
 
+class NotExactlyOneDatasetException(DataException):
+    def __init__(self, datasetDirs):
+        msg = "Not exactly one dataset found: {}".format(datasetDirs)
+        super(NotExactlyOneDatasetException, self).__init__(msg)
+
+
 class FileOpenFailedException(DataException):
 
     def __init__(self, filename):

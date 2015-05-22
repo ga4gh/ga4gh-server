@@ -87,9 +87,10 @@ class TestAbstractBackend(unittest.TestCase):
             protocol.SearchCallSetsResponse, "callSets")
 
     def testGetVariantSets(self):
-        sortedVariantSetsFromGetter = sorted(self._backend.getVariantSets())
+        sortedVariantSetsFromGetter = sorted(
+            self._backend.getDataset().getVariantSets())
         sortedVariantSetMapValues = sorted(
-            self._backend._variantSetIdMap.values())
+            self._backend.getDataset()._variantSetIdMap.values())
         self.assertEqual(
             sortedVariantSetMapValues, sortedVariantSetsFromGetter)
 
@@ -178,8 +179,9 @@ class TestFileSystemBackend(TestAbstractBackend):
     """
     def setUp(self):
         self._dataDir = os.path.join("tests", "data")
-        self._variantsDir = os.path.join(self._dataDir, "variants")
         self._referencesDir = os.path.join(self._dataDir, "references")
+        self._datasetDir = os.path.join(self._dataDir, "dataset1")
+        self._variantsDir = os.path.join(self._datasetDir, "variants")
         self._vcfs = {}
         self._variants = []
         self._referenceNames = set()
