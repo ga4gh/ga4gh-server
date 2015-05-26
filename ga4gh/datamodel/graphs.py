@@ -153,16 +153,17 @@ class GraphDatabase(object):
         return count, callSets
 
     def searchAlleleCalls(self, alleleId=None,
-                          callSetId=None, variantSet=None, start=0, end=None):
+                          callSetId=None, variantSetId=None,
+                          start=0, end=None):
         limits = _makeLimits(start, end)
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
-            count = sg.searchAlleleCallsCount(
-                alleleId=alleleId, callSetId=callSetId, variantSet=variantSet)
-            alleleCallsDicts = sg.searchAlleleCalls(
-                limits=limits,
-                alleleId=alleleId,
-                callSetId=callSetId,
-                variantSet=variantSet)
+            count = sg.searchAlleleCallsCount(alleleId=alleleId,
+                                              callSetId=callSetId,
+                                              variantSetId=variantSetId)
+            alleleCallsDicts = sg.searchAlleleCalls(limits=limits,
+                                                    alleleId=alleleId,
+                                                    callSetId=callSetId,
+                                                    variantSetId=variantSetId)
         alleleCalls = []
         for ac in alleleCallsDicts:
             alleleCall = protocol.AlleleCall()
@@ -171,6 +172,20 @@ class GraphDatabase(object):
             alleleCall.totalCopies = ac['ploidy']
             alleleCalls.append(alleleCall)
         return count, alleleCalls
+
+    def searchAlleles(self, variantSetId=None, start=0, end=None):
+        limits = _makeLimits(start, end)
+        with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
+            count = sg.searchAllelesCount(variantSetId=variantSetId)
+            allelesDicts = sg.searchAlleles(limits=limits,
+                                            variantSetId=variantSetId)
+        alleles = []
+        for a in allelesDicts:
+            allele = protocol.Allele()
+            allele.id = a['ID']
+            allele.variantSetId = a['variantSetID']
+            alleles.append(allele)
+        return count, alleles
 
     def searchSequences(self, referenceSetId=None, variantSetId=None,
                         start=0, end=None):

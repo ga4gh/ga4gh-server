@@ -145,6 +145,14 @@ class SideGraph(object):
     def searchVariantSets(self, limits=None):
         return self._getRowsAsDicts("VariantSet", limits)
 
+    def searchAllelesCount(self, variantSetId=None):
+        return self._countRows("Allele",
+                               variantSetID=variantSetId)
+
+    def searchAlleles(self, limits=None, variantSetId=None):
+        return self._getRowsAsDicts("Allele", limits,
+                                    variantSetID=variantSetId)
+
     def searchCallSetsCount(self):
         return self._countRows("CallSet")
 
@@ -158,12 +166,12 @@ class SideGraph(object):
         return callSets
 
     def searchAlleleCallsCount(self, alleleId=None,
-                               callSetId=None, variantSet=None):
+                               callSetId=None, variantSetId=None):
         return self._countRows("AlleleCall",
-                               alleleId=alleleId, callSetId=callSetId)
+                               alleleID=alleleId, callSetID=callSetId)
 
     def searchAlleleCalls(self, limits=None,
-                          alleleId=None, callSetId=None, variantSet=None):
+                          alleleId=None, callSetId=None, variantSetId=None):
         # Can't use the regular _getRowsAsDicts mechanism as it has two
         # primary keys, not ID. Ordering is by those, lexicographic.
         # TODO: restrict by variantSet

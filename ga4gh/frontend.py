@@ -272,6 +272,12 @@ def searchAlleleCalls(version):
         version, flask.request, app.backend.searchAlleleCalls)
 
 
+@app.route('/<version>/alleles/search', methods=['POST'])
+def searchAlleles(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchAlleles)
+
+
 @app.route('/<version>/readgroupsets/search', methods=['POST'])
 def searchReadGroupSets(version):
     return handleFlaskPostRequest(

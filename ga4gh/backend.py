@@ -564,6 +564,7 @@ class GraphBackend(AbstractBackend):
         self.callSetsGenerator = self._graphs.searchCallSets
         self.sequencesGenerator = self._graphs.searchSequences
         self.joinsGenerator = self._graphs.searchJoins
+        self.allelesGenerator = self._graphs.searchAlleles
 
     def runSearchRequest(
             self, requestStr, requestClass, responseClass, objectGenerator):
@@ -618,6 +619,16 @@ class GraphBackend(AbstractBackend):
             request, protocol.SearchAlleleCallsRequest,
             protocol.SearchAlleleCallsResponse,
             self.alleleCallsGenerator)
+
+    def searchAlleles(self, request):
+        """
+        Returns a SearchAllelesResponse for the specified
+        SearchAllelesRequest Object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchAllelesRequest,
+            protocol.SearchAllelesResponse,
+            self.allelesGenerator)
 
     def searchSequences(self, requestStr):
         """
