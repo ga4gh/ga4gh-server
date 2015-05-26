@@ -125,6 +125,11 @@ class RequestFactory(object):
         # setCommaSeparatedAttribute(request, self.args, 'callSetIds')
         return request
 
+    def createSearchAllelesRequest(self):
+        request = protocol.SearchAllelesRequest()
+        # setCommaSeparatedAttribute(request, self.args, 'variantId')
+        return request
+
     def createExtractSubgraphRequest(self):
         request = protocol.ExtractSubgraphRequest()
         request.position = protocol.Position()
@@ -558,6 +563,19 @@ class SearchAlleleCallsRunner(AbstractSearchRunner):
         self._run(self._httpClient.searchAlleleCalls)
 
 
+class SearchAllelesRunner(AbstractSearchRunner):
+    """
+    Runner class for the callsets/search method
+    """
+    def __init__(self, args):
+        super(SearchAllelesRunner, self).__init__(args)
+        request = RequestFactory(args).createSearchAllelesRequest()
+        self._setRequest(request, args)
+
+    def run(self):
+        self._run(self._httpClient.searchAlleles)
+
+
 class SearchReadsRunner(AbstractSearchRunner):
     """
     Runner class for the reads/search method
@@ -953,6 +971,17 @@ def addAlleleCallsSearchParser(subparsers):
     return parser
 
 
+def addAllelesSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "alleles-search",
+        description="Search for alleles",
+        help="Search for alleles")
+    parser.set_defaults(runner=SearchAllelesRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
 def addReadsSearchParser(subparsers):
     parser = subparsers.add_parser(
         "reads-search",
@@ -1028,6 +1057,7 @@ def client_main(parser=None):
     addReadGroupSetsSearchParser(subparsers)
     addCallsetsSearchParser(subparsers)
     addAlleleCallsSearchParser(subparsers)
+    addAllelesSearchParser(subparsers)
     addReadsSearchParser(subparsers)
     addReferenceSetsGetParser(subparsers)
     addReferencesGetParser(subparsers)

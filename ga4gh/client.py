@@ -288,6 +288,13 @@ class HttpClient(object):
         return self.runSearchRequest(
             protocolRequest, "allelecalls", protocol.SearchAlleleCallsResponse)
 
+    def searchAlleles(self, protocolRequest):
+        """
+        Returns an iterator over the Alleles from the server
+        """
+        return self.runSearchRequest(
+            protocolRequest, "alleles", protocol.SearchAllelesResponse)
+
     def searchReadGroupSets(self, protocolRequest):
         """
         Returns an iterator over the ReadGroupSets from the server
