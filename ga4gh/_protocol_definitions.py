@@ -34,7 +34,8 @@ class Allele(ProtocolElement):
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Allele",
-"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
+"fields": [{"doc": "", "type": "string", "name": "id"},
+{"doc": "", "type": "string", "name": "name"}, {"doc": "",
 "type": "string", "name": "variantSetId"}, {"doc": "", "type": {"doc":
 "", "type": "record", "name": "Path", "fields": [{"default": [],
 "doc": "", "type": {"items": {"doc": "", "type": "record", "name":
@@ -53,6 +54,7 @@ class Allele(ProtocolElement):
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
         "id",
+        "name",
         "path",
         "variantSetId",
     ])
@@ -73,11 +75,12 @@ class Allele(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'id', 'path', 'variantSetId'
+        'id', 'name', 'path', 'variantSetId'
     ]
 
     def __init__(self):
         self.id = None
+        self.name = None
         self.path = None
         self.variantSetId = None
 
