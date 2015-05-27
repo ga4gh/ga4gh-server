@@ -219,12 +219,13 @@ class SideGraph(object):
             fastaFileName, key_fn=lambda key: key.split()[0])
         return fasta[recordName][start:end]
 
-    def getVariantSetIdForAllele(self, alleleID):
+    def getAllele(self, alleleID):
         """
         Returns variantSet ID for a given allele ID
         """
         allele = self._getRowByIdAsDict("Allele", alleleID)
-        return allele["variantSetID"]
+        return {'variantSetId': allele["variantSetID"],
+                'name': allele["name"]}
 
     def getAllelePathItems(self, alleleID):
         """

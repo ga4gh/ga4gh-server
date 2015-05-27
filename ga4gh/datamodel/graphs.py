@@ -183,6 +183,7 @@ class GraphDatabase(object):
         for a in allelesDicts:
             allele = protocol.Allele()
             allele.id = a['ID']
+            allele.name = a['name']
             allele.variantSetId = a['variantSetID']
             alleles.append(allele)
         return count, alleles
@@ -254,7 +255,9 @@ class GraphDatabase(object):
         ret = protocol.Allele()
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             ret.id = alleleId
-            ret.variantSetId = sg.getVariantSetIdForAllele(alleleId)
+            alleleData = sg.getAllele(alleleId)
+            ret.variantSetId = alleleData['variantSetId']
+            ret.name = alleleData['name']
             ret.path = protocol.Path()
             ret.path.segments = map(_makeSegment,
                                     sg.getAllelePathItems(alleleId))
