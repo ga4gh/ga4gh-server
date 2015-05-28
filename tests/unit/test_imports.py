@@ -162,8 +162,10 @@ class ImportGraphLayerChecker(object):
                       'ga4gh/datamodel/references.py',
                       'ga4gh/datamodel/variants.py',
                       'ga4gh/datamodel/datasets.py'],
-        'libraries': ['ga4gh/converters.py'],
-        'protocol': ['ga4gh/protocol.py', 'ga4gh/_protocol_definitions.py'],
+        'libraries': ['ga4gh/converters.py',
+                      'ga4gh/configtest.py'],
+        'protocol': ['ga4gh/protocol.py',
+                     'ga4gh/_protocol_definitions.py'],
         'config': ['ga4gh/serverconfig.py'],
         'avrotools': ['ga4gh/avrotools.py'],
     }
