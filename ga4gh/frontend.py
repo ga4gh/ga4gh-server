@@ -88,7 +88,8 @@ class ServerStatus(object):
         """
         # TODO what other config keys are appropriate to export here?
         keys = [
-            'DEBUG', 'REQUEST_VALIDATION', 'RESPONSE_VALIDATION'
+            'DEBUG', 'REQUEST_VALIDATION', 'RESPONSE_VALIDATION',
+            'DEFAULT_PAGE_SIZE', 'MAX_RESPONSE_LENGTH',
         ]
         return [(k, app.config[k]) for k in keys]
 
