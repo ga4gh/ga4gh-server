@@ -602,7 +602,7 @@ class GraphBackend(AbstractBackend):
             if responseBuilder.isFull():
                 break
         npt = start + i + 1
-        nextPageToken = npt if npt < count else None
+        nextPageToken = str(npt) if npt < count else None
         responseBuilder.setNextPageToken(nextPageToken)
 
         responseString = responseBuilder.getJsonString()

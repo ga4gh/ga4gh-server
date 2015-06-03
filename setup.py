@@ -2,8 +2,8 @@ import re
 from ez_setup import use_setuptools
 from setuptools import setup
 
-MIN_SETUPTOOLS_VERSION = "0.7"
-use_setuptools(version=MIN_SETUPTOOLS_VERSION)
+MIN_SETUPTOOLS_VERSION = "5.4.1"
+use_setuptools (version=MIN_SETUPTOOLS_VERSION)
 
 
 # Following the recommendations of PEP 396 we parse the version number
