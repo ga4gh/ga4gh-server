@@ -19,5 +19,6 @@ Contents
     installation
     configuration
     development
+    status
 
 
