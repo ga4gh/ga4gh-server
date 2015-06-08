@@ -37,8 +37,9 @@ class TestVariantsGenerator(unittest.TestCase):
     """
     def setUp(self):
         self.request = protocol.SearchVariantsRequest()
-        self.backend = backend.AbstractBackend()
+        self.backend = backend.SimulatedBackend()
         self.variantSetId = "variantSetId"
+        self.datasetId = self.backend.getDatasetIds()[0]
 
     def testNoVariantSetsNotSupported(self):
         # a request for no variant sets should throw an exception
@@ -88,7 +89,7 @@ class TestVariantsGenerator(unittest.TestCase):
 
     def _initVariantSet(self, numVariants):
         variantSet = MockVariantSet(self.variantSetId, numVariants)
-        self.backend.getDataset()._variantSetIdMap = {
+        self.backend.getDataset(self.datasetId)._variantSetIdMap = {
             self.variantSetId: variantSet}
         self.request.variantSetIds = [self.variantSetId]
 
@@ -120,8 +121,9 @@ class TestReadsGenerator(unittest.TestCase):
     """
     def setUp(self):
         self.request = protocol.SearchReadsRequest()
-        self.backend = backend.AbstractBackend()
+        self.backend = backend.SimulatedBackend()
         self.readGroupId = "readGroupId"
+        self.datasetId = self.backend.getDatasetIds()[0]
 
     def testNoReadGroupsNotSupported(self):
         # a request for no read groups should throw an exception
@@ -171,7 +173,7 @@ class TestReadsGenerator(unittest.TestCase):
 
     def _initReadGroup(self, numAlignments):
         readGroup = MockReadGroup(self.readGroupId, numAlignments)
-        self.backend.getDataset()._readGroupIdMap = {
+        self.backend.getDataset(self.datasetId)._readGroupIdMap = {
             self.readGroupId: readGroup}
         self.request.readGroupIds = [self.readGroupId]
 

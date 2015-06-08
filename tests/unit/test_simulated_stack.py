@@ -38,9 +38,10 @@ class TestSimulatedStack(unittest.TestCase):
 
     def setUp(self):
         self.backend = frontend.app.backend
+        self.datasetId = self.backend.getDatasetIds()[0]
         self.variantSetIds = [
             variantSet.getId() for variantSet in
-            self.backend.getDataset().getVariantSets()]
+            self.backend.getDataset(self.datasetId).getVariantSets()]
 
     def sendJsonPostRequest(self, path, data):
         return self.app.post(
@@ -51,6 +52,7 @@ class TestSimulatedStack(unittest.TestCase):
         expectedIds = self.variantSetIds
         request = protocol.SearchVariantSetsRequest()
         request.pageSize = len(expectedIds)
+        request.datasetIds = [self.datasetId]
         path = utils.applyVersion('/variantsets/search')
         response = self.sendJsonPostRequest(
             path, request.toJsonString())

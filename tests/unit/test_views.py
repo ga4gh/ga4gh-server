@@ -60,9 +60,9 @@ class TestFrontend(unittest.TestCase):
         request.end = 1
         return self.sendPostRequest('/variants/search', request)
 
-    def sendVariantSetsSearch(self, datasetIds=[""]):
+    def sendVariantSetsSearch(self):
         request = protocol.SearchVariantSetsRequest()
-        request.datasetIds = datasetIds
+        request.datasetIds = ["simulatedDataset1"]
         return self.sendPostRequest('/variantsets/search', request)
 
     def sendCallSetsSearch(self):
@@ -79,6 +79,10 @@ class TestFrontend(unittest.TestCase):
         request = protocol.SearchReadsRequest()
         request.readGroupIds = readGroupIds
         return self.sendPostRequest('/reads/search', request)
+
+    def sendDatasetsSearch(self):
+        request = protocol.SearchDatasetsRequest()
+        return self.sendPostRequest('/datasets/search', request)
 
     def sendGetRequest(self, path):
         versionedPath = utils.applyVersion(path)
@@ -145,6 +149,7 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendReferenceSetsGet())
         assertHeaders(self.sendReferencesSearch())
         assertHeaders(self.sendReferenceBasesList())
+        assertHeaders(self.sendDatasetsSearch())
         # TODO: Test other methods as they are implemented
 
     def verifySearchRouting(self, path, getDefined=False):
@@ -248,6 +253,13 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(
             responseData.alignments[1].id,
             "aReadGroupSet:one:simulated1")
+
+    def testDatasetsSearch(self):
+        response = self.sendDatasetsSearch()
+        responseData = protocol.SearchDatasetsResponse.fromJsonString(
+            response.data)
+        datasets = list(responseData.datasets)
+        self.assertEqual('simulatedDataset1', datasets[0].id)
 
     def testWrongVersion(self):
         path = '/v0.1.2/variantsets/search'

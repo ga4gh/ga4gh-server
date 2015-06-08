@@ -2910,6 +2910,81 @@ This metadata represents VCF header information.
         self.type = None
         self.value = None
 
+
+class SearchDatasetsRequest(SearchRequest):
+    """
+    This request maps to the body of `POST /datasets/search` as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchDatasetsRequest", "fields": [{"default": null, "doc": "",
+"type": ["null", "int"], "name": "pageSize"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'pageSize', 'pageToken'
+    ]
+
+    def __init__(self):
+        self.pageSize = None
+        self.pageToken = None
+
+
+class SearchDatasetsResponse(SearchResponse):
+    """
+    This is the response from `POST /datasets/search` expressed as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchDatasetsResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
+"name": "Dataset", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}], "doc": ""}, "type": "array"}, "name":
+"datasets"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "datasets"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'datasets': Dataset,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'datasets': Dataset,
+        }
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'datasets', 'nextPageToken'
+    ]
+
+    def __init__(self):
+        self.datasets = []
+        self.nextPageToken = None
+
+
 postMethods = \
     [('/analyses/search',
       SearchAnalysesRequest,

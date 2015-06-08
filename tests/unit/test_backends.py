@@ -13,6 +13,7 @@ import unittest
 
 import pysam
 
+import ga4gh.exceptions as exceptions
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
@@ -54,6 +55,7 @@ class TestAbstractBackend(unittest.TestCase):
         the details of the pageSize.
         """
         request = protocol.SearchVariantSetsRequest()
+        request.datasetIds = [self._backend.getDatasetIds()[0]]
         return self.resultIterator(
             request, pageSize, self._backend.searchVariantSets,
             protocol.SearchVariantSetsResponse, "variantSets")
@@ -87,10 +89,11 @@ class TestAbstractBackend(unittest.TestCase):
             protocol.SearchCallSetsResponse, "callSets")
 
     def testGetVariantSets(self):
+        datasetId = self._backend.getDatasetIds()[0]
         sortedVariantSetsFromGetter = sorted(
-            self._backend.getDataset().getVariantSets())
+            self._backend.getDataset(datasetId).getVariantSets())
         sortedVariantSetMapValues = sorted(
-            self._backend.getDataset()._variantSetIdMap.values())
+            self._backend.getDataset(datasetId)._variantSetIdMap.values())
         self.assertEqual(
             sortedVariantSetMapValues, sortedVariantSetsFromGetter)
 
@@ -101,6 +104,7 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testRunSearchRequest(self):
         request = protocol.SearchVariantSetsRequest()
+        request.datasetIds = [self._backend.getDatasetIds()[0]]
         responseStr = self._backend.runSearchRequest(
             request.toJsonString(), protocol.SearchVariantSetsRequest,
             protocol.SearchVariantSetsResponse,
@@ -125,6 +129,7 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testSearchVariantSets(self):
         request = protocol.SearchVariantSetsRequest()
+        request.datasetIds = [self._backend.getDatasetIds()[0]]
         responseStr = self._backend.searchVariantSets(request.toJsonString())
         response = protocol.SearchVariantSetsResponse.fromJsonString(
             responseStr)
@@ -207,6 +212,23 @@ class TestFileSystemBackend(TestAbstractBackend):
     def testRunListReferenceBases(self):
         id_ = "example_1:simple"
         self.runListReferenceBases(id_)
+
+    def testOneDatasetRestriction(self):
+        # no datasetIds attr
+        request = protocol.SearchReadsRequest()
+        self._backend._getDatasetFromRequest(request)
+
+        # datasetIds attr
+        request = protocol.SearchVariantSetsRequest()
+        with self.assertRaises(exceptions.NotExactlyOneDatasetException):
+            self._backend._getDatasetFromRequest(request)
+        datasetId = 'dataset1'
+        request.datasetIds = [datasetId]
+        dataset = self._backend._getDatasetFromRequest(request)
+        self.assertEquals(dataset.getId(), datasetId)
+        request.datasetIds = ['dataset1', 'dataset2']
+        with self.assertRaises(exceptions.NotExactlyOneDatasetException):
+            self._backend._getDatasetFromRequest(request)
 
 
 class TestTopLevelObjectGenerator(unittest.TestCase):
