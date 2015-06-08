@@ -26,7 +26,7 @@ class MockVariantSet(variants.AbstractVariantSet):
         self.numVariants = numVariants
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+                    name=None, callSetIds=None):
         for i in range(self.numVariants):
             yield generateVariant()
 

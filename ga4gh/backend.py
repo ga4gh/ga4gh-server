@@ -166,7 +166,7 @@ class VariantsIntervalIterator(IntervalIterator):
     def _getIterator(self):
         iterator = self._container.getVariants(
             self._request.referenceName, self._startPosition,
-            self._request.end, self._request.variantName,
+            self._request.end, self._request.name,
             self._request.callSetIds)
         return iterator
 

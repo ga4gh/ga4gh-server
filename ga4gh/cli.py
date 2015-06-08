@@ -75,7 +75,7 @@ class RequestFactory(object):
     def createSearchVariantsRequest(self):
         request = protocol.SearchVariantsRequest()
         request.referenceName = self.args.referenceName
-        request.variantName = self.args.variantName
+        request.name = self.args.name
         request.start = self.args.start
         request.end = self.args.end
         if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
@@ -552,7 +552,7 @@ def addVariantSearchOptions(parser):
         "--referenceName", "-r", default="1",
         help="Only return variants on this reference.")
     parser.add_argument(
-        "--variantName", "-n", default=None,
+        "--name", "-n", default=None,
         help="Only return variants which have exactly this name.")
     parser.add_argument(
         "--callSetIds", "-c", default=[],

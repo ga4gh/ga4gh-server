@@ -25,7 +25,7 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.referenceName = 'ref'
         self.startPosition = 100
         self.endPosition = 103
-        self.variantName = 'unused'
+        self.name = 'unused'
         self.callSetIds = ['unused']
         self.bases = ["A", "C", "G", "T"]
 
@@ -40,7 +40,7 @@ class TestSimulatedVariantSet(unittest.TestCase):
             simulatedVariantSet = self.simulatedVariantSet
         simulatedVariants = simulatedVariantSet.getVariants(
             self.referenceName, self.startPosition, self.endPosition,
-            self.variantName, self.callSetIds)
+            self.name, self.callSetIds)
         variantList = list(simulatedVariants)
         return variantList
 

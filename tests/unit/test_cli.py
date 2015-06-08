@@ -49,7 +49,7 @@ class TestGa2VcfArguments(unittest.TestCase):
         cliInput = """--workarounds WORK,AROUND
         --key KEY -O --outputFile /dev/null
         variants-search --referenceName REFERENCENAME
-        --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
+        --name VARIANTNAME --callSetIds CALL,SET,IDS --start 0
         --end 1 --pageSize 2 --variantSetIds VARIANT,SET,IDS
         --datasetIds DATASET,IDS --maxCalls 5
         BASEURL"""
@@ -116,7 +116,7 @@ class TestClientArguments(unittest.TestCase):
 
     def testVariantsSearchArguments(self):
         self.cliInput = """variants-search --referenceName REFERENCENAME
-        --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
+        --name VARIANTNAME --callSetIds CALL,SET,IDS --start 0
         --end 1 --pageSize 2 --variantSetIds VARIANT,SET,IDS"""
 
     def testVariantSetsSearchArguments(self):
