@@ -50,13 +50,13 @@ INSERT INTO Reference_ReferenceSet_Join VALUES (4, 1);
 INSERT INTO Reference_ReferenceSet_Join VALUES (5, 1);
 
 INSERT INTO GraphJoin_ReferenceSet_Join VALUES (1, 1);
-INSERT INTO GraphJoin_ReferenceSet_Join VALUES (1, 2);
-INSERT INTO GraphJoin_ReferenceSet_Join VALUES (1, 3);
-INSERT INTO GraphJoin_ReferenceSet_Join VALUES (1, 4);
-INSERT INTO GraphJoin_ReferenceSet_Join VALUES (1, 5);
-INSERT INTO GraphJoin_ReferenceSet_Join VALUES (1, 6);
-INSERT INTO GraphJoin_ReferenceSet_Join VALUES (1, 7);
-INSERT INTO GraphJoin_ReferenceSet_Join VALUES (1, 8);
+INSERT INTO GraphJoin_ReferenceSet_Join VALUES (2, 1);
+INSERT INTO GraphJoin_ReferenceSet_Join VALUES (3, 1);
+INSERT INTO GraphJoin_ReferenceSet_Join VALUES (4, 1);
+INSERT INTO GraphJoin_ReferenceSet_Join VALUES (5, 1);
+INSERT INTO GraphJoin_ReferenceSet_Join VALUES (6, 1);
+INSERT INTO GraphJoin_ReferenceSet_Join VALUES (7, 1);
+INSERT INTO GraphJoin_ReferenceSet_Join VALUES (8, 1);
 
 --
 -- Describe some inputs presumably used to construct the graph,
