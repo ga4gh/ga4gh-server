@@ -68,8 +68,9 @@ class BaseServerException(Exception):
         """
         # We use the CRC32 digest of the class name as a unique code.
         # We follow the recommendation of the Python docs to ensure
-        # that this value is signed 32 bit integer.
-        code = zlib.crc32(cls.__name__) & 0xffffffff
+        # that this value is signed 32 bit integer, and then mod it
+        # to ensure non-negativity
+        code = (zlib.crc32(cls.__name__) & 0xffffffff) % 2**31
         return code
 
 

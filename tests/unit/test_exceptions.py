@@ -62,6 +62,7 @@ class TestExceptionConsistency(unittest.TestCase):
     Ensure invariants of exceptions:
     - every exception has a non-None error code
     - every exception has a unique error code
+    - every exception has an error code in the range [0, 2**31-1]
     - every exception can be instantiated successfully
     """
     def _getExceptionClasses(self):
@@ -76,6 +77,8 @@ class TestExceptionConsistency(unittest.TestCase):
             self.assertNotIn(code, codes)
             codes.add(code)
             self.assertIsNotNone(code)
+            self.assertGreaterEqual(code, 0)
+            self.assertLessEqual(code, 2**31 - 1)
 
     def testInstantiation(self):
         for class_ in self._getExceptionClasses():
