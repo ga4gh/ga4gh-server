@@ -315,7 +315,14 @@ def index():
 
 @app.route('/<version>')
 def indexRedirect(version):
-    return index()
+    try:
+        isCurrentVersion = Version.isCurrentVersion(version)
+    except TypeError:  # malformed "version string"
+        raise exceptions.PathNotFoundException()
+    if isCurrentVersion:
+        return index()
+    else:
+        raise exceptions.PathNotFoundException()
 
 
 @app.route('/<version>/references/<id>')
