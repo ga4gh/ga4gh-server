@@ -29,6 +29,9 @@ class PysamSanitizer(object):
     vcfMin = -2**31
     vcfMax = 2**31 - 1
 
+    rNameMin = 0
+    rNameMax = 85
+
     maxStringLength = 2**10  # arbitrary
 
     @classmethod
@@ -58,6 +61,12 @@ class PysamSanitizer(object):
         return referenceName, start, end
 
     @classmethod
+    def sanitizeGetRName(cls, referenceId):
+        cls.assertInt(referenceId, 'referenceId')
+        cls.assertInRange(
+            referenceId, cls.rNameMin, cls.rNameMax, 'referenceId')
+
+    @classmethod
     def assertValidRange(cls, start, end, startName, endName):
         if start > end:
             message = "invalid coordinates: {} ({}) " \
@@ -65,10 +74,24 @@ class PysamSanitizer(object):
             raise exceptions.DatamodelValidationException(message)
 
     @classmethod
-    def sanitizeInt(cls, attr, minVal, maxVal, attrName):
+    def assertInRange(cls, attr, minVal, maxVal, attrName):
+        message = "invalid {} '{}' outside of range [{}, {}]"
+        if attr < minVal:
+            raise exceptions.DatamodelValidationException(message.format(
+                attrName, attr, minVal, maxVal))
+        if attr > maxVal:
+            raise exceptions.DatamodelValidationException(message.format(
+                attrName, attr, minVal, maxVal))
+
+    @classmethod
+    def assertInt(cls, attr, attrName):
         if not isinstance(attr, int):
             message = "invalid {} '{}' not an int".format(attrName, attr)
             raise exceptions.DatamodelValidationException(message)
+
+    @classmethod
+    def sanitizeInt(cls, attr, minVal, maxVal, attrName):
+        cls.assertInt(attr, attrName)
         if attr < minVal:
             attr = minVal
         if attr > maxVal:

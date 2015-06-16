@@ -231,6 +231,7 @@ class HtslibReadGroup(datamodel.PysamSanitizer, AbstractReadGroup):
         if referenceName is not None and referenceId is not None:
             raise exceptions.BadReadsSearchRequestBothRefs()
         if referenceId is not None:
+            self.sanitizeGetRName(referenceId)
             referenceName = self._samFile.getrname(referenceId)
         referenceName, start, end = self.sanitizeAlignmentFileFetch(
             referenceName, start, end)
@@ -251,6 +252,7 @@ class HtslibReadGroup(datamodel.PysamSanitizer, AbstractReadGroup):
         ret.alignment = protocol.GALinearAlignment()
         ret.alignment.mappingQuality = read.mapping_quality
         ret.alignment.position = protocol.GAPosition()
+        self.sanitizeGetRName(read.reference_id)
         ret.alignment.position.referenceName = self._samFile.getrname(
             read.reference_id)
         ret.alignment.position.position = read.reference_start
@@ -273,6 +275,7 @@ class HtslibReadGroup(datamodel.PysamSanitizer, AbstractReadGroup):
         ret.nextMatePosition = None
         if read.next_reference_id != -1:
             ret.nextMatePosition = protocol.GAPosition()
+            self.sanitizeGetRName(read.next_reference_id)
             ret.nextMatePosition.referenceName = self._samFile.getrname(
                 read.next_reference_id)
             ret.nextMatePosition.position = read.next_reference_start
