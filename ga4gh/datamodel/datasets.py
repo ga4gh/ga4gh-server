@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import os
 import random
 
+import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.reads as reads
@@ -24,6 +25,17 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIdMap = {}
         self._readGroupIds = []
         self._readGroupIdMap = {}
+
+    def toProtocolElement(self):
+        dataset = protocol.Dataset()
+        dataset.id = self.getId()
+        return dataset
+
+    def getId(self):
+        """
+        Return the id of the dataset
+        """
+        return self._id
 
     def getDirectory(self):
         """
@@ -85,8 +97,10 @@ class SimulatedDataset(AbstractDataset):
     A simulated dataset
     """
     def __init__(
-            self, randomSeed, numCalls, variantDensity, numVariantSets):
+            self, datasetId, randomSeed, numCalls,
+            variantDensity, numVariantSets):
         super(SimulatedDataset, self).__init__()
+        self._id = datasetId
         self._randomSeed = randomSeed
         self._randomGenerator = random.Random()
         self._randomGenerator.seed(self._randomSeed)
@@ -116,6 +130,7 @@ class FileSystemDataset(AbstractDataset):
     """
     def __init__(self, datasetDir):
         super(FileSystemDataset, self).__init__()
+        self._id = os.path.basename(os.path.normpath(datasetDir))
         self._datasetDir = datasetDir
 
         # Variants

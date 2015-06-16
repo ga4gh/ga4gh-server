@@ -144,6 +144,9 @@ class TestClientArguments(unittest.TestCase):
         --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
         --referenceName REFERENCENAME"""
 
+    def testDatasetsSearchArguments(self):
+        self.cliInput = """datasets-search"""
+
     def testReferenceSetGetArguments(self):
         self.cliInput = """referencesets-get ID"""
 

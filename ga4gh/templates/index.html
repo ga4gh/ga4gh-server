@@ -40,28 +40,7 @@
         </div>
         <div>
             <h3>Data</h3>
-            <h4>VariantSets</h4>
-            <table>
-                {% for variantSet in info.getVariantSets() %}
-                <tr>
-                    <td>{{ variantSet.getId() }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-            <h4>ReadGroupSets</h4>
-            <table>
-                {% for readGroupSet in info.getReadGroupSets() %}
-                <tr>
-                    <td>{{ readGroupSet.getId() }}</td>
-                </tr>
-                    {% for readGroup in readGroupSet.getReadGroups() %}
-                <tr>
-                    <td></td>
-                    <td>{{ readGroup.getId() }}</td>
-                </tr>
-                {% endfor %}
-            {% endfor %}
-            </table>
+
             <h4>ReferenceSets</h4>
             <table>
                 {% for referenceSet in info.getReferenceSets() %}
@@ -76,6 +55,34 @@
                 {% endfor %}
             {% endfor %}
             </table>
+
+            <h4>DataSets</h4>
+            {% for datasetId in info.getDatasetIds() %}
+                <h5>{{ datasetId }}</h5>
+                <h6>VariantSets</h6>
+                <table>
+                    {% for variantSet in info.getVariantSets(datasetId) %}
+                    <tr>
+                        <td>{{ variantSet.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                <h6>ReadGroupSets</h6>
+                <table>
+                    {% for readGroupSet in info.getReadGroupSets(datasetId) %}
+                    <tr>
+                        <td>{{ readGroupSet.getId() }}</td>
+                        <td></td>
+                    </tr>
+                        {% for readGroup in readGroupSet.getReadGroups() %}
+                    <tr>
+                        <td></td>
+                        <td>{{ readGroup.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+                </table>
+            {% endfor %}
         </div>
     </body>
 </html>

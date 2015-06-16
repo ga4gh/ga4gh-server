@@ -193,13 +193,33 @@ class AbstractBackend(object):
         self._responseValidation = False
         self._defaultPageSize = 100
         self._maxResponseLength = 2**20  # 1 MiB
-        self._dataset = datasets.AbstractDataset()
+        self._datasetIdMap = {}
+        self._datasetIds = []
 
-    def getDataset(self):
+    def _getDatasetFromRequest(self, request):
+        if hasattr(request, "datasetIds"):
+            if len(request.datasetIds) != 1:
+                raise exceptions.NotExactlyOneDatasetException(
+                    request.datasetIds)
+            datasetId = request.datasetIds[0]
+            return self._datasetIdMap[datasetId]
+        else:
+            # TODO this can go away when all requests have datasetIds
+            # instead, we should throw an error here
+            datasetId = self._datasetIds[0]
+            return self._datasetIdMap[datasetId]
+
+    def getDatasetIds(self):
         """
-        Returns the backend's dataset
+        Returns a list of datasets in this backend
         """
-        return self._dataset
+        return self._datasetIds
+
+    def getDataset(self, datasetId):
+        """
+        Returns a dataset with id datasetId
+        """
+        return self._datasetIdMap[datasetId]
 
     def getReferenceSets(self):
         """
@@ -383,6 +403,16 @@ class AbstractBackend(object):
             protocol.SearchCallSetsResponse,
             self.callSetsGenerator)
 
+    def searchDatasets(self, request):
+        """
+        Returns a SearchDatasetsResponse object for the specified
+        SearchDatasetsRequest Object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchDatasetsRequest,
+            protocol.SearchDatasetsResponse,
+            self.datasetsGenerator)
+
     # Iterators over the data hieararchy
 
     def _topLevelObjectGenerator(self, request, idMap, idList):
@@ -402,14 +432,23 @@ class AbstractBackend(object):
                 nextPageToken = str(currentIndex)
             yield object_.toProtocolElement(), nextPageToken
 
+    def datasetsGenerator(self, request):
+        """
+        Returns a generator over the (dataset, nextPageToken) pairs
+        defined by the specified request
+        """
+        return self._topLevelObjectGenerator(
+            request, self._datasetIdMap, self._datasetIds)
+
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
         defined by the specified request.
         """
+        dataset = self._getDatasetFromRequest(request)
         return self._topLevelObjectGenerator(
-            request, self.getDataset().getReadGroupSetIdMap(),
-            self.getDataset().getReadGroupSetIds())
+            request, dataset.getReadGroupSetIdMap(),
+            dataset.getReadGroupSetIds())
 
     def referenceSetsGenerator(self, request):
         """
@@ -432,17 +471,19 @@ class AbstractBackend(object):
         Returns a generator over the (variantSet, nextPageToken) pairs defined
         by the specified request.
         """
+        dataset = self._getDatasetFromRequest(request)
         return self._topLevelObjectGenerator(
-            request, self.getDataset().getVariantSetIdMap(),
-            self.getDataset().getVariantSetIds())
+            request, dataset.getVariantSetIdMap(),
+            dataset.getVariantSetIds())
 
     def readsGenerator(self, request):
         """
         Returns a generator over the (read, nextPageToken) pairs defined
         by the specified request
         """
+        dataset = self._getDatasetFromRequest(request)
         intervalIterator = ReadsIntervalIterator(
-            request, self.getDataset().getReadGroupIdMap())
+            request, dataset.getReadGroupIdMap())
         return intervalIterator
 
     def variantsGenerator(self, request):
@@ -450,8 +491,9 @@ class AbstractBackend(object):
         Returns a generator over the (variant, nextPageToken) pairs defined
         by the specified request.
         """
+        dataset = self._getDatasetFromRequest(request)
         intervalIterator = VariantsIntervalIterator(
-            request, self.getDataset().getVariantSetIdMap())
+            request, dataset.getVariantSetIdMap())
         return intervalIterator
 
     def callSetsGenerator(self, request):
@@ -462,8 +504,9 @@ class AbstractBackend(object):
         if request.name is not None:
             raise exceptions.NotImplementedException(
                 "Searching over names is not supported")
+        dataset = self._getDatasetFromRequest(request)
         variantSet = _getVariantSet(
-            request, self.getDataset().getVariantSetIdMap())
+            request, dataset.getVariantSetIdMap())
         return self._topLevelObjectGenerator(
             request, variantSet.getCallSetIdMap(),
             variantSet.getCallSetIds())
@@ -541,8 +584,17 @@ class SimulatedBackend(AbstractBackend):
     def __init__(self, randomSeed=0, numCalls=1, variantDensity=0.5,
                  numVariantSets=1):
         super(SimulatedBackend, self).__init__()
-        self._dataset = datasets.SimulatedDataset(
-            randomSeed, numCalls, variantDensity, numVariantSets)
+
+        # Datasets
+        dataset1 = datasets.SimulatedDataset(
+            "simulatedDataset1", randomSeed, numCalls,
+            variantDensity, numVariantSets)
+        dataset2 = datasets.SimulatedDataset(
+            "simulatedDataset2", randomSeed, numCalls,
+            variantDensity, numVariantSets)
+        self._datasetIdMap[dataset1.getId()] = dataset1
+        self._datasetIdMap[dataset2.getId()] = dataset2
+        self._datasetIds = sorted(self._datasetIdMap.keys())
 
         # References
         referenceSetId = "aReferenceSet"
@@ -586,7 +638,7 @@ class FileSystemBackend(AbstractBackend):
             for directory in os.listdir(self._dataDir)
             if os.path.isdir(os.path.join(self._dataDir, directory)) and
             directory != referencesDirName]
-        if len(datasetDirs) != 1:
-            raise exceptions.NotExactlyOneDatasetException(datasetDirs)
-        datasetDir = datasetDirs[0]
-        self._dataset = datasets.FileSystemDataset(datasetDir)
+        for datasetDir in datasetDirs:
+            dataset = datasets.FileSystemDataset(datasetDir)
+            self._datasetIdMap[dataset.getId()] = dataset
+        self._datasetIds = sorted(self._datasetIdMap.keys())

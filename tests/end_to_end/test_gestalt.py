@@ -22,10 +22,11 @@ class TestGestalt(server_test.ServerTest):
     """
     def testEndToEnd(self):
         self.client = client.ClientForTesting(self.server.getUrl())
-        self.runVariantSetRequest()
+        self.runVariantsRequest()
         self.assertLogsWritten()
         self.runReadsRequest()
         self.runReferencesRequest()
+        self.runVariantSetsRequestDatasetTwo()
         self.client.cleanup()
 
     def assertLogsWritten(self):
@@ -56,7 +57,8 @@ class TestGestalt(server_test.ServerTest):
 
         # num of client stdout should be twice the value of
         # SIMULATED_BACKEND_NUM_VARIANT_SETS
-        expectedNumClientOutLines = 20
+        # times the number of datasets (currently 2)
+        expectedNumClientOutLines = 40
         self.assertEqual(len(clientOutLines), expectedNumClientOutLines)
 
         # client stderr should log at least one post
@@ -69,7 +71,7 @@ class TestGestalt(server_test.ServerTest):
             requestFound,
             "No request logged from the client to stderr")
 
-    def runVariantSetRequest(self):
+    def runVariantsRequest(self):
         self.runClientCmd(self.client, "variants-search -s0 -e2")
 
     def runReadsRequest(self):
@@ -88,4 +90,9 @@ class TestGestalt(server_test.ServerTest):
         cmd = "references-get {}".format(referenceId)
         self.runClientCmd(self.client, cmd)
         cmd = "references-list-bases {}".format(referenceId)
+        self.runClientCmd(self.client, cmd)
+
+    def runVariantSetsRequestDatasetTwo(self):
+        datasetId = "simulatedDataset2"
+        cmd = "variantsets-search --datasetIds {}".format(datasetId)
         self.runClientCmd(self.client, cmd)

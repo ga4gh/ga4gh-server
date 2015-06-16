@@ -112,6 +112,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
             self.protocolRequest, "reads",
             protocol.SearchReadsResponse)
 
+    def testSearchDatasets(self):
+        self.httpClient.searchDatasets(self.protocolRequest)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            self.protocolRequest, "datasets",
+            protocol.SearchDatasetsResponse)
+
     def testGetReferenceSet(self):
         self.httpClient.getReferenceSet(self._id)
         self.httpClient.runGetRequest.assert_called_once_with(

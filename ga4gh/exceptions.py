@@ -152,6 +152,13 @@ class DatamodelValidationException(BadRequestException):
     """
 
 
+class NotExactlyOneDatasetException(BadRequestException):
+    def __init__(self, requestedDatasetIds):
+        msg = "Not exactly one dataset requested: {}".format(
+            requestedDatasetIds)
+        super(NotExactlyOneDatasetException, self).__init__(msg)
+
+
 class NotFoundException(RuntimeException):
     """
     The superclass of all exceptions in which some resource was not
@@ -224,12 +231,6 @@ class DataException(BaseServerException):
     Exceptions thrown during the server startup, and processing faulty VCFs
     """
     message = "Faulty data found or data file is missing."
-
-
-class NotExactlyOneDatasetException(DataException):
-    def __init__(self, datasetDirs):
-        msg = "Not exactly one dataset found: {}".format(datasetDirs)
-        super(NotExactlyOneDatasetException, self).__init__(msg)
 
 
 class FileOpenFailedException(DataException):

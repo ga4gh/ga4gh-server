@@ -139,17 +139,23 @@ class ServerStatus(object):
         urls.sort()
         return urls
 
-    def getVariantSets(self):
+    def getDatasetIds(self):
         """
-        Returns the list of variant sets for this server.
+        Returns the list of datasetIds for this backend
         """
-        return app.backend.getDataset().getVariantSets()
+        return app.backend.getDatasetIds()
 
-    def getReadGroupSets(self):
+    def getVariantSets(self, datasetId):
         """
-        Returns the list of ReadGroupSets for this server.
+        Returns the list of variant sets for the dataset
         """
-        return app.backend.getDataset().getReadGroupSets()
+        return app.backend.getDataset(datasetId).getVariantSets()
+
+    def getReadGroupSets(self, datasetId):
+        """
+        Returns the list of ReadGroupSets for the dataset
+        """
+        return app.backend.getDataset(datasetId).getReadGroupSets()
 
     def getReferenceSets(self):
         """
@@ -370,6 +376,12 @@ def searchVariantSets(version):
 def searchVariants(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchVariants)
+
+
+@app.route('/<version>/datasets/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchDatasets(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchDatasets)
 
 
 # The below methods ensure that JSON is returned for various errors
