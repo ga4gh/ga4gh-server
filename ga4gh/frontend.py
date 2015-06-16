@@ -13,6 +13,7 @@ import datetime
 import flask
 import flask.ext.cors as cors
 import humanize
+import werkzeug
 
 import ga4gh
 import ga4gh.backend as backend
@@ -24,6 +25,32 @@ SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
 
 
 app = flask.Flask(__name__)
+
+
+class NoConverter(werkzeug.routing.BaseConverter):
+    """
+    A converter that allows the routing matching algorithm to not
+    match on certain literal terms
+
+    This is needed because if there are e.g. two routes:
+
+    /<version>/callsets/search
+    /<version>/callsets/<id>
+
+    A request for /someVersion/callsets/search will get routed to
+    the second, which is not what we want.
+    """
+    def __init__(self, map, *items):
+        werkzeug.routing.BaseConverter.__init__(self, map)
+        self.items = items
+
+    def to_python(self, value):
+        if value in self.items:
+            raise werkzeug.routing.ValidationError()
+        return value
+
+
+app.url_map.converters['no'] = NoConverter
 
 
 class Version(object):
@@ -391,8 +418,139 @@ def searchDatasets(version):
         version, flask.request, app.backend.searchDatasets)
 
 
+# The below paths have not yet been implemented
+
+
+@app.route('/<version>/callsets/<no(search):id>')
+def getCallset(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/alleles/<no(search):id>')
+def getAllele(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/variants/<no(search):id>')
+def getVariant(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/variantsets/<vsid>/sequences/<sid>')
+def getVariantSetSequence(version, vsid, sid):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/variantsets/<no(search):id>')
+def getVariantSet(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/feature/<id>')
+def getFeature(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/sequences/<id>/bases')
+def getSequenceBases(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/mode/<mode>')
+def getMode(version, mode):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/datasets/<no(search):id>')
+def getDataset(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/readgroupsets/<no(search):id>')
+def getReadGroupSet(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/readgroups/<id>')
+def getReadGroup(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route(
+    '/<version>/genotypephenotype/search',
+    methods=SEARCH_ENDPOINT_METHODS)
+def searchGenotypePephenotype(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/individuals/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchIndividuals(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/samples/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchSamples(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/experiments/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchExperiments(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route(
+    '/<version>/individualgroups/search',
+    methods=SEARCH_ENDPOINT_METHODS)
+def searchIndividualGroups(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/analyses/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchAnalyses(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/sequences/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchSequences(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/joins/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchJoins(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/subgraph/segments', methods=SEARCH_ENDPOINT_METHODS)
+def subgraphSegments(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/subgraph/joins', methods=SEARCH_ENDPOINT_METHODS)
+def subgraphJoins(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/features/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchFeatures(version):
+    raise exceptions.NotImplementedException()
+
+
+@app.route(
+    '/<version>/variantsets/<id>/sequences/search',
+    methods=SEARCH_ENDPOINT_METHODS)
+def searchVariantSetSequences(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/alleles/search', methods=SEARCH_ENDPOINT_METHODS)
+def searchAlleles(version):
+    raise exceptions.NotImplementedException()
+
+
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html
+
+
 @app.errorhandler(404)
 def pathNotFoundHandler(errorString):
     return handleException(exceptions.PathNotFoundException())

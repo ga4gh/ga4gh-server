@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import unittest
+import logging
 
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
@@ -31,6 +32,8 @@ class TestFrontend(unittest.TestCase):
         frontend.configure(
             baseConfig="TestConfig", extraConfig=config)
         cls.app = frontend.app.test_client()
+        # silence usually unhelpful CORS log
+        logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
 
     @classmethod
     def tearDownClass(cls):
@@ -275,3 +278,45 @@ class TestFrontend(unittest.TestCase):
         path = '/{}/variantsets/search'.format(
             frontend.Version.currentString)
         self.assertEqual(200, self.app.options(path).status_code)
+
+    def testNotImplementedPaths(self):
+        pathsNotImplementedPost = [
+            '/genotypephenotype/search',
+            '/individuals/search',
+            '/samples/search',
+            '/experiments/search',
+            '/individualgroups/search',
+            '/analyses/search',
+            '/sequences/search',
+            '/joins/search',
+            '/subgraph/segments',
+            '/subgraph/joins',
+            '/features/search',
+            '/variantsets/<id>/sequences/search',
+            '/alleles/search',
+        ]
+        pathsNotImplementedGet = [
+            '/callsets/<id>',
+            '/alleles/<id>',
+            '/variants/<id>',
+            '/variantsets/<id>/sequences/<id>',
+            '/variantsets/<id>',
+            '/feature/<id>',
+            '/sequences/<id>/bases',
+            '/mode/<id>',
+            '/datasets/<id>',
+            '/readgroupsets/<id>',
+            '/readgroups/<id>',
+        ]
+
+        def runRequest(method, path):
+            requestPath = path.replace('<id>', 'someId')
+            versionedPath = utils.applyVersion(requestPath)
+            response = method(versionedPath)
+            protocol.GAException.fromJsonString(response.get_data())
+            self.assertEqual(response.status_code, 501)
+
+        for path in pathsNotImplementedGet:
+            runRequest(self.app.get, path)
+        for path in pathsNotImplementedPost:
+            runRequest(self.app.post, path)
