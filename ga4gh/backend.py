@@ -141,6 +141,7 @@ class ReadsIntervalIterator(IntervalIterator):
 
     def _getIterator(self):
         iterator = self._container.getReadAlignments(
+            self._request.referenceName,
             self._request.referenceId,
             self._startPosition, self._request.end)
         return iterator
