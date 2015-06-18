@@ -131,10 +131,16 @@ class TestFrontend(unittest.TestCase):
         return response
 
     def test404sReturnJson(self):
-        path = utils.applyVersion('/doesNotExist')
-        response = self.app.get(path)
-        protocol.GAException.fromJsonString(response.get_data())
-        self.assertEqual(404, response.status_code)
+        paths = [
+            '/doesNotExist',
+            utils.applyVersion('/doesNotExist'),
+            utils.applyVersion('/reads/sea'),
+            utils.applyVersion('/variantsets/id/doesNotExist'),
+        ]
+        for path in paths:
+            response = self.app.get(path)
+            protocol.GAException.fromJsonString(response.get_data())
+            self.assertEqual(404, response.status_code)
 
     def testCors(self):
         def assertHeaders(response):
