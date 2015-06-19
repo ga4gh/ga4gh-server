@@ -235,6 +235,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # including unmapped reads.
         referenceName = ""
         if referenceId is not None:
+            self.sanitizeGetRName(referenceId)
             referenceName = self._samFile.getrname(referenceId)
         referenceName, start, end = self.sanitizeAlignmentFileFetch(
             referenceName, start, end)
@@ -255,6 +256,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.alignment = protocol.LinearAlignment()
         ret.alignment.mappingQuality = read.mapping_quality
         ret.alignment.position = protocol.Position()
+        self.sanitizeGetRName(read.reference_id)
         ret.alignment.position.referenceName = self._samFile.getrname(
             read.reference_id)
         ret.alignment.position.position = read.reference_start
@@ -278,6 +280,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.nextMatePosition = None
         if read.next_reference_id != -1:
             ret.nextMatePosition = protocol.Position()
+            self.sanitizeGetRName(read.next_reference_id)
             ret.nextMatePosition.referenceName = self._samFile.getrname(
                 read.next_reference_id)
             ret.nextMatePosition.position = read.next_reference_start

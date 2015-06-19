@@ -60,6 +60,26 @@ class TestPysamSanitizer(datamodel.PysamDatamodelMixin, unittest.TestCase):
         # correct range should not throw error
         self.assertValidRange(0, 100, 'start', 'end')
 
+    def testAssertInRange(self):
+        # too low
+        with self.assertRaises(exceptions.DatamodelValidationException):
+            self.assertInRange(-1, 0, 100, 'example')
+
+        # too high
+        with self.assertRaises(exceptions.DatamodelValidationException):
+            self.assertInRange(101, 0, 100, 'example')
+
+        # in range
+        self.assertInRange(50, 0, 100, 'example')
+
+    def testAssertInt(self):
+        # is an int
+        self.assertInt(5, 'example')
+
+        # is not an int
+        with self.assertRaises(exceptions.DatamodelValidationException):
+            self.assertInt('5', 'example')
+
     def testSanitizeVariantFileFetch(self):
         contigArg = 'x' * (self.maxStringLength + 1)
         startArg = self.vcfMin - 1
@@ -87,3 +107,19 @@ class TestPysamSanitizer(datamodel.PysamDatamodelMixin, unittest.TestCase):
         start, end = self.sanitizeFastaFileFetch(startArg, endArg)
         self.assertEqual(start, self.fastaMin)
         self.assertEqual(end, self.fastaMax)
+
+    def testSanitizeGetRName(self):
+        # too high
+        referenceId = self.rNameMax + 1
+        with self.assertRaises(exceptions.DatamodelValidationException):
+            self.sanitizeGetRName(referenceId)
+
+        # too low
+        referenceId = self.rNameMin - 1
+        with self.assertRaises(exceptions.DatamodelValidationException):
+            self.sanitizeGetRName(referenceId)
+
+        # not an int
+        referenceId = '1'
+        with self.assertRaises(exceptions.DatamodelValidationException):
+            self.sanitizeGetRName(referenceId)
