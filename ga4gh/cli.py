@@ -133,9 +133,9 @@ class RequestFactory(object):
     def createExtractSubgraphRequest(self):
         request = protocol.ExtractSubgraphRequest()
         request.position = protocol.Position()
-        request.position.position = self.args.position
+        request.position.position = int(self.args.position)
         request.position.sequenceId = self.args.sequenceId
-        request.radius = self.args.radius
+        request.radius = int(self.args.radius)
         return request
 
     def createSearchReadsRequest(self):
