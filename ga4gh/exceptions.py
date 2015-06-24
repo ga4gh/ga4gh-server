@@ -213,8 +213,11 @@ class NotImplementedException(RuntimeException):
     """
     httpStatus = 501
 
-    def __init__(self, message):
-        self.message = message
+    def __init__(self, message=None):
+        if message is None:
+            self.message = "Path not implemented"
+        else:
+            self.message = message
 
 
 class CallSetNotInVariantSetException(NotFoundException):
