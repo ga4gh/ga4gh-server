@@ -54,71 +54,100 @@ def _getVariantSet(request, variantSetIdMap):
 class IntervalIterator(object):
     """
     Implements generator logic for types which accept a start/end
-    range to search for the object
+    range to search for the object. Returns an iterator over
+    (object, pageToken) pairs. The pageToken is a string which allows
+    us to pick up the iteration at any point, and is None for the last
+    value in the iterator.
     """
     def __init__(self, request, containerIdMap):
         self._request = request
         self._containerIdMap = containerIdMap
-        self._badPageTokenExceptionMessage = (
-            "Inconsistent page token provided")
         self._container = self._getContainer()
-        self._startPosition, self._equalPositionsToSkip = \
-            self._getIntervalCounters()
-        self._iterator = self._getIterator()
-        self._generator = self._internalIterator()
+        self._searchIterator = None
+        self._currentObject = None
+        self._nextObject = None
+        self._searchAnchor = None
+        self._distanceFromAnchor = None
+        if request.pageToken is None:
+            self._initialiseIteration()
+        else:
+            # Set the search start point and the number of records to skip from
+            # the page token.
+            searchAnchor, objectsToSkip = _parsePageToken(request.pageToken, 2)
+            self._pickUpIteration(searchAnchor, objectsToSkip)
 
-    def __iter__(self):
-        return self._generator
+    def _initialiseIteration(self):
+        """
+        Starts a new iteration.
+        """
+        self._searchIterator = self._search(
+                self._request.start, self._request.end)
+        self._currentObject = next(self._searchIterator, None)
+        if self._currentObject is not None:
+            self._nextObject = next(self._searchIterator, None)
+            self._searchAnchor = self._request.start
+            self._distanceFromAnchor = 0
+            firstObjectStart = self._getStart(self._currentObject)
+            if firstObjectStart > self._request.start:
+                self._searchAnchor = firstObjectStart
+
+    def _pickUpIteration(self, searchAnchor, objectsToSkip):
+        """
+        Picks up iteration from a previously provided page token. There are two
+        different phases here:
+        1) We are iterating over the initial set of intervals in which start
+        is < the search start coorindate.
+        2) We are iterating over the remaining intervals in which start >= to
+        the search start coordinate.
+        """
+        self._searchAnchor = searchAnchor
+        self._distanceFromAnchor = objectsToSkip
+        self._searchIterator = self._search(searchAnchor, self._request.end)
+        obj = next(self._searchIterator)
+        if searchAnchor == self._request.start:
+            # This is the initial set of intervals, we just skip forward
+            # objectsToSkip positions
+            for _ in range(objectsToSkip):
+                obj = next(self._searchIterator)
+        else:
+            # Now, we are past this initial set of intervals.
+            # First, we need to skip forward over the intervals where
+            # start < searchAnchor, as we've seen these already.
+            while self._getStart(obj) < searchAnchor:
+                obj = next(self._searchIterator)
+            # Now, we skip over objectsToSkip objects such that
+            # start == searchAnchor
+            for _ in range(objectsToSkip):
+                assert self._getStart(obj) == searchAnchor
+                obj = next(self._searchIterator)
+        self._currentObject = obj
+        self._nextObject = next(self._searchIterator, None)
 
     def next(self):
-        obj = next(self._generator)
-        return obj
+        """
+        Returns the next (object, nextPageToken) pair.
+        """
+        if self._currentObject is None:
+            raise StopIteration()
+        nextPageToken = None
+        if self._nextObject is not None:
+            start = self._getStart(self._nextObject)
+            # If start > the search anchor, move the search anchor. Otherwise,
+            # increment the distance from the anchor.
+            if start > self._searchAnchor:
+                self._searchAnchor = start
+                self._distanceFromAnchor = 0
+            else:
+                self._distanceFromAnchor += 1
+            nextPageToken = "{}:{}".format(
+                self._searchAnchor, self._distanceFromAnchor)
+        ret = self._currentObject, nextPageToken
+        self._currentObject = self._nextObject
+        self._nextObject = next(self._searchIterator, None)
+        return ret
 
-    def _raiseBadPageTokenException(self):
-        raise exceptions.BadPageTokenException(
-            self._badPageTokenExceptionMessage)
-
-    def _getIntervalCounters(self):
-        startPosition = self._request.start
-        equalPositionsToSkip = 0
-        if self._request.pageToken is not None:
-            startPosition, equalPositionsToSkip = _parsePageToken(
-                self._request.pageToken, 2)
-        return startPosition, equalPositionsToSkip
-
-    def _internalIterator(self):
-        obj = next(self._iterator, None)
-        if self._request.pageToken is not None:
-            # First, skip any records with getStart < startPosition
-            # or getEnd < request.start
-            while (self._getStart(obj) < self._startPosition or
-                   self._getEnd(obj) < self._request.start):
-                obj = next(self._iterator, None)
-                if obj is None:
-                    self._raiseBadPageTokenException()
-            # Now, skip equalPositionsToSkip records which have getStart
-            # == startPosition
-            equalPositionsSkipped = 0
-            while equalPositionsSkipped < self._equalPositionsToSkip:
-                if self._getStart(obj) != self._startPosition:
-                    self._raiseBadPageTokenException()
-                equalPositionsSkipped += 1
-                obj = next(self._iterator, None)
-                if obj is None:
-                    self._raiseBadPageTokenException()
-        # iterator is now positioned to start yielding valid records
-        while obj is not None:
-            nextObj = next(self._iterator, None)
-            nextPageToken = None
-            if nextObj is not None:
-                if self._getStart(obj) == self._getStart(nextObj):
-                    self._equalPositionsToSkip += 1
-                else:
-                    self._equalPositionsToSkip = 0
-                nextPageToken = "{}:{}".format(
-                    self._getStart(nextObj), self._equalPositionsToSkip)
-            yield obj, nextPageToken
-            obj = nextObj
+    def __iter__(self):
+        return self
 
 
 class ReadsIntervalIterator(IntervalIterator):
@@ -139,12 +168,9 @@ class ReadsIntervalIterator(IntervalIterator):
             raise exceptions.ReadGroupNotFoundException(readGroupId)
         return readGroup
 
-    def _getIterator(self):
-        iterator = self._container.getReadAlignments(
-            self._request.referenceName,
-            self._request.referenceId,
-            self._startPosition, self._request.end)
-        return iterator
+    def _search(self, start, end):
+        return self._container.getReadAlignments(
+            self._request.referenceName, self._request.referenceId, start, end)
 
     @classmethod
     def _getStart(cls, readAlignment):
@@ -163,12 +189,10 @@ class VariantsIntervalIterator(IntervalIterator):
     def _getContainer(self):
         return _getVariantSet(self._request, self._containerIdMap)
 
-    def _getIterator(self):
-        iterator = self._container.getVariants(
-            self._request.referenceName, self._startPosition,
-            self._request.end, self._request.variantName,
+    def _search(self, start, end):
+        return self._container.getVariants(
+            self._request.referenceName, start, end, self._request.variantName,
             self._request.callSetIds)
-        return iterator
 
     @classmethod
     def _getStart(cls, variant):
