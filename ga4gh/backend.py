@@ -81,7 +81,7 @@ class IntervalIterator(object):
         Starts a new iteration.
         """
         self._searchIterator = self._search(
-                self._request.start, self._request.end)
+            self._request.start, self._request.end)
         self._currentObject = next(self._searchIterator, None)
         if self._currentObject is not None:
             self._nextObject = next(self._searchIterator, None)
