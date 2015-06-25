@@ -16,6 +16,6 @@ class TestDatasets(unittest.TestCase):
     """
     def testToProtocolElement(self):
         datasetId = 'ds1'
-        dataset = datasets.SimulatedDataset(datasetId, 1, 2, 3, 4)
+        dataset = datasets.SimulatedDataset(datasetId, 1, 2, 3, 4, 5)
         gaDataset = dataset.toProtocolElement()
         self.assertEqual(dataset.getId(), gaDataset.id)

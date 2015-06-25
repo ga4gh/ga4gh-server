@@ -98,7 +98,7 @@ class SimulatedDataset(AbstractDataset):
     """
     def __init__(
             self, datasetId, randomSeed, numCalls,
-            variantDensity, numVariantSets):
+            variantDensity, numVariantSets, numAlignments):
         super(SimulatedDataset, self).__init__()
         self._id = datasetId
         self._randomSeed = randomSeed
@@ -116,7 +116,8 @@ class SimulatedDataset(AbstractDataset):
 
         # Reads
         readGroupSetId = "aReadGroupSet"
-        readGroupSet = reads.SimulatedReadGroupSet(readGroupSetId)
+        readGroupSet = reads.SimulatedReadGroupSet(
+            readGroupSetId, numAlignments)
         self._readGroupSetIdMap[readGroupSetId] = readGroupSet
         for readGroup in readGroupSet.getReadGroups():
             self._readGroupIdMap[readGroup.getId()] = readGroup

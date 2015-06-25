@@ -221,9 +221,11 @@ def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):
             "SIMULATED_BACKEND_NUM_REFERENCE_SETS"]
         numReferencesPerReferenceSet = app.config[
             "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET"]
+        numAlignments = app.config[
+            "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
         theBackend = backend.SimulatedBackend(
             randomSeed, numCalls, variantDensity, numVariantSets,
-            numReferenceSets, numReferencesPerReferenceSet)
+            numReferenceSets, numReferencesPerReferenceSet, numAlignments)
     elif dataSource == "__EMPTY__":
         theBackend = backend.EmptyBackend()
     else:
