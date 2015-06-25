@@ -8,6 +8,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import unittest
+import hashlib
+import logging
 
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
@@ -21,12 +23,20 @@ class TestSimulatedStack(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
+        # silence usually unhelpful CORS log
+        logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
+
+        cls.numReferenceSets = 5
+        cls.numReferencesPerReferenceSet = 3
         config = {
             "DATA_SOURCE": "__SIMULATED__",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
             "SIMULATED_BACKEND_NUM_CALLS": 0,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
             "SIMULATED_BACKEND_NUM_VARIANT_SETS": 10,
+            "SIMULATED_BACKEND_NUM_REFERENCE_SETS": cls.numReferenceSets,
+            "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET":
+                cls.numReferencesPerReferenceSet,
         }
         frontend.configure(
             baseConfig="TestConfig", extraConfig=config)
@@ -155,3 +165,65 @@ class TestSimulatedStack(unittest.TestCase):
             self.assertEqual(callSetName, callSet.sampleId)
 
         # TODO add tests after name string search schemas is implemented
+
+    def testReferences(self):
+        # search for reference sets
+        path = utils.applyVersion('/referencesets/search')
+        request = protocol.SearchReferenceSetsRequest()
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        self.assertEqual(response.status_code, 200)
+        responseData = protocol.SearchReferenceSetsResponse.fromJsonString(
+            response.data)
+        referenceSets = responseData.referenceSets
+        self.assertEqual(self.numReferenceSets, len(referenceSets))
+
+        # search for references
+        path = utils.applyVersion('/references/search')
+        request = protocol.SearchReferencesRequest()
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        self.assertEqual(response.status_code, 200)
+        responseData = protocol.SearchReferencesResponse.fromJsonString(
+            response.data)
+        references = responseData.references
+        self.assertEqual(
+            self.numReferenceSets * self.numReferencesPerReferenceSet,
+            len(references))
+
+        for referenceSet in referenceSets:
+            # fetch the reference set
+            path = utils.applyVersion(
+                '/referencesets/{}'.format(referenceSet.id))
+            response = self.app.get(path)
+            self.assertEqual(response.status_code, 200)
+            fetchedReferenceSet = protocol.ReferenceSet.fromJsonString(
+                response.data)
+            self.assertEqual(fetchedReferenceSet, referenceSet)
+            self.assertEqual(
+                len(fetchedReferenceSet.referenceIds),
+                self.numReferencesPerReferenceSet)
+
+            for referenceId in referenceSet.referenceIds:
+                # fetch the reference
+                path = utils.applyVersion(
+                    '/references/{}'.format(referenceId))
+                response = self.app.get(path)
+                self.assertEqual(response.status_code, 200)
+                fetchedReference = protocol.Reference.fromJsonString(
+                    response.data)
+                self.assertEqual(fetchedReference.id, referenceId)
+
+                # fetch the bases
+                path = utils.applyVersion(
+                    '/references/{}/bases'.format(referenceId))
+                args = protocol.ListReferenceBasesRequest().toJsonDict()
+                response = self.app.get(path, data=args)
+                self.assertEqual(response.status_code, 200)
+                bases = protocol.ListReferenceBasesResponse.fromJsonString(
+                    response.data)
+                self.assertEqual(len(bases.sequence), 200)
+                self.assertEqual(
+                    set(bases.sequence),
+                    set(['A', 'C', 'T', 'G']))
+                calculatedDigest = hashlib.md5(bases.sequence).hexdigest()
+                self.assertEqual(
+                    calculatedDigest, fetchedReference.md5checksum)

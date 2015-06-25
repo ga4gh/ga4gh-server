@@ -7,6 +7,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import random
+import hashlib
 
 import pysam
 
@@ -68,11 +70,17 @@ class SimulatedReferenceSet(AbstractReferenceSet):
     """
     A simulated referenceSet
     """
-    def __init__(self, id_):
+    def __init__(self, id_, randomSeed=0, numReferences=1):
         super(SimulatedReferenceSet, self).__init__(id_)
-        referenceId = "{}:srsone".format(id_)
-        reference = SimulatedReference(referenceId)
-        self._referenceIdMap[referenceId] = reference
+        self._randomSeed = randomSeed
+        self._randomGenerator = random.Random()
+        self._randomGenerator.seed(self._randomSeed)
+        for i in range(numReferences):
+            referenceSeed = self._randomGenerator.getrandbits(32)
+            referenceId = "{}:srs{}".format(id_, i)
+            reference = SimulatedReference(referenceId, referenceSeed)
+            self._referenceIdMap[referenceId] = reference
+        self._referenceIds = sorted(self._referenceIdMap.keys())
 
 
 class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
@@ -135,10 +143,20 @@ class SimulatedReference(AbstractReference):
     """
     A simulated reference
     """
-    def __init__(self, id_):
+    choices = 'AGCT'
+
+    def __init__(self, id_, randomSeed=0, length=200):
         super(SimulatedReference, self).__init__(id_)
-        self.bases = "AGCT" * 50
-        self._md5checksum = "lol"
+        self._randomSeed = randomSeed
+        self._randomGenerator = random.Random()
+        self._randomGenerator.seed(self._randomSeed)
+        self._length = length
+        bases = []
+        for _ in range(length):
+            choice = self._randomGenerator.choice(self.choices)
+            bases.append(choice)
+        self.bases = ''.join(bases)
+        self._md5checksum = hashlib.md5(self.bases).hexdigest()
 
     def getBases(self, start=None, end=None):
         return self.bases[start:end]

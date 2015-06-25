@@ -79,8 +79,8 @@ class TestGestalt(server_test.ServerTest):
         self.runClientCmd(self.client, cmd)
 
     def runReferencesRequest(self):
-        referenceSetId = 'aReferenceSet'
-        referenceId = 'aReferenceSet:srsone'
+        referenceSetId = 'referenceSet0'
+        referenceId = '{}:srs0'.format(referenceSetId)
         cmd = "referencesets-search"
         self.runClientCmd(self.client, cmd)
         cmd = "references-search"

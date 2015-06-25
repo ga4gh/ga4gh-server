@@ -217,8 +217,13 @@ def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):
         numCalls = app.config["SIMULATED_BACKEND_NUM_CALLS"]
         variantDensity = app.config["SIMULATED_BACKEND_VARIANT_DENSITY"]
         numVariantSets = app.config["SIMULATED_BACKEND_NUM_VARIANT_SETS"]
+        numReferenceSets = app.config[
+            "SIMULATED_BACKEND_NUM_REFERENCE_SETS"]
+        numReferencesPerReferenceSet = app.config[
+            "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET"]
         theBackend = backend.SimulatedBackend(
-            randomSeed, numCalls, variantDensity, numVariantSets)
+            randomSeed, numCalls, variantDensity, numVariantSets,
+            numReferenceSets, numReferencesPerReferenceSet)
     elif dataSource == "__EMPTY__":
         theBackend = backend.EmptyBackend()
     else:
