@@ -1,5 +1,4 @@
 Flask
-Flask-API
 Flask-Cors
 Twisted
 avro
