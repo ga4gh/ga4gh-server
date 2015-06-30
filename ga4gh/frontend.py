@@ -24,6 +24,7 @@ import requests
 
 import ga4gh
 import ga4gh.backend as backend
+import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
@@ -200,6 +201,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     if configFile is not None:
         app.config.from_pyfile(configFile)
     app.config.update(extraConfig.items())
+    # Setup file handle cache max size
+    datamodel.fileHandleCache.setMaxCacheSize(
+        app.config["FILE_HANDLE_CACHE_MAX_SIZE"])
     # Setup CORS
     cors.CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()

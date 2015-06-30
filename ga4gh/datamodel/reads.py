@@ -13,7 +13,6 @@ import pysam
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
-import ga4gh.exceptions as exceptions
 
 
 class SamCigar(object):
@@ -217,10 +216,9 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     def __init__(self, id_, dataFile):
         super(HtslibReadGroup, self).__init__(id_)
         self._samFilePath = dataFile
-        try:
-            self._samFile = pysam.AlignmentFile(dataFile)
-        except ValueError:
-            raise exceptions.FileOpenFailedException(dataFile)
+
+    def openFile(self, dataFile):
+        return pysam.AlignmentFile(dataFile)
 
     def getSamFilePath(self):
         """
@@ -235,13 +233,14 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # TODO If referenceId is None, return against all references,
         # including unmapped reads.
         referenceName = ""
+        samFile = self.getFileHandle(self._samFilePath)
         if referenceId is not None:
             self.sanitizeGetRName(referenceId)
-            referenceName = self._samFile.getrname(referenceId)
+            referenceName = samFile.getrname(referenceId)
         referenceName, start, end = self.sanitizeAlignmentFileFetch(
             referenceName, start, end)
         # TODO deal with errors from htslib
-        readAlignments = self._samFile.fetch(referenceName, start, end)
+        readAlignments = samFile.fetch(referenceName, start, end)
         for readAlignment in readAlignments:
             yield self.convertReadAlignment(readAlignment)
 
@@ -258,7 +257,8 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.alignment.mappingQuality = read.mapping_quality
         ret.alignment.position = protocol.Position()
         self.sanitizeGetRName(read.reference_id)
-        ret.alignment.position.referenceName = self._samFile.getrname(
+        samFile = self.getFileHandle(self._samFilePath)
+        ret.alignment.position.referenceName = samFile.getrname(
             read.reference_id)
         ret.alignment.position.position = read.reference_start
         ret.alignment.position.strand = \
@@ -282,7 +282,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         if read.next_reference_id != -1:
             ret.nextMatePosition = protocol.Position()
             self.sanitizeGetRName(read.next_reference_id)
-            ret.nextMatePosition.referenceName = self._samFile.getrname(
+            ret.nextMatePosition.referenceName = samFile.getrname(
                 read.next_reference_id)
             ret.nextMatePosition.position = read.next_reference_start
             ret.nextMatePosition.strand = \
