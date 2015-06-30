@@ -187,13 +187,13 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, self.app.options(versionedPath).status_code)
 
     def testRouteReferences(self):
-        referenceId = "aReferenceSet:srsone"
+        referenceId = "referenceSet0:srs0"
         paths = ['/references/{}', '/references/{}/bases']
         for path in paths:
             path = path.format(referenceId)
             versionedPath = utils.applyVersion(path)
             self.assertEqual(200, self.app.get(versionedPath).status_code)
-        referenceSetId = "aReferenceSet"
+        referenceSetId = "referenceSet0"
         paths = ['/referencesets/{}']
         for path in paths:
             path = path.format(referenceSetId)

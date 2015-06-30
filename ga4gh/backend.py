@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 import os
 import json
+import random
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
@@ -82,7 +83,7 @@ class IntervalIterator(object):
         Starts a new iteration.
         """
         self._searchIterator = self._search(
-                self._request.start, self._request.end)
+            self._request.start, self._request.end)
         self._currentObject = next(self._searchIterator, None)
         if self._currentObject is not None:
             self._nextObject = next(self._searchIterator, None)
@@ -607,7 +608,8 @@ class SimulatedBackend(AbstractBackend):
     A GA4GH backend backed by no data; used mostly for testing
     """
     def __init__(self, randomSeed=0, numCalls=1, variantDensity=0.5,
-                 numVariantSets=1):
+                 numVariantSets=1, numReferenceSets=1,
+                 numReferencesPerReferenceSet=1):
         super(SimulatedBackend, self).__init__()
 
         # Datasets
@@ -622,12 +624,18 @@ class SimulatedBackend(AbstractBackend):
         self._datasetIds = sorted(self._datasetIdMap.keys())
 
         # References
-        referenceSetId = "aReferenceSet"
-        referenceSet = references.SimulatedReferenceSet(referenceSetId)
-        self._referenceSetIdMap[referenceSetId] = referenceSet
-        for reference in referenceSet.getReferences():
-            referenceId = reference.getId()
-            self._referenceIdMap[referenceId] = reference
+        randomGenerator = random.Random()
+        randomGenerator.seed(randomSeed)
+        for i in range(numReferenceSets):
+            referenceSetId = "referenceSet{}".format(i)
+            referenceSetSeed = randomGenerator.getrandbits(32)
+            referenceSet = references.SimulatedReferenceSet(
+                referenceSetId, referenceSetSeed,
+                numReferencesPerReferenceSet)
+            self._referenceSetIdMap[referenceSetId] = referenceSet
+            for reference in referenceSet.getReferences():
+                referenceId = reference.getId()
+                self._referenceIdMap[referenceId] = reference
         self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
         self._referenceIds = sorted(self._referenceIdMap.keys())
 
