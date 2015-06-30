@@ -28,6 +28,7 @@ class TestSimulatedStack(unittest.TestCase):
 
         cls.numReferenceSets = 5
         cls.numReferencesPerReferenceSet = 3
+        cls.numAlignmentsPerReadGroup = 2
         config = {
             "DATA_SOURCE": "__SIMULATED__",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
@@ -37,6 +38,8 @@ class TestSimulatedStack(unittest.TestCase):
             "SIMULATED_BACKEND_NUM_REFERENCE_SETS": cls.numReferenceSets,
             "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET":
                 cls.numReferencesPerReferenceSet,
+            "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP":
+                cls.numAlignmentsPerReadGroup,
         }
         frontend.configure(
             baseConfig="TestConfig", extraConfig=config)
@@ -227,3 +230,29 @@ class TestSimulatedStack(unittest.TestCase):
                 calculatedDigest = hashlib.md5(bases.sequence).hexdigest()
                 self.assertEqual(
                     calculatedDigest, fetchedReference.md5checksum)
+
+    def testReads(self):
+        # search read group sets
+        path = utils.applyVersion('/readgroupsets/search')
+        request = protocol.SearchReadGroupSetsRequest()
+        request.datasetIds = ['simulatedDataset1']
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        self.assertEqual(response.status_code, 200)
+        responseData = protocol.SearchReadGroupSetsResponse.fromJsonString(
+            response.data)
+        readGroupSets = responseData.readGroupSets
+        self.assertEqual(len(readGroupSets), 1)
+
+        # search reads
+        path = utils.applyVersion('/reads/search')
+        request = protocol.SearchReadsRequest()
+        readGroupId = readGroupSets[0].readGroups[0].id
+        request.readGroupIds = [readGroupId]
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        self.assertEqual(response.status_code, 200)
+        responseData = protocol.SearchReadsResponse.fromJsonString(
+            response.data)
+        alignments = responseData.alignments
+        self.assertEqual(len(alignments), self.numAlignmentsPerReadGroup)
+        for alignment in alignments:
+            self.assertEqual(alignment.readGroupId, readGroupId)

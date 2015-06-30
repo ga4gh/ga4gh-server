@@ -609,16 +609,16 @@ class SimulatedBackend(AbstractBackend):
     """
     def __init__(self, randomSeed=0, numCalls=1, variantDensity=0.5,
                  numVariantSets=1, numReferenceSets=1,
-                 numReferencesPerReferenceSet=1):
+                 numReferencesPerReferenceSet=1, numAlignments=2):
         super(SimulatedBackend, self).__init__()
 
         # Datasets
         dataset1 = datasets.SimulatedDataset(
             "simulatedDataset1", randomSeed, numCalls,
-            variantDensity, numVariantSets)
+            variantDensity, numVariantSets, numAlignments)
         dataset2 = datasets.SimulatedDataset(
             "simulatedDataset2", randomSeed, numCalls,
-            variantDensity, numVariantSets)
+            variantDensity, numVariantSets, numAlignments)
         self._datasetIdMap[dataset1.getId()] = dataset1
         self._datasetIdMap[dataset2.getId()] = dataset2
         self._datasetIds = sorted(self._datasetIdMap.keys())

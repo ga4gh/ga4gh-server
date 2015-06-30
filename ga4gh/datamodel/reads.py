@@ -102,10 +102,10 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
     """
     A simulated read group set
     """
-    def __init__(self, id_):
+    def __init__(self, id_, numAlignments=2):
         super(SimulatedReadGroupSet, self).__init__(id_)
         readGroupId = "{}:one".format(id_)
-        readGroup = SimulatedReadGroup(readGroupId)
+        readGroup = SimulatedReadGroup(readGroupId, numAlignments)
         self._readGroups.append(readGroup)
 
 
@@ -172,11 +172,12 @@ class SimulatedReadGroup(AbstractReadGroup):
     """
     A simulated readgroup
     """
-    def __init__(self, id_):
+    def __init__(self, id_, numAlignments=2):
         super(SimulatedReadGroup, self).__init__(id_)
+        self._numAlignments = numAlignments
 
     def getReadAlignments(self, referenceId=None, start=None, end=None):
-        for i in range(2):
+        for i in range(self._numAlignments):
             alignment = self._createReadAlignment(i)
             yield alignment
 
