@@ -70,9 +70,10 @@ class PysamDatamodelMixin(object):
 
     @classmethod
     def sanitizeAlignmentFileFetch(
-            cls, referenceName=None, start=None, end=None):
-        if referenceName is not None:
-            referenceName = cls.sanitizeString(referenceName, 'referenceName')
+            cls, reference_name=None, start=None, end=None):
+        if reference_name is not None:
+            reference_name = cls.sanitizeString(
+                reference_name, 'reference_name')
         if start is not None:
             start = cls.sanitizeInt(
                 start, cls.samMin, cls.samMaxStart, 'start')
@@ -80,7 +81,7 @@ class PysamDatamodelMixin(object):
             end = cls.sanitizeInt(end, cls.samMin, cls.samMaxEnd, 'end')
         if start is not None and end is not None:
             cls.assertValidRange(start, end, 'start', 'end')
-        return referenceName, start, end
+        return reference_name, start, end
 
     @classmethod
     def sanitizeFastaFileFetch(cls, start=None, end=None):
@@ -95,10 +96,10 @@ class PysamDatamodelMixin(object):
         return start, end
 
     @classmethod
-    def sanitizeGetRName(cls, referenceId):
-        cls.assertInt(referenceId, 'referenceId')
+    def sanitizeGetRName(cls, reference_id):
+        cls.assertInt(reference_id, 'reference_id')
         cls.assertInRange(
-            referenceId, cls.rNameMin, cls.rNameMax, 'referenceId')
+            reference_id, cls.rNameMin, cls.rNameMax, 'reference_id')
 
     @classmethod
     def assertValidRange(cls, start, end, startName, endName):

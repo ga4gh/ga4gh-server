@@ -34,21 +34,21 @@ class SearchResponseBuilder(object):
     we are building responses, as we write the JSON representation
     of ProtocolElements directly to a buffer.
     """
-    def __init__(self, responseClass, pageSize, maxResponseLength):
+    def __init__(self, responseClass, page_size, maxResponseLength):
         """
         Allocates a new SearchResponseBuilder for the specified
         subclass of SearchResponse, with the specified
-        user-requested pageSize and the system mandated
+        user-requested page_size and the system mandated
         maxResponseLength (in bytes). The maxResponseLength is an
         approximate limit on the overall length of the JSON
         response.
         """
         self._responseClass = responseClass
-        self._pageSize = pageSize
+        self._page_size = page_size
         self._maxResponseLength = maxResponseLength
         self._valueListBuffer = StringIO()
         self._numElements = 0
-        self._nextPageToken = None
+        self._next_page_token = None
 
     def getPageSize(self):
         """
@@ -56,7 +56,7 @@ class SearchResponseBuilder(object):
         user-requested maximum size for the number of elements in the
         value list.
         """
-        return self._pageSize
+        return self._page_size
 
     def getMaxResponseLength(self):
         """
@@ -69,16 +69,16 @@ class SearchResponseBuilder(object):
 
     def getNextPageToken(self):
         """
-        Returns the value of the nextPageToken for this
+        Returns the value of the next_page_token for this
         SearchResponseBuilder.
         """
-        return self._nextPageToken
+        return self._next_page_token
 
-    def setNextPageToken(self, nextPageToken):
+    def setNextPageToken(self, next_page_token):
         """
-        Sets the nextPageToken to the specified value.
+        Sets the next_page_token to the specified value.
         """
-        self._nextPageToken = nextPageToken
+        self._next_page_token = next_page_token
 
     def addValue(self, protocolElement):
         """
@@ -94,23 +94,23 @@ class SearchResponseBuilder(object):
         """
         Returns True if the response buffer is full, and False otherwise.
         The buffer is full if either (1) the number of items in the value
-        list is >= pageSize or (2) the total length of the serialised
+        list is >= page_size or (2) the total length of the serialised
         elements in the page is >= maxResponseLength.
         """
         return (
-            self._numElements >= self._pageSize or
+            self._numElements >= self._page_size or
             self._valueListBuffer.tell() >= self._maxResponseLength)
 
     def getJsonString(self):
         """
         Returns a string version of the SearchResponse that has
         been built by this SearchResponseBuilder. This is a fully
-        formed JSON document, and consists of the pageToken and
+        formed JSON document, and consists of the page_token and
         the value list.
         """
         pageListString = "[{}]".format(self._valueListBuffer.getvalue())
-        return '{{"nextPageToken": {},"{}": {}}}'.format(
-            json.dumps(self._nextPageToken),
+        return '{{"next_page_token": {},"{}": {}}}'.format(
+            json.dumps(self._next_page_token),
             self._responseClass.getValueListName(), pageListString)
 
 

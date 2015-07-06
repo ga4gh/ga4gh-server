@@ -79,7 +79,7 @@ server using `cURL <http://curl.haxx.se/>`_:
 
 .. code-block:: bash
 
-    $ curl --data '{"datasetIds":[XXXX], "name":null}' --header 'Content-Type: application/json' \
+    $ curl --data '{"dataset_ids":[XXXX], "name":null}' --header 'Content-Type: application/json' \
     http://localhost:8000/current/readgroupsets/search
 
 In this example, we used the `searchReadGroupSets
@@ -95,7 +95,7 @@ equivalent command using:
 .. code-block:: bash
 
     $ source ga4gh-env/bin/activate
-    (ga4gh-env) $ ga4gh_client readgroupsets-search --datasetIds XXXX http://localhost:8000/current
+    (ga4gh-env) $ ga4gh_client readgroupsets-search --dataset_ids XXXX http://localhost:8000/current
 
 The output of this command is a simple summary of the ReadGroupSets that
 are present on the server. We can also see the JSON messages passing
@@ -103,7 +103,7 @@ between the client and the server if we increase the verbosity level:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ ga4gh_client -vv readgroupsets-search --datasetIds XXXX http://localhost:8000/current
+    (ga4gh-env) $ ga4gh_client -vv readgroupsets-search --dataset_ids XXXX http://localhost:8000/current
 
 We can perform similar queries for variant data using the
 `searchVariants
@@ -115,7 +115,7 @@ method:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ ga4gh_client variantsets-search --datasetIds XXXX http://localhost:8000/current
+    (ga4gh-env) $ ga4gh_client variantsets-search --dataset_ids XXXX http://localhost:8000/current
     1kg-phase1
     1kg-phase3
 
@@ -128,7 +128,7 @@ as follows:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ ga4gh_client variants-search --datasetIds XXXX http://localhost:8000/v0.5.1 \
+    (ga4gh-env) $ ga4gh_client variants-search --dataset_ids XXXX http://localhost:8000/v0.5.1 \
     --variantSetIds=1kg-phase1 --referenceName=2 --start=33100 --end=34000
 
 The output of the client program is a summary of the data received in a

@@ -94,7 +94,7 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         readGroupSet.readGroups = [
             readGroup.toProtocolElement() for readGroup in self._readGroups]
         readGroupSet.name = None
-        readGroupSet.datasetId = None
+        readGroupSet.dataset_id = None
         return readGroupSet
 
 
@@ -104,8 +104,8 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
     """
     def __init__(self, id_):
         super(SimulatedReadGroupSet, self).__init__(id_)
-        readGroupId = "{}:one".format(id_)
-        readGroup = SimulatedReadGroup(readGroupId)
+        read_group_id = "{}:one".format(id_)
+        readGroup = SimulatedReadGroup(read_group_id)
         self._readGroups.append(readGroup)
 
 
@@ -123,8 +123,8 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     def _addDataFile(self, path):
         filename = os.path.split(path)[1]
         localId = os.path.splitext(filename)[0]
-        readGroupId = "{}:{}".format(self._id, localId)
-        readGroup = HtslibReadGroup(readGroupId, path)
+        read_group_id = "{}:{}".format(self._id, localId)
+        readGroup = HtslibReadGroup(read_group_id, path)
         self._readGroups.append(readGroup)
 
 
@@ -156,14 +156,14 @@ class AbstractReadGroup(object):
         readGroup.id = self._id
         readGroup.created = self._creationTime
         readGroup.updated = self._updateTime
-        readGroup.datasetId = None
+        readGroup.dataset_id = None
         readGroup.description = None
         readGroup.experiment = None
         readGroup.info = {}
         readGroup.name = readGroup.id
         readGroup.predictedInsertSize = None
         readGroup.programs = []
-        readGroup.referenceSetId = None
+        readGroup.reference_set_id = None
         readGroup.sampleId = None
         return readGroup
 
@@ -175,7 +175,7 @@ class SimulatedReadGroup(AbstractReadGroup):
     def __init__(self, id_):
         super(SimulatedReadGroup, self).__init__(id_)
 
-    def getReadAlignments(self, referenceId=None, start=None, end=None):
+    def getReadAlignments(self, reference_id=None, start=None, end=None):
         for i in range(2):
             alignment = self._createReadAlignment(i)
             yield alignment
@@ -184,28 +184,28 @@ class SimulatedReadGroup(AbstractReadGroup):
         # TODO fill out a bit more
         id_ = "{}:simulated{}".format(self._id, i)
         alignment = protocol.ReadAlignment()
-        alignment.alignedQuality = [1, 2, 3]
-        alignment.alignedSequence = "ACT"
+        alignment.aligned_quality = [1, 2, 3]
+        alignment.aligned_sequence = "ACT"
         gaPosition = protocol.Position()
         gaPosition.position = 0
-        gaPosition.referenceName = "whatevs"
+        gaPosition.reference_name = "whatevs"
         gaPosition.strand = protocol.Strand.POS_STRAND
         gaLinearAlignment = protocol.LinearAlignment()
         gaLinearAlignment.position = gaPosition
         alignment.alignment = gaLinearAlignment
-        alignment.duplicateFragment = False
-        alignment.failedVendorQualityChecks = False
-        alignment.fragmentLength = 3
-        alignment.fragmentName = id_
+        alignment.duplicate_fragment = False
+        alignment.failed_vendor_quality_checks = False
+        alignment.fragment_length = 3
+        alignment.fragment_name = id_
         alignment.id = id_
         alignment.info = {}
-        alignment.nextMatePosition = None
-        alignment.numberReads = None
-        alignment.properPlacement = False
-        alignment.readGroupId = self._id
-        alignment.readNumber = None
-        alignment.secondaryAlignment = False
-        alignment.supplementaryAlignment = False
+        alignment.next_mate_position = None
+        alignment.number_reads = None
+        alignment.proper_placement = False
+        alignment.read_group_id = self._id
+        alignment.read_number = None
+        alignment.secondary_alignment = False
+        alignment.supplementary_alignment = False
         return alignment
 
 
@@ -227,20 +227,20 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         """
         return self._samFilePath
 
-    def getReadAlignments(self, referenceId=None, start=None, end=None):
+    def getReadAlignments(self, reference_id=None, start=None, end=None):
         """
         Returns an iterator over the specified reads
         """
-        # TODO If referenceId is None, return against all references,
+        # TODO If reference_id is None, return against all references,
         # including unmapped reads.
-        referenceName = ""
-        if referenceId is not None:
-            self.sanitizeGetRName(referenceId)
-            referenceName = self._samFile.getrname(referenceId)
-        referenceName, start, end = self.sanitizeAlignmentFileFetch(
-            referenceName, start, end)
+        reference_name = ""
+        if reference_id is not None:
+            self.sanitizeGetRName(reference_id)
+            reference_name = self._samFile.getrname(reference_id)
+        reference_name, start, end = self.sanitizeAlignmentFileFetch(
+            reference_name, start, end)
         # TODO deal with errors from htslib
-        readAlignments = self._samFile.fetch(referenceName, start, end)
+        readAlignments = self._samFile.fetch(reference_name, start, end)
         for readAlignment in readAlignments:
             yield self.convertReadAlignment(readAlignment)
 
@@ -251,13 +251,13 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.ReadAlignment()
-        ret.alignedQuality = list(read.query_qualities)
-        ret.alignedSequence = read.query_sequence
+        ret.aligned_quality = list(read.query_qualities)
+        ret.aligned_sequence = read.query_sequence
         ret.alignment = protocol.LinearAlignment()
-        ret.alignment.mappingQuality = read.mapping_quality
+        ret.alignment.mapping_quality = read.mapping_quality
         ret.alignment.position = protocol.Position()
         self.sanitizeGetRName(read.reference_id)
-        ret.alignment.position.referenceName = self._samFile.getrname(
+        ret.alignment.position.reference_name = self._samFile.getrname(
             read.reference_id)
         ret.alignment.position.position = read.reference_start
         ret.alignment.position.strand = \
@@ -266,42 +266,42 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         for operation, length in read.cigar:
             gaCigarUnit = protocol.CigarUnit()
             gaCigarUnit.operation = SamCigar.int2ga(operation)
-            gaCigarUnit.operationLength = length
+            gaCigarUnit.operation_length = length
             gaCigarUnit.referenceSequence = None  # TODO fix this!
             ret.alignment.cigar.append(gaCigarUnit)
-        ret.duplicateFragment = SamFlags.isFlagSet(
+        ret.duplicate_fragment = SamFlags.isFlagSet(
             read.flag, SamFlags.DUPLICATE_FRAGMENT)
-        ret.failedVendorQualityChecks = SamFlags.isFlagSet(
+        ret.failed_vendor_quality_checks = SamFlags.isFlagSet(
             read.flag, SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
-        ret.fragmentLength = read.template_length
-        ret.fragmentName = read.query_name
+        ret.fragment_length = read.template_length
+        ret.fragment_name = read.query_name
         ret.id = "{}:{}".format(self._id, read.query_name)
         ret.info = {key: [str(value)] for key, value in read.tags}
-        ret.nextMatePosition = None
+        ret.next_mate_position = None
         if read.next_reference_id != -1:
-            ret.nextMatePosition = protocol.Position()
+            ret.next_mate_position = protocol.Position()
             self.sanitizeGetRName(read.next_reference_id)
-            ret.nextMatePosition.referenceName = self._samFile.getrname(
+            ret.next_mate_position.reference_name = self._samFile.getrname(
                 read.next_reference_id)
-            ret.nextMatePosition.position = read.next_reference_start
-            ret.nextMatePosition.strand = \
+            ret.next_mate_position.position = read.next_reference_start
+            ret.next_mate_position.strand = \
                 protocol.Strand.POS_STRAND  # TODO fix this!
-        # TODO Is this the correct mapping between numberReads and
-        # sam flag 0x1? What about the mapping between numberReads
+        # TODO Is this the correct mapping between number_reads and
+        # sam flag 0x1? What about the mapping between number_reads
         # and 0x40 and 0x80?
-        ret.numberReads = None
-        ret.readNumber = None
+        ret.number_reads = None
+        ret.read_number = None
         if SamFlags.isFlagSet(read.flag, SamFlags.NUMBER_READS):
-            ret.numberReads = 2
+            ret.number_reads = 2
             if SamFlags.isFlagSet(read.flag, SamFlags.READ_NUMBER_ONE):
-                ret.readNumber = 0
+                ret.read_number = 0
             elif SamFlags.isFlagSet(read.flag, SamFlags.READ_NUMBER_TWO):
-                ret.readNumber = 1
-        ret.properPlacement = SamFlags.isFlagSet(
+                ret.read_number = 1
+        ret.proper_placement = SamFlags.isFlagSet(
             read.flag, SamFlags.PROPER_PLACEMENT)
-        ret.readGroupId = self._id
-        ret.secondaryAlignment = SamFlags.isFlagSet(
+        ret.read_group_id = self._id
+        ret.secondary_alignment = SamFlags.isFlagSet(
             read.flag, SamFlags.SECONDARY_ALIGNMENT)
-        ret.supplementaryAlignment = SamFlags.isFlagSet(
+        ret.supplementary_alignment = SamFlags.isFlagSet(
             read.flag, SamFlags.SUPPLEMENTARY_ALIGNMENT)
         return ret

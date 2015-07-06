@@ -86,10 +86,10 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         super(AbstractVariantSet, self).__init__()
         self._id = id_
         self._callSetIdMap = {}
-        self._callSetIds = []
+        self._call_set_ids = []
         self._creationTime = None
         self._updatedTime = None
-        self._referenceSetId = ""
+        self._reference_set_id = ""
 
     def getCreationTime(self):
         """
@@ -117,20 +117,20 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         callSetId = self.getCallSetId(sampleName)
         callSet = CallSet(self, callSetId, sampleName)
         self._callSetIdMap[callSetId] = callSet
-        self._callSetIds.append(callSetId)
+        self._call_set_ids.append(callSetId)
 
     def getCallSetIdMap(self):
         """
-        Returns the map of callSetIds to CallSet objects in this
+        Returns the map of call_set_ids to CallSet objects in this
         VariantSet.
         """
         return self._callSetIdMap
 
     def getCallSetIds(self):
         """
-        Returns the list of callSetIds in this VariantSet.
+        Returns the list of call_set_ids in this VariantSet.
         """
-        return self._callSetIds
+        return self._call_set_ids
 
     def getCallSets(self):
         """
@@ -144,8 +144,8 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         protocolElement = protocol.VariantSet()
         protocolElement.id = self._id
-        protocolElement.datasetId = "NotImplemented"
-        protocolElement.referenceSetId = self._referenceSetId
+        protocolElement.dataset_id = "NotImplemented"
+        protocolElement.reference_set_id = self._reference_set_id
         protocolElement.metadata = self.getMetadata()
         return protocolElement
 
@@ -172,7 +172,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         ret = protocol.Variant()
         ret.created = self._creationTime
         ret.updated = self._updatedTime
-        ret.variantSetId = self.getId()
+        ret.variant_set_id = self.getId()
         return ret
 
 
@@ -181,8 +181,8 @@ class SimulatedVariantSet(AbstractVariantSet):
     A variant set that doesn't derive from a data store.
     Used mostly for testing.
     """
-    def __init__(self, randomSeed, numCalls, variantDensity, variantSetId):
-        super(SimulatedVariantSet, self).__init__(variantSetId)
+    def __init__(self, randomSeed, numCalls, variantDensity, variant_set_id):
+        super(SimulatedVariantSet, self).__init__(variant_set_id)
         self._randomSeed = randomSeed
         self._numCalls = numCalls
         for j in range(numCalls):
@@ -199,19 +199,19 @@ class SimulatedVariantSet(AbstractVariantSet):
         ret = []
         return ret
 
-    def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+    def getVariants(self, reference_name, startPosition, endPosition,
+                    variant_name=None, call_set_ids=None):
         randomNumberGenerator = random.Random()
         i = startPosition
         while i < endPosition:
             randomNumberGenerator.seed(self._randomSeed + i)
             if randomNumberGenerator.random() < self._variantDensity:
                 variant = self.generateVariant(
-                    self._id, referenceName, i, randomNumberGenerator)
+                    self._id, reference_name, i, randomNumberGenerator)
                 yield variant
             i += 1
 
-    def generateVariant(self, variantSetId, referenceName, position,
+    def generateVariant(self, variant_set_id, reference_name, position,
                         randomNumberGenerator):
         """
         Generate a random variant for the specified position using the
@@ -221,17 +221,17 @@ class SimulatedVariantSet(AbstractVariantSet):
         """
         variant = self._createGaVariant()
         variant.names = []
-        variant.referenceName = referenceName
+        variant.reference_name = reference_name
         variant.id = "{0}:{1}:{2}".format(
-            variant.variantSetId, referenceName, position)
+            variant.variant_set_id, reference_name, position)
         variant.start = position
         variant.end = position + 1  # SNPs only for now
         bases = ["A", "C", "G", "T"]
         ref = randomNumberGenerator.choice(bases)
-        variant.referenceBases = ref
+        variant.reference_bases = ref
         alt = randomNumberGenerator.choice(
             [base for base in bases if base != ref])
-        variant.alternateBases = [alt]
+        variant.alternate_bases = [alt]
         variant.calls = []
         for callSet in self.getCallSets():
             call = protocol.Call()
@@ -315,10 +315,10 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             for sample in variantFile.header.samples:
                 self.addCallSet(sample)
         else:
-            callSetIds = set([
+            call_set_ids = set([
                 self.getCallSetId(sample)
                 for sample in variantFile.header.samples])
-            if callSetIds != set(self._callSetIdMap.keys()):
+            if call_set_ids != set(self._callSetIdMap.keys()):
                 raise exceptions.InconsistentCallSetIdException(
                     variantFile.filename)
 
@@ -370,10 +370,10 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 call.info[key] = _encodeValue(value)
         return call
 
-    def convertVariant(self, record, callSetIds):
+    def convertVariant(self, record, call_set_ids):
         """
         Converts the specified pysam variant record into a GA4GH Variant
-        object. Only calls for the specified list of callSetIds will
+        object. Only calls for the specified list of call_set_ids will
         be included.
         """
         variant = self._createGaVariant()
@@ -382,14 +382,14 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         variant.id = "{0}:{1}:{2}".format(self._id,
                                           record.contig,
                                           record.pos)
-        variant.referenceName = record.contig
+        variant.reference_name = record.contig
         if record.id is not None:
             variant.names = record.id.split(';')
         variant.start = record.start          # 0-based inclusive
         variant.end = record.stop             # 0-based exclusive
-        variant.referenceBases = record.ref
+        variant.reference_bases = record.ref
         if record.alts is not None:
-            variant.alternateBases = list(record.alts)
+            variant.alternate_bases = list(record.alts)
         # record.filter and record.qual are also available, when supported
         # by GAVariant.
         for key, value in record.info.iteritems():
@@ -403,7 +403,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         variant.calls = []
         sampleIterator = 0  # REMOVAL
         for name, call in record.samples.iteritems():
-            if self.getCallSetId(name) in callSetIds:
+            if self.getCallSetId(name) in call_set_ids:
                 genotypeData = sampleData[sampleIterator].split(
                     ":")[0]  # REMOVAL
                 variant.calls.append(self._convertGaCall(
@@ -411,40 +411,40 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             sampleIterator += 1  # REMOVAL
         return variant
 
-    def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+    def getVariants(self, reference_name, startPosition, endPosition,
+                    variant_name=None, call_set_ids=None):
         """
         Returns an iterator over the specified variants. The parameters
         correspond to the attributes of a GASearchVariantsRequest object.
         """
-        if variantName is not None:
+        if variant_name is not None:
             raise exceptions.NotImplementedException(
-                "Searching by variantName is not supported")
-        # For v0.5.1, callSetIds=[] actually means return all callSets.
-        # In v0.6+, callSetIds=[] means return no call sets, and
-        # callSetIds=None means return all call sets. For forward
+                "Searching by variant_name is not supported")
+        # For v0.5.1, call_set_ids=[] actually means return all call_sets.
+        # In v0.6+, call_set_ids=[] means return no call sets, and
+        # call_set_ids=None means return all call sets. For forward
         # compatibility, we use the 0.6 interface for this function but
         # we translate back to the 0.5 interface while we support this.
         # TODO Remove this comment and workaround once we transition to
         # protocol version 0.6
-        if callSetIds is None:
-            callSetIds = []
+        if call_set_ids is None:
+            call_set_ids = []
         else:
-            for callSetId in callSetIds:
-                if callSetId not in self._callSetIds:
+            for callSetId in call_set_ids:
+                if callSetId not in self._call_set_ids:
                     raise exceptions.CallSetNotInVariantSetException(
                         callSetId, self.getId())
-        if len(callSetIds) == 0:
-            callSetIds = self._callSetIds
-        if referenceName in self._chromFileMap:
-            varFile = self._chromFileMap[referenceName]
-            referenceName, startPosition, endPosition = \
+        if len(call_set_ids) == 0:
+            call_set_ids = self._call_set_ids
+        if reference_name in self._chromFileMap:
+            varFile = self._chromFileMap[reference_name]
+            reference_name, startPosition, endPosition = \
                 self.sanitizeVariantFileFetch(
-                    referenceName, startPosition, endPosition)
+                    reference_name, startPosition, endPosition)
             cursor = varFile.fetch(
-                referenceName, startPosition, endPosition)
+                reference_name, startPosition, endPosition)
             for record in cursor:
-                yield self.convertVariant(record, callSetIds)
+                yield self.convertVariant(record, call_set_ids)
 
     def getMetadata(self):
         return self._metadata

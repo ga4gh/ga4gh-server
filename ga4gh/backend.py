@@ -17,15 +17,15 @@ import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
 
 
-def _parsePageToken(pageToken, numValues):
+def _parsePageToken(page_token, numValues):
     """
-    Parses the specified pageToken and returns a list of the specified
+    Parses the specified page_token and returns a list of the specified
     number of values. Page tokens are assumed to consist of a fixed
     number of integers seperated by colons. If the page token does
     not conform to this specification, raise a InvalidPageToken
     exception.
     """
-    tokens = pageToken.split(":")
+    tokens = page_token.split(":")
     if len(tokens) != numValues:
         msg = "Invalid number of values in page token"
         raise exceptions.BadPageTokenException(msg)
@@ -38,18 +38,18 @@ def _parsePageToken(pageToken, numValues):
 
 
 def _getVariantSet(request, variantSetIdMap):
-    if len(request.variantSetIds) != 1:
-        if len(request.variantSetIds) == 0:
+    if len(request.variant_set_ids) != 1:
+        if len(request.variant_set_ids) == 0:
             msg = "Variant search requires specifying a variantSet"
         else:
             msg = ("Variant search over multiple variantSets "
                    "not supported")
         raise exceptions.NotImplementedException(msg)
-    variantSetId = request.variantSetIds[0]
+    variant_set_id = request.variant_set_ids[0]
     try:
-        variantSet = variantSetIdMap[variantSetId]
+        variantSet = variantSetIdMap[variant_set_id]
     except KeyError:
-        raise exceptions.VariantSetNotFoundException(variantSetId)
+        raise exceptions.VariantSetNotFoundException(variant_set_id)
     return variantSet
 
 
@@ -57,7 +57,7 @@ class IntervalIterator(object):
     """
     Implements generator logic for types which accept a start/end
     range to search for the object. Returns an iterator over
-    (object, pageToken) pairs. The pageToken is a string which allows
+    (object, page_token) pairs. The page_token is a string which allows
     us to pick up the iteration at any point, and is None for the last
     value in the iterator.
     """
@@ -70,12 +70,13 @@ class IntervalIterator(object):
         self._nextObject = None
         self._searchAnchor = None
         self._distanceFromAnchor = None
-        if request.pageToken is None:
+        if request.page_token is None:
             self._initialiseIteration()
         else:
             # Set the search start point and the number of records to skip from
             # the page token.
-            searchAnchor, objectsToSkip = _parsePageToken(request.pageToken, 2)
+            searchAnchor, objectsToSkip = _parsePageToken(
+                request.page_token, 2)
             self._pickUpIteration(searchAnchor, objectsToSkip)
 
     def _initialiseIteration(self):
@@ -127,11 +128,11 @@ class IntervalIterator(object):
 
     def next(self):
         """
-        Returns the next (object, nextPageToken) pair.
+        Returns the next (object, next_page_token) pair.
         """
         if self._currentObject is None:
             raise StopIteration()
-        nextPageToken = None
+        next_page_token = None
         if self._nextObject is not None:
             start = self._getStart(self._nextObject)
             # If start > the search anchor, move the search anchor. Otherwise,
@@ -141,9 +142,9 @@ class IntervalIterator(object):
                 self._distanceFromAnchor = 0
             else:
                 self._distanceFromAnchor += 1
-            nextPageToken = "{}:{}".format(
+            next_page_token = "{}:{}".format(
                 self._searchAnchor, self._distanceFromAnchor)
-        ret = self._currentObject, nextPageToken
+        ret = self._currentObject, next_page_token
         self._currentObject = self._nextObject
         self._nextObject = next(self._searchIterator, None)
         return ret
@@ -157,22 +158,22 @@ class ReadsIntervalIterator(IntervalIterator):
     An interval iterator for reads
     """
     def _getContainer(self):
-        if len(self._request.readGroupIds) != 1:
-            if len(self._request.readGroupIds) == 0:
+        if len(self._request.read_group_ids) != 1:
+            if len(self._request.read_group_ids) == 0:
                 msg = "Read search requires a readGroup to be specified"
             else:
                 msg = "Read search over multiple readGroups not supported"
             raise exceptions.NotImplementedException(msg)
-        readGroupId = self._request.readGroupIds[0]
+        read_group_id = self._request.read_group_ids[0]
         try:
-            readGroup = self._containerIdMap[self._request.readGroupIds[0]]
+            readGroup = self._containerIdMap[self._request.read_group_ids[0]]
         except KeyError:
-            raise exceptions.ReadGroupNotFoundException(readGroupId)
+            raise exceptions.ReadGroupNotFoundException(read_group_id)
         return readGroup
 
     def _search(self, start, end):
         return self._container.getReadAlignments(
-            self._request.referenceId, start, end)
+            self._request.reference_id, start, end)
 
     @classmethod
     def _getStart(cls, readAlignment):
@@ -181,7 +182,7 @@ class ReadsIntervalIterator(IntervalIterator):
     @classmethod
     def _getEnd(cls, readAlignment):
         return cls._getStart(readAlignment) + \
-            len(readAlignment.alignedSequence)
+            len(readAlignment.aligned_sequence)
 
 
 class VariantsIntervalIterator(IntervalIterator):
@@ -193,8 +194,9 @@ class VariantsIntervalIterator(IntervalIterator):
 
     def _search(self, start, end):
         return self._container.getVariants(
-            self._request.referenceName, start, end, self._request.variantName,
-            self._request.callSetIds)
+            self._request.reference_name, start, end,
+            self._request.variant_name,
+            self._request.call_set_ids)
 
     @classmethod
     def _getStart(cls, variant):
@@ -214,38 +216,38 @@ class AbstractBackend(object):
         self._referenceSetIdMap = {}
         self._referenceSetIds = []
         self._referenceIdMap = {}
-        self._referenceIds = []
+        self._reference_ids = []
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
         self._maxResponseLength = 2**20  # 1 MiB
         self._datasetIdMap = {}
-        self._datasetIds = []
+        self._dataset_ids = []
 
     def _getDatasetFromRequest(self, request):
-        if hasattr(request, "datasetIds"):
-            if len(request.datasetIds) != 1:
+        if hasattr(request, "dataset_ids"):
+            if len(request.dataset_ids) != 1:
                 raise exceptions.NotExactlyOneDatasetException(
-                    request.datasetIds)
-            datasetId = request.datasetIds[0]
-            return self._datasetIdMap[datasetId]
+                    request.dataset_ids)
+            dataset_id = request.dataset_ids[0]
+            return self._datasetIdMap[dataset_id]
         else:
-            # TODO this can go away when all requests have datasetIds
+            # TODO this can go away when all requests have dataset_ids
             # instead, we should throw an error here
-            datasetId = self._datasetIds[0]
-            return self._datasetIdMap[datasetId]
+            dataset_id = self._dataset_ids[0]
+            return self._datasetIdMap[dataset_id]
 
     def getDatasetIds(self):
         """
         Returns a list of datasets in this backend
         """
-        return self._datasetIds
+        return self._dataset_ids
 
-    def getDataset(self, datasetId):
+    def getDataset(self, dataset_id):
         """
-        Returns a dataset with id datasetId
+        Returns a dataset with id dataset_id
         """
-        return self._datasetIdMap[datasetId]
+        return self._datasetIdMap[dataset_id]
 
     def getReferenceSets(self):
         """
@@ -287,28 +289,28 @@ class AbstractBackend(object):
             except ValueError:
                 raise exceptions.BadRequestIntegerException(
                     'end', endString)
-        if 'pageToken' in requestArgs:
-            pageTokenStr = requestArgs['pageToken']
-            start = _parsePageToken(pageTokenStr, 1)[0]
+        if 'page_token' in requestArgs:
+            page_token_str = requestArgs['page_token']
+            start = _parsePageToken(page_token_str, 1)[0]
         chunkSize = self._maxResponseLength
 
         # get reference bases
         gbEnd = min(start + chunkSize, end)
         sequence = reference.getBases(start, gbEnd)
 
-        # determine nextPageToken
+        # determine next_page_token
         if len(sequence) == chunkSize:
-            nextPageToken = start + chunkSize
+            next_page_token = start + chunkSize
         elif len(sequence) > chunkSize:
             raise exceptions.ServerError()  # should never happen
         else:
-            nextPageToken = None
+            next_page_token = None
 
         # build response
         response = protocol.ListReferenceBasesResponse()
         response.offset = start
         response.sequence = sequence
-        response.nextPageToken = nextPageToken
+        response.next_page_token = next_page_token
         return response.toJsonString()
 
     def runGetRequest(self, idMap, id_):
@@ -332,8 +334,8 @@ class AbstractBackend(object):
         We return a string representation of an instance of the specified
         responseClass in JSON format. Objects are filled into the page list
         using the specified object generator, which must return
-        (object, nextPageToken) pairs, and be able to resume iteration from
-        any point using the nextPageToken attribute of the request object.
+        (object, next_page_token) pairs, and be able to resume iteration from
+        any point using the next_page_token attribute of the request object.
         """
         self.startProfile()
         try:
@@ -342,18 +344,18 @@ class AbstractBackend(object):
             raise exceptions.InvalidJsonException(requestStr)
         self.validateRequest(requestDict, requestClass)
         request = requestClass.fromJsonDict(requestDict)
-        if request.pageSize is None:
-            request.pageSize = self._defaultPageSize
-        if request.pageSize <= 0:
-            raise exceptions.BadPageSizeException(request.pageSize)
+        if request.page_size is None:
+            request.page_size = self._defaultPageSize
+        if request.page_size <= 0:
+            raise exceptions.BadPageSizeException(request.page_size)
         responseBuilder = protocol.SearchResponseBuilder(
-            responseClass, request.pageSize, self._maxResponseLength)
-        nextPageToken = None
-        for obj, nextPageToken in objectGenerator(request):
+            responseClass, request.page_size, self._maxResponseLength)
+        next_page_token = None
+        for obj, next_page_token in objectGenerator(request):
             responseBuilder.addValue(obj)
             if responseBuilder.isFull():
                 break
-        responseBuilder.setNextPageToken(nextPageToken)
+        responseBuilder.setNextPageToken(next_page_token)
         responseString = responseBuilder.getJsonString()
         self.validateResponse(responseString, responseClass)
         self.endProfile()
@@ -447,28 +449,28 @@ class AbstractBackend(object):
         of the data hierarchy.
         """
         currentIndex = 0
-        if request.pageToken is not None:
-            currentIndex, = _parsePageToken(request.pageToken, 1)
+        if request.page_token is not None:
+            currentIndex, = _parsePageToken(request.page_token, 1)
         while currentIndex < len(idList):
             objectId = idList[currentIndex]
             object_ = idMap[objectId]
             currentIndex += 1
-            nextPageToken = None
+            next_page_token = None
             if currentIndex < len(idList):
-                nextPageToken = str(currentIndex)
-            yield object_.toProtocolElement(), nextPageToken
+                next_page_token = str(currentIndex)
+            yield object_.toProtocolElement(), next_page_token
 
     def datasetsGenerator(self, request):
         """
-        Returns a generator over the (dataset, nextPageToken) pairs
+        Returns a generator over the (dataset, next_page_token) pairs
         defined by the specified request
         """
         return self._topLevelObjectGenerator(
-            request, self._datasetIdMap, self._datasetIds)
+            request, self._datasetIdMap, self._dataset_ids)
 
     def readGroupSetsGenerator(self, request):
         """
-        Returns a generator over the (readGroupSet, nextPageToken) pairs
+        Returns a generator over the (readGroupSet, next_page_token) pairs
         defined by the specified request.
         """
         dataset = self._getDatasetFromRequest(request)
@@ -478,7 +480,7 @@ class AbstractBackend(object):
 
     def referenceSetsGenerator(self, request):
         """
-        Returns a generator over the (referenceSet, nextPageToken) pairs
+        Returns a generator over the (referenceSet, next_page_token) pairs
         defined by the specified request.
         """
         return self._topLevelObjectGenerator(
@@ -486,16 +488,16 @@ class AbstractBackend(object):
 
     def referencesGenerator(self, request):
         """
-        Returns a generator over the (reference, nextPageToken) pairs
+        Returns a generator over the (reference, next_page_token) pairs
         defined by the specified request.
         """
         return self._topLevelObjectGenerator(
-            request, self._referenceIdMap, self._referenceIds)
+            request, self._referenceIdMap, self._reference_ids)
 
     def variantSetsGenerator(self, request):
         """
-        Returns a generator over the (variantSet, nextPageToken) pairs defined
-        by the specified request.
+        Returns a generator over the (variantSet, next_page_token) pairs
+        defined by the specified request.
         """
         dataset = self._getDatasetFromRequest(request)
         return self._topLevelObjectGenerator(
@@ -504,7 +506,7 @@ class AbstractBackend(object):
 
     def readsGenerator(self, request):
         """
-        Returns a generator over the (read, nextPageToken) pairs defined
+        Returns a generator over the (read, next_page_token) pairs defined
         by the specified request
         """
         dataset = self._getDatasetFromRequest(request)
@@ -514,7 +516,7 @@ class AbstractBackend(object):
 
     def variantsGenerator(self, request):
         """
-        Returns a generator over the (variant, nextPageToken) pairs defined
+        Returns a generator over the (variant, next_page_token) pairs defined
         by the specified request.
         """
         dataset = self._getDatasetFromRequest(request)
@@ -524,7 +526,7 @@ class AbstractBackend(object):
 
     def callSetsGenerator(self, request):
         """
-        Returns a generator over the (callSet, nextPageToken) pairs defined
+        Returns a generator over the (callSet, next_page_token) pairs defined
         by the specified request.
         """
         if request.name is not None:
@@ -621,23 +623,23 @@ class SimulatedBackend(AbstractBackend):
             variantDensity, numVariantSets)
         self._datasetIdMap[dataset1.getId()] = dataset1
         self._datasetIdMap[dataset2.getId()] = dataset2
-        self._datasetIds = sorted(self._datasetIdMap.keys())
+        self._dataset_ids = sorted(self._datasetIdMap.keys())
 
         # References
         randomGenerator = random.Random()
         randomGenerator.seed(randomSeed)
         for i in range(numReferenceSets):
-            referenceSetId = "referenceSet{}".format(i)
+            reference_set_id = "referenceSet{}".format(i)
             referenceSetSeed = randomGenerator.getrandbits(32)
             referenceSet = references.SimulatedReferenceSet(
-                referenceSetId, referenceSetSeed,
+                reference_set_id, referenceSetSeed,
                 numReferencesPerReferenceSet)
-            self._referenceSetIdMap[referenceSetId] = referenceSet
+            self._referenceSetIdMap[reference_set_id] = referenceSet
             for reference in referenceSet.getReferences():
-                referenceId = reference.getId()
-                self._referenceIdMap[referenceId] = reference
+                reference_id = reference.getId()
+                self._referenceIdMap[reference_id] = reference
         self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
-        self._referenceIds = sorted(self._referenceIdMap.keys())
+        self._reference_ids = sorted(self._referenceIdMap.keys())
 
 
 class FileSystemBackend(AbstractBackend):
@@ -653,17 +655,17 @@ class FileSystemBackend(AbstractBackend):
         # References
         referencesDirName = "references"
         referenceSetDir = os.path.join(self._dataDir, referencesDirName)
-        for referenceSetId in os.listdir(referenceSetDir):
-            relativePath = os.path.join(referenceSetDir, referenceSetId)
+        for reference_set_id in os.listdir(referenceSetDir):
+            relativePath = os.path.join(referenceSetDir, reference_set_id)
             if os.path.isdir(relativePath):
                 referenceSet = references.HtslibReferenceSet(
-                    referenceSetId, relativePath)
-                self._referenceSetIdMap[referenceSetId] = referenceSet
+                    reference_set_id, relativePath)
+                self._referenceSetIdMap[reference_set_id] = referenceSet
                 for reference in referenceSet.getReferences():
-                    referenceId = reference.getId()
-                    self._referenceIdMap[referenceId] = reference
+                    reference_id = reference.getId()
+                    self._referenceIdMap[reference_id] = reference
         self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
-        self._referenceIds = sorted(self._referenceIdMap.keys())
+        self._reference_ids = sorted(self._referenceIdMap.keys())
 
         # Datasets
         datasetDirs = [
@@ -674,4 +676,4 @@ class FileSystemBackend(AbstractBackend):
         for datasetDir in datasetDirs:
             dataset = datasets.FileSystemDataset(datasetDir)
             self._datasetIdMap[dataset.getId()] = dataset
-        self._datasetIds = sorted(self._datasetIdMap.keys())
+        self._dataset_ids = sorted(self._datasetIdMap.keys())

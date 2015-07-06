@@ -54,33 +54,33 @@ class TestFrontend(unittest.TestCase):
 
     def sendVariantsSearch(self):
         response = self.sendVariantSetsSearch()
-        variantSets = protocol.SearchVariantSetsResponse().fromJsonString(
-            response.data).variantSets
+        variant_sets = protocol.SearchVariantSetsResponse().fromJsonString(
+            response.data).variant_sets
         request = protocol.SearchVariantsRequest()
-        request.variantSetIds = [variantSets[0].id]
-        request.referenceName = "1"
+        request.variant_set_ids = [variant_sets[0].id]
+        request.reference_name = "1"
         request.start = 0
         request.end = 1
         return self.sendPostRequest('/variants/search', request)
 
     def sendVariantSetsSearch(self):
         request = protocol.SearchVariantSetsRequest()
-        request.datasetIds = ["simulatedDataset1"]
+        request.dataset_ids = ["simulatedDataset1"]
         return self.sendPostRequest('/variantsets/search', request)
 
     def sendCallSetsSearch(self):
         response = self.sendVariantSetsSearch()
-        variantSets = protocol.SearchVariantSetsResponse().fromJsonString(
-            response.data).variantSets
+        variant_sets = protocol.SearchVariantSetsResponse().fromJsonString(
+            response.data).variant_sets
         request = protocol.SearchCallSetsRequest()
-        request.variantSetIds = [variantSets[0].id]
+        request.variant_set_ids = [variant_sets[0].id]
         return self.sendPostRequest('/callsets/search', request)
 
-    def sendReadsSearch(self, readGroupIds=None):
-        if readGroupIds is None:
-            readGroupIds = ['aReadGroupSet:one']
+    def sendReadsSearch(self, read_group_ids=None):
+        if read_group_ids is None:
+            read_group_ids = ['aReadGroupSet:one']
         request = protocol.SearchReadsRequest()
-        request.readGroupIds = readGroupIds
+        request.read_group_ids = read_group_ids
         return self.sendPostRequest('/reads/search', request)
 
     def sendDatasetsSearch(self):
@@ -187,16 +187,16 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, self.app.options(versionedPath).status_code)
 
     def testRouteReferences(self):
-        referenceId = "referenceSet0:srs0"
+        reference_id = "referenceSet0:srs0"
         paths = ['/references/{}', '/references/{}/bases']
         for path in paths:
-            path = path.format(referenceId)
+            path = path.format(reference_id)
             versionedPath = utils.applyVersion(path)
             self.assertEqual(200, self.app.get(versionedPath).status_code)
-        referenceSetId = "referenceSet0"
+        reference_set_id = "referenceSet0"
         paths = ['/referencesets/{}']
         for path in paths:
-            path = path.format(referenceSetId)
+            path = path.format(reference_set_id)
             versionedPath = utils.applyVersion(path)
             self.assertEqual(200, self.app.get(versionedPath).status_code)
         self.verifySearchRouting('/referencesets/search', True)
@@ -241,14 +241,14 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         responseData = protocol.SearchVariantSetsResponse.fromJsonString(
             response.data)
-        self.assertEqual(len(responseData.variantSets), 1)
+        self.assertEqual(len(responseData.variant_sets), 1)
 
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch()
         self.assertEqual(200, response.status_code)
         responseData = protocol.SearchCallSetsResponse.fromJsonString(
             response.data)
-        self.assertEqual(len(responseData.callSets), 1)
+        self.assertEqual(len(responseData.call_sets), 1)
 
     def testReadsSearch(self):
         response = self.sendReadsSearch()

@@ -75,24 +75,24 @@ class TestGestalt(server_test.ServerTest):
         self.runClientCmd(self.client, "variants-search -s0 -e2")
 
     def runReadsRequest(self):
-        cmd = "reads-search --readGroupIds 'aReadGroupSet:one'"
+        cmd = "reads-search --read_group_ids 'aReadGroupSet:one'"
         self.runClientCmd(self.client, cmd)
 
     def runReferencesRequest(self):
-        referenceSetId = 'referenceSet0'
-        referenceId = '{}:srs0'.format(referenceSetId)
+        reference_set_id = 'referenceSet0'
+        reference_id = '{}:srs0'.format(reference_set_id)
         cmd = "referencesets-search"
         self.runClientCmd(self.client, cmd)
         cmd = "references-search"
         self.runClientCmd(self.client, cmd)
-        cmd = "referencesets-get {}".format(referenceSetId)
+        cmd = "referencesets-get {}".format(reference_set_id)
         self.runClientCmd(self.client, cmd)
-        cmd = "references-get {}".format(referenceId)
+        cmd = "references-get {}".format(reference_id)
         self.runClientCmd(self.client, cmd)
-        cmd = "references-list-bases {}".format(referenceId)
+        cmd = "references-list-bases {}".format(reference_id)
         self.runClientCmd(self.client, cmd)
 
     def runVariantSetsRequestDatasetTwo(self):
-        datasetId = "simulatedDataset2"
-        cmd = "variantsets-search --datasetIds {}".format(datasetId)
+        dataset_id = "simulatedDataset2"
+        cmd = "variantsets-search --dataset_ids {}".format(dataset_id)
         self.runClientCmd(self.client, cmd)

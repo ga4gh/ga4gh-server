@@ -28,12 +28,12 @@ class TestRemoteFetchReads(RemoteServerTestReads):
     """
     def testBamFetch(self):
         self.client = client.ClientForTesting(self.server.getUrl())
-        self.readGroupIds = \
+        self.read_group_ids = \
             'remoteTest:wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample'
         self.runClientCmd(
             self.client,
-            "reads-search --readGroupIds '{}'".format(
-                self.readGroupIds))
+            "reads-search --read_group_ids '{}'".format(
+                self.read_group_ids))
         self._assertLogsWritten()
         self.client.cleanup()
 

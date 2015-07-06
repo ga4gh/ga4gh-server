@@ -15,7 +15,7 @@ class TestDatasets(unittest.TestCase):
     Tests the datasets class
     """
     def testToProtocolElement(self):
-        datasetId = 'ds1'
-        dataset = datasets.SimulatedDataset(datasetId, 1, 2, 3, 4)
+        dataset_id = 'ds1'
+        dataset = datasets.SimulatedDataset(dataset_id, 1, 2, 3, 4)
         gaDataset = dataset.toProtocolElement()
         self.assertEqual(dataset.getId(), gaDataset.id)

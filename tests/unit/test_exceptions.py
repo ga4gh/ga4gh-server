@@ -96,7 +96,7 @@ class TestExceptionConsistency(unittest.TestCase):
                 obj = objClass()
                 obj.alignments = [protocol.ReadAlignment()]
                 obj.alignments[0].alignment = protocol.LinearAlignment()
-                obj.alignments[0].alignment.mappingQuality = wrongString
+                obj.alignments[0].alignment.mapping_quality = wrongString
                 jsonDict = obj.toJsonDict()
                 args = (jsonDict, objClass)
             else:
@@ -129,7 +129,7 @@ class TestExceptionConsistency(unittest.TestCase):
         obj = objClass()
         obj.alignments = [protocol.ReadAlignment()]
         obj.alignments[0].alignment = protocol.LinearAlignment()
-        obj.alignments[0].alignment.mappingQuality = wrongString
+        obj.alignments[0].alignment.mapping_quality = wrongString
         jsonDict = obj.toJsonDict()
         instance = exceptions.ResponseValidationFailureException(
             jsonDict, objClass)

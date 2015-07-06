@@ -17,16 +17,16 @@ def parseArgs():
             "Converts an error code received by a clients to the  "
             "corresponding exception class."))
     parser.add_argument(
-        "errorCode", type=int,
-        help="The errorCode value in a GAException object.")
+        "error_code", type=int,
+        help="The error_code value in a GAException object.")
     args = parser.parse_args()
     return args
 
 
 def main():
     args = parseArgs()
-    exceptionClass = exceptions.getExceptionClass(args.errorCode)
-    print(args.errorCode, exceptionClass, sep="\t")
+    exceptionClass = exceptions.getExceptionClass(args.error_code)
+    print(args.error_code, exceptionClass, sep="\t")
 
 
 if __name__ == '__main__':

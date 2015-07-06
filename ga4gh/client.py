@@ -108,9 +108,9 @@ class HttpClient(object):
         return responseObject
 
     def _updateNotDone(self, responseObject, protocolRequest):
-        if hasattr(responseObject, 'nextPageToken'):
-            protocolRequest.pageToken = responseObject.nextPageToken
-            notDone = responseObject.nextPageToken is not None
+        if hasattr(responseObject, 'next_page_token'):
+            protocolRequest.page_token = responseObject.next_page_token
+            notDone = responseObject.next_page_token is not None
         else:
             notDone = False
         return notDone
@@ -138,7 +138,7 @@ class HttpClient(object):
         Runs the specified request at the specified objectName and instantiates
         an object of the specified class. We yield each object in listAttr.
         If pages of results are present, repeat this process until the
-        pageToken is null.
+        page_token is null.
         """
         fullUrl = posixpath.join(self._urlPrefix, objectName + '/search')
         notDone = True
@@ -148,7 +148,7 @@ class HttpClient(object):
                 'POST', fullUrl, protocolResponseClass, httpData=data)
             valueList = getattr(
                 responseObject, protocolResponseClass.getValueListName())
-            self._logger.info("Response pageSize={}".format(len(valueList)))
+            self._logger.info("Response page_size={}".format(len(valueList)))
             for extract in valueList:
                 yield extract
             notDone = self._updateNotDone(responseObject, protocolRequest)

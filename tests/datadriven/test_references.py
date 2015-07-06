@@ -36,23 +36,23 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         """
         Container class for information about a reference
         """
-        def __init__(self, referenceSetId, fastaFileName):
+        def __init__(self, reference_set_id, fastaFileName):
             filename = os.path.split(fastaFileName)[1]
-            referenceId = "{}:{}".format(
-                referenceSetId, filename.split(".")[0])
-            self.id = referenceId
+            reference_id = "{}:{}".format(
+                reference_set_id, filename.split(".")[0])
+            self.id = reference_id
             self.fastaFile = pysam.FastaFile(fastaFileName)
             self.bases = self.fastaFile.fetch(self.fastaFile.references[0])
 
-    def __init__(self, referenceSetId, baseDir):
-        super(ReferenceSetTest, self).__init__(referenceSetId, baseDir)
+    def __init__(self, reference_set_id, baseDir):
+        super(ReferenceSetTest, self).__init__(reference_set_id, baseDir)
         self._referenceInfos = {}
         for fastaFileName in glob.glob(
                 os.path.join(self._dataDir, "*.fa.gz")):
-            self._readFasta(referenceSetId, fastaFileName)
+            self._readFasta(reference_set_id, fastaFileName)
 
-    def _readFasta(self, referenceSetId, fastaFileName):
-        referenceInfo = self.ReferenceInfo(referenceSetId, fastaFileName)
+    def _readFasta(self, reference_set_id, fastaFileName):
+        referenceInfo = self.ReferenceInfo(reference_set_id, fastaFileName)
         self._referenceInfos[fastaFileName] = referenceInfo
 
     def getDataModelClass(self):
@@ -67,7 +67,7 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         referenceSetPe = referenceSet.toProtocolElement()
         self.assertValid(
             protocol.ReferenceSet, referenceSetPe.toJsonDict())
-        self.assertGreater(len(referenceSetPe.referenceIds), 0)
+        self.assertGreater(len(referenceSetPe.reference_ids), 0)
         for gaReference in referenceSet.getReferences():
             reference = gaReference.toProtocolElement().toJsonDict()
             self.assertValid(protocol.Reference, reference)

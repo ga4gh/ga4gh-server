@@ -172,17 +172,17 @@ class ServerStatus(object):
         """
         return app.backend.getDatasetIds()
 
-    def getVariantSets(self, datasetId):
+    def getVariantSets(self, dataset_id):
         """
         Returns the list of variant sets for the dataset
         """
-        return app.backend.getDataset(datasetId).getVariantSets()
+        return app.backend.getDataset(dataset_id).getVariantSets()
 
-    def getReadGroupSets(self, datasetId):
+    def getReadGroupSets(self, dataset_id):
         """
         Returns the list of ReadGroupSets for the dataset
         """
-        return app.backend.getDataset(datasetId).getReadGroupSets()
+        return app.backend.getDataset(dataset_id).getReadGroupSets()
 
     def getReferenceSets(self):
         """
