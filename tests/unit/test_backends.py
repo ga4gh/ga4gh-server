@@ -207,7 +207,10 @@ class TestFileSystemBackend(TestAbstractBackend):
         variantSets = [variantSet for variantSet in self.getVariantSets()]
         self.assertEqual(len(variantSets), len(self._vcfs))
         ids = set(variantSet.id for variantSet in variantSets)
-        self.assertEqual(ids, set(self._vcfs.keys()))
+        datasetId = self._backend.getDatasetIds()[0]
+        vcfKeys = set(
+            '{}:{}'.format(datasetId, vsId) for vsId in self._vcfs.keys())
+        self.assertEqual(ids, vcfKeys)
 
     def testRunListReferenceBases(self):
         id_ = "example_1:simple"
@@ -216,7 +219,8 @@ class TestFileSystemBackend(TestAbstractBackend):
     def testOneDatasetRestriction(self):
         # no datasetIds attr
         request = protocol.SearchReadsRequest()
-        self._backend._getDatasetFromRequest(request)
+        with self.assertRaises(AssertionError):
+            self._backend._getDatasetFromRequest(request)
 
         # datasetIds attr
         request = protocol.SearchVariantSetsRequest()
@@ -229,6 +233,15 @@ class TestFileSystemBackend(TestAbstractBackend):
         request.datasetIds = ['dataset1', 'dataset2']
         with self.assertRaises(exceptions.NotExactlyOneDatasetException):
             self._backend._getDatasetFromRequest(request)
+
+    def testDatasetNotFound(self):
+        request = protocol.SearchVariantSetsRequest()
+        datasetId = 'doesNotExist'
+        request.datasetIds = [datasetId]
+        with self.assertRaises(exceptions.DatasetNotFoundException):
+            self._backend._getDatasetFromRequest(request)
+        with self.assertRaises(exceptions.DatasetNotFoundException):
+            self._backend._getDatasetFromCompoundId(datasetId + ':notUsed')
 
 
 class TestTopLevelObjectGenerator(unittest.TestCase):

@@ -28,8 +28,9 @@ class TestRemoteFetchReads(RemoteServerTestReads):
     """
     def testBamFetch(self):
         self.client = client.ClientForTesting(self.server.getUrl())
-        self.readGroupIds = \
-            'remoteTest:wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample'
+        self.readGroupIds = (
+            'dataset1:remoteTest:'
+            'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample')
         self.runClientCmd(
             self.client,
             "reads-search --readGroupIds '{}'".format(

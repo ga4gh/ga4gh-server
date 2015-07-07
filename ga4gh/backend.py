@@ -222,18 +222,39 @@ class AbstractBackend(object):
         self._datasetIdMap = {}
         self._datasetIds = []
 
+    def _getDatasetFromReadsRequest(self, request):
+        if len(request.readGroupIds) != 1:
+            raise exceptions.NotImplementedException(
+                "Exactly one read group id must be specified")
+        compoundId = request.readGroupIds[0]
+        dataset = self._getDatasetFromCompoundId(compoundId)
+        return dataset
+
+    def _getDatasetFromVariantsRequest(self, request):
+        variantSetIds = request.variantSetIds
+        if len(variantSetIds) != 1:
+            raise exceptions.NotImplementedException(
+                "Exactly one variant set id must be specified")
+        compoundId = request.variantSetIds[0]
+        dataset = self._getDatasetFromCompoundId(compoundId)
+        return dataset
+
+    def _getDatasetFromCompoundId(self, compoundId):
+        splits = compoundId.split(':')
+        datasetId = splits[0]
+        dataset = self.getDataset(datasetId)
+        return dataset
+
     def _getDatasetFromRequest(self, request):
-        if hasattr(request, "datasetIds"):
-            if len(request.datasetIds) != 1:
-                raise exceptions.NotExactlyOneDatasetException(
-                    request.datasetIds)
-            datasetId = request.datasetIds[0]
-            return self._datasetIdMap[datasetId]
-        else:
-            # TODO this can go away when all requests have datasetIds
-            # instead, we should throw an error here
-            datasetId = self._datasetIds[0]
-            return self._datasetIdMap[datasetId]
+        # we shouldn't call this method on any request object that
+        # doesn't have a datasetIds attribute
+        assert hasattr(request, "datasetIds")
+        if len(request.datasetIds) != 1:
+            raise exceptions.NotExactlyOneDatasetException(
+                request.datasetIds)
+        datasetId = request.datasetIds[0]
+        dataset = self.getDataset(datasetId)
+        return dataset
 
     def getDatasetIds(self):
         """
@@ -245,7 +266,10 @@ class AbstractBackend(object):
         """
         Returns a dataset with id datasetId
         """
-        return self._datasetIdMap[datasetId]
+        try:
+            return self._datasetIdMap[datasetId]
+        except KeyError:
+            raise exceptions.DatasetNotFoundException(datasetId)
 
     def getReferenceSets(self):
         """
@@ -507,7 +531,7 @@ class AbstractBackend(object):
         Returns a generator over the (read, nextPageToken) pairs defined
         by the specified request
         """
-        dataset = self._getDatasetFromRequest(request)
+        dataset = self._getDatasetFromReadsRequest(request)
         intervalIterator = ReadsIntervalIterator(
             request, dataset.getReadGroupIdMap())
         return intervalIterator
@@ -517,7 +541,7 @@ class AbstractBackend(object):
         Returns a generator over the (variant, nextPageToken) pairs defined
         by the specified request.
         """
-        dataset = self._getDatasetFromRequest(request)
+        dataset = self._getDatasetFromVariantsRequest(request)
         intervalIterator = VariantsIntervalIterator(
             request, dataset.getVariantSetIdMap())
         return intervalIterator
@@ -530,7 +554,7 @@ class AbstractBackend(object):
         if request.name is not None:
             raise exceptions.NotImplementedException(
                 "Searching over names is not supported")
-        dataset = self._getDatasetFromRequest(request)
+        dataset = self._getDatasetFromVariantsRequest(request)
         variantSet = _getVariantSet(
             request, dataset.getVariantSetIdMap())
         return self._topLevelObjectGenerator(

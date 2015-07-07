@@ -79,7 +79,7 @@ class TestFrontend(unittest.TestCase):
 
     def sendReadsSearch(self, readGroupIds=None):
         if readGroupIds is None:
-            readGroupIds = ['aReadGroupSet:one']
+            readGroupIds = ['simulatedDataset1:aReadGroupSet:one']
         request = protocol.SearchReadsRequest()
         request.readGroupIds = readGroupIds
         return self.sendPostRequest('/reads/search', request)
@@ -259,10 +259,10 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(len(responseData.alignments), 2)
         self.assertEqual(
             responseData.alignments[0].id,
-            "aReadGroupSet:one:simulated0")
+            "simulatedDataset1:aReadGroupSet:one:simulated0")
         self.assertEqual(
             responseData.alignments[1].id,
-            "aReadGroupSet:one:simulated1")
+            "simulatedDataset1:aReadGroupSet:one:simulated1")
 
     def testDatasetsSearch(self):
         response = self.sendDatasetsSearch()

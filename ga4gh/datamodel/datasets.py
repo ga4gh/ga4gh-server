@@ -107,7 +107,7 @@ class SimulatedDataset(AbstractDataset):
 
         # Variants
         for i in range(numVariantSets):
-            variantSetId = "simVs{}".format(i)
+            variantSetId = "{}:simVs{}".format(self._id, i)
             seed = self._randomGenerator.randint(0, 2**32 - 1)
             variantSet = variants.SimulatedVariantSet(
                 seed, numCalls, variantDensity, variantSetId)
@@ -115,7 +115,7 @@ class SimulatedDataset(AbstractDataset):
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
         # Reads
-        readGroupSetId = "aReadGroupSet"
+        readGroupSetId = "{}:aReadGroupSet".format(self._id)
         readGroupSet = reads.SimulatedReadGroupSet(
             readGroupSetId, numAlignments)
         self._readGroupSetIdMap[readGroupSetId] = readGroupSet
@@ -137,21 +137,23 @@ class FileSystemDataset(AbstractDataset):
         # Variants
         variantSetDir = os.path.join(self._datasetDir, "variants")
         for variantSetId in os.listdir(variantSetDir):
+            compoundVsid = '{}:{}'.format(self._id, variantSetId)
             relativePath = os.path.join(variantSetDir, variantSetId)
             if os.path.isdir(relativePath):
-                self._variantSetIdMap[variantSetId] = \
+                self._variantSetIdMap[compoundVsid] = \
                     variants.HtslibVariantSet(
-                        variantSetId, relativePath)
+                        compoundVsid, relativePath)
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
         # Reads
         readGroupSetDir = os.path.join(self._datasetDir, "reads")
         for readGroupSetId in os.listdir(readGroupSetDir):
+            compoundRgsid = '{}:{}'.format(self._id, readGroupSetId)
             relativePath = os.path.join(readGroupSetDir, readGroupSetId)
             if os.path.isdir(relativePath):
                 readGroupSet = reads.HtslibReadGroupSet(
-                    readGroupSetId, relativePath)
-                self._readGroupSetIdMap[readGroupSetId] = readGroupSet
+                    compoundRgsid, relativePath)
+                self._readGroupSetIdMap[compoundRgsid] = readGroupSet
                 for readGroup in readGroupSet.getReadGroups():
                     self._readGroupIdMap[readGroup.getId()] = readGroup
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
