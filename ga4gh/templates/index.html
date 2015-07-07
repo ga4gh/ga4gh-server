@@ -16,10 +16,10 @@
             <table>
                 <th>Method</th>
                 <th>Path</th>
-                {% for rule in info.getUrls() %}
+                {% for url in info.getUrls() %}
                 <tr>
-                    <td>{{ rule[1] }}</td>
-                    <td>{{ rule[0] }}</td>
+                    <td>{{ url[0] }}</td>
+                    <td>{{ url[1] }}</td>
                 </tr>
                 {% endfor %}
             </table>

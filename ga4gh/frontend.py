@@ -11,6 +11,7 @@ import os
 import datetime
 import socket
 import urlparse
+import functools
 
 import flask
 import flask.ext.cors as cors
@@ -32,6 +33,8 @@ SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
 SECRET_KEY_LENGTH = 24
 
 app = flask.Flask(__name__)
+assert not hasattr(app, 'urls')
+app.urls = []
 
 
 class NoConverter(werkzeug.routing.BaseConverter):
@@ -156,22 +159,8 @@ class ServerStatus(object):
         Returns the list of (httpMethod, URL) tuples that this server
         supports.
         """
-        urls = []
-        rules = app.url_map.iter_rules()
-        excluded_methods = ('OPTIONS', 'HEAD')
-        excluded_rules = (
-            '/', '/flask-api/static/<path:filename>',
-            '/static/<path:filename>')
-        version = Version.getVersionForUrl(protocol.version)
-        for rule in rules:
-            for method in rule.methods:
-                if (method not in excluded_methods and
-                        rule.rule not in excluded_rules):
-                    versionedRule = rule.rule.replace(
-                        "<version>", version)
-                    urls.append((versionedRule, method))
-        urls.sort()
-        return urls
+        app.urls.sort()
+        return app.urls
 
     def getDatasetIds(self):
         """
@@ -446,6 +435,39 @@ def handleFlaskPostRequest(version, flaskRequest, endpoint):
         raise exceptions.MethodNotAllowedException()
 
 
+class DisplayedRoute(object):
+    """
+    Registers that a route should be displayed on the html page
+    """
+    def __init__(
+            self, path, postMethod=False, pathDisplay=None):
+        self.path = path
+        self.methods = None
+        if postMethod:
+            methodDisplay = 'POST'
+            self.methods = SEARCH_ENDPOINT_METHODS
+        else:
+            methodDisplay = 'GET'
+        if pathDisplay is None:
+            pathDisplay = path
+        pathDisplay = pathDisplay.replace(
+            '<version>', protocol.version)
+        app.urls.append((methodDisplay, pathDisplay))
+
+    def __call__(self, func):
+        if self.methods is None:
+            app.add_url_rule(self.path, func.func_name, func)
+        else:
+            app.add_url_rule(
+                self.path, func.func_name, func, methods=self.methods)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            return result
+        return wrapper
+
+
 @app.route('/')
 def index():
     return flask.render_template('index.html', info=app.serverStatus)
@@ -463,67 +485,67 @@ def indexRedirect(version):
         raise exceptions.PathNotFoundException()
 
 
-@app.route('/<version>/references/<id>')
+@DisplayedRoute('/<version>/references/<id>')
 def getReference(version, id):
     return handleFlaskGetRequest(
         version, id, flask.request, app.backend.getReference)
 
 
-@app.route('/<version>/referencesets/<id>')
+@DisplayedRoute('/<version>/referencesets/<id>')
 def getReferenceSet(version, id):
     return handleFlaskGetRequest(
         version, id, flask.request, app.backend.getReferenceSet)
 
 
-@app.route('/<version>/references/<id>/bases')
+@DisplayedRoute('/<version>/references/<id>/bases')
 def listReferenceBases(version, id):
     return handleFlaskListRequest(
         version, id, flask.request, app.backend.listReferenceBases)
 
 
-@app.route('/<version>/callsets/search', methods=SEARCH_ENDPOINT_METHODS)
+@DisplayedRoute('/<version>/callsets/search', postMethod=True)
 def searchCallSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchCallSets)
 
 
-@app.route('/<version>/readgroupsets/search', methods=SEARCH_ENDPOINT_METHODS)
+@DisplayedRoute('/<version>/readgroupsets/search', postMethod=True)
 def searchReadGroupSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchReadGroupSets)
 
 
-@app.route('/<version>/reads/search', methods=SEARCH_ENDPOINT_METHODS)
+@DisplayedRoute('/<version>/reads/search', postMethod=True)
 def searchReads(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchReads)
 
 
-@app.route('/<version>/referencesets/search', methods=SEARCH_ENDPOINT_METHODS)
+@DisplayedRoute('/<version>/referencesets/search', postMethod=True)
 def searchReferenceSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchReferenceSets)
 
 
-@app.route('/<version>/references/search', methods=SEARCH_ENDPOINT_METHODS)
+@DisplayedRoute('/<version>/references/search', postMethod=True)
 def searchReferences(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchReferences)
 
 
-@app.route('/<version>/variantsets/search', methods=SEARCH_ENDPOINT_METHODS)
+@DisplayedRoute('/<version>/variantsets/search', postMethod=True)
 def searchVariantSets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchVariantSets)
 
 
-@app.route('/<version>/variants/search', methods=SEARCH_ENDPOINT_METHODS)
+@DisplayedRoute('/<version>/variants/search', postMethod=True)
 def searchVariants(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchVariants)
 
 
-@app.route('/<version>/datasets/search', methods=SEARCH_ENDPOINT_METHODS)
+@DisplayedRoute('/<version>/datasets/search', postMethod=True)
 def searchDatasets(version):
     return handleFlaskPostRequest(
         version, flask.request, app.backend.searchDatasets)
