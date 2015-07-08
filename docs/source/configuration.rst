@@ -99,4 +99,56 @@ RESPONSE_VALIDATION
     that they conform to the protocol. This should only be used for development
     purposes.
 
+OIDC_PROVIDER
+    If this value is provided, then OIDC is configured and SSL is used. It is
+    the URI of the OpenID Connect provider, which should return an OIDC
+    provider configuration document.
 
+OIDC_REDIRECT_URI
+    The URL of the redirect URI for OIDC. This will be something like
+    ``https://SERVER_NAME:PORT/oauth2callback``. During testing
+    (and particularly in automated tests), if TESTING is True, we can have
+    this automatically configured, but this is discouraged in production,
+    and fails if TESTING is not True.
+
+OIDC_CLIENT_ID, OIDC_CLIENT_SECRET
+    These are the client id and secret arranged with the OIDC provider,
+    if client registration is manual (google, for instance). If the provider
+    supports automated registration they are not required or used.
+
+OIDC_AUTHZ_ENDPOINT, OIDC_TOKEN_ENDPOINT, OIDC_TOKEN_REV_ENDPOINT
+    If the authorization provider has no discovery document available, you can
+    set the authorization and token endpoints here.
+
+------------------------
+OpenID Connect Providers
+------------------------
+
+The server can be configured to use OpenID Connect (OIDC) for authentication.
+As an example, here is how one configures it to use Google as the provider.
+
+Go to https://console.developers.google.com/project and in create a project.
+
+.. image:: images/Create_project.png
+
+Navigate to the project -> APIs & auth -> Consent Screen and enter a product
+name
+
+.. image:: images/Consent_screen_-_ga4gh.png
+
+Navigate to project -> APIs & auth -> Credentials, and create a new client ID.
+
+.. image:: images/Credentials_-_ga4gh.png
+
+Create the client as follows:
+
+.. image:: images/Credentials_-_ga4gh_2.png
+
+Which will give you the necessary client id and secret. Use these in the OIDC
+configuration for the GA4GH server, using the `OIDC_CLIENT_ID` and
+`OIDC_CLIENT_SECRET` configuration variables. The Redirect URI should match
+the `OIDC_REDIRECT_URI` configuration variable, with the exception that the
+redirect URI shown at google does not require a port (but the configuration
+variable does)
+
+.. image:: images/Credentials_-_ga4gh_3.png

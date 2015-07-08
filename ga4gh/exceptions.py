@@ -172,6 +172,10 @@ class PathNotFoundException(NotFoundException):
     message = "The request path was not found"
 
 
+class ConfigurationException(BaseServerException):
+    pass
+
+
 class ObjectNotFoundException(NotFoundException):
     message = "The requested object was not found"
 
@@ -205,6 +209,12 @@ class VersionNotSupportedException(NotFoundException):
 class MethodNotAllowedException(RuntimeException):
     httpStatus = 405
     message = "Method not allowed"
+
+
+class NotAuthenticatedException(RuntimeException):
+    httpStatus = 403
+    message = (
+        "Not authenticated. Use the key on the server index page.")
 
 
 class NotImplementedException(RuntimeException):

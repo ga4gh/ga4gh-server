@@ -24,7 +24,7 @@ class ClientForTesting(object):
         if flags is None:
             self.flags = "-v -O"
         else:
-            self.flags = None
+            self.flags = flags
         self.cmdLine = ("python client_dev.py {flags} {command} "
                         "{serverUrl}/v{protocolVersion}")
         self._createLogFiles()

@@ -106,3 +106,6 @@ target/
 
 # Pycharm
 .idea/
+
+# Unused parts of the OIDC provider
+oidc-provider/simple_op/src/provider/server/static/jwks.json

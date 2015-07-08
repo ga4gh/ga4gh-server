@@ -260,6 +260,9 @@ def addGlobalOptions(parser):
         "--config-file", "-f", type=str, default=None,
         help="The configuration file to use")
     parser.add_argument(
+        "--tls", "-t", action="store_true", default=False,
+        help="Start in TLS (https) mode.")
+    parser.add_argument(
         "--dont-use-reloader", default=False, action="store_true",
         help="Don't use the flask reloader")
 
@@ -270,10 +273,13 @@ def server_main(parser=None):
             description="GA4GH reference server")
     addGlobalOptions(parser)
     args = parser.parse_args()
-    frontend.configure(args.config_file, args.config)
+    frontend.configure(args.config_file, args.config, args.port)
+    sslContext = None
+    if args.tls or ("OIDC_PROVIDER" in frontend.app.config):
+        sslContext = "adhoc"
     frontend.app.run(
         host="0.0.0.0", port=args.port,
-        use_reloader=not args.dont_use_reloader)
+        use_reloader=not args.dont_use_reloader, ssl_context=sslContext)
 
 
 ##############################################################################
@@ -665,7 +671,8 @@ def addClientGlobalOptions(parser):
     parser.add_argument(
         "--workarounds", "-w", default=None, help="The workarounds to use")
     parser.add_argument(
-        "--key", "-k", help="The auth key to use")
+        "--key", "-k", default='invalid',
+        help="Auth Key. Found on server index page.")
     parser.add_argument(
         "--minimalOutput", "-O", default=False,
         help="Use minimal output; default False",

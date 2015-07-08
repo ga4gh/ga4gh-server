@@ -9,20 +9,27 @@ from __future__ import unicode_literals
 
 import os
 import datetime
+import socket
+import urlparse
 
 import flask
 import flask.ext.cors as cors
 import humanize
 import werkzeug
+import oic
+import oic.oauth2
+import oic.oic.message as message
+import requests
 
 import ga4gh
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
+
 MIMETYPE = "application/json"
 SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
-
+SECRET_KEY_LENGTH = 24
 
 app = flask.Flask(__name__)
 
@@ -191,7 +198,8 @@ class ServerStatus(object):
         return app.backend.getReferenceSets()
 
 
-def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):
+def configure(configFile=None, baseConfig="ProductionConfig",
+              port=8000, extraConfig={}):
     """
     TODO Document this critical function! What does it do? What does
     it assume?
@@ -235,6 +243,52 @@ def configure(configFile=None, baseConfig="ProductionConfig", extraConfig={}):
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])
     theBackend.setMaxResponseLength(app.config["MAX_RESPONSE_LENGTH"])
     app.backend = theBackend
+    app.secret_key = os.urandom(SECRET_KEY_LENGTH)
+    app.oidcClient = None
+    app.tokenMap = None
+    app.myPort = port
+    if "OIDC_PROVIDER" in app.config:
+        # The oic client. If we're testing, we don't want to verify
+        # SSL certificates
+        app.oidcClient = oic.oic.Client(
+            verify_ssl=('TESTING' not in app.config))
+        app.tokenMap = {}
+        try:
+            app.oidcClient.provider_config(app.config['OIDC_PROVIDER'])
+        except requests.exceptions.ConnectionError:
+            configResponse = message.ProviderConfigurationResponse(
+                issuer=app.config['OIDC_PROVIDER'],
+                authorization_endpoint=app.config['OIDC_AUTHZ_ENDPOINT'],
+                token_endpoint=app.config['OIDC_TOKEN_ENDPOINT'],
+                revocation_endpoint=app.config['OIDC_TOKEN_REV_ENDPOINT'])
+            app.oidcClient.handle_provider_config(configResponse,
+                                                  app.config['OIDC_PROVIDER'])
+
+        # The redirect URI comes from the configuration.
+        # If we are testing, then we allow the automatic creation of a
+        # redirect uri if none is configured
+        redirectUri = app.config.get('OIDC_REDIRECT_URI')
+        if redirectUri is None and 'TESTING' in app.config:
+            redirectUri = 'https://{0}:{1}/oauth2callback'.format(
+                socket.gethostname(), app.myPort)
+        app.oidcClient.redirect_uris = [redirectUri]
+        if redirectUri is []:
+            raise exceptions.ConfigurationException(
+                'OIDC configuration requires a redirect uri')
+
+        # We only support dynamic registration while testing.
+        if ('registration_endpoint' in app.oidcClient.provider_info and
+           'TESTING' in app.config):
+            app.oidcClient.register(
+                app.oidcClient.provider_info["registration_endpoint"],
+                redirect_uris=[redirectUri])
+        else:
+            response = message.RegistrationResponse(
+                client_id=app.config['OIDC_CLIENT_ID'],
+                client_secret=app.config['OIDC_CLIENT_SECRET'],
+                redirect_uris=[redirectUri],
+                verify_ssl=False)
+            app.oidcClient.store_registration_info(response)
 
 
 def getFlaskResponse(responseString, httpStatus=200):
@@ -299,6 +353,56 @@ def handleException(exception):
 def assertCorrectVersion(version):
     if not Version.isCurrentVersion(version):
         raise exceptions.VersionNotSupportedException()
+
+
+def startLogin():
+    """
+    If we are not logged in, this generates the redirect URL to the OIDC
+    provider and returns the redirect response
+    :return: A redirect response to the OIDC provider
+    """
+    flask.session["state"] = oic.oauth2.rndstr(SECRET_KEY_LENGTH)
+    flask.session["nonce"] = oic.oauth2.rndstr(SECRET_KEY_LENGTH)
+    args = {
+        "client_id": app.oidcClient.client_id,
+        "response_type": "code",
+        "scope": ["openid", "profile"],
+        "nonce": flask.session["nonce"],
+        "redirect_uri": app.oidcClient.redirect_uris[0],
+        "state": flask.session["state"]
+    }
+
+    result = app.oidcClient.do_authorization_request(
+        request_args=args, state=flask.session["state"])
+    return flask.redirect(result.url)
+
+
+@app.before_request
+def checkAuthentication():
+    """
+    The request will have a parameter 'key' if it came from the command line
+    client, or have a session key of 'key' if it's the browser.
+    If the token is not found, start the login process.
+
+    If there is no oidcClient, we are running naked and we don't check.
+    If we're being redirected to the oidcCallback we don't check.
+
+    :returns None if all is ok (and the request handler continues as usual).
+    Otherwise if the key was in the session (therefore we're in a browser)
+    then startLogin() will redirect to the OIDC provider. If the key was in
+    the request arguments, we're using the command line and just raise an
+    exception.
+    """
+    if app.oidcClient is None:
+        return
+    if flask.request.endpoint == 'oidcCallback':
+        return
+    key = flask.session.get('key') or flask.request.args.get('key')
+    if app.tokenMap.get(key) is None:
+        if 'key' in flask.request.args:
+            raise exceptions.NotAuthenticatedException()
+        else:
+            return startLogin()
 
 
 def handleFlaskGetRequest(version, id_, flaskRequest, endpoint):
@@ -554,6 +658,65 @@ def searchAlleles(version):
     raise exceptions.NotImplementedException()
 
 
+@app.route('/oauth2callback', methods=['GET'])
+def oidcCallback():
+    """
+    Once the authorization provider has cleared the user, the browser
+    is returned here with a code. This function takes that code and
+    checks it with the authorization provider to prove that it is valid,
+    and get a bit more information about the user (which we don't use).
+
+    A token is generated and given to the user, and the authorization info
+    retrieved above is stored against this token. Later, when a client
+    connects with this token, it is assumed to be a valid user.
+
+    :return: A display of the authentication token to use in the client. If
+    OIDC is not configured, raises a NotImplementedException.
+    """
+    if app.oidcClient is None:
+        raise exceptions.NotImplementedException()
+    response = dict(flask.request.args.iteritems(multi=True))
+    aresp = app.oidcClient.parse_response(message.AuthorizationResponse,
+                                          info=response,
+                                          sformat='dict')
+    sessState = flask.session.get('state')
+    respState = aresp['state']
+    if not isinstance(aresp,
+                      message.AuthorizationResponse) or respState != sessState:
+        raise exceptions.NotAuthenticatedException()
+
+    args = {
+        "code": aresp['code'],
+        "redirect_uri": app.oidcClient.redirect_uris[0],
+        "client_id": app.oidcClient.client_id,
+        "client_secret": app.oidcClient.client_secret
+    }
+    atr = app.oidcClient.do_access_token_request(
+        scope="openid",
+        state=respState,
+        request_args=args)
+
+    if not isinstance(atr, message.AccessTokenResponse):
+        raise exceptions.NotAuthenticatedException()
+
+    atrDict = atr.to_dict()
+    if flask.session.get('nonce') != atrDict['id_token']['nonce']:
+        raise exceptions.NotAuthenticatedException()
+    key = oic.oauth2.rndstr(SECRET_KEY_LENGTH)
+    flask.session['key'] = key
+    app.tokenMap[key] = aresp["code"], respState, atrDict
+    # flask.url_for is broken. It relies on SERVER_NAME for both name
+    # and port, and defaults to 'localhost' if not found. Therefore
+    # we need to fix the returned url
+    indexUrl = flask.url_for('index', _external=True)
+    indexParts = list(urlparse.urlparse(indexUrl))
+    if ':' not in indexParts[1]:
+        indexParts[1] = '{0}:{1}'.format(socket.gethostname(), app.myPort)
+        indexUrl = urlparse.urlunparse(indexParts)
+    response = flask.redirect(indexUrl)
+    return response
+
+
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html
 
@@ -566,3 +729,8 @@ def pathNotFoundHandler(errorString):
 @app.errorhandler(405)
 def methodNotAllowedHandler(errorString):
     return handleException(exceptions.MethodNotAllowedException())
+
+
+@app.errorhandler(403)
+def notAuthenticatedHandler(errorString):
+    return handleException(exceptions.NotAuthenticatedException())

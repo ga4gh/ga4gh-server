@@ -283,6 +283,21 @@ This default configuration can be changed by providing a (fully qualified)
 path to a configuration file (see the :ref:`configuration`
 section for details).
 
+There is also an OpenID Connect (oidc) provider you can run locally for
+development and testing. It resides in ``/oidc-provider`` and has a run.sh
+file that creates a virtualenv, installs the necessary packages, and
+runs the server. Configuration files can be found in
+``/oidc-provider/simple_op``::
+
+    $ cd oidc-provider
+    $ ./run.sh
+
+The provider expects OIDC redirect URIs to be over HTTPS, so if the ga4gh
+server is started with OIDC enabled, it defaults to HTTPS. You can run the
+server against this using::
+
+    $ python server_dev.py -c LocalOidConfig
+
 ************
 Organisation
 ************

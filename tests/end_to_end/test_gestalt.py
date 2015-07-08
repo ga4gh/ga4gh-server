@@ -12,8 +12,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import server_test as server_test
-import client as client
+import server_test
+import client
 
 
 class TestGestalt(server_test.ServerTest):

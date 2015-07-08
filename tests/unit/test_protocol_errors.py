@@ -22,6 +22,7 @@ class TestFrontendErrors(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
+        reload(frontend)
         frontend.configure(baseConfig="TestConfig")
         cls.app = frontend.app.test_client()
 

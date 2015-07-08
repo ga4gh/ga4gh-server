@@ -15,3 +15,7 @@ pyyaml
 requests
 snakefood
 sphinx
+oic
+pyopenssl
+lxml
+cherrypy
