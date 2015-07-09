@@ -23,5 +23,3 @@ script:
   - coverage erase
   - nosetests --with-coverage --cover-package ga4gh
               --cover-inclusive --cover-min-percentage 85
-  - make clean -C docs/source/
-  - make -C docs/source/
