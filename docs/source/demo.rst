@@ -29,6 +29,12 @@ packages using:
 
     $ sudo apt-get install python-dev python-virtualenv zlib1g-dev
 
+On Fedora 22+ (current), the equivalent would be:
+
+.. code-block:: bash
+
+    $ sudo dnf install python-devel python-virtualenv zlib-devel
+
 First, we create a virtualenv sandbox to isolate the demo from the
 rest of the system, and then activate it:
 
