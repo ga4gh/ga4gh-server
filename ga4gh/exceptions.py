@@ -186,6 +186,12 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class DatasetNotFoundException(NotFoundException):
+    def __init__(self, datasetId):
+        self.message = "The requested dataset '{}' was not found".format(
+            datasetId)
+
+
 class ReadGroupNotFoundException(ObjectNotFoundException):
     def __init__(self, readGroupId):
         self.message = "readGroupId '{}' not found".format(readGroupId)
