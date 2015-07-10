@@ -20,27 +20,27 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.numCalls = 2
         # ensure variantDensity is >= 1 so we get deterministic behavoir
         self.variantDensity = 1
-        self.variantSetId = 3
+        self.variant_set_id = 3
         self.simulatedVariantSet = self._getSimulatedVariantSet()
-        self.referenceName = 'ref'
+        self.reference_name = 'ref'
         self.startPosition = 100
         self.endPosition = 103
-        self.variantName = 'unused'
-        self.callSetIds = ['unused']
+        self.variant_name = 'unused'
+        self.call_set_ids = ['unused']
         self.bases = ["A", "C", "G", "T"]
 
     def _getSimulatedVariantSet(self):
         simulatedVariantSet = variants.SimulatedVariantSet(
             self.randomSeed, self.numCalls,
-            self.variantDensity, self.variantSetId)
+            self.variantDensity, self.variant_set_id)
         return simulatedVariantSet
 
     def _getSimulatedVariantsList(self, simulatedVariantSet=None):
         if simulatedVariantSet is None:
             simulatedVariantSet = self.simulatedVariantSet
         simulatedVariants = simulatedVariantSet.getVariants(
-            self.referenceName, self.startPosition, self.endPosition,
-            self.variantName, self.callSetIds)
+            self.reference_name, self.startPosition, self.endPosition,
+            self.variant_name, self.call_set_ids)
         variantList = list(simulatedVariants)
         return variantList
 
@@ -53,7 +53,7 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.assertEqual(
             self.variantDensity, self.simulatedVariantSet._variantDensity)
         self.assertEqual(
-            self.variantSetId, self.simulatedVariantSet._id)
+            self.variant_set_id, self.simulatedVariantSet._id)
         self.assertEqual(
             self.simulatedVariantSet.getCreationTime(),
             self.simulatedVariantSet.getUpdatedTime())
@@ -64,17 +64,17 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.assertEqual(
             len(variantList), self.endPosition - self.startPosition)
         simulatedVariant = variantList[0]
-        self.assertIn(str(self.variantSetId), simulatedVariant.id)
-        self.assertIn(self.referenceName, simulatedVariant.id)
+        self.assertIn(str(self.variant_set_id), simulatedVariant.id)
+        self.assertIn(self.reference_name, simulatedVariant.id)
         self.assertIn(str(self.startPosition), simulatedVariant.id)
-        self.assertEqual(simulatedVariant.variantSetId, self.variantSetId)
-        self.assertEqual(simulatedVariant.referenceName, self.referenceName)
+        self.assertEqual(simulatedVariant.variant_set_id, self.variant_set_id)
+        self.assertEqual(simulatedVariant.reference_name, self.reference_name)
         self.assertEqual(simulatedVariant.created, simulatedVariant.updated)
         self.assertEqual(simulatedVariant.start, self.startPosition)
         self.assertEqual(simulatedVariant.end, self.startPosition + 1)
-        self.assertIn(simulatedVariant.referenceBases, self.bases)
+        self.assertIn(simulatedVariant.reference_bases, self.bases)
         self.assertIn(
-            simulatedVariant.alternateBases[0], self.bases)
+            simulatedVariant.alternate_bases[0], self.bases)
         self.assertEqual(len(simulatedVariant.calls), self.numCalls)
 
     def testConsistency(self):

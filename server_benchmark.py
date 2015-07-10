@@ -41,17 +41,17 @@ class CpuProfilerBackend(ga4gh.backend.FileSystemBackend):
         self.profiler.disable()
 
 
-def _heavyQuery(variantSetId, callSetIds):
+def _heavyQuery(variant_set_id, call_set_ids):
     """
-    Very heavy query: calls for the specified list of callSetIds
+    Very heavy query: calls for the specified list of call_set_ids
     on chromosome 2 (11 pages, 90 seconds to fetch the entire thing
     on a high-end desktop machine)
     """
     request = protocol.GASearchVariantsRequest()
-    request.referenceName = '2'
-    request.variantSetIds = [variantSetId]
-    request.callSetIds = callSetIds
-    request.pageSize = 100
+    request.reference_name = '2'
+    request.variant_set_ids = [variant_set_id]
+    request.call_set_ids = call_set_ids
+    request.page_size = 100
     request.end = 100000
     return request
 
@@ -73,7 +73,7 @@ def extractNextPageToken(resultString):
     than doing the variant search in the first place; instead we use
     a regexp to extract the next page token.
     """
-    m = re.search('(?<=nextPageToken": )(?:")?([0-9]*?:[0-9]*)|null',
+    m = re.search('(?<=next_page_token": )(?:")?([0-9]*?:[0-9]*)|null',
                   resultString)
     if m is not None:
         return m.group(1)
@@ -97,7 +97,7 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
         # Iterate to go beyond the first page of results.
         while token is not None and pageCount < pageLimit:
             pageRequest = request
-            pageRequest.pageToken = token
+            pageRequest.page_token = token
             pageRequestString = pageRequest.toJsonString()
             resultString, elapsedTime = timeOneSearch(pageRequestString)
             accruedTime += elapsedTime
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="GA4GH reference server benchmark")
     parser.add_argument(
-        'variantSetId',
+        'variant_set_id',
         help="The variant set ID to run the query against")
     parser.add_argument(
         '--profile', default='none',
@@ -132,7 +132,7 @@ if __name__ == '__main__':
         help='how many pages (max) to load '
              'from each test case (default: %(default)s)')
     parser.add_argument(
-        "--callSetIds", "-c", default=[],
+        "--call_set_ids", "-c", default=[],
         help="""Return variant calls which belong to call sets
             with these IDs. Pass in IDs as a comma separated list (no spaces),
             or '*' (with the single quotes!) to indicate 'all call sets'.
@@ -149,15 +149,15 @@ if __name__ == '__main__':
     elif args.profile == 'cpu':
         backendClass = CpuProfilerBackend
     # Get our list of callSetids
-    callSetIds = args.callSetIds
-    if callSetIds != []:
-        callSetIds = None
-        if args.callSetIds != "*":
-            callSetIds = args.callSetIds.split(",")
+    call_set_ids = args.call_set_ids
+    if call_set_ids != []:
+        call_set_ids = None
+        if args.call_set_ids != "*":
+            call_set_ids = args.call_set_ids.split(",")
 
     backend = backendClass("ga4gh-example-data")
     minTime = benchmarkOneQuery(
-        _heavyQuery(args.variantSetId, callSetIds), args.repeatLimit,
+        _heavyQuery(args.variant_set_id, call_set_ids), args.repeatLimit,
         args.pageLimit)
     print(minTime)
 

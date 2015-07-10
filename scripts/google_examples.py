@@ -28,22 +28,22 @@ def runTests():
     workarounds = "--workarounds=google"
     minimalOutput = "-O"
     commands = [
-        "variants-search --variantSetIds 10473108253681171589 "
-        "--referenceName 22 --start 51005491 --end 51005492 --pageSize 1",
+        "variants-search --variant_set_ids 10473108253681171589 "
+        "--reference_name 22 --start 51005491 --end 51005492 --page_size 1",
         "references-list-bases --id EIaSo62VtfXT4AE --start 15000 "
         "--end 15010",
         "referencesets-get --id EMud_c37lKPXTQ",
         "references-get --id EIaSo62VtfXT4AE",
-        "variantsets-search --datasetIds 10473108253681171589",
+        "variantsets-search --dataset_ids 10473108253681171589",
         "referencesets-search --accessions GCA_000001405.15",
         "references-search --md5checksums 1b22b98cdeb4a9304cb5d48026a85128",
-        "readgroupsets-search --datasetIds 10473108253681171589 "
-        "--name NA12878 --pageSize 1",
-        "callsets-search --variantSetIds 10473108253681171589 "
-        "--name HG00261 --pageSize 1",
-        "reads-search --start 51005353 --end 51005354 --readGroupIds "
-        "ChhDTXZuaHBLVEZoQ2JpT2J1enZtN25Pb0IQAA --referenceName "
-        "22 --pageSize 1",
+        "readgroupsets-search --dataset_ids 10473108253681171589 "
+        "--name NA12878 --page_size 1",
+        "callsets-search --variant_set_ids 10473108253681171589 "
+        "--name HG00261 --page_size 1",
+        "reads-search --start 51005353 --end 51005354 --read_group_ids "
+        "ChhDTXZuaHBLVEZoQ2JpT2J1enZtN25Pb0IQAA --reference_name "
+        "22 --page_size 1",
     ]
     for command in commands:
         cmdStr = """

@@ -28,7 +28,7 @@ class TravisSimulator(object):
 
     def expandCommand(self, command):
         # subprocess.check_call doesn't expand globs by default, unless
-        # shell=True is passed, which is a security hazzard.
+        # shell=True is passed, which is a security hazard.
         # This gets around that limitation by implementing some shell features
         # which should be enough for our purposes.  See:
         # https://docs.python.org/2/library/subprocess.html

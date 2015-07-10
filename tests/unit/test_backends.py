@@ -30,70 +30,70 @@ class TestAbstractBackend(unittest.TestCase):
         # TODO arbitrary values, pepper to taste
 
     def resultIterator(
-            self, request, pageSize, searchMethod, ResponseClass, listMember):
+            self, request, page_size, searchMethod, ResponseClass, listMember):
         """
         Returns an iterator over the list of results from the specified
         request.  All results are returned, and paging is handled
         automatically.
         """
         notDone = True
-        request.pageSize = pageSize
+        request.page_size = page_size
         while notDone:
             # TODO validate the response there.
             responseStr = searchMethod(request.toJsonString())
             response = ResponseClass.fromJsonString(responseStr)
             objectList = getattr(response, listMember)
-            self.assertLessEqual(len(objectList), pageSize)
+            self.assertLessEqual(len(objectList), page_size)
             for obj in objectList:
                 yield obj
-            notDone = response.nextPageToken is not None
-            request.pageToken = response.nextPageToken
+            notDone = response.next_page_token is not None
+            request.page_token = response.next_page_token
 
-    def getVariantSets(self, pageSize=100):
+    def getVariantSets(self, page_size=100):
         """
         Returns an iterator over the variantSets, abstracting away
-        the details of the pageSize.
+        the details of the page_size.
         """
         request = protocol.SearchVariantSetsRequest()
-        request.datasetIds = [self._backend.getDatasetIds()[0]]
+        request.dataset_ids = [self._backend.getDatasetIds()[0]]
         return self.resultIterator(
-            request, pageSize, self._backend.searchVariantSets,
-            protocol.SearchVariantSetsResponse, "variantSets")
+            request, page_size, self._backend.searchVariantSets,
+            protocol.SearchVariantSetsResponse, "variant_sets")
 
     def getVariants(
-            self, variantSetIds, referenceName, start=0, end=2 ** 32,
-            pageSize=100, callSetIds=None):
+            self, variant_set_ids, reference_name, start=0, end=2 ** 32,
+            page_size=100, call_set_ids=None):
         """
         Returns an iterator over the specified list of variants,
         abstracting out paging details.
         """
         request = protocol.SearchVariantsRequest()
-        request.variantSetIds = variantSetIds
-        request.referenceName = referenceName
+        request.variant_set_ids = variant_set_ids
+        request.reference_name = reference_name
         request.start = start
         request.end = end
-        request.callSetIds = callSetIds
+        request.call_set_ids = call_set_ids
         return self.resultIterator(
-            request, pageSize, self._backend.searchVariants,
+            request, page_size, self._backend.searchVariants,
             protocol.SearchVariantsResponse, "variants")
 
-    def getCallSets(self, variantSetId, pageSize=100):
+    def getCallSets(self, variant_set_id, page_size=100):
         """
         Returns an iterator over the callsets in a specified
         variant set.
         """
         request = protocol.SearchCallSetsRequest()
-        request.variantSetIds = [variantSetId]
+        request.variant_set_ids = [variant_set_id]
         return self.resultIterator(
-            request, pageSize, self._backend.searchCallSets,
-            protocol.SearchCallSetsResponse, "callSets")
+            request, page_size, self._backend.searchCallSets,
+            protocol.SearchCallSetsResponse, "call_sets")
 
     def testGetVariantSets(self):
-        datasetId = self._backend.getDatasetIds()[0]
+        dataset_id = self._backend.getDatasetIds()[0]
         sortedVariantSetsFromGetter = sorted(
-            self._backend.getDataset(datasetId).getVariantSets())
+            self._backend.getDataset(dataset_id).getVariantSets())
         sortedVariantSetMapValues = sorted(
-            self._backend.getDataset(datasetId)._variantSetIdMap.values())
+            self._backend.getDataset(dataset_id)._variantSetIdMap.values())
         self.assertEqual(
             sortedVariantSetMapValues, sortedVariantSetsFromGetter)
 
@@ -104,7 +104,7 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testRunSearchRequest(self):
         request = protocol.SearchVariantSetsRequest()
-        request.datasetIds = [self._backend.getDatasetIds()[0]]
+        request.dataset_ids = [self._backend.getDatasetIds()[0]]
         responseStr = self._backend.runSearchRequest(
             request.toJsonString(), protocol.SearchVariantSetsRequest,
             protocol.SearchVariantSetsResponse,
@@ -129,7 +129,7 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testSearchVariantSets(self):
         request = protocol.SearchVariantSetsRequest()
-        request.datasetIds = [self._backend.getDatasetIds()[0]]
+        request.dataset_ids = [self._backend.getDatasetIds()[0]]
         responseStr = self._backend.searchVariantSets(request.toJsonString())
         response = protocol.SearchVariantSetsResponse.fromJsonString(
             responseStr)
@@ -137,10 +137,10 @@ class TestAbstractBackend(unittest.TestCase):
             isinstance(response, protocol.SearchVariantSetsResponse))
 
     def testSearchVariants(self):
-        variantSetIds = [
-            variantSet.id for variantSet in self.getVariantSets(pageSize=1)]
+        variant_set_ids = [
+            variantSet.id for variantSet in self.getVariantSets(page_size=1)]
         request = protocol.SearchVariantsRequest()
-        request.variantSetIds = variantSetIds[:1]
+        request.variant_set_ids = variant_set_ids[:1]
         responseStr = self._backend.searchVariants(request.toJsonString())
         response = protocol.SearchVariantsResponse.fromJsonString(
             responseStr)
@@ -148,10 +148,10 @@ class TestAbstractBackend(unittest.TestCase):
             isinstance(response, protocol.SearchVariantsResponse))
 
     def testSearchCallSets(self):
-        variantSetIds = [
-            variantSet.id for variantSet in self.getVariantSets(pageSize=1)]
+        variant_set_ids = [
+            variantSet.id for variantSet in self.getVariantSets(page_size=1)]
         request = protocol.SearchCallSetsRequest()
-        request.variantSetIds = variantSetIds[:1]
+        request.variant_set_ids = variant_set_ids[:1]
         responseStr = self._backend.searchCallSets(request.toJsonString())
         response = protocol.SearchCallSetsResponse.fromJsonString(
             responseStr)
@@ -160,16 +160,16 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testVariantSetPagination(self):
         results = []
-        for pageSize in range(1, 100):
-            variantSetIds = [
+        for page_size in range(1, 100):
+            variant_set_ids = [
                 variantSet.id for variantSet in self.getVariantSets(
-                    pageSize=pageSize)]
-            results.append(variantSetIds)
+                    page_size=page_size)]
+            results.append(variant_set_ids)
         for result in results[1:]:
             self.assertEqual(result, results[0])
 
     def runListReferenceBases(self, id_):
-        requestArgs = {"start": 5, "end": 10, "pageToken": "0"}
+        requestArgs = {"start": 5, "end": 10, "page_token": "0"}
         responseStr = self._backend.listReferenceBases(id_, requestArgs)
         response = protocol.ListReferenceBasesResponse.fromJsonString(
             responseStr)
@@ -204,9 +204,9 @@ class TestFileSystemBackend(TestAbstractBackend):
         self._backend = backend.FileSystemBackend(self._dataDir)
 
     def testVariantSetIds(self):
-        variantSets = [variantSet for variantSet in self.getVariantSets()]
-        self.assertEqual(len(variantSets), len(self._vcfs))
-        ids = set(variantSet.id for variantSet in variantSets)
+        variant_sets = [variantSet for variantSet in self.getVariantSets()]
+        self.assertEqual(len(variant_sets), len(self._vcfs))
+        ids = set(variantSet.id for variantSet in variant_sets)
         self.assertEqual(ids, set(self._vcfs.keys()))
 
     def testRunListReferenceBases(self):
@@ -214,19 +214,19 @@ class TestFileSystemBackend(TestAbstractBackend):
         self.runListReferenceBases(id_)
 
     def testOneDatasetRestriction(self):
-        # no datasetIds attr
+        # no dataset_ids attr
         request = protocol.SearchReadsRequest()
         self._backend._getDatasetFromRequest(request)
 
-        # datasetIds attr
+        # dataset_ids attr
         request = protocol.SearchVariantSetsRequest()
         with self.assertRaises(exceptions.NotExactlyOneDatasetException):
             self._backend._getDatasetFromRequest(request)
-        datasetId = 'dataset1'
-        request.datasetIds = [datasetId]
+        dataset_id = 'dataset1'
+        request.dataset_ids = [dataset_id]
         dataset = self._backend._getDatasetFromRequest(request)
-        self.assertEquals(dataset.getId(), datasetId)
-        request.datasetIds = ['dataset1', 'dataset2']
+        self.assertEquals(dataset.getId(), dataset_id)
+        request.dataset_ids = ['dataset1', 'dataset2']
         with self.assertRaises(exceptions.NotExactlyOneDatasetException):
             self._backend._getDatasetFromRequest(request)
 
@@ -244,7 +244,7 @@ class TestTopLevelObjectGenerator(unittest.TestCase):
                 return self
 
         self.request = FakeRequest()
-        self.request.pageToken = None
+        self.request.page_token = None
         self.idMap = {
             "a": FakeTopLevelObject(),
             "b": FakeTopLevelObject(),
@@ -254,7 +254,7 @@ class TestTopLevelObjectGenerator(unittest.TestCase):
         self.backend = backend.AbstractBackend()
 
     def testPageToken(self):
-        self.request.pageToken = "1"
+        self.request.page_token = "1"
         self._assertNumItems(2)
 
     def testPageTokenNone(self):

@@ -17,13 +17,13 @@ import tests.utils as utils
 
 class DummyRequest(protocol.ProtocolElement):
 
-    __slots__ = ["stringVal", "intVal", "arrayVal", "pageToken"]
+    __slots__ = ["stringVal", "intVal", "arrayVal", "page_token"]
 
     def __init__(self):
         self.stringVal = "stringVal"
         self.intVal = 1
         self.arrayVal = [1, 2, 3]
-        self.pageToken = None
+        self.page_token = None
 
     def __eq__(self, other):
         for field in self.__slots__:
@@ -46,8 +46,8 @@ class DummyResponse(object):
 
     def _getText(self):
         txt = {
-            "nextPageToken": "xyz",
-            "referenceSets": [
+            "next_page_token": "xyz",
+            "reference_sets": [
                 {"id": "refA", "md5checksum": "abc"},
                 {"id": "refB"}
             ]
@@ -206,7 +206,7 @@ class TestRunRequest(unittest.TestCase):
             text = {
                 "offset": 123,
                 "sequence": "sequence",
-                "nextPageToken": "pageTok",
+                "next_page_token": "pageTok",
             }
             mockGet.side_effect = [
                 DummyResponse(json.dumps(text)), DummyResponse('{}')]

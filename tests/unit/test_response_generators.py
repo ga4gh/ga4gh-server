@@ -25,8 +25,8 @@ class MockVariantSet(variants.AbstractVariantSet):
         super(MockVariantSet, self).__init__(id_)
         self.numVariants = numVariants
 
-    def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+    def getVariants(self, reference_name, startPosition, endPosition,
+                    variant_name=None, call_set_ids=None):
         for i in range(self.numVariants):
             yield generateVariant()
 
@@ -38,24 +38,24 @@ class TestVariantsGenerator(unittest.TestCase):
     def setUp(self):
         self.request = protocol.SearchVariantsRequest()
         self.backend = backend.SimulatedBackend()
-        self.variantSetId = "variantSetId"
-        self.datasetId = self.backend.getDatasetIds()[0]
+        self.variant_set_id = "variant_set_id"
+        self.dataset_id = self.backend.getDatasetIds()[0]
 
     def testNoVariantSetsNotSupported(self):
         # a request for no variant sets should throw an exception
-        self.request.variantSetIds = []
+        self.request.variant_set_ids = []
         with self.assertRaises(exceptions.NotImplementedException):
             self.backend.variantsGenerator(self.request)
 
     def testMultipleVariantSetsNotSupported(self):
         # a request for multiple variant sets should throw an exception
-        self.request.variantSetIds = ["1", "2"]
+        self.request.variant_set_ids = ["1", "2"]
         with self.assertRaises(exceptions.NotImplementedException):
             self.backend.variantsGenerator(self.request)
 
     def testNonexistantVariantSet(self):
         # a request for a variant set that doesn't exist should throw an error
-        self.request.variantSetIds = ["notFound"]
+        self.request.variant_set_ids = ["notFound"]
         with self.assertRaises(exceptions.VariantSetNotFoundException):
             self.backend.variantsGenerator(self.request)
 
@@ -66,32 +66,32 @@ class TestVariantsGenerator(unittest.TestCase):
         self.assertIsNone(next(iterator, None))
 
     def testVariantSetOneVariant(self):
-        # a variant set with one variant should return it and a null pageToken
+        # a variant set with one variant should return it and a null page_token
         self._initVariantSet(1)
         iterator = self.backend.variantsGenerator(self.request)
-        variant, nextPageToken = next(iterator)
+        variant, next_page_token = next(iterator)
         self.assertIsNotNone(variant)
-        self.assertIsNone(nextPageToken)
+        self.assertIsNone(next_page_token)
         self.assertIsNone(next(iterator, None))
 
     def testVariantSetTwoVariants(self):
         # a variant set with two variants should return the first with
-        # a non-null pageToken and the second with a null pageToken
+        # a non-null page_token and the second with a null page_token
         self._initVariantSet(2)
         iterator = self.backend.variantsGenerator(self.request)
-        variant, nextPageToken = next(iterator)
+        variant, next_page_token = next(iterator)
         self.assertIsNotNone(variant)
-        self.assertIsNotNone(nextPageToken)
-        variant, nextPageToken = next(iterator)
+        self.assertIsNotNone(next_page_token)
+        variant, next_page_token = next(iterator)
         self.assertIsNotNone(variant)
-        self.assertIsNone(nextPageToken)
+        self.assertIsNone(next_page_token)
         self.assertIsNone(next(iterator, None))
 
     def _initVariantSet(self, numVariants):
-        variantSet = MockVariantSet(self.variantSetId, numVariants)
-        self.backend.getDataset(self.datasetId)._variantSetIdMap = {
-            self.variantSetId: variantSet}
-        self.request.variantSetIds = [self.variantSetId]
+        variantSet = MockVariantSet(self.variant_set_id, numVariants)
+        self.backend.getDataset(self.dataset_id)._variantSetIdMap = {
+            self.variant_set_id: variantSet}
+        self.request.variant_set_ids = [self.variant_set_id]
 
 
 def generateReadAlignment(position=0, sequence='abc'):
@@ -99,7 +99,7 @@ def generateReadAlignment(position=0, sequence='abc'):
     alignment.alignment = protocol.LinearAlignment()
     alignment.alignment.position = protocol.Position()
     alignment.alignment.position.position = position
-    alignment.alignedSequence = sequence
+    alignment.aligned_sequence = sequence
     return alignment
 
 
@@ -109,7 +109,7 @@ class MockReadGroup(reads.AbstractReadGroup):
         super(MockReadGroup, self).__init__(id_)
         self.numAlignments = numAlignments
 
-    def getReadAlignments(self, referenceName=None, referenceId=None,
+    def getReadAlignments(self, reference_name=None, reference_id=None,
                           start=None, end=None):
         for i in range(self.numAlignments):
             yield generateReadAlignment(i)
@@ -122,24 +122,24 @@ class TestReadsGenerator(unittest.TestCase):
     def setUp(self):
         self.request = protocol.SearchReadsRequest()
         self.backend = backend.SimulatedBackend()
-        self.readGroupId = "readGroupId"
-        self.datasetId = self.backend.getDatasetIds()[0]
+        self.read_group_id = "read_group_id"
+        self.dataset_id = self.backend.getDatasetIds()[0]
 
     def testNoReadGroupsNotSupported(self):
         # a request for no read groups should throw an exception
-        self.request.readGroupIds = []
+        self.request.read_group_ids = []
         with self.assertRaises(exceptions.NotImplementedException):
             self.backend.readsGenerator(self.request)
 
     def testMultipleReadGroupsNotSupported(self):
         # a request for multiple read groups should throw an exception
-        self.request.readGroupIds = ["1", "2"]
+        self.request.read_group_ids = ["1", "2"]
         with self.assertRaises(exceptions.NotImplementedException):
             self.backend.readsGenerator(self.request)
 
     def testNonexistantReadGroup(self):
         # a request for a readGroup that doesn't exist should throw an error
-        self.request.readGroupIds = ["notFound"]
+        self.request.read_group_ids = ["notFound"]
         with self.assertRaises(exceptions.ReadGroupNotFoundException):
             self.backend.readsGenerator(self.request)
 
@@ -150,32 +150,32 @@ class TestReadsGenerator(unittest.TestCase):
         self.assertIsNone(next(iterator, None))
 
     def testReadGroupOneRead(self):
-        # a readGroup with one read should return it and a null nextPageToken
+        # a readGroup with one read should return it and a null next_page_token
         self._initReadGroup(1)
         iterator = self.backend.readsGenerator(self.request)
-        alignment, nextPageToken = next(iterator)
+        alignment, next_page_token = next(iterator)
         self.assertIsNotNone(alignment)
-        self.assertIsNone(nextPageToken)
+        self.assertIsNone(next_page_token)
         self.assertIsNone(next(iterator, None))
 
     def testReadGroupTwoReads(self):
         # a readGroup with two reads should return the first with
-        # a non-null pageToken and the second with a null pageToken
+        # a non-null page_token and the second with a null page_token
         self._initReadGroup(2)
         iterator = self.backend.readsGenerator(self.request)
-        alignment, nextPageToken = next(iterator)
+        alignment, next_page_token = next(iterator)
         self.assertIsNotNone(alignment)
-        self.assertIsNotNone(nextPageToken)
-        alignment, nextPageToken = next(iterator)
+        self.assertIsNotNone(next_page_token)
+        alignment, next_page_token = next(iterator)
         self.assertIsNotNone(alignment)
-        self.assertIsNone(nextPageToken)
+        self.assertIsNone(next_page_token)
         self.assertIsNone(next(iterator, None))
 
     def _initReadGroup(self, numAlignments):
-        readGroup = MockReadGroup(self.readGroupId, numAlignments)
-        self.backend.getDataset(self.datasetId)._readGroupIdMap = {
-            self.readGroupId: readGroup}
-        self.request.readGroupIds = [self.readGroupId]
+        readGroup = MockReadGroup(self.read_group_id, numAlignments)
+        self.backend.getDataset(self.dataset_id)._readGroupIdMap = {
+            self.read_group_id: readGroup}
+        self.request.read_group_ids = [self.read_group_id]
 
 
 class TestVariantsIntervalIteratorClassMethods(unittest.TestCase):
@@ -213,4 +213,4 @@ class TestReadsIntervalIteratorClassMethods(unittest.TestCase):
         result = self.intervalIterator._getEnd(self.read)
         self.assertEqual(
             self.intervalIterator._getStart(self.read) +
-            len(self.read.alignedSequence), result)
+            len(self.read.aligned_sequence), result)

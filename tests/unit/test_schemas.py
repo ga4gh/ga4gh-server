@@ -182,7 +182,7 @@ class EqualityTest(SchemaTest):
     def testDifferentLengthArrays(self):
         i1 = self.getTypicalInstance(protocol.CallSet)
         i2 = protocol.CallSet.fromJsonDict(i1.toJsonDict())
-        i2.variantSetIds.append("extra")
+        i2.variant_set_ids.append("extra")
         self.assertFalse(i1 == i2)
 
 
@@ -297,7 +297,7 @@ class SearchResponseBuilderTest(SchemaTest):
                     class_, len(valueList), 2**32)
                 for value in valueList:
                     builder.addValue(value)
-                builder.setNextPageToken(instance.nextPageToken)
+                builder.setNextPageToken(instance.next_page_token)
                 otherInstance = class_.fromJsonString(builder.getJsonString())
                 self.assertEqual(instance,  otherInstance)
 
@@ -306,19 +306,19 @@ class SearchResponseBuilderTest(SchemaTest):
         # filling after full is True.
         responseClass = protocol.SearchVariantsResponse
         valueClass = protocol.Variant
-        for pageSize in range(1, 10):
+        for page_size in range(1, 10):
             builder = protocol.SearchResponseBuilder(
-                responseClass, pageSize, 2**32)
-            self.assertEqual(builder.getPageSize(), pageSize)
+                responseClass, page_size, 2**32)
+            self.assertEqual(builder.getPageSize(), page_size)
             self.assertFalse(builder.isFull())
-            for listLength in range(1, 2 * pageSize):
+            for listLength in range(1, 2 * page_size):
                 builder.addValue(self.getTypicalInstance(valueClass))
                 instance = responseClass.fromJsonString(
                     builder.getJsonString())
                 valueList = getattr(
                     instance, responseClass.getValueListName())
                 self.assertEqual(len(valueList), listLength)
-                if listLength < pageSize:
+                if listLength < page_size:
                     self.assertFalse(builder.isFull())
                 else:
                     self.assertTrue(builder.isFull())
@@ -326,15 +326,15 @@ class SearchResponseBuilderTest(SchemaTest):
     def testPageSizeExactFill(self):
         responseClass = protocol.SearchVariantsResponse
         valueClass = protocol.Variant
-        for pageSize in range(1, 10):
+        for page_size in range(1, 10):
             builder = protocol.SearchResponseBuilder(
-                responseClass, pageSize, 2**32)
-            self.assertEqual(builder.getPageSize(), pageSize)
+                responseClass, page_size, 2**32)
+            self.assertEqual(builder.getPageSize(), page_size)
             while not builder.isFull():
                 builder.addValue(self.getTypicalInstance(valueClass))
             instance = responseClass.fromJsonString(builder.getJsonString())
             valueList = getattr(instance, responseClass.getValueListName())
-            self.assertEqual(len(valueList), pageSize)
+            self.assertEqual(len(valueList), page_size)
 
     def testMaxResponseLengthOverridesPageSize(self):
         responseClass = protocol.SearchVariantsResponse
@@ -357,13 +357,13 @@ class SearchResponseBuilderTest(SchemaTest):
         responseClass = protocol.SearchVariantsResponse
         builder = protocol.SearchResponseBuilder(
             responseClass, 100, 2**32)
-        # If not set, pageToken should be None
+        # If not set, page_token should be None
         self.assertIsNone(builder.getNextPageToken())
         instance = responseClass.fromJsonString(builder.getJsonString())
-        self.assertIsNone(instance.nextPageToken)
+        self.assertIsNone(instance.next_page_token)
         # page tokens can be None or any string.
-        for nextPageToken in [None, "", "string"]:
-            builder.setNextPageToken(nextPageToken)
-            self.assertEqual(nextPageToken, builder.getNextPageToken())
+        for next_page_token in [None, "", "string"]:
+            builder.setNextPageToken(next_page_token)
+            self.assertEqual(next_page_token, builder.getNextPageToken())
             instance = responseClass.fromJsonString(builder.getJsonString())
-            self.assertEqual(nextPageToken, instance.nextPageToken)
+            self.assertEqual(next_page_token, instance.next_page_token)

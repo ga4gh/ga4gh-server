@@ -48,10 +48,10 @@ class TestSimulatedStack(unittest.TestCase):
 
     def setUp(self):
         self.backend = frontend.app.backend
-        self.datasetId = self.backend.getDatasetIds()[0]
-        self.variantSetIds = [
+        self.dataset_id = self.backend.getDatasetIds()[0]
+        self.variant_set_ids = [
             variantSet.getId() for variantSet in
-            self.backend.getDataset(self.datasetId).getVariantSets()]
+            self.backend.getDataset(self.dataset_id).getVariantSets()]
 
     def sendJsonPostRequest(self, path, data):
         return self.app.post(
@@ -59,10 +59,10 @@ class TestSimulatedStack(unittest.TestCase):
             data=data)
 
     def testVariantSetsSearch(self):
-        expectedIds = self.variantSetIds
+        expectedIds = self.variant_set_ids
         request = protocol.SearchVariantSetsRequest()
-        request.pageSize = len(expectedIds)
-        request.datasetIds = [self.datasetId]
+        request.page_size = len(expectedIds)
+        request.dataset_ids = [self.dataset_id]
         path = utils.applyVersion('/variantsets/search')
         response = self.sendJsonPostRequest(
             path, request.toJsonString())
@@ -74,20 +74,20 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertTrue(protocol.SearchVariantSetsResponse.validate(
             responseData.toJsonDict()))
 
-        self.assertIsNone(responseData.nextPageToken)
-        self.assertEqual(len(expectedIds), len(responseData.variantSets))
-        for variantSet in responseData.variantSets:
+        self.assertIsNone(responseData.next_page_token)
+        self.assertEqual(len(expectedIds), len(responseData.variant_sets))
+        for variantSet in responseData.variant_sets:
             self.assertTrue(variantSet.id in expectedIds)
 
     def testVariantsSearch(self):
-        expectedIds = self.variantSetIds[:1]
-        referenceName = '1'
+        expectedIds = self.variant_set_ids[:1]
+        reference_name = '1'
 
         request = protocol.SearchVariantsRequest()
-        request.referenceName = referenceName
+        request.reference_name = reference_name
         request.start = 0
         request.end = 0
-        request.variantSetIds = expectedIds
+        request.variant_set_ids = expectedIds
 
         # Request windows is too small, no results
         path = utils.applyVersion('/variants/search')
@@ -96,7 +96,7 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         responseData = protocol.SearchVariantsResponse.fromJsonString(
             response.data)
-        self.assertIsNone(responseData.nextPageToken)
+        self.assertIsNone(responseData.next_page_token)
         self.assertEqual([], responseData.variants)
 
         # Larger request window, expect results
@@ -115,8 +115,8 @@ class TestSimulatedStack(unittest.TestCase):
         for variant in responseData.variants:
             self.assertGreaterEqual(variant.start, 0)
             self.assertLessEqual(variant.end, 2 ** 16)
-            self.assertTrue(variant.variantSetId in expectedIds)
-            self.assertEqual(variant.referenceName, referenceName)
+            self.assertTrue(variant.variant_set_id in expectedIds)
+            self.assertEqual(variant.reference_name, reference_name)
 
         # TODO: Add more useful test scenarios, including some covering
         # pagination behavior.
@@ -131,18 +131,18 @@ class TestSimulatedStack(unittest.TestCase):
         request.name = None
         path = utils.applyVersion('/callsets/search')
 
-        # when variantSetIds are wrong, no results
-        request.variantSetIds = ["xxxx"]
+        # when variant_set_ids are wrong, no results
+        request.variant_set_ids = ["xxxx"]
         response = self.sendJsonPostRequest(
             path, request.toJsonString())
         self.assertEqual(200, response.status_code)
         responseData = protocol.SearchCallSetsResponse.fromJsonString(
             response.data)
-        self.assertIsNone(responseData.nextPageToken)
-        self.assertEqual([], responseData.callSets)
+        self.assertIsNone(responseData.next_page_token)
+        self.assertEqual([], responseData.call_sets)
 
         # if no callset name is given return all callsets
-        request.variantSetIds = self.variantSetIds[:1]
+        request.variant_set_ids = self.variant_set_ids[:1]
         response = self.sendJsonPostRequest(
             path, request.toJsonString())
         self.assertEqual(200, response.status_code)
@@ -150,17 +150,17 @@ class TestSimulatedStack(unittest.TestCase):
             response.data)
         self.assertTrue(protocol.SearchCallSetsResponse.validate(
             responseData.toJsonDict()))
-        self.assertNotEqual([], responseData.callSets)
-        # TODO test the length of responseData.callSets equal to all callsets
+        self.assertNotEqual([], responseData.call_sets)
+        # TODO test the length of responseData.call_sets equal to all callsets
 
         # Verify all results are of the correct type and range
-        for callSet in responseData.callSets:
+        for callSet in responseData.call_sets:
             self.assertIs(type(callSet.info), dict)
-            self.assertIs(type(callSet.variantSetIds), list)
+            self.assertIs(type(callSet.variant_set_ids), list)
             splits = callSet.id.split(".")
-            variantSetId = '.'.join(splits[:2])
+            variant_set_id = '.'.join(splits[:2])
             callSetName = splits[-1]
-            self.assertIn(variantSetId, callSet.variantSetIds)
+            self.assertIn(variant_set_id, callSet.variant_set_ids)
             self.assertEqual(callSetName, callSet.name)
             self.assertEqual(callSetName, callSet.sampleId)
 
@@ -174,8 +174,8 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         responseData = protocol.SearchReferenceSetsResponse.fromJsonString(
             response.data)
-        referenceSets = responseData.referenceSets
-        self.assertEqual(self.numReferenceSets, len(referenceSets))
+        reference_sets = responseData.reference_sets
+        self.assertEqual(self.numReferenceSets, len(reference_sets))
 
         # search for references
         path = utils.applyVersion('/references/search')
@@ -189,7 +189,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.numReferenceSets * self.numReferencesPerReferenceSet,
             len(references))
 
-        for referenceSet in referenceSets:
+        for referenceSet in reference_sets:
             # fetch the reference set
             path = utils.applyVersion(
                 '/referencesets/{}'.format(referenceSet.id))
@@ -199,22 +199,22 @@ class TestSimulatedStack(unittest.TestCase):
                 response.data)
             self.assertEqual(fetchedReferenceSet, referenceSet)
             self.assertEqual(
-                len(fetchedReferenceSet.referenceIds),
+                len(fetchedReferenceSet.reference_ids),
                 self.numReferencesPerReferenceSet)
 
-            for referenceId in referenceSet.referenceIds:
+            for reference_id in referenceSet.reference_ids:
                 # fetch the reference
                 path = utils.applyVersion(
-                    '/references/{}'.format(referenceId))
+                    '/references/{}'.format(reference_id))
                 response = self.app.get(path)
                 self.assertEqual(response.status_code, 200)
                 fetchedReference = protocol.Reference.fromJsonString(
                     response.data)
-                self.assertEqual(fetchedReference.id, referenceId)
+                self.assertEqual(fetchedReference.id, reference_id)
 
                 # fetch the bases
                 path = utils.applyVersion(
-                    '/references/{}/bases'.format(referenceId))
+                    '/references/{}/bases'.format(reference_id))
                 args = protocol.ListReferenceBasesRequest().toJsonDict()
                 response = self.app.get(path, data=args)
                 self.assertEqual(response.status_code, 200)

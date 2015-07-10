@@ -65,7 +65,7 @@ class SamConverter(AbstractConverter):
 
     def _getHeader(self):
         # TODO where to get actual values for header?
-        # need some kind of getReadGroup(readGroupId) method in protocol
+        # need some kind of getReadGroup(read_group_id) method in protocol
         # just add these dummy lines for now
         header = {
             'HD': {'VN': '1.0'},
@@ -113,56 +113,56 @@ class SamLine(object):
     def toAlignedSegment(cls, read, targetIds):
         ret = pysam.AlignedSegment()
         # QNAME
-        ret.query_name = read.fragmentName.encode(cls._encoding)
+        ret.query_name = read.fragment_name.encode(cls._encoding)
         # SEQ
-        ret.query_sequence = read.alignedSequence.encode(cls._encoding)
+        ret.query_sequence = read.aligned_sequence.encode(cls._encoding)
         # FLAG
         ret.flag = cls.toSamFlag(read)
         # RNAME
-        refName = read.alignment.position.referenceName
+        refName = read.alignment.position.reference_name
         ret.reference_id = targetIds[refName]
         # POS
         ret.reference_start = int(read.alignment.position.position)
         # MAPQ
-        ret.mapping_quality = read.alignment.mappingQuality
+        ret.mapping_quality = read.alignment.mapping_quality
         # CIGAR
         ret.cigar = cls.toCigar(read)
         # RNEXT
-        nextRefName = read.nextMatePosition.referenceName
+        nextRefName = read.next_mate_position.reference_name
         ret.next_reference_id = targetIds[nextRefName]
         # PNEXT
-        ret.next_reference_start = int(read.nextMatePosition.position)
+        ret.next_reference_start = int(read.next_mate_position.position)
         # TLEN
-        ret.template_length = read.fragmentLength
+        ret.template_length = read.fragment_length
         # QUAL
-        ret.query_qualities = read.alignedQuality
+        ret.query_qualities = read.aligned_quality
         ret.tags = cls.toTags(read)
         return ret
 
     @classmethod
     def toSamFlag(cls, read):
         flag = 0
-        if read.numberReads:
+        if read.number_reads:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.NUMBER_READS)
-        if read.properPlacement:
+        if read.proper_placement:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.PROPER_PLACEMENT)
-        if read.readNumber:
+        if read.read_number:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.READ_NUMBER_ONE)
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.READ_NUMBER_TWO)
-        if read.secondaryAlignment:
+        if read.secondary_alignment:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.SECONDARY_ALIGNMENT)
-        if read.failedVendorQualityChecks:
+        if read.failed_vendor_quality_checks:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
-        if read.duplicateFragment:
+        if read.duplicate_fragment:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.DUPLICATE_FRAGMENT)
-        if read.supplementaryAlignment:
+        if read.supplementary_alignment:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.SUPPLEMENTARY_ALIGNMENT)
         return flag
@@ -172,7 +172,7 @@ class SamLine(object):
         cigarTuples = []
         for gaCigarUnit in read.alignment.cigar:
             operation = reads.SamCigar.ga2int(gaCigarUnit.operation)
-            length = int(gaCigarUnit.operationLength)
+            length = int(gaCigarUnit.operation_length)
             cigarTuple = (operation, length)
             cigarTuples.append(cigarTuple)
         return tuple(cigarTuples)

@@ -66,7 +66,7 @@ class TestFrontendErrors(unittest.TestCase):
         self.assertEqual(response.status_code, exceptionClass.httpStatus)
         error = protocol.GAException.fromJsonString(response.data)
         self.assertEqual(
-            error.errorCode, exceptionClass.getErrorCode())
+            error.error_code, exceptionClass.getErrorCode())
         self.assertGreater(len(error.message), 0)
 
     def assertRequestRaises(self, exceptionClass, url, request):
@@ -81,12 +81,12 @@ class TestFrontendErrors(unittest.TestCase):
         for url, requestClass in self.endPointMap.items():
             for badType in ["", "1", "None", 0.0, 1e3]:
                 request = self._createInstance(requestClass)
-                request.pageSize = badType
+                request.page_size = badType
                 self.assertRequestRaises(
                     exceptions.RequestValidationFailureException, url, request)
             for badSize in [-100, -1, 0]:
                 request = self._createInstance(requestClass)
-                request.pageSize = badSize
+                request.page_size = badSize
                 self.assertRequestRaises(
                     exceptions.BadPageSizeException, url, request)
 
@@ -94,6 +94,6 @@ class TestFrontendErrors(unittest.TestCase):
         for url, requestClass in self.endPointMap.items():
             for badType in [0, 0.0, 1e-3, {}, [], [None]]:
                 request = self._createInstance(requestClass)
-                request.pageToken = badType
+                request.page_token = badType
                 self.assertRequestRaises(
                     exceptions.RequestValidationFailureException, url, request)

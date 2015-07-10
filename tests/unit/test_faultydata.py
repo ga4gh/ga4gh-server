@@ -18,63 +18,63 @@ class FaultyVariantDataTest(unittest.TestCase):
     def setUp(self):
         self.testDataDir = "tests/faultydata/variants"
 
-    def getFullPath(self, variantSetId):
-        return os.path.join(self.testDataDir, variantSetId)
+    def getFullPath(self, variant_set_id):
+        return os.path.join(self.testDataDir, variant_set_id)
 
 
 class TestVariantSetNoIndexedVcf(FaultyVariantDataTest):
     setIds = ["no_indexed_vcf"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for variant_set_id in self.setIds:
+            path = self.getFullPath(variant_set_id)
             self.assertRaises(
                 exceptions.NotIndexedException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, variant_set_id, path)
 
 
 class TestInconsistentMetaData(FaultyVariantDataTest):
     setIds = ["inconsist_meta"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for variant_set_id in self.setIds:
+            path = self.getFullPath(variant_set_id)
             self.assertRaises(
                 exceptions.InconsistentMetaDataException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, variant_set_id, path)
 
 
 class TestInconsistentCallSetId(FaultyVariantDataTest):
     setIds = ["inconsist_sampleid", "inconsist_sampleid2"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for variant_set_id in self.setIds:
+            path = self.getFullPath(variant_set_id)
             self.assertRaises(
                 exceptions.InconsistentCallSetIdException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, variant_set_id, path)
 
 
 class TestOverlappingVcfVariants(FaultyVariantDataTest):
     setIds = ["overlapping_vcf"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for variant_set_id in self.setIds:
+            path = self.getFullPath(variant_set_id)
             self.assertRaises(
                 exceptions.OverlappingVcfException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, variant_set_id, path)
 
 
 class TestEmptyDirException(FaultyVariantDataTest):
     setIds = ["empty_dir"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for variant_set_id in self.setIds:
+            path = self.getFullPath(variant_set_id)
             self.assertRaises(
                 exceptions.EmptyDirException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, variant_set_id, path)
 
 
 class TestDuplicateCallSetId(FaultyVariantDataTest):
@@ -94,26 +94,26 @@ class TestDuplicateCallSetId(FaultyVariantDataTest):
 
     @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for variant_set_id in self.setIds:
+            path = self.getFullPath(variant_set_id)
             self.assertRaises(
                 exceptions.DuplicateCallSetIdException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, variant_set_id, path)
 
 
 class FaultyReferenceDataTest(unittest.TestCase):
     def setUp(self):
         self.testDataDir = "tests/faultydata/references"
 
-    def getFullPath(self, referenceSetId):
-        return os.path.join(self.testDataDir, referenceSetId)
+    def getFullPath(self, reference_set_id):
+        return os.path.join(self.testDataDir, reference_set_id)
 
 
 class TestTwoReferences(FaultyReferenceDataTest):
     setIds = ["two_references"]
 
     def testInstantiation(self):
-        for referenceSetId in self.setIds:
-            path = self.getFullPath(referenceSetId)
+        for reference_set_id in self.setIds:
+            path = self.getFullPath(reference_set_id)
             with self.assertRaises(exceptions.NotExactlyOneReferenceException):
-                references.HtslibReferenceSet(referenceSetId, path)
+                references.HtslibReferenceSet(reference_set_id, path)

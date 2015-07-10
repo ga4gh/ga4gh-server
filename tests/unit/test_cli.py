@@ -48,10 +48,10 @@ class TestGa2VcfArguments(unittest.TestCase):
     def testVariantsSearchArguments(self):
         cliInput = """--workarounds WORK,AROUND
         --key KEY -O --outputFile /dev/null
-        variants-search --referenceName REFERENCENAME
-        --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
-        --end 1 --pageSize 2 --variantSetIds VARIANT,SET,IDS
-        --datasetIds DATASET,IDS --maxCalls 5
+        variants-search --reference_name REFERENCENAME
+        --variant_name VARIANTNAME --call_set_ids CALL,SET,IDS --start 0
+        --end 1 --page_size 2 --variant_set_ids VARIANT,SET,IDS
+        --dataset_ids DATASET,IDS --maxCalls 5
         BASEURL"""
         stubConverterModule = StubConverterModuleVcf(self)
         with mock.patch(
@@ -69,9 +69,9 @@ class TestGa2SamArguments(unittest.TestCase):
     """
     def testReadsSearchArguments(self):
         cliInput = """--workarounds WORK,AROUND --key KEY -O
-        --pageSize 1 --start 2 --end 3 --outputFile OUT.SAM
-        --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
-        --referenceName REFERENCENAME --binaryOutput
+        --page_size 1 --start 2 --end 3 --outputFile OUT.SAM
+        --read_group_ids READ,GROUP,IDS --reference_id REFERENCEID
+        --reference_name REFERENCENAME --binaryOutput
         BASEURL"""
         stubConverterModule = StubConverterModuleSam(self)
         with mock.patch(
@@ -115,34 +115,34 @@ class TestClientArguments(unittest.TestCase):
         self.verifyInput()
 
     def testVariantsSearchArguments(self):
-        self.cliInput = """variants-search --referenceName REFERENCENAME
-        --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
-        --end 1 --pageSize 2 --variantSetIds VARIANT,SET,IDS"""
+        self.cliInput = """variants-search --reference_name REFERENCENAME
+        --variant_name VARIANTNAME --call_set_ids CALL,SET,IDS --start 0
+        --end 1 --page_size 2 --variant_set_ids VARIANT,SET,IDS"""
 
     def testVariantSetsSearchArguments(self):
-        self.cliInput = """variantsets-search --pageSize 1 --datasetIds
+        self.cliInput = """variantsets-search --page_size 1 --dataset_ids
         DATA,SET,IDS"""
 
     def testReferenceSetsSearchArguments(self):
-        self.cliInput = """referencesets-search --pageSize 1 --accessions
+        self.cliInput = """referencesets-search --page_size 1 --accessions
         ACC,ESS,IONS --md5checksums MD5,CHECKSUMS --assemblyId ASSEMBLYID"""
 
     def testReferencesSearchArguments(self):
-        self.cliInput = """references-search --pageSize 1 --accessions
+        self.cliInput = """references-search --page_size 1 --accessions
         ACC,ESS,IONS --md5checksums MD5,CHECKSUMS"""
 
     def testReadGroupSetsSearchArguments(self):
-        self.cliInput = """readgroupsets-search --pageSize 1 --datasetIds
+        self.cliInput = """readgroupsets-search --page_size 1 --dataset_ids
         DATA,SET,IDS --name NAME"""
 
     def testCallSetsSearchArguments(self):
-        self.cliInput = """callsets-search --pageSize 1 --name NAME
-        --variantSetIds VARIANT,SET,IDS"""
+        self.cliInput = """callsets-search --page_size 1 --name NAME
+        --variant_set_ids VARIANT,SET,IDS"""
 
     def testReadsSearchArguments(self):
-        self.cliInput = """reads-search --pageSize 1 --start 2 --end 3
-        --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
-        --referenceName REFERENCENAME"""
+        self.cliInput = """reads-search --page_size 1 --start 2 --end 3
+        --read_group_ids READ,GROUP,IDS --reference_id REFERENCEID
+        --reference_name REFERENCENAME"""
 
     def testDatasetsSearchArguments(self):
         self.cliInput = """datasets-search"""

@@ -26,7 +26,7 @@ class AbstractReferenceSet(object):
     def __init__(self, id_):
         self._id = id_
         self._referenceIdMap = {}
-        self._referenceIds = []
+        self._reference_ids = []
 
     def getId(self):
         return self._id
@@ -47,9 +47,9 @@ class AbstractReferenceSet(object):
         ret.id = self._id
         ret.isDerived = False
         ret.md5checksum = self._generateMd5Checksum()
-        ret.ncbiTaxonId = None
-        ret.referenceIds = self._referenceIds
-        ret.sourceAccessions = []
+        ret.ncbi_taxon_id = None
+        ret.reference_ids = self._reference_ids
+        ret.source_accessions = []
         ret.sourceURI = None
         return ret
 
@@ -77,10 +77,10 @@ class SimulatedReferenceSet(AbstractReferenceSet):
         self._randomGenerator.seed(self._randomSeed)
         for i in range(numReferences):
             referenceSeed = self._randomGenerator.getrandbits(32)
-            referenceId = "{}:srs{}".format(id_, i)
-            reference = SimulatedReference(referenceId, referenceSeed)
-            self._referenceIdMap[referenceId] = reference
-        self._referenceIds = sorted(self._referenceIdMap.keys())
+            reference_id = "{}:srs{}".format(id_, i)
+            reference = SimulatedReference(reference_id, referenceSeed)
+            self._referenceIdMap[reference_id] = reference
+        self._reference_ids = sorted(self._referenceIdMap.keys())
 
 
 class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
@@ -91,16 +91,16 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
         super(HtslibReferenceSet, self).__init__(id_)
         self._dataDir = dataDir
         # TODO get metadata from a file within dataDir? How else will we
-        # fill in the fields like ncbiTaxonId etc?
+        # fill in the fields like ncbi_taxon_id etc?
         self._scanDataFiles(dataDir, ["*.fa.gz"])
-        self._referenceIds = sorted(self._referenceIdMap.keys())
+        self._reference_ids = sorted(self._referenceIdMap.keys())
 
     def _addDataFile(self, path):
         filename = os.path.split(path)[1]
         localId = filename.split(".")[0]
-        referenceId = "{}:{}".format(self._id, localId)
-        reference = HtslibReference(referenceId, path)
-        self._referenceIdMap[referenceId] = reference
+        reference_id = "{}:{}".format(self._id, localId)
+        reference = HtslibReference(reference_id, path)
+        self._referenceIdMap[reference_id] = reference
 
 
 class AbstractReference(object):
@@ -126,8 +126,8 @@ class AbstractReference(object):
         reference.length = self.getLength()
         reference.md5checksum = self.getMd5Checksum()
         reference.name = self.getName()
-        reference.ncbiTaxonId = None
-        reference.sourceAccessions = []
+        reference.ncbi_taxon_id = None
+        reference.source_accessions = []
         reference.sourceDivergence = None
         reference.sourceURI = None
         return reference

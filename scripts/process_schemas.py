@@ -72,8 +72,8 @@ class SchemaClass(object):
         assert self.isSearchResponse()
         names = [field.name for field in self.getFields()]
         # We assume that there are exactly two fields in every
-        # SearchResponse: nextPageToken and the value list.
-        names.remove('nextPageToken')
+        # SearchResponse: next_page_token and the value list.
+        names.remove('next_page_token')
         assert len(names) == 1
         return names[0]
 

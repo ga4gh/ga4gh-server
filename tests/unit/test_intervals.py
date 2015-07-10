@@ -98,8 +98,8 @@ class FakeRequest(object):
     """
     A class to stand in as a Request object.
     """
-    def __init__(self, start, end, pageToken):
-        self.pageToken = pageToken
+    def __init__(self, start, end, page_token):
+        self.page_token = page_token
         self.start = start
         self.end = end
 
@@ -109,9 +109,9 @@ class TrivialIntervalIterator(backend.IntervalIterator):
     The simplest possible instance of the interval iterator
     used to test the iteration code.
     """
-    def __init__(self, intervalSet, start, end, pageToken=None):
+    def __init__(self, intervalSet, start, end, page_token=None):
         self.intervalSet = intervalSet
-        request = FakeRequest(start, end, pageToken)
+        request = FakeRequest(start, end, page_token)
         super(TrivialIntervalIterator, self).__init__(request, None)
 
     def _getContainer(self):

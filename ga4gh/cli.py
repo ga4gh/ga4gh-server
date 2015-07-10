@@ -40,19 +40,19 @@ def setCommaSeparatedAttribute(request, args, attr):
 
 class RequestFactory(object):
     """
-    Provides methods for easy inititalization of request objects
+    Provides methods for easy initialization of request objects
     """
     class SearchReadsRequestGoogle(protocol.ProtocolElement):
 
-        __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds',
-                     'referenceName', 'start']
+        __slots__ = ['end', 'page_size', 'page_token', 'read_group_ids',
+                     'reference_name', 'start']
 
         def __init__(self):
             self.end = None
-            self.pageSize = None
-            self.pageToken = None
-            self.readGroupIds = []
-            self.referenceName = None
+            self.page_size = None
+            self.page_token = None
+            self.read_group_ids = []
+            self.reference_name = None
             self.start = 0
 
     def __init__(self, args):
@@ -67,28 +67,28 @@ class RequestFactory(object):
 
     def createSearchVariantSetsRequest(self):
         request = protocol.SearchVariantSetsRequest()
-        setCommaSeparatedAttribute(request, self.args, 'datasetIds')
-        request.pageSize = self.args.pageSize
-        request.pageToken = None
+        setCommaSeparatedAttribute(request, self.args, 'dataset_ids')
+        request.page_size = self.args.page_size
+        request.page_token = None
         return request
 
     def createSearchVariantsRequest(self):
         request = protocol.SearchVariantsRequest()
-        request.referenceName = self.args.referenceName
-        request.variantName = self.args.variantName
+        request.reference_name = self.args.reference_name
+        request.variant_name = self.args.variant_name
         request.start = self.args.start
         request.end = self.args.end
         if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
             request.maxCalls = self.args.maxCalls
-        if self.args.callSetIds == []:
-            request.callSetIds = []
-        elif self.args.callSetIds == '*':
+        if self.args.call_set_ids == []:
+            request.call_set_ids = []
+        elif self.args.call_set_ids == '*':
             # For v0.5.1 the semantics are for the empty list to correspond
             # to all calls. This should be set to None for v0.6
-            request.callSetIds = []
+            request.call_set_ids = []
         else:
-            request.callSetIds = self.args.callSetIds.split(",")
-        setCommaSeparatedAttribute(request, self.args, 'variantSetIds')
+            request.call_set_ids = self.args.call_set_ids.split(",")
+        setCommaSeparatedAttribute(request, self.args, 'variant_set_ids')
         return request
 
     def createSearchReferenceSetsRequest(self):
@@ -105,26 +105,26 @@ class RequestFactory(object):
 
     def createSearchReadGroupSetsRequest(self):
         request = protocol.SearchReadGroupSetsRequest()
-        setCommaSeparatedAttribute(request, self.args, 'datasetIds')
+        setCommaSeparatedAttribute(request, self.args, 'dataset_ids')
         request.name = self.args.name
         return request
 
     def createSearchCallSetsRequest(self):
         request = protocol.SearchCallSetsRequest()
-        setCommaSeparatedAttribute(request, self.args, 'variantSetIds')
+        setCommaSeparatedAttribute(request, self.args, 'variant_set_ids')
         request.name = self.args.name
         return request
 
     def createSearchReadsRequest(self):
         request = protocol.SearchReadsRequest()
         if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
-            # google says referenceId not a valid field
+            # google says reference_id not a valid field
             request = self.SearchReadsRequestGoogle()
-        setCommaSeparatedAttribute(request, self.args, 'readGroupIds')
+        setCommaSeparatedAttribute(request, self.args, 'read_group_ids')
         request.start = self.args.start
         request.end = self.args.end
-        request.referenceId = self.args.referenceId
-        request.referenceName = self.args.referenceName
+        request.reference_id = self.args.reference_id
+        request.reference_name = self.args.reference_name
         return request
 
     def createSearchDatasetsRequest(self):
@@ -169,8 +169,8 @@ def ga2vcf_main(parser=None):
     # to populate the searchVariantSetsRequest;
     # this is a temporary workaround until we have getVariantSet
     # in the protocol;
-    # also note both requests have a pageSize attribute
-    addDatasetIdsArgument(variantsSearchParser)
+    # also note both requests have a page_size attribute
+    addDataSetIdsArgument(variantsSearchParser)
     args = parser.parse_args()
     if "runner" not in args:
         parser.print_help()
@@ -320,9 +320,9 @@ class AbstractSearchRunner(AbstractQueryRunner):
         Sets the _httpClient and other common attributes
         """
         self._minimalOutput = args.minimalOutput
-        if 'pageSize' in args:
-            # ListReferenceBasesRequest does not have a pageSize attr
-            request.pageSize = args.pageSize
+        if 'page_size' in args:
+            # ListReferenceBasesRequest does not have a page_size attr
+            request.page_size = args.page_size
         self._request = request
 
     def _run(self, method, attrName=None):
@@ -362,23 +362,23 @@ class SearchVariantsRunner(AbstractSearchRunner):
         request = RequestFactory(args).createSearchVariantsRequest()
         # if no variantSets have been specified, send a request to
         # the server to grab all variantSets and then continue
-        if args.variantSetIds is None:
+        if args.variant_set_ids is None:
             datasetsRequest = protocol.SearchDatasetsRequest()
             datasetsResponse = self._httpClient.searchDatasets(
                 datasetsRequest)
-            datasetIds = [dataset.id for dataset in datasetsResponse]
-            variantSetIds = []
-            for datasetId in datasetIds:
+            dataset_ids = [dataset.id for dataset in datasetsResponse]
+            variant_set_ids = []
+            for dataset_id in dataset_ids:
                 variantSetsRequest = protocol.SearchVariantSetsRequest()
-                variantSetsRequest.datasetIds = [datasetId]
+                variantSetsRequest.dataset_ids = [dataset_id]
                 response = self._httpClient.searchVariantSets(
                     variantSetsRequest)
                 datasetVariantSetIds = [
                     variantSet.id for variantSet in response]
-                variantSetIds.extend(datasetVariantSetIds)
-            request.variantSetIds = variantSetIds
+                variant_set_ids.extend(datasetVariantSetIds)
+            request.variant_set_ids = variant_set_ids
         else:
-            setCommaSeparatedAttribute(request, args, 'variantSetIds')
+            setCommaSeparatedAttribute(request, args, 'variant_set_ids')
         self._setRequest(request, args)
 
     def run(self):
@@ -386,9 +386,9 @@ class SearchVariantsRunner(AbstractSearchRunner):
         # multiple requests. The server does not support multiple values
         # so we send of sequential requests instead.
         request = self._request
-        variantSetIds = request.variantSetIds
-        for variantSetId in variantSetIds:
-            request.variantSetIds = [variantSetId]
+        variant_set_ids = request.variant_set_ids
+        for variant_set_id in variant_set_ids:
+            request.variant_set_ids = [variant_set_id]
             if self._minimalOutput:
                 self._run(self._httpClient.searchVariants, 'id')
             else:
@@ -401,9 +401,9 @@ class SearchVariantsRunner(AbstractSearchRunner):
         Prints out the specified Variant object in a VCF-like form.
         """
         print(
-            variant.id, variant.variantSetId, variant.names,
-            variant.referenceName, variant.start, variant.end,
-            variant.referenceBases, variant.alternateBases,
+            variant.id, variant.variant_set_id, variant.names,
+            variant.reference_name, variant.start, variant.end,
+            variant.reference_bases, variant.alternate_bases,
             sep="\t", end="\t")
         for key, value in variant.info.items():
             print(key, value, sep="=", end=";")
@@ -473,15 +473,15 @@ class SearchReadsRunner(AbstractSearchRunner):
     """
     class SearchReadsRequestGoogle(protocol.ProtocolElement):
 
-        __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds',
-                     'referenceName', 'start']
+        __slots__ = ['end', 'page_size', 'page_token', 'read_group_ids',
+                     'reference_name', 'start']
 
         def __init__(self):
             self.end = None
-            self.pageSize = None
-            self.pageToken = None
-            self.readGroupIds = []
-            self.referenceName = None
+            self.page_size = None
+            self.page_token = None
+            self.read_group_ids = []
+            self.reference_name = None
             self.start = 0
 
     def __init__(self, args):
@@ -576,13 +576,13 @@ def addVariantSearchOptions(parser):
     """
     addVariantSetIdsArgument(parser)
     parser.add_argument(
-        "--referenceName", "-r", default="1",
+        "--reference_name", "-r", default="1",
         help="Only return variants on this reference.")
     parser.add_argument(
-        "--variantName", "-n", default=None,
+        "--variant_name", "-n", default=None,
         help="Only return variants which have exactly this name.")
     parser.add_argument(
-        "--callSetIds", "-c", default=[],
+        "--call_set_ids", "-c", default=[],
         help="""Return variant calls which belong to call sets
             with these IDs. Pass in IDs as a comma separated list (no spaces).
             Omit this option to indicate 'all call sets'.
@@ -598,7 +598,7 @@ def addVariantSearchOptions(parser):
 
 def addVariantSetIdsArgument(parser):
     parser.add_argument(
-        "--variantSetIds", "-V", default=None,
+        "--variant_set_ids", "-V", default=None,
         help="The variant set id(s) to search over")
 
 
@@ -644,14 +644,14 @@ def addMd5ChecksumsArgument(parser):
 
 def addPageSizeArgument(parser):
     parser.add_argument(
-        "--pageSize", "-m", default=100, type=int,
+        "--page_size", "-m", default=100, type=int,
         help="The maximum number of results returned in one response.")
 
 
-def addDatasetIdsArgument(parser):
+def addDataSetIdsArgument(parser):
     parser.add_argument(
-        "--datasetIds", default=None,
-        help="The datasetIds to search over")
+        "--dataset_ids", default=None,
+        help="The dataset_ids to search over")
 
 
 def addNameArgument(parser):
@@ -709,15 +709,15 @@ def addVariantSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchVariantSetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addDatasetIdsArgument(parser)
+    addDataSetIdsArgument(parser)
     return parser
 
 
 def addReferenceSetsSearchParser(subparsers):
     parser = subparsers.add_parser(
         "referencesets-search",
-        description="Search for referenceSets",
-        help="Search for referenceSets")
+        description="Search for reference_sets",
+        help="Search for reference_sets")
     parser.set_defaults(runner=SearchReferenceSetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
@@ -750,7 +750,7 @@ def addReadGroupSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addDatasetIdsArgument(parser)
+    addDataSetIdsArgument(parser)
     addNameArgument(parser)
     return parser
 
@@ -758,8 +758,8 @@ def addReadGroupSetsSearchParser(subparsers):
 def addCallsetsSearchParser(subparsers):
     parser = subparsers.add_parser(
         "callsets-search",
-        description="Search for callSets",
-        help="Search for callSets")
+        description="Search for call_sets",
+        help="Search for call_sets")
     parser.set_defaults(runner=SearchCallSetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
@@ -794,14 +794,14 @@ def addReadsSearchParserArguments(parser):
     addStartArgument(parser)
     addEndArgument(parser)
     parser.add_argument(
-        "--readGroupIds", default=None,
-        help="The readGroupIds to search over")
+        "--read_group_ids", default=None,
+        help="The read_group_ids to search over")
     parser.add_argument(
-        "--referenceId", default=None,
-        help="The referenceId to search over")
+        "--reference_id", default=None,
+        help="The reference_id to search over")
     parser.add_argument(
-        "--referenceName", default=None,
-        help="The referenceName to search over")
+        "--reference_name", default=None,
+        help="The reference_name to search over")
 
 
 def addReferenceSetsGetParser(subparsers):

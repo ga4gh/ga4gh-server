@@ -14,16 +14,16 @@ import ga4gh.protocol as protocol
 import ga4gh.avrotools as avrotools
 
 
-def getExceptionClass(errorCode):
+def getExceptionClass(error_code):
     """
     Converts the specified error code into the corresponding class object.
-    Raises a KeyError if the errorCode is not found.
+    Raises a KeyError if the error_code is not found.
     """
     classMap = {}
     for name, class_ in inspect.getmembers(sys.modules[__name__]):
         if inspect.isclass(class_) and issubclass(class_, Exception):
             classMap[class_.getErrorCode()] = class_
-    return classMap[errorCode]
+    return classMap[error_code]
 
 
 def getServerError(exception):
@@ -94,7 +94,7 @@ class RuntimeException(BaseServerException):
         it can be communicated back to the client.
         """
         error = protocol.GAException()
-        error.errorCode = self.getErrorCode()
+        error.error_code = self.getErrorCode()
         error.message = self.getMessage()
         return error
 
@@ -115,8 +115,8 @@ class BadRequestIntegerException(BadRequestException):
 
 
 class BadPageSizeException(BadRequestException):
-    def __init__(self, pageSize):
-        self.message = "Request page size '{}' is invalid".format(pageSize)
+    def __init__(self, page_size):
+        self.message = "Request page size '{}' is invalid".format(page_size)
 
 
 class BadPageTokenException(BadRequestException):
@@ -142,7 +142,7 @@ class RequestValidationFailureException(BadRequestException):
 
 
 class BadReadsSearchRequestBothRefs(BadRequestException):
-    message = "only one of referenceId and referenceName can be specified"
+    message = "only one of reference_id and reference_name can be specified"
 
 
 class DatamodelValidationException(BadRequestException):
@@ -177,14 +177,14 @@ class ObjectNotFoundException(NotFoundException):
 
 
 class VariantSetNotFoundException(NotFoundException):
-    def __init__(self, variantSetId):
+    def __init__(self, variant_set_id):
         self.message = "The requested VariantSet '{}' was not found".format(
-            variantSetId)
+            variant_set_id)
 
 
 class ReadGroupNotFoundException(ObjectNotFoundException):
-    def __init__(self, readGroupId):
-        self.message = "readGroupId '{}' not found".format(readGroupId)
+    def __init__(self, read_group_id):
+        self.message = "read_group_id '{}' not found".format(read_group_id)
 
 
 class ObjectWithIdNotFoundException(ObjectNotFoundException):
@@ -224,9 +224,9 @@ class CallSetNotInVariantSetException(NotFoundException):
     """
     Indicates a request was made for a callSet not in the actual variantSet
     """
-    def __init__(self, callSetId, variantSetId):
+    def __init__(self, callSetId, variant_set_id):
         self.message = "callSet '{0}' not in variantSet '{1}'".format(
-            callSetId, variantSetId)
+            callSetId, variant_set_id)
 
 
 class DataException(BaseServerException):

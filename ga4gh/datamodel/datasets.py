@@ -19,11 +19,11 @@ class AbstractDataset(datamodel.DatamodelObject):
     The base class of datasets containing variants and reads
     """
     def __init__(self):
-        self._variantSetIds = []
+        self._variant_set_ids = []
         self._variantSetIdMap = {}
-        self._readGroupSetIds = []
+        self._read_group_set_ids = []
         self._readGroupSetIdMap = {}
-        self._readGroupIds = []
+        self._read_group_ids = []
         self._readGroupIdMap = {}
 
     def toProtocolElement(self):
@@ -47,7 +47,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         Return a list of ids of variant sets that this dataset has
         """
-        return self._variantSetIds
+        return self._variant_set_ids
 
     def getVariantSetIdMap(self):
         """
@@ -65,7 +65,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         Return a list of ids of read group sets that this dataset has
         """
-        return self._readGroupSetIds
+        return self._read_group_set_ids
 
     def getReadGroupSetIdMap(self):
         """
@@ -77,7 +77,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         Return a list of ids of read groups that this dataset has
         """
-        return self._readGroupIds
+        return self._read_group_ids
 
     def getReadGroupIdMap(self):
         """
@@ -97,22 +97,22 @@ class SimulatedDataset(AbstractDataset):
     A simulated dataset
     """
     def __init__(
-            self, datasetId, randomSeed, numCalls,
+            self, dataset_id, randomSeed, numCalls,
             variantDensity, numVariantSets):
         super(SimulatedDataset, self).__init__()
-        self._id = datasetId
+        self._id = dataset_id
         self._randomSeed = randomSeed
         self._randomGenerator = random.Random()
         self._randomGenerator.seed(self._randomSeed)
 
         # Variants
         for i in range(numVariantSets):
-            variantSetId = "simVs{}".format(i)
+            variant_set_id = "simVs{}".format(i)
             seed = self._randomGenerator.randint(0, 2**32 - 1)
             variantSet = variants.SimulatedVariantSet(
-                seed, numCalls, variantDensity, variantSetId)
-            self._variantSetIdMap[variantSetId] = variantSet
-        self._variantSetIds = sorted(self._variantSetIdMap.keys())
+                seed, numCalls, variantDensity, variant_set_id)
+            self._variantSetIdMap[variant_set_id] = variantSet
+        self._variant_set_ids = sorted(self._variantSetIdMap.keys())
 
         # Reads
         readGroupSetId = "aReadGroupSet"
@@ -120,8 +120,8 @@ class SimulatedDataset(AbstractDataset):
         self._readGroupSetIdMap[readGroupSetId] = readGroupSet
         for readGroup in readGroupSet.getReadGroups():
             self._readGroupIdMap[readGroup.getId()] = readGroup
-        self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
-        self._readGroupIds = sorted(self._readGroupIdMap.keys())
+        self._read_group_set_ids = sorted(self._readGroupSetIdMap.keys())
+        self._read_group_ids = sorted(self._readGroupIdMap.keys())
 
 
 class FileSystemDataset(AbstractDataset):
@@ -135,13 +135,13 @@ class FileSystemDataset(AbstractDataset):
 
         # Variants
         variantSetDir = os.path.join(self._datasetDir, "variants")
-        for variantSetId in os.listdir(variantSetDir):
-            relativePath = os.path.join(variantSetDir, variantSetId)
+        for variant_set_id in os.listdir(variantSetDir):
+            relativePath = os.path.join(variantSetDir, variant_set_id)
             if os.path.isdir(relativePath):
-                self._variantSetIdMap[variantSetId] = \
+                self._variantSetIdMap[variant_set_id] = \
                     variants.HtslibVariantSet(
-                        variantSetId, relativePath)
-        self._variantSetIds = sorted(self._variantSetIdMap.keys())
+                        variant_set_id, relativePath)
+        self._variant_set_ids = sorted(self._variantSetIdMap.keys())
 
         # Reads
         readGroupSetDir = os.path.join(self._datasetDir, "reads")
@@ -153,5 +153,5 @@ class FileSystemDataset(AbstractDataset):
                 self._readGroupSetIdMap[readGroupSetId] = readGroupSet
                 for readGroup in readGroupSet.getReadGroups():
                     self._readGroupIdMap[readGroup.getId()] = readGroup
-        self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
-        self._readGroupIds = sorted(self._readGroupIdMap.keys())
+        self._read_group_set_ids = sorted(self._readGroupSetIdMap.keys())
+        self._read_group_ids = sorted(self._readGroupIdMap.keys())
