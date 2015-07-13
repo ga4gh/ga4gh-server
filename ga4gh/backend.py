@@ -423,6 +423,13 @@ class AbstractBackend(object):
             protocol.SearchReferencesResponse,
             self.referencesGenerator)
 
+    def getVariantSet(self, id_):
+        """
+        Returns a variantSet with the given id.
+        """
+        dataset = self._getDatasetFromCompoundId(id_)
+        return self.runGetRequest(dataset.getVariantSetIdMap(), id_)
+
     def searchVariantSets(self, request):
         """
         Returns a GASearchVariantSetsResponse for the specified

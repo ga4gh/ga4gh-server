@@ -555,6 +555,12 @@ def searchDatasets(version):
         version, flask.request, app.backend.searchDatasets)
 
 
+@DisplayedRoute('/<version>/variantsets/<no(search):id>')
+def getVariantSet(version, id):
+    return handleFlaskGetRequest(
+        version, id, flask.request, app.backend.getVariantSet)
+
+
 # The below paths have not yet been implemented
 
 
@@ -575,11 +581,6 @@ def getVariant(version, id):
 
 @app.route('/<version>/variantsets/<vsid>/sequences/<sid>')
 def getVariantSetSequence(version, vsid, sid):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/variantsets/<no(search):id>')
-def getVariantSet(version, id):
     raise exceptions.NotImplementedException()
 
 

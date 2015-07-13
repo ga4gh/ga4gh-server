@@ -180,15 +180,13 @@ class HttpClient(object):
         """
         Returns a referenceSet from the server
         """
-        return self.runGetRequest(
-            "referencesets", protocol.ReferenceSet, id_)
+        return self.runGetRequest("referencesets", protocol.ReferenceSet, id_)
 
     def getReference(self, id_):
         """
         Returns a reference from the server
         """
-        return self.runGetRequest(
-            "references", protocol.Reference, id_)
+        return self.runGetRequest("references", protocol.Reference, id_)
 
     def listReferenceBases(self, protocolRequest, id_):
         """
@@ -204,6 +202,12 @@ class HttpClient(object):
         """
         return self.runSearchRequest(
             protocolRequest, "variants", protocol.SearchVariantsResponse)
+
+    def getVariantSet(self, id_):
+        """
+        Returns a variantSet from the server
+        """
+        return self.runGetRequest("variantsets", protocol.VariantSet, id_)
 
     def searchVariantSets(self, protocolRequest):
         """

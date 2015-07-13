@@ -48,11 +48,9 @@ class TestGa2VcfArguments(unittest.TestCase):
     def testVariantsSearchArguments(self):
         cliInput = """--workarounds WORK,AROUND
         --key KEY -O --outputFile /dev/null
-        variants-search --referenceName REFERENCENAME
+        --referenceName REFERENCENAME
         --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
-        --end 1 --pageSize 2 --variantSetIds VARIANT,SET,IDS
-        --datasetIds DATASET,IDS --maxCalls 5
-        BASEURL"""
+        --end 1 --pageSize 2 BASEURL VARIANTSETID"""
         stubConverterModule = StubConverterModuleVcf(self)
         with mock.patch(
                 'ga4gh.converters.VcfConverter',

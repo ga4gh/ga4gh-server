@@ -50,8 +50,17 @@ class TestFrontend(unittest.TestCase):
             'Origin': self.exampleUrl,
         }
         return self.app.post(
-            versionedPath, headers=headers,
-            data=request.toJsonString())
+            versionedPath, headers=headers, data=request.toJsonString())
+
+    def sendGetRequest(self, path):
+        """
+        Sends a get request to the specified URL and returns the response.
+        """
+        versionedPath = utils.applyVersion(path)
+        headers = {
+            'Origin': self.exampleUrl,
+        }
+        return self.app.get(versionedPath, headers=headers)
 
     def sendVariantsSearch(self):
         response = self.sendVariantSetsSearch()
@@ -88,32 +97,31 @@ class TestFrontend(unittest.TestCase):
         request = protocol.SearchDatasetsRequest()
         return self.sendPostRequest('/datasets/search', request)
 
-    def sendGetRequest(self, path):
-        versionedPath = utils.applyVersion(path)
-        headers = {
-            'Origin': self.exampleUrl,
-        }
-        response = self.app.get(versionedPath, headers=headers)
+    def sendReferencesSearch(self):
+        path = "/references/search"
+        request = protocol.SearchReferencesRequest()
+        response = self.sendPostRequest(path, request)
         return response
 
-    def sendReferencesGet(self, id_=None):
+    def sendGetVariantSet(self, id_=None):
+        if id_ is None:
+            id_ = 'simple:simple'
+        path = "/variantsets/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
+    def sendGetReference(self, id_=None):
         if id_ is None:
             id_ = 'simple:simple'
         path = "/references/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
 
-    def sendReferenceSetsGet(self, id_=None):
+    def sendGetReferenceSet(self, id_=None):
         if id_ is None:
             id_ = 'simple'
         path = "/referencesets/{}".format(id_)
         response = self.sendGetRequest(path)
-        return response
-
-    def sendReferencesSearch(self):
-        path = "/references/search"
-        request = protocol.SearchReferencesRequest()
-        response = self.sendPostRequest(path, request)
         return response
 
     def sendListRequest(self, path, request):
@@ -151,15 +159,17 @@ class TestFrontend(unittest.TestCase):
             self.assertEqual(self.exampleUrl,
                              response.headers['Access-Control-Allow-Origin'])
             self.assertTrue('Content-Type' in response.headers)
-
+        # Post-based search methods
         assertHeaders(self.sendVariantsSearch())
         assertHeaders(self.sendVariantSetsSearch())
         assertHeaders(self.sendReadsSearch())
-        assertHeaders(self.sendReferencesGet())
-        assertHeaders(self.sendReferenceSetsGet())
         assertHeaders(self.sendReferencesSearch())
         assertHeaders(self.sendReferenceBasesList())
         assertHeaders(self.sendDatasetsSearch())
+        # Get-based accessor methods
+        assertHeaders(self.sendGetVariantSet())
+        assertHeaders(self.sendGetReference())
+        assertHeaders(self.sendGetReferenceSet())
         # TODO: Test other methods as they are implemented
 
     def verifySearchRouting(self, path, getDefined=False):
@@ -215,8 +225,8 @@ class TestFrontend(unittest.TestCase):
             self.verifySearchRouting(path)
 
     def testRouteVariants(self):
-        for path in ['/variantsets/search', '/variants/search']:
-            self.verifySearchRouting(path)
+        self.verifySearchRouting('/variantsets/search', True)
+        self.verifySearchRouting('/variants/search', False)
 
     def testRouteIndex(self):
         self._routeIndex("/")
@@ -243,6 +253,16 @@ class TestFrontend(unittest.TestCase):
         responseData = protocol.SearchVariantSetsResponse.fromJsonString(
             response.data)
         self.assertEqual(len(responseData.variantSets), 1)
+
+    def testGetVariantSet(self):
+        response = self.sendVariantSetsSearch()
+        responseData = protocol.SearchVariantSetsResponse.fromJsonString(
+            response.data)
+        variantSetId = responseData.variantSets[0].id
+        response = self.sendGetVariantSet(variantSetId)
+        self.assertEqual(200, response.status_code)
+        response = self.sendGetVariantSet("this isn't a valid id")
+        self.assertEqual(404, response.status_code)
 
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch()
@@ -301,7 +321,6 @@ class TestFrontend(unittest.TestCase):
             '/alleles/<id>',
             '/variants/<id>',
             '/variantsets/<id>/sequences/<id>',
-            '/variantsets/<id>',
             '/feature/<id>',
             '/sequences/<id>/bases',
             '/mode/<id>',
