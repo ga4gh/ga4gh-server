@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 
 import time
 import argparse
-import sys
 import logging
 import unittest
 import unittest.loader
@@ -160,47 +159,39 @@ def ga2vcf_main(parser=None):
     # parse args
     if parser is None:
         parser = argparse.ArgumentParser(
-            description="GA4GH VCF conversion tool")
+            description=(
+                "GA4GH VCF conversion tool. Converts variant information "
+                "stored in a GA4GH repository into VCF format."))
     addClientGlobalOptions(parser)
     addOutputFileArgument(parser)
-    subparsers = parser.add_subparsers(title='subcommands',)
-    variantsSearchParser = addVariantsSearchParser(subparsers)
-    # TODO kinda ugly that we need to overload the parser with arguments
-    # to populate the searchVariantSetsRequest;
-    # this is a temporary workaround until we have getVariantSet
-    # in the protocol;
-    # also note both requests have a pageSize attribute
-    addDatasetIdsArgument(variantsSearchParser)
+    addBinaryOutputArgument(parser)
+    addUrlArgument(parser)
+    parser.add_argument("variantSetId", help="The variant set to convert")
+    addReferenceNameArgument(parser)
+    addVariantNameArgument(parser)
+    addCallSetIdsArgument(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+    addPageSizeArgument(parser)
     args = parser.parse_args()
-    if "runner" not in args:
+    if "baseUrl" not in args:
         parser.print_help()
     else:
         ga2vcf_run(args)
 
 
 def ga2vcf_run(args):
-    # instantiate params
-    searchVariantsRequest = RequestFactory(
-        args).createSearchVariantsRequest()
-    searchVariantSetsRequest = RequestFactory(
-        args).createSearchVariantSetsRequest()
-    if args.outputFile is None:
-        outputStream = sys.stdout
-    else:
-        outputStream = open(args.outputFile, 'w')
+    # The factory expects a variantSetIds value rather than a single variant
+    # set, so we add this in by hand.
+    args.variantSetIds = args.variantSetId
+    searchVariantsRequest = RequestFactory(args).createSearchVariantsRequest()
     workarounds = getWorkarounds(args)
     httpClient = client.HttpClient(
         args.baseUrl, args.verbose, workarounds, args.key)
-
     # do conversion
     vcfConverter = converters.VcfConverter(
-        httpClient, outputStream,
-        searchVariantSetsRequest, searchVariantsRequest)
+        httpClient, searchVariantsRequest, args.outputFile, args.binaryOutput)
     vcfConverter.convert()
-
-    # cleanup
-    if args.outputFile is not None:
-        outputStream.close()
 
 
 ##############################################################################
@@ -581,18 +572,9 @@ def addVariantSearchOptions(parser):
     Adds common options to a variant searches command line parser.
     """
     addVariantSetIdsArgument(parser)
-    parser.add_argument(
-        "--referenceName", "-r", default="1",
-        help="Only return variants on this reference.")
-    parser.add_argument(
-        "--variantName", "-n", default=None,
-        help="Only return variants which have exactly this name.")
-    parser.add_argument(
-        "--callSetIds", "-c", default=[],
-        help="""Return variant calls which belong to call sets
-            with these IDs. Pass in IDs as a comma separated list (no spaces).
-            Omit this option to indicate 'all call sets'.
-            """)
+    addReferenceNameArgument(parser)
+    addVariantNameArgument(parser)
+    addCallSetIdsArgument(parser)
     addStartArgument(parser)
     addEndArgument(parser)
     addPageSizeArgument(parser)
@@ -606,6 +588,27 @@ def addVariantSetIdsArgument(parser):
     parser.add_argument(
         "--variantSetIds", "-V", default=None,
         help="The variant set id(s) to search over")
+
+
+def addReferenceNameArgument(parser):
+    parser.add_argument(
+        "--referenceName", "-r", default="1",
+        help="Only return variants on this reference.")
+
+
+def addVariantNameArgument(parser):
+    parser.add_argument(
+        "--variantName", "-n", default=None,
+        help="Only return variants which have exactly this name.")
+
+
+def addCallSetIdsArgument(parser):
+    parser.add_argument(
+        "--callSetIds", "-c", default=[],
+        help="""Return variant calls which belong to call sets
+            with these IDs. Pass in IDs as a comma separated list (no spaces).
+            Omit this option to indicate 'all call sets'.
+            """)
 
 
 def addStartArgument(parser):
@@ -650,8 +653,11 @@ def addMd5ChecksumsArgument(parser):
 
 def addPageSizeArgument(parser):
     parser.add_argument(
-        "--pageSize", "-m", default=100, type=int,
-        help="The maximum number of results returned in one response.")
+        "--pageSize", "-m", default=None, type=int,
+        help=(
+            "The maximum number of results returned in one page. "
+            "The default is to let the server decide how many "
+            "results to return in a single page."))
 
 
 def addDatasetIdsArgument(parser):

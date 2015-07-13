@@ -17,8 +17,11 @@ class AbstractConverter(object):
     """
     Abstract base class for converter classes
     """
-    def __init__(self, httpClient):
+    def __init__(self, httpClient, apiRequest, outputFile, binaryOutput):
         self._httpClient = httpClient
+        self._apiRequest = apiRequest
+        self._outputFile = outputFile
+        self._binaryOutput = binaryOutput
 
 
 ##############################################################################
@@ -36,13 +39,6 @@ class SamConverter(AbstractConverter):
     """
     Converts a request to a SAM file
     """
-    def __init__(self, httpClient, searchReadsRequest, outputFile,
-                 binaryOutput):
-        super(SamConverter, self).__init__(httpClient)
-        self._searchReadsRequest = searchReadsRequest
-        self._outputFile = outputFile
-        self._binaryOutput = binaryOutput
-
     def convert(self):
         header = self._getHeader()
         targetIds = self._getTargetIds(header)
@@ -57,7 +53,7 @@ class SamConverter(AbstractConverter):
             fileString = self._outputFile
         alignmentFile = pysam.AlignmentFile(
             fileString, flags, header=header)
-        iterator = self._httpClient.searchReads(self._searchReadsRequest)
+        iterator = self._httpClient.searchReads(self._apiRequest)
         for read in iterator:
             alignedSegment = SamLine.toAlignedSegment(read, targetIds)
             alignmentFile.write(alignedSegment)
@@ -213,8 +209,34 @@ class VcfException(Exception):
 
 class VcfConverter(AbstractConverter):
     """
-    Converts a request to a VCF file
+    Converts the Variants represented by a SearchVariantsRequest into
+    VCF format using pysam.
     """
-    def __init__(self, httpClient, outputStream, searchVariantSetsRequest,
-                 searchVariantsRequest):
-        raise NotImplementedError
+    def _writeHeader(self):
+        # We support exactly one variantSet.
+        variantSetId = self._apiRequest.variantSetIds[0]
+        variantSet = self._httpClient.getVariantSet(variantSetId)
+        # TODO convert this into pysam types and write to the output file.
+        # For now, just print out some stuff to demonstrate how to get the
+        # attributes we have.
+        print("ID = ", variantSet.id)
+        print("Dataset ID = ", variantSet.datasetId)
+        print("Metadata = ")
+        for metadata in variantSet.metadata:
+            print("\t", metadata)
+
+    def _writeBody(self):
+        for variant in self._httpClient.searchVariants(self._apiRequest):
+            # TODO convert each variant object into pysam objects and write to
+            # the output file. For now, just print the first variant and break.
+            print(variant)
+            break
+
+    def convert(self):
+        """
+        Run the conversion process.
+        """
+        # TODO allocate the pysam VCF object which can be used for the
+        # conversion process. See the convert method for ga2sam above.
+        self._writeHeader()
+        self._writeBody()

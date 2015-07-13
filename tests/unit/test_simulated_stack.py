@@ -58,9 +58,20 @@ class TestSimulatedStack(unittest.TestCase):
             self.backend.getDataset(self.datasetId).getVariantSets()]
 
     def sendJsonPostRequest(self, path, data):
+        """
+        Sends a JSON request to the specified path with the specified data
+        and returns the response.
+        """
         return self.app.post(
             path, headers={'Content-type': 'application/json'},
             data=data)
+
+    def sendObjectGetRequest(self, path, id_):
+        """
+        Sends a GET request to the specified path for an object with the
+        specified ID and returns the response.
+        """
+        return self.app.get("{}/{}".format(path, id_))
 
     def testVariantSetsSearch(self):
         expectedIds = self.variantSetIds
@@ -82,6 +93,17 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(len(expectedIds), len(responseData.variantSets))
         for variantSet in responseData.variantSets:
             self.assertTrue(variantSet.id in expectedIds)
+
+    def testGetVariantSet(self):
+        path = utils.applyVersion("/variantsets")
+        for variantSetId in self.variantSetIds:
+            response = self.sendObjectGetRequest(path, variantSetId)
+            self.assertEqual(200, response.status_code)
+            responseObject = protocol.VariantSet.fromJsonString(response.data)
+            self.assertEqual(responseObject.id, variantSetId)
+        for badId in ["", "terribly bad ID value", "x" * 1000]:
+            response = self.sendObjectGetRequest(path, badId)
+            self.assertEqual(404, response.status_code)
 
     def testVariantsSearch(self):
         expectedIds = self.variantSetIds[:1]
