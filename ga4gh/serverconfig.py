@@ -29,6 +29,8 @@ class BaseConfig(object):
     SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET = 1
     SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP = 2
 
+    FILE_HANDLE_CACHE_MAX_SIZE = 50
+
 
 class DevelopmentConfig(BaseConfig):
     """

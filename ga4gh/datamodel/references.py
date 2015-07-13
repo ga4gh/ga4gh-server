@@ -175,14 +175,17 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
     def __init__(self, id_, dataFile):
         super(HtslibReference, self).__init__(id_)
         self._fastaFilePath = dataFile
-        self._fastaFile = pysam.FastaFile(dataFile)
-        numReferences = len(self._fastaFile.references)
+        fastaFile = self.openFile(dataFile)
+        numReferences = len(fastaFile.references)
         if numReferences != 1:
             raise exceptions.NotExactlyOneReferenceException(
                 self._id, numReferences)
-        self._refName = self._fastaFile.references[0]
-        # refData = self._fastaFile.fetch(self._refName)
+        self._refName = fastaFile.references[0]
+        # refData = fastaFile.fetch(self._refName)
         self._md5checksum = "TODO"  # hashlib.md5(refData).hexdigest()
+
+    def openFile(self, dataFile):
+        return pysam.FastaFile(dataFile)
 
     def getFastaFilePath(self):
         """
@@ -192,11 +195,12 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
 
     def getBases(self, start=None, end=None):
         start, end = self.sanitizeFastaFileFetch(start, end)
-        bases = self._fastaFile.fetch(self._refName, start, end)
+        bases = self.getFileHandle(self.getFastaFilePath()).fetch(
+                      self._refName, start, end)
         return bases
 
     def getLength(self):
-        return self._fastaFile.lengths[0]
+        return self.getFileHandle(self.getFastaFilePath()).lengths[0]
 
     def getName(self):
-        return self._fastaFile.references[0]
+        return self.getFileHandle(self.getFastaFilePath()).references[0]

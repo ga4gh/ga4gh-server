@@ -12,6 +12,7 @@ import json
 import tempfile
 import shutil
 import atexit
+import collections
 
 import ga4gh.exceptions as exceptions
 
@@ -24,6 +25,89 @@ def _cleanupHtslibsMess(indexDir):
     """
     if os.path.exists(indexDir):
         shutil.rmtree(indexDir)
+
+
+class PysamFileHandleCache(object):
+    """
+    Cache for opened file handles. We use a deque which has the
+    advantage to have push/pop operations in O(1) We always add
+    elements on the left of the deque and pop elements from the right.
+    When a file is accessed via getFileHandle, its priority gets
+    updated, it is put at the "top" of the deque.
+    """
+
+    def __init__(self):
+        self._cache = collections.deque()
+        self._memoTable = dict()
+        # Initialize the value even if it will be set up by the config
+        self._maxCacheSize = 50
+
+    def setMaxCacheSize(self, size):
+        """
+        Sets the maximum size of the cache
+        """
+        if size <= 0:
+            raise ValueError(
+                "The size of the cache must be a strictly positive value")
+        self._maxCacheSize = size
+
+    def _add(self, dataFile, handle):
+        """
+        Add a file handle to the left of the deque
+        """
+        self._cache.appendleft((dataFile, handle))
+
+    def _update(self, dataFile, handle):
+        """
+        Update the priority of the file handle. The element is first
+        removed and then added to the left of the deque.
+        """
+        self._cache.remove((dataFile, handle))
+        self._add(dataFile, handle)
+
+    def _removeLru(self):
+        """
+        Remove the least recently used file handle from the cache.
+        The pop method removes an element from the right of the deque.
+        Returns the name of the file that has been removed.
+        """
+        (dataFile, handle) = self._cache.pop()
+        handle.close()
+        return dataFile
+
+    def getCachedFiles(self):
+        """
+        Returns all file names stored in the cache.
+        """
+        return self._memoTable.keys()
+
+    def getFileHandle(self, dataFile, openMethod):
+        """
+        Returns handle associated to the filename. If the file is
+        already opened, update its priority in the cache and return
+        its handle. Otherwise, open the file using openMethod, store
+        it in the cache and return the corresponding handle.
+        """
+        if dataFile in self._memoTable:
+            handle = self._memoTable[dataFile]
+            self._update(dataFile, handle)
+            return handle
+        else:
+            try:
+                handle = openMethod(dataFile)
+            except ValueError:
+                raise exceptions.FileOpenFailedException(dataFile)
+
+            self._memoTable[dataFile] = handle
+            self._add(dataFile, handle)
+            if len(self._memoTable) > self._maxCacheSize:
+                dataFile = self._removeLru()
+                del self._memoTable[dataFile]
+            return handle
+
+
+# LRU cache of open file handles
+fileHandleCache = PysamFileHandleCache()
 
 
 class DatamodelObject(object):
@@ -187,3 +271,6 @@ class PysamDatamodelMixin(object):
             atexit.register(_cleanupHtslibsMess, indexDir)
         if numDataFiles == 0:
             raise exceptions.EmptyDirException(dataDir, patterns)
+
+    def getFileHandle(self, dataFile):
+        return fileHandleCache.getFileHandle(dataFile, self.openFile)

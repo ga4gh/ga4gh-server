@@ -322,8 +322,11 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 raise exceptions.InconsistentCallSetIdException(
                     variantFile.filename)
 
+    def openFile(self, filename):
+        return pysam.VariantFile(filename)
+
     def _addDataFile(self, filename):
-        varFile = pysam.VariantFile(filename)
+        varFile = self.openFile(filename)
         if varFile.index is None:
             raise exceptions.NotIndexedException(filename)
         for chrom in varFile.index:
@@ -337,7 +340,8 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                     raise exceptions.OverlappingVcfException(filename, chrom)
                 self._updateMetadata(varFile)
                 self._updateCallSetIds(varFile)
-                self._chromFileMap[chrom] = varFile
+                self._chromFileMap[chrom] = filename
+        varFile.close()
 
     def _convertGaCall(self, recordId, name, pysamCall, genotypeData):
         callSet = self.getCallSet(name)
@@ -346,7 +350,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         call.callSetName = callSet.getSampleName()
         call.sampleId = callSet.getSampleName()
         # TODO:
-        # NOTE: THE FOLLOWING TWO LINES IS NOT THE INTENED IMPLEMENTATION,
+        # NOTE: THE FOLLOWING TWO LINES IS NOT THE INTENDED IMPLEMENTATION,
         ###########################################
         call.phaseset = None
         call.genotype, call.phaseset = convertVCFGenotype(
@@ -437,11 +441,11 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         if len(callSetIds) == 0:
             callSetIds = self._callSetIds
         if referenceName in self._chromFileMap:
-            varFile = self._chromFileMap[referenceName]
+            varFileName = self._chromFileMap[referenceName]
             referenceName, startPosition, endPosition = \
                 self.sanitizeVariantFileFetch(
                     referenceName, startPosition, endPosition)
-            cursor = varFile.fetch(
+            cursor = self.getFileHandle(varFileName).fetch(
                 referenceName, startPosition, endPosition)
             for record in cursor:
                 yield self.convertVariant(record, callSetIds)
