@@ -168,6 +168,13 @@ class ReadGroupNotFoundException(ObjectNotFoundException):
         self.message = "readGroupId '{}' not found".format(readGroupId)
 
 
+class ReferenceNameNotFoundException(ObjectNotFoundException):
+    def __init__(self, referenceName, readGroupId):
+        self.message = (
+            "referenceName '{}' not found "
+            "in readGroupId '{}'".format(referenceName, readGroupId))
+
+
 class UnsupportedMediaTypeException(RuntimeException):
     httpStatus = 415
     message = "Unsupported media type"
