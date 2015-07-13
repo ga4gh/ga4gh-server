@@ -1,0 +1,7 @@
+INSTALLATION INSTRUCTIONS
+--------------------------
+
+Here are the packages needed to install the oidc provider
+
+Ubuntu:
+- sudo apt-get install libffi-dev libxml2-dev
