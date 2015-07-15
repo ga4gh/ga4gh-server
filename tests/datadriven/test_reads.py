@@ -64,6 +64,13 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     def getProtocolClass(self):
         return protocol.GAReadGroupSet
 
+    def testBadReferenceName(self):
+        # test that querying by a bad referenceName throws an error
+        readGroupSet = self._gaObject
+        readGroup = readGroupSet.getReadGroups()[0]
+        with self.assertRaises(exceptions.ReferenceNameNotFoundException):
+            list(readGroup.getReadAlignments("doesNotExist"))
+
     def testGetReadAlignmentsBothRefs(self):
         # test that querying by both referenceName and referenceId fails
         with self.assertRaises(exceptions.BadReadsSearchRequestBothRefs):

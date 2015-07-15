@@ -235,7 +235,11 @@ class HtslibReadGroup(datamodel.PysamSanitizer, AbstractReadGroup):
             referenceName = self._samFile.getrname(referenceId)
         referenceName, start, end = self.sanitizeAlignmentFileFetch(
             referenceName, start, end)
-        # TODO deal with errors from htslib
+        if referenceName is not None:
+            if self._samFile.gettid(referenceName) == -1:
+                raise exceptions.ReferenceNameNotFoundException(
+                    referenceName, self.getId())
+        # TODO deal with other errors from htslib
         readAlignments = self._samFile.fetch(referenceName, start, end)
         for readAlignment in readAlignments:
             yield self.convertReadAlignment(readAlignment)
