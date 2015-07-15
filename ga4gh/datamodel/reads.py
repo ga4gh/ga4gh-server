@@ -251,7 +251,10 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.ReadAlignment()
-        ret.alignedQuality = list(read.query_qualities)
+        if read.query_qualities is None:
+            ret.alignedQuality = []
+        else:
+            ret.alignedQuality = list(read.query_qualities)
         ret.alignedSequence = read.query_sequence
         ret.alignment = protocol.LinearAlignment()
         ret.alignment.mappingQuality = read.mapping_quality
