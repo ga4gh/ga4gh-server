@@ -538,6 +538,8 @@ class AbstractBackend(object):
         Returns a generator over the (read, nextPageToken) pairs defined
         by the specified request
         """
+        if request.referenceId is None:
+            raise exceptions.UnmappedReadsNotSupported()
         dataset = self._getDatasetFromReadsRequest(request)
         intervalIterator = ReadsIntervalIterator(
             request, dataset.getReadGroupIdMap())

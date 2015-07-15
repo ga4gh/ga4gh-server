@@ -69,8 +69,7 @@ class TestGa2SamArguments(unittest.TestCase):
         cliInput = """--workarounds WORK,AROUND --key KEY -O
         --pageSize 1 --start 2 --end 3 --outputFile OUT.SAM
         --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
-        --referenceName REFERENCENAME --binaryOutput
-        BASEURL"""
+        --binaryOutput BASEURL"""
         stubConverterModule = StubConverterModuleSam(self)
         with mock.patch(
                 'ga4gh.converters.SamConverter',
@@ -139,8 +138,7 @@ class TestClientArguments(unittest.TestCase):
 
     def testReadsSearchArguments(self):
         self.cliInput = """reads-search --pageSize 1 --start 2 --end 3
-        --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
-        --referenceName REFERENCENAME"""
+        --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID"""
 
     def testDatasetsSearchArguments(self):
         self.cliInput = """datasets-search"""

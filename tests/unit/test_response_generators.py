@@ -121,6 +121,7 @@ class TestReadsGenerator(unittest.TestCase):
     """
     def setUp(self):
         self.request = protocol.SearchReadsRequest()
+        self.request.referenceId = "chr1"
         self.backend = backend.SimulatedBackend()
         self.datasetId = self.backend.getDatasetIds()[0]
         self.readGroupId = "{}:readGroupId".format(self.datasetId)

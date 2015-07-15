@@ -33,8 +33,8 @@ class TestRemoteFetchReads(RemoteServerTestReads):
             'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample')
         self.runClientCmd(
             self.client,
-            "reads-search --readGroupIds '{}'".format(
-                self.readGroupIds))
+            "reads-search --readGroupIds '{}' "
+            "--referenceId chr1 ".format(self.readGroupIds))
         self._assertLogsWritten()
         self.client.cleanup()
 

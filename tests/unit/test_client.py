@@ -1,7 +1,6 @@
 """
 Tests for the client
 """
-
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -167,12 +166,24 @@ class TestRunRequest(unittest.TestCase):
             self.assertEqual(result[1].id, "refB")
 
             # verify requests.post called correctly
-            url = "http://example.com/referencesets/search"
-            jsonString = protocolRequest.toJsonString()
-            headers = {"Content-type": "application/json"}
             httpMethod = 'POST'
-            mockPost.assert_called_twice_with(
-                httpMethod, url, jsonString, headers=headers, verify=False)
+            url = "http://example.com/referencesets/search"
+            data = protocolRequest.toJsonString()
+            headers = {"Content-type": "application/json"}
+            params = {u'key': u'KEY'}
+            self.assertEqual(len(mockPost.call_args_list), 2)
+
+            # assert first call correct
+            firstCall = mockPost.call_args_list[0]
+            self.assertRequestsCall(
+                firstCall, httpMethod, url, headers, data, params, False)
+
+            # assert second call correct
+            protocolRequest.pageToken = "xyz"
+            data = protocolRequest.toJsonString()
+            secondCall = mockPost.call_args_list[1]
+            self.assertRequestsCall(
+                secondCall, httpMethod, url, headers, data, params, False)
 
     def testRunGetRequest(self):
         # setup
@@ -233,7 +244,30 @@ class TestRunRequest(unittest.TestCase):
             self.assertEqual(result[0].sequence, "sequence")
 
             # verify requests.get called correctly
-            url = "http://example.com/references/myId/bases"
-            params = {"start": 1, "end": 5}
             httpMethod = 'GET'
-            mockGet.assert_called_twice_with(httpMethod, url, params=params)
+            url = "http://example.com/references/myId/bases"
+            params = {
+                'start': 1, 'end': 5, 'key': 'KEY', 'pageToken': None}
+            headers = {}
+            data = None
+            self.assertEqual(len(mockGet.call_args_list), 2)
+
+            # assert first call correct
+            firstCall = mockGet.call_args_list[0]
+            self.assertRequestsCall(
+                firstCall, httpMethod, url, headers, data, params, False)
+
+            # assert second call correct
+            params['pageToken'] = 'pageTok'
+            secondCall = mockGet.call_args_list[1]
+            self.assertRequestsCall(
+                secondCall, httpMethod, url, headers, data, params, False)
+
+    def assertRequestsCall(
+            self, call, httpMethod, url,
+            headers, data, params, verify):
+        self.assertEqual(call[0], (httpMethod, url))
+        self.assertEqual(call[1]['headers'], headers)
+        self.assertEqual(call[1]['data'], data)
+        self.assertEqual(call[1]['params'], params)
+        self.assertEqual(call[1]['verify'], False)

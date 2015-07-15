@@ -1,0 +1,5 @@
+This BAM has two qualities:
+- 14 mapped reads plus 1 unmapped read at the end
+- has no query_qualities for some reads
+
+See issues #498 and #492
