@@ -1,9 +1,13 @@
 import re
-from ez_setup import use_setuptools
-from setuptools import setup
 
-MIN_SETUPTOOLS_VERSION = "0.7"
-use_setuptools(version=MIN_SETUPTOOLS_VERSION)
+# First, we try to use setuptools. If it's not available locally,
+# we fall back on ez_setup.
+try:
+    from setuptools import setup
+except ImportError:
+    from ez_setup import use_setuptools
+    use_setuptools()
+    from setuptools import setup
 
 
 # Following the recommendations of PEP 396 we parse the version number
