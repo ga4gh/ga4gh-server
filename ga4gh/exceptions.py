@@ -197,6 +197,14 @@ class ReadGroupNotFoundException(ObjectNotFoundException):
         self.message = "readGroupId '{}' not found".format(readGroupId)
 
 
+class ReferenceNotFoundException(ObjectNotFoundException):
+    def __init__(self, readGroupId, referenceId, validRefs):
+        self.message = (
+            "reference '{}' does not exist "
+            "in read group '{}'; valid references are: {}".format(
+                referenceId, readGroupId, validRefs))
+
+
 class ObjectWithIdNotFoundException(ObjectNotFoundException):
     def __init__(self, objectId):
         self.message = "No object of this type exists with id '{}'".format(
@@ -234,6 +242,13 @@ class NotImplementedException(RuntimeException):
             self.message = "Path not implemented"
         else:
             self.message = message
+
+
+class UnmappedReadsNotSupported(NotImplementedException):
+    def __init__(self):
+        self.message = (
+            "Unmapped reads are not yet supported; "
+            "please specify a reference")
 
 
 class CallSetNotInVariantSetException(NotFoundException):

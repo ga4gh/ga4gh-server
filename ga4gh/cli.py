@@ -123,7 +123,6 @@ class RequestFactory(object):
         request.start = self.args.start
         request.end = self.args.end
         request.referenceId = self.args.referenceId
-        request.referenceName = self.args.referenceName
         return request
 
     def createSearchDatasetsRequest(self):
@@ -812,9 +811,6 @@ def addReadsSearchParserArguments(parser):
     parser.add_argument(
         "--referenceId", default=None,
         help="The referenceId to search over")
-    parser.add_argument(
-        "--referenceName", default=None,
-        help="The referenceName to search over")
 
 
 def addReferenceSetsGetParser(subparsers):

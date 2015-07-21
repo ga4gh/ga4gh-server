@@ -77,7 +77,8 @@ class TestGestalt(server_test.ServerTest):
     def runReadsRequest(self):
         cmd = (
             "reads-search --readGroupIds "
-            "'simulatedDataset1:aReadGroupSet:one'")
+            "'simulatedDataset1:aReadGroupSet:one' "
+            "--referenceId chr1")
         self.runClientCmd(self.client, cmd)
 
     def runReferencesRequest(self):

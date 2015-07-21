@@ -271,6 +271,7 @@ class TestSimulatedStack(unittest.TestCase):
         request = protocol.SearchReadsRequest()
         readGroupId = readGroupSets[0].readGroups[0].id
         request.readGroupIds = [readGroupId]
+        request.referenceId = "chr1"
         response = self.sendJsonPostRequest(path, request.toJsonString())
         self.assertEqual(response.status_code, 200)
         responseData = protocol.SearchReadsResponse.fromJsonString(

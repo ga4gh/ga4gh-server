@@ -39,8 +39,10 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self.reads = []
             self.refIds = collections.defaultdict(list)
             for read in self.samFile:
-                refId = read.reference_id
-                self.refIds[refId].append(read)
+                if read.reference_id != -1:
+                    # mapped read
+                    refId = self.samFile.getrname(read.reference_id)
+                    self.refIds[refId].append(read)
                 self.reads.append(read)
 
     def __init__(self, readGroupSetId, baseDir):
@@ -144,9 +146,12 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
 
     def assertAlignmentsEqual(self, gaAlignment, pysamAlignment,
                               readGroupInfo):
-        self.assertEqual(
-            gaAlignment.alignedQuality,
-            list(pysamAlignment.query_qualities))
+        if pysamAlignment.query_qualities is None:
+            self.assertEqual(gaAlignment.alignedQuality, [])
+        else:
+            self.assertEqual(
+                gaAlignment.alignedQuality,
+                list(pysamAlignment.query_qualities))
         self.assertEqual(
             gaAlignment.alignedSequence,
             pysamAlignment.query_sequence)

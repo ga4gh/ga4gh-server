@@ -13,6 +13,7 @@ import pysam
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
+import ga4gh.exceptions as exceptions
 
 
 class SamCigar(object):
@@ -232,15 +233,15 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         """
         # TODO If referenceId is None, return against all references,
         # including unmapped reads.
-        referenceName = ""
         samFile = self.getFileHandle(self._samFilePath)
-        if referenceId is not None:
-            self.sanitizeGetRName(referenceId)
-            referenceName = samFile.getrname(referenceId)
-        referenceName, start, end = self.sanitizeAlignmentFileFetch(
-            referenceName, start, end)
+        referenceId, start, end = self.sanitizeAlignmentFileFetch(
+            referenceId, start, end)
+        if (referenceId is not None and
+                referenceId not in samFile.references):
+            raise exceptions.ReferenceNotFoundException(
+                self.getId(), referenceId, samFile.references)
         # TODO deal with errors from htslib
-        readAlignments = samFile.fetch(referenceName, start, end)
+        readAlignments = samFile.fetch(referenceId, start, end)
         for readAlignment in readAlignments:
             yield self.convertReadAlignment(readAlignment)
 
@@ -251,7 +252,10 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.ReadAlignment()
-        ret.alignedQuality = list(read.query_qualities)
+        if read.query_qualities is None:
+            ret.alignedQuality = []
+        else:
+            ret.alignedQuality = list(read.query_qualities)
         ret.alignedSequence = read.query_sequence
         ret.alignment = protocol.LinearAlignment()
         ret.alignment.mappingQuality = read.mapping_quality
