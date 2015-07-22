@@ -14,6 +14,8 @@ import unittest
 import unittest.loader
 import unittest.suite
 
+import requests
+
 import ga4gh.client as client
 import ga4gh.protocol as protocol
 import ga4gh.converters as converters
@@ -236,7 +238,7 @@ def addBinaryOutputArgument(parser):
 ##############################################################################
 
 
-def addGlobalOptions(parser):
+def addServerOptions(parser):
     parser.add_argument(
         "--port", "-P", default=8000, type=int,
         help="The port to listen on")
@@ -252,15 +254,21 @@ def addGlobalOptions(parser):
     parser.add_argument(
         "--dont-use-reloader", default=False, action="store_true",
         help="Don't use the flask reloader")
+    parser.add_argument(
+        "--disable-urllib-warnings", default=False, action="store_true",
+        help="Disable urllib3 warnings")
 
 
 def server_main(parser=None):
     if parser is None:
         parser = argparse.ArgumentParser(
             description="GA4GH reference server")
-    addGlobalOptions(parser)
+    addServerOptions(parser)
     args = parser.parse_args()
-    frontend.configure(args.config_file, args.config, args.port)
+    if args.disable_urllib_warnings:
+        requests.packages.urllib3.disable_warnings()
+    frontend.configure(
+        args.config_file, args.config, args.port)
     sslContext = None
     if args.tls or ("OIDC_PROVIDER" in frontend.app.config):
         sslContext = "adhoc"
