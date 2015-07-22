@@ -29,7 +29,7 @@ class TestFrontend(unittest.TestCase):
             "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
             # "DEBUG" : True
         }
-        reload(frontend)
+        frontend.reset()
         frontend.configure(
             baseConfig="TestConfig", extraConfig=config)
         cls.app = frontend.app.test_client()

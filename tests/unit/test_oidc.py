@@ -109,7 +109,7 @@ class TestFrontendOidc(unittest.TestCase):
             "OIDC_PROVIDER": "http://auth.com"
             # "DEBUG" : True
         }
-        reload(frontend)
+        frontend.reset()
         frontend.configure(
             baseConfig="TestOidcConfig", extraConfig=config, port=8001)
         cls.app = frontend.app.test_client()

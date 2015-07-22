@@ -188,6 +188,15 @@ class ServerStatus(object):
         return app.backend.getReferenceSets()
 
 
+def reset():
+    """
+    Resets the flask app; used in testing
+    """
+    app.config.clear()
+    configStr = 'ga4gh.serverconfig:FlaskDefaultConfig'
+    app.config.from_object(configStr)
+
+
 def configure(configFile=None, baseConfig="ProductionConfig",
               port=8000, extraConfig={}):
     """
