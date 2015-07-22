@@ -23,7 +23,7 @@ libraries. On Debian or Ubuntu, we can install these using
 
 .. code-block:: bash
 
-    $ sudo apt-get install python-dev zlib1g-dev git
+    $ sudo apt-get install python-dev zlib1g-dev git libxslt1-dev
 
 .. note::
     TODO: Document this basic step for other platforms? We definitely want
@@ -319,7 +319,7 @@ To generate a new ``_protocol_definitions.py`` file, use
 
    $ python scripts/process_schemas.py -i path/to/schemas desiredVersion
 
-Where ``desiredVersion`` is the version that will be written to the 
+Where ``desiredVersion`` is the version that will be written to the
 ``_protocol_definitions.py`` file.  This version must be in the form
 ``major.minor.revision`` where major, minor and revision can be any
 alphanumeric string.
