@@ -46,16 +46,21 @@ def getClientKey(server_url, username, password):
     return tokenTag.text_content()[len(tokenMarker):]
 
 
-class TestOidc(server_test.ServerTest):
+class TestOidc(server_test.ServerTestClass):
+    """
+    Tests the oidc flow
+    """
+    @classmethod
+    def otherSetup(cls):
+        cls.opServer = server.OidcOpServerForTesting()
+        cls.opServer.start()
 
-    def otherSetup(self):
-        self.opServer = server.OidcOpServerForTesting()
-        self.opServer.start()
+    @classmethod
+    def otherTeardown(cls):
+        cls.opServer.shutdown()
 
-    def otherTeardown(self):
-        self.opServer.shutdown()
-
-    def getServer(self):
+    @classmethod
+    def getServer(cls):
         return server.Ga4ghServerForTesting(useOidc=True)
 
     def testOidc(self):
