@@ -614,11 +614,10 @@ def getReadGroup(version, id):
     raise exceptions.NotImplementedException()
 
 
-@app.route(
-    '/<version>/genotypephenotype/search',
-    methods=SEARCH_ENDPOINT_METHODS)
-def searchGenotypePephenotype(version):
-    raise exceptions.NotImplementedException()
+@DisplayedRoute('/<version>/genotypephenotype/search', postMethod=True)
+def searchGenotypePhenotype(version):
+    return handleFlaskPostRequest(
+        version, flask.request, app.backend.searchGenotypePhenotype)
 
 
 @app.route('/<version>/individuals/search', methods=SEARCH_ENDPOINT_METHODS)

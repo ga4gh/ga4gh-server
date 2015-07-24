@@ -303,7 +303,6 @@ class TestFrontend(unittest.TestCase):
 
     def testNotImplementedPaths(self):
         pathsNotImplementedPost = [
-            '/genotypephenotype/search',
             '/individuals/search',
             '/samples/search',
             '/experiments/search',
@@ -346,3 +345,11 @@ class TestFrontend(unittest.TestCase):
         path = '/oauth2callback'.format(
             frontend.Version.currentString)
         self.assertEqual(501, self.app.get(path).status_code)
+
+    def testGenotypePhenotypeSearch(self):
+        request = protocol.SearchFeaturesRequest()
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.SearchVariantsResponse.fromJsonString(
+            response.data)
+        print("response:", responseData)
