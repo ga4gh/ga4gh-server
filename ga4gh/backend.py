@@ -629,6 +629,13 @@ class AbstractBackend(object):
         """
         self._maxResponseLength = maxResponseLength
 
+    def searchGenotypePhenotype(self, id_):
+        """
+        Returns a GenotypePhenotype with the given id.
+        """
+        # TODO - implement a lookup
+        return "{}"
+
 
 class EmptyBackend(AbstractBackend):
     """
