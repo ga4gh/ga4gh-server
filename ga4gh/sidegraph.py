@@ -327,7 +327,7 @@ class SideGraph(object):
             sqLength = int(sq["length"])
             segStart = segEnd = pos
             if fwd:
-                segEnd = min(sqLength, pos + rad)
+                segEnd = min(sqLength-1, pos + rad)
             else:
                 segStart = max(sqStart, pos - rad)
 
@@ -360,7 +360,7 @@ class SideGraph(object):
             segments.append(dict(
                 sequenceID=seqId,
                 start=unionStart,
-                length=unionEnd - unionStart,
+                length=unionEnd - unionStart+1,
                 strandIsForward=SIDEGRAPH_TRUE))
             # With segments adjusted, now explore joins...
             foundJoins = self.getJoins(seqId, segStart, segEnd)
