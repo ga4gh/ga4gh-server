@@ -68,7 +68,7 @@ class TestOidc(server_test.ServerTestClass):
         key = getClientKey(serverUrl, 'diana', 'krall')
         test_client = client.ClientForTesting(
             serverUrl, flags="--key {}".format(key))
-        self.runVariantSetRequest(test_client)
+        self.runVariantsRequest(test_client)
         test_client.cleanup()
 
     def testOidcBadLoginPassword(self):
@@ -80,8 +80,8 @@ class TestOidc(server_test.ServerTestClass):
         serverUrl = self.server.getUrl()
         test_client = client.ClientForTesting(
             serverUrl, flags="--key {}".format('ABC'))
-        self.assertRaises(subprocess.CalledProcessError,
-                          self.runVariantSetRequest, test_client)
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.runVariantsRequest(test_client)
         test_client.cleanup()
 
     def testMultipleOidcClients(self):
@@ -92,10 +92,12 @@ class TestOidc(server_test.ServerTestClass):
             serverUrl, flags="--key {}".format(key))
         client2 = client.ClientForTesting(
             serverUrl, flags="--key {}".format(key2))
-        self.runVariantSetRequest(client1)
-        self.runVariantSetRequest(client2)
+        self.runVariantsRequest(client1)
+        self.runVariantsRequest(client2)
         client1.cleanup()
         client2.cleanup()
 
-    def runVariantSetRequest(self, command):
-        self.runClientCmd(command, "variants-search -s0 -e2")
+    def runVariantsRequest(self, client):
+        self.runClientCmd(
+            client,
+            "variants-search -s 0 -e 2 -V simulatedDataset1:simVs0")

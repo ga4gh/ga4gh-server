@@ -119,9 +119,8 @@ class TestExceptionConsistency(unittest.TestCase):
         jsonDict = obj.toJsonDict()
         instance = exceptions.RequestValidationFailureException(
             jsonDict, objClass)
-        self.assertIn(
-            "invalid fields: {u'start': u'thisIsWrong'}",
-            instance.message)
+        self.assertIn("invalid fields:", instance.message)
+        self.assertIn("u'start': u'thisIsWrong'", instance.message)
         self.assertEqual(instance.message.count(wrongString), 2)
 
         # ResponseValidationFailureException

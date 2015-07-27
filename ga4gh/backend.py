@@ -38,14 +38,7 @@ def _parsePageToken(pageToken, numValues):
 
 
 def _getVariantSet(request, variantSetIdMap):
-    if len(request.variantSetIds) != 1:
-        if len(request.variantSetIds) == 0:
-            msg = "Variant search requires specifying a variantSet"
-        else:
-            msg = ("Variant search over multiple variantSets "
-                   "not supported")
-        raise exceptions.NotImplementedException(msg)
-    variantSetId = request.variantSetIds[0]
+    variantSetId = request.variantSetId
     try:
         variantSet = variantSetIdMap[variantSetId]
     except KeyError:
@@ -231,11 +224,7 @@ class AbstractBackend(object):
         return dataset
 
     def _getDatasetFromVariantsRequest(self, request):
-        variantSetIds = request.variantSetIds
-        if len(variantSetIds) != 1:
-            raise exceptions.NotImplementedException(
-                "Exactly one variant set id must be specified")
-        compoundId = request.variantSetIds[0]
+        compoundId = request.variantSetId
         dataset = self._getDatasetFromCompoundId(compoundId)
         return dataset
 
@@ -246,13 +235,7 @@ class AbstractBackend(object):
         return dataset
 
     def _getDatasetFromRequest(self, request):
-        # we shouldn't call this method on any request object that
-        # doesn't have a datasetIds attribute
-        assert hasattr(request, "datasetIds")
-        if len(request.datasetIds) != 1:
-            raise exceptions.NotExactlyOneDatasetException(
-                request.datasetIds)
-        datasetId = request.datasetIds[0]
+        datasetId = request.datasetId
         dataset = self.getDataset(datasetId)
         return dataset
 

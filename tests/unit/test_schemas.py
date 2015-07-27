@@ -223,15 +223,12 @@ class ValidatorTest(SchemaTest):
             jsonDict = instance.toJsonDict()
             self.assertTrue(cls.validate(jsonDict))
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testValidateDefaultValues(self):
         self.validateClasses(self.getDefaultInstance)
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testValidateTypicalValues(self):
         self.validateClasses(self.getTypicalInstance)
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testValidateRandomValues(self):
         self.validateClasses(self.getRandomInstance)
 

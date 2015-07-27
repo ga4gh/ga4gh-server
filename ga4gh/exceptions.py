@@ -152,13 +152,6 @@ class DatamodelValidationException(BadRequestException):
     """
 
 
-class NotExactlyOneDatasetException(BadRequestException):
-    def __init__(self, requestedDatasetIds):
-        msg = "Not exactly one dataset requested: {}".format(
-            requestedDatasetIds)
-        super(NotExactlyOneDatasetException, self).__init__(msg)
-
-
 class NotFoundException(RuntimeException):
     """
     The superclass of all exceptions in which some resource was not

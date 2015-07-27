@@ -77,7 +77,7 @@ class TestSimulatedStack(unittest.TestCase):
         expectedIds = self.variantSetIds
         request = protocol.SearchVariantSetsRequest()
         request.pageSize = len(expectedIds)
-        request.datasetIds = [self.datasetId]
+        request.datasetId = self.datasetId
         path = utils.applyVersion('/variantsets/search')
         response = self.sendJsonPostRequest(
             path, request.toJsonString())
@@ -106,14 +106,14 @@ class TestSimulatedStack(unittest.TestCase):
             self.assertEqual(404, response.status_code)
 
     def testVariantsSearch(self):
-        expectedIds = self.variantSetIds[:1]
+        expectedId = self.variantSetIds[0]
         referenceName = '1'
 
         request = protocol.SearchVariantsRequest()
         request.referenceName = referenceName
         request.start = 0
         request.end = 0
-        request.variantSetIds = expectedIds
+        request.variantSetId = expectedId
 
         # Request windows is too small, no results
         path = utils.applyVersion('/variants/search')
@@ -141,7 +141,7 @@ class TestSimulatedStack(unittest.TestCase):
         for variant in responseData.variants:
             self.assertGreaterEqual(variant.start, 0)
             self.assertLessEqual(variant.end, 2 ** 16)
-            self.assertTrue(variant.variantSetId in expectedIds)
+            self.assertEqual(variant.variantSetId, expectedId)
             self.assertEqual(variant.referenceName, referenceName)
 
         # TODO: Add more useful test scenarios, including some covering
@@ -258,7 +258,7 @@ class TestSimulatedStack(unittest.TestCase):
         # search read group sets
         path = utils.applyVersion('/readgroupsets/search')
         request = protocol.SearchReadGroupSetsRequest()
-        request.datasetIds = ['simulatedDataset1']
+        request.datasetId = 'simulatedDataset1'
         response = self.sendJsonPostRequest(path, request.toJsonString())
         self.assertEqual(response.status_code, 200)
         responseData = protocol.SearchReadGroupSetsResponse.fromJsonString(

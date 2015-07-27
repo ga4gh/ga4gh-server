@@ -61,7 +61,9 @@ class TestRemoteFetchVariants(RemoteServerTestVariants):
     """
     def testVcfFetch(self):
         self.client = client.ClientForTesting(self.server.getUrl())
-        self.runClientCmd(self.client, "variants-search")
+        self.runClientCmd(
+            self.client,
+            "variants-search -V dataset1:remoteTest")
         self._assertLogsWritten()
         self.client.cleanup()
 

@@ -66,7 +66,7 @@ class RequestFactory(object):
 
     def createSearchVariantSetsRequest(self):
         request = protocol.SearchVariantSetsRequest()
-        setCommaSeparatedAttribute(request, self.args, 'datasetIds')
+        request.datasetId = self.args.datasetId
         request.pageSize = self.args.pageSize
         request.pageToken = None
         return request
@@ -87,7 +87,7 @@ class RequestFactory(object):
             request.callSetIds = []
         else:
             request.callSetIds = self.args.callSetIds.split(",")
-        setCommaSeparatedAttribute(request, self.args, 'variantSetIds')
+        request.variantSetId = self.args.variantSetId
         return request
 
     def createSearchReferenceSetsRequest(self):
@@ -104,13 +104,13 @@ class RequestFactory(object):
 
     def createSearchReadGroupSetsRequest(self):
         request = protocol.SearchReadGroupSetsRequest()
-        setCommaSeparatedAttribute(request, self.args, 'datasetIds')
+        request.datasetId = self.args.datasetId
         request.name = self.args.name
         return request
 
     def createSearchCallSetsRequest(self):
         request = protocol.SearchCallSetsRequest()
-        setCommaSeparatedAttribute(request, self.args, 'variantSetIds')
+        request.variantSetId = self.args.variantSetId
         request.name = self.args.name
         return request
 
@@ -180,9 +180,6 @@ def ga2vcf_main(parser=None):
 
 
 def ga2vcf_run(args):
-    # The factory expects a variantSetIds value rather than a single variant
-    # set, so we add this in by hand.
-    args.variantSetIds = args.variantSetId
     searchVariantsRequest = RequestFactory(args).createSearchVariantsRequest()
     workarounds = getWorkarounds(args)
     httpClient = client.HttpClient(
@@ -356,41 +353,15 @@ class SearchVariantsRunner(AbstractSearchRunner):
     def __init__(self, args):
         super(SearchVariantsRunner, self).__init__(args)
         request = RequestFactory(args).createSearchVariantsRequest()
-        # if no variantSets have been specified, send a request to
-        # the server to grab all variantSets and then continue
-        if args.variantSetIds is None:
-            datasetsRequest = protocol.SearchDatasetsRequest()
-            datasetsResponse = self._httpClient.searchDatasets(
-                datasetsRequest)
-            datasetIds = [dataset.id for dataset in datasetsResponse]
-            variantSetIds = []
-            for datasetId in datasetIds:
-                variantSetsRequest = protocol.SearchVariantSetsRequest()
-                variantSetsRequest.datasetIds = [datasetId]
-                response = self._httpClient.searchVariantSets(
-                    variantSetsRequest)
-                datasetVariantSetIds = [
-                    variantSet.id for variantSet in response]
-                variantSetIds.extend(datasetVariantSetIds)
-            request.variantSetIds = variantSetIds
-        else:
-            setCommaSeparatedAttribute(request, args, 'variantSetIds')
         self._setRequest(request, args)
 
     def run(self):
-        # TODO this is a hack until we make a nicer interface to deal with
-        # multiple requests. The server does not support multiple values
-        # so we send of sequential requests instead.
-        request = self._request
-        variantSetIds = request.variantSetIds
-        for variantSetId in variantSetIds:
-            request.variantSetIds = [variantSetId]
-            if self._minimalOutput:
-                self._run(self._httpClient.searchVariants, 'id')
-            else:
-                results = self._httpClient.searchVariants(self._request)
-                for result in results:
-                    self.printVariant(result)
+        if self._minimalOutput:
+            self._run(self._httpClient.searchVariants, 'id')
+        else:
+            results = self._httpClient.searchVariants(self._request)
+            for result in results:
+                self.printVariant(result)
 
     def printVariant(self, variant):
         """
@@ -570,7 +541,7 @@ def addVariantSearchOptions(parser):
     """
     Adds common options to a variant searches command line parser.
     """
-    addVariantSetIdsArgument(parser)
+    addVariantSetIdArgument(parser)
     addReferenceNameArgument(parser)
     addVariantNameArgument(parser)
     addCallSetIdsArgument(parser)
@@ -583,10 +554,10 @@ def addVariantSearchOptions(parser):
         help="The maxiumum number of calls to return")
 
 
-def addVariantSetIdsArgument(parser):
+def addVariantSetIdArgument(parser):
     parser.add_argument(
-        "--variantSetIds", "-V", default=None,
-        help="The variant set id(s) to search over")
+        "--variantSetId", "-V", default=None,
+        help="The variant set id to search over")
 
 
 def addReferenceNameArgument(parser):
@@ -659,10 +630,10 @@ def addPageSizeArgument(parser):
             "results to return in a single page."))
 
 
-def addDatasetIdsArgument(parser):
+def addDatasetIdArgument(parser):
     parser.add_argument(
-        "--datasetIds", default=None,
-        help="The datasetIds to search over")
+        "--datasetId", default=None,
+        help="The datasetId to search over")
 
 
 def addNameArgument(parser):
@@ -721,7 +692,7 @@ def addVariantSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchVariantSetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addDatasetIdsArgument(parser)
+    addDatasetIdArgument(parser)
     return parser
 
 
@@ -762,7 +733,7 @@ def addReadGroupSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addDatasetIdsArgument(parser)
+    addDatasetIdArgument(parser)
     addNameArgument(parser)
     return parser
 
@@ -776,7 +747,7 @@ def addCallsetsSearchParser(subparsers):
     addUrlArgument(parser)
     addPageSizeArgument(parser)
     addNameArgument(parser)
-    addVariantSetIdsArgument(parser)
+    addVariantSetIdArgument(parser)
     return parser
 
 
