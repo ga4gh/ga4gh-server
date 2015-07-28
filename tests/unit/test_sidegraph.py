@@ -171,7 +171,7 @@ class TestCase(unittest.TestCase):
                 'sequenceID': '2'},
             {'strandIsForward': u'TRUE',
                 'start': 65,
-                'length': 20,
+                'length': 22,
                 'sequenceID': '1'}]
         expectedSegmentsSet = self.setOfDicts(expectedSegmentsArray)
         expectedJoinsArray = [
