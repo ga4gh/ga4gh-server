@@ -43,7 +43,7 @@ class ClientForTesting(object):
     def getErrLines(self):
         return utils.getLinesFromLogFile(self.errFile)
 
-    def runCommand(self, command):
+    def runCommand(self, command, debugOnFail=True):
         clientCmdLine = self.cmdLine.format(**{
             "flags": self.flags,
             "command": command,
@@ -56,7 +56,8 @@ class ClientForTesting(object):
                 stdout=self.outFile,
                 stderr=self.errFile)
         except subprocess.CalledProcessError as error:
-            self.printDebugInfo(command)
+            if debugOnFail:
+                self.printDebugInfo(command)
             raise error
 
     def printDebugInfo(self, command):

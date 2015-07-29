@@ -52,6 +52,7 @@ class TestOidc(server_test.ServerTestClass):
     """
     @classmethod
     def otherSetup(cls):
+        requests.packages.urllib3.disable_warnings()
         cls.opServer = server.OidcOpServerForTesting()
         cls.opServer.start()
 
@@ -73,15 +74,17 @@ class TestOidc(server_test.ServerTestClass):
 
     def testOidcBadLoginPassword(self):
         serverUrl = self.server.getUrl()
-        self.assertRaises(StopIteration,
-                          getClientKey, serverUrl, 'diana', 'krallxxx')
+        with self.assertRaises(StopIteration):
+            getClientKey(serverUrl, 'diana', 'krallxxx')
 
     def testOidcBadLoginKey(self):
         serverUrl = self.server.getUrl()
         test_client = client.ClientForTesting(
             serverUrl, flags="--key {}".format('ABC'))
         with self.assertRaises(subprocess.CalledProcessError):
-            self.runVariantsRequest(test_client)
+            test_client.runCommand(
+                "variants-search -s 0 -e 2 -V simulatedDataset1:simVs0",
+                debugOnFail=False)
         test_client.cleanup()
 
     def testMultipleOidcClients(self):

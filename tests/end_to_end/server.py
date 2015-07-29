@@ -194,6 +194,7 @@ OIDC_PROVIDER = "https://localhost:{0}"
         cmdLine = """
 python server_dev.py
 --dont-use-reloader
+--disable-urllib-warnings
 --config TestConfig
 --config-file {}
 --port {} """.format(configFilePath, self.port)
