@@ -10,6 +10,7 @@ import socket
 import mock
 import urlparse
 import logging
+import mimetypes
 
 import oic
 import oic.oic.message as message
@@ -288,3 +289,15 @@ class TestFrontendOidc(unittest.TestCase):
                 sess['nonce'] = oic.oauth2.rndstr(0)
             result = app.get(url)
             self.assertEqual(result.status_code, 403)
+
+    def testMimetype(self):
+        """
+        The  `oidc-provider` relies on mimetypes.guess_type(full_path)
+        `mimetypes` in turn relies on the host OS configuration,
+        typically ["/etc/mime.types","/etc/httpd/conf/mime.types",...]
+        If this test fails, see the results of `mimetypes.knownfiles`
+        on your host and ensure configuration set up
+        see https://github.com/ga4gh/server/issues/501
+        """
+        content_type, encoding = mimetypes.guess_type("foo.json")
+        self.assertEqual(content_type, "application/json")
