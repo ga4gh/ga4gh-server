@@ -1,6 +1,7 @@
 language: python
 python:
   - "2.7"
+sudo: false
 
 before_install:
   - wget 'http://www.well.ox.ac.uk/~jk/wheelhouse.tar'
