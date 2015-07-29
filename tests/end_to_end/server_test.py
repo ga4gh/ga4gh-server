@@ -11,7 +11,19 @@ import subprocess
 import server as server
 
 
-class ServerTest(unittest.TestCase):
+class ClientHelperMixin(object):
+    """
+    Helper methods involving the client for server tests
+    """
+    def runClientCmd(self, client, command):
+        try:
+            client.runCommand(command)
+        except subprocess.CalledProcessError as error:
+            self.server.printDebugInfo()
+            raise error
+
+
+class ServerTest(ClientHelperMixin, unittest.TestCase):
     """
     Manages server bootup and shutdown for a test
     """
@@ -39,20 +51,13 @@ class ServerTest(unittest.TestCase):
         try:
             self.server.start()
             super(ServerTest, self).run(*args, **kwargs)
-        except Exception as e:
+        except Exception as exception:
             self.server.printDebugInfo()
             self.otherExceptionHandling()
-            raise e
+            raise exception
         finally:
             self.server.shutdown()
             self.otherTeardown()
-
-    def runClientCmd(self, client, command):
-        try:
-            client.runCommand(command)
-        except subprocess.CalledProcessError as error:
-            self.server.printDebugInfo()
-            raise error
 
 
 class RemoteServerTest(ServerTest):
@@ -84,3 +89,44 @@ class RemoteServerTest(ServerTest):
             self.server.printDebugInfo()
             self.remoteServer.printDebugInfo()
             raise error
+
+
+class ServerTestClass(ClientHelperMixin, unittest.TestCase):
+    """
+    Like ServerTest, except starts and stops the server at the class
+    level instead of the method level.
+    """
+    @classmethod
+    def setUpClass(cls):
+        cls.otherSetup()
+        cls.server = cls.getServer()
+        cls.server.start()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.server.shutdown()
+        cls.otherTeardown()
+
+    @classmethod
+    def otherSetup(cls):
+        pass
+
+    @classmethod
+    def otherTeardown(cls):
+        pass
+
+    @classmethod
+    def otherExceptionHandling(cls):
+        pass
+
+    @classmethod
+    def getServer(cls):
+        return server.Ga4ghServerForTesting()
+
+    def run(self, *args, **kwargs):
+        try:
+            super(ServerTestClass, self).run(*args, **kwargs)
+        except Exception as exception:
+            self.server.printDebugInfo()
+            self.otherExceptionHandling()
+            raise exception
