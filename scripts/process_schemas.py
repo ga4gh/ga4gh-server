@@ -155,10 +155,12 @@ class SchemaClass(object):
         self._writeWrappedWithIndent(slotString, outputFile, 2)
         self._writeWithIndent("]", outputFile)
         self._writeNewline(outputFile)
-        self._writeWithIndent("def __init__(self):", outputFile)
+        self._writeWithIndent("def __init__(self, **kwargs):", outputFile)
         for field in self.getFields():
-            string_ = "self.{0} = {1}".format(field.name, field.default)
+            string_ = "self.{} = kwargs.get(".format(field.name)
             self._writeWithIndent(string_, outputFile, 2)
+            string_ = "'{}', {})".format(field.name, field.default)
+            self._writeWithIndent(string_, outputFile, 3)
 
     def writeEmbeddedTypesClassMethods(self, outputFile):
         """
