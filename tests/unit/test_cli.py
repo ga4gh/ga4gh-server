@@ -114,11 +114,11 @@ class TestClientArguments(unittest.TestCase):
     def testVariantsSearchArguments(self):
         self.cliInput = """variants-search --referenceName REFERENCENAME
         --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
-        --end 1 --pageSize 2 --variantSetIds VARIANT,SET,IDS"""
+        --end 1 --pageSize 2 --variantSetId VARIANTSETIDS"""
 
     def testVariantSetsSearchArguments(self):
-        self.cliInput = """variantsets-search --pageSize 1 --datasetIds
-        DATA,SET,IDS"""
+        self.cliInput = """variantsets-search --pageSize 1 --datasetId
+        DATASETID"""
 
     def testReferenceSetsSearchArguments(self):
         self.cliInput = """referencesets-search --pageSize 1 --accessions
@@ -129,12 +129,12 @@ class TestClientArguments(unittest.TestCase):
         ACC,ESS,IONS --md5checksums MD5,CHECKSUMS"""
 
     def testReadGroupSetsSearchArguments(self):
-        self.cliInput = """readgroupsets-search --pageSize 1 --datasetIds
-        DATA,SET,IDS --name NAME"""
+        self.cliInput = """readgroupsets-search --pageSize 1 --datasetId
+        DATASETID --name NAME"""
 
     def testCallSetsSearchArguments(self):
         self.cliInput = """callsets-search --pageSize 1 --name NAME
-        --variantSetIds VARIANT,SET,IDS"""
+        --variantSetId VARIANTSETID"""
 
     def testReadsSearchArguments(self):
         self.cliInput = """reads-search --pageSize 1 --start 2 --end 3

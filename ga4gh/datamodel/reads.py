@@ -187,6 +187,7 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment = protocol.ReadAlignment()
         alignment.alignedQuality = [1, 2, 3]
         alignment.alignedSequence = "ACT"
+        alignment.fragmentId = 'TODO'
         gaPosition = protocol.Position()
         gaPosition.position = 0
         gaPosition.referenceName = "whatevs"
@@ -252,6 +253,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.ReadAlignment()
+        ret.fragmentId = 'TODO'
         if read.query_qualities is None:
             ret.alignedQuality = []
         else:

@@ -67,7 +67,7 @@ class TestFrontend(unittest.TestCase):
         variantSets = protocol.SearchVariantSetsResponse().fromJsonString(
             response.data).variantSets
         request = protocol.SearchVariantsRequest()
-        request.variantSetIds = [variantSets[0].id]
+        request.variantSetId = variantSets[0].id
         request.referenceName = "1"
         request.start = 0
         request.end = 1
@@ -75,7 +75,7 @@ class TestFrontend(unittest.TestCase):
 
     def sendVariantSetsSearch(self):
         request = protocol.SearchVariantSetsRequest()
-        request.datasetIds = ["simulatedDataset1"]
+        request.datasetId = "simulatedDataset1"
         return self.sendPostRequest('/variantsets/search', request)
 
     def sendCallSetsSearch(self):
@@ -83,7 +83,7 @@ class TestFrontend(unittest.TestCase):
         variantSets = protocol.SearchVariantSetsResponse().fromJsonString(
             response.data).variantSets
         request = protocol.SearchCallSetsRequest()
-        request.variantSetIds = [variantSets[0].id]
+        request.variantSetId = variantSets[0].id
         return self.sendPostRequest('/callsets/search', request)
 
     def sendReadsSearch(self, readGroupIds=None):

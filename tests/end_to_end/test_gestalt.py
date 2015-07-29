@@ -55,10 +55,8 @@ class TestGestalt(server_test.ServerTest):
             [], clientOutLines,
             "Client stdout log is empty")
 
-        # num of client stdout should be twice the value of
-        # SIMULATED_BACKEND_NUM_VARIANT_SETS
-        # times the number of datasets (currently 2)
-        expectedNumClientOutLines = 40
+        # number of variants to expect
+        expectedNumClientOutLines = 2
         self.assertEqual(len(clientOutLines), expectedNumClientOutLines)
 
         # client stderr should log at least one post
@@ -72,7 +70,9 @@ class TestGestalt(server_test.ServerTest):
             "No request logged from the client to stderr")
 
     def runVariantsRequest(self):
-        self.runClientCmd(self.client, "variants-search -s0 -e2")
+        self.runClientCmd(
+            self.client,
+            "variants-search -s 0 -e 2 -V simulatedDataset1:simVs0")
 
     def runReadsRequest(self):
         cmd = (
@@ -97,5 +97,5 @@ class TestGestalt(server_test.ServerTest):
 
     def runVariantSetsRequestDatasetTwo(self):
         datasetId = "simulatedDataset2"
-        cmd = "variantsets-search --datasetIds {}".format(datasetId)
+        cmd = "variantsets-search --datasetId {}".format(datasetId)
         self.runClientCmd(self.client, cmd)

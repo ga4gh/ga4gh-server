@@ -41,21 +41,9 @@ class TestVariantsGenerator(unittest.TestCase):
         self.datasetId = self.backend.getDatasetIds()[0]
         self.variantSetId = "{}:variantSetId".format(self.datasetId)
 
-    def testNoVariantSetsNotSupported(self):
-        # a request for no variant sets should throw an exception
-        self.request.variantSetIds = []
-        with self.assertRaises(exceptions.NotImplementedException):
-            self.backend.variantsGenerator(self.request)
-
-    def testMultipleVariantSetsNotSupported(self):
-        # a request for multiple variant sets should throw an exception
-        self.request.variantSetIds = ["1", "2"]
-        with self.assertRaises(exceptions.NotImplementedException):
-            self.backend.variantsGenerator(self.request)
-
     def testNonexistantVariantSet(self):
         # a request for a variant set that doesn't exist should throw an error
-        self.request.variantSetIds = ["{}:notFound".format(self.datasetId)]
+        self.request.variantSetId = "{}:notFound".format(self.datasetId)
         with self.assertRaises(exceptions.VariantSetNotFoundException):
             self.backend.variantsGenerator(self.request)
 
@@ -91,7 +79,7 @@ class TestVariantsGenerator(unittest.TestCase):
         variantSet = MockVariantSet(self.variantSetId, numVariants)
         self.backend.getDataset(self.datasetId)._variantSetIdMap = {
             self.variantSetId: variantSet}
-        self.request.variantSetIds = [self.variantSetId]
+        self.request.variantSetId = self.variantSetId
 
 
 def generateReadAlignment(position=0, sequence='abc'):

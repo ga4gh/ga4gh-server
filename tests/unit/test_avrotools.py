@@ -36,7 +36,6 @@ class TestAvrotools(unittest.TestCase):
             with self.assertRaises(avrotools.AvrotoolsException):
                 validator.getInvalidFields(jsonDict)
 
-    @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testGeneratedObjects(self):
         # Test that generated objects pass validation
         for class_ in protocol.getProtocolClasses():
