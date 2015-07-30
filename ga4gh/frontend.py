@@ -570,130 +570,6 @@ def getVariantSet(version, id):
         version, id, flask.request, app.backend.getVariantSet)
 
 
-# The below paths have not yet been implemented
-
-
-@app.route('/<version>/callsets/<no(search):id>')
-def getCallset(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/alleles/<no(search):id>')
-def getAllele(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/variants/<no(search):id>')
-def getVariant(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/variantsets/<vsid>/sequences/<sid>')
-def getVariantSetSequence(version, vsid, sid):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/feature/<id>')
-def getFeature(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/sequences/<id>/bases')
-def getSequenceBases(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/mode/<mode>')
-def getMode(version, mode):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/datasets/<no(search):id>')
-def getDataset(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/readgroupsets/<no(search):id>')
-def getReadGroupSet(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/readgroups/<id>')
-def getReadGroup(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route(
-    '/<version>/genotypephenotype/search',
-    methods=SEARCH_ENDPOINT_METHODS)
-def searchGenotypePephenotype(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/individuals/search', methods=SEARCH_ENDPOINT_METHODS)
-def searchIndividuals(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/samples/search', methods=SEARCH_ENDPOINT_METHODS)
-def searchSamples(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/experiments/search', methods=SEARCH_ENDPOINT_METHODS)
-def searchExperiments(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route(
-    '/<version>/individualgroups/search',
-    methods=SEARCH_ENDPOINT_METHODS)
-def searchIndividualGroups(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/analyses/search', methods=SEARCH_ENDPOINT_METHODS)
-def searchAnalyses(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/sequences/search', methods=SEARCH_ENDPOINT_METHODS)
-def searchSequences(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/joins/search', methods=SEARCH_ENDPOINT_METHODS)
-def searchJoins(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/subgraph/segments', methods=SEARCH_ENDPOINT_METHODS)
-def subgraphSegments(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/subgraph/joins', methods=SEARCH_ENDPOINT_METHODS)
-def subgraphJoins(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/features/search', methods=SEARCH_ENDPOINT_METHODS)
-def searchFeatures(version):
-    raise exceptions.NotImplementedException()
-
-
-@app.route(
-    '/<version>/variantsets/<id>/sequences/search',
-    methods=SEARCH_ENDPOINT_METHODS)
-def searchVariantSetSequences(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/alleles/search', methods=SEARCH_ENDPOINT_METHODS)
-def searchAlleles(version):
-    raise exceptions.NotImplementedException()
-
-
 @app.route('/oauth2callback', methods=['GET'])
 def oidcCallback():
     """
@@ -712,13 +588,14 @@ def oidcCallback():
     if app.oidcClient is None:
         raise exceptions.NotImplementedException()
     response = dict(flask.request.args.iteritems(multi=True))
-    aresp = app.oidcClient.parse_response(message.AuthorizationResponse,
-                                          info=response,
-                                          sformat='dict')
+    aresp = app.oidcClient.parse_response(
+        message.AuthorizationResponse,
+        info=response,
+        sformat='dict')
     sessState = flask.session.get('state')
     respState = aresp['state']
-    if not isinstance(aresp,
-                      message.AuthorizationResponse) or respState != sessState:
+    if (not isinstance(aresp, message.AuthorizationResponse) or
+            respState != sessState):
         raise exceptions.NotAuthenticatedException()
 
     args = {
@@ -747,10 +624,38 @@ def oidcCallback():
     indexUrl = flask.url_for('index', _external=True)
     indexParts = list(urlparse.urlparse(indexUrl))
     if ':' not in indexParts[1]:
-        indexParts[1] = '{0}:{1}'.format(socket.gethostname(), app.myPort)
+        indexParts[1] = '{}:{}'.format(socket.gethostname(), app.myPort)
         indexUrl = urlparse.urlunparse(indexParts)
     response = flask.redirect(indexUrl)
     return response
+
+
+# The below paths have not yet been implemented
+
+
+@app.route('/<version>/callsets/<no(search):id>')
+def getCallset(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/variants/<no(search):id>')
+def getVariant(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/datasets/<no(search):id>')
+def getDataset(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/readgroupsets/<no(search):id>')
+def getReadGroupSet(version, id):
+    raise exceptions.NotImplementedException()
+
+
+@app.route('/<version>/readgroups/<id>')
+def getReadGroup(version, id):
+    raise exceptions.NotImplementedException()
 
 
 # The below methods ensure that JSON is returned for various errors

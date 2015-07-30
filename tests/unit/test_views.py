@@ -303,28 +303,10 @@ class TestFrontend(unittest.TestCase):
 
     def testNotImplementedPaths(self):
         pathsNotImplementedPost = [
-            '/genotypephenotype/search',
-            '/individuals/search',
-            '/samples/search',
-            '/experiments/search',
-            '/individualgroups/search',
-            '/analyses/search',
-            '/sequences/search',
-            '/joins/search',
-            '/subgraph/segments',
-            '/subgraph/joins',
-            '/features/search',
-            '/variantsets/<id>/sequences/search',
-            '/alleles/search',
         ]
         pathsNotImplementedGet = [
             '/callsets/<id>',
-            '/alleles/<id>',
             '/variants/<id>',
-            '/variantsets/<id>/sequences/<id>',
-            '/feature/<id>',
-            '/sequences/<id>/bases',
-            '/mode/<id>',
             '/datasets/<id>',
             '/readgroupsets/<id>',
             '/readgroups/<id>',
