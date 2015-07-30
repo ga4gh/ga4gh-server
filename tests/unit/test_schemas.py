@@ -185,6 +185,16 @@ class EqualityTest(SchemaTest):
         i2.variantSetIds.append("extra")
         self.assertFalse(i1 == i2)
 
+    def testKeywordInstantiation(self):
+        for cls in protocol.getProtocolClasses():
+            kwargs = {}
+            instance = self.getDefaultInstance(cls)
+            for key in instance.toJsonDict().keys():
+                val = getattr(instance, key)
+                kwargs[key] = val
+            secondInstance = cls(**kwargs)
+            self.assertEqual(instance, secondInstance)
+
 
 class SerialisationTest(SchemaTest):
     """
@@ -259,7 +269,7 @@ class GetProtocolClassesTest(SchemaTest):
     """
     def testAllClasses(self):
         classes = protocol.getProtocolClasses()
-        assert len(classes) > 0
+        self.assertGreater(len(classes), 0)
         for class_ in classes:
             self.assertTrue(issubclass(class_, protocol.ProtocolElement))
 
