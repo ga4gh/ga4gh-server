@@ -94,6 +94,11 @@ class GraphDatabase(object):
         for rdict in referenceDicts:
             reference = protocol.Reference()
             reference.id = rdict['ID']
+            reference.sequenceId = rdict['sequenceID']
+            reference.md5checksum = rdict['md5checksum']
+            reference.name = rdict['name']
+            reference.start = rdict['start']
+            reference.length = rdict['length'] 
             references.append(reference)
         return count, references
 
