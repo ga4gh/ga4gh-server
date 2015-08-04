@@ -378,3 +378,28 @@ class ResponseValidationFailureException(ServerError):
             "Invalid fields: {} "
             "Please file a bug report.".format(
                 jsonDict, requestClass, validator.getInvalidFields(jsonDict)))
+
+
+#####################################################################
+#
+# Client exceptions
+#
+#####################################################################
+
+
+class BaseClientException(Exception):
+    """
+    The base class for client exceptions
+    """
+
+
+class EmptyResponseException(BaseClientException):
+    """
+    The client received an empty response from the server
+    """
+
+
+class RequestNonSuccessException(BaseClientException):
+    """
+    The client received a 4xx or 5xx error code from the server
+    """
