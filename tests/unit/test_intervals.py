@@ -153,7 +153,7 @@ class TestIntervalIterator(unittest.TestCase):
         self.testIntervalSets.append(
             IntervalSet(0, 100, randomIntervals(0, 100, 10)))
         self.testIntervalSets.append(
-            IntervalSet(0, 100, randomIntervals(0, 100, 1000)))
+            IntervalSet(0, 100, randomIntervals(0, 100, 100)))
 
     def verifyInterval(self, intervalSet, start, end):
         """
