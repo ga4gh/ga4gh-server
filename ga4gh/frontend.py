@@ -564,10 +564,20 @@ def searchDatasets(version):
         version, flask.request, app.backend.searchDatasets)
 
 
-@DisplayedRoute('/<version>/variantsets/<no(search):id>')
+@DisplayedRoute(
+    '/<version>/variantsets/<no(search):id>',
+    pathDisplay='/<version>/variantsets/<id>')
 def getVariantSet(version, id):
     return handleFlaskGetRequest(
         version, id, flask.request, app.backend.getVariantSet)
+
+
+@DisplayedRoute(
+    '/<version>/variants/<no(search):id>',
+    pathDisplay='/<version>/variants/<id>')
+def getVariant(version, id):
+    return handleFlaskGetRequest(
+        version, id, flask.request, app.backend.getVariant)
 
 
 @app.route('/oauth2callback', methods=['GET'])
@@ -635,11 +645,6 @@ def oidcCallback():
 
 @app.route('/<version>/callsets/<no(search):id>')
 def getCallset(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/variants/<no(search):id>')
-def getVariant(version, id):
     raise exceptions.NotImplementedException()
 
 

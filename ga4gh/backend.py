@@ -12,6 +12,7 @@ import random
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
+import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -39,11 +40,27 @@ def _parsePageToken(pageToken, numValues):
 
 def _getVariantSet(request, variantSetIdMap):
     variantSetId = request.variantSetId
-    try:
-        variantSet = variantSetIdMap[variantSetId]
-    except KeyError:
-        raise exceptions.VariantSetNotFoundException(variantSetId)
+    variantSet = _safeMapQuery(
+        variantSetIdMap, variantSetId,
+        exceptionClass=exceptions.VariantSetNotFoundException)
     return variantSet
+
+
+def _safeMapQuery(idMap, id_, exceptionClass=None, idErrorString=None):
+    """
+    Attempt to retrieve a value from a map, throw an appropriate error
+    if the key is not present
+    (works for both dict and list types)
+    """
+    try:
+        obj = idMap[id_]
+    except KeyError:
+        if idErrorString is None:
+            idErrorString = id_
+        if exceptionClass is None:
+            exceptionClass = exceptions.ObjectWithIdNotFoundException
+        raise exceptionClass(idErrorString)
+    return obj
 
 
 class IntervalIterator(object):
@@ -157,10 +174,9 @@ class ReadsIntervalIterator(IntervalIterator):
                 msg = "Read search over multiple readGroups not supported"
             raise exceptions.NotImplementedException(msg)
         readGroupId = self._request.readGroupIds[0]
-        try:
-            readGroup = self._containerIdMap[self._request.readGroupIds[0]]
-        except KeyError:
-            raise exceptions.ReadGroupNotFoundException(readGroupId)
+        readGroup = _safeMapQuery(
+            self._containerIdMap, readGroupId,
+            exceptions.ReadGroupNotFoundException)
         return readGroup
 
     def _search(self, start, end):
@@ -229,8 +245,13 @@ class AbstractBackend(object):
         return dataset
 
     def _getDatasetFromCompoundId(self, compoundId):
+        if compoundId is None:
+            raise exceptions.BadIdentifierException(compoundId)
+        if not isinstance(compoundId, basestring):
+            raise exceptions.BadIdentifierException(compoundId)
         splits = compoundId.split(':')
-        datasetId = splits[0]
+        datasetId = _safeMapQuery(
+            splits, 0, exceptions.BadIdentifierException, compoundId)
         dataset = self.getDataset(datasetId)
         return dataset
 
@@ -249,10 +270,9 @@ class AbstractBackend(object):
         """
         Returns a dataset with id datasetId
         """
-        try:
-            return self._datasetIdMap[datasetId]
-        except KeyError:
-            raise exceptions.DatasetNotFoundException(datasetId)
+        return _safeMapQuery(
+            self._datasetIdMap, datasetId,
+            exceptions.DatasetNotFoundException)
 
     def getReferenceSets(self):
         """
@@ -274,10 +294,9 @@ class AbstractBackend(object):
 
     def listReferenceBases(self, id_, requestArgs):
         # parse arguments
-        try:
-            reference = self._referenceIdMap[id_]
-        except KeyError:
-            raise exceptions.ObjectWithIdNotFoundException(id_)
+        reference = _safeMapQuery(
+            self._referenceIdMap, id_,
+            exceptions.ObjectWithIdNotFoundException)
         start = 0
         end = datamodel.PysamDatamodelMixin.fastaMax
         if 'start' in requestArgs:
@@ -323,10 +342,7 @@ class AbstractBackend(object):
         Runs a get request by indexing into the provided idMap and
         returning a json string of that object
         """
-        try:
-            obj = idMap[id_]
-        except KeyError:
-            raise exceptions.ObjectWithIdNotFoundException(id_)
+        obj = _safeMapQuery(idMap, id_)
         protocolElement = obj.toProtocolElement()
         jsonString = protocolElement.toJsonString()
         return jsonString
@@ -412,6 +428,18 @@ class AbstractBackend(object):
         """
         dataset = self._getDatasetFromCompoundId(id_)
         return self.runGetRequest(dataset.getVariantSetIdMap(), id_)
+
+    def getVariant(self, id_):
+        """
+        Returns a variant with the given id
+        """
+        compoundId = variants.CompoundVariantId(id_)
+        dataset = self._getDatasetFromCompoundId(compoundId.datasetId)
+        variantSet = _safeMapQuery(
+            dataset.getVariantSetIdMap(), compoundId.variantSetId)
+        variant = variantSet.getVariant(compoundId)
+        jsonString = variant.toJsonString()
+        return jsonString
 
     def searchVariantSets(self, request):
         """

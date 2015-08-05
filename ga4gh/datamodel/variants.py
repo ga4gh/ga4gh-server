@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 import datetime
 import random
+import hashlib
 
 import pysam
 
@@ -45,6 +46,17 @@ def convertVCFGenotype(vcfGenotype, vcfPhaseset):
         genotype = [-1]
 
     return genotype, phaseset
+
+
+class CompoundVariantId(datamodel.CompoundId):
+    """
+    The compound id for a variant
+    """
+    fields = ['datasetId', 'vsId', 'referenceName', 'start', 'md5']
+    comboFields = {
+        'variantSetId': [0, 1],
+        'variantId': [2, 3, 4],
+    }
 
 
 class CallSet(object):
@@ -199,6 +211,15 @@ class SimulatedVariantSet(AbstractVariantSet):
         ret = []
         return ret
 
+    def getVariant(self, compoundId):
+        randomNumberGenerator = random.Random()
+        start = int(compoundId.start)
+        randomNumberGenerator.seed(self._randomSeed + start)
+        variant = self.generateVariant(
+            self._id, compoundId.referenceName, start,
+            randomNumberGenerator)
+        return variant
+
     def getVariants(self, referenceName, startPosition, endPosition,
                     variantName=None, callSetIds=None):
         randomNumberGenerator = random.Random()
@@ -222,8 +243,13 @@ class SimulatedVariantSet(AbstractVariantSet):
         variant = self._createGaVariant()
         variant.names = []
         variant.referenceName = referenceName
-        variant.id = "{0}:{1}:{2}".format(
-            variant.variantSetId, referenceName, position)
+        md5 = 'notApplicable'
+        compoundId = CompoundVariantId.compose(
+            variantSetId=variant.variantSetId,
+            referenceName=referenceName,
+            start=position,
+            md5=md5)
+        variant.id = str(compoundId)
         variant.start = position
         variant.end = position + 1  # SNPs only for now
         bases = ["A", "C", "G", "T"]
@@ -269,6 +295,8 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
     Class representing a single variant set backed by a directory of indexed
     VCF or BCF files.
     """
+    startDiff = 1
+
     def __init__(self, id_, dataDir):
         super(HtslibVariantSet, self).__init__(id_)
         self._dataDir = dataDir
@@ -374,6 +402,13 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 call.info[key] = _encodeValue(value)
         return call
 
+    def hashVariant(self, record):
+        """
+        Produces an MD5 hash of the pysam variant record to uniquely
+        identify it
+        """
+        return hashlib.md5(record.ref + str(record.alts)).hexdigest()
+
     def convertVariant(self, record, callSetIds):
         """
         Converts the specified pysam variant record into a GA4GH Variant
@@ -383,9 +418,13 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         variant = self._createGaVariant()
         # N.B. record.pos is 1-based
         #      also consider using record.start-record.stop
-        variant.id = "{0}:{1}:{2}".format(self._id,
-                                          record.contig,
-                                          record.pos)
+        md5 = self.hashVariant(record)
+        compoundId = CompoundVariantId.compose(
+            variantSetId=self._id,
+            referenceName=record.contig,
+            start=record.pos,
+            md5=md5)
+        variant.id = str(compoundId)
         variant.referenceName = record.contig
         if record.id is not None:
             variant.names = record.id.split(';')
@@ -414,6 +453,27 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                     record.id, name, call, genotypeData))  # REPLACE
             sampleIterator += 1  # REMOVAL
         return variant
+
+    def getVariant(self, compoundId):
+        if compoundId.referenceName in self._chromFileMap:
+            varFileName = self._chromFileMap[compoundId.referenceName]
+        else:
+            raise exceptions.ObjectNotFoundException(compoundId)
+        start = int(compoundId.start)
+        # fetch start is exclusive, not inclusive
+        startPosition = start - self.startDiff
+        referenceName, startPosition, endPosition = \
+            self.sanitizeVariantFileFetch(
+                compoundId.referenceName, startPosition, None)
+        cursor = self.getFileHandle(varFileName).fetch(
+            referenceName, startPosition, endPosition)
+        for record in cursor:
+            if start != record.start:
+                continue
+            digest = self.hashVariant(record)
+            if digest == compoundId.md5:
+                return self.convertVariant(record, [])
+        raise exceptions.ObjectNotFoundException(compoundId)
 
     def getVariants(self, referenceName, startPosition, endPosition,
                     variantName=None, callSetIds=None):

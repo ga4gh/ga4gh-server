@@ -7,11 +7,13 @@ from __future__ import unicode_literals
 
 import os
 import glob
+import hashlib
 
 import vcf
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel as datamodel
 import tests.datadriven as datadriven
 import tests.utils as utils
 
@@ -29,7 +31,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
     built by the variants.VariantSet object.
     """
     def __init__(self, variantSetId, baseDir):
-        super(VariantSetTest, self).__init__(variantSetId, baseDir)
+        compoundId = 'dataset1:{}'.format(variantSetId)
+        super(VariantSetTest, self).__init__(
+            variantSetId, baseDir, compoundId)
         self._variantRecords = []
         self._referenceNames = set()
         # Read in all the VCF files in datadir and store each variant.
@@ -165,7 +169,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         gaCallSetVariants = []
         gaId = self._gaObject.getId()
         for referenceName in self._referenceNames:
-            end = 2**30  # TODO This is arbitrary, and pysam can choke. FIX!
+            end = datamodel.PysamDatamodelMixin.vcfMax
             gaSearchId = ["{}.{}".format(
                 gaId, sampleId) for sampleId in searchsampleIds]
             gaVariants = list(self._gaObject.getVariants(
@@ -306,9 +310,6 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self.assertTrue(self._pyvcfVariantIsInGaVarants(
                 variant, variantEnd-1, variantEnd+1))
 
-    def testVariantFromToInRange(self):
-        pass
-
     def testVariantSetMetadata(self):
         def convertPyvcfNumber(number):
             if number == -1:
@@ -345,3 +346,21 @@ class VariantSetTest(datadriven.DataDrivenTest):
         testMetaLength = (
             1 + len(self._formats) + len(self._infos) - gtCounter)
         self.assertEqual(len(keyMap), testMetaLength)
+
+    def testGetVariant(self):
+        variantSet = self._gaObject
+        for referenceName in self._referenceNames:
+            refnameVariants = self._getPyvcfVariants(referenceName)
+            for variant in refnameVariants:
+                md5 = self._hashVariant(variant)
+                compoundId = variants.CompoundVariantId.compose(
+                    variantSetId=variantSet.getId(),
+                    referenceName=referenceName,
+                    start=variant.start,
+                    md5=md5)
+                gotVariant = variantSet.getVariant(compoundId)
+                self.assertEqual(str(compoundId), gotVariant.id)
+
+    def _hashVariant(self, record):
+        alts = tuple([str(substitution) for substitution in record.ALT])
+        return hashlib.md5(record.REF + str(alts)).hexdigest()

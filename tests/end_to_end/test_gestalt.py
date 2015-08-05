@@ -72,7 +72,7 @@ class TestGestalt(server_test.ServerTest):
     def runVariantsRequest(self):
         self.runClientCmd(
             self.client,
-            "variants-search -s 0 -e 2 -V simulatedDataset1:simVs0")
+            "variants-search -s 0 -e 2 simulatedDataset1:simVs0")
 
     def runReadsRequest(self):
         cmd = (

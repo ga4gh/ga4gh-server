@@ -13,6 +13,10 @@ import logging
 import ga4gh.protocol as protocol
 
 
+class EmptyResponse(Exception):
+    message = "No response received from server"
+
+
 class HttpClient(object):
     """
     GA4GH Http Client
@@ -187,6 +191,12 @@ class HttpClient(object):
         Returns a reference from the server
         """
         return self.runGetRequest("references", protocol.Reference, id_)
+
+    def getVariant(self, id_):
+        """
+        Returns a variant from the server
+        """
+        return self.runGetRequest("variants", protocol.Variant, id_)
 
     def listReferenceBases(self, protocolRequest, id_):
         """

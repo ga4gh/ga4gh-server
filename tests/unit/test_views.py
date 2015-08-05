@@ -10,6 +10,7 @@ import logging
 
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.variants as variants
 import tests.utils as utils
 
 
@@ -39,6 +40,8 @@ class TestFrontend(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.app = None
+
+    # -------------- send request helper methods --------------------
 
     def sendPostRequest(self, path, request):
         """
@@ -104,6 +107,19 @@ class TestFrontend(unittest.TestCase):
         response = self.sendPostRequest(path, request)
         return response
 
+    def sendGetVariant(self, id_=None):
+        if id_ is None:
+            compoundId = variants.CompoundVariantId.compose(
+                datasetId='simulatedDataset1',
+                vsId='simVs0',
+                referenceName='referenceName',
+                start=5,
+                md5='md5')
+            id_ = str(compoundId)
+        path = "/variants/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
     def sendGetVariantSet(self, id_=None):
         if id_ is None:
             id_ = 'simple:simple'
@@ -143,6 +159,35 @@ class TestFrontend(unittest.TestCase):
         response = self.sendListRequest(path, request)
         return response
 
+    # -------------- other helper methods --------------------
+
+    def verifySearchRouting(self, path, getDefined=False):
+        """
+        Verifies that the specified path has the correct routing for a
+        search command. If getDefined is False we check to see if it
+        returns the correct status code.
+        """
+        versionedPath = utils.applyVersion(path)
+        response = self.app.post(versionedPath)
+        protocol.GAException.fromJsonString(response.get_data())
+        self.assertEqual(415, response.status_code)
+        if not getDefined:
+            getResponse = self.app.get(versionedPath)
+            protocol.GAException.fromJsonString(getResponse.get_data())
+            self.assertEqual(405, getResponse.status_code)
+
+        # Malformed requests should return 400
+        for badJson in ["", None, "JSON", "<xml/>", "{]"]:
+            badResponse = self.app.post(
+                versionedPath, data=badJson,
+                headers={'Content-type': 'application/json'})
+            self.assertEqual(400, badResponse.status_code)
+
+        # OPTIONS should return success
+        self.assertEqual(200, self.app.options(versionedPath).status_code)
+
+    # -------------- test methods --------------------
+
     def test404sReturnJson(self):
         paths = [
             '/doesNotExist',
@@ -171,32 +216,8 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendGetVariantSet())
         assertHeaders(self.sendGetReference())
         assertHeaders(self.sendGetReferenceSet())
+        assertHeaders(self.sendGetVariant())
         # TODO: Test other methods as they are implemented
-
-    def verifySearchRouting(self, path, getDefined=False):
-        """
-        Verifies that the specified path has the correct routing for a
-        search command. If getDefined is False we check to see if it
-        returns the correct status code.
-        """
-        versionedPath = utils.applyVersion(path)
-        response = self.app.post(versionedPath)
-        protocol.GAException.fromJsonString(response.get_data())
-        self.assertEqual(415, response.status_code)
-        if not getDefined:
-            getResponse = self.app.get(versionedPath)
-            protocol.GAException.fromJsonString(getResponse.get_data())
-            self.assertEqual(405, getResponse.status_code)
-
-        # Malformed requests should return 400
-        for badJson in ["", None, "JSON", "<xml/>", "{]"]:
-            badResponse = self.app.post(
-                versionedPath, data=badJson,
-                headers={'Content-type': 'application/json'})
-            self.assertEqual(400, badResponse.status_code)
-
-        # OPTIONS should return success
-        self.assertEqual(200, self.app.options(versionedPath).status_code)
 
     def testRouteReferences(self):
         referenceId = "referenceSet0:srs0"
@@ -265,6 +286,10 @@ class TestFrontend(unittest.TestCase):
         response = self.sendGetVariantSet("this isn't a valid id")
         self.assertEqual(404, response.status_code)
 
+    def testGetVariant(self):
+        response = self.sendGetVariant()
+        self.assertEqual(200, response.status_code)
+
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch()
         self.assertEqual(200, response.status_code)
@@ -306,7 +331,6 @@ class TestFrontend(unittest.TestCase):
         ]
         pathsNotImplementedGet = [
             '/callsets/<id>',
-            '/variants/<id>',
             '/datasets/<id>',
             '/readgroupsets/<id>',
             '/readgroups/<id>',

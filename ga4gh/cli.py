@@ -519,6 +519,17 @@ class GetReferenceRunner(AbstractGetRunner):
         self._run(self._httpClient.getReference)
 
 
+class GetVariantRunner(AbstractGetRunner):
+    """
+    Runner class for the variants/{id} method
+    """
+    def __init__(self, args):
+        super(GetVariantRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.getVariant)
+
+
 class BenchmarkRunner(SearchVariantsRunner):
     """
     Runner class for the client side benchmarking. This is intended to give
@@ -564,7 +575,7 @@ def addVariantSearchOptions(parser):
 
 def addVariantSetIdArgument(parser):
     parser.add_argument(
-        "--variantSetId", "-V", default=None,
+        "variantSetId",
         help="The variant set id to search over")
 
 
@@ -676,8 +687,8 @@ def addBenchmarkingParser(subparsers):
         description="Run simple benchmarks on the various methods",
         help="Benchmark server performance")
     parser.set_defaults(runner=BenchmarkRunner)
-    addUrlArgument(parser)
     addVariantSearchOptions(parser)
+    addUrlArgument(parser)
     return parser
 
 
@@ -687,8 +698,8 @@ def addVariantsSearchParser(subparsers):
         description="Search for variants",
         help="Search for variants.")
     parser.set_defaults(runner=SearchVariantsRunner)
-    addUrlArgument(parser)
     addVariantSearchOptions(parser)
+    addUrlArgument(parser)
     return parser
 
 
@@ -752,10 +763,10 @@ def addCallsetsSearchParser(subparsers):
         description="Search for callSets",
         help="Search for callSets")
     parser.set_defaults(runner=SearchCallSetsRunner)
-    addUrlArgument(parser)
     addPageSizeArgument(parser)
     addNameArgument(parser)
     addVariantSetIdArgument(parser)
+    addUrlArgument(parser)
     return parser
 
 
@@ -810,6 +821,15 @@ def addReferencesGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addVariantsGetParser(subparsers):
+    parser = subparsers.add_parser(
+        "variants-get",
+        description="Get a variant",
+        help="Get a variant")
+    parser.set_defaults(runner=GetVariantRunner)
+    addGetArguments(parser)
+
+
 def addReferencesBasesListParser(subparsers):
     parser = subparsers.add_parser(
         "references-list-bases",
@@ -839,6 +859,7 @@ def client_main(parser=None):
     addDatasetsSearchParser(subparsers)
     addReferenceSetsGetParser(subparsers)
     addReferencesGetParser(subparsers)
+    addVariantsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
 
     args = parser.parse_args()

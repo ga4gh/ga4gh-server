@@ -114,7 +114,7 @@ class TestClientArguments(unittest.TestCase):
     def testVariantsSearchArguments(self):
         self.cliInput = """variants-search --referenceName REFERENCENAME
         --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
-        --end 1 --pageSize 2 --variantSetId VARIANTSETIDS"""
+        --end 1 --pageSize 2 VARIANTSETID"""
 
     def testVariantSetsSearchArguments(self):
         self.cliInput = """variantsets-search --pageSize 1 --datasetId
@@ -134,7 +134,7 @@ class TestClientArguments(unittest.TestCase):
 
     def testCallSetsSearchArguments(self):
         self.cliInput = """callsets-search --pageSize 1 --name NAME
-        --variantSetId VARIANTSETID"""
+        VARIANTSETID"""
 
     def testReadsSearchArguments(self):
         self.cliInput = """reads-search --pageSize 1 --start 2 --end 3
@@ -152,6 +152,9 @@ class TestClientArguments(unittest.TestCase):
     def testReferenceBasesListArguments(self):
         self.cliInput = """references-list-bases ID
         --start 1 --end 2"""
+
+    def testVariantGetArguments(self):
+        self.cliInput = """variants-get ID"""
 
 
 class StubArgumentParser(object):

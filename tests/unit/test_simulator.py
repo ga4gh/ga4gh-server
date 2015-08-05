@@ -20,7 +20,8 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.numCalls = 2
         # ensure variantDensity is >= 1 so we get deterministic behavoir
         self.variantDensity = 1
-        self.variantSetId = 3
+        self.datasetId = 'datasetId'
+        self.variantSetId = '{}:variantSetId'.format(self.datasetId)
         self.simulatedVariantSet = self._getSimulatedVariantSet()
         self.referenceName = 'ref'
         self.startPosition = 100
