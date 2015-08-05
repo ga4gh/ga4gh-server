@@ -194,7 +194,7 @@ class GraphDatabase(object):
         return count, alleles
 
     def searchSequences(self, referenceSetId=None, variantSetId=None,
-                        start=0, end=None):
+                        listBases=False, start=0, end=None):
         """
         Returns a pair (count, sequences) where count
         is the total number of found objects for the search (without limits)
@@ -211,12 +211,15 @@ class GraphDatabase(object):
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchSequencesCount()
             rawSequences = sg.searchSequences(limits)
-        sequences = []
-        for rawSeq in rawSequences:
-            seq = protocol.Sequence()
-            seq.id = rawSeq['ID']
-            seq.length = rawSeq['length']
-            sequences.append(seq)
+
+            sequences = []
+            for rawSeq in rawSequences:
+                seq = protocol.Sequence()
+                seq.id = rawSeq['ID']
+                seq.length = rawSeq['length']
+                if listBases:
+                    seq.bases = sg.getSequenceBases(seq.id)
+                sequences.append(seq)
         return count, sequences
 
     def searchJoins(self, referenceSetId=None, variantSetId=None,

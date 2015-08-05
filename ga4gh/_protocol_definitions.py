@@ -4156,6 +4156,7 @@ class SearchSequencesRequest(SearchRequest):
 "SearchSequencesRequest", "fields": [{"default": null, "doc": "",
 "type": ["null", "string"], "name": "referenceSetId"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
+{"default": false, "doc": "", "type": "boolean", "name": "listBases"},
 {"default": null, "doc": "", "type": ["null", "int"], "name":
 "pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
 "name": "pageToken"}], "doc": ""}
@@ -4175,7 +4176,8 @@ null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'pageSize', 'pageToken', 'referenceSetId', 'variantSetId'
+        'pageSize', 'pageToken', 'referenceSetId', 'variantSetId',
+        'listBases'
     ]
 
     def __init__(self):
@@ -4183,6 +4185,7 @@ null, "doc": "", "type": ["null", "string"], "name": "variantSetId"},
         self.pageToken = None
         self.referenceSetId = None
         self.variantSetId = None
+        self.listBases = False
 
 
 class SearchSequencesResponse(SearchResponse):
@@ -4195,7 +4198,8 @@ class SearchSequencesResponse(SearchResponse):
 "SearchSequencesResponse", "fields": [{"default": [], "doc": "",
 "type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
 "name": "Sequence", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"doc": "", "type": "long", "name": "length"}], "doc": ""},
+"id"}, {"doc": "", "type": "long", "name": "length"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "bases"}], "doc": ""},
 "type": "array"}, "name": "sequences"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "nextPageToken"}], "doc": ""}
 """
@@ -4502,7 +4506,8 @@ class Sequence(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "Sequence", "fields": [{"doc": "", "type": "string", "name": "id"},
-{"doc": "", "type": "long", "name": "length"}], "doc": ""}
+{"doc": "", "type": "long", "name": "length"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "bases"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -4522,12 +4527,13 @@ class Sequence(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'id', 'length'
+        'id', 'length', 'bases'
     ]
 
     def __init__(self):
         self.id = None
         self.length = None
+        self.bases = None
 
 
 class Side(ProtocolElement):

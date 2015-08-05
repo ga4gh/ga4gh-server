@@ -11,7 +11,7 @@ from __future__ import unicode_literals
 import os
 import logging
 
-import pyfasta
+import pyfaidx
 import sqlite3
 import re
 
@@ -215,9 +215,9 @@ class SideGraph(object):
         fastaURI, recordName = fetched
         fastaFileName = os.path.join(self._fastaDir,
                                      os.path.basename(fastaURI))
-        fasta = pyfasta.Fasta(
-            fastaFileName, key_fn=lambda key: key.split()[0])
-        return fasta[recordName][start:end]
+        fasta = pyfaidx.Fasta(
+            fastaFileName)
+        return str(fasta[recordName][start:end])
 
     def getAllele(self, alleleID):
         """
