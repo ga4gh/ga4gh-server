@@ -215,6 +215,31 @@ class AbstractBackend(object):
         self._datasetIdMap = {}
         self._datasetIds = []
 
+    def setRequestValidation(self, requestValidation):
+        """
+        Set enabling request validation
+        """
+        self._requestValidation = requestValidation
+
+    def setResponseValidation(self, responseValidation):
+        """
+        Set enabling response validation
+        """
+        self._responseValidation = responseValidation
+
+    def setDefaultPageSize(self, defaultPageSize):
+        """
+        Sets the default page size for request to the specified value.
+        """
+        self._defaultPageSize = defaultPageSize
+
+    def setMaxResponseLength(self, maxResponseLength):
+        """
+        Sets the approximate maximum response length to the specified
+        value.
+        """
+        self._maxResponseLength = maxResponseLength
+
     def _getDatasetFromReadsRequest(self, request):
         if len(request.readGroupIds) != 1:
             raise exceptions.NotImplementedException(
@@ -260,200 +285,47 @@ class AbstractBackend(object):
         """
         return list(self._referenceSetIdMap.values())
 
-    def getReference(self, id_):
+    def startProfile(self):
         """
-        Returns a reference with the given id_
+        Profiling hook. Called at the start of the runSearchRequest method
+        and allows for detailed profiling of search performance.
         """
-        return self.runGetRequest(self._referenceIdMap, id_)
+        pass
 
-    def getReferenceSet(self, id_):
+    def endProfile(self):
         """
-        Returns a referenceSet with the given id_
+        Profiling hook. Called at the end of the runSearchRequest method.
         """
-        return self.runGetRequest(self._referenceSetIdMap, id_)
+        pass
 
-    def listReferenceBases(self, id_, requestArgs):
-        # parse arguments
-        try:
-            reference = self._referenceIdMap[id_]
-        except KeyError:
-            raise exceptions.ObjectWithIdNotFoundException(id_)
-        start = 0
-        end = datamodel.PysamDatamodelMixin.fastaMax
-        if 'start' in requestArgs:
-            startString = requestArgs['start']
-            try:
-                start = int(startString)
-            except ValueError:
-                raise exceptions.BadRequestIntegerException(
-                    'start', startString)
-        if 'end' in requestArgs:
-            endString = requestArgs['end']
-            try:
-                end = int(endString)
-            except ValueError:
-                raise exceptions.BadRequestIntegerException(
-                    'end', endString)
-        if 'pageToken' in requestArgs:
-            pageTokenStr = requestArgs['pageToken']
-            start = _parsePageToken(pageTokenStr, 1)[0]
-        chunkSize = self._maxResponseLength
+    def validateRequest(self, jsonDict, requestClass):
+        """
+        Ensures the jsonDict corresponds to a valid instance of requestClass
+        Throws an error if the data is invalid
+        """
+        if self._requestValidation:
+            if not requestClass.validate(jsonDict):
+                raise exceptions.RequestValidationFailureException(
+                    jsonDict, requestClass)
 
-        # get reference bases
-        gbEnd = min(start + chunkSize, end)
-        sequence = reference.getBases(start, gbEnd)
+    def validateResponse(self, jsonString, responseClass):
+        """
+        Ensures the jsonDict corresponds to a valid instance of responseClass
+        Throws an error if the data is invalid
+        """
+        if self._responseValidation:
+            jsonDict = json.loads(jsonString)
+            if not responseClass.validate(jsonDict):
+                raise exceptions.ResponseValidationFailureException(
+                    jsonDict, responseClass)
 
-        # determine nextPageToken
-        if len(sequence) == chunkSize:
-            nextPageToken = start + chunkSize
-        elif len(sequence) > chunkSize:
-            raise exceptions.ServerError()  # should never happen
-        else:
-            nextPageToken = None
-
-        # build response
-        response = protocol.ListReferenceBasesResponse()
-        response.offset = start
-        response.sequence = sequence
-        response.nextPageToken = nextPageToken
-        return response.toJsonString()
-
-    def runGetRequest(self, idMap, id_):
-        """
-        Runs a get request by indexing into the provided idMap and
-        returning a json string of that object
-        """
-        try:
-            obj = idMap[id_]
-        except KeyError:
-            raise exceptions.ObjectWithIdNotFoundException(id_)
-        protocolElement = obj.toProtocolElement()
-        jsonString = protocolElement.toJsonString()
-        return jsonString
-
-    def runSearchRequest(
-            self, requestStr, requestClass, responseClass, objectGenerator):
-        """
-        Runs the specified request. The request is a string containing
-        a JSON representation of an instance of the specified requestClass.
-        We return a string representation of an instance of the specified
-        responseClass in JSON format. Objects are filled into the page list
-        using the specified object generator, which must return
-        (object, nextPageToken) pairs, and be able to resume iteration from
-        any point using the nextPageToken attribute of the request object.
-        """
-        self.startProfile()
-        try:
-            requestDict = json.loads(requestStr)
-        except ValueError:
-            raise exceptions.InvalidJsonException(requestStr)
-        self.validateRequest(requestDict, requestClass)
-        request = requestClass.fromJsonDict(requestDict)
-        if request.pageSize is None:
-            request.pageSize = self._defaultPageSize
-        if request.pageSize <= 0:
-            raise exceptions.BadPageSizeException(request.pageSize)
-        responseBuilder = protocol.SearchResponseBuilder(
-            responseClass, request.pageSize, self._maxResponseLength)
-        nextPageToken = None
-        for obj, nextPageToken in objectGenerator(request):
-            responseBuilder.addValue(obj)
-            if responseBuilder.isFull():
-                break
-        responseBuilder.setNextPageToken(nextPageToken)
-        responseString = responseBuilder.getJsonString()
-        self.validateResponse(responseString, responseClass)
-        self.endProfile()
-        return responseString
-
-    def searchReadGroupSets(self, request):
-        """
-        Returns a GASearchReadGroupSetsResponse for the specified
-        GASearchReadGroupSetsRequest object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchReadGroupSetsRequest,
-            protocol.SearchReadGroupSetsResponse,
-            self.readGroupSetsGenerator)
-
-    def searchReads(self, request):
-        """
-        Returns a GASearchReadsResponse for the specified
-        GASearchReadsRequest object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchReadsRequest,
-            protocol.SearchReadsResponse,
-            self.readsGenerator)
-
-    def searchReferenceSets(self, request):
-        """
-        Returns a GASearchReferenceSetsResponse for the specified
-        GASearchReferenceSetsRequest object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchReferenceSetsRequest,
-            protocol.SearchReferenceSetsResponse,
-            self.referenceSetsGenerator)
-
-    def searchReferences(self, request):
-        """
-        Returns a GASearchReferencesResponse for the specified
-        GASearchReferencesRequest object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchReferencesRequest,
-            protocol.SearchReferencesResponse,
-            self.referencesGenerator)
-
-    def getVariantSet(self, id_):
-        """
-        Returns a variantSet with the given id.
-        """
-        dataset = self._getDatasetFromCompoundId(id_)
-        return self.runGetRequest(dataset.getVariantSetIdMap(), id_)
-
-    def searchVariantSets(self, request):
-        """
-        Returns a GASearchVariantSetsResponse for the specified
-        GASearchVariantSetsRequest object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchVariantSetsRequest,
-            protocol.SearchVariantSetsResponse,
-            self.variantSetsGenerator)
-
-    def searchVariants(self, request):
-        """
-        Returns a GASearchVariantsResponse for the specified
-        GASearchVariantsRequest object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchVariantsRequest,
-            protocol.SearchVariantsResponse,
-            self.variantsGenerator)
-
-    def searchCallSets(self, request):
-        """
-        Returns a GASearchCallSetsResponse for the specified
-        GASearchCallSetsRequest Object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchCallSetsRequest,
-            protocol.SearchCallSetsResponse,
-            self.callSetsGenerator)
-
-    def searchDatasets(self, request):
-        """
-        Returns a SearchDatasetsResponse object for the specified
-        SearchDatasetsRequest Object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchDatasetsRequest,
-            protocol.SearchDatasetsResponse,
-            self.datasetsGenerator)
-
-    # Iterators over the data hieararchy
+    ###########################################################
+    #
+    # Iterators over the data hierarchy. These methods help to
+    # implement the search endpoints by providing iterators
+    # over the objects to be returned to the client.
+    #
+    ###########################################################
 
     def _topLevelObjectGenerator(self, request, idMap, idList):
         """
@@ -553,64 +425,206 @@ class AbstractBackend(object):
             request, variantSet.getCallSetIdMap(),
             variantSet.getCallSetIds())
 
-    def startProfile(self):
-        """
-        Profiling hook. Called at the start of the runSearchRequest method
-        and allows for detailed profiling of search performance.
-        """
-        pass
+    ###########################################################
+    #
+    # Public API methods. Each of these methods implements the
+    # corresponding API end point, and return data ready to be
+    # written to the wire.
+    #
+    ###########################################################
 
-    def endProfile(self):
+    def runGetRequest(self, idMap, id_):
         """
-        Profiling hook. Called at the end of the runSearchRequest method.
+        Runs a get request by indexing into the provided idMap and
+        returning a json string of that object
         """
-        pass
+        try:
+            obj = idMap[id_]
+        except KeyError:
+            raise exceptions.ObjectWithIdNotFoundException(id_)
+        protocolElement = obj.toProtocolElement()
+        jsonString = protocolElement.toJsonString()
+        return jsonString
 
-    def validateRequest(self, jsonDict, requestClass):
+    def runSearchRequest(
+            self, requestStr, requestClass, responseClass, objectGenerator):
         """
-        Ensures the jsonDict corresponds to a valid instance of requestClass
-        Throws an error if the data is invalid
+        Runs the specified request. The request is a string containing
+        a JSON representation of an instance of the specified requestClass.
+        We return a string representation of an instance of the specified
+        responseClass in JSON format. Objects are filled into the page list
+        using the specified object generator, which must return
+        (object, nextPageToken) pairs, and be able to resume iteration from
+        any point using the nextPageToken attribute of the request object.
         """
-        if self._requestValidation:
-            if not requestClass.validate(jsonDict):
-                raise exceptions.RequestValidationFailureException(
-                    jsonDict, requestClass)
+        self.startProfile()
+        try:
+            requestDict = json.loads(requestStr)
+        except ValueError:
+            raise exceptions.InvalidJsonException(requestStr)
+        self.validateRequest(requestDict, requestClass)
+        request = requestClass.fromJsonDict(requestDict)
+        if request.pageSize is None:
+            request.pageSize = self._defaultPageSize
+        if request.pageSize <= 0:
+            raise exceptions.BadPageSizeException(request.pageSize)
+        responseBuilder = protocol.SearchResponseBuilder(
+            responseClass, request.pageSize, self._maxResponseLength)
+        nextPageToken = None
+        for obj, nextPageToken in objectGenerator(request):
+            responseBuilder.addValue(obj)
+            if responseBuilder.isFull():
+                break
+        responseBuilder.setNextPageToken(nextPageToken)
+        responseString = responseBuilder.getJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
 
-    def validateResponse(self, jsonString, responseClass):
+    def runListReferenceBases(self, id_, requestArgs):
         """
-        Ensures the jsonDict corresponds to a valid instance of responseClass
-        Throws an error if the data is invalid
+        Runs a listReferenceBases request for the specified ID and
+        request arguments.
         """
-        if self._responseValidation:
-            jsonDict = json.loads(jsonString)
-            if not responseClass.validate(jsonDict):
-                raise exceptions.ResponseValidationFailureException(
-                    jsonDict, responseClass)
+        # parse arguments
+        try:
+            reference = self._referenceIdMap[id_]
+        except KeyError:
+            raise exceptions.ObjectWithIdNotFoundException(id_)
+        start = 0
+        end = datamodel.PysamDatamodelMixin.fastaMax
+        if 'start' in requestArgs:
+            startString = requestArgs['start']
+            try:
+                start = int(startString)
+            except ValueError:
+                raise exceptions.BadRequestIntegerException(
+                    'start', startString)
+        if 'end' in requestArgs:
+            endString = requestArgs['end']
+            try:
+                end = int(endString)
+            except ValueError:
+                raise exceptions.BadRequestIntegerException(
+                    'end', endString)
+        if 'pageToken' in requestArgs:
+            pageTokenStr = requestArgs['pageToken']
+            start = _parsePageToken(pageTokenStr, 1)[0]
+        chunkSize = self._maxResponseLength
 
-    def setRequestValidation(self, requestValidation):
-        """
-        Set enabling request validation
-        """
-        self._requestValidation = requestValidation
+        # get reference bases
+        gbEnd = min(start + chunkSize, end)
+        sequence = reference.getBases(start, gbEnd)
 
-    def setResponseValidation(self, responseValidation):
-        """
-        Set enabling response validation
-        """
-        self._responseValidation = responseValidation
+        # determine nextPageToken
+        if len(sequence) == chunkSize:
+            nextPageToken = start + chunkSize
+        elif len(sequence) > chunkSize:
+            raise exceptions.ServerError()  # should never happen
+        else:
+            nextPageToken = None
 
-    def setDefaultPageSize(self, defaultPageSize):
-        """
-        Sets the default page size for request to the specified value.
-        """
-        self._defaultPageSize = defaultPageSize
+        # build response
+        response = protocol.ListReferenceBasesResponse()
+        response.offset = start
+        response.sequence = sequence
+        response.nextPageToken = nextPageToken
+        return response.toJsonString()
 
-    def setMaxResponseLength(self, maxResponseLength):
+    # Get requests.
+
+    def runGetReference(self, id_):
         """
-        Sets the approximate maximum response length to the specified
-        value.
+        Runs a getReference request for the specified ID.
         """
-        self._maxResponseLength = maxResponseLength
+        return self.runGetRequest(self._referenceIdMap, id_)
+
+    def runGetReferenceSet(self, id_):
+        """
+        Runs a getReferenceSet request for the specified ID.
+        """
+        return self.runGetRequest(self._referenceSetIdMap, id_)
+
+    def runGetVariantSet(self, id_):
+        """
+        Runs a getVariantSet request for the specified ID.
+        """
+        dataset = self._getDatasetFromCompoundId(id_)
+        return self.runGetRequest(dataset.getVariantSetIdMap(), id_)
+
+    # Search requests.
+
+    def runSearchReadGroupSets(self, request):
+        """
+        Runs the specified SearchReadGroupSetsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchReadGroupSetsRequest,
+            protocol.SearchReadGroupSetsResponse,
+            self.readGroupSetsGenerator)
+
+    def runSearchReads(self, request):
+        """
+        Runs the specified SearchReadsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchReadsRequest,
+            protocol.SearchReadsResponse,
+            self.readsGenerator)
+
+    def runSearchReferenceSets(self, request):
+        """
+        Runs the specified SearchReferenceSetsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchReferenceSetsRequest,
+            protocol.SearchReferenceSetsResponse,
+            self.referenceSetsGenerator)
+
+    def runSearchReferences(self, request):
+        """
+        Runs the specified SearchReferenceRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchReferencesRequest,
+            protocol.SearchReferencesResponse,
+            self.referencesGenerator)
+
+    def runSearchVariantSets(self, request):
+        """
+        Runs the specified SearchVariantSetsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchVariantSetsRequest,
+            protocol.SearchVariantSetsResponse,
+            self.variantSetsGenerator)
+
+    def runSearchVariants(self, request):
+        """
+        Runs the specified SearchVariantRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchVariantsRequest,
+            protocol.SearchVariantsResponse,
+            self.variantsGenerator)
+
+    def runSearchCallSets(self, request):
+        """
+        Runs the specified SearchCallSetsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchCallSetsRequest,
+            protocol.SearchCallSetsResponse,
+            self.callSetsGenerator)
+
+    def runSearchDatasets(self, request):
+        """
+        Runs the specified SearchDatasetsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchDatasetsRequest,
+            protocol.SearchDatasetsResponse,
+            self.datasetsGenerator)
 
 
 class EmptyBackend(AbstractBackend):

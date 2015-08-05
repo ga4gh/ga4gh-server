@@ -57,7 +57,7 @@ class TestAbstractBackend(unittest.TestCase):
         request = protocol.SearchVariantSetsRequest()
         request.datasetId = self._backend.getDatasetIds()[0]
         return self.resultIterator(
-            request, pageSize, self._backend.searchVariantSets,
+            request, pageSize, self._backend.runSearchVariantSets,
             protocol.SearchVariantSetsResponse, "variantSets")
 
     def getVariants(
@@ -74,7 +74,7 @@ class TestAbstractBackend(unittest.TestCase):
         request.end = end
         request.callSetIds = callSetIds
         return self.resultIterator(
-            request, pageSize, self._backend.searchVariants,
+            request, pageSize, self._backend.runSearchVariants,
             protocol.SearchVariantsResponse, "variants")
 
     def getCallSets(self, variantSetId, pageSize=100):
@@ -85,7 +85,7 @@ class TestAbstractBackend(unittest.TestCase):
         request = protocol.SearchCallSetsRequest()
         request.variantSetIds = [variantSetId]
         return self.resultIterator(
-            request, pageSize, self._backend.searchCallSets,
+            request, pageSize, self._backend.runSearchCallSets,
             protocol.SearchCallSetsResponse, "callSets")
 
     def testGetVariantSets(self):
@@ -130,7 +130,8 @@ class TestAbstractBackend(unittest.TestCase):
     def testSearchVariantSets(self):
         request = protocol.SearchVariantSetsRequest()
         request.datasetId = self._backend.getDatasetIds()[0]
-        responseStr = self._backend.searchVariantSets(request.toJsonString())
+        responseStr = self._backend.runSearchVariantSets(
+            request.toJsonString())
         response = protocol.SearchVariantSetsResponse.fromJsonString(
             responseStr)
         self.assertTrue(
@@ -141,7 +142,7 @@ class TestAbstractBackend(unittest.TestCase):
             variantSet.id for variantSet in self.getVariantSets(pageSize=1)]
         request = protocol.SearchVariantsRequest()
         request.variantSetId = variantSetIds[0]
-        responseStr = self._backend.searchVariants(request.toJsonString())
+        responseStr = self._backend.runSearchVariants(request.toJsonString())
         response = protocol.SearchVariantsResponse.fromJsonString(
             responseStr)
         self.assertTrue(
@@ -152,7 +153,7 @@ class TestAbstractBackend(unittest.TestCase):
             variantSet.id for variantSet in self.getVariantSets(pageSize=1)]
         request = protocol.SearchCallSetsRequest()
         request.variantSetId = variantSetIds[0]
-        responseStr = self._backend.searchCallSets(request.toJsonString())
+        responseStr = self._backend.runSearchCallSets(request.toJsonString())
         response = protocol.SearchCallSetsResponse.fromJsonString(
             responseStr)
         self.assertTrue(
@@ -170,7 +171,7 @@ class TestAbstractBackend(unittest.TestCase):
 
     def runListReferenceBases(self, id_):
         requestArgs = {"start": 5, "end": 10, "pageToken": "0"}
-        responseStr = self._backend.listReferenceBases(id_, requestArgs)
+        responseStr = self._backend.runListReferenceBases(id_, requestArgs)
         response = protocol.ListReferenceBasesResponse.fromJsonString(
             responseStr)
         self.assertTrue(

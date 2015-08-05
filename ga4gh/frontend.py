@@ -501,73 +501,73 @@ def indexRedirect(version):
 @DisplayedRoute('/<version>/references/<id>')
 def getReference(version, id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.getReference)
+        version, id, flask.request, app.backend.runGetReference)
 
 
 @DisplayedRoute('/<version>/referencesets/<id>')
 def getReferenceSet(version, id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.getReferenceSet)
+        version, id, flask.request, app.backend.runGetReferenceSet)
 
 
 @DisplayedRoute('/<version>/references/<id>/bases')
 def listReferenceBases(version, id):
     return handleFlaskListRequest(
-        version, id, flask.request, app.backend.listReferenceBases)
+        version, id, flask.request, app.backend.runListReferenceBases)
 
 
 @DisplayedRoute('/<version>/callsets/search', postMethod=True)
 def searchCallSets(version):
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchCallSets)
+        version, flask.request, app.backend.runSearchCallSets)
 
 
 @DisplayedRoute('/<version>/readgroupsets/search', postMethod=True)
 def searchReadGroupSets(version):
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchReadGroupSets)
+        version, flask.request, app.backend.runSearchReadGroupSets)
 
 
 @DisplayedRoute('/<version>/reads/search', postMethod=True)
 def searchReads(version):
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchReads)
+        version, flask.request, app.backend.runSearchReads)
 
 
 @DisplayedRoute('/<version>/referencesets/search', postMethod=True)
 def searchReferenceSets(version):
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchReferenceSets)
+        version, flask.request, app.backend.runSearchReferenceSets)
 
 
 @DisplayedRoute('/<version>/references/search', postMethod=True)
 def searchReferences(version):
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchReferences)
+        version, flask.request, app.backend.runSearchReferences)
 
 
 @DisplayedRoute('/<version>/variantsets/search', postMethod=True)
 def searchVariantSets(version):
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchVariantSets)
+        version, flask.request, app.backend.runSearchVariantSets)
 
 
 @DisplayedRoute('/<version>/variants/search', postMethod=True)
 def searchVariants(version):
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchVariants)
+        version, flask.request, app.backend.runSearchVariants)
 
 
 @DisplayedRoute('/<version>/datasets/search', postMethod=True)
 def searchDatasets(version):
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.searchDatasets)
+        version, flask.request, app.backend.runSearchDatasets)
 
 
 @DisplayedRoute('/<version>/variantsets/<no(search):id>')
 def getVariantSet(version, id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.getVariantSet)
+        version, id, flask.request, app.backend.runGetVariantSet)
 
 
 @app.route('/oauth2callback', methods=['GET'])
