@@ -15,6 +15,8 @@ from __future__ import unicode_literals
 import server_test
 import client
 
+import ga4gh.datamodel.references as references
+
 
 class TestGestalt(server_test.ServerTest):
     """
@@ -83,7 +85,8 @@ class TestGestalt(server_test.ServerTest):
 
     def runReferencesRequest(self):
         referenceSetId = 'referenceSet0'
-        referenceId = '{}:srs0'.format(referenceSetId)
+        referenceId = references.CompoundReferenceId.compose(
+            referenceSetId=referenceSetId, rId='srs0')
         cmd = "referencesets-search"
         self.runClientCmd(self.client, cmd)
         cmd = "references-search"

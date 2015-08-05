@@ -11,6 +11,7 @@ import glob
 import vcf
 
 import ga4gh.protocol as protocol
+import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.variants as variants
 import tests.datadriven as datadriven
 import tests.utils as utils
@@ -29,7 +30,10 @@ class VariantSetTest(datadriven.DataDrivenTest):
     built by the variants.VariantSet object.
     """
     def __init__(self, variantSetId, baseDir):
-        super(VariantSetTest, self).__init__(variantSetId, baseDir)
+        compoundId = variants.CompoundVariantSetId.compose(
+            datasetId='dataset1', vsId=variantSetId)
+        super(VariantSetTest, self).__init__(
+            variantSetId, baseDir, str(compoundId))
         self._variantRecords = []
         self._referenceNames = set()
         # Read in all the VCF files in datadir and store each variant.
@@ -165,11 +169,13 @@ class VariantSetTest(datadriven.DataDrivenTest):
         gaCallSetVariants = []
         gaId = self._gaObject.getId()
         for referenceName in self._referenceNames:
-            end = 2**30  # TODO This is arbitrary, and pysam can choke. FIX!
-            gaSearchId = ["{}.{}".format(
-                gaId, sampleId) for sampleId in searchsampleIds]
+            end = datamodel.PysamDatamodelMixin.vcfMax
+            gaSearchIds = [
+                str(variants.CompoundCallsetId.compose(
+                    variantSetId=gaId, csId=sampleId))
+                for sampleId in searchsampleIds]
             gaVariants = list(self._gaObject.getVariants(
-                referenceName, 0, end, searchVariants, gaSearchId))
+                referenceName, 0, end, searchVariants, gaSearchIds))
             self._verifyGaVariantsSample(gaVariants, searchsampleIds)
             gaCallSetVariants += gaVariants
             localVariants = filter(
@@ -305,9 +311,6 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 variant, variantEnd-1, variantEnd))
             self.assertTrue(self._pyvcfVariantIsInGaVarants(
                 variant, variantEnd-1, variantEnd+1))
-
-    def testVariantFromToInRange(self):
-        pass
 
     def testVariantSetMetadata(self):
         def convertPyvcfNumber(number):

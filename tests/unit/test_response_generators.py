@@ -39,11 +39,15 @@ class TestVariantsGenerator(unittest.TestCase):
         self.request = protocol.SearchVariantsRequest()
         self.backend = backend.SimulatedBackend()
         self.datasetId = self.backend.getDatasetIds()[0]
-        self.variantSetId = "{}:variantSetId".format(self.datasetId)
+        compoundId = variants.CompoundVariantSetId.compose(
+            datasetId=self.datasetId, vsId='variantSetId')
+        self.variantSetId = str(compoundId)
 
     def testNonexistantVariantSet(self):
         # a request for a variant set that doesn't exist should throw an error
-        self.request.variantSetId = "{}:notFound".format(self.datasetId)
+        compoundId = variants.CompoundVariantSetId.compose(
+            datasetId=self.datasetId, vsId='notFound')
+        self.request.variantSetId = str(compoundId)
         with self.assertRaises(exceptions.VariantSetNotFoundException):
             self.backend.variantsGenerator(self.request)
 
@@ -112,7 +116,11 @@ class TestReadsGenerator(unittest.TestCase):
         self.request.referenceId = "chr1"
         self.backend = backend.SimulatedBackend()
         self.datasetId = self.backend.getDatasetIds()[0]
-        self.readGroupId = "{}:readGroupId".format(self.datasetId)
+        self.rgsId = "aReadGroupSet"
+        self.rgId = "aReadGroup"
+        compoundId = reads.CompoundReadGroupId.compose(
+            datasetId=self.datasetId, rgsId=self.rgsId, rgId=self.rgId)
+        self.readGroupId = str(compoundId)
 
     def testNoReadGroupsNotSupported(self):
         # a request for no read groups should throw an exception
@@ -128,7 +136,9 @@ class TestReadsGenerator(unittest.TestCase):
 
     def testNonexistantReadGroup(self):
         # a request for a readGroup that doesn't exist should throw an error
-        self.request.readGroupIds = ["{}:notFound".format(self.datasetId)]
+        compoundId = reads.CompoundReadGroupId.compose(
+            datasetId=self.datasetId, rgsId='notFound', rgId='notFound')
+        self.request.readGroupIds = [str(compoundId)]
         with self.assertRaises(exceptions.ReadGroupNotFoundException):
             self.backend.readsGenerator(self.request)
 

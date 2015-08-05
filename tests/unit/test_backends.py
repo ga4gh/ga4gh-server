@@ -17,6 +17,7 @@ import ga4gh.exceptions as exceptions
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
+import ga4gh.datamodel.variants as variants
 
 
 class TestAbstractBackend(unittest.TestCase):
@@ -210,7 +211,9 @@ class TestFileSystemBackend(TestAbstractBackend):
         ids = set(variantSet.id for variantSet in variantSets)
         datasetId = self._backend.getDatasetIds()[0]
         vcfKeys = set(
-            '{}:{}'.format(datasetId, vsId) for vsId in self._vcfs.keys())
+            str(variants.CompoundVariantSetId.compose(
+                datasetId=datasetId, vsId=vsId))
+            for vsId in self._vcfs.keys())
         self.assertEqual(ids, vcfKeys)
 
     def testRunListReferenceBases(self):
@@ -220,11 +223,9 @@ class TestFileSystemBackend(TestAbstractBackend):
     def testDatasetNotFound(self):
         request = protocol.SearchVariantSetsRequest()
         datasetId = 'doesNotExist'
-        request.datasetIds = [datasetId]
+        request.datasetId = datasetId
         with self.assertRaises(exceptions.DatasetNotFoundException):
-            self._backend._getDatasetFromRequest(request)
-        with self.assertRaises(exceptions.DatasetNotFoundException):
-            self._backend._getDatasetFromCompoundId(datasetId + ':notUsed')
+            self._backend.getDataset(request.datasetId)
 
 
 class TestTopLevelObjectGenerator(unittest.TestCase):

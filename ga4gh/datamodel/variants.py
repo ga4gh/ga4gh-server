@@ -47,6 +47,34 @@ def convertVCFGenotype(vcfGenotype, vcfPhaseset):
     return genotype, phaseset
 
 
+class CompoundVariantSetId(datamodel.CompoundId):
+    """
+    The compound id for a variant set
+    """
+    fields = ['datasetId', 'vsId']
+
+
+class CompoundVariantId(datamodel.CompoundId):
+    """
+    The compound id for a variant
+    """
+    fields = ['datasetId', 'vsId', 'referenceName', 'start']
+    comboFields = {
+        'variantSetId': [0, 1],
+        'variantId': [2, 3],
+    }
+
+
+class CompoundCallsetId(datamodel.CompoundId):
+    """
+    The compound id for a callset
+    """
+    fields = ['datasetId', 'vsId', 'csId']
+    comboFields = {
+        'variantSetId': [0, 1],
+    }
+
+
 class CallSet(object):
     """
     Class representing a CallSet. A CallSet basically represents the
@@ -108,7 +136,10 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         Returns the callSetId for the specified sampleName in this
         VariantSet.
         """
-        return "{0}.{1}".format(self.getId(), sampleName)
+        compoundId = CompoundCallsetId.compose(
+            variantSetId=self.getId(),
+            csId=sampleName)
+        return str(compoundId)
 
     def addCallSet(self, sampleName):
         """
@@ -222,8 +253,10 @@ class SimulatedVariantSet(AbstractVariantSet):
         variant = self._createGaVariant()
         variant.names = []
         variant.referenceName = referenceName
-        variant.id = "{0}:{1}:{2}".format(
-            variant.variantSetId, referenceName, position)
+        compoundId = CompoundVariantId.compose(
+            variantSetId=variant.variantSetId,
+            referenceName=referenceName, start=position)
+        variant.id = str(compoundId)
         variant.start = position
         variant.end = position + 1  # SNPs only for now
         bases = ["A", "C", "G", "T"]
@@ -383,9 +416,11 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         variant = self._createGaVariant()
         # N.B. record.pos is 1-based
         #      also consider using record.start-record.stop
-        variant.id = "{0}:{1}:{2}".format(self._id,
-                                          record.contig,
-                                          record.pos)
+        compoundId = CompoundVariantId.compose(
+            variantSetId=self._id,
+            referenceName=record.contig,
+            start=record.pos)
+        variant.id = str(compoundId)
         variant.referenceName = record.contig
         if record.id is not None:
             variant.names = record.id.split(';')

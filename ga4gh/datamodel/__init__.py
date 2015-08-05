@@ -27,6 +27,77 @@ def _cleanupHtslibsMess(indexDir):
         shutil.rmtree(indexDir)
 
 
+class CompoundId(object):
+    """
+    Base class for an id composed of several different parts, separated
+    by a separator.
+    """
+    separator = ':'
+    fields = []
+    comboFields = {}
+
+    @classmethod
+    def compose(cls, **kwargs):
+        compoundId = cls(None, _skipInstantiation=True)
+        validFields = set()
+        for field in cls.fields:
+            validFields.add(field)
+        comboKeys = cls.comboFields.keys()
+        for key, value in kwargs.items():
+            if value is None:
+                msg = "field '{}' is None".format(key)
+                raise ValueError(msg)
+            if key in validFields:
+                setattr(compoundId, key, str(value))
+            elif key in comboKeys:
+                setattr(compoundId, key, value)
+                fieldIndexes = cls.comboFields[key]
+                splits = value.split(cls.separator)
+                if len(fieldIndexes) != len(splits):
+                    msg = ("field '{}' with value '{}' has {} split(s), "
+                           "needs {}")
+                    raise ValueError(msg.format(
+                        key, value, len(splits), len(fieldIndexes)))
+                for i in range(len(splits)):
+                    field = cls.fields[fieldIndexes[i]]
+                    setattr(compoundId, field, splits[i])
+            else:
+                msg = "field '{}' not in fields of {}; options are: {}"
+                raise ValueError(msg.format(key, cls.__name__, cls.fields))
+        return compoundId
+
+    def __init__(self, compoundIdStr, _skipInstantiation=False):
+        if not _skipInstantiation:
+            if not isinstance(compoundIdStr, basestring):
+                raise exceptions.BadIdentifierException(
+                    compoundIdStr, self._getParseErrorMessage())
+            splits = compoundIdStr.split(self.separator)
+            if len(splits) != len(self.fields):
+                raise exceptions.BadIdentifierException(
+                    compoundIdStr, self._getParseErrorMessage())
+            for i, field in enumerate(self.fields):
+                setattr(self, field, str(splits[i]))
+            for comboFieldName, comboFieldOrder in self.comboFields.items():
+                values = []
+                for i in comboFieldOrder:
+                    value = getattr(self, self.fields[i])
+                    values.append(str(value))
+                comboFieldValue = self.separator.join(values)
+                setattr(self, comboFieldName, comboFieldValue)
+
+    def __str__(self):
+        values = []
+        for field in self.fields:
+            value = getattr(self, field)
+            values.append(value)
+        return self.separator.join(values)
+
+    def _getParseErrorMessage(self):
+        idFormat = self.separator.join(self.fields)
+        msg = "(id must be in format {})".format(idFormat)
+        return msg
+
+
 class PysamFileHandleCache(object):
     """
     Cache for opened file handles. We use a deque which has the

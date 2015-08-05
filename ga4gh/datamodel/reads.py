@@ -16,6 +16,34 @@ import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
 
 
+class CompoundReadGroupSetId(datamodel.CompoundId):
+    """
+    The compound id for a read group set
+    """
+    fields = ['datasetId', 'rgsId']
+
+
+class CompoundReadGroupId(datamodel.CompoundId):
+    """
+    The compound id for a read group
+    """
+    fields = ['datasetId', 'rgsId', 'rgId']
+    comboFields = {
+        'readGroupSetId': [0, 1],
+    }
+
+
+class CompoundReadAlignmentId(datamodel.CompoundId):
+    """
+    The compound id for a read alignment
+    """
+    fields = ['datasetId', 'rgsId', 'rgId', 'raId']
+    comboFields = {
+        'readGroupSetId': [0, 1],
+        'readGroupId': [0, 1, 2],
+    }
+
+
 class SamCigar(object):
     """
     Utility class for working with SAM CIGAR strings
@@ -104,8 +132,9 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
     """
     def __init__(self, id_, numAlignments=2):
         super(SimulatedReadGroupSet, self).__init__(id_)
-        readGroupId = "{}:one".format(id_)
-        readGroup = SimulatedReadGroup(readGroupId, numAlignments)
+        compoundId = CompoundReadGroupId.compose(
+            readGroupSetId=id_, rgId='one')
+        readGroup = SimulatedReadGroup(str(compoundId), numAlignments)
         self._readGroups.append(readGroup)
 
 
@@ -123,8 +152,9 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     def _addDataFile(self, path):
         filename = os.path.split(path)[1]
         localId = os.path.splitext(filename)[0]
-        readGroupId = "{}:{}".format(self._id, localId)
-        readGroup = HtslibReadGroup(readGroupId, path)
+        compoundId = CompoundReadGroupId.compose(
+            readGroupSetId=self._id, rgId=localId)
+        readGroup = HtslibReadGroup(str(compoundId), path)
         self._readGroups.append(readGroup)
 
 
@@ -183,7 +213,9 @@ class SimulatedReadGroup(AbstractReadGroup):
 
     def _createReadAlignment(self, i):
         # TODO fill out a bit more
-        id_ = "{}:simulated{}".format(self._id, i)
+        compoundId = CompoundReadAlignmentId.compose(
+            readGroupId=self._id, raId="simulated{}".format(i))
+        id_ = str(compoundId)
         alignment = protocol.ReadAlignment()
         alignment.alignedQuality = [1, 2, 3]
         alignment.alignedSequence = "ACT"
@@ -282,7 +314,9 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
             read.flag, SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
         ret.fragmentLength = read.template_length
         ret.fragmentName = read.query_name
-        ret.id = "{}:{}".format(self._id, read.query_name)
+        compoundId = CompoundReadAlignmentId.compose(
+            readGroupId=self._id, raId=read.query_name)
+        ret.id = str(compoundId)
         ret.info = {key: [str(value)] for key, value in read.tags}
         ret.nextMatePosition = None
         if read.next_reference_id != -1:

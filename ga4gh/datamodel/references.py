@@ -17,6 +17,13 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
 
+class CompoundReferenceId(datamodel.CompoundId):
+    """
+    The compound id for a reference
+    """
+    fields = ['referenceSetId', 'rId']
+
+
 class AbstractReferenceSet(object):
     """
     Class representing ReferenceSets. A ReferenceSet is a set of
@@ -77,9 +84,10 @@ class SimulatedReferenceSet(AbstractReferenceSet):
         self._randomGenerator.seed(self._randomSeed)
         for i in range(numReferences):
             referenceSeed = self._randomGenerator.getrandbits(32)
-            referenceId = "{}:srs{}".format(id_, i)
-            reference = SimulatedReference(referenceId, referenceSeed)
-            self._referenceIdMap[referenceId] = reference
+            compoundId = CompoundReferenceId.compose(
+                referenceSetId=id_, rId='srs{}'.format(i))
+            reference = SimulatedReference(str(compoundId), referenceSeed)
+            self._referenceIdMap[str(compoundId)] = reference
         self._referenceIds = sorted(self._referenceIdMap.keys())
 
 
@@ -98,9 +106,10 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     def _addDataFile(self, path):
         filename = os.path.split(path)[1]
         localId = filename.split(".")[0]
-        referenceId = "{}:{}".format(self._id, localId)
-        reference = HtslibReference(referenceId, path)
-        self._referenceIdMap[referenceId] = reference
+        compoundId = CompoundReferenceId.compose(
+            referenceSetId=self._id, rId=localId)
+        reference = HtslibReference(str(compoundId), path)
+        self._referenceIdMap[str(compoundId)] = reference
 
 
 class AbstractReference(object):

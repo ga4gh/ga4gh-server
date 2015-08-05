@@ -11,6 +11,7 @@ import unittest
 import hashlib
 import logging
 
+import ga4gh.datamodel.variants as variants
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 import tests.utils as utils
@@ -101,8 +102,11 @@ class TestSimulatedStack(unittest.TestCase):
             self.assertEqual(200, response.status_code)
             responseObject = protocol.VariantSet.fromJsonString(response.data)
             self.assertEqual(responseObject.id, variantSetId)
+        datasetId = 'dataset1'
         for badId in ["", "terribly bad ID value", "x" * 1000]:
-            response = self.sendObjectGetRequest(path, badId)
+            compoundId = variants.CompoundVariantSetId.compose(
+                datasetId=datasetId, vsId=badId)
+            response = self.sendObjectGetRequest(path, str(compoundId))
             self.assertEqual(404, response.status_code)
 
     def testVariantsSearch(self):

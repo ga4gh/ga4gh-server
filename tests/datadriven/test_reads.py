@@ -33,7 +33,9 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         def __init__(self, readGroupSetId, samFileName):
             filename = os.path.split(samFileName)[1]
             localId = os.path.splitext(filename)[0]
-            readGroupId = "{}:{}".format(readGroupSetId, localId)
+            compoundId = reads.CompoundReadGroupId.compose(
+                datasetId='dataset1', rgsId=readGroupSetId, rgId=localId)
+            readGroupId = str(compoundId)
             self.id = readGroupId
             self.samFile = pysam.AlignmentFile(samFileName)
             self.reads = []
@@ -46,7 +48,10 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 self.reads.append(read)
 
     def __init__(self, readGroupSetId, baseDir):
-        super(ReadGroupSetTest, self).__init__(readGroupSetId, baseDir)
+        compoundId = reads.CompoundReadGroupSetId.compose(
+            datasetId='dataset1', rgsId=readGroupSetId)
+        super(ReadGroupSetTest, self).__init__(
+            readGroupSetId, baseDir, str(compoundId))
         self._readGroupInfos = {}
         for samFileName in glob.glob(
                 os.path.join(self._dataDir, "*.bam")):
@@ -181,9 +186,9 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         self.assertEqual(
             gaAlignment.fragmentName,
             pysamAlignment.query_name)
-        self.assertEqual(
-            gaAlignment.id,
-            "{}:{}".format(readGroupInfo.id, pysamAlignment.query_name))
+        compoundId = reads.CompoundReadAlignmentId.compose(
+            readGroupId=readGroupInfo.id, raId=pysamAlignment.query_name)
+        self.assertEqual(gaAlignment.id, str(compoundId))
         self.assertEqual(
             gaAlignment.info,
             {key: [str(value)] for key, value in pysamAlignment.tags})
