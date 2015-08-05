@@ -119,6 +119,13 @@ class TestFrontend(unittest.TestCase):
         response = self.sendGetRequest(path)
         return response
 
+    def sendGetReadGroupSet(self, id_=None):
+        if id_ is None:
+            id_ = 'simulatedDataset1:aReadGroupSet'
+        path = "/readgroupsets/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
     def sendGetReferenceSet(self, id_=None):
         if id_ is None:
             id_ = 'simple'
@@ -172,6 +179,7 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendGetVariantSet())
         assertHeaders(self.sendGetReference())
         assertHeaders(self.sendGetReferenceSet())
+        assertHeaders(self.sendGetReadGroupSet())
         # TODO: Test other methods as they are implemented
 
     def verifySearchRouting(self, path, getDefined=False):
@@ -267,6 +275,13 @@ class TestFrontend(unittest.TestCase):
         response = self.sendGetVariantSet(str(compoundId))
         self.assertEqual(404, response.status_code)
 
+    def testGetReadGroupSet(self):
+        response = self.sendGetReadGroupSet()
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.ReadGroupSet.fromJsonString(
+            response.data)
+        self.assertEqual(responseData.id, 'simulatedDataset1:aReadGroupSet')
+
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch()
         self.assertEqual(200, response.status_code)
@@ -310,7 +325,6 @@ class TestFrontend(unittest.TestCase):
             '/callsets/<id>',
             '/variants/<id>',
             '/datasets/<id>',
-            '/readgroupsets/<id>',
             '/readgroups/<id>',
         ]
 

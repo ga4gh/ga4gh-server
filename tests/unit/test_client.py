@@ -132,6 +132,11 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.runGetRequest.assert_called_once_with(
             "references", protocol.Reference, self._id)
 
+    def testGetReadGroupSets(self):
+        self.httpClient.getReadGroupSet(self._id)
+        self.httpClient.runGetRequest.assert_called_once_with(
+            "readgroupsets", protocol.ReadGroupSet, self._id)
+
     def testListReferenceBases(self):
         self.httpClient.listReferenceBases(self.protocolRequest, self._id)
         self.httpClient.runListRequest.assert_called_once_with(
