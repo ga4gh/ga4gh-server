@@ -584,6 +584,14 @@ def getReadGroup(version, id):
         version, id, flask.request, app.backend.runGetReadGroup)
 
 
+@DisplayedRoute(
+    '/<version>/callsets/<no(search):id>',
+    pathDisplay='/<version>/callsets/<id>')
+def getCallset(version, id):
+    return handleFlaskGetRequest(
+        version, id, flask.request, app.backend.runGetCallset)
+
+
 @app.route('/oauth2callback', methods=['GET'])
 def oidcCallback():
     """
@@ -645,11 +653,6 @@ def oidcCallback():
 
 
 # The below paths have not yet been implemented
-
-
-@app.route('/<version>/callsets/<no(search):id>')
-def getCallset(version, id):
-    raise exceptions.NotImplementedException()
 
 
 @app.route('/<version>/variants/<no(search):id>')

@@ -133,6 +133,13 @@ class TestFrontend(unittest.TestCase):
         response = self.sendGetRequest(path)
         return response
 
+    def sendGetCallset(self, id_=None):
+        if id_ is None:
+            id_ = 'simulatedDataset1:simVs0:simCallSet_0'
+        path = "/callsets/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
     def sendGetReferenceSet(self, id_=None):
         if id_ is None:
             id_ = 'simple'
@@ -298,6 +305,14 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(
             responseData.id, 'simulatedDataset1:aReadGroupSet:one')
 
+    def testGetCallset(self):
+        response = self.sendGetCallset()
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.CallSet.fromJsonString(
+            response.data)
+        self.assertEqual(
+            responseData.id, 'simulatedDataset1:simVs0:simCallSet_0')
+
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch()
         self.assertEqual(200, response.status_code)
@@ -338,7 +353,6 @@ class TestFrontend(unittest.TestCase):
         pathsNotImplementedPost = [
         ]
         pathsNotImplementedGet = [
-            '/callsets/<id>',
             '/variants/<id>',
             '/datasets/<id>',
         ]

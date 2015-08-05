@@ -542,6 +542,17 @@ class GetReadGroupRunner(AbstractGetRunner):
         self._run(self._httpClient.getReadGroup)
 
 
+class GetCallsetRunner(AbstractGetRunner):
+    """
+    Runner class for the callsets/{id} method
+    """
+    def __init__(self, args):
+        super(GetCallsetRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.getCallset)
+
+
 class BenchmarkRunner(SearchVariantsRunner):
     """
     Runner class for the client side benchmarking. This is intended to give
@@ -851,6 +862,15 @@ def addReadGroupsGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addCallsetsGetParser(subparsers):
+    parser = subparsers.add_parser(
+        "callsets-get",
+        description="Get a callset",
+        help="Get a callset")
+    parser.set_defaults(runner=GetCallsetRunner)
+    addGetArguments(parser)
+
+
 def addReferencesBasesListParser(subparsers):
     parser = subparsers.add_parser(
         "references-list-bases",
@@ -882,6 +902,7 @@ def client_main(parser=None):
     addReferencesGetParser(subparsers)
     addReadGroupSetsGetParser(subparsers)
     addReadGroupsGetParser(subparsers)
+    addCallsetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
 
     args = parser.parse_args()

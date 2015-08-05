@@ -204,6 +204,12 @@ class HttpClient(object):
         """
         return self.runGetRequest("readgroups", protocol.ReadGroup, id_)
 
+    def getCallset(self, id_):
+        """
+        Returns a callset from the server
+        """
+        return self.runGetRequest("callsets", protocol.CallSet, id_)
+
     def listReferenceBases(self, protocolRequest, id_):
         """
         Returns an iterator over the bases from the server
