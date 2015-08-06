@@ -21,6 +21,7 @@ import ga4gh.protocol as protocol
 import ga4gh.converters as converters
 import ga4gh.frontend as frontend
 import ga4gh.configtest as configtest
+import ga4gh.exceptions as exceptions
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -845,8 +846,13 @@ def client_main(parser=None):
     if "runner" not in args:
         parser.print_help()
     else:
-        runner = args.runner(args)
-        runner.run()
+        try:
+            runner = args.runner(args)
+            runner.run()
+        except (exceptions.BaseClientException,
+                requests.exceptions.RequestException) as exception:
+            # TODO suppress exception unless debug settings are enabled
+            raise exception
 
 ##############################################################################
 # Configuration testing

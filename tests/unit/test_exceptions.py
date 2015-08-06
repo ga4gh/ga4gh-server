@@ -1,7 +1,6 @@
 """
 Tests related to exceptions
 """
-
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -53,8 +52,9 @@ class TestExceptionHandler(unittest.TestCase):
         self.assertEquals(gaException.message, message)
 
 
-def isClassAndExceptionSubclass(class_):
-    return inspect.isclass(class_) and issubclass(class_, Exception)
+def isClassAndBaseServerExceptionSubclass(class_):
+    return (inspect.isclass(class_) and
+            issubclass(class_, exceptions.BaseServerException))
 
 
 class TestExceptionConsistency(unittest.TestCase):
@@ -67,7 +67,7 @@ class TestExceptionConsistency(unittest.TestCase):
     """
     def _getExceptionClasses(self):
         classes = inspect.getmembers(
-            exceptions, isClassAndExceptionSubclass)
+            exceptions, isClassAndBaseServerExceptionSubclass)
         return [class_ for _, class_ in classes]
 
     def testCodeInvariants(self):

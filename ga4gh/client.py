@@ -11,6 +11,7 @@ import posixpath
 import logging
 
 import ga4gh.protocol as protocol
+import ga4gh.exceptions as exceptions
 
 
 class HttpClient(object):
@@ -88,9 +89,9 @@ class HttpClient(object):
     def _checkStatus(self, response):
         if response.status_code != requests.codes.ok:
             self._logger.error("%s %s", response.status_code, response.text)
-            # TODO use custom exception instead of Exception
-            raise Exception("Url {0} had status_code {1}".format(
-                response.url, response.status_code))
+            raise exceptions.RequestNonSuccessException(
+                "Url {0} had status_code {1}".format(
+                    response.url, response.status_code))
 
     def _updateBytesRead(self, jsonString):
         self._bytesRead += len(jsonString)
@@ -99,6 +100,8 @@ class HttpClient(object):
         jsonResponseString = response.text
         self._updateBytesRead(jsonResponseString)
         self._debugResponse(jsonResponseString)
+        if jsonResponseString == '':
+            raise exceptions.EmptyResponseException()
         responseObject = protocolResponseClass.fromJsonString(
             jsonResponseString)
         return responseObject
