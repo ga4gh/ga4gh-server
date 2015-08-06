@@ -15,8 +15,8 @@ import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.variants as variants
 
 
 def _parsePageToken(pageToken, numValues):
@@ -474,6 +474,16 @@ class AbstractBackend(object):
         self.validateResponse(responseString, responseClass)
         self.endProfile()
         return responseString
+
+    def runGetCallset(self, id_):
+        """
+        Returns a callset with the given id
+        """
+        compoundId = variants.CompoundCallsetId(id_)
+        dataset = self.getDataset(compoundId.datasetId)
+        variantSet = _getVariantSet(
+            compoundId, dataset.getVariantSetIdMap())
+        return self.runGetRequest(variantSet.getCallSetIdMap(), id_)
 
     def runListReferenceBases(self, id_, requestArgs):
         """
