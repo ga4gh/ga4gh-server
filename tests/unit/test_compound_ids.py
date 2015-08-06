@@ -132,10 +132,11 @@ class TestCompoundIds(unittest.TestCase):
     def testVariant(self):
         referenceName = "referenceName"
         start = "start"
+        md5 = "md5"
         variantSet = self.getVariantSet()
         dataset = variantSet.getParentContainer()
         cid = datamodel.VariantCompoundId(
-            variantSet.getCompoundId(), referenceName, start)
+            variantSet.getCompoundId(), referenceName, start, md5)
         self.assertRaises(
             ValueError, datamodel.VariantCompoundId,
             variantSet.getCompoundId())
@@ -146,16 +147,18 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.variantSet, variantSet.getLocalId())
         self.assertEqual(cid.referenceName, referenceName)
         self.assertEqual(cid.start, start)
+        self.assertEqual(cid.md5, md5)
         self.assertEqual(cid.datasetId, dataset.getId())
         self.assertEqual(cid.variantSetId, variantSet.getId())
 
     def testVariantParse(self):
-        idStr = "a:b:c:d"
+        idStr = "a:b:c:d:e"
         cid = datamodel.VariantCompoundId.parse(idStr)
         self.assertEqual(cid.dataset, "a")
         self.assertEqual(cid.variantSet, "b")
         self.assertEqual(cid.referenceName, "c")
         self.assertEqual(cid.start, "d")
+        self.assertEqual(cid.md5, "e")
         self.verifyParseFailure(idStr, datamodel.VariantCompoundId)
 
     def testReferenceSet(self):

@@ -210,6 +210,12 @@ class HttpClient(object):
         """
         return self.runGetRequest("callsets", protocol.CallSet, id_)
 
+    def getVariant(self, id_):
+        """
+        Returns a variant from the server
+        """
+        return self.runGetRequest("variants", protocol.Variant, id_)
+
     def listReferenceBases(self, protocolRequest, id_):
         """
         Returns an iterator over the bases from the server

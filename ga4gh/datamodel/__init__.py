@@ -215,7 +215,7 @@ class VariantCompoundId(VariantSetCompoundId):
     """
     The compound id for a variant
     """
-    fields = VariantSetCompoundId.fields + ['referenceName', 'start']
+    fields = VariantSetCompoundId.fields + ['referenceName', 'start', 'md5']
 
 
 class CallSetCompoundId(VariantSetCompoundId):

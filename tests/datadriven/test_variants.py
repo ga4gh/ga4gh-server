@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import os
 import glob
+import hashlib
 
 import vcf
 
@@ -14,6 +15,7 @@ import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.variants as variants
 import ga4gh.protocol as protocol
+import ga4gh.exceptions as exceptions
 import tests.datadriven as datadriven
 import tests.utils as utils
 
@@ -346,3 +348,48 @@ class VariantSetTest(datadriven.DataDrivenTest):
         testMetaLength = (
             1 + len(self._formats) + len(self._infos) - gtCounter)
         self.assertEqual(len(keyMap), testMetaLength)
+
+    def testGetVariant(self):
+        variantSet = self._gaObject
+        for referenceName in self._referenceNames:
+            refnameVariants = self._getPyvcfVariants(referenceName)
+            for variant in refnameVariants:
+                # positive test: get the expected variant
+                md5 = self._hashVariant(variant)
+                compoundId = datamodel.VariantCompoundId(
+                    variantSet.getCompoundId(), referenceName,
+                    variant.start, md5)
+                gotVariant = variantSet.getVariant(compoundId)
+                self.assertEqual(str(compoundId), gotVariant.id)
+
+                # negative test: change start position to past variant
+                wrongStart = variant.end
+                compoundId = datamodel.VariantCompoundId(
+                    variantSet.getCompoundId(), referenceName,
+                    wrongStart, md5)
+                try:
+                    gotVariant = variantSet.getVariant(compoundId)
+                    self.assertNotEqual(variant.start, gotVariant.start)
+                except exceptions.ObjectNotFoundException:
+                    pass
+
+                # negative test: change reference name
+                compoundId = datamodel.VariantCompoundId(
+                    variantSet.getCompoundId(), "wrong reference name",
+                    variant.start, md5)
+                with self.assertRaises(exceptions.ObjectNotFoundException):
+                    variantSet.getVariant(compoundId)
+
+                # negative test: change hash
+                compoundId = datamodel.VariantCompoundId(
+                    variantSet.getCompoundId(), referenceName,
+                    variant.start, "wrong hash")
+                with self.assertRaises(exceptions.ObjectNotFoundException):
+                    variantSet.getVariant(compoundId)
+
+    def _hashVariant(self, record):
+        if record.ALT[0] is None:
+            alts = tuple()
+        else:
+            alts = tuple([str(substitution) for substitution in record.ALT])
+        return hashlib.md5(record.REF + str(alts)).hexdigest()
