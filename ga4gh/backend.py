@@ -41,11 +41,26 @@ def _parsePageToken(pageToken, numValues):
 
 def _getVariantSet(request, variantSetIdMap):
     variantSetId = request.variantSetId
-    try:
-        variantSet = variantSetIdMap[variantSetId]
-    except KeyError:
-        raise exceptions.VariantSetNotFoundException(variantSetId)
+    variantSet = _safeMapQuery(
+        variantSetIdMap, variantSetId,
+        exceptionClass=exceptions.VariantSetNotFoundException)
     return variantSet
+
+
+def _safeMapQuery(idMap, id_, exceptionClass=None, idErrorString=None):
+    """
+    Attempt to retrieve a value from a map, throw an appropriate error
+    if the key is not present
+    """
+    try:
+        obj = idMap[id_]
+    except KeyError:
+        if idErrorString is None:
+            idErrorString = id_
+        if exceptionClass is None:
+            exceptionClass = exceptions.ObjectWithIdNotFoundException
+        raise exceptionClass(idErrorString)
+    return obj
 
 
 class IntervalIterator(object):
@@ -159,10 +174,9 @@ class ReadsIntervalIterator(IntervalIterator):
                 msg = "Read search over multiple readGroups not supported"
             raise exceptions.NotImplementedException(msg)
         readGroupId = self._request.readGroupIds[0]
-        try:
-            readGroup = self._containerIdMap[self._request.readGroupIds[0]]
-        except KeyError:
-            raise exceptions.ReadGroupNotFoundException(readGroupId)
+        readGroup = _safeMapQuery(
+            self._containerIdMap, readGroupId,
+            exceptions.ReadGroupNotFoundException)
         return readGroup
 
     def _search(self, start, end):
@@ -252,10 +266,9 @@ class AbstractBackend(object):
         """
         Returns a dataset with id datasetId
         """
-        try:
-            return self._datasetIdMap[datasetId]
-        except KeyError:
-            raise exceptions.DatasetNotFoundException(datasetId)
+        return _safeMapQuery(
+            self._datasetIdMap, datasetId,
+            exceptions.DatasetNotFoundException)
 
     def getReferenceSets(self):
         """
@@ -422,10 +435,7 @@ class AbstractBackend(object):
         Runs a get request by indexing into the provided idMap and
         returning a json string of that object
         """
-        try:
-            obj = idMap[id_]
-        except KeyError:
-            raise exceptions.ObjectWithIdNotFoundException(id_)
+        obj = _safeMapQuery(idMap, id_)
         protocolElement = obj.toProtocolElement()
         jsonString = protocolElement.toJsonString()
         return jsonString
@@ -471,10 +481,9 @@ class AbstractBackend(object):
         request arguments.
         """
         # parse arguments
-        try:
-            reference = self._referenceIdMap[id_]
-        except KeyError:
-            raise exceptions.ObjectWithIdNotFoundException(id_)
+        reference = _safeMapQuery(
+            self._referenceIdMap, id_,
+            exceptions.ObjectWithIdNotFoundException)
         start = 0
         end = datamodel.PysamDatamodelMixin.fastaMax
         if 'start' in requestArgs:
