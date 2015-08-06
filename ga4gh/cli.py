@@ -531,6 +531,17 @@ class GetReadGroupSetRunner(AbstractGetRunner):
         self._run(self._httpClient.getReadGroupSet)
 
 
+class GetReadGroupRunner(AbstractGetRunner):
+    """
+    Runner class for the references/{id} method
+    """
+    def __init__(self, args):
+        super(GetReadGroupRunner, self).__init__(args)
+
+    def run(self):
+        self._run(self._httpClient.getReadGroup)
+
+
 class BenchmarkRunner(SearchVariantsRunner):
     """
     Runner class for the client side benchmarking. This is intended to give
@@ -831,6 +842,15 @@ def addReadGroupSetsGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addReadGroupsGetParser(subparsers):
+    parser = subparsers.add_parser(
+        "readgroups-get",
+        description="Get a read group",
+        help="Get a read group")
+    parser.set_defaults(runner=GetReadGroupRunner)
+    addGetArguments(parser)
+
+
 def addReferencesBasesListParser(subparsers):
     parser = subparsers.add_parser(
         "references-list-bases",
@@ -861,6 +881,7 @@ def client_main(parser=None):
     addReferenceSetsGetParser(subparsers)
     addReferencesGetParser(subparsers)
     addReadGroupSetsGetParser(subparsers)
+    addReadGroupsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
 
     args = parser.parse_args()

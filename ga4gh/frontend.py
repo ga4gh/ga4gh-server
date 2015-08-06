@@ -578,6 +578,12 @@ def getReadGroupSet(version, id):
         version, id, flask.request, app.backend.runGetReadGroupSet)
 
 
+@DisplayedRoute('/<version>/readgroups/<id>')
+def getReadGroup(version, id):
+    return handleFlaskGetRequest(
+        version, id, flask.request, app.backend.runGetReadGroup)
+
+
 @app.route('/oauth2callback', methods=['GET'])
 def oidcCallback():
     """
@@ -653,11 +659,6 @@ def getVariant(version, id):
 
 @app.route('/<version>/datasets/<no(search):id>')
 def getDataset(version, id):
-    raise exceptions.NotImplementedException()
-
-
-@app.route('/<version>/readgroups/<id>')
-def getReadGroup(version, id):
     raise exceptions.NotImplementedException()
 
 
