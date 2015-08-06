@@ -18,7 +18,10 @@ class AbstractDataset(datamodel.DatamodelObject):
     """
     The base class of datasets containing variants and reads
     """
-    def __init__(self):
+    compoundIdClass = datamodel.DatasetCompoundId
+
+    def __init__(self, localId):
+        super(AbstractDataset, self).__init__(None, localId)
         self._variantSetIds = []
         self._variantSetIdMap = {}
         self._readGroupSetIds = []
@@ -30,18 +33,6 @@ class AbstractDataset(datamodel.DatamodelObject):
         dataset = protocol.Dataset()
         dataset.id = self.getId()
         return dataset
-
-    def getId(self):
-        """
-        Return the id of the dataset
-        """
-        return self._id
-
-    def getDirectory(self):
-        """
-        Return the path of the directory of this dataset
-        """
-        return self._datasetDir
 
     def getVariantSetIds(self):
         """
@@ -97,30 +88,27 @@ class SimulatedDataset(AbstractDataset):
     A simulated dataset
     """
     def __init__(
-            self, datasetId, randomSeed, numCalls,
-            variantDensity, numVariantSets, numAlignments):
-        super(SimulatedDataset, self).__init__()
-        self._id = datasetId
+            self, localId, randomSeed=1, numCalls=1,
+            variantDensity=1, numVariantSets=1, numAlignments=1):
+        super(SimulatedDataset, self).__init__(localId)
         self._randomSeed = randomSeed
         self._randomGenerator = random.Random()
         self._randomGenerator.seed(self._randomSeed)
 
         # Variants
         for i in range(numVariantSets):
-            compoundVariantSetId = variants.CompoundVariantSetId.compose(
-                datasetId=self._id, vsId="simVs{}".format(i))
+            localId = "simVs{}".format(i)
             seed = self._randomGenerator.randint(0, 2**32 - 1)
             variantSet = variants.SimulatedVariantSet(
-                seed, numCalls, variantDensity, str(compoundVariantSetId))
-            self._variantSetIdMap[str(compoundVariantSetId)] = variantSet
+                self, localId, seed, numCalls, variantDensity)
+            self._variantSetIdMap[variantSet.getId()] = variantSet
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
         # Reads
-        compoundReadGroupSetId = reads.CompoundReadGroupSetId.compose(
-            datasetId=self._id, rgsId='aReadGroupSet')
+        localId = 'aReadGroupSet'
         readGroupSet = reads.SimulatedReadGroupSet(
-            str(compoundReadGroupSetId), numAlignments)
-        self._readGroupSetIdMap[str(compoundReadGroupSetId)] = readGroupSet
+            self, localId, numAlignments)
+        self._readGroupSetIdMap[readGroupSet.getId()] = readGroupSet
         for readGroup in readGroupSet.getReadGroups():
             self._readGroupIdMap[readGroup.getId()] = readGroup
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())
@@ -131,34 +119,28 @@ class FileSystemDataset(AbstractDataset):
     """
     A dataset based on the file system
     """
-    def __init__(self, datasetDir):
-        super(FileSystemDataset, self).__init__()
-        self._id = os.path.basename(os.path.normpath(datasetDir))
-        self._datasetDir = datasetDir
+    def __init__(self, dataDir):
+        localId = os.path.basename(os.path.normpath(dataDir))
+        super(FileSystemDataset, self).__init__(localId)
 
         # Variants
-        variantSetDir = os.path.join(self._datasetDir, "variants")
-        for variantSetId in os.listdir(variantSetDir):
-            compoundVariantSetId = variants.CompoundVariantSetId.compose(
-                datasetId=self._id, vsId=variantSetId)
-            relativePath = os.path.join(variantSetDir, variantSetId)
+        variantSetDir = os.path.join(dataDir, "variants")
+        for localId in os.listdir(variantSetDir):
+            relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
-                self._variantSetIdMap[str(compoundVariantSetId)] = \
-                    variants.HtslibVariantSet(
-                        str(compoundVariantSetId), relativePath)
+                variantSet = variants.HtslibVariantSet(
+                    self, localId, relativePath)
+                self._variantSetIdMap[variantSet.getId()] = variantSet
         self._variantSetIds = sorted(self._variantSetIdMap.keys())
 
         # Reads
-        readGroupSetDir = os.path.join(self._datasetDir, "reads")
-        for readGroupSetId in os.listdir(readGroupSetDir):
-            compoundReadGroupSetId = reads.CompoundReadGroupSetId.compose(
-                datasetId=self._id, rgsId=readGroupSetId)
-            relativePath = os.path.join(readGroupSetDir, readGroupSetId)
+        readGroupSetDir = os.path.join(dataDir, "reads")
+        for localId in os.listdir(readGroupSetDir):
+            relativePath = os.path.join(readGroupSetDir, localId)
             if os.path.isdir(relativePath):
                 readGroupSet = reads.HtslibReadGroupSet(
-                    str(compoundReadGroupSetId), relativePath)
-                self._readGroupSetIdMap[
-                    str(compoundReadGroupSetId)] = readGroupSet
+                    self, localId, relativePath)
+                self._readGroupSetIdMap[readGroupSet.getId()] = readGroupSet
                 for readGroup in readGroupSet.getReadGroups():
                     self._readGroupIdMap[readGroup.getId()] = readGroup
         self._readGroupSetIds = sorted(self._readGroupSetIdMap.keys())

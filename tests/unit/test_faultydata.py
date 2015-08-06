@@ -8,8 +8,9 @@ from __future__ import unicode_literals
 import os
 import unittest
 
-import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
+import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
@@ -17,68 +18,62 @@ import ga4gh.protocol as protocol
 class FaultyVariantDataTest(unittest.TestCase):
     def setUp(self):
         self.testDataDir = "tests/faultydata/variants"
-        self.datasetId = 'dataset1'
+        self.dataset = datasets.AbstractDataset('dataset1')
 
-    def getFullPath(self, variantSetId):
-        return os.path.join(self.testDataDir, variantSetId)
+    def getFullPath(self, localId):
+        return os.path.join(self.testDataDir, localId)
 
 
 class TestVariantSetNoIndexedVcf(FaultyVariantDataTest):
     setIds = ["no_indexed_vcf"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for localId in self.setIds:
+            path = self.getFullPath(localId)
             self.assertRaises(
                 exceptions.NotIndexedException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, self.dataset, localId, path)
 
 
 class TestInconsistentMetaData(FaultyVariantDataTest):
     setIds = ["inconsist_meta"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
-            compoundId = variants.CompoundVariantSetId.compose(
-                datasetId=self.datasetId, vsId=variantSetId)
+        for localId in self.setIds:
+            path = self.getFullPath(localId)
             with self.assertRaises(exceptions.InconsistentMetaDataException):
-                variants.HtslibVariantSet(str(compoundId), path)
+                variants.HtslibVariantSet(self.dataset, localId, path)
 
 
 class TestInconsistentCallSetId(FaultyVariantDataTest):
     setIds = ["inconsist_sampleid", "inconsist_sampleid2"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
-            compoundId = variants.CompoundVariantSetId.compose(
-                datasetId=self.datasetId, vsId=variantSetId)
+        for localId in self.setIds:
+            path = self.getFullPath(localId)
             with self.assertRaises(exceptions.InconsistentCallSetIdException):
-                variants.HtslibVariantSet(str(compoundId), path)
+                variants.HtslibVariantSet(self.dataset, localId, path)
 
 
 class TestOverlappingVcfVariants(FaultyVariantDataTest):
     setIds = ["overlapping_vcf"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
-            compoundId = variants.CompoundVariantSetId.compose(
-                datasetId=self.datasetId, vsId=variantSetId)
+        for localId in self.setIds:
+            path = self.getFullPath(localId)
             with self.assertRaises(exceptions.OverlappingVcfException):
-                variants.HtslibVariantSet(str(compoundId), path)
+                variants.HtslibVariantSet(self.dataset, localId, path)
 
 
 class TestEmptyDirException(FaultyVariantDataTest):
     setIds = ["empty_dir"]
 
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for localId in self.setIds:
+            path = self.getFullPath(localId)
             self.assertRaises(
                 exceptions.EmptyDirException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, self.dataset, localId, path)
 
 
 class TestDuplicateCallSetId(FaultyVariantDataTest):
@@ -98,11 +93,11 @@ class TestDuplicateCallSetId(FaultyVariantDataTest):
 
     @unittest.skipIf(protocol.version.startswith("0.6"), "")
     def testInstantiation(self):
-        for variantSetId in self.setIds:
-            path = self.getFullPath(variantSetId)
+        for localId in self.setIds:
+            path = self.getFullPath(localId)
             self.assertRaises(
                 exceptions.DuplicateCallSetIdException,
-                variants.HtslibVariantSet, variantSetId, path)
+                variants.HtslibVariantSet, self.dataset, localId, path)
 
 
 class FaultyReferenceDataTest(unittest.TestCase):

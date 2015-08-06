@@ -17,26 +17,18 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
 
-class CompoundReferenceId(datamodel.CompoundId):
-    """
-    The compound id for a reference
-    """
-    fields = ['referenceSetId', 'rId']
-
-
-class AbstractReferenceSet(object):
+class AbstractReferenceSet(datamodel.DatamodelObject):
     """
     Class representing ReferenceSets. A ReferenceSet is a set of
     References which typically comprise a reference assembly, such as
     GRCh38.
     """
-    def __init__(self, id_):
-        self._id = id_
+    compoundIdClass = datamodel.ReferenceSetCompoundId
+
+    def __init__(self, localId):
+        super(AbstractReferenceSet, self).__init__(None, localId)
         self._referenceIdMap = {}
         self._referenceIds = []
-
-    def getId(self):
-        return self._id
 
     def getReferences(self):
         """
@@ -51,7 +43,7 @@ class AbstractReferenceSet(object):
         ret = protocol.ReferenceSet()
         ret.assemblyId = None
         ret.description = None
-        ret.id = self._id
+        ret.id = self.getId()
         ret.isDerived = False
         ret.md5checksum = self._generateMd5Checksum()
         ret.ncbiTaxonId = None
@@ -77,17 +69,17 @@ class SimulatedReferenceSet(AbstractReferenceSet):
     """
     A simulated referenceSet
     """
-    def __init__(self, id_, randomSeed=0, numReferences=1):
-        super(SimulatedReferenceSet, self).__init__(id_)
+    def __init__(self, localId, randomSeed=0, numReferences=1):
+        super(SimulatedReferenceSet, self).__init__(localId)
         self._randomSeed = randomSeed
         self._randomGenerator = random.Random()
         self._randomGenerator.seed(self._randomSeed)
         for i in range(numReferences):
             referenceSeed = self._randomGenerator.getrandbits(32)
-            compoundId = CompoundReferenceId.compose(
-                referenceSetId=id_, rId='srs{}'.format(i))
-            reference = SimulatedReference(str(compoundId), referenceSeed)
-            self._referenceIdMap[str(compoundId)] = reference
+            referenceLocalId = "srs{}".format(i)
+            reference = SimulatedReference(
+                self, referenceLocalId, referenceSeed)
+            self._referenceIdMap[reference.getId()] = reference
         self._referenceIds = sorted(self._referenceIdMap.keys())
 
 
@@ -95,8 +87,8 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     """
     A referenceSet based on data on a file system
     """
-    def __init__(self, id_, dataDir):
-        super(HtslibReferenceSet, self).__init__(id_)
+    def __init__(self, localId, dataDir):
+        super(HtslibReferenceSet, self).__init__(localId)
         self._dataDir = dataDir
         # TODO get metadata from a file within dataDir? How else will we
         # fill in the fields like ncbiTaxonId etc?
@@ -106,31 +98,25 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     def _addDataFile(self, path):
         filename = os.path.split(path)[1]
         localId = filename.split(".")[0]
-        compoundId = CompoundReferenceId.compose(
-            referenceSetId=self._id, rId=localId)
-        reference = HtslibReference(str(compoundId), path)
-        self._referenceIdMap[str(compoundId)] = reference
+        reference = HtslibReference(self, localId, path)
+        self._referenceIdMap[reference.getId()] = reference
 
 
-class AbstractReference(object):
+class AbstractReference(datamodel.DatamodelObject):
     """
     Class representing References. A Reference is a canonical
     assembled contig, intended to act as a reference coordinate space
     for other genomic annotations. A single Reference might represent
     the human chromosome 1, for instance.
     """
-    def __init__(self, id_):
-        self._id = id_
-
-    def getId(self):
-        return self._id
+    compoundIdClass = datamodel.ReferenceCompoundId
 
     def toProtocolElement(self):
         """
         Returns the GA4GH protocol representation of this Reference.
         """
         reference = protocol.Reference()
-        reference.id = self._id
+        reference.id = self.getId()
         reference.isDerived = False
         reference.length = self.getLength()
         reference.md5checksum = self.getMd5Checksum()
@@ -154,8 +140,8 @@ class SimulatedReference(AbstractReference):
     """
     choices = 'AGCT'
 
-    def __init__(self, id_, randomSeed=0, length=200):
-        super(SimulatedReference, self).__init__(id_)
+    def __init__(self, parentContainer, name, randomSeed=0, length=200):
+        super(SimulatedReference, self).__init__(parentContainer, name)
         self._randomSeed = randomSeed
         self._randomGenerator = random.Random()
         self._randomGenerator.seed(self._randomSeed)
@@ -174,24 +160,26 @@ class SimulatedReference(AbstractReference):
         return len(self.bases)
 
     def getName(self):
-        return 'someRef'
+        return self.getLocalId()
 
 
 class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
     """
     A reference based on data stored in a file on the file system
     """
-    def __init__(self, id_, dataFile):
-        super(HtslibReference, self).__init__(id_)
+    def __init__(self, parentContainer, name, dataFile):
+        super(HtslibReference, self).__init__(parentContainer, name)
         self._fastaFilePath = dataFile
         fastaFile = self.openFile(dataFile)
         numReferences = len(fastaFile.references)
         if numReferences != 1:
             raise exceptions.NotExactlyOneReferenceException(
-                self._id, numReferences)
+                self.getId(), numReferences)
         self._refName = fastaFile.references[0]
+        self._length = fastaFile.lengths[0]
         # refData = fastaFile.fetch(self._refName)
         self._md5checksum = "TODO"  # hashlib.md5(refData).hexdigest()
+        fastaFile.close()
 
     def openFile(self, dataFile):
         return pysam.FastaFile(dataFile)
@@ -209,7 +197,7 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
         return bases
 
     def getLength(self):
-        return self.getFileHandle(self.getFastaFilePath()).lengths[0]
+        return self._length
 
     def getName(self):
-        return self.getFileHandle(self.getFastaFilePath()).references[0]
+        return self._refName
