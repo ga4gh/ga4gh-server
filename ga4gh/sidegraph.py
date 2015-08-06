@@ -11,7 +11,7 @@ from __future__ import unicode_literals
 import os
 import logging
 
-import pyfaidx
+import pyfasta
 import sqlite3
 import re
 
@@ -36,7 +36,7 @@ def _limitsSql(limits):
     if limits is not None and len(limits) > 1:
         start = int(limits[0])
         end = int(limits[1])
-        return " LIMIT {}, {}".format(start, end)
+        return " LIMIT {}, {}".format(start, end-start)
     else:
         return ""
 
@@ -215,8 +215,8 @@ class SideGraph(object):
         fastaURI, recordName = fetched
         fastaFileName = os.path.join(self._fastaDir,
                                      os.path.basename(fastaURI))
-        fasta = pyfaidx.Fasta(
-            fastaFileName)
+        fasta = pyfasta.Fasta(
+            fastaFileName, key_fn=lambda key: key.split()[0])
         return str(fasta[recordName][start:end])
 
     def getAllele(self, alleleID):
