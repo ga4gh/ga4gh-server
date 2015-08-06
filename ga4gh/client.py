@@ -191,6 +191,13 @@ class HttpClient(object):
         """
         return self.runGetRequest("references", protocol.Reference, id_)
 
+    def getReadGroupSet(self, id_):
+        """
+        Returns a read group set from the server
+        """
+        return self.runGetRequest(
+            "readgroupsets", protocol.ReadGroupSet, id_)
+
     def listReferenceBases(self, protocolRequest, id_):
         """
         Returns an iterator over the bases from the server

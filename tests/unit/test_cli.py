@@ -149,6 +149,9 @@ class TestClientArguments(unittest.TestCase):
     def testReferenceGetArguments(self):
         self.cliInput = """references-get ID"""
 
+    def testReadGroupSetGetArguments(self):
+        self.cliInput = """readgroupsets-get ID"""
+
     def testReferenceBasesListArguments(self):
         self.cliInput = """references-list-bases ID
         --start 1 --end 2"""

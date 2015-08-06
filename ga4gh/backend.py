@@ -526,6 +526,14 @@ class AbstractBackend(object):
 
     # Get requests.
 
+    def runGetReadGroupSet(self, id_):
+        """
+        Returns a readGroupSet with the given id_
+        """
+        compoundId = reads.CompoundReadGroupSetId(id_)
+        dataset = self.getDataset(compoundId.datasetId)
+        return self.runGetRequest(dataset.getReadGroupSetIdMap(), id_)
+
     def runGetReference(self, id_):
         """
         Runs a getReference request for the specified ID.
