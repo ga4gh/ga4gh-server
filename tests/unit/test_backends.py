@@ -20,6 +20,12 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 
 
+class BackendForTesting(backend.AbstractBackend):
+    """
+    A backend to test abstract methods
+    """
+
+
 class TestAbstractBackend(unittest.TestCase):
     """
     Provides testing harness for testing methods in AbstractBackend,
@@ -97,11 +103,6 @@ class TestAbstractBackend(unittest.TestCase):
             self._backend.getDataset(datasetId)._variantSetIdMap.values())
         self.assertEqual(
             sortedVariantSetMapValues, sortedVariantSetsFromGetter)
-
-    def testParsePageToken(self):
-        goodPageToken = "12:34:567:8:9000"
-        parsedToken = backend._parsePageToken(goodPageToken, 5)
-        self.assertEqual(parsedToken[2], 567)
 
     def testRunSearchRequest(self):
         request = protocol.SearchVariantSetsRequest()
@@ -262,3 +263,40 @@ class TestTopLevelObjectGenerator(unittest.TestCase):
             self.request, self.idMap, self.idList)
         items = list(iterator)
         self.assertEqual(len(items), numItems)
+
+
+class TestPrivateBackendMethods(unittest.TestCase):
+    """
+    keep tests of private backend methods here and not in one of the
+    subclasses of TestAbstractBackend, otherwise the tests will needlessly
+    be run more than once
+
+    (they could be put in TestAbstractBackend, but I think it's a clearer
+    separation to put them in their own test class)
+    """
+    def testParsePageToken(self):
+        goodPageToken = "12:34:567:8:9000"
+        parsedToken = backend._parsePageToken(goodPageToken, 5)
+        self.assertEqual(parsedToken[2], 567)
+
+    def testSafeMapQuery(self):
+        # test map
+        key = 'a'
+        value = 'b'
+        idMap = {key: value}
+        result = backend._safeMapQuery(idMap, key)
+        self.assertEqual(result, value)
+
+        # test array
+        arr = [value]
+        result = backend._safeMapQuery(arr, 0)
+        self.assertEqual(result, value)
+
+        # test exception with custom class
+        exceptionClass = exceptions.FileOpenFailedException
+        with self.assertRaises(exceptionClass):
+            backend._safeMapQuery(idMap, 'notFound', exceptionClass)
+
+        # test exception with custom id string
+        with self.assertRaises(exceptions.ObjectWithIdNotFoundException):
+            backend._safeMapQuery(idMap, 'notFound', idErrorString='msg')
