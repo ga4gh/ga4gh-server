@@ -14,6 +14,8 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
+import ga4gh.datamodel.reads as reads
+import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.datasets as datasets
 
 
@@ -240,30 +242,6 @@ class AbstractBackend(object):
         """
         self._maxResponseLength = maxResponseLength
 
-    def _getDatasetFromReadsRequest(self, request):
-        if len(request.readGroupIds) != 1:
-            raise exceptions.NotImplementedException(
-                "Exactly one read group id must be specified")
-        compoundId = request.readGroupIds[0]
-        dataset = self._getDatasetFromCompoundId(compoundId)
-        return dataset
-
-    def _getDatasetFromVariantsRequest(self, request):
-        compoundId = request.variantSetId
-        dataset = self._getDatasetFromCompoundId(compoundId)
-        return dataset
-
-    def _getDatasetFromCompoundId(self, compoundId):
-        splits = compoundId.split(':')
-        datasetId = splits[0]
-        dataset = self.getDataset(datasetId)
-        return dataset
-
-    def _getDatasetFromRequest(self, request):
-        datasetId = request.datasetId
-        dataset = self.getDataset(datasetId)
-        return dataset
-
     def getDatasetIds(self):
         """
         Returns a list of datasets in this backend
@@ -357,7 +335,7 @@ class AbstractBackend(object):
         Returns a generator over the (readGroupSet, nextPageToken) pairs
         defined by the specified request.
         """
-        dataset = self._getDatasetFromRequest(request)
+        dataset = self.getDataset(request.datasetId)
         return self._topLevelObjectGenerator(
             request, dataset.getReadGroupSetIdMap(),
             dataset.getReadGroupSetIds())
@@ -383,7 +361,7 @@ class AbstractBackend(object):
         Returns a generator over the (variantSet, nextPageToken) pairs defined
         by the specified request.
         """
-        dataset = self._getDatasetFromRequest(request)
+        dataset = self.getDataset(request.datasetId)
         return self._topLevelObjectGenerator(
             request, dataset.getVariantSetIdMap(),
             dataset.getVariantSetIds())
@@ -395,7 +373,11 @@ class AbstractBackend(object):
         """
         if request.referenceId is None:
             raise exceptions.UnmappedReadsNotSupported()
-        dataset = self._getDatasetFromReadsRequest(request)
+        if len(request.readGroupIds) != 1:
+            raise exceptions.NotImplementedException(
+                "Exactly one read group id must be specified")
+        compoundId = reads.CompoundReadGroupId(request.readGroupIds[0])
+        dataset = self.getDataset(compoundId.datasetId)
         intervalIterator = ReadsIntervalIterator(
             request, dataset.getReadGroupIdMap())
         return intervalIterator
@@ -405,7 +387,8 @@ class AbstractBackend(object):
         Returns a generator over the (variant, nextPageToken) pairs defined
         by the specified request.
         """
-        dataset = self._getDatasetFromVariantsRequest(request)
+        compoundId = variants.CompoundVariantSetId(request.variantSetId)
+        dataset = self.getDataset(compoundId.datasetId)
         intervalIterator = VariantsIntervalIterator(
             request, dataset.getVariantSetIdMap())
         return intervalIterator
@@ -418,7 +401,8 @@ class AbstractBackend(object):
         if request.name is not None:
             raise exceptions.NotImplementedException(
                 "Searching over names is not supported")
-        dataset = self._getDatasetFromVariantsRequest(request)
+        compoundId = variants.CompoundVariantSetId(request.variantSetId)
+        dataset = self.getDataset(compoundId.datasetId)
         variantSet = _getVariantSet(
             request, dataset.getVariantSetIdMap())
         return self._topLevelObjectGenerator(
@@ -549,8 +533,10 @@ class AbstractBackend(object):
         """
         Runs a getVariantSet request for the specified ID.
         """
-        dataset = self._getDatasetFromCompoundId(id_)
-        return self.runGetRequest(dataset.getVariantSetIdMap(), id_)
+        compoundId = variants.CompoundVariantSetId(id_)
+        dataset = self.getDataset(compoundId.datasetId)
+        return self.runGetRequest(
+            dataset.getVariantSetIdMap(), str(compoundId))
 
     # Search requests.
 

@@ -38,9 +38,9 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         """
         def __init__(self, referenceSetId, fastaFileName):
             filename = os.path.split(fastaFileName)[1]
-            referenceId = "{}:{}".format(
-                referenceSetId, filename.split(".")[0])
-            self.id = referenceId
+            compoundId = references.CompoundReferenceId.compose(
+                referenceSetId=referenceSetId, rId=filename.split(".")[0])
+            self.id = str(compoundId)
             self.fastaFile = pysam.FastaFile(fastaFileName)
             self.bases = self.fastaFile.fetch(self.fastaFile.references[0])
 

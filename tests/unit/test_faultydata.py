@@ -17,6 +17,7 @@ import ga4gh.protocol as protocol
 class FaultyVariantDataTest(unittest.TestCase):
     def setUp(self):
         self.testDataDir = "tests/faultydata/variants"
+        self.datasetId = 'dataset1'
 
     def getFullPath(self, variantSetId):
         return os.path.join(self.testDataDir, variantSetId)
@@ -39,9 +40,10 @@ class TestInconsistentMetaData(FaultyVariantDataTest):
     def testInstantiation(self):
         for variantSetId in self.setIds:
             path = self.getFullPath(variantSetId)
-            self.assertRaises(
-                exceptions.InconsistentMetaDataException,
-                variants.HtslibVariantSet, variantSetId, path)
+            compoundId = variants.CompoundVariantSetId.compose(
+                datasetId=self.datasetId, vsId=variantSetId)
+            with self.assertRaises(exceptions.InconsistentMetaDataException):
+                variants.HtslibVariantSet(str(compoundId), path)
 
 
 class TestInconsistentCallSetId(FaultyVariantDataTest):
@@ -50,9 +52,10 @@ class TestInconsistentCallSetId(FaultyVariantDataTest):
     def testInstantiation(self):
         for variantSetId in self.setIds:
             path = self.getFullPath(variantSetId)
-            self.assertRaises(
-                exceptions.InconsistentCallSetIdException,
-                variants.HtslibVariantSet, variantSetId, path)
+            compoundId = variants.CompoundVariantSetId.compose(
+                datasetId=self.datasetId, vsId=variantSetId)
+            with self.assertRaises(exceptions.InconsistentCallSetIdException):
+                variants.HtslibVariantSet(str(compoundId), path)
 
 
 class TestOverlappingVcfVariants(FaultyVariantDataTest):
@@ -61,9 +64,10 @@ class TestOverlappingVcfVariants(FaultyVariantDataTest):
     def testInstantiation(self):
         for variantSetId in self.setIds:
             path = self.getFullPath(variantSetId)
-            self.assertRaises(
-                exceptions.OverlappingVcfException,
-                variants.HtslibVariantSet, variantSetId, path)
+            compoundId = variants.CompoundVariantSetId.compose(
+                datasetId=self.datasetId, vsId=variantSetId)
+            with self.assertRaises(exceptions.OverlappingVcfException):
+                variants.HtslibVariantSet(str(compoundId), path)
 
 
 class TestEmptyDirException(FaultyVariantDataTest):

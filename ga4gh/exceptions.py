@@ -123,6 +123,13 @@ class BadPageTokenException(BadRequestException):
     message = "Request page token invalid"
 
 
+class BadIdentifierException(BadRequestException):
+    def __init__(self, id_, msg=None):
+        self.message = "The identifier provided is invalid: '{}' ".format(id_)
+        if msg is not None:
+            self.message += msg
+
+
 class InvalidJsonException(BadRequestException):
     def __init__(self, jsonString):
         self.message = "Cannot parse JSON: '{}'".format(jsonString)

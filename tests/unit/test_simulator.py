@@ -20,7 +20,10 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.numCalls = 2
         # ensure variantDensity is >= 1 so we get deterministic behavoir
         self.variantDensity = 1
-        self.variantSetId = 3
+        self.datasetId = 'dataset1'
+        compoundId = variants.CompoundVariantSetId.compose(
+            datasetId=self.datasetId, vsId=3)
+        self.variantSetId = str(compoundId)
         self.simulatedVariantSet = self._getSimulatedVariantSet()
         self.referenceName = 'ref'
         self.startPosition = 100
@@ -109,8 +112,9 @@ class TestSimulatedReadGroupSet(unittest.TestCase):
     Test properties of the simulated ReadGroupSet
     """
     def testCreation(self):
-        readGroupSetId = "readGroupSetId"
-        simulatedReadGroupSet = reads.SimulatedReadGroupSet(readGroupSetId)
+        compoundId = reads.CompoundReadGroupSetId("dataset1:readGroupSetId")
+        simulatedReadGroupSet = reads.SimulatedReadGroupSet(
+            str(compoundId))
         for readGroup in simulatedReadGroupSet.getReadGroups():
             alignments = list(readGroup.getReadAlignments())
             self.assertGreater(len(alignments), 0)
