@@ -567,7 +567,8 @@ class GraphBackend(AbstractBackend):
         self.allelesGenerator = self._graphs.searchAlleles
 
     def runSearchRequest(
-            self, requestStr, requestClass, responseClass, objectGenerator):
+            self, requestStr, requestClass, responseClass, objectGenerator,
+            optionalParams = None):
         """
         Overrides AbstractBackend's runSearchRequest.
 
@@ -576,6 +577,8 @@ class GraphBackend(AbstractBackend):
         where count is the TOTAL number of available entityObjects,
         and the array of objects is of size requested by pagination or less
         (if at or near end of the list).
+        optionalParams is an array of names of parameters that can be parsed
+        from the request object and passed to the objectGenerator method.
         """
         self.startProfile()
         try:
@@ -591,9 +594,16 @@ class GraphBackend(AbstractBackend):
 
         start = int(request.pageToken) if request.pageToken is not None else 0
         end = start + int(request.pageSize)
-        # TODO implement other search fields
+
+        ogkwargs = {}
+        if type(optionalParams) == type(list()):
+            for op in optionalParams:
+                opv = getattr(request, op, None)
+                if opv:
+                    ogkwargs[op] = opv
+
         count, protocolObjects = objectGenerator(
-            start=start, end=end)
+            start=start, end=end, **ogkwargs)
         responseBuilder = protocol.SearchResponseBuilder(
             responseClass, request.pageSize, self._maxResponseLength)
         i = 0
@@ -639,7 +649,7 @@ class GraphBackend(AbstractBackend):
         return self.runSearchRequest(
             requestStr, protocol.SearchSequencesRequest,
             protocol.SearchSequencesResponse,
-            self.sequencesGenerator)
+            self.sequencesGenerator, ['listBases'])
 
     def searchJoins(self, requestStr):
         """
