@@ -70,6 +70,7 @@ class SideGraph(object):
         self._sqlFile = sqlFile
         self._logger.setLevel(logging.DEBUG)
         self._fastaDir = fastaDir
+        self._fastaDict = {} # index by FASTA ID in DB.
 
     def __enter__(self):
         self._graphDb = sqlite3.connect(self._sqlFile)
@@ -213,11 +214,12 @@ class SideGraph(object):
             raise Exception("sequence id not found")
 
         fastaURI, recordName = fetched
-        fastaFileName = os.path.join(self._fastaDir,
+        if self._fastaDict.get(fastaURI) is None:
+            fastaFileName = os.path.join(self._fastaDir,
                                      os.path.basename(fastaURI))
-        fasta = pyfasta.Fasta(
-            fastaFileName, key_fn=lambda key: key.split()[0])
-        return str(fasta[recordName][start:end])
+            self._fastaDict[fastaURI] = pyfasta.Fasta(
+                fastaFileName, key_fn=lambda key: key.split()[0])
+        return str(self._fastaDict[fastaURI][recordName][start:end])
 
     def getAllele(self, alleleID):
         """
