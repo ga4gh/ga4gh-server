@@ -6,13 +6,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import glob
-import os
-import json
-import tempfile
-import shutil
 import atexit
+import base64
 import collections
+import glob
+import json
+import os
+import shutil
+import tempfile
 
 import ga4gh.exceptions as exceptions
 
@@ -52,7 +53,8 @@ class CompoundId(object):
             elif key in comboKeys:
                 setattr(compoundId, key, value)
                 fieldIndexes = cls.comboFields[key]
-                splits = value.split(cls.separator)
+                deobfuscated = cls.deobfuscate(value)
+                splits = deobfuscated.split(cls.separator)
                 if len(fieldIndexes) != len(splits):
                     msg = ("field '{}' with value '{}' has {} split(s), "
                            "needs {}")
@@ -71,7 +73,8 @@ class CompoundId(object):
             if not isinstance(compoundIdStr, basestring):
                 raise exceptions.BadIdentifierException(
                     compoundIdStr, self._getParseErrorMessage())
-            splits = compoundIdStr.split(self.separator)
+            deobfuscated = self.deobfuscate(compoundIdStr)
+            splits = deobfuscated.split(self.separator)
             if len(splits) != len(self.fields):
                 raise exceptions.BadIdentifierException(
                     compoundIdStr, self._getParseErrorMessage())
@@ -85,12 +88,29 @@ class CompoundId(object):
                 comboFieldValue = self.separator.join(values)
                 setattr(self, comboFieldName, comboFieldValue)
 
+    @classmethod
+    def obfuscate(cls, idString):
+        """
+        Mildly obfuscates the specified ID string in an easily reversible
+        fashion. This is not intended for security purposes, but rather to
+        dissuade users from depending on our internal ID structures.
+        """
+        ret = base64.b64encode(idString)
+        return ret
+
+    @classmethod
+    def deobfuscate(cls, idString):
+        """
+        Reverses the obfuscation done by the :meth:`obfuscate` method.
+        """
+        return base64.b64decode(idString)
+
     def __str__(self):
         values = []
         for field in self.fields:
             value = getattr(self, field)
             values.append(value)
-        return self.separator.join(values)
+        return self.obfuscate(self.separator.join(values))
 
     def _getParseErrorMessage(self):
         idFormat = self.separator.join(self.fields)
