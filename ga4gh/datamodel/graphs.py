@@ -211,7 +211,6 @@ class GraphDatabase(object):
         with sidegraph.SideGraph(self._dbFile, self._dataDir) as sg:
             count = sg.searchSequencesCount()
             rawSequences = sg.searchSequences(limits)
-
             sequences = []
             for rawSeq in rawSequences:
                 seq = protocol.Sequence()
