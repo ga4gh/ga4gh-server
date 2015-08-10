@@ -220,8 +220,6 @@ class AbstractBackend(object):
     def __init__(self):
         self._referenceSetIdMap = {}
         self._referenceSetIds = []
-        self._referenceIdMap = {}
-        self._referenceIds = []
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
@@ -254,11 +252,11 @@ class AbstractBackend(object):
         """
         self._maxResponseLength = maxResponseLength
 
-    def getDatasetIds(self):
+    def getDatasets(self):
         """
         Returns a list of datasets in this backend
         """
-        return self._datasetIds
+        return [self._datasetIdMap[id_] for id_ in self._datasetIds]
 
     def getDataset(self, datasetId):
         """
@@ -272,7 +270,15 @@ class AbstractBackend(object):
         """
         Returns the list of ReferenceSets in this backend
         """
-        return list(self._referenceSetIdMap.values())
+        return [self._referenceSetIdMap[id_] for id_ in self._referenceSetIds]
+
+    def getReferenceSet(self, referenceSetId):
+        """
+        Retuns the reference set with the speficied ID.
+        """
+        return _safeMapQuery(
+            self._referenceSetIdMap, referenceSetId,
+            exceptions.ReferenceSetNotFoundException)
 
     def startProfile(self):
         """
@@ -364,8 +370,10 @@ class AbstractBackend(object):
         Returns a generator over the (reference, nextPageToken) pairs
         defined by the specified request.
         """
+        referenceSet = self.getReferenceSet(request.referenceSetId)
         return self._topLevelObjectGenerator(
-            request, self._referenceIdMap, self._referenceIds)
+            request, referenceSet.getReferenceIdMap(),
+            referenceSet.getReferenceIds())
 
     def variantSetsGenerator(self, request):
         """
@@ -490,8 +498,10 @@ class AbstractBackend(object):
         request arguments.
         """
         # parse arguments
+        compoundId = datamodel.ReferenceCompoundId.parse(id_)
+        referenceSet = self.getReferenceSet(compoundId.referenceSetId)
         reference = _safeMapQuery(
-            self._referenceIdMap, id_,
+            referenceSet.getReferenceIdMap(), id_,
             exceptions.ObjectWithIdNotFoundException)
         start = 0
         end = datamodel.PysamDatamodelMixin.fastaMax
@@ -555,7 +565,9 @@ class AbstractBackend(object):
         """
         Runs a getReference request for the specified ID.
         """
-        return self.runGetRequest(self._referenceIdMap, id_)
+        compoundId = datamodel.ReferenceCompoundId.parse(id_)
+        referenceSet = self.getReferenceSet(compoundId.referenceSetId)
+        return self.runGetRequest(referenceSet.getReferenceIdMap(), id_)
 
     def runGetReferenceSet(self, id_):
         """
@@ -682,11 +694,7 @@ class SimulatedBackend(AbstractBackend):
                 referenceSetId, referenceSetSeed,
                 numReferencesPerReferenceSet)
             self._referenceSetIdMap[referenceSetId] = referenceSet
-            for reference in referenceSet.getReferences():
-                referenceId = reference.getId()
-                self._referenceIdMap[referenceId] = reference
         self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
-        self._referenceIds = sorted(self._referenceIdMap.keys())
 
 
 class FileSystemBackend(AbstractBackend):
@@ -708,10 +716,7 @@ class FileSystemBackend(AbstractBackend):
                 referenceSet = references.HtslibReferenceSet(
                     referenceSetName, relativePath)
                 self._referenceSetIdMap[referenceSet.getId()] = referenceSet
-                for reference in referenceSet.getReferences():
-                    self._referenceIdMap[reference.getId()] = reference
         self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
-        self._referenceIds = sorted(self._referenceIdMap.keys())
 
         # Datasets
         datasetDirs = [

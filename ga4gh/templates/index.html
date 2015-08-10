@@ -60,11 +60,11 @@
             </table>
 
             <h4>DataSets</h4>
-            {% for datasetId in info.getDatasetIds() %}
-                <h5>{{ datasetId }}</h5>
+            {% for dataset in info.getDatasets() %}
+                <h5>{{ dataset.getId() }}</h5>
                 <h6>VariantSets</h6>
                 <table>
-                    {% for variantSet in info.getVariantSets(datasetId) %}
+                    {% for variantSet in info.getVariantSets(dataset.getId()) %}
                     <tr>
                         <td>{{ variantSet.getId() }}</td>
                     </tr>
@@ -72,7 +72,7 @@
                 </table>
                 <h6>ReadGroupSets</h6>
                 <table>
-                    {% for readGroupSet in info.getReadGroupSets(datasetId) %}
+                    {% for readGroupSet in info.getReadGroupSets(dataset.getId())%}
                     <tr>
                         <td>{{ readGroupSet.getId() }}</td>
                         <td></td>

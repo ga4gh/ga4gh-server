@@ -38,8 +38,7 @@ class TestVariantsGenerator(unittest.TestCase):
     def setUp(self):
         self.request = protocol.SearchVariantsRequest()
         self.backend = backend.SimulatedBackend()
-        self.datasetId = self.backend.getDatasetIds()[0]
-        self.dataset = self.backend.getDataset(self.datasetId)
+        self.dataset = self.backend.getDatasets()[0]
         self.variantSetLocalId = 'variantSet'
 
     def testNonexistantVariantSet(self):
@@ -81,8 +80,7 @@ class TestVariantsGenerator(unittest.TestCase):
     def _initVariantSet(self, numVariants):
         variantSet = MockVariantSet(
             self.dataset, self.variantSetLocalId, numVariants)
-        self.backend.getDataset(self.datasetId)._variantSetIdMap = {
-            variantSet.getId(): variantSet}
+        self.dataset._variantSetIdMap = {variantSet.getId(): variantSet}
         self.request.variantSetId = variantSet.getId()
 
 
@@ -115,8 +113,7 @@ class TestReadsGenerator(unittest.TestCase):
         self.request = protocol.SearchReadsRequest()
         self.request.referenceId = "chr1"
         self.backend = backend.SimulatedBackend()
-        self.datasetId = self.backend.getDatasetIds()[0]
-        self.dataset = self.backend.getDataset(self.datasetId)
+        self.dataset = self.backend.getDatasets()[0]
         self.readGroupSetLocalId = "aReadGroupSet"
         self.readGroupLocalId = "aReadGroup"
         self.readGroupSet = reads.AbstractReadGroupSet(

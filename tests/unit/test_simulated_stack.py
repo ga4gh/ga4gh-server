@@ -11,7 +11,6 @@ import unittest
 import hashlib
 import logging
 
-import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.variants as variants
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
@@ -28,20 +27,15 @@ class TestSimulatedStack(unittest.TestCase):
         # silence usually unhelpful CORS log
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
 
-        cls.numReferenceSets = 5
-        cls.numReferencesPerReferenceSet = 3
-        cls.numAlignmentsPerReadGroup = 2
         config = {
             "DATA_SOURCE": "__SIMULATED__",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
             "SIMULATED_BACKEND_NUM_CALLS": 0,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
             "SIMULATED_BACKEND_NUM_VARIANT_SETS": 10,
-            "SIMULATED_BACKEND_NUM_REFERENCE_SETS": cls.numReferenceSets,
-            "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET":
-                cls.numReferencesPerReferenceSet,
-            "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP":
-                cls.numAlignmentsPerReadGroup,
+            "SIMULATED_BACKEND_NUM_REFERENCE_SETS": 3,
+            "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET": 4,
+            "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP": 5
         }
         frontend.reset()
         frontend.configure(
@@ -54,10 +48,6 @@ class TestSimulatedStack(unittest.TestCase):
 
     def setUp(self):
         self.backend = frontend.app.backend
-        self.datasetId = self.backend.getDatasetIds()[0]
-        self.variantSetIds = [
-            variantSet.getId() for variantSet in
-            self.backend.getDataset(self.datasetId).getVariantSets()]
 
     def sendJsonPostRequest(self, path, data):
         """
@@ -75,49 +65,143 @@ class TestSimulatedStack(unittest.TestCase):
         """
         return self.app.get("{}/{}".format(path, id_))
 
-    def testVariantSetsSearch(self):
-        expectedIds = self.variantSetIds
-        request = protocol.SearchVariantSetsRequest()
-        request.pageSize = len(expectedIds)
-        request.datasetId = self.datasetId
-        path = utils.applyVersion('/variantsets/search')
-        response = self.sendJsonPostRequest(
-            path, request.toJsonString())
+    def verifyVariantSetsEqual(self, gaVariantSet, variantSet):
+        dataset = variantSet.getParentContainer()
+        self.assertEqual(gaVariantSet.id, variantSet.getId())
+        self.assertEqual(gaVariantSet.datasetId, dataset.getId())
+        # TODO verify the metadata and other attributes.
 
+    def verifyReadGroupSetsEqual(self, gaReadGroupSet, readGroupSet):
+        dataset = readGroupSet.getParentContainer()
+        self.assertEqual(gaReadGroupSet.id, readGroupSet.getId())
+        self.assertEqual(gaReadGroupSet.datasetId, dataset.getId())
+        self.assertEqual(gaReadGroupSet.name, readGroupSet.getLocalId())
+        self.assertEqual(
+            len(gaReadGroupSet.readGroups), len(readGroupSet.getReadGroups()))
+        for gaReadGroup, readGroup in zip(
+                gaReadGroupSet.readGroups, readGroupSet.getReadGroups()):
+            self.verifyReadGroupsEqual(gaReadGroup, readGroup)
+
+    def verifyReadGroupsEqual(self, gaReadGroup, readGroup):
+        self.assertEqual(gaReadGroup.id, readGroup.getId())
+
+    def verifyDatasetsEqual(self, gaDataset, dataset):
+        self.assertEqual(gaDataset.id, dataset.getId())
+        # TODO fill out the remaining fields and test
+
+    def verifyReferenceSetsEqual(self, gaReferenceSet, referenceSet):
+        self.assertEqual(gaReferenceSet.id, referenceSet.getId())
+        referenceIds = [ref.getId() for ref in referenceSet.getReferences()]
+        self.assertEqual(gaReferenceSet.referenceIds, referenceIds)
+        # TODO fill out the remaining fields and test
+
+    def verifyReferencesEqual(self, gaReference, reference):
+        self.assertEqual(gaReference.id, reference.getId())
+        # TODO fill out the remaining fields and test
+
+    def verifySearchMethod(
+            self, request, path, responseClass, objects, objectVerifier):
+        """
+        Verifies that the specified search request operates correctly
+        and returns all the speficied objects. The specified verifier
+        function checks that all the returned objects are equivalent
+        to their datamodel counterparts.
+        """
+        request.pageSize = len(objects)
+        response = self.sendJsonPostRequest(path, request.toJsonString())
         self.assertEqual(200, response.status_code)
+        responseData = responseClass.fromJsonString(response.data)
 
-        responseData = protocol.SearchVariantSetsResponse.fromJsonString(
-            response.data)
-        self.assertTrue(protocol.SearchVariantSetsResponse.validate(
-            responseData.toJsonDict()))
-
+        self.assertTrue(responseData.validate(responseData.toJsonDict()))
         self.assertIsNone(responseData.nextPageToken)
-        self.assertEqual(len(expectedIds), len(responseData.variantSets))
-        for variantSet in responseData.variantSets:
-            self.assertTrue(variantSet.id in expectedIds)
+
+        responseList = getattr(responseData, responseClass.getValueListName())
+        self.assertEqual(len(objects), len(responseList))
+        for gaObject, datamodelObject in zip(responseList, objects):
+            objectVerifier(gaObject, datamodelObject)
+
+    def testDatasetsSearch(self):
+        request = protocol.SearchDatasetsRequest()
+        datasets = self.backend.getDatasets()
+        path = utils.applyVersion('/datasets/search')
+        self.verifySearchMethod(
+            request, path, protocol.SearchDatasetsResponse, datasets,
+            self.verifyDatasetsEqual)
+
+    def testVariantSetsSearch(self):
+        path = utils.applyVersion('/variantsets/search')
+        for dataset in self.backend.getDatasets():
+            variantSets = dataset.getVariantSets()
+            request = protocol.SearchVariantSetsRequest()
+            request.datasetId = dataset.getId()
+            self.verifySearchMethod(
+                request, path, protocol.SearchVariantSetsResponse, variantSets,
+                self.verifyVariantSetsEqual)
+
+    def testReadGroupSetsSearch(self):
+        path = utils.applyVersion('/readgroupsets/search')
+        for dataset in self.backend.getDatasets():
+            readGroupSets = dataset.getReadGroupSets()
+            request = protocol.SearchReadGroupSetsRequest()
+            request.datasetId = dataset.getId()
+            self.verifySearchMethod(
+                request, path, protocol.SearchReadGroupSetsResponse,
+                readGroupSets, self.verifyReadGroupSetsEqual)
+
+    def testReferenceSetsSearch(self):
+        request = protocol.SearchReferenceSetsRequest()
+        referenceSets = self.backend.getReferenceSets()
+        path = utils.applyVersion('/referencesets/search')
+        self.verifySearchMethod(
+            request, path, protocol.SearchReferenceSetsResponse, referenceSets,
+            self.verifyReferenceSetsEqual)
+
+    def testReferencesSearch(self):
+        path = utils.applyVersion('/references/search')
+        for referenceSet in self.backend.getReferenceSets():
+            references = referenceSet.getReferences()
+            request = protocol.SearchReferencesRequest()
+            request.referenceSetId = referenceSet.getId()
+            self.verifySearchMethod(
+                request, path, protocol.SearchReferencesResponse, references,
+                self.verifyReferencesEqual)
 
     def testGetVariantSet(self):
         path = utils.applyVersion("/variantsets")
-        for variantSetId in self.variantSetIds:
-            response = self.sendObjectGetRequest(path, variantSetId)
-            self.assertEqual(200, response.status_code)
-            responseObject = protocol.VariantSet.fromJsonString(response.data)
-            self.assertEqual(responseObject.id, variantSetId)
-        dataset = datasets.AbstractDataset("dataset1")
-        for badId in ["terribly bad ID value", "x" * 1000]:
-            variantSet = variants.AbstractVariantSet(dataset, badId)
-            response = self.sendObjectGetRequest(path, variantSet.getId())
-            self.assertEqual(404, response.status_code)
+        for dataset in self.backend.getDatasets():
+            for variantSet in dataset.getVariantSets():
+                response = self.sendObjectGetRequest(path, variantSet.getId())
+                self.assertEqual(200, response.status_code)
+                responseObject = protocol.VariantSet.fromJsonString(
+                    response.data)
+                self.verifyVariantSetsEqual(responseObject, variantSet)
+            for badId in ["", "terribly bad ID value", "x" * 1000]:
+                variantSet = variants.AbstractVariantSet(dataset, badId)
+                response = self.sendObjectGetRequest(path, variantSet.getId())
+                self.assertEqual(404, response.status_code)
+
+    def testGetReadGroup(self):
+        path = utils.applyVersion("/readgroups")
+        for dataset in self.backend.getDatasets():
+            for readGroupSet in dataset.getReadGroupSets():
+                for readGroup in readGroupSet.getReadGroups():
+                    response = self.sendObjectGetRequest(
+                        path, readGroup.getId())
+                    self.assertEqual(200, response.status_code)
+                    responseObject = protocol.ReadGroupSet.fromJsonString(
+                        response.data)
+                    self.verifyReadGroupsEqual(responseObject, readGroup)
 
     def testVariantsSearch(self):
-        expectedId = self.variantSetIds[0]
+        dataset = self.backend.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
         referenceName = '1'
 
         request = protocol.SearchVariantsRequest()
         request.referenceName = referenceName
         request.start = 0
         request.end = 0
-        request.variantSetId = expectedId
+        request.variantSetId = variantSet.getId()
 
         # Request windows is too small, no results
         path = utils.applyVersion('/variants/search')
@@ -145,7 +229,7 @@ class TestSimulatedStack(unittest.TestCase):
         for variant in responseData.variants:
             self.assertGreaterEqual(variant.start, 0)
             self.assertLessEqual(variant.end, 2 ** 16)
-            self.assertEqual(variant.variantSetId, expectedId)
+            self.assertEqual(variant.variantSetId, variantSet.getId())
             self.assertEqual(variant.referenceName, referenceName)
 
         # TODO: Add more useful test scenarios, including some covering
@@ -196,55 +280,30 @@ class TestSimulatedStack(unittest.TestCase):
 
         # TODO add tests after name string search schemas is implemented
 
-    def testReferences(self):
-        # search for reference sets
-        path = utils.applyVersion('/referencesets/search')
-        request = protocol.SearchReferenceSetsRequest()
-        response = self.sendJsonPostRequest(path, request.toJsonString())
-        self.assertEqual(response.status_code, 200)
-        responseData = protocol.SearchReferenceSetsResponse.fromJsonString(
-            response.data)
-        referenceSets = responseData.referenceSets
-        self.assertEqual(self.numReferenceSets, len(referenceSets))
-
-        # search for references
-        path = utils.applyVersion('/references/search')
-        request = protocol.SearchReferencesRequest()
-        response = self.sendJsonPostRequest(path, request.toJsonString())
-        self.assertEqual(response.status_code, 200)
-        responseData = protocol.SearchReferencesResponse.fromJsonString(
-            response.data)
-        references = responseData.references
-        self.assertEqual(
-            self.numReferenceSets * self.numReferencesPerReferenceSet,
-            len(references))
-
-        for referenceSet in referenceSets:
+    def testGetReferences(self):
+        for referenceSet in self.backend.getReferenceSets():
             # fetch the reference set
             path = utils.applyVersion(
-                '/referencesets/{}'.format(referenceSet.id))
+                '/referencesets/{}'.format(referenceSet.getId()))
             response = self.app.get(path)
             self.assertEqual(response.status_code, 200)
-            fetchedReferenceSet = protocol.ReferenceSet.fromJsonString(
+            gaReferenceSet = protocol.ReferenceSet.fromJsonString(
                 response.data)
-            self.assertEqual(fetchedReferenceSet, referenceSet)
-            self.assertEqual(
-                len(fetchedReferenceSet.referenceIds),
-                self.numReferencesPerReferenceSet)
+            self.verifyReferenceSetsEqual(gaReferenceSet, referenceSet)
 
-            for referenceId in referenceSet.referenceIds:
+            for reference in referenceSet.getReferences():
                 # fetch the reference
                 path = utils.applyVersion(
-                    '/references/{}'.format(referenceId))
+                    '/references/{}'.format(reference.getId()))
                 response = self.app.get(path)
                 self.assertEqual(response.status_code, 200)
                 fetchedReference = protocol.Reference.fromJsonString(
                     response.data)
-                self.assertEqual(fetchedReference.id, referenceId)
+                self.verifyReferencesEqual(fetchedReference, reference)
 
                 # fetch the bases
                 path = utils.applyVersion(
-                    '/references/{}/bases'.format(referenceId))
+                    '/references/{}/bases'.format(reference.getId()))
                 args = protocol.ListReferenceBasesRequest().toJsonDict()
                 response = self.app.get(path, data=args)
                 self.assertEqual(response.status_code, 200)
@@ -259,28 +318,21 @@ class TestSimulatedStack(unittest.TestCase):
                     calculatedDigest, fetchedReference.md5checksum)
 
     def testReads(self):
-        # search read group sets
-        path = utils.applyVersion('/readgroupsets/search')
-        request = protocol.SearchReadGroupSetsRequest()
-        request.datasetId = 'simulatedDataset1'
-        response = self.sendJsonPostRequest(path, request.toJsonString())
-        self.assertEqual(response.status_code, 200)
-        responseData = protocol.SearchReadGroupSetsResponse.fromJsonString(
-            response.data)
-        readGroupSets = responseData.readGroupSets
-        self.assertEqual(len(readGroupSets), 1)
-
-        # search reads
         path = utils.applyVersion('/reads/search')
-        request = protocol.SearchReadsRequest()
-        readGroupId = readGroupSets[0].readGroups[0].id
-        request.readGroupIds = [readGroupId]
-        request.referenceId = "chr1"
-        response = self.sendJsonPostRequest(path, request.toJsonString())
-        self.assertEqual(response.status_code, 200)
-        responseData = protocol.SearchReadsResponse.fromJsonString(
-            response.data)
-        alignments = responseData.alignments
-        self.assertEqual(len(alignments), self.numAlignmentsPerReadGroup)
-        for alignment in alignments:
-            self.assertEqual(alignment.readGroupId, readGroupId)
+        for dataset in self.backend.getDatasets():
+            for readGroupSet in dataset.getReadGroupSets():
+                for readGroup in readGroupSet.getReadGroups():
+                    # search reads
+                    request = protocol.SearchReadsRequest()
+                    request.readGroupIds = [readGroup.getId()]
+                    request.referenceId = "chr1"
+                    response = self.sendJsonPostRequest(
+                        path, request.toJsonString())
+                    self.assertEqual(response.status_code, 200)
+                    responseData = protocol.SearchReadsResponse.fromJsonString(
+                        response.data)
+                    alignments = responseData.alignments
+                    self.assertGreater(len(alignments), 0)
+                    for alignment in alignments:
+                        self.assertEqual(
+                            alignment.readGroupId, readGroup.getId())

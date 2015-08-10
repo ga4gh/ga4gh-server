@@ -163,11 +163,11 @@ class ServerStatus(object):
         app.urls.sort()
         return app.urls
 
-    def getDatasetIds(self):
+    def getDatasets(self):
         """
         Returns the list of datasetIds for this backend
         """
-        return app.backend.getDatasetIds()
+        return app.backend.getDatasets()
 
     def getVariantSets(self, datasetId):
         """

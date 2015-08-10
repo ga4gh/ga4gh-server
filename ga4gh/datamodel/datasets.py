@@ -50,7 +50,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         Returns the list of VariantSets in this dataset
         """
-        return self._variantSetIdMap.values()
+        return [self._variantSetIdMap[id_] for id_ in self._variantSetIds]
 
     def getReadGroupSetIds(self):
         """

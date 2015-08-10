@@ -177,10 +177,6 @@ class CompoundId(object):
             idFormat = cls.separator.join(cls.fields)
             msg = "(id must be in format {})".format(idFormat)
             raise exceptions.BadIdentifierException(compoundIdStr, msg)
-        for identifier in splits:
-            msg = "Cannot have empty sections within identifier."
-            if len(identifier) == 0:
-                raise exceptions.BadIdentifierException(compoundIdStr, msg)
         return cls(None, *splits)
 
 

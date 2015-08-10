@@ -26,7 +26,7 @@ class TestCompoundIds(unittest.TestCase):
     Test the compound ids
     """
     def testBadParse(self):
-        for badId in [5, None, 'a;b', 'a;b;c;d', 'a;b;', ';;;', ';;;;']:
+        for badId in [5, None, 'a;b', 'a;b;c;d', 'a;b;sd;', ';;;;']:
             with self.assertRaises(exceptions.BadIdentifierException):
                 ExampleCompoundId.parse(badId)
 
@@ -39,13 +39,10 @@ class TestCompoundIds(unittest.TestCase):
         cid = compoundIdClass.parse(idStr)
         self.assertIsNotNone(cid)
         # Now, check for substrings
-        for j in range(len(idStr)):
+        for j in range(len(idStr) - 1):
             self.assertRaises(
                 exceptions.BadIdentifierException, compoundIdClass.parse,
                 idStr[:j])
-            self.assertRaises(
-                exceptions.BadIdentifierException, compoundIdClass.parse,
-                idStr[j + 1:])
         # Adding on an extra field should also provoke a parse error.
         self.assertRaises(
             exceptions.BadIdentifierException, compoundIdClass.parse,
