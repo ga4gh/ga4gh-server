@@ -12,3 +12,9 @@ echo "-e ." >> /app/requirements.txt
 
 # Copy application.wsgi into the location mod-wsgi_docker expects it
 cp /app/deploy/application.wsgi /app/ga4gh/
+
+echo " -----> Installing extra libs"
+apt-get update && \
+	apt-get install -y --no-install-recommends \
+	libffi-dev \
+	libxslt1-dev
