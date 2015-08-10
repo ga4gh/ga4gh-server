@@ -230,13 +230,11 @@ class DataDrivenTest(TestCase):
     corresponding to this, and then test that these objects have the
     properties that we expect.
     """
-    def __init__(self, setId, baseDir, compoundSetId=None):
+    def __init__(self, parentContainer, setId, baseDir):
         self._setId = setId
-        if compoundSetId is not None:
-            self._setId = compoundSetId
         self._dataDir = os.path.join(baseDir, setId)
         self._gaObject = self.getDataModelClass()(
-            self._setId, self._dataDir)
+            parentContainer, self._setId, self._dataDir)
 
     def getSetId(self):
         """

@@ -211,10 +211,11 @@ class TestFileSystemBackend(TestAbstractBackend):
         self.assertEqual(len(variantSets), len(self._vcfs))
         ids = set(variantSet.id for variantSet in variantSets)
         datasetId = self._backend.getDatasetIds()[0]
-        vcfKeys = set(
-            str(variants.CompoundVariantSetId.compose(
-                datasetId=datasetId, vsId=vsId))
-            for vsId in self._vcfs.keys())
+        dataset = self._backend.getDataset(datasetId)
+        vcfKeys = set()
+        for localId in self._vcfs.keys():
+            tmpVariantSet = variants.AbstractVariantSet(dataset, localId)
+            vcfKeys.add(tmpVariantSet.getId())
         self.assertEqual(ids, vcfKeys)
 
     def testRunListReferenceBases(self):

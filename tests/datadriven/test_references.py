@@ -15,8 +15,8 @@ import hashlib
 # a different library here --- perhaps BioPython?
 import pysam
 
-import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
+import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 
 
@@ -37,15 +37,11 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         Container class for information about a reference
         """
         def __init__(self, referenceSetId, fastaFileName):
-            filename = os.path.split(fastaFileName)[1]
-            compoundId = references.CompoundReferenceId.compose(
-                referenceSetId=referenceSetId, rId=filename.split(".")[0])
-            self.id = str(compoundId)
             self.fastaFile = pysam.FastaFile(fastaFileName)
             self.bases = self.fastaFile.fetch(self.fastaFile.references[0])
 
     def __init__(self, referenceSetId, baseDir):
-        super(ReferenceSetTest, self).__init__(referenceSetId, baseDir)
+        super(ReferenceSetTest, self).__init__(None, referenceSetId, baseDir)
         self._referenceInfos = {}
         for fastaFileName in glob.glob(
                 os.path.join(self._dataDir, "*.fa.gz")):
@@ -56,7 +52,11 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         self._referenceInfos[fastaFileName] = referenceInfo
 
     def getDataModelClass(self):
-        return references.HtslibReferenceSet
+        class HtslibReferenceSetWrapper(references.HtslibReferenceSet):
+            def __init__(self, parentContainer, localId, dataDir):
+                super(HtslibReferenceSetWrapper, self).__init__(
+                    localId, dataDir)
+        return HtslibReferenceSetWrapper
 
     def getProtocolClass(self):
         return protocol.ReferenceSet

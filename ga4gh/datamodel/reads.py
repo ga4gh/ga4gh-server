@@ -16,34 +16,6 @@ import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
 
 
-class CompoundReadGroupSetId(datamodel.CompoundId):
-    """
-    The compound id for a read group set
-    """
-    fields = ['datasetId', 'rgsId']
-
-
-class CompoundReadGroupId(datamodel.CompoundId):
-    """
-    The compound id for a read group
-    """
-    fields = ['datasetId', 'rgsId', 'rgId']
-    comboFields = {
-        'readGroupSetId': [0, 1],
-    }
-
-
-class CompoundReadAlignmentId(datamodel.CompoundId):
-    """
-    The compound id for a read alignment
-    """
-    fields = ['datasetId', 'rgsId', 'rgId', 'raId']
-    comboFields = {
-        'readGroupSetId': [0, 1],
-        'readGroupId': [0, 1, 2],
-    }
-
-
 class SamCigar(object):
     """
     Utility class for working with SAM CIGAR strings
@@ -99,13 +71,11 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
     """
     The base class of a read group set
     """
-    def __init__(self, id_):
-        self._id = id_
-        self._readGroups = []
+    compoundIdClass = datamodel.ReadGroupSetCompoundId
 
-    def getId(self):
-        # TODO move into the superclass
-        return self._id
+    def __init__(self, parentContainer, localId):
+        super(AbstractReadGroupSet, self).__init__(parentContainer, localId)
+        self._readGroups = []
 
     def getReadGroups(self):
         """
@@ -118,11 +88,11 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         Returns the GA4GH protocol representation of this ReadGroupSet.
         """
         readGroupSet = protocol.ReadGroupSet()
-        readGroupSet.id = self._id
+        readGroupSet.id = self.getId()
         readGroupSet.readGroups = [
             readGroup.toProtocolElement() for readGroup in self._readGroups]
-        readGroupSet.name = None
-        readGroupSet.datasetId = None
+        readGroupSet.name = self.getLocalId()
+        readGroupSet.datasetId = self.getParentContainer().getId()
         return readGroupSet
 
 
@@ -130,11 +100,10 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
     """
     A simulated read group set
     """
-    def __init__(self, id_, numAlignments=2):
-        super(SimulatedReadGroupSet, self).__init__(id_)
-        compoundId = CompoundReadGroupId.compose(
-            readGroupSetId=id_, rgId='one')
-        readGroup = SimulatedReadGroup(str(compoundId), numAlignments)
+    def __init__(self, parentContainer, localId, numAlignments=2):
+        super(SimulatedReadGroupSet, self).__init__(parentContainer, localId)
+        readGroupLocalId = "one"  # FIXME
+        readGroup = SimulatedReadGroup(self, readGroupLocalId, numAlignments)
         self._readGroups.append(readGroup)
 
 
@@ -142,8 +111,8 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     """
     Class representing a logical collection ReadGroups.
     """
-    def __init__(self, id_, dataDir):
-        super(HtslibReadGroupSet, self).__init__(id_)
+    def __init__(self, parentContainer, localId, dataDir):
+        super(HtslibReadGroupSet, self).__init__(parentContainer, localId)
         self._dataDir = dataDir
         self._readGroups = []
         self._setAccessTimes(dataDir)
@@ -152,29 +121,23 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     def _addDataFile(self, path):
         filename = os.path.split(path)[1]
         localId = os.path.splitext(filename)[0]
-        compoundId = CompoundReadGroupId.compose(
-            readGroupSetId=self._id, rgId=localId)
-        readGroup = HtslibReadGroup(str(compoundId), path)
+        readGroup = HtslibReadGroup(self, localId, path)
         self._readGroups.append(readGroup)
 
 
-class AbstractReadGroup(object):
+class AbstractReadGroup(datamodel.DatamodelObject):
     """
     Class representing a ReadGroup. A ReadGroup is all the data that's
     processed the same way by the sequencer.  There are typically 1-10
     ReadGroups in a ReadGroupSet.
     """
-    def __init__(self, id_):
-        self._id = id_
+    compoundIdClass = datamodel.ReadGroupCompoundId
+
+    def __init__(self, parentContainer, localId):
+        super(AbstractReadGroup, self).__init__(parentContainer, localId)
         now = protocol.convertDatetime(datetime.datetime.now())
         self._creationTime = now
         self._updateTime = now
-
-    def getId(self):
-        """
-        Returns the id of the read group
-        """
-        return self._id
 
     def toProtocolElement(self):
         """
@@ -183,46 +146,52 @@ class AbstractReadGroup(object):
         # TODO this is very incomplete, but we don't have the
         # implementation to fill out the rest of the fields currently
         readGroup = protocol.ReadGroup()
-        readGroup.id = self._id
+        readGroup.id = self.getId()
         readGroup.created = self._creationTime
         readGroup.updated = self._updateTime
-        readGroup.datasetId = None
+        dataset = self.getParentContainer().getParentContainer()
+        readGroup.datasetId = dataset.getId()
         readGroup.description = None
         readGroup.experiment = None
         readGroup.info = {}
-        readGroup.name = readGroup.id
+        readGroup.name = self.getLocalId()
         readGroup.predictedInsertSize = None
         readGroup.programs = []
         readGroup.referenceSetId = None
         readGroup.sampleId = None
         return readGroup
 
+    def getReadAlignmentId(self, gaAlignment):
+        """
+        Returns a string ID suitable for use in the specified GA
+        ReadAlignment object in this ReadGroup.
+        """
+        compoundId = datamodel.ReadAlignmentCompoundId(
+            self.getCompoundId(), gaAlignment.fragmentName)
+        return str(compoundId)
+
 
 class SimulatedReadGroup(AbstractReadGroup):
     """
     A simulated readgroup
     """
-    def __init__(self, id_, numAlignments=2):
-        super(SimulatedReadGroup, self).__init__(id_)
+    def __init__(self, parentContainer, localId, numAlignments=2):
+        super(SimulatedReadGroup, self).__init__(parentContainer, localId)
         self._numAlignments = numAlignments
 
     def getReadAlignments(self, referenceId=None, start=None, end=None):
         for i in range(self._numAlignments):
-            alignment = self._createReadAlignment(i)
-            yield alignment
+            yield self._createReadAlignment(i)
 
     def _createReadAlignment(self, i):
         # TODO fill out a bit more
-        compoundId = CompoundReadAlignmentId.compose(
-            readGroupId=self._id, raId="simulated{}".format(i))
-        id_ = str(compoundId)
         alignment = protocol.ReadAlignment()
         alignment.alignedQuality = [1, 2, 3]
         alignment.alignedSequence = "ACT"
         alignment.fragmentId = 'TODO'
         gaPosition = protocol.Position()
         gaPosition.position = 0
-        gaPosition.referenceName = "whatevs"
+        gaPosition.referenceName = "NotImplemented"
         gaPosition.strand = protocol.Strand.POS_STRAND
         gaLinearAlignment = protocol.LinearAlignment()
         gaLinearAlignment.position = gaPosition
@@ -230,16 +199,16 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.duplicateFragment = False
         alignment.failedVendorQualityChecks = False
         alignment.fragmentLength = 3
-        alignment.fragmentName = id_
-        alignment.id = id_
+        alignment.fragmentName = "simulated{}".format(i)
         alignment.info = {}
         alignment.nextMatePosition = None
         alignment.numberReads = None
         alignment.properPlacement = False
-        alignment.readGroupId = self._id
+        alignment.readGroupId = self.getId()
         alignment.readNumber = None
         alignment.secondaryAlignment = False
         alignment.supplementaryAlignment = False
+        alignment.id = self.getReadAlignmentId(alignment)
         return alignment
 
 
@@ -247,8 +216,8 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     """
     A readgroup based on htslib's reading of a given file
     """
-    def __init__(self, id_, dataFile):
-        super(HtslibReadGroup, self).__init__(id_)
+    def __init__(self, parentContainer, localId, dataFile):
+        super(HtslibReadGroup, self).__init__(parentContainer, localId)
         self._samFilePath = dataFile
 
     def openFile(self, dataFile):
@@ -314,9 +283,6 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
             read.flag, SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
         ret.fragmentLength = read.template_length
         ret.fragmentName = read.query_name
-        compoundId = CompoundReadAlignmentId.compose(
-            readGroupId=self._id, raId=read.query_name)
-        ret.id = str(compoundId)
         ret.info = {key: [str(value)] for key, value in read.tags}
         ret.nextMatePosition = None
         if read.next_reference_id != -1:
@@ -340,9 +306,10 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
                 ret.readNumber = 1
         ret.properPlacement = SamFlags.isFlagSet(
             read.flag, SamFlags.PROPER_PLACEMENT)
-        ret.readGroupId = self._id
+        ret.readGroupId = self.getId()
         ret.secondaryAlignment = SamFlags.isFlagSet(
             read.flag, SamFlags.SECONDARY_ALIGNMENT)
         ret.supplementaryAlignment = SamFlags.isFlagSet(
             read.flag, SamFlags.SUPPLEMENTARY_ALIGNMENT)
+        ret.id = self.getReadAlignmentId(ret)
         return ret

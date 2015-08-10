@@ -8,9 +8,9 @@ from __future__ import unicode_literals
 import unittest
 
 import ga4gh.backend as backend
-import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
+import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
 
@@ -21,8 +21,8 @@ def generateVariant():
 
 class MockVariantSet(variants.AbstractVariantSet):
 
-    def __init__(self, id_, numVariants):
-        super(MockVariantSet, self).__init__(id_)
+    def __init__(self, parentContainer, localId, numVariants):
+        super(MockVariantSet, self).__init__(parentContainer, localId)
         self.numVariants = numVariants
 
     def getVariants(self, referenceName, startPosition, endPosition,
@@ -39,15 +39,14 @@ class TestVariantsGenerator(unittest.TestCase):
         self.request = protocol.SearchVariantsRequest()
         self.backend = backend.SimulatedBackend()
         self.datasetId = self.backend.getDatasetIds()[0]
-        compoundId = variants.CompoundVariantSetId.compose(
-            datasetId=self.datasetId, vsId='variantSetId')
-        self.variantSetId = str(compoundId)
+        self.dataset = self.backend.getDataset(self.datasetId)
+        self.variantSetLocalId = 'variantSet'
 
     def testNonexistantVariantSet(self):
         # a request for a variant set that doesn't exist should throw an error
-        compoundId = variants.CompoundVariantSetId.compose(
-            datasetId=self.datasetId, vsId='notFound')
-        self.request.variantSetId = str(compoundId)
+        variantSet = variants.AbstractVariantSet(
+            self.dataset, 'notFound')
+        self.request.variantSetId = variantSet.getId()
         with self.assertRaises(exceptions.VariantSetNotFoundException):
             self.backend.variantsGenerator(self.request)
 
@@ -80,10 +79,11 @@ class TestVariantsGenerator(unittest.TestCase):
         self.assertIsNone(next(iterator, None))
 
     def _initVariantSet(self, numVariants):
-        variantSet = MockVariantSet(self.variantSetId, numVariants)
+        variantSet = MockVariantSet(
+            self.dataset, self.variantSetLocalId, numVariants)
         self.backend.getDataset(self.datasetId)._variantSetIdMap = {
-            self.variantSetId: variantSet}
-        self.request.variantSetId = self.variantSetId
+            variantSet.getId(): variantSet}
+        self.request.variantSetId = variantSet.getId()
 
 
 def generateReadAlignment(position=0, sequence='abc'):
@@ -97,8 +97,8 @@ def generateReadAlignment(position=0, sequence='abc'):
 
 class MockReadGroup(reads.AbstractReadGroup):
 
-    def __init__(self, id_, numAlignments):
-        super(MockReadGroup, self).__init__(id_)
+    def __init__(self, parentContainer, localId, numAlignments):
+        super(MockReadGroup, self).__init__(parentContainer, localId)
         self.numAlignments = numAlignments
 
     def getReadAlignments(self, referenceName=None, referenceId=None,
@@ -116,11 +116,11 @@ class TestReadsGenerator(unittest.TestCase):
         self.request.referenceId = "chr1"
         self.backend = backend.SimulatedBackend()
         self.datasetId = self.backend.getDatasetIds()[0]
-        self.rgsId = "aReadGroupSet"
-        self.rgId = "aReadGroup"
-        compoundId = reads.CompoundReadGroupId.compose(
-            datasetId=self.datasetId, rgsId=self.rgsId, rgId=self.rgId)
-        self.readGroupId = str(compoundId)
+        self.dataset = self.backend.getDataset(self.datasetId)
+        self.readGroupSetLocalId = "aReadGroupSet"
+        self.readGroupLocalId = "aReadGroup"
+        self.readGroupSet = reads.AbstractReadGroupSet(
+            self.dataset, self.readGroupSetLocalId)
 
     def testNoReadGroupsNotSupported(self):
         # a request for no read groups should throw an exception
@@ -136,9 +136,8 @@ class TestReadsGenerator(unittest.TestCase):
 
     def testNonexistantReadGroup(self):
         # a request for a readGroup that doesn't exist should throw an error
-        compoundId = reads.CompoundReadGroupId.compose(
-            datasetId=self.datasetId, rgsId='notFound', rgId='notFound')
-        self.request.readGroupIds = [str(compoundId)]
+        readGroup = reads.AbstractReadGroup(self.readGroupSet, 'notFound')
+        self.request.readGroupIds = [readGroup.getId()]
         with self.assertRaises(exceptions.ReadGroupNotFoundException):
             self.backend.readsGenerator(self.request)
 
@@ -171,10 +170,10 @@ class TestReadsGenerator(unittest.TestCase):
         self.assertIsNone(next(iterator, None))
 
     def _initReadGroup(self, numAlignments):
-        readGroup = MockReadGroup(self.readGroupId, numAlignments)
-        self.backend.getDataset(self.datasetId)._readGroupIdMap = {
-            self.readGroupId: readGroup}
-        self.request.readGroupIds = [self.readGroupId]
+        readGroup = MockReadGroup(
+            self.readGroupSet, self.readGroupLocalId, numAlignments)
+        self.dataset._readGroupIdMap = {readGroup.getId(): readGroup}
+        self.request.readGroupIds = [readGroup.getId()]
 
 
 class TestVariantsIntervalIteratorClassMethods(unittest.TestCase):

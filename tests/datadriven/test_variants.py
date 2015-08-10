@@ -10,9 +10,10 @@ import glob
 
 import vcf
 
-import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
+import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.variants as variants
+import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 import tests.utils as utils
 
@@ -30,10 +31,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
     built by the variants.VariantSet object.
     """
     def __init__(self, variantSetId, baseDir):
-        compoundId = variants.CompoundVariantSetId.compose(
-            datasetId='dataset1', vsId=variantSetId)
-        super(VariantSetTest, self).__init__(
-            variantSetId, baseDir, str(compoundId))
+        dataset = datasets.AbstractDataset("ds")
+        super(VariantSetTest, self).__init__(dataset, variantSetId, baseDir)
         self._variantRecords = []
         self._referenceNames = set()
         # Read in all the VCF files in datadir and store each variant.
@@ -167,12 +166,11 @@ class VariantSetTest(datadriven.DataDrivenTest):
         leaving searchSampleIds will get all samples.
         """
         gaCallSetVariants = []
-        gaId = self._gaObject.getId()
         for referenceName in self._referenceNames:
             end = datamodel.PysamDatamodelMixin.vcfMax
             gaSearchIds = [
-                str(variants.CompoundCallsetId.compose(
-                    variantSetId=gaId, csId=sampleId))
+                str(datamodel.CallSetCompoundId(
+                    self._gaObject.getCompoundId(), sampleId))
                 for sampleId in searchsampleIds]
             gaVariants = list(self._gaObject.getVariants(
                 referenceName, 0, end, searchVariants, gaSearchIds))

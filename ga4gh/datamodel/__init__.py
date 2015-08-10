@@ -27,77 +27,6 @@ def _cleanupHtslibsMess(indexDir):
         shutil.rmtree(indexDir)
 
 
-class CompoundId(object):
-    """
-    Base class for an id composed of several different parts, separated
-    by a separator.
-    """
-    separator = ':'
-    fields = []
-    comboFields = {}
-
-    @classmethod
-    def compose(cls, **kwargs):
-        compoundId = cls(None, _skipInstantiation=True)
-        validFields = set()
-        for field in cls.fields:
-            validFields.add(field)
-        comboKeys = cls.comboFields.keys()
-        for key, value in kwargs.items():
-            if value is None:
-                msg = "field '{}' is None".format(key)
-                raise ValueError(msg)
-            if key in validFields:
-                setattr(compoundId, key, str(value))
-            elif key in comboKeys:
-                setattr(compoundId, key, value)
-                fieldIndexes = cls.comboFields[key]
-                splits = value.split(cls.separator)
-                if len(fieldIndexes) != len(splits):
-                    msg = ("field '{}' with value '{}' has {} split(s), "
-                           "needs {}")
-                    raise ValueError(msg.format(
-                        key, value, len(splits), len(fieldIndexes)))
-                for i in range(len(splits)):
-                    field = cls.fields[fieldIndexes[i]]
-                    setattr(compoundId, field, splits[i])
-            else:
-                msg = "field '{}' not in fields of {}; options are: {}"
-                raise ValueError(msg.format(key, cls.__name__, cls.fields))
-        return compoundId
-
-    def __init__(self, compoundIdStr, _skipInstantiation=False):
-        if not _skipInstantiation:
-            if not isinstance(compoundIdStr, basestring):
-                raise exceptions.BadIdentifierException(
-                    compoundIdStr, self._getParseErrorMessage())
-            splits = compoundIdStr.split(self.separator)
-            if len(splits) != len(self.fields):
-                raise exceptions.BadIdentifierException(
-                    compoundIdStr, self._getParseErrorMessage())
-            for i, field in enumerate(self.fields):
-                setattr(self, field, str(splits[i]))
-            for comboFieldName, comboFieldOrder in self.comboFields.items():
-                values = []
-                for i in comboFieldOrder:
-                    value = getattr(self, self.fields[i])
-                    values.append(str(value))
-                comboFieldValue = self.separator.join(values)
-                setattr(self, comboFieldName, comboFieldValue)
-
-    def __str__(self):
-        values = []
-        for field in self.fields:
-            value = getattr(self, field)
-            values.append(value)
-        return self.separator.join(values)
-
-    def _getParseErrorMessage(self):
-        idFormat = self.separator.join(self.fields)
-        msg = "(id must be in format {})".format(idFormat)
-        return msg
-
-
 class PysamFileHandleCache(object):
     """
     Cache for opened file handles. We use a deque which has the
@@ -181,13 +110,200 @@ class PysamFileHandleCache(object):
 fileHandleCache = PysamFileHandleCache()
 
 
+class CompoundId(object):
+    """
+    Base class for an id composed of several different parts, separated
+    by a separator. Each compound ID consists of a set of fields, each
+    of which corresponds to a local ID in the data hierarchy. For example,
+    we might have fields like ["dataset", "variantSet"] for a variantSet.
+    These are available as cid.dataset, and cid.variantSet.  The actual IDs
+    of the containing objects can be obtained using the corresponding
+    like cid.datasetId and cid.variantSetId.
+    """
+    separator = ':'
+    fields = []
+    """
+    The fields that the compound ID is composed of. These are parsed and
+    made available as attributes on the object.
+    """
+    containerIds = []
+    """
+    The fields of the ID form a breadcrumb trail through the data
+    hierarchy, and successive prefixes provide the IDs for objects
+    further up the tree. This list is a set of tuples giving the
+    name and length of a given prefix forming an identifier.
+    """
+
+    def __init__(self, parentCompoundId, *localIds):
+        """
+        Allocates a new CompoundId for the specified parentCompoundId and
+        local identifiers. This compoundId inherits all of the fields and
+        values from the parent compound ID, and must have localIds
+        corresponding to its fields. If no parent id is present,
+        parentCompoundId should be set to None.
+        """
+        index = 0
+        if parentCompoundId is not None:
+            for field in parentCompoundId.fields:
+                setattr(self, field, getattr(parentCompoundId, field))
+                index += 1
+        for field, localId in zip(self.fields[index:], localIds):
+            setattr(self, field, str(localId))
+        if len(localIds) != len(self.fields) - index:
+            raise ValueError(
+                "Incorrect number of fields provided to instantiate ID")
+        for idFieldName, prefix in self.containerIds:
+            values = [getattr(self, f) for f in self.fields[:prefix + 1]]
+            containerId = self.separator.join(values)
+            setattr(self, idFieldName, containerId)
+
+    def __str__(self):
+        values = []
+        for field in self.fields:
+            value = getattr(self, field)
+            values.append(value)
+        return self.separator.join(values)
+
+    @classmethod
+    def parse(cls, compoundIdStr):
+        """
+        Parses the specified compoundId string and returns an instance
+        of this CompoundId class.
+        """
+        if not isinstance(compoundIdStr, basestring):
+            raise exceptions.BadIdentifierException(compoundIdStr)
+        splits = compoundIdStr.split(cls.separator)
+        if len(splits) != len(cls.fields):
+            idFormat = cls.separator.join(cls.fields)
+            msg = "(id must be in format {})".format(idFormat)
+            raise exceptions.BadIdentifierException(compoundIdStr, msg)
+        for identifier in splits:
+            msg = "Cannot have empty sections within identifier."
+            if len(identifier) == 0:
+                raise exceptions.BadIdentifierException(compoundIdStr, msg)
+        return cls(None, *splits)
+
+
+class ReferenceSetCompoundId(CompoundId):
+    """
+    The compound ID for reference sets.
+    """
+    fields = ['referenceSet']
+    containerIds = [('referenceSetId', 0)]
+
+
+class ReferenceCompoundId(ReferenceSetCompoundId):
+    """
+    The compound id for a reference
+    """
+    fields = ReferenceSetCompoundId.fields + ['reference']
+
+
+class DatasetCompoundId(CompoundId):
+    """
+    The compound id for a data set
+    """
+    fields = ['dataset']
+    containerIds = [('datasetId', 0)]
+
+
+class VariantSetCompoundId(DatasetCompoundId):
+    """
+    The compound id for a variant set
+    """
+    fields = DatasetCompoundId.fields + ['variantSet']
+    containerIds = DatasetCompoundId.containerIds + [('variantSetId', 1)]
+
+
+class VariantCompoundId(VariantSetCompoundId):
+    """
+    The compound id for a variant
+    """
+    fields = VariantSetCompoundId.fields + ['referenceName', 'start']
+
+
+class CallSetCompoundId(VariantSetCompoundId):
+    """
+    The compound id for a callset
+    """
+    fields = VariantSetCompoundId.fields + ['name']
+
+
+class ReadGroupSetCompoundId(DatasetCompoundId):
+    """
+    The compound id for a read group set
+    """
+    fields = DatasetCompoundId.fields + ['readGroupSet']
+    containerIds = DatasetCompoundId.containerIds + [('readGroupSetId', 1)]
+
+
+class ReadGroupCompoundId(ReadGroupSetCompoundId):
+    """
+    The compound id for a read group
+    """
+    fields = ReadGroupSetCompoundId.fields + ['readGroup']
+    containerIds = ReadGroupSetCompoundId.containerIds + [('readGroupId', 2)]
+
+
+class ReadAlignmentCompoundId(ReadGroupCompoundId):
+    """
+    The compound id for a read alignment
+    """
+    fields = ReadGroupCompoundId.fields + ['readAlignment']
+
+
 class DatamodelObject(object):
     """
-    Superclass of all datamodel types
+    Superclass of all datamodel types. A datamodel object is a concrete
+    representation of some data, either a single observation (such as a
+    read) or an aggregated set of related observations (such as a dataset).
+    Every datamodel object has an ID and a localId. The ID is an identifier
+    which uniquely idenfifies the object within a server instance. The
+    localId is a name that identifies the object with a given its
+    parent container.
     """
-    def __init__(self):
-        # TODO move common functionality into this class from subclasses
-        pass
+
+    compoundIdClass = None
+    """ The class for compoundIds. Must be set in concrete subclasses.  """
+
+    def __init__(self, parentContainer, localId):
+        self._parentContainer = parentContainer
+        self._localId = localId
+        parentId = None
+        if parentContainer is not None:
+            parentId = parentContainer.getCompoundId()
+        self._compoundId = self.compoundIdClass(parentId, localId)
+
+    def getId(self):
+        """
+        Returns the string identifying this DatamodelObject within the
+        server.
+        """
+        return str(self._compoundId)
+
+    def getCompoundId(self):
+        """
+        Returns the CompoundId instance that identifies this object
+        within the server.
+        """
+        return self._compoundId
+
+    def getLocalId(self):
+        """
+        Returns the localId of this DatamodelObject. The localId of a
+        DatamodelObject is a name that identifies it within its parent
+        container.
+        """
+        return self._localId
+
+    def getParentContainer(self):
+        """
+        Returns the parent container for this DatamodelObject. This the
+        object that is one-level above this object in the data hierarchy.
+        For example, for a Variant this is the VariantSet that it belongs
+        to.
+        """
+        return self._parentContainer
 
 
 class PysamDatamodelMixin(object):

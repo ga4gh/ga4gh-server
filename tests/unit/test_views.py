@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import unittest
 import logging
 
-import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel as datamodel
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 import tests.utils as utils
@@ -286,7 +286,7 @@ class TestFrontend(unittest.TestCase):
         variantSetId = responseData.variantSets[0].id
         response = self.sendGetVariantSet(variantSetId)
         self.assertEqual(200, response.status_code)
-        compoundId = variants.CompoundVariantSetId("notValid:notValid")
+        compoundId = datamodel.VariantSetCompoundId.parse("notValid:notValid")
         response = self.sendGetVariantSet(str(compoundId))
         self.assertEqual(404, response.status_code)
 

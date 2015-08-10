@@ -9,8 +9,10 @@ import collections
 import glob
 import os
 
-import ga4gh.protocol as protocol
+import ga4gh.datamodel as datamodel
+import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
+import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 
 import pysam
@@ -30,13 +32,12 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         """
         Container class for information about a read group
         """
-        def __init__(self, readGroupSetId, samFileName):
+        def __init__(self, gaReadGroupSet, samFileName):
             filename = os.path.split(samFileName)[1]
             localId = os.path.splitext(filename)[0]
-            compoundId = reads.CompoundReadGroupId.compose(
-                datasetId='dataset1', rgsId=readGroupSetId, rgId=localId)
-            readGroupId = str(compoundId)
-            self.id = readGroupId
+            self.gaReadGroup = reads.AbstractReadGroup(
+                gaReadGroupSet, localId)
+            self.id = self.gaReadGroup.getId()
             self.samFile = pysam.AlignmentFile(samFileName)
             self.reads = []
             self.refIds = collections.defaultdict(list)
@@ -48,17 +49,16 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 self.reads.append(read)
 
     def __init__(self, readGroupSetId, baseDir):
-        compoundId = reads.CompoundReadGroupSetId.compose(
-            datasetId='dataset1', rgsId=readGroupSetId)
+        dataset = datasets.AbstractDataset("ds")
         super(ReadGroupSetTest, self).__init__(
-            readGroupSetId, baseDir, str(compoundId))
+            dataset, readGroupSetId, baseDir)
         self._readGroupInfos = {}
         for samFileName in glob.glob(
                 os.path.join(self._dataDir, "*.bam")):
             self._readSam(readGroupSetId, samFileName)
 
     def _readSam(self, readGroupSetId, samFileName):
-        readGroupInfo = self.ReadGroupInfo(readGroupSetId, samFileName)
+        readGroupInfo = self.ReadGroupInfo(self._gaObject, samFileName)
         self._readGroupInfos[samFileName] = readGroupInfo
 
     def getDataModelClass(self):
@@ -186,8 +186,9 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         self.assertEqual(
             gaAlignment.fragmentName,
             pysamAlignment.query_name)
-        compoundId = reads.CompoundReadAlignmentId.compose(
-            readGroupId=readGroupInfo.id, raId=pysamAlignment.query_name)
+        compoundId = datamodel.ReadAlignmentCompoundId(
+            readGroupInfo.gaReadGroup.getCompoundId(),
+            pysamAlignment.query_name)
         self.assertEqual(gaAlignment.id, str(compoundId))
         self.assertEqual(
             gaAlignment.info,

@@ -7,6 +7,8 @@ from __future__ import unicode_literals
 
 import unittest
 
+import ga4gh.datamodel as datamodel
+import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 
@@ -20,10 +22,6 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.numCalls = 2
         # ensure variantDensity is >= 1 so we get deterministic behavoir
         self.variantDensity = 1
-        self.datasetId = 'dataset1'
-        compoundId = variants.CompoundVariantSetId.compose(
-            datasetId=self.datasetId, vsId=3)
-        self.variantSetId = str(compoundId)
         self.simulatedVariantSet = self._getSimulatedVariantSet()
         self.referenceName = 'ref'
         self.startPosition = 100
@@ -33,9 +31,10 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.bases = ["A", "C", "G", "T"]
 
     def _getSimulatedVariantSet(self):
+        dataset = datasets.AbstractDataset('dataset1')
         simulatedVariantSet = variants.SimulatedVariantSet(
-            self.randomSeed, self.numCalls,
-            self.variantDensity, self.variantSetId)
+            dataset, 'variantSet1', self.randomSeed, self.numCalls,
+            self.variantDensity)
         return simulatedVariantSet
 
     def _getSimulatedVariantsList(self, simulatedVariantSet=None):
@@ -56,8 +55,6 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.assertEqual(
             self.variantDensity, self.simulatedVariantSet._variantDensity)
         self.assertEqual(
-            self.variantSetId, self.simulatedVariantSet._id)
-        self.assertEqual(
             self.simulatedVariantSet.getCreationTime(),
             self.simulatedVariantSet.getUpdatedTime())
 
@@ -66,19 +63,34 @@ class TestSimulatedVariantSet(unittest.TestCase):
         variantList = self._getSimulatedVariantsList()
         self.assertEqual(
             len(variantList), self.endPosition - self.startPosition)
-        simulatedVariant = variantList[0]
-        self.assertIn(str(self.variantSetId), simulatedVariant.id)
-        self.assertIn(self.referenceName, simulatedVariant.id)
-        self.assertIn(str(self.startPosition), simulatedVariant.id)
-        self.assertEqual(simulatedVariant.variantSetId, self.variantSetId)
-        self.assertEqual(simulatedVariant.referenceName, self.referenceName)
-        self.assertEqual(simulatedVariant.created, simulatedVariant.updated)
-        self.assertEqual(simulatedVariant.start, self.startPosition)
-        self.assertEqual(simulatedVariant.end, self.startPosition + 1)
-        self.assertIn(simulatedVariant.referenceBases, self.bases)
-        self.assertIn(
-            simulatedVariant.alternateBases[0], self.bases)
-        self.assertEqual(len(simulatedVariant.calls), self.numCalls)
+        for offset, simulatedVariant in enumerate(variantList):
+            start = self.startPosition + offset
+            variantSetCompoundId = self.simulatedVariantSet.getCompoundId()
+            variantCompoundId = datamodel.VariantCompoundId.parse(
+                simulatedVariant.id)
+            self.assertEqual(
+                variantSetCompoundId.variantSetId,
+                self.simulatedVariantSet.getId())
+            self.assertEqual(
+                variantSetCompoundId.variantSetId,
+                variantCompoundId.variantSetId)
+            self.assertEqual(
+                variantCompoundId.referenceName, self.referenceName)
+            self.assertEqual(
+                variantCompoundId.start, str(simulatedVariant.start))
+            self.assertEqual(
+                simulatedVariant.variantSetId,
+                self.simulatedVariantSet.getId())
+            self.assertEqual(
+                simulatedVariant.referenceName, self.referenceName)
+            self.assertEqual(
+                simulatedVariant.created, simulatedVariant.updated)
+            self.assertEqual(simulatedVariant.start, start)
+            self.assertEqual(simulatedVariant.end, start + 1)
+            self.assertIn(simulatedVariant.referenceBases, self.bases)
+            self.assertIn(
+                simulatedVariant.alternateBases[0], self.bases)
+            self.assertEqual(len(simulatedVariant.calls), self.numCalls)
 
     def testConsistency(self):
         # two SimulatedBackend objects given the same parameters
@@ -112,9 +124,10 @@ class TestSimulatedReadGroupSet(unittest.TestCase):
     Test properties of the simulated ReadGroupSet
     """
     def testCreation(self):
-        compoundId = reads.CompoundReadGroupSetId("dataset1:readGroupSetId")
+        dataset = datasets.AbstractDataset('dataset1')
+        localId = "readGroupSetId"
         simulatedReadGroupSet = reads.SimulatedReadGroupSet(
-            str(compoundId))
+                dataset, localId)
         for readGroup in simulatedReadGroupSet.getReadGroups():
             alignments = list(readGroup.getReadAlignments())
             self.assertGreater(len(alignments), 0)

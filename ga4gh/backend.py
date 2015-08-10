@@ -10,13 +10,11 @@ import os
 import json
 import random
 
-import ga4gh.protocol as protocol
+import ga4gh.datamodel as datamodel
+import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.variants as variants
+import ga4gh.protocol as protocol
 
 
 def _parsePageToken(pageToken, numValues):
@@ -389,7 +387,8 @@ class AbstractBackend(object):
         if len(request.readGroupIds) != 1:
             raise exceptions.NotImplementedException(
                 "Exactly one read group id must be specified")
-        compoundId = reads.CompoundReadGroupId(request.readGroupIds[0])
+        compoundId = datamodel.ReadGroupCompoundId.parse(
+            request.readGroupIds[0])
         dataset = self.getDataset(compoundId.datasetId)
         intervalIterator = ReadsIntervalIterator(
             request, dataset.getReadGroupIdMap())
@@ -400,7 +399,7 @@ class AbstractBackend(object):
         Returns a generator over the (variant, nextPageToken) pairs defined
         by the specified request.
         """
-        compoundId = variants.CompoundVariantSetId(request.variantSetId)
+        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
         dataset = self.getDataset(compoundId.datasetId)
         intervalIterator = VariantsIntervalIterator(
             request, dataset.getVariantSetIdMap())
@@ -414,7 +413,7 @@ class AbstractBackend(object):
         if request.name is not None:
             raise exceptions.NotImplementedException(
                 "Searching over names is not supported")
-        compoundId = variants.CompoundVariantSetId(request.variantSetId)
+        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
         dataset = self.getDataset(compoundId.datasetId)
         variantSet = _getVariantSet(
             request, dataset.getVariantSetIdMap())
@@ -479,7 +478,7 @@ class AbstractBackend(object):
         """
         Returns a callset with the given id
         """
-        compoundId = variants.CompoundCallsetId(id_)
+        compoundId = datamodel.CallSetCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
         variantSet = _getVariantSet(
             compoundId, dataset.getVariantSetIdMap())
@@ -540,7 +539,7 @@ class AbstractBackend(object):
         """
         Returns a readGroupSet with the given id_
         """
-        compoundId = reads.CompoundReadGroupSetId(id_)
+        compoundId = datamodel.ReadGroupSetCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
         return self.runGetRequest(dataset.getReadGroupSetIdMap(), id_)
 
@@ -548,7 +547,7 @@ class AbstractBackend(object):
         """
         Returns a read group with the given id_
         """
-        compoundId = reads.CompoundReadGroupId(id_)
+        compoundId = datamodel.ReadGroupCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
         return self.runGetRequest(dataset.getReadGroupIdMap(), id_)
 
@@ -568,10 +567,9 @@ class AbstractBackend(object):
         """
         Runs a getVariantSet request for the specified ID.
         """
-        compoundId = variants.CompoundVariantSetId(id_)
+        compoundId = datamodel.VariantSetCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
-        return self.runGetRequest(
-            dataset.getVariantSetIdMap(), str(compoundId))
+        return self.runGetRequest(dataset.getVariantSetIdMap(), id_)
 
     # Search requests.
 
@@ -704,15 +702,14 @@ class FileSystemBackend(AbstractBackend):
         # References
         referencesDirName = "references"
         referenceSetDir = os.path.join(self._dataDir, referencesDirName)
-        for referenceSetId in os.listdir(referenceSetDir):
-            relativePath = os.path.join(referenceSetDir, referenceSetId)
+        for referenceSetName in os.listdir(referenceSetDir):
+            relativePath = os.path.join(referenceSetDir, referenceSetName)
             if os.path.isdir(relativePath):
                 referenceSet = references.HtslibReferenceSet(
-                    referenceSetId, relativePath)
-                self._referenceSetIdMap[referenceSetId] = referenceSet
+                    referenceSetName, relativePath)
+                self._referenceSetIdMap[referenceSet.getId()] = referenceSet
                 for reference in referenceSet.getReferences():
-                    referenceId = reference.getId()
-                    self._referenceIdMap[referenceId] = reference
+                    self._referenceIdMap[reference.getId()] = reference
         self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
         self._referenceIds = sorted(self._referenceIdMap.keys())
 
