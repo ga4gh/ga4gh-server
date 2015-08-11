@@ -30,9 +30,9 @@ class TestSimulatedStack(unittest.TestCase):
         config = {
             "DATA_SOURCE": "__SIMULATED__",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
-            "SIMULATED_BACKEND_NUM_CALLS": 0,
+            "SIMULATED_BACKEND_NUM_CALLS": 5,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
-            "SIMULATED_BACKEND_NUM_VARIANT_SETS": 10,
+            "SIMULATED_BACKEND_NUM_VARIANT_SETS": 4,
             "SIMULATED_BACKEND_NUM_REFERENCE_SETS": 3,
             "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET": 4,
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP": 5
@@ -71,6 +71,13 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(gaVariantSet.datasetId, dataset.getId())
         # TODO verify the metadata and other attributes.
 
+    def verifyCallSetsEqual(self, gaCallSet, callSet):
+        variantSet = callSet.getParentContainer()
+        self.assertEqual(gaCallSet.id, callSet.getId())
+        self.assertEqual(gaCallSet.name, callSet.getLocalId())
+        self.assertEqual(gaCallSet.variantSetIds, [variantSet.getId()])
+        # TODO add some simulated info and check
+
     def verifyReadGroupSetsEqual(self, gaReadGroupSet, readGroupSet):
         dataset = readGroupSet.getParentContainer()
         self.assertEqual(gaReadGroupSet.id, readGroupSet.getId())
@@ -108,6 +115,7 @@ class TestSimulatedStack(unittest.TestCase):
         to their datamodel counterparts.
         """
         request.pageSize = len(objects)
+        self.assertGreater(request.pageSize, 0)
         response = self.sendJsonPostRequest(path, request.toJsonString())
         self.assertEqual(200, response.status_code)
         responseData = responseClass.fromJsonString(response.data)
@@ -137,6 +145,17 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifySearchMethod(
                 request, path, protocol.SearchVariantSetsResponse, variantSets,
                 self.verifyVariantSetsEqual)
+
+    def testCallSetsSearch(self):
+        path = utils.applyVersion('/callsets/search')
+        for dataset in self.backend.getDatasets():
+            for variantSet in dataset.getVariantSets():
+                callSets = variantSet.getCallSets()
+                request = protocol.SearchCallSetsRequest()
+                request.variantSetId = variantSet.getId()
+                self.verifySearchMethod(
+                    request, path, protocol.SearchCallSetsResponse, callSets,
+                    self.verifyCallSetsEqual)
 
     def testReadGroupSetsSearch(self):
         path = utils.applyVersion('/readgroupsets/search')
@@ -236,49 +255,6 @@ class TestSimulatedStack(unittest.TestCase):
         # pagination behavior.
 
         # TODO: Add test cases for other methods when they are implemented.
-
-    @unittest.skipIf(True, "")
-    def testCallSetsSearch(self):
-        # TODO remove the @skipIf decorator here once calls have been
-        # properly implemented in the simulator.
-        request = protocol.SearchCallSetsRequest()
-        request.name = None
-        path = utils.applyVersion('/callsets/search')
-
-        # when variantSetIds are wrong, no results
-        request.variantSetIds = ["xxxx"]
-        response = self.sendJsonPostRequest(
-            path, request.toJsonString())
-        self.assertEqual(200, response.status_code)
-        responseData = protocol.SearchCallSetsResponse.fromJsonString(
-            response.data)
-        self.assertIsNone(responseData.nextPageToken)
-        self.assertEqual([], responseData.callSets)
-
-        # if no callset name is given return all callsets
-        request.variantSetIds = self.variantSetIds[:1]
-        response = self.sendJsonPostRequest(
-            path, request.toJsonString())
-        self.assertEqual(200, response.status_code)
-        responseData = protocol.SearchCallSetsResponse.fromJsonString(
-            response.data)
-        self.assertTrue(protocol.SearchCallSetsResponse.validate(
-            responseData.toJsonDict()))
-        self.assertNotEqual([], responseData.callSets)
-        # TODO test the length of responseData.callSets equal to all callsets
-
-        # Verify all results are of the correct type and range
-        for callSet in responseData.callSets:
-            self.assertIs(type(callSet.info), dict)
-            self.assertIs(type(callSet.variantSetIds), list)
-            splits = callSet.id.split(".")
-            variantSetId = '.'.join(splits[:2])
-            callSetName = splits[-1]
-            self.assertIn(variantSetId, callSet.variantSetIds)
-            self.assertEqual(callSetName, callSet.name)
-            self.assertEqual(callSetName, callSet.sampleId)
-
-        # TODO add tests after name string search schemas is implemented
 
     def testGetReferences(self):
         for referenceSet in self.backend.getReferenceSets():

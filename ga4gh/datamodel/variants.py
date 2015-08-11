@@ -66,6 +66,7 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
         gaCallSet.sampleId = self.getLocalId()
+        gaCallSet.variantSetIds = [variantSet.getId()]
         return gaCallSet
 
     def getSampleName(self):
@@ -125,9 +126,9 @@ class AbstractVariantSet(datamodel.DatamodelObject):
 
     def getCallSets(self):
         """
-        Returns an iterator over the CallSets for this VariantSet.
+        Returns the list of CallSets in this VariantSet.
         """
-        return self._callSetIdMap.values()
+        return [self._callSetIdMap[id_] for id_ in self._callSetIds]
 
     def toProtocolElement(self):
         """
