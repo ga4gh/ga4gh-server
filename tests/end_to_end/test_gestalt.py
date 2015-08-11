@@ -86,7 +86,7 @@ class TestGestalt(server_test.ServerTest):
         referenceId = referenceSetId + ":srs0"
         cmd = "referencesets-search"
         self.runClientCmd(self.client, cmd)
-        cmd = "references-search"
+        cmd = "references-search --referenceSetId={}".format(referenceSetId)
         self.runClientCmd(self.client, cmd)
         cmd = "referencesets-get {}".format(referenceSetId)
         self.runClientCmd(self.client, cmd)

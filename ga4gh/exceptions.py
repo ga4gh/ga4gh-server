@@ -197,6 +197,11 @@ class ReadGroupNotFoundException(ObjectNotFoundException):
         self.message = "readGroupId '{}' not found".format(readGroupId)
 
 
+class ReferenceSetNotFoundException(ObjectNotFoundException):
+    def __init__(self, referenceSetId):
+        self.message = "referenceSetId '{}' not found".format(referenceSetId)
+
+
 class ReferenceNotFoundException(ObjectNotFoundException):
     def __init__(self, readGroupId, referenceId, validRefs):
         self.message = (

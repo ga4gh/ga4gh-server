@@ -34,7 +34,13 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         """
         Returns the References in this ReferenceSet.
         """
-        return self._referenceIdMap.values()
+        return [self._referenceIdMap[id_] for id_ in self._referenceIds]
+
+    def getReferenceIdMap(self):
+        return self._referenceIdMap
+
+    def getReferenceIds(self):
+        return self._referenceIds
 
     def toProtocolElement(self):
         """
