@@ -21,6 +21,10 @@ class TestGestalt(server_test.ServerTest):
     An end-to-end test of the client and server
     """
     def testEndToEnd(self):
+        self.simulatedVariantSetId = "simulatedDataset1:simVs0"
+        self.simulatedReadGroupId = "simulatedDataset1:aReadGroupSet:one"
+        self.simulatedReferenceSetId = "referenceSet0"
+        self.simulatedReferenceId = "referenceSet0:srs0"
         self.client = client.ClientForTesting(self.server.getUrl())
         self.runVariantsRequest()
         self.assertLogsWritten()
@@ -72,18 +76,19 @@ class TestGestalt(server_test.ServerTest):
     def runVariantsRequest(self):
         self.runClientCmd(
             self.client,
-            "variants-search -s 0 -e 2 -V simulatedDataset1:simVs0")
+            "variants-search -s 0 -e 2 -V {}".format(
+                self.simulatedVariantSetId))
 
     def runReadsRequest(self):
         cmd = (
-            "reads-search --readGroupIds "
-            "'simulatedDataset1:aReadGroupSet:one' "
-            "--referenceId chr1")
+            "reads-search --readGroupIds {} "
+            "--referenceId chr1".format(
+                self.simulatedReadGroupId))
         self.runClientCmd(self.client, cmd)
 
     def runReferencesRequest(self):
-        referenceSetId = 'referenceSet0'
-        referenceId = referenceSetId + ":srs0"
+        referenceSetId = self.simulatedReferenceSetId
+        referenceId = self.simulatedReferenceId
         cmd = "referencesets-search"
         self.runClientCmd(self.client, cmd)
         cmd = "references-search --referenceSetId={}".format(referenceSetId)
