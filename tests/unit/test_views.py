@@ -37,9 +37,24 @@ class TestFrontend(unittest.TestCase):
         # silence usually unhelpful CORS log
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.app = None
+        # example test values
+        cls.backend = frontend.app.backend
+        cls.referenceSet = cls.backend.getReferenceSets()[0]
+        cls.referenceSetId = cls.referenceSet.getId()
+        cls.reference = cls.referenceSet.getReferences()[0]
+        cls.referenceId = cls.reference.getId()
+        cls.dataset = cls.backend.getDatasets()[0]
+        cls.datasetId = cls.dataset.getId()
+        cls.variantSet = cls.dataset.getVariantSets()[0]
+        cls.variantSetId = cls.variantSet.getId()
+        cls.callSet = cls.variantSet.getCallSets()[0]
+        cls.callSetId = cls.callSet.getId()
+        cls.readGroupSet = cls.dataset.getReadGroupSets()[0]
+        cls.readGroupSetId = cls.readGroupSet.getId()
+        cls.readGroup = cls.readGroupSet.getReadGroups()[0]
+        cls.readGroupId = cls.readGroup.getId()
+        cls.readAlignment = cls.readGroup.getReadAlignments().next()
+        cls.readAlignmentId = cls.readAlignment.id
 
     def sendPostRequest(self, path, request):
         """
@@ -76,7 +91,7 @@ class TestFrontend(unittest.TestCase):
 
     def sendVariantSetsSearch(self):
         request = protocol.SearchVariantSetsRequest()
-        request.datasetId = "simulatedDataset1"
+        request.datasetId = self.datasetId
         return self.sendPostRequest('/variantsets/search', request)
 
     def sendCallSetsSearch(self):
@@ -89,7 +104,7 @@ class TestFrontend(unittest.TestCase):
 
     def sendReadsSearch(self, readGroupIds=None):
         if readGroupIds is None:
-            readGroupIds = ['simulatedDataset1:aReadGroupSet:one']
+            readGroupIds = [self.readGroupId]
         request = protocol.SearchReadsRequest()
         request.readGroupIds = readGroupIds
         request.referenceId = "chr1"
@@ -116,42 +131,42 @@ class TestFrontend(unittest.TestCase):
 
     def sendGetVariantSet(self, id_=None):
         if id_ is None:
-            id_ = 'simple:simple'
+            id_ = self.variantSetId
         path = "/variantsets/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
 
     def sendGetReadGroup(self, id_=None):
         if id_ is None:
-            id_ = 'simulatedDataset1:aReadGroupSet:one'
+            id_ = self.readGroupId
         path = "/readgroups/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
 
     def sendGetReference(self, id_=None):
         if id_ is None:
-            id_ = 'simple:simple'
+            id_ = self.referenceId
         path = "/references/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
 
     def sendGetReadGroupSet(self, id_=None):
         if id_ is None:
-            id_ = 'simulatedDataset1:aReadGroupSet'
+            id_ = self.readGroupSetId
         path = "/readgroupsets/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
 
     def sendGetCallset(self, id_=None):
         if id_ is None:
-            id_ = 'simulatedDataset1:simVs0:simCallSet_0'
+            id_ = self.callSetId
         path = "/callsets/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
 
     def sendGetReferenceSet(self, id_=None):
         if id_ is None:
-            id_ = 'simple'
+            id_ = self.referenceSetId
         path = "/referencesets/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
@@ -168,7 +183,7 @@ class TestFrontend(unittest.TestCase):
 
     def sendReferenceBasesList(self, id_=None):
         if id_ is None:
-            id_ = 'simple:simple'
+            id_ = self.referenceId
         path = "/references/{}/bases".format(id_)
         request = protocol.ListReferenceBasesRequest()
         response = self.sendListRequest(path, request)
@@ -233,13 +248,13 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, self.app.options(versionedPath).status_code)
 
     def testRouteReferences(self):
-        referenceId = "referenceSet0:srs0"
+        referenceId = self.referenceId
         paths = ['/references/{}', '/references/{}/bases']
         for path in paths:
             path = path.format(referenceId)
             versionedPath = utils.applyVersion(path)
             self.assertEqual(200, self.app.get(versionedPath).status_code)
-        referenceSetId = "referenceSet0"
+        referenceSetId = self.referenceSetId
         paths = ['/referencesets/{}']
         for path in paths:
             path = path.format(referenceSetId)
@@ -305,7 +320,8 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         responseData = protocol.ReadGroupSet.fromJsonString(
             response.data)
-        self.assertEqual(responseData.id, 'simulatedDataset1:aReadGroupSet')
+        self.assertEqual(
+            responseData.id, self.readGroupSetId)
 
     def testGetReadGroup(self):
         response = self.sendGetReadGroup()
@@ -313,7 +329,7 @@ class TestFrontend(unittest.TestCase):
         responseData = protocol.ReadGroup.fromJsonString(
             response.data)
         self.assertEqual(
-            responseData.id, 'simulatedDataset1:aReadGroupSet:one')
+            responseData.id, self.readGroupId)
 
     def testGetCallset(self):
         response = self.sendGetCallset()
@@ -321,7 +337,7 @@ class TestFrontend(unittest.TestCase):
         responseData = protocol.CallSet.fromJsonString(
             response.data)
         self.assertEqual(
-            responseData.id, 'simulatedDataset1:simVs0:simCallSet_0')
+            responseData.id, self.callSetId)
 
     def testGetVariant(self):
         response = self.sendGetVariant()
@@ -342,7 +358,7 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(len(responseData.alignments), 2)
         self.assertEqual(
             responseData.alignments[0].id,
-            "simulatedDataset1:aReadGroupSet:one:simulated0")
+            self.readAlignmentId)
         self.assertEqual(
             responseData.alignments[1].id,
             "simulatedDataset1:aReadGroupSet:one:simulated1")
@@ -352,7 +368,7 @@ class TestFrontend(unittest.TestCase):
         responseData = protocol.SearchDatasetsResponse.fromJsonString(
             response.data)
         datasets = list(responseData.datasets)
-        self.assertEqual('simulatedDataset1', datasets[0].id)
+        self.assertEqual(self.datasetId, datasets[0].id)
 
     def testWrongVersion(self):
         path = '/v0.1.2/variantsets/search'

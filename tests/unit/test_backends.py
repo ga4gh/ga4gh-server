@@ -129,7 +129,7 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertTrue(isinstance(response, class_))
 
     def testRunListReferenceBases(self):
-        id_ = "referenceSet0:srs0"
+        id_ = self._backend.getReferenceSets()[0].getReferences()[0].getId()
         self.runListReferenceBases(id_)
 
     def testSearchVariantSets(self):

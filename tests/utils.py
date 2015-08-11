@@ -26,26 +26,6 @@ def getLinesFromLogFile(stream):
     return lines
 
 
-class Timed(object):
-    """
-    Decorator that times a method, reporting runtime at finish
-    """
-    def __call__(self, func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            self.start = time.time()
-            result = func(*args, **kwargs)
-            self.end = time.time()
-            self._report()
-            return result
-        return wrapper
-
-    def _report(self):
-        delta = self.end - self.start
-        timeString = humanize.time.naturaldelta(delta)
-        print("Finished in {} ({} seconds)".format(timeString, delta))
-
-
 def getProjectRootFilePath():
     # assumes we're in a directory one level below the project root
     return os.path.dirname(os.path.dirname(__file__))
@@ -64,10 +44,49 @@ def makeHttpClient():
     return httpClient
 
 
+def applyVersion(route):
+    return "/{0}{1}".format(protocol.version, route)
+
+
+def powerset(iterable, maxSets=None):
+    """
+    powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
+
+    See https://docs.python.org/2/library/itertools.html#recipes
+    """
+    s = list(iterable)
+    return itertools.islice(itertools.chain.from_iterable(
+        itertools.combinations(s, r) for r in range(len(s) + 1)),
+        0, maxSets)
+
+
+# ---------------- Decorators ----------------
+
+
 class TimeoutException(Exception):
     """
     A process has taken too long to execute
     """
+
+
+class Timed(object):
+    """
+    Decorator that times a method, reporting runtime at finish
+    """
+    def __call__(self, func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            self.start = time.time()
+            result = func(*args, **kwargs)
+            self.end = time.time()
+            self._report()
+            return result
+        return wrapper
+
+    def _report(self):
+        delta = self.end - self.start
+        timeString = humanize.time.naturaldelta(delta)
+        print("Finished in {} ({} seconds)".format(timeString, delta))
 
 
 class Repeat(object):
@@ -116,19 +135,3 @@ class Timeout(object):
                 signal.alarm(0)
             return result
         return wrapper
-
-
-def applyVersion(route):
-    return "/{0}{1}".format(protocol.version, route)
-
-
-def powerset(iterable, maxSets=None):
-    """
-    powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
-
-    See https://docs.python.org/2/library/itertools.html#recipes
-    """
-    s = list(iterable)
-    return itertools.islice(itertools.chain.from_iterable(
-        itertools.combinations(s, r) for r in range(len(s) + 1)),
-        0, maxSets)
