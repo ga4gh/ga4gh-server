@@ -265,6 +265,15 @@ class CallSetNotInVariantSetException(NotFoundException):
             callSetId, variantSetId)
 
 
+class CallSetNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for a callSet with a name that
+    does not exist.
+    """
+    def __init__(self, callSetName):
+        self.message = "callSet with name '{0}' not found".format(callSetName)
+
+
 class DataException(BaseServerException):
     """
     Exceptions thrown during the server startup, and processing faulty VCFs

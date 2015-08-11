@@ -418,16 +418,19 @@ class AbstractBackend(object):
         Returns a generator over the (callSet, nextPageToken) pairs defined
         by the specified request.
         """
-        if request.name is not None:
-            raise exceptions.NotImplementedException(
-                "Searching over names is not supported")
         compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
         dataset = self.getDataset(compoundId.datasetId)
         variantSet = _getVariantSet(
-            request, dataset.getVariantSetIdMap())
-        return self._topLevelObjectGenerator(
-            request, variantSet.getCallSetIdMap(),
-            variantSet.getCallSetIds())
+            compoundId, dataset.getVariantSetIdMap())
+        if request.name is None:
+            return self._topLevelObjectGenerator(
+                request, variantSet.getCallSetIdMap(),
+                variantSet.getCallSetIds())
+        else:
+            # Since names are unique within a callSet, we either have one
+            # result or we 404.
+            callSet = variantSet.getCallSetByName(request.name)
+            return [(callSet.toProtocolElement(), None)]
 
     ###########################################################
     #
@@ -501,8 +504,7 @@ class AbstractBackend(object):
         compoundId = datamodel.ReferenceCompoundId.parse(id_)
         referenceSet = self.getReferenceSet(compoundId.referenceSetId)
         reference = _safeMapQuery(
-            referenceSet.getReferenceIdMap(), id_,
-            exceptions.ObjectWithIdNotFoundException)
+            referenceSet.getReferenceIdMap(), id_)
         start = 0
         end = datamodel.PysamDatamodelMixin.fastaMax
         if 'start' in requestArgs:
