@@ -33,8 +33,8 @@ class TestSimulatedVariantSet(unittest.TestCase):
     def _getSimulatedVariantSet(self):
         dataset = datasets.AbstractDataset('dataset1')
         simulatedVariantSet = variants.SimulatedVariantSet(
-            dataset, 'variantSet1', self.randomSeed, self.numCalls,
-            self.variantDensity)
+            dataset, 'variantSet1', randomSeed=self.randomSeed,
+            numCalls=self.numCalls, variantDensity=self.variantDensity)
         return simulatedVariantSet
 
     def _getSimulatedVariantsList(self, simulatedVariantSet=None):

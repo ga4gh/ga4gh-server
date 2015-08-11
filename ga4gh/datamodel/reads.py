@@ -75,13 +75,28 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
 
     def __init__(self, parentContainer, localId):
         super(AbstractReadGroupSet, self).__init__(parentContainer, localId)
-        self._readGroups = []
+        self._readGroupIdMap = {}
+        self._readGroupIds = []
+
+    def addReadGroup(self, readGroup):
+        """
+        Adds the specified ReadGroup to this ReadGroupSet.
+        """
+        id_ = readGroup.getId()
+        self._readGroupIdMap[id_] = readGroup
+        self._readGroupIds.append(id_)
+
+    def getReadGroupIdMap(self):
+        return self._readGroupIdMap
+
+    def getReadGroupIds(self):
+        return self._readGroupIds
 
     def getReadGroups(self):
         """
-        Returns the read groups in this read group set
+        Returns the list of ReadGroups in this ReadGroupSet.
         """
-        return self._readGroups
+        return [self._readGroupIdMap[id_] for id_ in self._readGroupIds]
 
     def toProtocolElement(self):
         """
@@ -90,7 +105,8 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         readGroupSet = protocol.ReadGroupSet()
         readGroupSet.id = self.getId()
         readGroupSet.readGroups = [
-            readGroup.toProtocolElement() for readGroup in self._readGroups]
+            readGroup.toProtocolElement()
+            for readGroup in self.getReadGroups()]
         readGroupSet.name = self.getLocalId()
         readGroupSet.datasetId = self.getParentContainer().getId()
         return readGroupSet
@@ -100,11 +116,15 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
     """
     A simulated read group set
     """
-    def __init__(self, parentContainer, localId, numAlignments=2):
+    def __init__(
+            self, parentContainer, localId, randomSeed=1, numReadGroups=1,
+            numAlignments=2):
         super(SimulatedReadGroupSet, self).__init__(parentContainer, localId)
-        readGroupLocalId = "one"  # FIXME
-        readGroup = SimulatedReadGroup(self, readGroupLocalId, numAlignments)
-        self._readGroups.append(readGroup)
+        for i in range(numReadGroups):
+            localId = "rg{}".format(i)
+            readGroup = SimulatedReadGroup(
+                self, localId, randomSeed + i, numAlignments)
+            self.addReadGroup(readGroup)
 
 
 class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
@@ -114,7 +134,6 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     def __init__(self, parentContainer, localId, dataDir):
         super(HtslibReadGroupSet, self).__init__(parentContainer, localId)
         self._dataDir = dataDir
-        self._readGroups = []
         self._setAccessTimes(dataDir)
         self._scanDataFiles(dataDir, ["*.bam"])
 
@@ -122,7 +141,7 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
         filename = os.path.split(path)[1]
         localId = os.path.splitext(filename)[0]
         readGroup = HtslibReadGroup(self, localId, path)
-        self._readGroups.append(readGroup)
+        self.addReadGroup(readGroup)
 
 
 class AbstractReadGroup(datamodel.DatamodelObject):
@@ -175,7 +194,7 @@ class SimulatedReadGroup(AbstractReadGroup):
     """
     A simulated readgroup
     """
-    def __init__(self, parentContainer, localId, numAlignments=2):
+    def __init__(self, parentContainer, localId, randomSeed, numAlignments=2):
         super(SimulatedReadGroup, self).__init__(parentContainer, localId)
         self._numAlignments = numAlignments
 

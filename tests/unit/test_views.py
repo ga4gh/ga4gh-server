@@ -47,6 +47,8 @@ class TestFrontend(unittest.TestCase):
         cls.datasetId = cls.dataset.getId()
         cls.variantSet = cls.dataset.getVariantSets()[0]
         cls.variantSetId = cls.variantSet.getId()
+        gaVariant = cls.variantSet.getVariants("1", 0, 2**32).next()
+        cls.variantId = gaVariant.id
         cls.callSet = cls.variantSet.getCallSets()[0]
         cls.callSetId = cls.callSet.getId()
         cls.readGroupSet = cls.dataset.getReadGroupSets()[0]
@@ -122,9 +124,7 @@ class TestFrontend(unittest.TestCase):
 
     def sendGetVariant(self, id_=None):
         if id_ is None:
-            compoundId = datamodel.VariantCompoundId.parse(
-                'simulatedDataset1:simVs0:referenceName:5:md5')
-            id_ = str(compoundId)
+            id_ = self.variantId
         path = "/variants/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
@@ -359,9 +359,6 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(
             responseData.alignments[0].id,
             self.readAlignmentId)
-        self.assertEqual(
-            responseData.alignments[1].id,
-            "simulatedDataset1:aReadGroupSet:one:simulated1")
 
     def testDatasetsSearch(self):
         response = self.sendDatasetsSearch()

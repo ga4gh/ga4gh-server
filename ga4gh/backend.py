@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 import os
 import json
-import random
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -218,14 +217,30 @@ class AbstractBackend(object):
     This class provides methods for all of the GA4GH protocol end points.
     """
     def __init__(self):
-        self._referenceSetIdMap = {}
-        self._referenceSetIds = []
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
         self._maxResponseLength = 2**20  # 1 MiB
         self._datasetIdMap = {}
         self._datasetIds = []
+        self._referenceSetIdMap = {}
+        self._referenceSetIds = []
+
+    def addDataset(self, dataset):
+        """
+        Adds the specified dataset to this backend.
+        """
+        id_ = dataset.getId()
+        self._datasetIdMap[id_] = dataset
+        self._datasetIds.append(id_)
+
+    def addReferenceSet(self, referenceSet):
+        """
+        Adds the specified reference set to this backend.
+        """
+        id_ = referenceSet.getId()
+        self._referenceSetIdMap[id_] = referenceSet
+        self._referenceSetIds.append(id_)
 
     def setRequestValidation(self, requestValidation):
         """
@@ -339,6 +354,13 @@ class AbstractBackend(object):
                 nextPageToken = str(currentIndex)
             yield object_.toProtocolElement(), nextPageToken
 
+    def _singleObjectGenerator(self, datamodelObject):
+        """
+        Returns a generator suitable for a search method in which the
+        result set is a single object.
+        """
+        yield (datamodelObject.toProtocolElement(), None)
+
     def datasetsGenerator(self, request):
         """
         Returns a generator over the (dataset, nextPageToken) pairs
@@ -353,9 +375,13 @@ class AbstractBackend(object):
         defined by the specified request.
         """
         dataset = self.getDataset(request.datasetId)
-        return self._topLevelObjectGenerator(
-            request, dataset.getReadGroupSetIdMap(),
-            dataset.getReadGroupSetIds())
+        if request.name is None:
+            return self._topLevelObjectGenerator(
+                request, dataset.getReadGroupSetIdMap(),
+                dataset.getReadGroupSetIds())
+        else:
+            readGroupSet = dataset.getReadGroupSetByName(request.name)
+            return self._singleObjectGenerator(readGroupSet)
 
     def referenceSetsGenerator(self, request):
         """
@@ -398,8 +424,9 @@ class AbstractBackend(object):
         compoundId = datamodel.ReadGroupCompoundId.parse(
             request.readGroupIds[0])
         dataset = self.getDataset(compoundId.datasetId)
+        readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
         intervalIterator = ReadsIntervalIterator(
-            request, dataset.getReadGroupIdMap())
+            request, readGroupSet.getReadGroupIdMap())
         return intervalIterator
 
     def variantsGenerator(self, request):
@@ -430,7 +457,7 @@ class AbstractBackend(object):
             # Since names are unique within a callSet, we either have one
             # result or we 404.
             callSet = variantSet.getCallSetByName(request.name)
-            return [(callSet.toProtocolElement(), None)]
+            return self._singleObjectGenerator(callSet)
 
     ###########################################################
     #
@@ -573,7 +600,8 @@ class AbstractBackend(object):
         """
         compoundId = datamodel.ReadGroupCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
-        return self.runGetRequest(dataset.getReadGroupIdMap(), id_)
+        readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
+        return self.runGetRequest(readGroupSet.getReadGroupIdMap(), id_)
 
     def runGetReference(self, id_):
         """
@@ -682,33 +710,32 @@ class SimulatedBackend(AbstractBackend):
     """
     A GA4GH backend backed by no data; used mostly for testing
     """
-    def __init__(self, randomSeed=0, numCalls=1, variantDensity=0.5,
-                 numVariantSets=1, numReferenceSets=1,
-                 numReferencesPerReferenceSet=1, numAlignments=2):
+    def __init__(
+            self, randomSeed=0, numDatasets=2,
+            numVariantSets=1, numCalls=1, variantDensity=0.5,
+            numReferenceSets=1, numReferencesPerReferenceSet=1,
+            numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
+            numAlignments=2):
         super(SimulatedBackend, self).__init__()
 
         # Datasets
-        dataset1 = datasets.SimulatedDataset(
-            "simulatedDataset1", randomSeed, numCalls,
-            variantDensity, numVariantSets, numAlignments)
-        dataset2 = datasets.SimulatedDataset(
-            "simulatedDataset2", randomSeed, numCalls,
-            variantDensity, numVariantSets, numAlignments)
-        self._datasetIdMap[dataset1.getId()] = dataset1
-        self._datasetIdMap[dataset2.getId()] = dataset2
-        self._datasetIds = sorted(self._datasetIdMap.keys())
-
+        for i in range(numDatasets):
+            seed = randomSeed + i
+            localId = "simulatedDataset{}".format(i)
+            dataset = datasets.SimulatedDataset(
+                localId, randomSeed=seed, numCalls=numCalls,
+                variantDensity=variantDensity, numVariantSets=numVariantSets,
+                numReadGroupSets=numReadGroupSets,
+                numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
+                numAlignments=numAlignments)
+            self.addDataset(dataset)
         # References
-        randomGenerator = random.Random()
-        randomGenerator.seed(randomSeed)
         for i in range(numReferenceSets):
-            referenceSetId = "referenceSet{}".format(i)
-            referenceSetSeed = randomGenerator.getrandbits(32)
+            localId = "referenceSet{}".format(i)
+            seed = randomSeed + i
             referenceSet = references.SimulatedReferenceSet(
-                referenceSetId, referenceSetSeed,
-                numReferencesPerReferenceSet)
-            self._referenceSetIdMap[referenceSetId] = referenceSet
-        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
+                localId, seed, numReferencesPerReferenceSet)
+            self.addReferenceSet(referenceSet)
 
 
 class FileSystemBackend(AbstractBackend):
@@ -729,9 +756,7 @@ class FileSystemBackend(AbstractBackend):
             if os.path.isdir(relativePath):
                 referenceSet = references.HtslibReferenceSet(
                     referenceSetName, relativePath)
-                self._referenceSetIdMap[referenceSet.getId()] = referenceSet
-        self._referenceSetIds = sorted(self._referenceSetIdMap.keys())
-
+                self.addReferenceSet(referenceSet)
         # Datasets
         datasetDirs = [
             os.path.join(self._dataDir, directory)
@@ -740,5 +765,4 @@ class FileSystemBackend(AbstractBackend):
             directory != referencesDirName]
         for datasetDir in datasetDirs:
             dataset = datasets.FileSystemDataset(datasetDir)
-            self._datasetIdMap[dataset.getId()] = dataset
-        self._datasetIds = sorted(self._datasetIdMap.keys())
+            self.addDataset(dataset)
