@@ -85,6 +85,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(AbstractVariantSet, self).__init__(parentContainer, localId)
         self._callSetIdMap = {}
+        self._callSetNameMap = {}
         self._callSetIds = []
         self._creationTime = None
         self._updatedTime = None
@@ -109,6 +110,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         callSet = CallSet(self, sampleName)
         callSetId = callSet.getId()
         self._callSetIdMap[callSetId] = callSet
+        self._callSetNameMap[sampleName] = callSet
         self._callSetIds.append(callSetId)
 
     def getCallSetIdMap(self):
@@ -129,6 +131,15 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         Returns the list of CallSets in this VariantSet.
         """
         return [self._callSetIdMap[id_] for id_ in self._callSetIds]
+
+    def getCallSetByName(self, name):
+        """
+        Returns a CallSet with the specified name, or raises a
+        CallSetNameNotFoundException if it does not exist.
+        """
+        if name not in self._callSetNameMap:
+            raise exceptions.CallSetNameNotFoundException(name)
+        return self._callSetNameMap[name]
 
     def toProtocolElement(self):
         """

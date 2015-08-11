@@ -169,14 +169,17 @@ class CompoundId(object):
         """
         Parses the specified compoundId string and returns an instance
         of this CompoundId class.
+
+        :raises: An ObjectWithIdNotFoundException if parsing fails. This is
+        because this method is a client-facing method, and if a malformed
+        identifier (under our internal rules) is provided, the response should
+        be that the identifier does not exist.
         """
         if not isinstance(compoundIdStr, basestring):
             raise exceptions.BadIdentifierException(compoundIdStr)
         splits = compoundIdStr.split(cls.separator)
         if len(splits) != len(cls.fields):
-            idFormat = cls.separator.join(cls.fields)
-            msg = "(id must be in format {})".format(idFormat)
-            raise exceptions.BadIdentifierException(compoundIdStr, msg)
+            raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
         return cls(None, *splits)
 
 
