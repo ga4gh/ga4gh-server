@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 import datetime
 import random
+import hashlib
 
 import pysam
 
@@ -161,8 +162,10 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         Returns an ID string suitable for the specified GA Variant
         object in this variant set.
         """
+        md5 = self.hashVariant(gaVariant)
         compoundId = datamodel.VariantCompoundId(
-            self.getCompoundId(), gaVariant.referenceName, gaVariant.start)
+            self.getCompoundId(), gaVariant.referenceName,
+            gaVariant.start, md5)
         return str(compoundId)
 
     def getCallSetId(self, sampleName):
@@ -173,6 +176,16 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         compoundId = datamodel.CallSetCompoundId(
             self.getCompoundId(), sampleName)
         return str(compoundId)
+
+    @classmethod
+    def hashVariant(cls, gaVariant):
+        """
+        Produces an MD5 hash of the ga variant object to uniquely
+        identify it
+        """
+        return hashlib.md5(
+            gaVariant.referenceBases +
+            str(tuple(gaVariant.alternateBases))).hexdigest()
 
 
 class SimulatedVariantSet(AbstractVariantSet):
@@ -200,6 +213,14 @@ class SimulatedVariantSet(AbstractVariantSet):
         ret = []
         # TODO Add simulated metadata.
         return ret
+
+    def getVariant(self, compoundId):
+        randomNumberGenerator = random.Random()
+        start = int(compoundId.start)
+        randomNumberGenerator.seed(self._randomSeed + start)
+        variant = self.generateVariant(
+            compoundId.referenceName, start, randomNumberGenerator)
+        return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
                     variantName=None, callSetIds=None):
@@ -409,6 +430,26 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             sampleIterator += 1  # REMOVAL
         variant.id = self.getVariantId(variant)
         return variant
+
+    def getVariant(self, compoundId):
+        if compoundId.referenceName in self._chromFileMap:
+            varFileName = self._chromFileMap[compoundId.referenceName]
+        else:
+            raise exceptions.ObjectNotFoundException(compoundId)
+        start = int(compoundId.start)
+        referenceName, startPosition, endPosition = \
+            self.sanitizeVariantFileFetch(
+                compoundId.referenceName, start, start + 1)
+        cursor = self.getFileHandle(varFileName).fetch(
+            referenceName, startPosition, endPosition)
+        for record in cursor:
+            variant = self.convertVariant(record, [])
+            if (record.start == start and
+                    compoundId.md5 == self.hashVariant(variant)):
+                return variant
+            elif record.start > start:
+                raise exceptions.ObjectNotFoundException()
+        raise exceptions.ObjectNotFoundException(compoundId)
 
     def getVariants(self, referenceName, startPosition, endPosition,
                     variantName=None, callSetIds=None):

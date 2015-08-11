@@ -564,10 +564,20 @@ def searchDatasets(version):
         version, flask.request, app.backend.runSearchDatasets)
 
 
-@DisplayedRoute('/<version>/variantsets/<no(search):id>')
+@DisplayedRoute(
+    '/<version>/variantsets/<no(search):id>',
+    pathDisplay='/<version>/variantsets/<id>')
 def getVariantSet(version, id):
     return handleFlaskGetRequest(
         version, id, flask.request, app.backend.runGetVariantSet)
+
+
+@DisplayedRoute(
+    '/<version>/variants/<no(search):id>',
+    pathDisplay='/<version>/variants/<id>')
+def getVariant(version, id):
+    return handleFlaskGetRequest(
+        version, id, flask.request, app.backend.runGetVariant)
 
 
 @DisplayedRoute(
@@ -653,11 +663,6 @@ def oidcCallback():
 
 
 # The below paths have not yet been implemented
-
-
-@app.route('/<version>/variants/<no(search):id>')
-def getVariant(version, id):
-    raise exceptions.NotImplementedException()
 
 
 @app.route('/<version>/datasets/<no(search):id>')

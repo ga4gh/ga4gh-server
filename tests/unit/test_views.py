@@ -105,6 +105,15 @@ class TestFrontend(unittest.TestCase):
         response = self.sendPostRequest(path, request)
         return response
 
+    def sendGetVariant(self, id_=None):
+        if id_ is None:
+            compoundId = datamodel.VariantCompoundId.parse(
+                'simulatedDataset1:simVs0:referenceName:5:md5')
+            id_ = str(compoundId)
+        path = "/variants/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
     def sendGetVariantSet(self, id_=None):
         if id_ is None:
             id_ = 'simple:simple'
@@ -195,6 +204,7 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendGetReferenceSet())
         assertHeaders(self.sendGetReadGroupSet())
         assertHeaders(self.sendGetReadGroup())
+        assertHeaders(self.sendGetVariant())
         # TODO: Test other methods as they are implemented
 
     def verifySearchRouting(self, path, getDefined=False):
@@ -313,6 +323,10 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(
             responseData.id, 'simulatedDataset1:simVs0:simCallSet_0')
 
+    def testGetVariant(self):
+        response = self.sendGetVariant()
+        self.assertEqual(200, response.status_code)
+
     def testCallSetsSearch(self):
         response = self.sendCallSetsSearch()
         self.assertEqual(200, response.status_code)
@@ -353,7 +367,6 @@ class TestFrontend(unittest.TestCase):
         pathsNotImplementedPost = [
         ]
         pathsNotImplementedGet = [
-            '/variants/<id>',
             '/datasets/<id>',
         ]
 

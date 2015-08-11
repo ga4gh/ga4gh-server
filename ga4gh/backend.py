@@ -545,6 +545,18 @@ class AbstractBackend(object):
 
     # Get requests.
 
+    def runGetVariant(self, id_):
+        """
+        Returns a variant with the given id
+        """
+        compoundId = datamodel.VariantCompoundId.parse(id_)
+        dataset = self.getDataset(compoundId.datasetId)
+        variantSet = _safeMapQuery(
+            dataset.getVariantSetIdMap(), compoundId.variantSetId)
+        variant = variantSet.getVariant(compoundId)
+        jsonString = variant.toJsonString()
+        return jsonString
+
     def runGetReadGroupSet(self, id_):
         """
         Returns a readGroupSet with the given id_
