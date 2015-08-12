@@ -472,22 +472,13 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         if variantName is not None:
             raise exceptions.NotImplementedException(
                 "Searching by variantName is not supported")
-        # For v0.5.1, callSetIds=[] actually means return all callSets.
-        # In v0.6+, callSetIds=[] means return no call sets, and
-        # callSetIds=None means return all call sets. For forward
-        # compatibility, we use the 0.6 interface for this function but
-        # we translate back to the 0.5 interface while we support this.
-        # TODO Remove this comment and workaround once we transition to
-        # protocol version 0.6
         if callSetIds is None:
-            callSetIds = []
+            callSetIds = self._callSetIds
         else:
             for callSetId in callSetIds:
                 if callSetId not in self._callSetIds:
                     raise exceptions.CallSetNotInVariantSetException(
                         callSetId, self.getId())
-        if len(callSetIds) == 0:
-            callSetIds = self._callSetIds
         if referenceName in self._chromFileMap:
             varFileName = self._chromFileMap[referenceName]
             referenceName, startPosition, endPosition = \
