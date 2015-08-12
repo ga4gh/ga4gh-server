@@ -97,7 +97,6 @@ class VariantSetTest(datadriven.DataDrivenTest):
         genotype, phaseset = variants.convertVCFGenotype(
             pyvcfCall.data.GT, pyvcfCall.phased)
         # callSetId information is not available in pyvcf.model._Call
-        self.assertIn(pyvcfCall.sample, gaCall.callSetId)
         self.assertEqual(gaCall.callSetName, pyvcfCall.sample)
         self.assertEqual(gaCall.genotype, genotype)
         phaseset = None

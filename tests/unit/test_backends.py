@@ -8,16 +8,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import glob
 import unittest
-
-import pysam
 
 import ga4gh.exceptions as exceptions
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.references as references
-import ga4gh.datamodel.variants as variants
 
 
 class BackendForTesting(backend.AbstractBackend):
@@ -128,10 +124,6 @@ class TestAbstractBackend(unittest.TestCase):
         response = class_.fromJsonString(responseStr)
         self.assertTrue(isinstance(response, class_))
 
-    def testRunListReferenceBases(self):
-        id_ = self._backend.getReferenceSets()[0].getReferences()[0].getId()
-        self.runListReferenceBases(id_)
-
     def testSearchVariantSets(self):
         request = protocol.SearchVariantSetsRequest()
         request.datasetId = self.getDataset().getId()
@@ -182,6 +174,18 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertTrue(
             isinstance(response, protocol.ListReferenceBasesResponse))
 
+    def testRunListReferenceBases(self):
+        referenceSet = self._backend.getReferenceSets()[0]
+        reference = referenceSet.getReferences()[0]
+        self.runListReferenceBases(reference.getId())
+
+    def testDatasetNotFound(self):
+        request = protocol.SearchVariantSetsRequest()
+        datasetId = 'doesNotExist'
+        request.datasetId = datasetId
+        with self.assertRaises(exceptions.DatasetNotFoundException):
+            self._backend.getDataset(request.datasetId)
+
 
 class TestFileSystemBackend(TestAbstractBackend):
     """
@@ -190,46 +194,7 @@ class TestFileSystemBackend(TestAbstractBackend):
     """
     def setUp(self):
         self._dataDir = os.path.join("tests", "data")
-        self._referencesDir = os.path.join(self._dataDir, "references")
-        self._datasetDir = os.path.join(self._dataDir, "dataset1")
-        self._variantsDir = os.path.join(self._datasetDir, "variants")
-        self._vcfs = {}
-        self._variants = []
-        self._referenceNames = set()
-        self._chromFileMap = {}
-        for relativePath in os.listdir(self._variantsDir):
-            pathToFiles = os.path.join(self._variantsDir, relativePath)
-            self._vcfs[relativePath] = []
-            for vcfFile in glob.glob(os.path.join(
-                    pathToFiles, "*.vcf.gz")):
-                self._chromFileMap[relativePath] = {}
-                self._vcfs[relativePath].append(vcfFile)
-                vcf = pysam.VariantFile(filename=vcfFile)
-                for chrom in vcf.index:
-                    self._chromFileMap[relativePath][chrom] = vcf
         self._backend = backend.FileSystemBackend(self._dataDir)
-
-    def testVariantSetIds(self):
-        variantSets = [variantSet for variantSet in self.getVariantSets()]
-        self.assertEqual(len(variantSets), len(self._vcfs))
-        ids = set(variantSet.id for variantSet in variantSets)
-        dataset = self.getDataset()
-        vcfKeys = set()
-        for localId in self._vcfs.keys():
-            tmpVariantSet = variants.AbstractVariantSet(dataset, localId)
-            vcfKeys.add(tmpVariantSet.getId())
-        self.assertEqual(ids, vcfKeys)
-
-    def testRunListReferenceBases(self):
-        id_ = "example_1:simple"
-        self.runListReferenceBases(id_)
-
-    def testDatasetNotFound(self):
-        request = protocol.SearchVariantSetsRequest()
-        datasetId = 'doesNotExist'
-        request.datasetId = datasetId
-        with self.assertRaises(exceptions.DatasetNotFoundException):
-            self._backend.getDataset(request.datasetId)
 
 
 class TestTopLevelObjectGenerator(unittest.TestCase):
