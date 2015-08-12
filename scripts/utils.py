@@ -40,39 +40,32 @@ class Timed(object):
     def _report(self):
         delta = self.end - self.start
         timeString = humanize.time.naturaldelta(delta)
-        log("Finished in {} ({} seconds)".format(timeString, delta))
+        log("Finished in {} ({:.2f} seconds)".format(timeString, delta))
 
 
 class FileDownloader(object):
     """
-    Provides a wget-like file download and terminal display
+    Base class for file downloaders of different protocols
     """
-    defaultChunkSize = 1048576  # 1MB
     defaultStream = sys.stdout
 
-    def __init__(self, url, path, chunkSize=defaultChunkSize,
-                 stream=defaultStream):
+    def __init__(self, url, path, stream=defaultStream):
         self.url = url
         self.path = path
         self.basename = os.path.basename(url)
         self.basenameLength = len(self.basename)
-        self.chunkSize = chunkSize
         self.stream = stream
-        self.bytesWritten = 0
+        self.bytesReceived = 0
         self.displayIndex = 0
         self.displayWindowSize = 20
+        self.fileSize = None
+        self.displayCounter = 0
 
-    def download(self):
+    def _printStartDownloadMessage(self):
         self.stream.write("Downloading '{}' to '{}'\n".format(
             self.url, self.path))
-        response = requests.get(self.url, stream=True)
-        response.raise_for_status()
-        self.contentLength = int(response.headers['content-length'])
-        with open(self.path, 'wb') as outputFile:
-            for chunk in response.iter_content(chunk_size=self.chunkSize):
-                self.bytesWritten += self.chunkSize
-                self._updateDisplay()
-                outputFile.write(chunk)
+
+    def _cleanUp(self):
         self.stream.write("\n")
         self.stream.flush()
 
@@ -82,21 +75,47 @@ class FileDownloader(object):
         else:
             return self.basename  # TODO scrolling window here
 
-    def _updateDisplay(self):
+    def _updateDisplay(self, modulo=1):
+        self.displayCounter += 1
+        if self.displayCounter % modulo != 0:
+            return
         fileName = self._getFileNameDisplayString()
-
-        # TODO contentLength seems to slightly under-report how many bytes
+        # TODO contentlength seems to slightly under-report how many bytes
         # we have to download... hence the min functions
-        percentage = min(self.bytesWritten / self.contentLength, 1)
+        percentage = min(self.bytesReceived / self.fileSize, 1)
         numerator = humanize.filesize.naturalsize(
-            min(self.bytesWritten, self.contentLength))
+            min(self.bytesReceived, self.fileSize))
         denominator = humanize.filesize.naturalsize(
-            self.contentLength)
-
+            self.fileSize)
         displayString = "{}   {:<6.2%} ({:>9} / {:<9})\r"
         self.stream.write(displayString.format(
             fileName, percentage, numerator, denominator))
         self.stream.flush()
+
+
+class HttpFileDownloader(FileDownloader):
+    """
+    Provides a wget-like file download and terminal display for HTTP
+    """
+    defaultChunkSize = 1048576  # 1MB
+
+    def __init__(self, url, path, chunkSize=defaultChunkSize,
+                 stream=FileDownloader.defaultStream):
+        super(HttpFileDownloader, self).__init__(
+            url, path, stream)
+        self.chunkSize = chunkSize
+
+    def download(self):
+        self._printStartDownloadMessage()
+        response = requests.get(self.url, stream=True)
+        response.raise_for_status()
+        self.fileSize = int(response.headers['content-length'])
+        with open(self.path, 'wb') as outputFile:
+            for chunk in response.iter_content(chunk_size=self.chunkSize):
+                self.bytesReceived += self.chunkSize
+                self._updateDisplay()
+                outputFile.write(chunk)
+        self._cleanUp()
 
 
 def runCommandSplits(splits, silent=False):

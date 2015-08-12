@@ -2,6 +2,7 @@
 *.swp
 *.swo
 ga4gh-example-data*
+ga4gh-downloaded-data*
 scripts/auth.yml
 *.fa
 *.pid

@@ -42,7 +42,7 @@ def archiveExistingData():
 
 def downloadData():
     url = "http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar"
-    fileDownloader = utils.FileDownloader(url, tarballPath)
+    fileDownloader = utils.HttpFileDownloader(url, tarballPath)
     fileDownloader.download()
     utils.log("Downloading finished")
 
