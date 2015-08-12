@@ -17,6 +17,7 @@ import pysam
 
 import ga4gh.datamodel.references as references
 import ga4gh.protocol as protocol
+import ga4gh.exceptions as exceptions
 import tests.datadriven as datadriven
 
 
@@ -39,6 +40,7 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         def __init__(self, referenceSetId, fastaFileName):
             self.fastaFile = pysam.FastaFile(fastaFileName)
             self.bases = self.fastaFile.fetch(self.fastaFile.references[0])
+            self.length = len(self.bases)
 
     def __init__(self, referenceSetId, baseDir):
         super(ReferenceSetTest, self).__init__(None, referenceSetId, baseDir)
@@ -92,19 +94,35 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         # test searching with start and end succeeds
         self.doRangeTest(5, 10)
 
+    def testGetBasesEmpty(self):
+        self.doRangeTest(0, 0)
+
+    def testOutOfBounds(self):
+        referenceSet = self._gaObject
+        for reference in referenceSet.getReferences():
+            length = reference.getLength()
+            badRanges = [
+                (-1, 1), (0, length + 1), (0, 2**34), (-2**32, 1),
+                (1, 0), (length, length - 1),
+            ]
+            for start, end in badRanges:
+                self.assertRaises(
+                    exceptions.ReferenceRangeErrorException,
+                    reference.getBases, start, end)
+
     def testMd5checksums(self):
         referenceSet = self._gaObject
         referenceMd5s = []
         for gaReference in referenceSet.getReferences():
-            pysamReference = self._referenceInfos[
-                gaReference.getFastaFilePath()]
-            basesChecksum = hashlib.md5(pysamReference.bases).hexdigest()
+            # pysamReference = self._referenceInfos[
+            #     gaReference.getFastaFilePath()]
+            # basesChecksum = hashlib.md5(pysamReference.bases).hexdigest()
             self.assertEqual("TODO", gaReference.getMd5Checksum())
-            referenceMd5s.append(basesChecksum)
-        # checksumsString = ''.join(referenceMd5s)
-        # md5checksum = hashlib.md5(checksumsString).hexdigest()
-        referenceSetMd5 = referenceSet._generateMd5Checksum()
-        self.assertEqual("TODO", referenceSetMd5)
+            referenceMd5s.append(gaReference.getMd5Checksum())
+        checksumsString = ''.join(referenceMd5s)
+        md5checksum = hashlib.md5(checksumsString).hexdigest()
+        referenceSetMd5 = referenceSet.getMd5Checksum()
+        self.assertEqual(md5checksum, referenceSetMd5)
 
     def doRangeTest(self, start=None, end=None):
         referenceSet = self._gaObject
@@ -116,6 +134,8 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
 
     def assertReferencesEqual(
             self, gaReference, pysamReference, start=None, end=None):
-        gaBases = gaReference.getBases(start, end)
-        pysamBases = pysamReference.bases[start:end]
+        theStart = 0 if start is None else start
+        theEnd = pysamReference.length if end is None else end
+        gaBases = gaReference.getBases(theStart, theEnd)
+        pysamBases = pysamReference.bases[theStart:theEnd]
         self.assertEqual(gaBases, pysamBases)

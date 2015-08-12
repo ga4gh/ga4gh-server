@@ -208,6 +208,11 @@ class ReferenceSetNotFoundException(ObjectNotFoundException):
 
 
 class ReferenceNotFoundException(ObjectNotFoundException):
+    def __init__(self, referenceId):
+        self.message = "referenceId '{}' not found".format(referenceId)
+
+
+class ReferenceNotFoundInReadGroupException(ObjectNotFoundException):
     def __init__(self, readGroupId, referenceId, validRefs):
         self.message = (
             "reference '{}' does not exist "
@@ -224,6 +229,26 @@ class ObjectWithIdNotFoundException(ObjectNotFoundException):
 class UnsupportedMediaTypeException(RuntimeException):
     httpStatus = 415
     message = "Unsupported media type"
+
+
+class RangeErrorException(RuntimeException):
+    """
+    The superclass of all exceptions for which a query range error occured.
+    This raises a HTTP Error 416 "Requested Range not satisfiable".
+    """
+    httpStatus = 416
+    message = "Requested Range not satisfiable"
+
+
+class ReferenceRangeErrorException(RangeErrorException):
+    """
+    Exception raised when the client attempts to access coordinates
+    outside of the reference.
+    """
+    def __init__(self, referenceId, start, end):
+        self.message = (
+            "Query ({}, {}) outside of range for reference {}".format(
+                start, end, referenceId))
 
 
 class VersionNotSupportedException(NotFoundException):

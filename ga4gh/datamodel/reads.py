@@ -259,7 +259,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
             referenceId, start, end)
         if (referenceId is not None and
                 referenceId not in samFile.references):
-            raise exceptions.ReferenceNotFoundException(
+            raise exceptions.ReferenceNotFoundInReadGroupException(
                 self.getId(), referenceId, samFile.references)
         # TODO deal with errors from htslib
         readAlignments = samFile.fetch(referenceId, start, end)
