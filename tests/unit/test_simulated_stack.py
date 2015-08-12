@@ -222,6 +222,20 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifySearchMethod(
                 request, path, protocol.SearchReadGroupSetsResponse,
                 readGroupSets, self.verifyReadGroupSetsEqual)
+            # Check if we can search for the readGroupSet with a good name.
+            for readGroupSet in readGroupSets:
+                request = protocol.SearchReadGroupSetsRequest()
+                request.datasetId = dataset.getId()
+                request.name = readGroupSet.getLocalId()
+                self.verifySearchMethod(
+                    request, path, protocol.SearchReadGroupSetsResponse,
+                    [readGroupSet], self.verifyReadGroupSetsEqual)
+            # Check if we can search for the callset with a bad name.
+            for badId in self.getBadIds():
+                request = protocol.SearchReadGroupSetsRequest()
+                request.datasetId = dataset.getId()
+                request.name = badId
+                self.verifySearchMethodFails(request, path)
         for badId in self.getBadIds():
             request = protocol.SearchReadGroupSetsRequest()
             request.datasetId = badId

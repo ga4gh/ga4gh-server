@@ -192,6 +192,11 @@ class DatasetNotFoundException(NotFoundException):
             datasetId)
 
 
+class ReadGroupSetNotFoundException(ObjectNotFoundException):
+    def __init__(self, readGroupSetId):
+        self.message = "readGroupSetId '{}' not found".format(readGroupSetId)
+
+
 class ReadGroupNotFoundException(ObjectNotFoundException):
     def __init__(self, readGroupId):
         self.message = "readGroupId '{}' not found".format(readGroupId)
@@ -270,8 +275,17 @@ class CallSetNameNotFoundException(NotFoundException):
     Indicates a request was made for a callSet with a name that
     does not exist.
     """
-    def __init__(self, callSetName):
-        self.message = "callSet with name '{0}' not found".format(callSetName)
+    def __init__(self, name):
+        self.message = "CallSet with name '{0}' not found".format(name)
+
+
+class ReadGroupSetNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for a ReadGroupSet with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "ReadGroupSet with name '{0}' not found".format(name)
 
 
 class DataException(BaseServerException):

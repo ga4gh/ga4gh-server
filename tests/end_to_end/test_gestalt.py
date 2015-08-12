@@ -21,8 +21,8 @@ class TestGestalt(server_test.ServerTest):
     An end-to-end test of the client and server
     """
     def testEndToEnd(self):
-        self.simulatedVariantSetId = "simulatedDataset1:simVs0"
-        self.simulatedReadGroupId = "simulatedDataset1:aReadGroupSet:one"
+        self.simulatedVariantSetId = "simulatedDataset0:simVs0"
+        self.simulatedReadGroupId = "simulatedDataset0:simRgs0:rg0"
         self.simulatedReferenceSetId = "referenceSet0"
         self.simulatedReferenceId = "referenceSet0:srs0"
         self.client = client.ClientForTesting(self.server.getUrl())
@@ -101,6 +101,6 @@ class TestGestalt(server_test.ServerTest):
         self.runClientCmd(self.client, cmd)
 
     def runVariantSetsRequestDatasetTwo(self):
-        datasetId = "simulatedDataset2"
+        datasetId = "simulatedDataset1"
         cmd = "variantsets-search --datasetId {}".format(datasetId)
         self.runClientCmd(self.client, cmd)
