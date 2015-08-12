@@ -45,10 +45,10 @@ class NoConverter(werkzeug.routing.BaseConverter):
 
     This is needed because if there are e.g. two routes:
 
-    /<version>/callsets/search
-    /<version>/callsets/<id>
+    /callsets/search
+    /callsets/<id>
 
-    A request for /someVersion/callsets/search will get routed to
+    A request for /callsets/search will get routed to
     the second, which is not what we want.
     """
     def __init__(self, map, *items):
@@ -62,51 +62,6 @@ class NoConverter(werkzeug.routing.BaseConverter):
 
 
 app.url_map.converters['no'] = NoConverter
-
-
-class Version(object):
-    """
-    A major/minor/revision version tag
-    """
-    currentString = "current"
-
-    @classmethod
-    def isCurrentVersion(cls, versionString):
-        if versionString == cls.currentString:
-            return True
-        return (Version.parseString(versionString) ==
-                Version.parseString(protocol.version))
-
-    @classmethod
-    def parseString(cls, versionString):
-        versions = versionString.strip('vV').split('.')
-        return Version(*versions)
-
-    def __init__(self, major, minor, revision):
-        self.version = (major, minor, revision)
-
-    def __cmp__(self, other):
-        return cmp(self.version, other.version)
-
-    def __hash__(self):
-        return hash(self.version)
-
-    def __eq__(self, other):
-        return self.version == other.version
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    @classmethod
-    def getVersionForUrl(cls, versionString):
-        """
-        Returns the specfied version string in a form suitable for using
-        within a URL. This involved prefixing with 'v'.
-        """
-        ret = versionString
-        if not ret.startswith("v"):
-            ret = "v{}".format(versionString)
-        return ret
 
 
 class ServerStatus(object):
@@ -355,11 +310,6 @@ def handleException(exception):
     return getFlaskResponse(responseStr, serverException.httpStatus)
 
 
-def assertCorrectVersion(version):
-    if not Version.isCurrentVersion(version):
-        raise exceptions.VersionNotSupportedException()
-
-
 def startLogin():
     """
     If we are not logged in, this generates the redirect URL to the OIDC
@@ -410,39 +360,33 @@ def checkAuthentication():
             return startLogin()
 
 
-def handleFlaskGetRequest(version, id_, flaskRequest, endpoint):
+def handleFlaskGetRequest(id_, flaskRequest, endpoint):
     """
     Handles the specified flask request for one of the GET URLs
-    at the specified version.  Invokes the specified endpoint to
-    generate a response.
+    Invokes the specified endpoint to generate a response.
     """
-    assertCorrectVersion(version)
     if flaskRequest.method == "GET":
         return handleHttpGet(id_, endpoint)
     else:
         raise exceptions.MethodNotAllowedException()
 
 
-def handleFlaskListRequest(version, id_, flaskRequest, endpoint):
+def handleFlaskListRequest(id_, flaskRequest, endpoint):
     """
-    Handles the specified flask list request for one of the GET URLs
-    at the specified version.  Invokes the specified endpoint to
-    generate a response.
+    Handles the specified flask list request for one of the GET URLs.
+    Invokes the specified endpoint to generate a response.
     """
-    assertCorrectVersion(version)
     if flaskRequest.method == "GET":
         return handleList(id_, endpoint, flaskRequest)
     else:
         raise exceptions.MethodNotAllowedException()
 
 
-def handleFlaskPostRequest(version, flaskRequest, endpoint):
+def handleFlaskPostRequest(flaskRequest, endpoint):
     """
     Handles the specified flask request for one of the POST URLS
-    at the specified version. Invokes the specified endpoint to
-    generate a response.
+    Invokes the specified endpoint to generate a response.
     """
-    assertCorrectVersion(version)
     if flaskRequest.method == "POST":
         return handleHttpPost(flaskRequest, endpoint)
     elif flaskRequest.method == "OPTIONS":
@@ -466,8 +410,6 @@ class DisplayedRoute(object):
             methodDisplay = 'GET'
         if pathDisplay is None:
             pathDisplay = path
-        pathDisplay = pathDisplay.replace(
-            '<version>', protocol.version)
         app.urls.append((methodDisplay, pathDisplay))
 
     def __call__(self, func):
@@ -489,120 +431,108 @@ def index():
     return flask.render_template('index.html', info=app.serverStatus)
 
 
-@app.route('/<version>')
-def indexRedirect(version):
-    try:
-        isCurrentVersion = Version.isCurrentVersion(version)
-    except TypeError:  # malformed "version string"
-        raise exceptions.PathNotFoundException()
-    if isCurrentVersion:
-        return index()
-    else:
-        raise exceptions.PathNotFoundException()
-
-
-@DisplayedRoute('/<version>/references/<id>')
-def getReference(version, id):
+@DisplayedRoute('/references/<id>')
+def getReference(id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.runGetReference)
+        id, flask.request, app.backend.runGetReference)
 
 
-@DisplayedRoute('/<version>/referencesets/<id>')
-def getReferenceSet(version, id):
+@DisplayedRoute('/referencesets/<id>')
+def getReferenceSet(id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.runGetReferenceSet)
+        id, flask.request, app.backend.runGetReferenceSet)
 
 
-@DisplayedRoute('/<version>/references/<id>/bases')
-def listReferenceBases(version, id):
+@DisplayedRoute('/references/<id>/bases')
+def listReferenceBases(id):
     return handleFlaskListRequest(
-        version, id, flask.request, app.backend.runListReferenceBases)
+        id, flask.request, app.backend.runListReferenceBases)
 
 
-@DisplayedRoute('/<version>/callsets/search', postMethod=True)
-def searchCallSets(version):
+@DisplayedRoute('/callsets/search', postMethod=True)
+def searchCallSets():
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.runSearchCallSets)
+        flask.request, app.backend.runSearchCallSets)
 
 
-@DisplayedRoute('/<version>/readgroupsets/search', postMethod=True)
-def searchReadGroupSets(version):
+@DisplayedRoute('/readgroupsets/search', postMethod=True)
+def searchReadGroupSets():
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.runSearchReadGroupSets)
+        flask.request, app.backend.runSearchReadGroupSets)
 
 
-@DisplayedRoute('/<version>/reads/search', postMethod=True)
-def searchReads(version):
+@DisplayedRoute('/reads/search', postMethod=True)
+def searchReads():
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.runSearchReads)
+        flask.request, app.backend.runSearchReads)
 
 
-@DisplayedRoute('/<version>/referencesets/search', postMethod=True)
-def searchReferenceSets(version):
+@DisplayedRoute('/referencesets/search', postMethod=True)
+def searchReferenceSets():
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.runSearchReferenceSets)
+        flask.request, app.backend.runSearchReferenceSets)
 
 
-@DisplayedRoute('/<version>/references/search', postMethod=True)
-def searchReferences(version):
+@DisplayedRoute('/references/search', postMethod=True)
+def searchReferences():
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.runSearchReferences)
+        flask.request, app.backend.runSearchReferences)
 
 
-@DisplayedRoute('/<version>/variantsets/search', postMethod=True)
-def searchVariantSets(version):
+@DisplayedRoute('/variantsets/search', postMethod=True)
+def searchVariantSets():
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.runSearchVariantSets)
+        flask.request, app.backend.runSearchVariantSets)
 
 
-@DisplayedRoute('/<version>/variants/search', postMethod=True)
-def searchVariants(version):
+@DisplayedRoute('/variants/search', postMethod=True)
+def searchVariants():
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.runSearchVariants)
+        flask.request, app.backend.runSearchVariants)
 
 
-@DisplayedRoute('/<version>/datasets/search', postMethod=True)
-def searchDatasets(version):
+@DisplayedRoute('/datasets/search', postMethod=True)
+def searchDatasets():
     return handleFlaskPostRequest(
-        version, flask.request, app.backend.runSearchDatasets)
+        flask.request, app.backend.runSearchDatasets)
 
 
 @DisplayedRoute(
-    '/<version>/variantsets/<no(search):id>',
-    pathDisplay='/<version>/variantsets/<id>')
-def getVariantSet(version, id):
+    '/variantsets/<no(search):id>',
+    pathDisplay='/variantsets/<id>')
+def getVariantSet(id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.runGetVariantSet)
+        id, flask.request, app.backend.runGetVariantSet)
 
 
 @DisplayedRoute(
-    '/<version>/variants/<no(search):id>',
-    pathDisplay='/<version>/variants/<id>')
-def getVariant(version, id):
+    '/variants/<no(search):id>',
+    pathDisplay='/variants/<id>')
+def getVariant(id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.runGetVariant)
+        id, flask.request, app.backend.runGetVariant)
 
 
 @DisplayedRoute(
-    '/<version>/readgroupsets/<no(search):id>',
-    pathDisplay='/<version>/readgroupsets/<id>')
-def getReadGroupSet(version, id):
+    '/readgroupsets/<no(search):id>',
+    pathDisplay='/readgroupsets/<id>')
+def getReadGroupSet(id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.runGetReadGroupSet)
+        id, flask.request, app.backend.runGetReadGroupSet)
 
 
-@DisplayedRoute('/<version>/readgroups/<id>')
-def getReadGroup(version, id):
+@DisplayedRoute('/readgroups/<id>')
+def getReadGroup(id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.runGetReadGroup)
+        id, flask.request, app.backend.runGetReadGroup)
 
 
 @DisplayedRoute(
-    '/<version>/callsets/<no(search):id>',
-    pathDisplay='/<version>/callsets/<id>')
-def getCallset(version, id):
+    '/callsets/<no(search):id>',
+    pathDisplay='/callsets/<id>')
+def getCallset(id):
     return handleFlaskGetRequest(
-        version, id, flask.request, app.backend.runGetCallset)
+        id, flask.request, app.backend.runGetCallset)
 
 
 @app.route('/oauth2callback', methods=['GET'])
@@ -667,9 +597,8 @@ def oidcCallback():
 
 # The below paths have not yet been implemented
 
-
-@app.route('/<version>/datasets/<no(search):id>')
-def getDataset(version, id):
+@app.route('/datasets/<no(search):id>')
+def getDataset(id):
     raise exceptions.NotImplementedException()
 
 

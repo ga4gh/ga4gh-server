@@ -11,7 +11,6 @@ import logging
 import ga4gh.datamodel as datamodel
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
-import tests.utils as utils
 
 
 class TestFrontend(unittest.TestCase):
@@ -62,23 +61,21 @@ class TestFrontend(unittest.TestCase):
         """
         Sends the specified GA request object and returns the response.
         """
-        versionedPath = utils.applyVersion(path)
         headers = {
             'Content-type': 'application/json',
             'Origin': self.exampleUrl,
         }
         return self.app.post(
-            versionedPath, headers=headers, data=request.toJsonString())
+            path, headers=headers, data=request.toJsonString())
 
     def sendGetRequest(self, path):
         """
         Sends a get request to the specified URL and returns the response.
         """
-        versionedPath = utils.applyVersion(path)
         headers = {
             'Origin': self.exampleUrl,
         }
-        return self.app.get(versionedPath, headers=headers)
+        return self.app.get(path, headers=headers)
 
     def sendVariantsSearch(self):
         response = self.sendVariantSetsSearch()
@@ -172,13 +169,11 @@ class TestFrontend(unittest.TestCase):
         return response
 
     def sendListRequest(self, path, request):
-        versionedPath = utils.applyVersion(path)
         headers = {
             'Origin': self.exampleUrl,
         }
         data = request.toJsonDict()
-        response = self.app.get(
-            versionedPath, data=data, headers=headers)
+        response = self.app.get(path, data=data, headers=headers)
         return response
 
     def sendReferenceBasesList(self, id_=None):
@@ -192,9 +187,8 @@ class TestFrontend(unittest.TestCase):
     def test404sReturnJson(self):
         paths = [
             '/doesNotExist',
-            utils.applyVersion('/doesNotExist'),
-            utils.applyVersion('/reads/sea'),
-            utils.applyVersion('/variantsets/id/doesNotExist'),
+            '/reads/sea',
+            '/variantsets/id/doesNotExist',
         ]
         for path in paths:
             response = self.app.get(path)
@@ -228,43 +222,40 @@ class TestFrontend(unittest.TestCase):
         search command. If getDefined is False we check to see if it
         returns the correct status code.
         """
-        versionedPath = utils.applyVersion(path)
-        response = self.app.post(versionedPath)
+        response = self.app.post(path)
         protocol.GAException.fromJsonString(response.get_data())
         self.assertEqual(415, response.status_code)
         if not getDefined:
-            getResponse = self.app.get(versionedPath)
+            getResponse = self.app.get(path)
             protocol.GAException.fromJsonString(getResponse.get_data())
             self.assertEqual(405, getResponse.status_code)
 
         # Malformed requests should return 400
         for badJson in ["", None, "JSON", "<xml/>", "{]"]:
             badResponse = self.app.post(
-                versionedPath, data=badJson,
+                path, data=badJson,
                 headers={'Content-type': 'application/json'})
             self.assertEqual(400, badResponse.status_code)
 
         # OPTIONS should return success
-        self.assertEqual(200, self.app.options(versionedPath).status_code)
+        self.assertEqual(200, self.app.options(path).status_code)
 
     def testRouteReferences(self):
         referenceId = self.referenceId
         paths = ['/references/{}', '/references/{}/bases']
         for path in paths:
             path = path.format(referenceId)
-            versionedPath = utils.applyVersion(path)
-            self.assertEqual(200, self.app.get(versionedPath).status_code)
+            self.assertEqual(200, self.app.get(path).status_code)
         referenceSetId = self.referenceSetId
         paths = ['/referencesets/{}']
         for path in paths:
             path = path.format(referenceSetId)
-            versionedPath = utils.applyVersion(path)
-            self.assertEqual(200, self.app.get(versionedPath).status_code)
+            self.assertEqual(200, self.app.get(path).status_code)
         self.verifySearchRouting('/referencesets/search', True)
         self.verifySearchRouting('/references/search', True)
 
     def testRouteCallsets(self):
-        path = utils.applyVersion('/callsets/search')
+        path = '/callsets/search'
         self.assertEqual(415, self.app.post(path).status_code)
         self.assertEqual(200, self.app.options(path).status_code)
         self.assertEqual(405, self.app.get(path).status_code)
@@ -279,12 +270,7 @@ class TestFrontend(unittest.TestCase):
         self.verifySearchRouting('/variants/search', False)
 
     def testRouteIndex(self):
-        self._routeIndex("/")
-
-    def testRouteIndexRedirect(self):
-        self._routeIndex("/{}".format(protocol.version))
-
-    def _routeIndex(self, path):
+        path = "/"
         response = self.app.get(path)
         self.assertEqual(200, response.status_code)
         self.assertEqual("text/html", response.mimetype)
@@ -367,15 +353,6 @@ class TestFrontend(unittest.TestCase):
         datasets = list(responseData.datasets)
         self.assertEqual(self.datasetId, datasets[0].id)
 
-    def testWrongVersion(self):
-        path = '/v0.1.2/variantsets/search'
-        self.assertEqual(404, self.app.options(path).status_code)
-
-    def testCurrentVersion(self):
-        path = '/{}/variantsets/search'.format(
-            frontend.Version.currentString)
-        self.assertEqual(200, self.app.options(path).status_code)
-
     def testNotImplementedPaths(self):
         pathsNotImplementedPost = [
         ]
@@ -385,8 +362,7 @@ class TestFrontend(unittest.TestCase):
 
         def runRequest(method, path):
             requestPath = path.replace('<id>', 'someId')
-            versionedPath = utils.applyVersion(requestPath)
-            response = method(versionedPath)
+            response = method(requestPath)
             protocol.GAException.fromJsonString(response.get_data())
             self.assertEqual(response.status_code, 501)
 
@@ -396,6 +372,5 @@ class TestFrontend(unittest.TestCase):
             runRequest(self.app.post, path)
 
     def testNoAuthentication(self):
-        path = '/oauth2callback'.format(
-            frontend.Version.currentString)
+        path = '/oauth2callback'
         self.assertEqual(501, self.app.get(path).status_code)

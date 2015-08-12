@@ -12,7 +12,6 @@ import os
 import signal
 import time
 
-import ga4gh.protocol as protocol
 import ga4gh.client as client
 
 
@@ -42,10 +41,6 @@ def makeHttpClient():
     key = "KEY"
     httpClient = client.HttpClient(url, debugLevel, workarounds, key)
     return httpClient
-
-
-def applyVersion(route):
-    return "/{0}{1}".format(protocol.version, route)
 
 
 def powerset(iterable, maxSets=None):
