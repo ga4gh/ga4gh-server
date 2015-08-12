@@ -189,13 +189,10 @@ class VariantSetTest(datadriven.DataDrivenTest):
 
     def testSearchCallSetIdsSystematic(self):
         for sampleIds in utils.powerset(self.vcfSamples, maxSets=10):
-            # TODO remove this for protocol 0.6
-            if len(sampleIds) == 0:
-                sampleIds = self.vcfSamples
             self._verifyVariantsCallSetIds(None, list(sampleIds))
 
     def testVariantsValid(self):
-        end = 2**30  # TODO This is arbitrary, and pysam can choke. FIX!
+        end = datamodel.PysamDatamodelMixin.vcfMax
         for referenceName in self._referenceNames:
             iterator = self._gaObject.getVariants(
                 referenceName, 0, end)
@@ -348,6 +345,42 @@ class VariantSetTest(datadriven.DataDrivenTest):
         testMetaLength = (
             1 + len(self._formats) + len(self._infos) - gtCounter)
         self.assertEqual(len(keyMap), testMetaLength)
+
+    def testGetVariantsCallSets(self):
+        variantSet = self._gaObject
+        start = 0
+        end = datamodel.PysamDatamodelMixin.vcfMax
+        callSetIds = variantSet.getCallSetIds()
+        someCallSetIds = callSetIds[0:3]
+        for referenceName in self._referenceNames:
+            # passing None as the callSetIds argument should be equivalent
+            # to passing all of the possible callSetIds as an argument
+            noneRecords = list(variantSet.getVariants(
+                referenceName, start, end, None, None))
+            allRecords = list(variantSet.getVariants(
+                referenceName, start, end, None, callSetIds))
+            self.assertEqual(len(noneRecords), len(allRecords))
+            for noneRecord, allRecord in zip(noneRecords, allRecords):
+                for noneCall, allCall in zip(
+                        noneRecord.calls, allRecord.calls):
+                    self.assertEqual(
+                        noneCall.callSetName, allCall.callSetName)
+
+            # passing an empty list as the callSetIds argument should
+            # return no callsets for any variant
+            emptyRecords = variantSet.getVariants(
+                referenceName, start, end, None, [])
+            for record in emptyRecords:
+                self.assertEqual(len(record.calls), 0)
+
+            # passing some callSetIds as the callSetIds argument should
+            # return only those calls
+            someRecords = list(variantSet.getVariants(
+                referenceName, start, end, None, someCallSetIds))
+            for record in someRecords:
+                self.assertEqual(len(record.calls), len(someCallSetIds))
+                for call, someId in zip(record.calls, someCallSetIds):
+                    self.assertEqual(call.callSetId, someId)
 
     def testGetVariant(self):
         variantSet = self._gaObject
