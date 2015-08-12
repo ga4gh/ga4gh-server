@@ -275,6 +275,24 @@ class TestSimulatedStack(unittest.TestCase):
             for badId in self.getBadIds():
                 variantSet = variants.AbstractVariantSet(dataset, badId)
                 self.verifyGetMethodFails(path, variantSet.getId())
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
+
+    def testGetCallSet(self):
+        path = utils.applyVersion("/callsets")
+        for dataset in self.backend.getDatasets():
+            for variantSet in dataset.getVariantSets():
+                for callSet in variantSet.getCallSets():
+                    response = self.sendObjectGetRequest(path, callSet.getId())
+                    self.assertEqual(200, response.status_code)
+                    responseObject = protocol.CallSet.fromJsonString(
+                        response.data)
+                    self.verifyCallSetsEqual(responseObject, callSet)
+                for badId in self.getBadIds():
+                    callSet = variants.CallSet(variantSet, badId)
+                    self.verifyGetMethodFails(path, callSet.getId())
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
 
     def testGetReadGroup(self):
         path = utils.applyVersion("/readgroups")
@@ -293,6 +311,8 @@ class TestSimulatedStack(unittest.TestCase):
             for badId in self.getBadIds():
                 readGroupSet = reads.AbstractReadGroupSet(dataset, badId)
                 self.verifyGetMethodFails(path, readGroupSet.getId())
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
 
     def testVariantsSearch(self):
         dataset = self.backend.getDatasets()[0]
