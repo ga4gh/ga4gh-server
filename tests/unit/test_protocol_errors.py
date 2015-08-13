@@ -11,7 +11,6 @@ import ga4gh.frontend as frontend
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.avrotools as avrotools
-import tests.utils as utils
 
 
 class TestFrontendErrors(unittest.TestCase):
@@ -44,8 +43,7 @@ class TestFrontendErrors(unittest.TestCase):
         self.endPointMap = {}
         for endPoint, requestClass, responseClass in protocol.postMethods:
             if requestClass in supportedMethods:
-                path = utils.applyVersion(endPoint)
-                self.endPointMap[path] = requestClass
+                self.endPointMap[endPoint] = requestClass
 
     def _createInstance(self, requestClass):
         """

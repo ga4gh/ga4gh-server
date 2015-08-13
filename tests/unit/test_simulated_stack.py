@@ -15,7 +15,6 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.reads as reads
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
-import tests.utils as utils
 
 
 class TestSimulatedStack(unittest.TestCase):
@@ -163,13 +162,13 @@ class TestSimulatedStack(unittest.TestCase):
     def testDatasetsSearch(self):
         request = protocol.SearchDatasetsRequest()
         datasets = self.backend.getDatasets()
-        path = utils.applyVersion('/datasets/search')
+        path = '/datasets/search'
         self.verifySearchMethod(
             request, path, protocol.SearchDatasetsResponse, datasets,
             self.verifyDatasetsEqual)
 
     def testVariantSetsSearch(self):
-        path = utils.applyVersion('/variantsets/search')
+        path = '/variantsets/search'
         for dataset in self.backend.getDatasets():
             variantSets = dataset.getVariantSets()
             request = protocol.SearchVariantSetsRequest()
@@ -183,7 +182,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifySearchMethodFails(request, path)
 
     def testCallSetsSearch(self):
-        path = utils.applyVersion('/callsets/search')
+        path = '/callsets/search'
         for dataset in self.backend.getDatasets():
             for variantSet in dataset.getVariantSets():
                 callSets = variantSet.getCallSets()
@@ -214,7 +213,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifySearchMethodFails(request, path)
 
     def testReadGroupSetsSearch(self):
-        path = utils.applyVersion('/readgroupsets/search')
+        path = '/readgroupsets/search'
         for dataset in self.backend.getDatasets():
             readGroupSets = dataset.getReadGroupSets()
             request = protocol.SearchReadGroupSetsRequest()
@@ -244,13 +243,13 @@ class TestSimulatedStack(unittest.TestCase):
     def testReferenceSetsSearch(self):
         request = protocol.SearchReferenceSetsRequest()
         referenceSets = self.backend.getReferenceSets()
-        path = utils.applyVersion('/referencesets/search')
+        path = '/referencesets/search'
         self.verifySearchMethod(
             request, path, protocol.SearchReferenceSetsResponse, referenceSets,
             self.verifyReferenceSetsEqual)
 
     def testReferencesSearch(self):
-        path = utils.applyVersion('/references/search')
+        path = '/references/search'
         for referenceSet in self.backend.getReferenceSets():
             references = referenceSet.getReferences()
             request = protocol.SearchReferencesRequest()
@@ -264,7 +263,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifySearchMethodFails(request, path)
 
     def testGetVariantSet(self):
-        path = utils.applyVersion("/variantsets")
+        path = "/variantsets"
         for dataset in self.backend.getDatasets():
             for variantSet in dataset.getVariantSets():
                 response = self.sendObjectGetRequest(path, variantSet.getId())
@@ -279,7 +278,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifyGetMethodFails(path, badId)
 
     def testGetCallSet(self):
-        path = utils.applyVersion("/callsets")
+        path = "/callsets"
         for dataset in self.backend.getDatasets():
             for variantSet in dataset.getVariantSets():
                 for callSet in variantSet.getCallSets():
@@ -295,7 +294,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifyGetMethodFails(path, badId)
 
     def testGetReadGroup(self):
-        path = utils.applyVersion("/readgroups")
+        path = "/readgroups"
         for dataset in self.backend.getDatasets():
             for readGroupSet in dataset.getReadGroupSets():
                 for readGroup in readGroupSet.getReadGroups():
@@ -326,7 +325,7 @@ class TestSimulatedStack(unittest.TestCase):
         request.variantSetId = variantSet.getId()
 
         # Request windows is too small, no results
-        path = utils.applyVersion('/variants/search')
+        path = '/variants/search'
         response = self.sendJsonPostRequest(
             path, request.toJsonString())
         self.assertEqual(200, response.status_code)
@@ -337,7 +336,7 @@ class TestSimulatedStack(unittest.TestCase):
 
         # Larger request window, expect results
         request.end = 2 ** 16
-        path = utils.applyVersion('/variants/search')
+        path = '/variants/search'
         response = self.sendJsonPostRequest(
             path, request.toJsonString())
         self.assertEqual(200, response.status_code)
@@ -362,8 +361,7 @@ class TestSimulatedStack(unittest.TestCase):
     def testGetReferences(self):
         for referenceSet in self.backend.getReferenceSets():
             # fetch the reference set
-            path = utils.applyVersion(
-                '/referencesets/{}'.format(referenceSet.getId()))
+            path = '/referencesets/{}'.format(referenceSet.getId())
             response = self.app.get(path)
             self.assertEqual(response.status_code, 200)
             gaReferenceSet = protocol.ReferenceSet.fromJsonString(
@@ -372,8 +370,7 @@ class TestSimulatedStack(unittest.TestCase):
 
             for reference in referenceSet.getReferences():
                 # fetch the reference
-                path = utils.applyVersion(
-                    '/references/{}'.format(reference.getId()))
+                path = '/references/{}'.format(reference.getId())
                 response = self.app.get(path)
                 self.assertEqual(response.status_code, 200)
                 fetchedReference = protocol.Reference.fromJsonString(
@@ -381,8 +378,7 @@ class TestSimulatedStack(unittest.TestCase):
                 self.verifyReferencesEqual(fetchedReference, reference)
 
                 # fetch the bases
-                path = utils.applyVersion(
-                    '/references/{}/bases'.format(reference.getId()))
+                path = '/references/{}/bases'.format(reference.getId())
                 args = protocol.ListReferenceBasesRequest().toJsonDict()
                 response = self.app.get(path, data=args)
                 self.assertEqual(response.status_code, 200)
@@ -397,7 +393,7 @@ class TestSimulatedStack(unittest.TestCase):
                     calculatedDigest, fetchedReference.md5checksum)
 
     def testReads(self):
-        path = utils.applyVersion('/reads/search')
+        path = '/reads/search'
         for dataset in self.backend.getDatasets():
             for readGroupSet in dataset.getReadGroupSets():
                 for readGroup in readGroupSet.getReadGroups():
