@@ -52,7 +52,7 @@ class TestOidc(server_test.ServerTestClass):
     """
     @classmethod
     def otherSetup(cls):
-        cls.simulatedVariantSetId = "simulatedDataset1:simVs0"
+        cls.simulatedVariantSetId = "c2ltdWxhdGVkRGF0YXNldDA6c2ltVnMw"
         requests.packages.urllib3.disable_warnings()
         cls.opServer = server.OidcOpServerForTesting()
         cls.opServer.start()

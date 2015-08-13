@@ -29,8 +29,8 @@ class TestRemoteFetchReads(RemoteServerTestReads):
     def testBamFetch(self):
         self.client = client.ClientForTesting(self.server.getUrl())
         self.readGroupIds = (
-            'dataset1:remoteTest:'
-            'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample')
+            'ZGF0YXNldDE6cmVtb3RlVGVzdDp3Z0VuY29kZVV3UmVwbGlTZXFCZzAy'
+            'ZXNHMWJBbG5SZXAxX3NhbXBsZQ==')
         self.runClientCmd(
             self.client,
             "reads-search --readGroupIds '{}' "
@@ -63,7 +63,7 @@ class TestRemoteFetchVariants(RemoteServerTestVariants):
         self.client = client.ClientForTesting(self.server.getUrl())
         self.runClientCmd(
             self.client,
-            "variants-search -V dataset1:remoteTest")
+            "variants-search -V ZGF0YXNldDE6cmVtb3RlVGVzdA==")
         self._assertLogsWritten()
         self.client.cleanup()
 

@@ -6,13 +6,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import glob
-import os
-import json
-import tempfile
-import shutil
 import atexit
+import base64
 import collections
+import glob
+import json
+import os
+import shutil
+import tempfile
 
 import ga4gh.exceptions as exceptions
 
@@ -155,14 +156,13 @@ class CompoundId(object):
         for idFieldName, prefix in self.containerIds:
             values = [getattr(self, f) for f in self.fields[:prefix + 1]]
             containerId = self.separator.join(values)
-            setattr(self, idFieldName, containerId)
+            obfuscated = self.obfuscate(containerId)
+            setattr(self, idFieldName, obfuscated)
 
     def __str__(self):
-        values = []
-        for field in self.fields:
-            value = getattr(self, field)
-            values.append(value)
-        return self.separator.join(values)
+        values = [getattr(self, f) for f in self.fields]
+        compoundIdStr = self.separator.join(values)
+        return self.obfuscate(compoundIdStr)
 
     @classmethod
     def parse(cls, compoundIdStr):
@@ -177,10 +177,38 @@ class CompoundId(object):
         """
         if not isinstance(compoundIdStr, basestring):
             raise exceptions.BadIdentifierException(compoundIdStr)
-        splits = compoundIdStr.split(cls.separator)
+        try:
+            deobfuscated = cls.deobfuscate(compoundIdStr)
+        except TypeError:
+            # When a string that cannot be converted to base64 is passed
+            # as an argument, b64decode raises a TypeError. We must treat
+            # this as an ID not found error.
+            raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
+        try:
+            splits = deobfuscated.split(cls.separator)
+        except UnicodeDecodeError:
+            # Sometimes base64 decoding succeeds but we're left with
+            # unicode gibberish. This is also and IdNotFound.
+            raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
         if len(splits) != len(cls.fields):
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
         return cls(None, *splits)
+
+    @classmethod
+    def obfuscate(cls, idStr):
+        """
+        Mildly obfuscates the specified ID string in an easily reversible
+        fashion. This is not intended for security purposes, but rather to
+        dissuade users from depending on our internal ID structures.
+        """
+        return base64.b64encode(idStr)
+
+    @classmethod
+    def deobfuscate(cls, idStr):
+        """
+        Reverses the obfuscation done by the :meth:`obfuscate` method.
+        """
+        return base64.b64decode(idStr)
 
 
 class ReferenceSetCompoundId(CompoundId):
