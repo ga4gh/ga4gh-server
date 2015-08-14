@@ -13,7 +13,6 @@ import unittest
 import ga4gh.exceptions as exceptions
 import ga4gh.backend as backend
 import ga4gh.protocol as protocol
-import ga4gh.datamodel.references as references
 
 
 class BackendForTesting(backend.AbstractBackend):
@@ -116,10 +115,8 @@ class TestAbstractBackend(unittest.TestCase):
             isinstance(response, protocol.SearchVariantSetsResponse))
 
     def testRunGetRequest(self):
-        id_ = "anId"
-        obj = references.SimulatedReferenceSet(id_)
-        idMap = {id_: obj}
-        responseStr = self._backend.runGetRequest(idMap, id_)
+        referenceSet = self._backend.getReferenceSets()[0]
+        responseStr = self._backend.runGetReferenceSet(referenceSet.getId())
         class_ = protocol.ReferenceSet
         response = class_.fromJsonString(responseStr)
         self.assertTrue(isinstance(response, class_))
@@ -246,25 +243,3 @@ class TestPrivateBackendMethods(unittest.TestCase):
         goodPageToken = "12:34:567:8:9000"
         parsedToken = backend._parsePageToken(goodPageToken, 5)
         self.assertEqual(parsedToken[2], 567)
-
-    def testSafeMapQuery(self):
-        # test map
-        key = 'a'
-        value = 'b'
-        idMap = {key: value}
-        result = backend._safeMapQuery(idMap, key)
-        self.assertEqual(result, value)
-
-        # test array
-        arr = [value]
-        result = backend._safeMapQuery(arr, 0)
-        self.assertEqual(result, value)
-
-        # test exception with custom class
-        exceptionClass = exceptions.FileOpenFailedException
-        with self.assertRaises(exceptionClass):
-            backend._safeMapQuery(idMap, 'notFound', exceptionClass)
-
-        # test exception with custom id string
-        with self.assertRaises(exceptions.ObjectWithIdNotFoundException):
-            backend._safeMapQuery(idMap, 'notFound', idErrorString='msg')

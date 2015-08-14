@@ -98,6 +98,15 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         """
         return [self._readGroupIdMap[id_] for id_ in self._readGroupIds]
 
+    def getReadGroup(self, id_):
+        """
+        Returns the ReadGroup with the specified id if it exists in this
+        ReadGroupSet, or raises a ReadGroupNotFoundException otherwise.
+        """
+        if id_ not in self._readGroupIdMap:
+            raise exceptions.ReadGroupNotFoundException(id_)
+        return self._readGroupIdMap[id_]
+
     def toProtocolElement(self):
         """
         Returns the GA4GH protocol representation of this ReadGroupSet.
