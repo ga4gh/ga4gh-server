@@ -381,18 +381,6 @@ class PysamDatamodelMixin(object):
         return referenceName, start, end
 
     @classmethod
-    def sanitizeFastaFileFetch(cls, start=None, end=None):
-        if start is not None:
-            start = cls.sanitizeInt(
-                start, cls.fastaMin, cls.fastaMax, 'start')
-        if end is not None:
-            end = cls.sanitizeInt(
-                end, cls.fastaMin, cls.fastaMax, 'end')
-        if start is not None and end is not None:
-            cls.assertValidRange(start, end, 'start', 'end')
-        return start, end
-
-    @classmethod
     def sanitizeGetRName(cls, referenceId):
         cls.assertInt(referenceId, 'referenceId')
         cls.assertInRange(

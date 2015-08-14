@@ -641,9 +641,9 @@ def addStartArgument(parser):
         help="The start of the search range (inclusive).")
 
 
-def addEndArgument(parser):
+def addEndArgument(parser, defaultValue=AVRO_LONG_MAX):
     parser.add_argument(
-        "--end", "-e", default=AVRO_LONG_MAX, type=int,
+        "--end", "-e", default=defaultValue, type=int,
         help="The end of the search range (exclusive).")
 
 
@@ -907,7 +907,7 @@ def addReferencesBasesListParser(subparsers):
     parser.set_defaults(runner=ListReferenceBasesRunner)
     addGetArguments(parser)
     addStartArgument(parser)
-    addEndArgument(parser)
+    addEndArgument(parser, defaultValue=None)
 
 
 def client_main(parser=None):

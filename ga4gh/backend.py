@@ -16,6 +16,22 @@ import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
 
+def _parseIntegerArgument(args, key, defaultValue):
+    """
+    Attempts to parse the specified key in the specified argument
+    dictionary into an integer. If the argument cannot be parsed,
+    raises a BadRequestIntegerException. If the key is not present,
+    return the specified default value.
+    """
+    ret = defaultValue
+    if key in args:
+        try:
+            ret = int(args[key])
+        except ValueError:
+            raise exceptions.BadRequestIntegerException(key, args[key])
+    return ret
+
+
 def _parsePageToken(pageToken, numValues):
     """
     Parses the specified pageToken and returns a list of the specified
@@ -530,40 +546,19 @@ class AbstractBackend(object):
         # parse arguments
         compoundId = datamodel.ReferenceCompoundId.parse(id_)
         referenceSet = self.getReferenceSet(compoundId.referenceSetId)
-        reference = _safeMapQuery(
-            referenceSet.getReferenceIdMap(), id_)
-        start = 0
-        end = datamodel.PysamDatamodelMixin.fastaMax
-        if 'start' in requestArgs:
-            startString = requestArgs['start']
-            try:
-                start = int(startString)
-            except ValueError:
-                raise exceptions.BadRequestIntegerException(
-                    'start', startString)
-        if 'end' in requestArgs:
-            endString = requestArgs['end']
-            try:
-                end = int(endString)
-            except ValueError:
-                raise exceptions.BadRequestIntegerException(
-                    'end', endString)
+        reference = referenceSet.getReference(id_)
+        start = _parseIntegerArgument(requestArgs, 'start', 0)
+        end = _parseIntegerArgument(requestArgs, 'end', reference.getLength())
         if 'pageToken' in requestArgs:
             pageTokenStr = requestArgs['pageToken']
             start = _parsePageToken(pageTokenStr, 1)[0]
+
         chunkSize = self._maxResponseLength
-
-        # get reference bases
-        gbEnd = min(start + chunkSize, end)
-        sequence = reference.getBases(start, gbEnd)
-
-        # determine nextPageToken
-        if len(sequence) == chunkSize:
-            nextPageToken = start + chunkSize
-        elif len(sequence) > chunkSize:
-            raise exceptions.ServerError()  # should never happen
-        else:
-            nextPageToken = None
+        nextPageToken = None
+        if start + chunkSize < end:
+            end = start + chunkSize
+            nextPageToken = str(start + chunkSize)
+        sequence = reference.getBases(start, end)
 
         # build response
         response = protocol.ListReferenceBasesResponse()
