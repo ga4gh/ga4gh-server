@@ -186,6 +186,12 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class CallSetNotFoundException(NotFoundException):
+    def __init__(self, callSetId):
+        self.message = "The requested CallSet '{}' was not found".format(
+            callSetId)
+
+
 class DatasetNotFoundException(NotFoundException):
     def __init__(self, datasetId):
         self.message = "The requested dataset '{}' was not found".format(

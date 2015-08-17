@@ -52,30 +52,6 @@ def _parsePageToken(pageToken, numValues):
     return values
 
 
-def _getVariantSet(request, variantSetIdMap):
-    variantSetId = request.variantSetId
-    variantSet = _safeMapQuery(
-        variantSetIdMap, variantSetId,
-        exceptionClass=exceptions.VariantSetNotFoundException)
-    return variantSet
-
-
-def _safeMapQuery(idMap, id_, exceptionClass=None, idErrorString=None):
-    """
-    Attempt to retrieve a value from a map, throw an appropriate error
-    if the key is not present
-    """
-    try:
-        obj = idMap[id_]
-    except KeyError:
-        if idErrorString is None:
-            idErrorString = id_
-        if exceptionClass is None:
-            exceptionClass = exceptions.ObjectWithIdNotFoundException
-        raise exceptionClass(idErrorString)
-    return obj
-
-
 class IntervalIterator(object):
     """
     Implements generator logic for types which accept a start/end
@@ -84,10 +60,9 @@ class IntervalIterator(object):
     us to pick up the iteration at any point, and is None for the last
     value in the iterator.
     """
-    def __init__(self, request, containerIdMap):
+    def __init__(self, request, parentContainer):
         self._request = request
-        self._containerIdMap = containerIdMap
-        self._container = self._getContainer()
+        self._parentContainer = parentContainer
         self._searchIterator = None
         self._currentObject = None
         self._nextObject = None
@@ -179,21 +154,9 @@ class ReadsIntervalIterator(IntervalIterator):
     """
     An interval iterator for reads
     """
-    def _getContainer(self):
-        if len(self._request.readGroupIds) != 1:
-            if len(self._request.readGroupIds) == 0:
-                msg = "Read search requires a readGroup to be specified"
-            else:
-                msg = "Read search over multiple readGroups not supported"
-            raise exceptions.NotImplementedException(msg)
-        readGroupId = self._request.readGroupIds[0]
-        readGroup = _safeMapQuery(
-            self._containerIdMap, readGroupId,
-            exceptions.ReadGroupNotFoundException)
-        return readGroup
 
     def _search(self, start, end):
-        return self._container.getReadAlignments(
+        return self._parentContainer.getReadAlignments(
             self._request.referenceId, start, end)
 
     @classmethod
@@ -202,19 +165,18 @@ class ReadsIntervalIterator(IntervalIterator):
 
     @classmethod
     def _getEnd(cls, readAlignment):
-        return cls._getStart(readAlignment) + \
-            len(readAlignment.alignedSequence)
+        return (
+            cls._getStart(readAlignment) +
+            len(readAlignment.alignedSequence))
 
 
 class VariantsIntervalIterator(IntervalIterator):
     """
     An interval iterator for variants
     """
-    def _getContainer(self):
-        return _getVariantSet(self._request, self._containerIdMap)
 
     def _search(self, start, end):
-        return self._container.getVariants(
+        return self._parentContainer.getVariants(
             self._request.referenceName, start, end, self._request.variantName,
             self._request.callSetIds)
 
@@ -289,13 +251,14 @@ class AbstractBackend(object):
         """
         return [self._datasetIdMap[id_] for id_ in self._datasetIds]
 
-    def getDataset(self, datasetId):
+    def getDataset(self, id_):
         """
-        Returns a dataset with id datasetId
+        Returns a dataset with the specified ID, or raises a
+        DatasetNotFoundException if it does not exist.
         """
-        return _safeMapQuery(
-            self._datasetIdMap, datasetId,
-            exceptions.DatasetNotFoundException)
+        if id_ not in self._datasetIdMap:
+            raise exceptions.DatasetNotFoundException(id_)
+        return self._datasetIdMap[id_]
 
     def getReferenceSets(self):
         """
@@ -303,13 +266,14 @@ class AbstractBackend(object):
         """
         return [self._referenceSetIdMap[id_] for id_ in self._referenceSetIds]
 
-    def getReferenceSet(self, referenceSetId):
+    def getReferenceSet(self, id_):
         """
-        Retuns the reference set with the speficied ID.
+        Retuns the ReferenceSet with the specified ID, or raises a
+        ReferenceSetNotFoundException if it does not exist.
         """
-        return _safeMapQuery(
-            self._referenceSetIdMap, referenceSetId,
-            exceptions.ReferenceSetNotFoundException)
+        if id_ not in self._referenceSetIdMap:
+            raise exceptions.ReferenceSetNotFoundException(id_)
+        return self._referenceSetIdMap[id_]
 
     def startProfile(self):
         """
@@ -441,8 +405,8 @@ class AbstractBackend(object):
             request.readGroupIds[0])
         dataset = self.getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
-        intervalIterator = ReadsIntervalIterator(
-            request, readGroupSet.getReadGroupIdMap())
+        readGroup = readGroupSet.getReadGroup(compoundId.readGroupId)
+        intervalIterator = ReadsIntervalIterator(request, readGroup)
         return intervalIterator
 
     def variantsGenerator(self, request):
@@ -452,8 +416,8 @@ class AbstractBackend(object):
         """
         compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
         dataset = self.getDataset(compoundId.datasetId)
-        intervalIterator = VariantsIntervalIterator(
-            request, dataset.getVariantSetIdMap())
+        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        intervalIterator = VariantsIntervalIterator(request, variantSet)
         return intervalIterator
 
     def callSetsGenerator(self, request):
@@ -463,8 +427,7 @@ class AbstractBackend(object):
         """
         compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
         dataset = self.getDataset(compoundId.datasetId)
-        variantSet = _getVariantSet(
-            compoundId, dataset.getVariantSetIdMap())
+        variantSet = dataset.getVariantSet(compoundId.variantSetId)
         if request.name is None:
             return self._topLevelObjectGenerator(
                 request, variantSet.getCallSetIdMap(),
@@ -483,12 +446,11 @@ class AbstractBackend(object):
     #
     ###########################################################
 
-    def runGetRequest(self, idMap, id_):
+    def runGetRequest(self, obj):
         """
-        Runs a get request by indexing into the provided idMap and
-        returning a json string of that object
+        Runs a get request by converting the specified datamodel
+        object into its protocol representation.
         """
-        obj = _safeMapQuery(idMap, id_)
         protocolElement = obj.toProtocolElement()
         jsonString = protocolElement.toJsonString()
         return jsonString
@@ -528,16 +490,6 @@ class AbstractBackend(object):
         self.endProfile()
         return responseString
 
-    def runGetCallset(self, id_):
-        """
-        Returns a callset with the given id
-        """
-        compoundId = datamodel.CallSetCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
-        variantSet = _getVariantSet(
-            compoundId, dataset.getVariantSetIdMap())
-        return self.runGetRequest(variantSet.getCallSetIdMap(), id_)
-
     def runListReferenceBases(self, id_, requestArgs):
         """
         Runs a listReferenceBases request for the specified ID and
@@ -569,16 +521,28 @@ class AbstractBackend(object):
 
     # Get requests.
 
+    def runGetCallset(self, id_):
+        """
+        Returns a callset with the given id
+        """
+        compoundId = datamodel.CallSetCompoundId.parse(id_)
+        dataset = self.getDataset(compoundId.datasetId)
+        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        callSet = variantSet.getCallSet(id_)
+        return self.runGetRequest(callSet)
+
     def runGetVariant(self, id_):
         """
         Returns a variant with the given id
         """
         compoundId = datamodel.VariantCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
-        variantSet = _safeMapQuery(
-            dataset.getVariantSetIdMap(), compoundId.variantSetId)
-        variant = variantSet.getVariant(compoundId)
-        jsonString = variant.toJsonString()
+        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        gaVariant = variantSet.getVariant(compoundId)
+        # TODO variant is a special case here, as it's returning a
+        # protocol element rather than a datamodel object. We should
+        # fix this for consistency.
+        jsonString = gaVariant.toJsonString()
         return jsonString
 
     def runGetReadGroupSet(self, id_):
@@ -587,7 +551,8 @@ class AbstractBackend(object):
         """
         compoundId = datamodel.ReadGroupSetCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
-        return self.runGetRequest(dataset.getReadGroupSetIdMap(), id_)
+        readGroupSet = dataset.getReadGroupSet(id_)
+        return self.runGetRequest(readGroupSet)
 
     def runGetReadGroup(self, id_):
         """
@@ -596,7 +561,8 @@ class AbstractBackend(object):
         compoundId = datamodel.ReadGroupCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
-        return self.runGetRequest(readGroupSet.getReadGroupIdMap(), id_)
+        readGroup = readGroupSet.getReadGroup(id_)
+        return self.runGetRequest(readGroup)
 
     def runGetReference(self, id_):
         """
@@ -604,13 +570,15 @@ class AbstractBackend(object):
         """
         compoundId = datamodel.ReferenceCompoundId.parse(id_)
         referenceSet = self.getReferenceSet(compoundId.referenceSetId)
-        return self.runGetRequest(referenceSet.getReferenceIdMap(), id_)
+        reference = referenceSet.getReference(id_)
+        return self.runGetRequest(reference)
 
     def runGetReferenceSet(self, id_):
         """
         Runs a getReferenceSet request for the specified ID.
         """
-        return self.runGetRequest(self._referenceSetIdMap, id_)
+        referenceSet = self.getReferenceSet(id_)
+        return self.runGetRequest(referenceSet)
 
     def runGetVariantSet(self, id_):
         """
@@ -618,7 +586,8 @@ class AbstractBackend(object):
         """
         compoundId = datamodel.VariantSetCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
-        return self.runGetRequest(dataset.getVariantSetIdMap(), id_)
+        variantSet = dataset.getVariantSet(id_)
+        return self.runGetRequest(variantSet)
 
     # Search requests.
 
