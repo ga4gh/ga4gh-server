@@ -349,7 +349,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         variantSet = self._gaObject
         start = 0
         end = datamodel.PysamDatamodelMixin.vcfMax
-        callSetIds = variantSet.getCallSetIds()
+        callSetIds = [callSet.getId() for callSet in variantSet.getCallSets()]
         someCallSetIds = callSetIds[0:3]
         for referenceName in self._referenceNames:
             # passing None as the callSetIds argument should be equivalent

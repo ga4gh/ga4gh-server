@@ -86,12 +86,6 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         self._readGroupIdMap[id_] = readGroup
         self._readGroupIds.append(id_)
 
-    def getReadGroupIdMap(self):
-        return self._readGroupIdMap
-
-    def getReadGroupIds(self):
-        return self._readGroupIds
-
     def getReadGroups(self):
         """
         Returns the list of ReadGroups in this ReadGroupSet.
