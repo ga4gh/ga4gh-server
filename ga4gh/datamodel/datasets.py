@@ -50,35 +50,38 @@ class AbstractDataset(datamodel.DatamodelObject):
         dataset.id = self.getId()
         return dataset
 
-    def getVariantSetIds(self):
-        """
-        Return a list of ids of variant sets that this dataset has
-        """
-        return self._variantSetIds
-
-    def getVariantSetIdMap(self):
-        """
-        Return a map of the dataset's variant set ids to variant sets
-        """
-        return self._variantSetIdMap
-
     def getVariantSets(self):
         """
         Returns the list of VariantSets in this dataset
         """
         return [self._variantSetIdMap[id_] for id_ in self._variantSetIds]
 
-    def getReadGroupSetIds(self):
+    def getNumVariantSets(self):
         """
-        Return a list of ids of read group sets that this dataset has
+        Returns the number of variant sets in this dataset.
         """
-        return self._readGroupSetIds
+        return len(self._variantSetIds)
 
-    def getReadGroupSetIdMap(self):
+    def getVariantSet(self, id_):
         """
-        Return a map of the dataset's read group set ids to read group sets
+        Returns the VariantSet with the specified name, or raises a
+        VariantSetNotFoundException otherwise.
         """
-        return self._readGroupSetIdMap
+        if id_ not in self._variantSetIdMap:
+            raise exceptions.VariantSetNotFoundException(id_)
+        return self._variantSetIdMap[id_]
+
+    def getVariantSetByIndex(self, index):
+        """
+        Returns the variant set at the specified index in this dataset.
+        """
+        return self._variantSetIdMap[self._variantSetIds[index]]
+
+    def getNumReadGroupSets(self):
+        """
+        Returns the number of readgroup sets in this dataset.
+        """
+        return len(self._readGroupSetIds)
 
     def getReadGroupSets(self):
         """
@@ -95,6 +98,12 @@ class AbstractDataset(datamodel.DatamodelObject):
             raise exceptions.ReadGroupSetNameNotFoundException(name)
         return self._readGroupSetNameMap[name]
 
+    def getReadGroupSetByIndex(self, index):
+        """
+        Returns the readgroup set at the specified index in this dataset.
+        """
+        return self._readGroupSetIdMap[self._readGroupSetIds[index]]
+
     def getReadGroupSet(self, id_):
         """
         Returns the ReadGroupSet with the specified name, or raises
@@ -103,15 +112,6 @@ class AbstractDataset(datamodel.DatamodelObject):
         if id_ not in self._readGroupSetIdMap:
             raise exceptions.ReadGroupNotFoundException(id_)
         return self._readGroupSetIdMap[id_]
-
-    def getVariantSet(self, id_):
-        """
-        Returns the VariantSet with the specified name, or raises a
-        VariantSetNotFoundException otherwise.
-        """
-        if id_ not in self._variantSetIdMap:
-            raise exceptions.VariantSetNotFoundException(id_)
-        return self._variantSetIdMap[id_]
 
 
 class SimulatedDataset(AbstractDataset):

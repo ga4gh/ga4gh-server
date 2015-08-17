@@ -251,6 +251,12 @@ class AbstractBackend(object):
         """
         return [self._datasetIdMap[id_] for id_ in self._datasetIds]
 
+    def getNumDatasets(self):
+        """
+        Returns the number of datasets in this backend.
+        """
+        return len(self._datasetIds)
+
     def getDataset(self, id_):
         """
         Returns a dataset with the specified ID, or raises a
@@ -260,11 +266,23 @@ class AbstractBackend(object):
             raise exceptions.DatasetNotFoundException(id_)
         return self._datasetIdMap[id_]
 
+    def getDatasetByIndex(self, index):
+        """
+        Returns the dataset at the specified index.
+        """
+        return self._datasetIdMap[self._datasetIds[index]]
+
     def getReferenceSets(self):
         """
         Returns the list of ReferenceSets in this backend
         """
         return [self._referenceSetIdMap[id_] for id_ in self._referenceSetIds]
+
+    def getNumReferenceSets(self):
+        """
+        Returns the number of reference sets in this backend.
+        """
+        return len(self._referenceSetIds)
 
     def getReferenceSet(self, id_):
         """
@@ -274,6 +292,12 @@ class AbstractBackend(object):
         if id_ not in self._referenceSetIdMap:
             raise exceptions.ReferenceSetNotFoundException(id_)
         return self._referenceSetIdMap[id_]
+
+    def getReferenceSetByIndex(self, index):
+        """
+        Returns the reference set at the specified index.
+        """
+        return self._referenceSetIdMap[self._referenceSetIds[index]]
 
     def startProfile(self):
         """
@@ -317,20 +341,23 @@ class AbstractBackend(object):
     #
     ###########################################################
 
-    def _topLevelObjectGenerator(self, request, idMap, idList):
+    def _topLevelObjectGenerator(self, request, numObjects, getByIndexMethod):
         """
-        Generalisation of the code to iterate over the objects at the top
-        of the data hierarchy.
+        Returns a generator over the results for the specified request, which
+        is over a set of objects of the specified size. The objects are
+        returned by call to the specified method, which must take a single
+        integer as an argument. The returned generator yields a sequence of
+        (object, nextPageToken) pairs, which allows this iteration to be picked
+        up at any point.
         """
         currentIndex = 0
         if request.pageToken is not None:
             currentIndex, = _parsePageToken(request.pageToken, 1)
-        while currentIndex < len(idList):
-            objectId = idList[currentIndex]
-            object_ = idMap[objectId]
+        while currentIndex < numObjects:
+            object_ = getByIndexMethod(currentIndex)
             currentIndex += 1
             nextPageToken = None
-            if currentIndex < len(idList):
+            if currentIndex < numObjects:
                 nextPageToken = str(currentIndex)
             yield object_.toProtocolElement(), nextPageToken
 
@@ -347,7 +374,7 @@ class AbstractBackend(object):
         defined by the specified request
         """
         return self._topLevelObjectGenerator(
-            request, self._datasetIdMap, self._datasetIds)
+            request, self.getNumDatasets(), self.getDatasetByIndex)
 
     def readGroupSetsGenerator(self, request):
         """
@@ -357,8 +384,8 @@ class AbstractBackend(object):
         dataset = self.getDataset(request.datasetId)
         if request.name is None:
             return self._topLevelObjectGenerator(
-                request, dataset.getReadGroupSetIdMap(),
-                dataset.getReadGroupSetIds())
+                request, dataset.getNumReadGroupSets(),
+                dataset.getReadGroupSetByIndex)
         else:
             readGroupSet = dataset.getReadGroupSetByName(request.name)
             return self._singleObjectGenerator(readGroupSet)
@@ -369,7 +396,7 @@ class AbstractBackend(object):
         defined by the specified request.
         """
         return self._topLevelObjectGenerator(
-            request, self._referenceSetIdMap, self._referenceSetIds)
+            request, self.getNumReferenceSets(), self.getReferenceSetByIndex)
 
     def referencesGenerator(self, request):
         """
@@ -378,8 +405,8 @@ class AbstractBackend(object):
         """
         referenceSet = self.getReferenceSet(request.referenceSetId)
         return self._topLevelObjectGenerator(
-            request, referenceSet.getReferenceIdMap(),
-            referenceSet.getReferenceIds())
+            request, referenceSet.getNumReferences(),
+            referenceSet.getReferenceByIndex)
 
     def variantSetsGenerator(self, request):
         """
@@ -388,8 +415,8 @@ class AbstractBackend(object):
         """
         dataset = self.getDataset(request.datasetId)
         return self._topLevelObjectGenerator(
-            request, dataset.getVariantSetIdMap(),
-            dataset.getVariantSetIds())
+            request, dataset.getNumVariantSets(),
+            dataset.getVariantSetByIndex)
 
     def readsGenerator(self, request):
         """
@@ -430,8 +457,8 @@ class AbstractBackend(object):
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         if request.name is None:
             return self._topLevelObjectGenerator(
-                request, variantSet.getCallSetIdMap(),
-                variantSet.getCallSetIds())
+                request, variantSet.getNumCallSets(),
+                variantSet.getCallSetByIndex)
         else:
             # Since names are unique within a callSet, we either have one
             # result or we 404.

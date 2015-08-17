@@ -113,24 +113,17 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._callSetNameMap[sampleName] = callSet
         self._callSetIds.append(callSetId)
 
-    def getCallSetIdMap(self):
-        """
-        Returns the map of callSetIds to CallSet objects in this
-        VariantSet.
-        """
-        return self._callSetIdMap
-
-    def getCallSetIds(self):
-        """
-        Returns the list of callSetIds in this VariantSet.
-        """
-        return self._callSetIds
-
     def getCallSets(self):
         """
         Returns the list of CallSets in this VariantSet.
         """
         return [self._callSetIdMap[id_] for id_ in self._callSetIds]
+
+    def getNumCallSets(self):
+        """
+        Returns the number of CallSets in this variant set.
+        """
+        return len(self._callSetIds)
 
     def getCallSetByName(self, name):
         """
@@ -140,6 +133,12 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         if name not in self._callSetNameMap:
             raise exceptions.CallSetNameNotFoundException(name)
         return self._callSetNameMap[name]
+
+    def getCallSetByIndex(self, index):
+        """
+        Returns the CallSet at the specfied index in this VariantSet.
+        """
+        return self._callSetIdMap[self._callSetIds[index]]
 
     def getCallSet(self, id_):
         """

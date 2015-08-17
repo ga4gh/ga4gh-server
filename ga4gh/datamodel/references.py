@@ -50,6 +50,18 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         """
         return [self._referenceIdMap[id_] for id_ in self._referenceIds]
 
+    def getNumReferences(self):
+        """
+        Returns the number of references in this ReferenceSet.
+        """
+        return len(self._referenceIds)
+
+    def getReferenceByIndex(self, index):
+        """
+        Returns the reference at the specified index in this ReferenceSet.
+        """
+        return self._referenceIdMap[self._referenceIds[index]]
+
     def getReference(self, id_):
         """
         Returns the Reference with the specified ID or raises a
@@ -58,12 +70,6 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         if id_ not in self._referenceIdMap:
             raise exceptions.ReferenceNotFoundException(id_)
         return self._referenceIdMap[id_]
-
-    def getReferenceIdMap(self):
-        return self._referenceIdMap
-
-    def getReferenceIds(self):
-        return self._referenceIds
 
     def getMd5Checksum(self):
         """
