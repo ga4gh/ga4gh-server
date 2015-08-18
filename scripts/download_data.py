@@ -15,6 +15,7 @@ import glob
 import gzip
 import os
 import tempfile
+import urllib
 import urllib2
 
 import pysam
@@ -47,8 +48,8 @@ def cleanDir():
     cwd = os.getcwd()
     utils.log("Cleaning out directory '{}'".format(cwd))
     globs = [
-        "*.tbi", "*.vcf", "*.vcf.gz", "*.bam", "*.bam.bai", "*.fasta.gz",
-        "*.fasta", "*.fasta.fai"]
+        "*.tbi", "*.vcf", "*.vcf.gz", "*.bam", "*.bam.bai", "*.fa.gz",
+        "*.fa", "*.fa.gz.fai", "*.fa.gz.gzi"]
     for fileGlob in globs:
         fileNames = glob.glob(fileGlob)
         for fileName in fileNames:
@@ -105,6 +106,32 @@ class AbstractFileDownloader(object):
         self.variantSetName = self.args.source
         self.chromMinMax = ChromMinMax()
         self.chromosomes = self.args.chromosomes.split(',')
+        self.accessions = {
+            '1': 'CM000663.2',
+            '2': 'CM000664.2',
+            '3': 'CM000665.2',
+            '4': 'CM000666.2',
+            '5': 'CM000667.2',
+            '6': 'CM000668.2',
+            '7': 'CM000669.2',
+            '8': 'CM000670.2',
+            '9': 'CM000671.2',
+            '10': 'CM000672.2',
+            '11': 'CM000673.2',
+            '12': 'CM000674.2',
+            '13': 'CM000675.2',
+            '14': 'CM000676.2',
+            '15': 'CM000677.2',
+            '16': 'CM000678.2',
+            '17': 'CM000679.2',
+            '18': 'CM000680.2',
+            '19': 'CM000681.2',
+            '20': 'CM000682.2',
+            '21': 'CM000683.2',
+            '22': 'CM000684.2',
+            'X': 'CM000685.2',
+            'Y': 'CM000686.2',
+        }
 
     def _getVcfFilenames(self):
         baseFileName = (
@@ -231,6 +258,30 @@ class AbstractFileDownloader(object):
             pysam.index(fileName.encode('utf-8'))
         escapeDir()
 
+    def downloadFastas(self):
+        dirList = [
+            self.args.dir_name, 'references', 'ebi']
+        mkdirAndChdirList(dirList)
+        cleanDir()
+        baseUrl = 'http://www.ebi.ac.uk/ena/data/view/'
+        for chromosome in self.chromosomes:
+            accession = self.accessions[chromosome]
+            path = os.path.join(baseUrl, accession)
+            maxPos = self.chromMinMax.getMaxPos(chromosome)
+            args = urllib.urlencode({
+                'display': 'fasta',
+                'range': '{}-{}'.format(0, maxPos)})
+            url = '{}%26{}'.format(path, args)
+            fileName = '{}.fa'.format(chromosome)
+            downloader = utils.HttpFileDownloader(url, fileName)
+            downloader.download()
+            utils.log("Compressing {}".format(fileName))
+            utils.runCommand("bgzip {}".format(fileName))
+            compressedFileName = fileName + '.gz'
+            utils.log("Indexing {}".format(compressedFileName))
+            utils.runCommand("samtools faidx {}".format(compressedFileName))
+        escapeDir(3)
+
 
 class NcbiFileDownloader(AbstractFileDownloader):
     """
@@ -287,6 +338,7 @@ def main(args):
     downloader = downloaderClass(args)
     downloader.downloadVcfs()
     downloader.downloadBams()
+    downloader.downloadFastas()
 
 
 if __name__ == '__main__':
