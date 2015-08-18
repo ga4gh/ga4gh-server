@@ -359,7 +359,7 @@ class SchemaProcessor(object):
         Downloads the specified url and saves the result to the specified
         file.
         """
-        fileDownloader = utils.FileDownloader(url, destination)
+        fileDownloader = utils.HttpFileDownloader(url, destination)
         fileDownloader.download()
 
     def convertAvro(self, avdlFile):
