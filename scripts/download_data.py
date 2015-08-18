@@ -49,7 +49,7 @@ def cleanDir():
     utils.log("Cleaning out directory '{}'".format(cwd))
     globs = [
         "*.tbi", "*.vcf", "*.vcf.gz", "*.bam", "*.bam.bai", "*.fa.gz",
-        "*.fa", "*.fa.gz.fai", "*.fa.gz.gzi"]
+        "*.fa", "*.fa.gz.fai", "*.fa.gz.gzi", "*.unsampled"]
     for fileGlob in globs:
         fileNames = glob.glob(fileGlob)
         for fileName in fileNames:
@@ -132,6 +132,12 @@ class AbstractFileDownloader(object):
             'X': 'CM000685.2',
             'Y': 'CM000686.2',
         }
+        self.samples = self.args.samples.split(',')
+        self.studyMap = {
+            'HG00096': 'GBR',
+            'HG00533': 'CHS',
+            'HG00534': 'CHS',
+        }
 
     def _getVcfFilenames(self):
         baseFileName = (
@@ -184,12 +190,13 @@ class AbstractFileDownloader(object):
         data = response.read(megabyte)
         lineCountQuota = 1000
         localFileName, _ = os.path.splitext(fileName)
-        utils.log("Writing '{}'".format(localFileName))
+        localTempFileName = localFileName + '.unsampled'
+        utils.log("Writing '{}'".format(localTempFileName))
         with tempfile.NamedTemporaryFile() as binaryFile:
             binaryFile.write(data)
             binaryFile.flush()
             gzipFile = gzip.open(binaryFile.name, "r")
-            outputFile = open(localFileName, "w")
+            outputFile = open(localTempFileName, "w")
             lineCount = 0
             for line in gzipFile:
                 outputFile.write(line)
@@ -200,6 +207,11 @@ class AbstractFileDownloader(object):
             assert lineCount == lineCountQuota
             outputFile.close()
             gzipFile.close()
+        utils.log("Sampling '{}'".format(localTempFileName))
+        utils.runCommand(
+            'bcftools view --force-samples -s {} {} -o {}'.format(
+                args.samples, localTempFileName, localFileName))
+        os.remove(localTempFileName)
         utils.log("Compressing '{}'".format(localFileName))
         utils.runCommand('bgzip -f {}'.format(localFileName))
         utils.log("Indexing '{}'".format(fileName))
@@ -218,16 +230,10 @@ class AbstractFileDownloader(object):
             self.args.dir_name, self.datasetName, 'reads', 'low-coverage']
         mkdirAndChdirList(dirList)
         cleanDir()
-        studyMap = {
-            'HG00096': 'GBR',
-            'HG00533': 'CHS',
-            'HG00534': 'CHS',
-        }
         baseUrl = self.getBamBaseUrl()
-        samples = self.args.samples.split(',')
-        for sample in samples:
+        for sample in self.samples:
             samplePath = '{}/alignment/'.format(sample)
-            study = studyMap[sample]
+            study = self.studyMap[sample]
             fileName = (
                 '{}.mapped.ILLUMINA.bwa.{}.'
                 'low_coverage.20120522.bam'.format(sample, study))
