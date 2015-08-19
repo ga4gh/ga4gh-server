@@ -3,9 +3,8 @@ Constructs a data source for the ga4gh server by downloading data from
 authoritative remote servers.
 """
 # TODO
-# - need some kind of checkpoint functionality to resume process
-#   where it left off since getting a clean run is so rare...
-# - references support
+# - would be nice to have some kind of checkpoint functionality to resume
+#   process where it left off since getting a clean run is uncertain...
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -103,7 +102,9 @@ class AbstractFileDownloader(object):
     def __init__(self, args):
         self.args = args
         self.datasetName = 'dataset1'
-        self.variantSetName = self.args.source
+        self.readGroupSetName = 'low-coverage'
+        self.variantSetName = '1kg-phase3-subset'
+        self.referenceSetName = 'GRCh38-subset'
         self.chromMinMax = ChromMinMax()
         self.chromosomes = self.args.chromosomes.split(',')
         self.accessions = {
@@ -227,7 +228,8 @@ class AbstractFileDownloader(object):
 
     def downloadBams(self):
         dirList = [
-            self.args.dir_name, self.datasetName, 'reads', 'low-coverage']
+            self.args.dir_name, self.datasetName, 'reads',
+            self.readGroupSetName]
         mkdirAndChdirList(dirList)
         cleanDir()
         baseUrl = self.getBamBaseUrl()
@@ -266,7 +268,7 @@ class AbstractFileDownloader(object):
 
     def downloadFastas(self):
         dirList = [
-            self.args.dir_name, 'references', 'ebi']
+            self.args.dir_name, 'references', self.referenceSetName]
         mkdirAndChdirList(dirList)
         cleanDir()
         baseUrl = 'http://www.ebi.ac.uk/ena/data/view/'
