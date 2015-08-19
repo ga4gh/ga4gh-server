@@ -52,7 +52,7 @@ class FileDownloader(object):
     def __init__(self, url, path, stream=defaultStream):
         self.url = url
         self.path = path
-        self.basename = os.path.basename(url)
+        self.basename = path
         self.basenameLength = len(self.basename)
         self.stream = stream
         self.bytesReceived = 0
@@ -80,16 +80,23 @@ class FileDownloader(object):
         if self.displayCounter % modulo != 0:
             return
         fileName = self._getFileNameDisplayString()
-        # TODO contentlength seems to slightly under-report how many bytes
-        # we have to download... hence the min functions
-        percentage = min(self.bytesReceived / self.fileSize, 1)
-        numerator = humanize.filesize.naturalsize(
-            min(self.bytesReceived, self.fileSize))
-        denominator = humanize.filesize.naturalsize(
-            self.fileSize)
-        displayString = "{}   {:<6.2%} ({:>9} / {:<9})\r"
-        self.stream.write(displayString.format(
-            fileName, percentage, numerator, denominator))
+        if self.fileSize is None:
+            displayString = "{}   bytes received: {}\r"
+            bytesReceived = humanize.filesize.naturalsize(
+                self.bytesReceived)
+            self.stream.write(displayString.format(
+                fileName, bytesReceived))
+        else:
+            # TODO contentlength seems to slightly under-report how many
+            # bytes we have to download... hence the min functions
+            percentage = min(self.bytesReceived / self.fileSize, 1)
+            numerator = humanize.filesize.naturalsize(
+                min(self.bytesReceived, self.fileSize))
+            denominator = humanize.filesize.naturalsize(
+                self.fileSize)
+            displayString = "{}   {:<6.2%} ({:>9} / {:<9})\r"
+            self.stream.write(displayString.format(
+                fileName, percentage, numerator, denominator))
         self.stream.flush()
 
 
@@ -109,7 +116,12 @@ class HttpFileDownloader(FileDownloader):
         self._printStartDownloadMessage()
         response = requests.get(self.url, stream=True)
         response.raise_for_status()
-        self.fileSize = int(response.headers['content-length'])
+        try:
+            contentLength = int(response.headers['content-length'])
+            self.fileSize = contentLength
+        except KeyError:
+            # chunked transfer encoding
+            pass
         with open(self.path, 'wb') as outputFile:
             for chunk in response.iter_content(chunk_size=self.chunkSize):
                 self.bytesReceived += self.chunkSize
