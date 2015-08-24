@@ -5,6 +5,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import glob
+import os
+
 import client as client
 import server as server
 import server_test as server_test
@@ -42,6 +45,13 @@ class TestRemoteFetchReads(RemoteServerTestReads):
         # client should have gotten some reads back
         self.assertEqual(len(self.client.getOutLines()), 10)
 
+    # TODO take out when #500 is fixed
+    def tearDown(self):
+        # clean up downloaded local index file
+        print("Removing bai index files; see issue #500")
+        for indexFile in glob.glob("*.bai"):
+            os.remove(indexFile)
+
 
 class RemoteServerTestVariants(server_test.RemoteServerTest):
     """
@@ -70,3 +80,10 @@ class TestRemoteFetchVariants(RemoteServerTestVariants):
     def _assertLogsWritten(self):
         # client should have gotten some variants back
         self.assertEqual(len(self.client.getOutLines()), 100)
+
+    # TODO take out when #500 is fixed
+    def tearDown(self):
+        # clean up downloaded local index file
+        print("Removing tbi index files; see issue #500")
+        for indexFile in glob.glob("*.tbi"):
+            os.remove(indexFile)
