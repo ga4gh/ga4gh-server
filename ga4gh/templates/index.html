@@ -2,8 +2,11 @@
     <head>
         <title>GA4GH reference server {{ info.getServerVersion()}}</title>
         <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        <link rel=stylesheet type=text/css href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     </head>
-    <body>
+    <body><div class="container">
         <h2>GA4GH reference server {{ info.getServerVersion() }}</h2>
         <div>
             <h3>Protocol version {{ info.getProtocolVersion() }}</h3>
@@ -13,7 +16,7 @@
         </div>
         <div>
             <h3>Operations available</h3>
-            <table>
+            <table class="table table-striped">
                 <th>Method</th>
                 <th>Path</th>
                 {% for url in info.getUrls() %}
@@ -30,7 +33,7 @@
         </div>
         <div>
             <h3>Configuration</h3>
-            <table>
+            <table class="table table-striped">
                 <th>Key</th>
                 <th>Value</th>
                 {% for key, value in info.getConfiguration() %}
@@ -45,47 +48,66 @@
             <h3>Data</h3>
 
             <h4>ReferenceSets</h4>
-            <table>
+            <table class="table table-striped">
+                <th>Name</th>
+                <th>Id</th>
+                <th>Reference Name</th>
+                <th>Reference Id</th>
                 {% for referenceSet in info.getReferenceSets() %}
                 <tr>
+                    <td>{{ referenceSet.getLocalId() }}</td>
                     <td>{{ referenceSet.getId() }}</td>
-                </tr>
-                    {% for reference in referenceSet.getReferences() %}
-                <tr>
                     <td></td>
+                    <td></td>
+                </tr>
+                {% for reference in referenceSet.getReferences() %}
+                <tr>
+                    <td>{{ reference.getLocalId() }}</td>
                     <td>{{ reference.getId() }}</td>
+                    <td></td>
+                    <td></td>
                 </tr>
                 {% endfor %}
-            {% endfor %}
+                {% endfor %}
             </table>
 
-            <h4>DataSets</h4>
             {% for dataset in info.getDatasets() %}
-                <h5>{{ dataset.getId() }}</h5>
+            <h4>Dataset name: {{ dataset.getLocalId() }} id: {{ dataset.getId() }}</h4>
                 <h6>VariantSets</h6>
-                <table>
+                <table class="table table-striped">
+                    <th>Name</th>
+                    <th>Id</th>
                     {% for variantSet in info.getVariantSets(dataset.getId()) %}
                     <tr>
+                        <td>{{ variantSet.getLocalId() }}</td>
                         <td>{{ variantSet.getId() }}</td>
                     </tr>
                     {% endfor %}
                 </table>
                 <h6>ReadGroupSets</h6>
-                <table>
+                <table class="table table-striped">
                     {% for readGroupSet in info.getReadGroupSets(dataset.getId())%}
+                    <th>Name</th>
+                    <th>Id</th>
+                    <th>ReadGroup Name</th>
+                    <th>ReadGroup Id</th>
                     <tr>
+                        <td>{{ readGroupSet.getLocalId() }}</td>
                         <td>{{ readGroupSet.getId() }}</td>
                         <td></td>
+                        <td></td>
                     </tr>
-                        {% for readGroup in readGroupSet.getReadGroups() %}
+                    {% for readGroup in readGroupSet.getReadGroups() %}
                     <tr>
                         <td></td>
+                        <td></td>
+                        <td>{{ readGroup.getLocalId() }}</td>
                         <td>{{ readGroup.getId() }}</td>
                     </tr>
                     {% endfor %}
-                {% endfor %}
+                    {% endfor %}
                 </table>
             {% endfor %}
         </div>
-    </body>
+    </div></body>
 </html>
