@@ -186,7 +186,14 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         stats.unalignedReadCount = self.getNumUnalignedReads()
         stats.baseCount = None  # TODO requires iterating through all reads
         readGroup.stats = stats
+        readGroup.programs = self.getPrograms()
         return readGroup
+
+    def getPrograms(self):
+        """
+        Returns an array of Programs used to generate this read group
+        """
+        raise NotImplementedError()
 
     def getReadAlignmentId(self, gaAlignment):
         """
@@ -227,6 +234,9 @@ class SimulatedReadGroup(AbstractReadGroup):
 
     def getNumUnalignedReads(self):
         return 0
+
+    def getPrograms(self):
+        return []
 
     def _createReadAlignment(self, i):
         # TODO fill out a bit more
@@ -281,6 +291,22 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     def getNumUnalignedReads(self):
         samFile = self.getFileHandle(self._samFilePath)
         return samFile.unmapped
+
+    def getPrograms(self):
+        programs = []
+        samFile = self.getFileHandle(self._samFilePath)
+        if 'PG' not in samFile.header:
+            return programs
+        htslibPrograms = samFile.header['PG']
+        for htslibProgram in htslibPrograms:
+            program = protocol.Program()
+            program.id = htslibProgram['ID']
+            program.commandLine = htslibProgram.get('CL', None)
+            program.name = htslibProgram.get('PN', None)
+            program.prevProgramId = htslibProgram.get('PP', None)
+            program.version = htslibProgram.get('VN', None)
+            programs.append(program)
+        return programs
 
     def getReadAlignments(self, referenceId=None, start=None, end=None):
         """

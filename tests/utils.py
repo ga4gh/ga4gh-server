@@ -18,6 +18,17 @@ import ga4gh.client as client
 packageName = 'ga4gh'
 
 
+def zipLists(*lists):
+    """
+    Checks to see if all of the lists are the same length, and throws
+    an AssertionError otherwise.  Returns the zipped lists.
+    """
+    length = len(lists[0])
+    for list_ in lists[1:]:
+        assert len(list_) == length
+    return zip(*lists)
+
+
 def getLinesFromLogFile(stream):
     stream.flush()
     stream.seek(0)
