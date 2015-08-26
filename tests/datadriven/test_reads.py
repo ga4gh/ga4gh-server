@@ -47,6 +47,8 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                     refId = self.samFile.getrname(read.reference_id)
                     self.refIds[refId].append(read)
                 self.reads.append(read)
+            self.numAlignedReads = self.samFile.mapped
+            self.numUnalignedReads = self.samFile.unmapped
 
     def __init__(self, readGroupSetId, baseDir):
         dataset = datasets.AbstractDataset("ds")
@@ -73,6 +75,25 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 self.getReadAlignmentsGenerator():
             self.assertAlignmentsEqual(
                 gaAlignment, pysamAlignment, readGroupInfo)
+
+    def testReadGroupStats(self):
+        # test that the stats attr of the readGroup is populated correctly
+        readGroupSet = self._gaObject
+        for readGroup in readGroupSet.getReadGroups():
+            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
+            gaReadGroup = readGroup.toProtocolElement()
+            self.assertEqual(
+                readGroup.getNumAlignedReads(),
+                readGroupInfo.numAlignedReads)
+            self.assertEqual(
+                readGroup.getNumUnalignedReads(),
+                readGroupInfo.numUnalignedReads)
+            self.assertEqual(
+                gaReadGroup.stats.alignedReadCount,
+                readGroupInfo.numAlignedReads)
+            self.assertEqual(
+                gaReadGroup.stats.unalignedReadCount,
+                readGroupInfo.numUnalignedReads)
 
     def testValidateObjects(self):
         # test that validation works on read groups and reads
