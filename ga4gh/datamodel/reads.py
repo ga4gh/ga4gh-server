@@ -181,6 +181,11 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.programs = []
         readGroup.referenceSetId = None
         readGroup.sampleId = None
+        stats = protocol.ReadStats()
+        stats.alignedReadCount = self.getNumAlignedReads()
+        stats.unalignedReadCount = self.getNumUnalignedReads()
+        stats.baseCount = None  # TODO requires iterating through all reads
+        readGroup.stats = stats
         return readGroup
 
     def getReadAlignmentId(self, gaAlignment):
@@ -191,6 +196,18 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         compoundId = datamodel.ReadAlignmentCompoundId(
             self.getCompoundId(), gaAlignment.fragmentName)
         return str(compoundId)
+
+    def getNumAlignedReads(self):
+        """
+        Return the number of aligned reads in this read group
+        """
+        raise NotImplementedError()
+
+    def getNumUnalignedReads(self):
+        """
+        Return the number of unaligned reads in this read group
+        """
+        raise NotImplementedError()
 
 
 class SimulatedReadGroup(AbstractReadGroup):
@@ -204,6 +221,12 @@ class SimulatedReadGroup(AbstractReadGroup):
     def getReadAlignments(self, referenceId=None, start=None, end=None):
         for i in range(self._numAlignments):
             yield self._createReadAlignment(i)
+
+    def getNumAlignedReads(self):
+        return self._numAlignments
+
+    def getNumUnalignedReads(self):
+        return 0
 
     def _createReadAlignment(self, i):
         # TODO fill out a bit more
@@ -250,6 +273,14 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         Returns the file path of the sam file
         """
         return self._samFilePath
+
+    def getNumAlignedReads(self):
+        samFile = self.getFileHandle(self._samFilePath)
+        return samFile.mapped
+
+    def getNumUnalignedReads(self):
+        samFile = self.getFileHandle(self._samFilePath)
+        return samFile.unmapped
 
     def getReadAlignments(self, referenceId=None, start=None, end=None):
         """
