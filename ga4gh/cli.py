@@ -245,6 +245,9 @@ def addServerOptions(parser):
         "--port", "-P", default=8000, type=int,
         help="The port to listen on")
     parser.add_argument(
+        "--host", "-H", default="127.0.0.1",
+        help="The server host string; use 0.0.0.0 to allow all connections.")
+    parser.add_argument(
         "--config", "-c", default='DevelopmentConfig', type=str,
         help="The configuration to use")
     parser.add_argument(
@@ -275,7 +278,7 @@ def server_main(parser=None):
     if args.tls or ("OIDC_PROVIDER" in frontend.app.config):
         sslContext = "adhoc"
     frontend.app.run(
-        host="0.0.0.0", port=args.port,
+        host=args.host, port=args.port,
         use_reloader=not args.dont_use_reloader, ssl_context=sslContext)
 
 
