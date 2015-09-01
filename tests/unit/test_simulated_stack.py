@@ -141,8 +141,6 @@ class TestSimulatedStack(unittest.TestCase):
 
     def verifyReferenceSetsEqual(self, gaReferenceSet, referenceSet):
         self.assertEqual(gaReferenceSet.id, referenceSet.getId())
-        referenceIds = [ref.getId() for ref in referenceSet.getReferences()]
-        self.assertEqual(gaReferenceSet.referenceIds, referenceIds)
         self.assertEqual(
             gaReferenceSet.md5checksum, referenceSet.getMd5Checksum())
         self.assertEqual(
