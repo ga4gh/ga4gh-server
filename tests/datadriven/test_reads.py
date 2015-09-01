@@ -14,6 +14,7 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
+import tests.utils as utils
 
 import pysam
 
@@ -49,6 +50,10 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 self.reads.append(read)
             self.numAlignedReads = self.samFile.mapped
             self.numUnalignedReads = self.samFile.unmapped
+            if 'PG' in self.samFile.header:
+                self.programs = self.samFile.header['PG']
+            else:
+                self.programs = []
 
     def __init__(self, readGroupSetId, baseDir):
         dataset = datasets.AbstractDataset("ds")
@@ -68,6 +73,26 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
 
     def getProtocolClass(self):
         return protocol.ReadGroupSet
+
+    def testPrograms(self):
+        # test that program info is set correctly
+        readGroupSet = self._gaObject
+        for readGroup in readGroupSet.getReadGroups():
+            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
+            gaPrograms = readGroup.getPrograms()
+            htslibPrograms = readGroupInfo.programs
+            for gaProgram, htslibProgram in utils.zipLists(
+                    gaPrograms, htslibPrograms):
+                self.assertEqual(
+                    gaProgram.id, htslibProgram.get('ID'))
+                self.assertEqual(
+                    gaProgram.commandLine, htslibProgram.get('CL', None))
+                self.assertEqual(
+                    gaProgram.name, htslibProgram.get('PN', None))
+                self.assertEqual(
+                    gaProgram.prevProgramId, htslibProgram.get('PP', None))
+                self.assertEqual(
+                    gaProgram.version, htslibProgram.get('VN', None))
 
     def testGetReadAlignments(self):
         # test that searching with no arguments succeeds
