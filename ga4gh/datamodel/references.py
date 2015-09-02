@@ -6,9 +6,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import hashlib
+import json
 import os
 import random
-import hashlib
 
 import pysam
 
@@ -162,7 +163,6 @@ class AbstractReference(datamodel.DatamodelObject):
         super(AbstractReference, self).__init__(parentContainer, localId)
         self._length = -1
         self._md5checksum = ""
-        self._name = ""
         self._sourceUri = None
         self._sourceAccessions = []
         self._isDerived = False
@@ -177,9 +177,9 @@ class AbstractReference(datamodel.DatamodelObject):
 
     def getName(self):
         """
-        Returns the name of this reference (e.g., '22').
+        Returns the name of this reference, e.g., '22'.
         """
-        return self._name
+        return self.getLocalId()
 
     def getIsDerived(self):
         """
@@ -313,7 +313,6 @@ class SimulatedReference(AbstractReference):
         rng = random.Random()
         rng.seed(randomSeed)
         self._length = length
-        self._name = localId
         bases = [rng.choice('ACGT') for _ in range(self._length)]
         self._bases = ''.join(bases)
         self._md5checksum = hashlib.md5(self._bases).hexdigest()
@@ -345,14 +344,16 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     def __init__(self, localId, dataDir):
         super(HtslibReferenceSet, self).__init__(localId)
         self._dataDir = dataDir
-        # TODO get metadata from a file within dataDir? How else will we
-        # fill in the fields like ncbiTaxonId etc?
         self._scanDataFiles(dataDir, ["*.fa.gz"])
 
     def _addDataFile(self, path):
-        filename = os.path.split(path)[1]
+        dirname, filename = os.path.split(path)
         localId = filename.split(".")[0]
-        reference = HtslibReference(self, localId, path)
+        metadata = {}
+        metadataFileName = os.path.join(dirname, "{}.json".format(localId))
+        with open(metadataFileName) as metadataFile:
+            metadata = json.load(metadataFile)
+        reference = HtslibReference(self, localId, path, metadata)
         self.addReference(reference)
 
 
@@ -360,18 +361,27 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
     """
     A reference based on data stored in a file on the file system
     """
-    def __init__(self, parentContainer, localId, dataFile):
+    def __init__(self, parentContainer, localId, dataFile, metadata):
         super(HtslibReference, self).__init__(parentContainer, localId)
         self._fastaFilePath = dataFile
-        fastaFile = self.openFile(dataFile)
+        fastaFile = self.getFileHandle(dataFile)
         numReferences = len(fastaFile.references)
         if numReferences != 1:
             raise exceptions.NotExactlyOneReferenceException(
-                self.getId(), numReferences)
-        self._name = fastaFile.references[0]
+                self._fastaFilePath, numReferences)
+        if fastaFile.references[0] != localId:
+            raise exceptions.InconsistentReferenceNameException(
+                self._fastaFilePath, fastaFile.references[0])
         self._length = fastaFile.lengths[0]
-        fastaFile.close()
-        self._md5checksum = "TODO"
+        try:
+            self._md5checksum = metadata["md5checksum"]
+            self._sourceUri = metadata["sourceUri"]
+            self._ncbiTaxonId = metadata["ncbiTaxonId"]
+            self._isDerived = metadata["isDerived"]
+            self._sourceDivergence = metadata["sourceDivergence"]
+            self._sourceAccessions = metadata["sourceAccessions"]
+        except KeyError as err:
+            raise exceptions.MissingReferenceMetadata(dataFile, str(err))
 
     def getFastaFilePath(self):
         """
@@ -386,5 +396,5 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
         self.checkQueryRange(start, end)
         fastaFile = self.getFileHandle(self._fastaFilePath)
         # TODO we should have some error checking here...
-        bases = fastaFile.fetch(self._name, start, end)
+        bases = fastaFile.fetch(self.getLocalId(), start, end)
         return bases

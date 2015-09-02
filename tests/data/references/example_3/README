@@ -1,0 +1,5 @@
+Generated using 
+
+python scripts/download_data.py --source=ebi --chromosomes=1,2,3 -V 5 -r0 --exclude-reference-min
+
+the reference set data was then copied in here.
