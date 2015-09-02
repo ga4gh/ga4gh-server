@@ -351,6 +351,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
         end = datamodel.PysamDatamodelMixin.vcfMax
         callSetIds = [callSet.getId() for callSet in variantSet.getCallSets()]
         someCallSetIds = callSetIds[0:3]
+        for callSetId in callSetIds:
+            returnedCallSet = variantSet.getCallSet(callSetId)
+            self.assertEqual(callSetId, returnedCallSet.getId())
         for referenceName in self._referenceNames:
             # passing None as the callSetIds argument should be equivalent
             # to passing all of the possible callSetIds as an argument
