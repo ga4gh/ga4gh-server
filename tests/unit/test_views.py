@@ -133,6 +133,13 @@ class TestFrontend(unittest.TestCase):
         response = self.sendGetRequest(path)
         return response
 
+    def sendGetDataset(self, id_=None):
+        if id_ is None:
+            id_ = self.datasetId
+        path = "/datasets/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
     def sendGetReadGroup(self, id_=None):
         if id_ is None:
             id_ = self.readGroupId
@@ -214,6 +221,7 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendGetReadGroupSet())
         assertHeaders(self.sendGetReadGroup())
         assertHeaders(self.sendGetVariant())
+        assertHeaders(self.sendGetDataset())
         # TODO: Test other methods as they are implemented
 
     def verifySearchRouting(self, path, getDefined=False):
@@ -290,6 +298,21 @@ class TestFrontend(unittest.TestCase):
             response.data)
         self.assertEqual(len(responseData.variantSets), 1)
 
+    def testGetDataset(self):
+        # Test OK: ID found
+        response = self.sendDatasetsSearch()
+        responseData = protocol.SearchDatasetsResponse.fromJsonString(
+            response.data)
+        datasetId = responseData.datasets[0].id
+        response = self.sendGetDataset(datasetId)
+        self.assertEqual(200, response.status_code)
+
+        # Test Error: 404, ID not found
+        obfuscated = datamodel.CompoundId.obfuscate("notValid")
+        compoundId = datamodel.DatasetCompoundId.parse(obfuscated)
+        response = self.sendGetDataset(str(compoundId))
+        self.assertEqual(404, response.status_code)
+
     def testGetVariantSet(self):
         response = self.sendVariantSetsSearch()
         responseData = protocol.SearchVariantSetsResponse.fromJsonString(
@@ -353,24 +376,6 @@ class TestFrontend(unittest.TestCase):
             response.data)
         datasets = list(responseData.datasets)
         self.assertEqual(self.datasetId, datasets[0].id)
-
-    def testNotImplementedPaths(self):
-        pathsNotImplementedPost = [
-        ]
-        pathsNotImplementedGet = [
-            '/datasets/<id>',
-        ]
-
-        def runRequest(method, path):
-            requestPath = path.replace('<id>', 'someId')
-            response = method(requestPath)
-            protocol.GAException.fromJsonString(response.get_data())
-            self.assertEqual(response.status_code, 501)
-
-        for path in pathsNotImplementedGet:
-            runRequest(self.app.get, path)
-        for path in pathsNotImplementedPost:
-            runRequest(self.app.post, path)
 
     def testNoAuthentication(self):
         path = '/oauth2callback'

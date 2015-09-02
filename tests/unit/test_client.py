@@ -147,6 +147,11 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.runGetRequest.assert_called_once_with(
             "callsets", protocol.CallSet, self._id)
 
+    def testGetDatasets(self):
+        self.httpClient.getDataset(self._id)
+        self.httpClient.runGetRequest.assert_called_once_with(
+            "datasets", protocol.Dataset, self._id)
+
     def testGetVariant(self):
         self.httpClient.getVariant(self._id)
         self.httpClient.runGetRequest.assert_called_once_with(

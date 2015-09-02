@@ -158,6 +158,9 @@ class TestClientArguments(unittest.TestCase):
     def testCallSetGetArguments(self):
         self.cliInput = """callsets-get ID"""
 
+    def testDatasetsGetArguments(self):
+        self.cliInput = """datasets-get ID"""
+
     def testVariantGetArguments(self):
         self.cliInput = """variants-get ID"""
 
