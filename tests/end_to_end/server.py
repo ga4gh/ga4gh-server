@@ -195,6 +195,7 @@ OIDC_PROVIDER = "https://localhost:{0}"
 python server_dev.py
 --dont-use-reloader
 --disable-urllib-warnings
+--host 0.0.0.0
 --config TestConfig
 --config-file {}
 --port {} """.format(configFilePath, self.port)
