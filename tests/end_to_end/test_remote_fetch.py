@@ -37,7 +37,7 @@ class TestRemoteFetchReads(RemoteServerTestReads):
         self.runClientCmd(
             self.client,
             "reads-search --readGroupIds '{}' "
-            "--referenceId chr1 ".format(self.readGroupIds))
+            "--referenceId Y2hyMQ== ".format(self.readGroupIds))
         self._assertLogsWritten()
         self.client.cleanup()
 

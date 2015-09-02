@@ -315,13 +315,15 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # TODO If referenceId is None, return against all references,
         # including unmapped reads.
         samFile = self.getFileHandle(self._samFilePath)
-        referenceId, start, end = self.sanitizeAlignmentFileFetch(
-            referenceId, start, end)
+        if referenceId is not None:
+            referenceId = datamodel.CompoundId.deobfuscate(referenceId)
         if (referenceId is not None and
                 referenceId not in samFile.references):
             raise exceptions.ReferenceNotFoundInReadGroupException(
                 self.getId(), referenceId, samFile.references)
         # TODO deal with errors from htslib
+        referenceId, start, end = self.sanitizeAlignmentFileFetch(
+            referenceId, start, end)
         readAlignments = samFile.fetch(referenceId, start, end)
         for readAlignment in readAlignments:
             yield self.convertReadAlignment(readAlignment)

@@ -46,7 +46,8 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 if read.reference_id != -1:
                     # mapped read
                     refId = self.samFile.getrname(read.reference_id)
-                    self.refIds[refId].append(read)
+                    obfuscatedId = datamodel.CompoundId.obfuscate(refId)
+                    self.refIds[obfuscatedId].append(read)
                 self.reads.append(read)
             self.numAlignedReads = self.samFile.mapped
             self.numUnalignedReads = self.samFile.unmapped
