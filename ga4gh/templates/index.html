@@ -86,11 +86,11 @@
                 </table>
                 <h6>ReadGroupSets</h6>
                 <table class="table table-striped">
-                    {% for readGroupSet in info.getReadGroupSets(dataset.getId())%}
                     <th>Name</th>
                     <th>Id</th>
                     <th>ReadGroup Name</th>
                     <th>ReadGroup Id</th>
+                    {% for readGroupSet in info.getReadGroupSets(dataset.getId())%}
                     <tr>
                         <td>{{ readGroupSet.getLocalId() }}</td>
                         <td>{{ readGroupSet.getId() }}</td>

@@ -1,0 +1,21 @@
+=== 1kg-low-coverage / *.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522 ===
+
+These files are part of the 1000 genomes low coverage reads.
+They were downloaded from ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/[sample id]/alignment
+and processed using the bam2bam script in the scripts directory.
+
+=== unmapped / chr17.1-250.bam ===
+
+This BAM has two qualities:
+- 14 mapped reads plus 1 unmapped read at the end
+- has no query_qualities for some reads
+
+See issues #498 and #492
+
+=== wgBam / wgEncode*.bam ===
+
+Files in this directory (wgBam) are taken from here:
+
+http://hgdownload.cse.ucsc.edu/goldenPath/hg19/encodeDCC/wgEncodeUwRepliSeq/
+
+And shortened / converted with tools in the scripts/ directory.
