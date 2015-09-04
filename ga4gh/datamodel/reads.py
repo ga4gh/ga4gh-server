@@ -51,6 +51,8 @@ class SamFlags(object):
     """
     NUMBER_READS = 0x1
     PROPER_PLACEMENT = 0x2
+    REVERSED = 0x10
+    NEXT_MATE_REVERSED = 0x20
     READ_NUMBER_ONE = 0x40
     READ_NUMBER_TWO = 0x80
     SECONDARY_ALIGNMENT = 0x100
@@ -349,8 +351,9 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.alignment.position.referenceName = samFile.getrname(
             read.reference_id)
         ret.alignment.position.position = read.reference_start
-        ret.alignment.position.strand = \
-            protocol.Strand.POS_STRAND  # TODO fix this!
+        ret.alignment.position.strand = protocol.Strand.POS_STRAND
+        if SamFlags.isFlagSet(read.flag, SamFlags.REVERSED):
+            ret.alignment.position.strand = protocol.Strand.NEG_STRAND
         ret.alignment.cigar = []
         for operation, length in read.cigar:
             gaCigarUnit = protocol.CigarUnit()
@@ -372,8 +375,9 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
             ret.nextMatePosition.referenceName = samFile.getrname(
                 read.next_reference_id)
             ret.nextMatePosition.position = read.next_reference_start
-            ret.nextMatePosition.strand = \
-                protocol.Strand.POS_STRAND  # TODO fix this!
+            ret.nextMatePosition.strand = protocol.Strand.POS_STRAND
+            if SamFlags.isFlagSet(read.flag, SamFlags.NEXT_MATE_REVERSED):
+                ret.nextMatePosition.strand = protocol.Strand.NEG_STRAND
         # TODO Is this the correct mapping between numberReads and
         # sam flag 0x1? What about the mapping between numberReads
         # and 0x40 and 0x80?
