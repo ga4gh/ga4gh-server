@@ -338,13 +338,6 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         # TODO How do we get the number of records in a VariantFile?
         return 0
 
-    def getCallSet(self, sampleName):
-        """
-        Returns the CallSet object for the specified sample name.
-        """
-        callSetId = self.getCallSetId(sampleName)
-        return self._callSetIdMap[callSetId]
-
     def _updateCallSetIds(self, variantFile):
         """
         Updates the call set IDs based on the specified variant file.
@@ -384,7 +377,8 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         varFile.close()
 
     def _convertGaCall(self, recordId, name, pysamCall, genotypeData):
-        callSet = self.getCallSet(name)
+        compoundId = self.getCallSetId(name)
+        callSet = self.getCallSet(compoundId)
         call = protocol.Call()
         call.callSetId = callSet.getId()
         call.callSetName = callSet.getSampleName()
