@@ -211,6 +211,15 @@ class TestSimulatedStack(unittest.TestCase):
         response = self.sendObjectGetRequest(path, id_)
         self.assertObjectNotFound(response)
 
+    def testGetDataset(self):
+        path = "/datasets"
+        for dataset in self.backend.getDatasets():
+            responseObject = self.sendGetObject(
+                path, dataset.getId(), protocol.Dataset)
+            self.verifyDatasetsEqual(responseObject, dataset)
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
+
     def testDatasetsSearch(self):
         request = protocol.SearchDatasetsRequest()
         datasets = self.backend.getDatasets()
