@@ -11,6 +11,7 @@ import collections
 import pysam
 
 import ga4gh.datamodel.reads as reads
+import ga4gh.protocol as protocol
 
 
 class AbstractConverter(object):
@@ -144,6 +145,12 @@ class SamLine(object):
         if read.properPlacement:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.PROPER_PLACEMENT)
+        if read.alignment.position.strand == protocol.Strand.NEG_STRAND:
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.REVERSED)
+        if read.alignment.position.strand == protocol.Strand.NEG_STRAND:
+            reads.SamFlags.setFlag(
+                flag, reads.SamFlags.NEXT_MATE_REVERSED)
         if read.readNumber:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.READ_NUMBER_ONE)
