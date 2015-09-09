@@ -1,3 +1,0 @@
-This file just ensures that the reads directory will exist in GitHub,
-thus causing the server to not fail on startup when it can't find a
-reads directory.

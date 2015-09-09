@@ -1,3 +1,0 @@
-This file just ensures that the references directory will exist in GitHub,
-thus causing the server to not fail on startup when it can't find a
-references directory.
