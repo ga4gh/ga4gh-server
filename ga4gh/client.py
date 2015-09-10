@@ -179,6 +179,12 @@ class HttpClient(object):
             self._urlPrefix, url).format(id=id_, objectName=objectName)
         return self._doRequest('GET', fullUrl, protocolResponseClass)
 
+    def getDataset(self, id_):
+        """
+        Returns a dataset from the server
+        """
+        return self.runGetRequest("datasets", protocol.Dataset, id_)
+
     def getReferenceSet(self, id_):
         """
         Returns a referenceSet from the server
