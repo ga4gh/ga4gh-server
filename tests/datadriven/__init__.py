@@ -8,6 +8,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import contextlib
+import fnmatch
 import os
 import inspect
 
@@ -32,7 +33,7 @@ def _wrapTestMethod(method):
     return testFunction
 
 
-def makeTests(testDataDir, testClass):
+def makeTests(testDataDir, testClass, fnmatchGlob=None):
     """
     Top-level entry point for data driven tests. For every subdirectory
     in testDataDir, create an instance of testClass and then yield
@@ -40,10 +41,12 @@ def makeTests(testDataDir, testClass):
     test generators.
     """
     for testSetId in os.listdir(testDataDir):
-        tester = testClass(testSetId, testDataDir)
-        for name, _ in inspect.getmembers(testClass):
-            if name.startswith("test"):
-                yield _wrapTestMethod(getattr(tester, name))
+        if (fnmatchGlob is not None and
+                fnmatch.fnmatch(testSetId, fnmatchGlob)):
+            tester = testClass(testSetId, testDataDir)
+            for name, _ in inspect.getmembers(testClass):
+                if name.startswith("test"):
+                    yield _wrapTestMethod(getattr(tester, name))
 
 
 class TestCase(object):

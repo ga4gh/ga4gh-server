@@ -1,3 +1,0 @@
-These files are part of the 1000 genomes low coverage reads.
-They were downloaded from ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/[sample id]/alignment 
-and processed using the bam2bam script in the scripts directory.

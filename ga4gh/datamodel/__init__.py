@@ -6,26 +6,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import atexit
 import base64
 import collections
 import glob
-import json
 import os
-import shutil
-import tempfile
 
 import ga4gh.exceptions as exceptions
-
-
-def _cleanupHtslibsMess(indexDir):
-    """
-    Cleanup the mess that htslib has left behind with the index files.
-    This is a temporary measure until we get a good interface for
-    dealing with indexes for remote files.
-    """
-    if os.path.exists(indexDir):
-        shutil.rmtree(indexDir)
 
 
 class PysamFileHandleCache(object):
@@ -452,25 +438,6 @@ class PysamDatamodelMixin(object):
             for filename in glob.glob(scanPath):
                 self._addDataFile(filename)
                 numDataFiles += 1
-        # This is a temporary workaround to allow us to use htslib's
-        # facility for working with remote files. The urls.json is
-        # definitely not a good idea and will be replaced later.
-        # We make a temporary file for each process so that it
-        # downloads its own copy and we are sure it's not overwriting
-        # the copy of another process. We then register a cleanup
-        # handler to get rid of these files on exit.
-        urlSource = os.path.join(dataDir, "urls.json")
-        if os.path.exists(urlSource):
-            with open(urlSource) as jsonFile:
-                urls = json.load(jsonFile)["urls"]
-            indexDir = tempfile.mkdtemp(prefix="htslib_mess.")
-            cwd = os.getcwd()
-            os.chdir(indexDir)
-            for url in urls:
-                self._addDataFile(url)
-                numDataFiles += 1
-            os.chdir(cwd)
-            atexit.register(_cleanupHtslibsMess, indexDir)
         if numDataFiles == 0:
             raise exceptions.EmptyDirException(dataDir, patterns)
 

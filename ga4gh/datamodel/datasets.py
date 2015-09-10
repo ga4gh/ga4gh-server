@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import fnmatch
 import os
 
 import ga4gh.datamodel as datamodel
@@ -161,7 +162,7 @@ class FileSystemDataset(AbstractDataset):
         readGroupSetDir = os.path.join(dataDir, "reads")
         for localId in os.listdir(readGroupSetDir):
             relativePath = os.path.join(readGroupSetDir, localId)
-            if os.path.isdir(relativePath):
+            if fnmatch.fnmatch(relativePath, '*.bam'):
                 readGroupSet = reads.HtslibReadGroupSet(
                     self, localId, relativePath)
                 self.addReadGroupSet(readGroupSet)

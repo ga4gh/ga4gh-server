@@ -7,7 +7,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import os
 
 import pysam
 
@@ -114,7 +113,29 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
             for readGroup in self.getReadGroups()]
         readGroupSet.name = self.getLocalId()
         readGroupSet.datasetId = self.getParentContainer().getId()
+        stats = protocol.ReadStats()
+        stats.alignedReadCount = self.getNumAlignedReads()
+        stats.unalignedReadCount = self.getNumUnalignedReads()
+        readGroupSet.stats = stats
         return readGroupSet
+
+    def getNumAlignedReads(self):
+        """
+        Return the number of aligned reads in this read group set
+        """
+        raise NotImplementedError()
+
+    def getNumUnalignedReads(self):
+        """
+        Return the number of unaligned reads in this read group set
+        """
+        raise NotImplementedError()
+
+    def getPrograms(self):
+        """
+        Returns an array of Programs used to generate this read group set
+        """
+        raise NotImplementedError()
 
 
 class SimulatedReadGroupSet(AbstractReadGroupSet):
@@ -124,29 +145,81 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
     def __init__(
             self, parentContainer, localId, randomSeed=1, numReadGroups=1,
             numAlignments=2):
-        super(SimulatedReadGroupSet, self).__init__(parentContainer, localId)
+        super(SimulatedReadGroupSet, self).__init__(
+            parentContainer, localId)
+        self._numAlignments = numAlignments
         for i in range(numReadGroups):
             localId = "rg{}".format(i)
             readGroup = SimulatedReadGroup(
                 self, localId, randomSeed + i, numAlignments)
             self.addReadGroup(readGroup)
 
+    def getNumAlignedReads(self):
+        return self._numAlignments
+
+    def getNumUnalignedReads(self):
+        return 0
+
+    def getPrograms(self):
+        return []
+
 
 class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     """
     Class representing a logical collection ReadGroups.
     """
-    def __init__(self, parentContainer, localId, dataDir):
+    def __init__(self, parentContainer, localId, dataFile):
         super(HtslibReadGroupSet, self).__init__(parentContainer, localId)
-        self._dataDir = dataDir
-        self._setAccessTimes(dataDir)
-        self._scanDataFiles(dataDir, ["*.bam"])
+        self._samFilePath = dataFile
+        samFile = self.getFileHandle(self._samFilePath)
+        if 'RG' not in samFile.header or len(samFile.header['RG']) == 0:
+            self._defaultReadGroup = True
+            readGroup = HtslibReadGroup(self, 'default')
+            self.addReadGroup(readGroup)
+        else:
+            self._defaultReadGroup = False
+            for readGroupHeader in samFile.header['RG']:
+                readGroup = HtslibReadGroup(self, readGroupHeader['ID'])
+                self.addReadGroup(readGroup)
 
-    def _addDataFile(self, path):
-        filename = os.path.split(path)[1]
-        localId = os.path.splitext(filename)[0]
-        readGroup = HtslibReadGroup(self, localId, path)
-        self.addReadGroup(readGroup)
+    def openFile(self, dataFile):
+        return pysam.AlignmentFile(dataFile)
+
+    def getSamFilePath(self):
+        """
+        Returns the file path of the sam file
+        """
+        return self._samFilePath
+
+    def isUsingDefaultReadGroup(self):
+        """
+        Returns whether the readGroupSet is using a default read group
+        """
+        return self._defaultReadGroup
+
+    def getNumAlignedReads(self):
+        samFile = self.getFileHandle(self._samFilePath)
+        return samFile.mapped
+
+    def getNumUnalignedReads(self):
+        samFile = self.getFileHandle(self._samFilePath)
+        return samFile.unmapped
+
+    def getPrograms(self):
+        programs = []
+        samFile = self.getFileHandle(self._samFilePath)
+        if 'PG' not in samFile.header:
+            return programs
+        htslibPrograms = samFile.header['PG']
+        for htslibProgram in htslibPrograms:
+            program = protocol.Program()
+            program.id = htslibProgram['ID']
+            program.commandLine = htslibProgram.get('CL', None)
+            program.name = htslibProgram.get('PN', None)
+            program.prevProgramId = htslibProgram.get('PP', None)
+            program.version = htslibProgram.get('VN', None)
+            programs.append(program)
+        return programs
 
 
 class AbstractReadGroup(datamodel.DatamodelObject):
@@ -191,12 +264,6 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.programs = self.getPrograms()
         return readGroup
 
-    def getPrograms(self):
-        """
-        Returns an array of Programs used to generate this read group
-        """
-        raise NotImplementedError()
-
     def getReadAlignmentId(self, gaAlignment):
         """
         Returns a string ID suitable for use in the specified GA
@@ -208,13 +275,19 @@ class AbstractReadGroup(datamodel.DatamodelObject):
 
     def getNumAlignedReads(self):
         """
-        Return the number of aligned reads in this read group
+        Return the number of aligned reads in the read group
         """
         raise NotImplementedError()
 
     def getNumUnalignedReads(self):
         """
-        Return the number of unaligned reads in this read group
+        Return the number of unaligned reads in the read group
+        """
+        raise NotImplementedError()
+
+    def getPrograms(self):
+        """
+        Returns an array of Programs used to generate this read group
         """
         raise NotImplementedError()
 
@@ -225,20 +298,10 @@ class SimulatedReadGroup(AbstractReadGroup):
     """
     def __init__(self, parentContainer, localId, randomSeed, numAlignments=2):
         super(SimulatedReadGroup, self).__init__(parentContainer, localId)
-        self._numAlignments = numAlignments
 
     def getReadAlignments(self, referenceId=None, start=None, end=None):
-        for i in range(self._numAlignments):
+        for i in range(self.getNumAlignedReads()):
             yield self._createReadAlignment(i)
-
-    def getNumAlignedReads(self):
-        return self._numAlignments
-
-    def getNumUnalignedReads(self):
-        return 0
-
-    def getPrograms(self):
-        return []
 
     def _createReadAlignment(self, i):
         # TODO fill out a bit more
@@ -268,47 +331,27 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.id = self.getReadAlignmentId(alignment)
         return alignment
 
+    def getNumAlignedReads(self):
+        return self._parentContainer.getNumAlignedReads()
+
+    def getNumUnalignedReads(self):
+        return 0
+
+    def getPrograms(self):
+        return []
+
 
 class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     """
     A readgroup based on htslib's reading of a given file
     """
-    def __init__(self, parentContainer, localId, dataFile):
+    def __init__(self, parentContainer, localId):
         super(HtslibReadGroup, self).__init__(parentContainer, localId)
-        self._samFilePath = dataFile
-
-    def openFile(self, dataFile):
-        return pysam.AlignmentFile(dataFile)
+        self._parentSamFilePath = parentContainer.getSamFilePath()
+        self._filterReads = not parentContainer.isUsingDefaultReadGroup()
 
     def getSamFilePath(self):
-        """
-        Returns the file path of the sam file
-        """
-        return self._samFilePath
-
-    def getNumAlignedReads(self):
-        samFile = self.getFileHandle(self._samFilePath)
-        return samFile.mapped
-
-    def getNumUnalignedReads(self):
-        samFile = self.getFileHandle(self._samFilePath)
-        return samFile.unmapped
-
-    def getPrograms(self):
-        programs = []
-        samFile = self.getFileHandle(self._samFilePath)
-        if 'PG' not in samFile.header:
-            return programs
-        htslibPrograms = samFile.header['PG']
-        for htslibProgram in htslibPrograms:
-            program = protocol.Program()
-            program.id = htslibProgram['ID']
-            program.commandLine = htslibProgram.get('CL', None)
-            program.name = htslibProgram.get('PN', None)
-            program.prevProgramId = htslibProgram.get('PP', None)
-            program.version = htslibProgram.get('VN', None)
-            programs.append(program)
-        return programs
+        return self._parentSamFilePath
 
     def getReadAlignments(self, referenceId=None, start=None, end=None):
         """
@@ -316,9 +359,12 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         """
         # TODO If referenceId is None, return against all references,
         # including unmapped reads.
-        samFile = self.getFileHandle(self._samFilePath)
+        samFile = self._parentContainer.getFileHandle(
+            self._parentSamFilePath)
         if referenceId is not None:
             referenceId = datamodel.CompoundId.deobfuscate(referenceId)
+        referenceId, start, end = self.sanitizeAlignmentFileFetch(
+            referenceId, start, end)
         if (referenceId is not None and
                 referenceId not in samFile.references):
             raise exceptions.ReferenceNotFoundInReadGroupException(
@@ -327,8 +373,14 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         referenceId, start, end = self.sanitizeAlignmentFileFetch(
             referenceId, start, end)
         readAlignments = samFile.fetch(referenceId, start, end)
-        for readAlignment in readAlignments:
-            yield self.convertReadAlignment(readAlignment)
+        if self._filterReads:
+            for readAlignment in readAlignments:
+                tags = dict(readAlignment.tags)
+                if 'RG' in tags and tags['RG'] == self._localId:
+                    yield self.convertReadAlignment(readAlignment)
+        else:
+            for readAlignment in readAlignments:
+                yield self.convertReadAlignment(readAlignment)
 
     def convertReadAlignment(self, read):
         """
@@ -347,7 +399,8 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.alignment.mappingQuality = read.mapping_quality
         ret.alignment.position = protocol.Position()
         self.sanitizeGetRName(read.reference_id)
-        samFile = self.getFileHandle(self._samFilePath)
+        samFile = self._parentContainer.getFileHandle(
+            self._parentSamFilePath)
         ret.alignment.position.referenceName = samFile.getrname(
             read.reference_id)
         ret.alignment.position.position = read.reference_start
@@ -398,3 +451,12 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
             read.flag, SamFlags.SUPPLEMENTARY_ALIGNMENT)
         ret.id = self.getReadAlignmentId(ret)
         return ret
+
+    def getNumAlignedReads(self):
+        return -1  # TODO populate with metadata
+
+    def getNumUnalignedReads(self):
+        return -1  # TODO populate with metadata
+
+    def getPrograms(self):
+        return self._parentContainer.getPrograms()

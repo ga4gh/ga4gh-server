@@ -5,9 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import collections
-import glob
 import os
+import collections
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -21,7 +20,8 @@ import pysam
 
 def testReads():
     testDataDir = "tests/data/dataset1/reads"
-    for test in datadriven.makeTests(testDataDir, ReadGroupSetTest):
+    for test in datadriven.makeTests(
+            testDataDir, ReadGroupSetTest, '*.bam'):
         yield test
 
 
@@ -29,28 +29,38 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     """
     Data driven test for read group sets
     """
+    class ReadGroupSetInfo(object):
+        """
+        Container class for information about a read group set
+        """
+        def __init__(self, samFileName):
+            self.samFile = pysam.AlignmentFile(samFileName)
+            self.numAlignedReads = self.samFile.mapped
+            self.numUnalignedReads = self.samFile.unmapped
+
     class ReadGroupInfo(object):
         """
         Container class for information about a read group
         """
-        def __init__(self, gaReadGroupSet, samFileName):
-            filename = os.path.split(samFileName)[1]
-            localId = os.path.splitext(filename)[0]
+        def __init__(self, gaReadGroupSet, samFileName, readGroupName):
             self.gaReadGroup = reads.AbstractReadGroup(
-                gaReadGroupSet, localId)
+                gaReadGroupSet, readGroupName)
             self.id = self.gaReadGroup.getId()
             self.samFile = pysam.AlignmentFile(samFileName)
             self.reads = []
             self.refIds = collections.defaultdict(list)
             for read in self.samFile:
+                tags = dict(read.tags)
+                if 'RG' not in tags or tags['RG'] != readGroupName:
+                    continue
                 if read.reference_id != -1:
                     # mapped read
                     refId = self.samFile.getrname(read.reference_id)
                     obfuscatedId = datamodel.CompoundId.obfuscate(refId)
                     self.refIds[obfuscatedId].append(read)
                 self.reads.append(read)
-            self.numAlignedReads = self.samFile.mapped
-            self.numUnalignedReads = self.samFile.unmapped
+            self.numAlignedReads = -1
+            self.numUnalignedReads = -1
             if 'PG' in self.samFile.header:
                 self.programs = self.samFile.header['PG']
             else:
@@ -61,13 +71,26 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         super(ReadGroupSetTest, self).__init__(
             dataset, readGroupSetId, baseDir)
         self._readGroupInfos = {}
-        for samFileName in glob.glob(
-                os.path.join(self._dataDir, "*.bam")):
-            self._readSam(readGroupSetId, samFileName)
+        self._readGroupSetInfos = {}
+        samFileName = self._dataDir
+        self._readSam(readGroupSetId, samFileName)
 
     def _readSam(self, readGroupSetId, samFileName):
-        readGroupInfo = self.ReadGroupInfo(self._gaObject, samFileName)
-        self._readGroupInfos[samFileName] = readGroupInfo
+        samFile = pysam.AlignmentFile(samFileName)
+        readGroupSetInfoKey = os.path.basename(samFileName)
+        readGroupSetInfo = self.ReadGroupSetInfo(samFileName)
+        self._readGroupSetInfos[readGroupSetInfoKey] = readGroupSetInfo
+        if 'RG' in samFile.header:
+            readGroupHeaders = samFile.header['RG']
+            readGroupNames = [
+                readGroupHeader['ID'] for readGroupHeader
+                in readGroupHeaders]
+        else:
+            readGroupNames = ['default']
+        for readGroupName in readGroupNames:
+            readGroupInfo = self.ReadGroupInfo(
+                self._gaObject, samFileName, readGroupName)
+            self._readGroupInfos[readGroupName] = readGroupInfo
 
     def getDataModelClass(self):
         return reads.HtslibReadGroupSet
@@ -79,7 +102,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         # test that program info is set correctly
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
-            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
+            readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
             gaPrograms = readGroup.getPrograms()
             htslibPrograms = readGroupInfo.programs
             for gaProgram, htslibProgram in utils.zipLists(
@@ -103,23 +126,33 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 gaAlignment, pysamAlignment, readGroupInfo)
 
     def testReadGroupStats(self):
-        # test that the stats attr of the readGroup is populated correctly
+        # test that the stats attrs are populated correctly
         readGroupSet = self._gaObject
+        gaReadGroupSet = readGroupSet.toProtocolElement()
+        readGroupSetInfo = self._readGroupSetInfos[
+            readGroupSet.getLocalId()]
+        self.assertEqual(
+            readGroupSet.getNumAlignedReads(),
+            readGroupSetInfo.numAlignedReads)
+        self.assertEqual(
+            readGroupSet.getNumUnalignedReads(),
+            readGroupSetInfo.numUnalignedReads)
+        self.assertEqual(
+            gaReadGroupSet.stats.alignedReadCount,
+            readGroupSetInfo.numAlignedReads)
+        self.assertEqual(
+            gaReadGroupSet.stats.unalignedReadCount,
+            readGroupSetInfo.numUnalignedReads)
         for readGroup in readGroupSet.getReadGroups():
-            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
             gaReadGroup = readGroup.toProtocolElement()
             self.assertEqual(
-                readGroup.getNumAlignedReads(),
-                readGroupInfo.numAlignedReads)
+                readGroup.getNumAlignedReads(), -1)
             self.assertEqual(
-                readGroup.getNumUnalignedReads(),
-                readGroupInfo.numUnalignedReads)
+                readGroup.getNumUnalignedReads(), -1)
             self.assertEqual(
-                gaReadGroup.stats.alignedReadCount,
-                readGroupInfo.numAlignedReads)
+                gaReadGroup.stats.alignedReadCount, -1)
             self.assertEqual(
-                gaReadGroup.stats.unalignedReadCount,
-                readGroupInfo.numUnalignedReads)
+                gaReadGroup.stats.unalignedReadCount, -1)
 
     def testValidateObjects(self):
         # test that validation works on read groups and reads
@@ -137,7 +170,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         # test that searching with a reference id succeeds
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
-            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
+            readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
             for refId, refIdReads in readGroupInfo.refIds.items():
                 alignments = list(
                     readGroup.getReadAlignments(referenceId=refId))
@@ -150,7 +183,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         # test that searching with start and end coords succeeds
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
-            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
+            readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
             for refId, refIdReads in readGroupInfo.refIds.items():
                 bigNumThatPysamWontChokeOn = 2**30
                 alignments = list(readGroup.getReadAlignments(
@@ -164,7 +197,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         # test that various range searches work
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
-            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
+            readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
             for refId, refIdReads in readGroupInfo.refIds.items():
                 alignments = list(readGroup.getReadAlignments(refId))
                 length = len(alignments)
@@ -175,7 +208,6 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 if length != len(set(positions)):
                     continue
                 begin = positions[0]
-                beginLength = len(alignments[0].alignedSequence)
                 end = positions[-1]
                 self.assertGetReadAlignmentsRangeResult(
                     readGroup, refId, begin, end + 1, length)
@@ -183,12 +215,6 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                     readGroup, refId, begin, end, length - 1)
                 self.assertGetReadAlignmentsRangeResult(
                     readGroup, refId, begin, begin, 0)
-                self.assertGetReadAlignmentsRangeResult(
-                    readGroup, refId, begin + beginLength,
-                    end + 1, length - 1)
-                self.assertGetReadAlignmentsRangeResult(
-                    readGroup, refId, begin + beginLength,
-                    end, length - 2)
 
     def assertGetReadAlignmentsRangeResult(self, readGroup, refId,
                                            start, end, result):
@@ -284,7 +310,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     def getReadAlignmentsGenerator(self):
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
-            readGroupInfo = self._readGroupInfos[readGroup.getSamFilePath()]
+            readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
             alignments = list(readGroup.getReadAlignments())
             for gaAlignment, pysamAlignment in zip(
                     alignments, readGroupInfo.reads):
