@@ -243,7 +243,7 @@ class SimulatedVariantSet(AbstractVariantSet):
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+                    callSetIds=None):
         randomNumberGenerator = random.Random()
         i = startPosition
         while i < endPosition:
@@ -466,14 +466,11 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         raise exceptions.ObjectNotFoundException(compoundId)
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    variantName=None, callSetIds=None):
+                    callSetIds=None):
         """
         Returns an iterator over the specified variants. The parameters
         correspond to the attributes of a GASearchVariantsRequest object.
         """
-        if variantName is not None:
-            raise exceptions.NotImplementedException(
-                "Searching by variantName is not supported")
         if callSetIds is None:
             callSetIds = self._callSetIds
         else:

@@ -177,7 +177,7 @@ class VariantsIntervalIterator(IntervalIterator):
 
     def _search(self, start, end):
         return self._parentContainer.getVariants(
-            self._request.referenceName, start, end, self._request.variantName,
+            self._request.referenceName, start, end,
             self._request.callSetIds)
 
     @classmethod

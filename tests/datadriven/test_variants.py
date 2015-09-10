@@ -161,9 +161,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
             for call in variant.calls:
                 self.assertIn(call.callSetName, sampleIds)
 
-    def _verifyVariantsCallSetIds(self, searchVariants, searchsampleIds):
+    def _verifyVariantsCallSetIds(self, searchsampleIds):
         """
-        Leaving searchVariants empty will get all variants,
         leaving searchSampleIds will get all samples.
         """
         gaCallSetVariants = []
@@ -174,21 +173,20 @@ class VariantSetTest(datadriven.DataDrivenTest):
                     self._gaObject.getCompoundId(), sampleId))
                 for sampleId in searchsampleIds]
             gaVariants = list(self._gaObject.getVariants(
-                referenceName, 0, end, searchVariants, gaSearchIds))
+                referenceName, 0, end, gaSearchIds))
             self._verifyGaVariantsSample(gaVariants, searchsampleIds)
             gaCallSetVariants += gaVariants
             localVariants = filter(
                 lambda v: v.CHROM == referenceName, self._variantRecords)
             self._verifyVariantsEqual(gaVariants, localVariants)
-        if searchVariants is None:
-            self.assertEqual(len(gaCallSetVariants), len(self._variantRecords))
+        self.assertEqual(len(gaCallSetVariants), len(self._variantRecords))
 
     def testSearchAllVariants(self):
-        self._verifyVariantsCallSetIds(None, self.vcfSamples[:1])
+        self._verifyVariantsCallSetIds(self.vcfSamples[:1])
 
     def testSearchCallSetIdsSystematic(self):
         for sampleIds in utils.powerset(self.vcfSamples, maxSets=10):
-            self._verifyVariantsCallSetIds(None, list(sampleIds))
+            self._verifyVariantsCallSetIds(list(sampleIds))
 
     def testVariantsValid(self):
         end = datamodel.PysamDatamodelMixin.vcfMax
@@ -215,7 +213,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
 
     def _assertEmptyVariant(self, referenceName, startPosition, endPosition):
         gaVariants = list(self._gaObject.getVariants(
-            referenceName, startPosition, endPosition, None, []))
+            referenceName, startPosition, endPosition, []))
         self.assertEqual(len(gaVariants), 0)
         pyvcfVariants = self._getPyvcfVariants(
             referenceName, startPosition, endPosition)
@@ -224,7 +222,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
     def _assertVariantsEqualInRange(
             self, referenceName, startPosition, endPosition):
         gaVariants = list(self._gaObject.getVariants(
-            referenceName, startPosition, endPosition, None, []))
+            referenceName, startPosition, endPosition, []))
         pyvcfVariants = self._getPyvcfVariants(
             referenceName, startPosition, endPosition)
         self.assertGreaterEqual(len(gaVariants), 0)
@@ -262,7 +260,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self, pyvcfVariant, intervalStart, intervalEnd):
         isIn = False
         gaVariants = list(self._gaObject.getVariants(
-            pyvcfVariant.CHROM, intervalStart, intervalEnd, None, []))
+            pyvcfVariant.CHROM, intervalStart, intervalEnd, []))
         for gaVariant in gaVariants:
             if self._gaVariantEqualsPyvcfVariant(gaVariant, pyvcfVariant):
                 isIn = True
@@ -358,9 +356,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
             # passing None as the callSetIds argument should be equivalent
             # to passing all of the possible callSetIds as an argument
             noneRecords = list(variantSet.getVariants(
-                referenceName, start, end, None, None))
+                referenceName, start, end, None))
             allRecords = list(variantSet.getVariants(
-                referenceName, start, end, None, callSetIds))
+                referenceName, start, end, callSetIds))
             self.assertEqual(len(noneRecords), len(allRecords))
             for noneRecord, allRecord in zip(noneRecords, allRecords):
                 for noneCall, allCall in zip(
@@ -371,14 +369,14 @@ class VariantSetTest(datadriven.DataDrivenTest):
             # passing an empty list as the callSetIds argument should
             # return no callsets for any variant
             emptyRecords = variantSet.getVariants(
-                referenceName, start, end, None, [])
+                referenceName, start, end, [])
             for record in emptyRecords:
                 self.assertEqual(len(record.calls), 0)
 
             # passing some callSetIds as the callSetIds argument should
             # return only those calls
             someRecords = list(variantSet.getVariants(
-                referenceName, start, end, None, someCallSetIds))
+                referenceName, start, end, someCallSetIds))
             for record in someRecords:
                 self.assertEqual(len(record.calls), len(someCallSetIds))
                 for call, someId in zip(record.calls, someCallSetIds):
