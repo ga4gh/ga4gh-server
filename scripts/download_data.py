@@ -102,7 +102,6 @@ class AbstractFileDownloader(object):
     def __init__(self, args):
         self.args = args
         self.datasetName = 'dataset1'
-        self.readGroupSetName = 'low-coverage'
         self.variantSetName = '1kg-phase3-subset'
         self.referenceSetName = 'GRCh38-subset'
         self.chromMinMax = ChromMinMax()
@@ -130,8 +129,6 @@ class AbstractFileDownloader(object):
             '20': 'CM000682.2',
             '21': 'CM000683.2',
             '22': 'CM000684.2',
-            'X': 'CM000685.2',
-            'Y': 'CM000686.2',
         }
         self.samples = self.args.samples.split(',')
         self.studyMap = {
@@ -148,15 +145,6 @@ class AbstractFileDownloader(object):
             str(i) for i in range(1, 23)
             if str(i) in self.chromosomes]
         fileNames = [baseFileName.format(chrName) for chrName in chrNames]
-        # the X and Y files use a different filename prefix
-        if 'X' in self.chromosomes:
-            fileNames.append(
-                'ALL.chrX.phase3_shapeit2_mvncall_integrated_v1a.'
-                '20130502.genotypes.vcf.gz')
-        if 'Y' in self.chromosomes:
-            fileNames.append(
-                'ALL.chrY.phase3_integrated_v1a.'
-                '20130502.genotypes.vcf.gz')
         return fileNames
 
     def getVcfBaseUrl(self):
@@ -228,8 +216,7 @@ class AbstractFileDownloader(object):
 
     def downloadBams(self):
         dirList = [
-            self.args.dir_name, self.datasetName, 'reads',
-            self.readGroupSetName]
+            self.args.dir_name, self.datasetName, 'reads']
         mkdirAndChdirList(dirList)
         cleanDir()
         baseUrl = self.getBamBaseUrl()
@@ -264,7 +251,7 @@ class AbstractFileDownloader(object):
             os.remove(baiFileName)
             utils.log("Indexing '{}'".format(fileName))
             pysam.index(fileName.encode('utf-8'))
-        escapeDir()
+        escapeDir(3)
 
     def downloadFastas(self):
         dirList = [
@@ -334,7 +321,7 @@ def parseArgs():
         "--num-reads", default=1000,
         help="the number of reads to download per reference")
     parser.add_argument(
-        "--chromosomes", default="1,2,3,X,Y",
+        "--chromosomes", default="1,2,3",
         help="the chromosomes whose corresponding reads should be downloaded")
     args = parser.parse_args()
     return args
