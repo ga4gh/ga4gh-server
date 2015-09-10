@@ -616,6 +616,13 @@ class AbstractBackend(object):
         variantSet = dataset.getVariantSet(id_)
         return self.runGetRequest(variantSet)
 
+    def runGetDataset(self, id_):
+        """
+        Runs a getDataset request for the specified ID.
+        """
+        dataset = self.getDataset(id_)
+        return self.runGetRequest(dataset)
+
     # Search requests.
 
     def runSearchReadGroupSets(self, request):
