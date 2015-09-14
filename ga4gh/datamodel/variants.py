@@ -245,10 +245,11 @@ class SimulatedVariantSet(AbstractVariantSet):
     def getVariants(self, referenceName, startPosition, endPosition,
                     callSetIds=None):
         randomNumberGenerator = random.Random()
+        randomNumberGenerator.seed(self._randomSeed)
         i = startPosition
         while i < endPosition:
-            randomNumberGenerator.seed(self._randomSeed + i)
             if randomNumberGenerator.random() < self._variantDensity:
+                randomNumberGenerator.seed(self._randomSeed + i)
                 yield self.generateVariant(
                     referenceName, i, randomNumberGenerator)
             i += 1
@@ -457,7 +458,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         cursor = self.getFileHandle(varFileName).fetch(
             referenceName, startPosition, endPosition)
         for record in cursor:
-            variant = self.convertVariant(record, [])
+            variant = self.convertVariant(record, self._callSetIds)
             if (record.start == start and
                     compoundId.md5 == self.hashVariant(variant)):
                 return variant

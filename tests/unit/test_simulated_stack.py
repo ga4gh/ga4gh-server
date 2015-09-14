@@ -334,6 +334,29 @@ class TestSimulatedStack(unittest.TestCase):
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
 
+    def testGetVariant(self):
+        # get a variant from the search method
+        referenceName = '1'
+        start = 0
+        dataset = self.backend.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        request = protocol.SearchVariantsRequest()
+        request.variantSetId = variantSet.getId()
+        request.referenceName = referenceName
+        request.start = start
+        request.end = 2**16
+        path = '/variants/search'
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchVariantsResponse)
+        variants = responseData.variants[:10]
+
+        # get 'the same' variant using the get method
+        for variant in variants:
+            path = '/variants'
+            responseObject = self.sendGetObject(
+                path, variant.id, protocol.Variant)
+            self.assertEqual(responseObject, variant)
+
     def testGetReferenceSet(self):
         path = "/referencesets"
         for referenceSet in self.backend.getReferenceSets():
