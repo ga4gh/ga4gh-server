@@ -148,7 +148,7 @@ class SamLine(object):
         if read.alignment.position.strand == protocol.Strand.NEG_STRAND:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.REVERSED)
-        if read.alignment.position.strand == protocol.Strand.NEG_STRAND:
+        if read.nextMatePosition.strand == protocol.Strand.NEG_STRAND:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.NEXT_MATE_REVERSED)
         if read.readNumber:
