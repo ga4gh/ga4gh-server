@@ -576,7 +576,7 @@ class GetVariantRunner(AbstractGetRunner):
         super(GetVariantRunner, self).__init__(args)
 
     def run(self):
-        self._run(self._httpClient.runGetVariant)
+        self._run(self._httpClient.getVariant)
 
 
 class BenchmarkRunner(SearchVariantsRunner):
