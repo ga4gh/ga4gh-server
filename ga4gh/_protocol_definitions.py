@@ -11,7 +11,7 @@ from protocol import SearchResponse
 
 import avro.schema
 
-version = '0.6.177d8ce1'
+version = '0.6.4568e6f6'
 
 
 class Call(ProtocolElement):
@@ -1148,7 +1148,8 @@ class ReferenceSet(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "ReferenceSet", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"doc": "", "type": "string", "name": "md5checksum"},
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"doc": "", "type": "string", "name": "md5checksum"},
 {"default": null, "doc": "", "type": ["null", "int"], "name":
 "ncbiTaxonId"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "description"}, {"default": null, "doc": "",
@@ -1178,7 +1179,7 @@ class ReferenceSet(ProtocolElement):
 
     __slots__ = [
         'assemblyId', 'description', 'id', 'isDerived', 'md5checksum',
-        'ncbiTaxonId', 'sourceAccessions', 'sourceURI'
+        'name', 'ncbiTaxonId', 'sourceAccessions', 'sourceURI'
     ]
 
     def __init__(self, **kwargs):
@@ -1192,6 +1193,8 @@ class ReferenceSet(ProtocolElement):
             'isDerived', False)
         self.md5checksum = kwargs.get(
             'md5checksum', None)
+        self.name = kwargs.get(
+            'name', None)
         self.ncbiTaxonId = kwargs.get(
             'ncbiTaxonId', None)
         self.sourceAccessions = kwargs.get(
@@ -1703,9 +1706,10 @@ class SearchReferenceSetsResponse(SearchResponse):
 "SearchReferenceSetsResponse", "fields": [{"default": [], "doc": "",
 "type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
 "name": "ReferenceSet", "fields": [{"doc": "", "type": "string",
-"name": "id"}, {"doc": "", "type": "string", "name": "md5checksum"},
-{"default": null, "doc": "", "type": ["null", "int"], "name":
-"ncbiTaxonId"}, {"default": null, "doc": "", "type": ["null",
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"doc": "", "type": "string", "name":
+"md5checksum"}, {"default": null, "doc": "", "type": ["null", "int"],
+"name": "ncbiTaxonId"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "description"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "assemblyId"}, {"default": null,
 "doc": "", "type": ["null", "string"], "name": "sourceURI"}, {"doc":
@@ -1897,9 +1901,10 @@ class SearchVariantSetsResponse(SearchResponse):
 "SearchVariantSetsResponse", "fields": [{"default": [], "doc": "",
 "type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
 "name": "VariantSet", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"doc": "", "type": "string", "name": "datasetId"}, {"doc": "",
-"type": "string", "name": "referenceSetId"}, {"default": [], "doc":
-"", "type": {"items": {"doc": "", "type": "record", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"doc": "", "type": "string", "name": "datasetId"},
+{"doc": "", "type": "string", "name": "referenceSetId"}, {"default":
+[], "doc": "", "type": {"items": {"doc": "", "type": "record", "name":
 "VariantSetMetadata", "fields": [{"doc": "", "type": "string", "name":
 "key"}, {"doc": "", "type": "string", "name": "value"}, {"doc": "",
 "type": "string", "name": "id"}, {"doc": "", "type": "string", "name":
@@ -2172,9 +2177,10 @@ class VariantSet(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "VariantSet", "fields": [{"doc": "", "type": "string", "name": "id"},
-{"doc": "", "type": "string", "name": "datasetId"}, {"doc": "",
-"type": "string", "name": "referenceSetId"}, {"default": [], "doc":
-"", "type": {"items": {"doc": "", "type": "record", "name":
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"doc": "", "type": "string", "name": "datasetId"}, {"doc":
+"", "type": "string", "name": "referenceSetId"}, {"default": [],
+"doc": "", "type": {"items": {"doc": "", "type": "record", "name":
 "VariantSetMetadata", "fields": [{"doc": "", "type": "string", "name":
 "key"}, {"doc": "", "type": "string", "name": "value"}, {"doc": "",
 "type": "string", "name": "id"}, {"doc": "", "type": "string", "name":
@@ -2207,7 +2213,7 @@ class VariantSet(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'datasetId', 'id', 'metadata', 'referenceSetId'
+        'datasetId', 'id', 'metadata', 'name', 'referenceSetId'
     ]
 
     def __init__(self, **kwargs):
@@ -2217,6 +2223,8 @@ class VariantSet(ProtocolElement):
             'id', None)
         self.metadata = kwargs.get(
             'metadata', [])
+        self.name = kwargs.get(
+            'name', None)
         self.referenceSetId = kwargs.get(
             'referenceSetId', None)
 
