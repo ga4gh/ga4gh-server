@@ -412,11 +412,30 @@ class NotExactlyOneReferenceException(MalformedException):
     """
     A FASTA file has a reference count not equal to one
     """
-    def __init__(self, id_, numReferences):
+    def __init__(self, fileName, numReferences):
         self.message = (
             "FASTA files must have one and only one reference.  "
-            "File {} has {} references.".format(id_, numReferences))
+            "File {} has {} references.".format(fileName, numReferences))
 
+
+class InconsistentReferenceNameException(MalformedException):
+    """
+    A FASTA file has a reference name not equal to its file name.
+    """
+    def __init__(self, fileName):
+        self.message = (
+            "FASTA file {} has a reference not equal to its "
+            "file name.".format(fileName))
+
+
+class MissingReferenceMetadata(MalformedException):
+    """
+    A FASTA file is missing some metadata in the JSON file.
+    """
+    def __init__(self, fileName, key):
+        self.message = (
+            "JSON metadata for file {} is missing key {}".format(
+                fileName, key))
 
 ###############################################################
 #

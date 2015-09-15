@@ -12,6 +12,8 @@ from __future__ import unicode_literals
 import argparse
 import glob
 import gzip
+import json
+import hashlib
 import os
 import tempfile
 import urllib
@@ -38,6 +40,17 @@ def mkdirAndChdir(dirName):
     if not os.path.exists(dirName):
         os.mkdir(dirName)
     os.chdir(dirName)
+
+
+def getReferenceChecksum(fastaFile):
+    """
+    Returns the md5 checksum for the reference sequence in the specified
+    FASTA file. This is the MD5 of the upper case sequence letters.
+    """
+    inputFile = pysam.FastaFile(fastaFile)
+    bases = inputFile.fetch(inputFile.references[0])
+    inputFile.close()
+    return hashlib.md5(bases.upper()).hexdigest()
 
 
 def cleanDir():
@@ -100,12 +113,16 @@ class AbstractFileDownloader(object):
     Base class for individual site genome file downloaders
     """
     def __init__(self, args):
-        self.args = args
+        self.excludeReferenceMin = args.exclude_reference_min
+        self.maxVariants = args.num_variants
+        self.maxReads = args.num_reads
+        self.samples = args.samples.split(',')
+        self.chromosomes = args.chromosomes.split(',')
+        self.dirName = args.dir_name
         self.datasetName = 'dataset1'
         self.variantSetName = '1kg-phase3-subset'
         self.referenceSetName = 'GRCh38-subset'
         self.chromMinMax = ChromMinMax()
-        self.chromosomes = self.args.chromosomes.split(',')
         self.accessions = {
             '1': 'CM000663.2',
             '2': 'CM000664.2',
@@ -130,7 +147,6 @@ class AbstractFileDownloader(object):
             '21': 'CM000683.2',
             '22': 'CM000684.2',
         }
-        self.samples = self.args.samples.split(',')
         self.studyMap = {
             'HG00096': 'GBR',
             'HG00533': 'CHS',
@@ -155,8 +171,7 @@ class AbstractFileDownloader(object):
 
     def _prepareDir(self):
         dirList = [
-            self.args.dir_name, self.datasetName, 'variants',
-            self.variantSetName]
+            self.dirName, self.datasetName, 'variants', self.variantSetName]
         mkdirAndChdirList(dirList)
         cleanDir()
 
@@ -177,7 +192,6 @@ class AbstractFileDownloader(object):
         response = urllib2.urlopen(url)
         megabyte = 1024 * 1024
         data = response.read(megabyte)
-        lineCountQuota = 1000
         localFileName, _ = os.path.splitext(fileName)
         localTempFileName = localFileName + '.unsampled'
         utils.log("Writing '{}'".format(localTempFileName))
@@ -191,9 +205,9 @@ class AbstractFileDownloader(object):
                 outputFile.write(line)
                 if not line.startswith("#"):
                     lineCount += 1
-                if lineCount >= lineCountQuota:
+                if lineCount >= self.maxVariants:
                     break
-            assert lineCount == lineCountQuota
+            assert lineCount == self.maxVariants
             outputFile.close()
             gzipFile.close()
         utils.log("Sampling '{}'".format(localTempFileName))
@@ -215,8 +229,7 @@ class AbstractFileDownloader(object):
         escapeDir()
 
     def downloadBams(self):
-        dirList = [
-            self.args.dir_name, self.datasetName, 'reads']
+        dirList = [self.dirName, self.datasetName, 'reads']
         mkdirAndChdirList(dirList)
         cleanDir()
         baseUrl = self.getBamBaseUrl()
@@ -240,7 +253,7 @@ class AbstractFileDownloader(object):
                     start=self.chromMinMax.getMinPos(chromosome),
                     end=self.chromMinMax.getMaxPos(chromosome))
                 for index, record in enumerate(iterator):
-                    if index >= args.num_reads:
+                    if index >= self.maxReads:
                         break
                     localFile.write(record)
                 utils.log("{} records written".format(index))
@@ -254,8 +267,7 @@ class AbstractFileDownloader(object):
         escapeDir(3)
 
     def downloadFastas(self):
-        dirList = [
-            self.args.dir_name, 'references', self.referenceSetName]
+        dirList = [self.dirName, 'references', self.referenceSetName]
         mkdirAndChdirList(dirList)
         cleanDir()
         baseUrl = 'http://www.ebi.ac.uk/ena/data/view/'
@@ -263,18 +275,43 @@ class AbstractFileDownloader(object):
             accession = self.accessions[chromosome]
             path = os.path.join(baseUrl, accession)
             maxPos = self.chromMinMax.getMaxPos(chromosome)
+            minPos = 0
+            if self.excludeReferenceMin:
+                minPos = self.chromMinMax.getMinPos(chromosome)
             args = urllib.urlencode({
                 'display': 'fasta',
-                'range': '{}-{}'.format(0, maxPos)})
+                'range': '{}-{}'.format(minPos, maxPos)})
             url = '{}%26{}'.format(path, args)
+            tempFileName = '{}.fa.temp'.format(chromosome)
             fileName = '{}.fa'.format(chromosome)
-            downloader = utils.HttpFileDownloader(url, fileName)
+            downloader = utils.HttpFileDownloader(url, tempFileName)
             downloader.download()
+            # We need to replace the header on the downloaded FASTA
+            with open(tempFileName, "r") as inFasta,\
+                    open(fileName, "w") as outFasta:
+                # Write the new header
+                print(">{}".format(chromosome), file=outFasta)
+                inFasta.readline()
+                for line in inFasta:
+                    print(line, file=outFasta, end="")
+            os.unlink(tempFileName)
             utils.log("Compressing {}".format(fileName))
             utils.runCommand("bgzip {}".format(fileName))
             compressedFileName = fileName + '.gz'
             utils.log("Indexing {}".format(compressedFileName))
             utils.runCommand("samtools faidx {}".format(compressedFileName))
+            # Assemble the metadata.
+            metadata = {
+                "md5checksum": getReferenceChecksum(compressedFileName),
+                "sourceUri": url,
+                "ncbiTaxonId": 9606,
+                "isDerived": False,
+                "sourceDivergence": None,
+                "sourceAccessions": [accession + ".subset"],
+            }
+            fileName = "{}.json".format(chromosome)
+            with open(fileName, "w") as metadataFile:
+                json.dump(metadata, metadataFile, indent=4)
         escapeDir(3)
 
 
@@ -318,11 +355,17 @@ def parseArgs():
         "--samples", default='HG00096,HG00533,HG00534',
         help="a comma-seperated list of samples to download")
     parser.add_argument(
-        "--num-reads", default=1000,
+        "--num-reads", "-r", default=1000, type=int,
         help="the number of reads to download per reference")
+    parser.add_argument(
+        "--num-variants", "-V", default=1000, type=int,
+        help="the maximum number of variants to download per VCF file.")
     parser.add_argument(
         "--chromosomes", default="1,2,3",
         help="the chromosomes whose corresponding reads should be downloaded")
+    parser.add_argument(
+        "--exclude-reference-min", default=False, action="store_true",
+        help="Exclude bases in the reference before the minimum position")
     args = parser.parse_args()
     return args
 
