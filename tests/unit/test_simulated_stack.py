@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import unittest
 import logging
+import random
 
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
@@ -26,7 +27,8 @@ class TestSimulatedStack(unittest.TestCase):
     def setUpClass(cls):
         # silence usually unhelpful CORS log
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
-
+        # Set the random seed to make tests reproducible.
+        random.seed(1)
         config = {
             "DATA_SOURCE": "__SIMULATED__",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
@@ -185,6 +187,16 @@ class TestSimulatedStack(unittest.TestCase):
         for gaObject, datamodelObject in zip(responseList, objects):
             objectVerifier(gaObject, datamodelObject)
 
+    def verifySearchResultsEmpty(self, request, path, responseClass):
+        """
+        Verifies that we get a successful response with an empty list of
+        results.
+        """
+        responseData = self.sendSearchRequest(path, request, responseClass)
+        self.assertIsNone(responseData.nextPageToken)
+        responseList = getattr(responseData, responseClass.getValueListName())
+        self.assertEqual(0, len(responseList))
+
     def assertObjectNotFound(self, response):
         """
         Checks that the specified response contains a search failure.
@@ -320,6 +332,68 @@ class TestSimulatedStack(unittest.TestCase):
             request = protocol.SearchReferencesRequest()
             request.referenceSetId = badId
             self.verifySearchMethodFails(request, path)
+
+    def verifyReferenceSearchFilters(
+            self, objectList, hasAssemblyId, path, requestFactory,
+            responseClass, objectVerifier):
+        """
+        Verifies the filtering functionality for the specified list of
+        reference-like objects.
+        """
+        self.assertGreater(len(objectList), 2)
+        for obj in objectList[1:]:
+            request = requestFactory()
+            # First, check the simple cases; 1 filter set, others null.
+            request.md5checksum = obj.getMd5Checksum()
+            self.verifySearchMethod(
+                request, path, responseClass, [obj], objectVerifier)
+            request.md5checksum = None
+            request.accession = obj.getSourceAccessions()[0]
+            self.verifySearchMethod(
+                request, path, responseClass, [obj], objectVerifier)
+            request.accession = None
+            if hasAssemblyId:
+                request.assemblyId = obj.getAssemblyId()
+                self.verifySearchMethod(
+                    request, path, responseClass, [obj], objectVerifier)
+                request.assemblyId = None
+            # Now check one good value and some bad values.
+            request.md5checksum = obj.getMd5Checksum()
+            badAccessions = [
+                "no such accession", objectList[0].getSourceAccessions()[0]]
+            for accession in badAccessions:
+                request.accession = accession
+                self.verifySearchResultsEmpty(request, path, responseClass)
+            request.accession = None
+            if hasAssemblyId:
+                badAssemblyIds = [
+                    "no such asssembly", objectList[0].getAssemblyId()]
+                for assemblyId in badAssemblyIds:
+                    request.assemblyId = assemblyId
+                    self.verifySearchResultsEmpty(request, path, responseClass)
+                request.assemblyId = None
+
+    def testReferencesSearchFilters(self):
+        path = '/references/search'
+        for referenceSet in self.backend.getReferenceSets():
+
+            def requestFactory():
+                request = protocol.SearchReferencesRequest()
+                request.referenceSetId = referenceSet.getId()
+                return request
+            self.verifyReferenceSearchFilters(
+                referenceSet.getReferences(), False, path, requestFactory,
+                protocol.SearchReferencesResponse, self.verifyReferencesEqual)
+
+    def testReferenceSetsSearchFilters(self):
+        path = '/referencesets/search'
+
+        def requestFactory():
+            return protocol.SearchReferenceSetsRequest()
+        self.verifyReferenceSearchFilters(
+            self.backend.getReferenceSets(), True, path, requestFactory,
+            protocol.SearchReferenceSetsResponse,
+            self.verifyReferenceSetsEqual)
 
     def testGetVariantSet(self):
         path = "/variantsets"

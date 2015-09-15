@@ -95,14 +95,14 @@ class RequestFactory(object):
 
     def createSearchReferenceSetsRequest(self):
         request = protocol.SearchReferenceSetsRequest()
-        setCommaSeparatedAttribute(request, self.args, 'accessions')
-        setCommaSeparatedAttribute(request, self.args, 'md5checksums')
+        request.accession = self.args.accession
+        request.md5checksum = self.args.md5checksum
         return request
 
     def createSearchReferencesRequest(self):
         request = protocol.SearchReferencesRequest()
-        setCommaSeparatedAttribute(request, self.args, 'accessions')
-        setCommaSeparatedAttribute(request, self.args, 'md5checksums')
+        request.accession = self.args.accession
+        request.md5checksum = self.args.md5checksum
         request.referenceSetId = self.args.referenceSetId
         return request
 
@@ -677,16 +677,16 @@ def addUrlArgument(parser):
     parser.add_argument("baseUrl", help="The URL of the API endpoint")
 
 
-def addAccessionsArgument(parser):
+def addAccessionArgument(parser):
     parser.add_argument(
-        "--accessions", default=None,
-        help="The accessions to search over")
+        "--accession", default=None,
+        help="The accession to search for")
 
 
-def addMd5ChecksumsArgument(parser):
+def addMd5ChecksumArgument(parser):
     parser.add_argument(
-        "--md5checksums", default=None,
-        help="The md5checksums to search over")
+        "--md5checksum", default=None,
+        help="The md5checksum to search for")
 
 
 def addPageSizeArgument(parser):
@@ -778,11 +778,11 @@ def addReferenceSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchReferenceSetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addAccessionsArgument(parser)
-    addMd5ChecksumsArgument(parser)
+    addAccessionArgument(parser)
+    addMd5ChecksumArgument(parser)
     parser.add_argument(
         "--assemblyId",
-        help="The assembly id to search over")
+        help="The assembly id to search for")
     return parser
 
 
@@ -794,8 +794,8 @@ def addReferencesSearchParser(subparsers):
     parser.set_defaults(runner=SearchReferencesRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addAccessionsArgument(parser)
-    addMd5ChecksumsArgument(parser)
+    addAccessionArgument(parser)
+    addMd5ChecksumArgument(parser)
     addReferenceSetIdArgument(parser)
     return parser
 

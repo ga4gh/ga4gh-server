@@ -121,12 +121,12 @@ class TestClientArguments(unittest.TestCase):
         DATASETID"""
 
     def testReferenceSetsSearchArguments(self):
-        self.cliInput = """referencesets-search --pageSize 1 --accessions
-        ACC,ESS,IONS --md5checksums MD5,CHECKSUMS --assemblyId ASSEMBLYID"""
+        self.cliInput = """referencesets-search --pageSize 1 --accession
+        ACCESSION --md5checksum MD5CHECKSUMS --assemblyId ASSEMBLYID"""
 
     def testReferencesSearchArguments(self):
-        self.cliInput = """references-search --pageSize 1 --accessions
-        ACC,ESS,IONS --md5checksums MD5,CHECKSUMS"""
+        self.cliInput = """references-search --pageSize 1 --accession
+        ACCESSIONS --md5checksum MD5CHECKSUM"""
 
     def testReadGroupSetsSearchArguments(self):
         self.cliInput = """readgroupsets-search --pageSize 1 --datasetId

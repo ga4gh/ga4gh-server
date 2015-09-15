@@ -291,8 +291,9 @@ class SimulatedReferenceSet(AbstractReferenceSet):
         self._isDerived = bool(random.randint(0, 1))
         self._ncbiTaxonId = random.randint(0, 2**16)
         self._sourceAccessions = []
-        for i in range(random.randint(0, 5)):
-                self._sourceAccessions.append("sim_accession_{}".format(i))
+        for i in range(random.randint(1, 3)):
+                self._sourceAccessions.append("sim_accession_{}".format(
+                    random.randint(1, 2**32)))
         self._sourceUri = "http://example.com/reference.fa"
         for i in range(numReferences):
             referenceSeed = self._randomGenerator.getrandbits(32)
@@ -322,8 +323,9 @@ class SimulatedReference(AbstractReference):
             self._sourceDivergence = rng.uniform(0, 0.1)
         self._ncbiTaxonId = random.randint(0, 2**16)
         self._sourceAccessions = []
-        for i in range(random.randint(0, 5)):
-                self._sourceAccessions.append("sim_accession_{}".format(i))
+        for i in range(random.randint(1, 3)):
+                self._sourceAccessions.append("sim_accession_{}".format(
+                    random.randint(1, 2**32)))
         self._sourceUri = "http://example.com/reference.fa"
 
     def getBases(self, start, end):
