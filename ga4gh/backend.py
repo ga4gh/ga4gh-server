@@ -361,6 +361,14 @@ class AbstractBackend(object):
                 nextPageToken = str(currentIndex)
             yield object_.toProtocolElement(), nextPageToken
 
+    def _objectListGenerator(self, request, objectList):
+        """
+        Returns a generator over the objects in the specified list using
+        _topLevelObjectGenerator to generate page tokens.
+        """
+        return self._topLevelObjectGenerator(
+            request, len(objectList), lambda index: objectList[index])
+
     def _singleObjectGenerator(self, datamodelObject):
         """
         Returns a generator suitable for a search method in which the
@@ -395,8 +403,21 @@ class AbstractBackend(object):
         Returns a generator over the (referenceSet, nextPageToken) pairs
         defined by the specified request.
         """
-        return self._topLevelObjectGenerator(
-            request, self.getNumReferenceSets(), self.getReferenceSetByIndex)
+        results = []
+        for obj in self.getReferenceSets():
+            include = True
+            if request.md5checksum is not None:
+                if request.md5checksum != obj.getMd5Checksum():
+                    include = False
+            if request.accession is not None:
+                if request.accession not in obj.getSourceAccessions():
+                    include = False
+            if request.assemblyId is not None:
+                if request.assemblyId != obj.getAssemblyId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
 
     def referencesGenerator(self, request):
         """
@@ -404,9 +425,18 @@ class AbstractBackend(object):
         defined by the specified request.
         """
         referenceSet = self.getReferenceSet(request.referenceSetId)
-        return self._topLevelObjectGenerator(
-            request, referenceSet.getNumReferences(),
-            referenceSet.getReferenceByIndex)
+        results = []
+        for obj in referenceSet.getReferences():
+            include = True
+            if request.md5checksum is not None:
+                if request.md5checksum != obj.getMd5Checksum():
+                    include = False
+            if request.accession is not None:
+                if request.accession not in obj.getSourceAccessions():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
 
     def variantSetsGenerator(self, request):
         """
