@@ -179,7 +179,8 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
         else:
             self._defaultReadGroup = False
             for readGroupHeader in samFile.header['RG']:
-                readGroup = HtslibReadGroup(self, readGroupHeader['ID'])
+                readGroup = HtslibReadGroup(
+                    self, readGroupHeader['ID'], readGroupHeader)
                 self.addReadGroup(readGroup)
 
     def openFile(self, dataFile):
@@ -255,7 +256,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.predictedInsertSize = None
         readGroup.programs = []
         readGroup.referenceSetId = None
-        readGroup.sampleId = None
+        readGroup.sampleId = self.getSampleId()
         stats = protocol.ReadStats()
         stats.alignedReadCount = self.getNumAlignedReads()
         stats.unalignedReadCount = self.getNumUnalignedReads()
@@ -288,6 +289,12 @@ class AbstractReadGroup(datamodel.DatamodelObject):
     def getPrograms(self):
         """
         Returns an array of Programs used to generate this read group
+        """
+        raise NotImplementedError()
+
+    def getSampleId(self):
+        """
+        Returns the sample id of the read group
         """
         raise NotImplementedError()
 
@@ -340,15 +347,21 @@ class SimulatedReadGroup(AbstractReadGroup):
     def getPrograms(self):
         return []
 
+    def getSampleId(self):
+        return 'sampleId'
+
 
 class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     """
     A readgroup based on htslib's reading of a given file
     """
-    def __init__(self, parentContainer, localId):
+    def __init__(self, parentContainer, localId, readGroupHeader=None):
         super(HtslibReadGroup, self).__init__(parentContainer, localId)
         self._parentSamFilePath = parentContainer.getSamFilePath()
         self._filterReads = not parentContainer.isUsingDefaultReadGroup()
+        self._sampleId = None
+        if readGroupHeader is not None:
+            self._sampleId = readGroupHeader.get('SM', None)
 
     def getSamFilePath(self):
         return self._parentSamFilePath
@@ -460,3 +473,6 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
 
     def getPrograms(self):
         return self._parentContainer.getPrograms()
+
+    def getSampleId(self):
+        return self._sampleId
