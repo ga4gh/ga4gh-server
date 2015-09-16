@@ -172,6 +172,7 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
         super(HtslibReadGroupSet, self).__init__(parentContainer, localId)
         self._samFilePath = dataFile
         samFile = self.getFileHandle(self._samFilePath)
+        self._setHeaderFields(samFile)
         if 'RG' not in samFile.header or len(samFile.header['RG']) == 0:
             self._defaultReadGroup = True
             readGroup = HtslibReadGroup(self, 'default')
@@ -182,6 +183,20 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
                 readGroup = HtslibReadGroup(
                     self, readGroupHeader['ID'], readGroupHeader)
                 self.addReadGroup(readGroup)
+
+    def _setHeaderFields(self, samFile):
+        programs = []
+        if 'PG' in samFile.header:
+            htslibPrograms = samFile.header['PG']
+            for htslibProgram in htslibPrograms:
+                program = protocol.Program()
+                program.id = htslibProgram['ID']
+                program.commandLine = htslibProgram.get('CL', None)
+                program.name = htslibProgram.get('PN', None)
+                program.prevProgramId = htslibProgram.get('PP', None)
+                program.version = htslibProgram.get('VN', None)
+                programs.append(program)
+        self._programs = programs
 
     def openFile(self, dataFile):
         return pysam.AlignmentFile(dataFile)
@@ -207,20 +222,7 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
         return samFile.unmapped
 
     def getPrograms(self):
-        programs = []
-        samFile = self.getFileHandle(self._samFilePath)
-        if 'PG' not in samFile.header:
-            return programs
-        htslibPrograms = samFile.header['PG']
-        for htslibProgram in htslibPrograms:
-            program = protocol.Program()
-            program.id = htslibProgram['ID']
-            program.commandLine = htslibProgram.get('CL', None)
-            program.name = htslibProgram.get('PN', None)
-            program.prevProgramId = htslibProgram.get('PP', None)
-            program.version = htslibProgram.get('VN', None)
-            programs.append(program)
-        return programs
+        return self._programs
 
 
 class AbstractReadGroup(datamodel.DatamodelObject):
@@ -233,7 +235,9 @@ class AbstractReadGroup(datamodel.DatamodelObject):
 
     def __init__(self, parentContainer, localId):
         super(AbstractReadGroup, self).__init__(parentContainer, localId)
-        now = protocol.convertDatetime(datetime.datetime.now())
+        datetimeNow = datetime.datetime.now()
+        now = protocol.convertDatetime(datetimeNow)
+        self._iso8601 = datetimeNow.strftime("%Y-%m-%dT%H:%M:%SZ")
         self._creationTime = now
         self._updateTime = now
 
@@ -253,7 +257,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.experiment = None
         readGroup.info = {}
         readGroup.name = self.getLocalId()
-        readGroup.predictedInsertSize = None
+        readGroup.predictedInsertSize = self.getPredictedInsertSize()
         readGroup.programs = []
         readGroup.referenceSetId = None
         readGroup.sampleId = self.getSampleId()
@@ -263,6 +267,25 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         stats.baseCount = None  # TODO requires iterating through all reads
         readGroup.stats = stats
         readGroup.programs = self.getPrograms()
+        readGroup.description = self.getDescription()
+        experiment = protocol.Experiment()
+        experiment.id = self.getExperimentId()
+        experiment.instrumentModel = self.getInstrumentModel()
+        experiment.sequencingCenter = self.getSequencingCenter()
+        experiment.description = self.getExperimentDescription()
+        experiment.info = {}
+        experiment.instrumentDataFile = None
+        experiment.library = self.getLibrary()
+        experiment.libraryLayout = None
+        experiment.molecule = None
+        experiment.name = None
+        experiment.platformUnit = self.getPlatformUnit()
+        experiment.recordCreateTime = self._iso8601
+        experiment.recordUpdateTime = self._iso8601
+        experiment.runTime = self.getRunTime()
+        experiment.selection = None
+        experiment.strategy = None
+        readGroup.experiment = experiment
         return readGroup
 
     def getReadAlignmentId(self, gaAlignment):
@@ -292,11 +315,65 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         """
         raise NotImplementedError()
 
+    def getDescription(self):
+        """
+        Returns a description of this read group
+        """
+        raise NotImplementedError()
+
     def getSampleId(self):
         """
         Returns the sample id of the read group
         """
         raise NotImplementedError()
+
+    def getPredictedInsertSize(self):
+        """
+        Returns the predicted insert size of the read group
+        """
+        raise NotImplementedError()
+
+    def getInstrumentModel(self):
+        """
+        Returns the instrument model used for this experiment
+        """
+        raise NotImplementedError()
+
+    def getSequencingCenter(self):
+        """
+        Returns the sequencing center used for this experiment
+        """
+        raise NotImplementedError()
+
+    def getExperimentDescription(self):
+        """
+        Returns the description of this read group
+        """
+        raise NotImplementedError()
+
+    def getLibrary(self):
+        """
+        Returns the name of the library used in this experiment
+        """
+        raise NotImplementedError()
+
+    def getPlatformUnit(self):
+        """
+        Returns the platform unit used in this experiment
+        """
+        raise NotImplementedError()
+
+    def getRunTime(self):
+        """
+        Returns the time at which the experiment was performed
+        """
+        raise NotImplementedError()
+
+    def getExperimentId(self):
+        """
+        Returns the id of the experiment used for this read group
+        """
+        return self.getId() + ':experiment'
 
 
 class SimulatedReadGroup(AbstractReadGroup):
@@ -347,8 +424,32 @@ class SimulatedReadGroup(AbstractReadGroup):
     def getPrograms(self):
         return []
 
+    def getDescription(self):
+        return None
+
     def getSampleId(self):
         return 'sampleId'
+
+    def getPredictedInsertSize(self):
+        return 0
+
+    def getInstrumentModel(self):
+        return None
+
+    def getSequencingCenter(self):
+        return None
+
+    def getExperimentDescription(self):
+        return None
+
+    def getLibrary(self):
+        return None
+
+    def getPlatformUnit(self):
+        return None
+
+    def getRunTime(self):
+        return None
 
 
 class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
@@ -360,8 +461,25 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         self._parentSamFilePath = parentContainer.getSamFilePath()
         self._filterReads = not parentContainer.isUsingDefaultReadGroup()
         self._sampleId = None
+        self._description = None
+        self._predictedInsertSize = None
+        self._instrumentModel = None
+        self._sequencingCenter = None
+        self._experimentDescription = None
+        self._library = None
+        self._platformUnit = None
+        self._runTime = None
         if readGroupHeader is not None:
             self._sampleId = readGroupHeader.get('SM', None)
+            self._description = readGroupHeader.get('DS', None)
+            if 'PI' in readGroupHeader:
+                self._predictedInsertSize = int(readGroupHeader['PI'])
+            self._instrumentModel = readGroupHeader.get('PL', None)
+            self._sequencingCenter = readGroupHeader.get('CN', None)
+            self._experimentDescription = readGroupHeader.get('DS', None)
+            self._library = readGroupHeader.get('LB', None)
+            self._platformUnit = readGroupHeader.get('PU', None)
+            self._runTime = readGroupHeader.get('DT', None)
 
     def getSamFilePath(self):
         return self._parentSamFilePath
@@ -474,5 +592,29 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     def getPrograms(self):
         return self._parentContainer.getPrograms()
 
+    def getDescription(self):
+        return self._description
+
     def getSampleId(self):
         return self._sampleId
+
+    def getPredictedInsertSize(self):
+        return self._predictedInsertSize
+
+    def getInstrumentModel(self):
+        return self._instrumentModel
+
+    def getSequencingCenter(self):
+        return self._sequencingCenter
+
+    def getExperimentDescription(self):
+        return self._experimentDescription
+
+    def getLibrary(self):
+        return self._library
+
+    def getPlatformUnit(self):
+        return self._platformUnit
+
+    def getRunTime(self):
+        return self._runTime

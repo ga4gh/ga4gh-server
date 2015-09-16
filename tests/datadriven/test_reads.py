@@ -61,17 +61,32 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 self.reads.append(read)
             self.numAlignedReads = -1
             self.numUnalignedReads = -1
+            self.programs = []
             if 'PG' in self.samFile.header:
                 self.programs = self.samFile.header['PG']
-            else:
-                self.programs = []
+            self.sampleId = None
+            self.description = None
+            self.predictedInsertSize = None
+            self.instrumentModel = None
+            self.sequencingCenter = None
+            self.experimentDescription = None
+            self.library = None
+            self.platformUnit = None
+            self.runTime = None
             if 'RG' in self.samFile.header:
                 readGroupHeader = [
                     rgHeader for rgHeader in self.samFile.header['RG']
                     if rgHeader['ID'] == readGroupName][0]
                 self.sampleId = readGroupHeader.get('SM', None)
-            else:
-                self.sampleId = None
+                self.description = readGroupHeader.get('DS', None)
+                if 'PI' in readGroupHeader:
+                    self.predictedInsertSize = int(readGroupHeader['PI'])
+                self.instrumentModel = readGroupHeader.get('PL', None)
+                self.sequencingCenter = readGroupHeader.get('CN', None)
+                self.experimentDescription = readGroupHeader.get('DS', None)
+                self.library = readGroupHeader.get('LB', None)
+                self.platformUnit = readGroupHeader.get('PU', None)
+                self.runTime = readGroupHeader.get('DT', None)
 
     def __init__(self, readGroupSetId, baseDir):
         dataset = datasets.AbstractDataset("ds")
@@ -105,14 +120,46 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     def getProtocolClass(self):
         return protocol.ReadGroupSet
 
-    def testSampleId(self):
-        # test that sampleId is set correctly
+    def testSampleIdEtc(self):
+        # test that sampleId and other misc fields are set correctly
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
             readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
-            gaSampleId = readGroup.getSampleId()
-            htslibSampleId = readGroupInfo.sampleId
-            self.assertEqual(gaSampleId, htslibSampleId)
+            gaReadGroup = readGroup.toProtocolElement()
+            self.assertEqual(
+                readGroupInfo.sampleId,
+                gaReadGroup.sampleId)
+            self.assertEqual(
+                readGroupInfo.predictedInsertSize,
+                gaReadGroup.predictedInsertSize)
+            self.assertEqual(
+                readGroupInfo.description,
+                gaReadGroup.description)
+
+    def testExperiments(self):
+        # test that the experiment field is set correctly
+        readGroupSet = self._gaObject
+        for readGroup in readGroupSet.getReadGroups():
+            readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
+            gaReadGroup = readGroup.toProtocolElement()
+            self.assertEqual(
+                readGroupInfo.instrumentModel,
+                gaReadGroup.experiment.instrumentModel)
+            self.assertEqual(
+                readGroupInfo.sequencingCenter,
+                gaReadGroup.experiment.sequencingCenter)
+            self.assertEqual(
+                readGroupInfo.experimentDescription,
+                gaReadGroup.experiment.description)
+            self.assertEqual(
+                readGroupInfo.library,
+                gaReadGroup.experiment.library)
+            self.assertEqual(
+                readGroupInfo.platformUnit,
+                gaReadGroup.experiment.platformUnit)
+            self.assertEqual(
+                readGroupInfo.runTime,
+                gaReadGroup.experiment.runTime)
 
     def testPrograms(self):
         # test that program info is set correctly
