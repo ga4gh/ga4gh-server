@@ -83,8 +83,8 @@ class TestGestalt(server_test.ServerTest):
     def runReadsRequest(self):
         cmd = (
             "reads-search --readGroupIds {} "
-            "--referenceId chr1".format(
-                self.simulatedReadGroupId))
+            "--referenceId {}".format(
+                self.simulatedReadGroupId, self.simulatedReferenceId))
         self.runClientCmd(self.client, cmd)
 
     def runReferencesRequest(self):

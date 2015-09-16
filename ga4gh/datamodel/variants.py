@@ -310,7 +310,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
     Class representing a single variant set backed by a directory of indexed
     VCF or BCF files.
     """
-    def __init__(self, parentContainer, localId, dataDir):
+    def __init__(self, parentContainer, localId, dataDir, backend):
         super(HtslibVariantSet, self).__init__(parentContainer, localId)
         self._dataDir = dataDir
         self._setAccessTimes(dataDir)

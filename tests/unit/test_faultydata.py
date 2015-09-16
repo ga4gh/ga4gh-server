@@ -35,7 +35,8 @@ class TestVariantSetNoIndexedVcf(FaultyVariantDataTest):
             path = self.getFullPath(localId)
             self.assertRaises(
                 exceptions.NotIndexedException,
-                variants.HtslibVariantSet, self.dataset, localId, path)
+                variants.HtslibVariantSet, self.dataset, localId, path,
+                None)
 
 
 class TestInconsistentMetaData(FaultyVariantDataTest):
@@ -45,7 +46,7 @@ class TestInconsistentMetaData(FaultyVariantDataTest):
         for localId in self.localIds:
             path = self.getFullPath(localId)
             with self.assertRaises(exceptions.InconsistentMetaDataException):
-                variants.HtslibVariantSet(self.dataset, localId, path)
+                variants.HtslibVariantSet(self.dataset, localId, path, None)
 
 
 class TestInconsistentCallSetId(FaultyVariantDataTest):
@@ -55,7 +56,7 @@ class TestInconsistentCallSetId(FaultyVariantDataTest):
         for localId in self.localIds:
             path = self.getFullPath(localId)
             with self.assertRaises(exceptions.InconsistentCallSetIdException):
-                variants.HtslibVariantSet(self.dataset, localId, path)
+                variants.HtslibVariantSet(self.dataset, localId, path, None)
 
 
 class TestOverlappingVcfVariants(FaultyVariantDataTest):
@@ -65,7 +66,7 @@ class TestOverlappingVcfVariants(FaultyVariantDataTest):
         for localId in self.localIds:
             path = self.getFullPath(localId)
             with self.assertRaises(exceptions.OverlappingVcfException):
-                variants.HtslibVariantSet(self.dataset, localId, path)
+                variants.HtslibVariantSet(self.dataset, localId, path, None)
 
 
 class TestEmptyDirException(FaultyVariantDataTest):
@@ -76,7 +77,7 @@ class TestEmptyDirException(FaultyVariantDataTest):
             path = self.getFullPath(localId)
             self.assertRaises(
                 exceptions.EmptyDirException,
-                variants.HtslibVariantSet, self.dataset, localId, path)
+                variants.HtslibVariantSet, self.dataset, localId, path, None)
 
 
 class TestDuplicateCallSetId(FaultyVariantDataTest):
@@ -100,7 +101,8 @@ class TestDuplicateCallSetId(FaultyVariantDataTest):
             path = self.getFullPath(localId)
             self.assertRaises(
                 exceptions.DuplicateCallSetIdException,
-                variants.HtslibVariantSet, self.dataset, localId, path)
+                variants.HtslibVariantSet, self.dataset, localId, path,
+                None)
 
 
 class FaultyReferenceDataTest(unittest.TestCase):
@@ -123,7 +125,7 @@ class TestTwoReferences(FaultyReferenceDataTest):
         path = self.getFullPath(localId)
         self.assertRaises(
             exceptions.NotExactlyOneReferenceException,
-            references.HtslibReferenceSet, localId, path)
+            references.HtslibReferenceSet, localId, path, None)
 
 
 class TestInconsistentReferenceName(FaultyReferenceDataTest):
@@ -137,4 +139,4 @@ class TestInconsistentReferenceName(FaultyReferenceDataTest):
         path = self.getFullPath(localId)
         self.assertRaises(
             exceptions.InconsistentReferenceNameException,
-            references.HtslibReferenceSet, localId, path)
+            references.HtslibReferenceSet, localId, path, None)

@@ -117,10 +117,11 @@ class AbstractFileDownloader(object):
         self.maxVariants = args.num_variants
         self.maxReads = args.num_reads
         self.samples = args.samples.split(',')
-        self.chromosomes = args.chromosomes.split(',')
+        self.numChromosomes = args.num_chromosomes
+        self.chromosomes = [str(j + 1) for j in range(self.numChromosomes)]
         self.dirName = args.dir_name
-        self.datasetName = 'dataset1'
-        self.variantSetName = '1kg-phase3-subset'
+        self.datasetName = '1kg-p3-subset'
+        self.variantSetName = 'mvncall'
         self.referenceSetName = 'GRCh38-subset'
         self.chromMinMax = ChromMinMax()
         self.accessions = {
@@ -153,16 +154,6 @@ class AbstractFileDownloader(object):
             'HG00534': 'CHS',
         }
 
-    def _getVcfFilenames(self):
-        baseFileName = (
-            "ALL.chr{}.phase3_shapeit2_mvncall_integrated_v5a"
-            ".20130502.genotypes.vcf.gz")
-        chrNames = [
-            str(i) for i in range(1, 23)
-            if str(i) in self.chromosomes]
-        fileNames = [baseFileName.format(chrName) for chrName in chrNames]
-        return fileNames
-
     def getVcfBaseUrl(self):
         return os.path.join(self.getBaseUrl(), 'ftp/release/20130502/')
 
@@ -186,13 +177,17 @@ class AbstractFileDownloader(object):
             record.chrom, self.chromMinMax.getMaxPos(record.chrom),
             self.chromMinMax.getMinPos(record.chrom)))
 
-    def _processFileName(self, fileName):
-        url = os.path.join(self.getVcfBaseUrl(), fileName)
+    def _downloadVcf(self, chromosome):
+        sourceFileName = (
+            "ALL.chr{}.phase3_shapeit2_mvncall_integrated_v5a"
+            ".20130502.genotypes.vcf.gz").format(chromosome)
+        url = os.path.join(self.getVcfBaseUrl(), sourceFileName)
         utils.log("Downloading '{}'".format(url))
         response = urllib2.urlopen(url)
         megabyte = 1024 * 1024
         data = response.read(megabyte)
-        localFileName, _ = os.path.splitext(fileName)
+        localFileName = "{}.vcf".format(chromosome)
+        localCompressedFileName = "{}.gz".format(localFileName)
         localTempFileName = localFileName + '.unsampled'
         utils.log("Writing '{}'".format(localTempFileName))
         with tempfile.NamedTemporaryFile() as binaryFile:
@@ -217,16 +212,41 @@ class AbstractFileDownloader(object):
         os.remove(localTempFileName)
         utils.log("Compressing '{}'".format(localFileName))
         utils.runCommand('bgzip -f {}'.format(localFileName))
-        utils.log("Indexing '{}'".format(fileName))
-        utils.runCommand('tabix {}'.format(fileName))
-        self._updatePositions(fileName)
+        utils.log("Indexing '{}'".format(localCompressedFileName))
+        utils.runCommand('tabix {}'.format(localCompressedFileName))
+        self._updatePositions(localCompressedFileName)
 
     def downloadVcfs(self):
         self._prepareDir()
-        fileNames = self._getVcfFilenames()
-        for fileName in fileNames:
-            self._processFileName(fileName)
+        for chromosome in self.chromosomes:
+            self._downloadVcf(chromosome)
         escapeDir()
+
+    def createBamHeader(self, baseHeader):
+        """
+        Creates a new bam header based on the specified header from the
+        parent BAM file.
+        """
+        header = dict(baseHeader)
+        newSequences = []
+        for index, referenceInfo in enumerate(header['SQ']):
+            if index < self.numChromosomes:
+                referenceName = referenceInfo['SN']
+                # The sequence dictionary in the BAM file has to match up
+                # with the sequence ids in the data, so we must be sure
+                # that these still match up.
+                assert referenceName == self.chromosomes[index]
+                newReferenceInfo = {
+                    'AS': self.referenceSetName,
+                    'SN': referenceName,
+                    'LN': 0,  # FIXME
+                    'UR': 'http://example.com',
+                    'M5': 'dbb6e8ece0b5de29da56601613007c2a',  # FIXME
+                    'SP': 'Human'
+                }
+                newSequences.append(newReferenceInfo)
+        header['SQ'] = newSequences
+        return header
 
     def downloadBams(self):
         dirList = [self.dirName, self.datasetName, 'reads']
@@ -236,16 +256,17 @@ class AbstractFileDownloader(object):
         for sample in self.samples:
             samplePath = '{}/alignment/'.format(sample)
             study = self.studyMap[sample]
-            fileName = (
+            sourceFileName = (
                 '{}.mapped.ILLUMINA.bwa.{}.'
                 'low_coverage.20120522.bam'.format(sample, study))
-            sampleUrl = os.path.join(baseUrl, samplePath, fileName)
+            destFileName = "{}.bam".format(sample)
+            sampleUrl = os.path.join(baseUrl, samplePath, sourceFileName)
             utils.log("Downloading index for '{}'".format(sampleUrl))
             remoteFile = pysam.AlignmentFile(sampleUrl)
-            header = remoteFile.header
-            utils.log("Writing '{}'".format(fileName))
+            header = self.createBamHeader(remoteFile.header)
+            utils.log("Writing '{}'".format(destFileName))
             localFile = pysam.AlignmentFile(
-                fileName, 'wb', header=header)
+                destFileName, 'wb', header=header)
             for chromosome in self.chromosomes:
                 utils.log("chromosome {}".format(chromosome))
                 iterator = remoteFile.fetch(
@@ -253,17 +274,21 @@ class AbstractFileDownloader(object):
                     start=self.chromMinMax.getMinPos(chromosome),
                     end=self.chromMinMax.getMaxPos(chromosome))
                 for index, record in enumerate(iterator):
-                    if index >= self.maxReads:
-                        break
-                    localFile.write(record)
+                    # We only write records where we have the references
+                    # for the next mate. TODO we should take the positions
+                    # of these reads into account later when calculating
+                    # our reference bounds.
+                    if record.next_reference_id < self.numChromosomes:
+                        if index >= self.maxReads:
+                            break
+                        localFile.write(record)
                 utils.log("{} records written".format(index))
-            iterator = None
             remoteFile.close()
             localFile.close()
-            baiFileName = fileName + '.bai'
+            baiFileName = sourceFileName + '.bai'
             os.remove(baiFileName)
-            utils.log("Indexing '{}'".format(fileName))
-            pysam.index(fileName.encode('utf-8'))
+            utils.log("Indexing '{}'".format(destFileName))
+            pysam.index(destFileName.encode('utf-8'))
         escapeDir(3)
 
     def downloadFastas(self):
@@ -361,8 +386,10 @@ def parseArgs():
         "--num-variants", "-V", default=1000, type=int,
         help="the maximum number of variants to download per VCF file.")
     parser.add_argument(
-        "--chromosomes", default="1,2,3",
-        help="the chromosomes whose corresponding reads should be downloaded")
+        "--num-chromosomes", default="3", type=int,
+        help=(
+            "the number of chromosomes whose corresponding reads should "
+            "be downloaded"))
     parser.add_argument(
         "--exclude-reference-min", default=False, action="store_true",
         help="Exclude bases in the reference before the minimum position")

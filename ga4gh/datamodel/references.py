@@ -18,6 +18,13 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
 
+DEFAULT_REFERENCESET_NAME = "Default"
+"""
+This is the name used for any reference set referred to in a BAM
+file that does not provide the 'AS' tag in the @SQ header.
+"""
+
+
 class AbstractReferenceSet(datamodel.DatamodelObject):
     """
     Class representing ReferenceSets. A ReferenceSet is a set of
@@ -29,6 +36,7 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
     def __init__(self, localId):
         super(AbstractReferenceSet, self).__init__(None, localId)
         self._referenceIdMap = {}
+        self._referenceNameMap = {}
         self._referenceIds = []
         self._assemblyId = None
         self._description = None
@@ -43,6 +51,7 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         """
         id_ = reference.getId()
         self._referenceIdMap[id_] = reference
+        self._referenceNameMap[reference.getLocalId()] = reference
         self._referenceIds.append(id_)
 
     def getReferences(self):
@@ -62,6 +71,14 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         Returns the reference at the specified index in this ReferenceSet.
         """
         return self._referenceIdMap[self._referenceIds[index]]
+
+    def getReferenceByName(self, name):
+        """
+        Returns the reference with the specified name.
+        """
+        if name not in self._referenceNameMap:
+            raise exceptions.ReferenceNameNotFoundException(name)
+        return self._referenceNameMap[name]
 
     def getReference(self, id_):
         """
@@ -343,7 +360,7 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     """
     A referenceSet based on data on a file system
     """
-    def __init__(self, localId, dataDir):
+    def __init__(self, localId, dataDir, backend):
         super(HtslibReferenceSet, self).__init__(localId)
         self._dataDir = dataDir
         self._scanDataFiles(dataDir, ["*.fa.gz"])
@@ -351,7 +368,6 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     def _addDataFile(self, path):
         dirname, filename = os.path.split(path)
         localId = filename.split(".")[0]
-        metadata = {}
         metadataFileName = os.path.join(dirname, "{}.json".format(localId))
         with open(metadataFileName) as metadataFile:
             metadata = json.load(metadataFile)

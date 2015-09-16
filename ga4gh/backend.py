@@ -6,8 +6,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import json
+import os
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -154,10 +154,13 @@ class ReadsIntervalIterator(IntervalIterator):
     """
     An interval iterator for reads
     """
+    def __init__(self, request, parentContainer, reference):
+        self._reference = reference
+        super(ReadsIntervalIterator, self).__init__(request, parentContainer)
 
     def _search(self, start, end):
         return self._parentContainer.getReadAlignments(
-            self._request.referenceId, start, end)
+            self._reference, start, end)
 
     @classmethod
     def _getStart(cls, readAlignment):
@@ -202,6 +205,7 @@ class AbstractBackend(object):
         self._datasetIdMap = {}
         self._datasetIds = []
         self._referenceSetIdMap = {}
+        self._referenceSetNameMap = {}
         self._referenceSetIds = []
 
     def addDataset(self, dataset):
@@ -218,6 +222,7 @@ class AbstractBackend(object):
         """
         id_ = referenceSet.getId()
         self._referenceSetIdMap[id_] = referenceSet
+        self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
 
     def setRequestValidation(self, requestValidation):
@@ -298,6 +303,14 @@ class AbstractBackend(object):
         Returns the reference set at the specified index.
         """
         return self._referenceSetIdMap[self._referenceSetIds[index]]
+
+    def getReferenceSetByName(self, name):
+        """
+        Returns the reference set with the specified name.
+        """
+        if name not in self._referenceSetNameMap:
+            raise exceptions.ReferenceSetNameNotFoundException(name)
+        return self._referenceSetNameMap[name]
 
     def startProfile(self):
         """
@@ -463,7 +476,10 @@ class AbstractBackend(object):
         dataset = self.getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
         readGroup = readGroupSet.getReadGroup(compoundId.readGroupId)
-        intervalIterator = ReadsIntervalIterator(request, readGroup)
+        # Find the reference.
+        referenceSet = readGroupSet.getReferenceSet()
+        reference = referenceSet.getReference(request.referenceId)
+        intervalIterator = ReadsIntervalIterator(request, readGroup, reference)
         return intervalIterator
 
     def variantsGenerator(self, request):
@@ -746,17 +762,6 @@ class SimulatedBackend(AbstractBackend):
             numAlignments=2):
         super(SimulatedBackend, self).__init__()
 
-        # Datasets
-        for i in range(numDatasets):
-            seed = randomSeed + i
-            localId = "simulatedDataset{}".format(i)
-            dataset = datasets.SimulatedDataset(
-                localId, randomSeed=seed, numCalls=numCalls,
-                variantDensity=variantDensity, numVariantSets=numVariantSets,
-                numReadGroupSets=numReadGroupSets,
-                numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
-                numAlignments=numAlignments)
-            self.addDataset(dataset)
         # References
         for i in range(numReferenceSets):
             localId = "referenceSet{}".format(i)
@@ -764,6 +769,20 @@ class SimulatedBackend(AbstractBackend):
             referenceSet = references.SimulatedReferenceSet(
                 localId, seed, numReferencesPerReferenceSet)
             self.addReferenceSet(referenceSet)
+
+        # Datasets
+        for i in range(numDatasets):
+            seed = randomSeed + i
+            localId = "simulatedDataset{}".format(i)
+            referenceSet = self.getReferenceSetByIndex(i % numReferenceSets)
+            dataset = datasets.SimulatedDataset(
+                localId, referenceSet=referenceSet, randomSeed=seed,
+                numCalls=numCalls, variantDensity=variantDensity,
+                numVariantSets=numVariantSets,
+                numReadGroupSets=numReadGroupSets,
+                numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
+                numAlignments=numAlignments)
+            self.addDataset(dataset)
 
 
 class FileSystemBackend(AbstractBackend):
@@ -783,7 +802,7 @@ class FileSystemBackend(AbstractBackend):
             relativePath = os.path.join(referenceSetDir, referenceSetName)
             if os.path.isdir(relativePath):
                 referenceSet = references.HtslibReferenceSet(
-                    referenceSetName, relativePath)
+                    referenceSetName, relativePath, self)
                 self.addReferenceSet(referenceSet)
         # Datasets
         datasetDirs = [
@@ -792,5 +811,5 @@ class FileSystemBackend(AbstractBackend):
             if os.path.isdir(os.path.join(self._dataDir, directory)) and
             directory != referencesDirName]
         for datasetDir in datasetDirs:
-            dataset = datasets.FileSystemDataset(datasetDir)
+            dataset = datasets.FileSystemDataset(datasetDir, self)
             self.addDataset(dataset)

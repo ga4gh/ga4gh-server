@@ -10,6 +10,7 @@ import unittest
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
+import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 
 
@@ -125,8 +126,9 @@ class TestSimulatedReadGroupSet(unittest.TestCase):
     def testCreation(self):
         dataset = datasets.AbstractDataset('dataset1')
         localId = "readGroupSetId"
+        referenceSet = references.SimulatedReferenceSet("srs1")
         simulatedReadGroupSet = reads.SimulatedReadGroupSet(
-                dataset, localId)
+                dataset, localId, referenceSet)
         for readGroup in simulatedReadGroupSet.getReadGroups():
             alignments = list(readGroup.getReadAlignments())
             self.assertGreater(len(alignments), 0)

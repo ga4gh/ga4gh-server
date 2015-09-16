@@ -73,6 +73,9 @@ class BaseServerException(Exception):
         code = (zlib.crc32(cls.__name__) & 0xffffffff) % 2**31
         return code
 
+    def __str__(self):
+        return self.getMessage()
+
 
 #####################################################################
 #
@@ -218,14 +221,6 @@ class ReferenceNotFoundException(ObjectNotFoundException):
         self.message = "referenceId '{}' not found".format(referenceId)
 
 
-class ReferenceNotFoundInReadGroupException(ObjectNotFoundException):
-    def __init__(self, readGroupId, referenceId, validRefs):
-        self.message = (
-            "reference '{}' does not exist "
-            "in read group '{}'; valid references are: {}".format(
-                referenceId, readGroupId, validRefs))
-
-
 class ObjectWithIdNotFoundException(ObjectNotFoundException):
     def __init__(self, objectId):
         self.message = "No object of this type exists with id '{}'".format(
@@ -317,6 +312,24 @@ class ReadGroupSetNameNotFoundException(NotFoundException):
     """
     def __init__(self, name):
         self.message = "ReadGroupSet with name '{0}' not found".format(name)
+
+
+class ReferenceNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for a Reference with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "Reference with name '{0}' not found".format(name)
+
+
+class ReferenceSetNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for a ReferenceSetSet with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "ReferenceSet with name '{0}' not found".format(name)
 
 
 class DataException(BaseServerException):
@@ -430,12 +443,37 @@ class InconsistentReferenceNameException(MalformedException):
 
 class MissingReferenceMetadata(MalformedException):
     """
-    A FASTA file is missing some metadata in the JSON file.
+    A FASTA file is missing some metadata in the corresponding JSON file.
     """
     def __init__(self, fileName, key):
         self.message = (
             "JSON metadata for file {} is missing key {}".format(
                 fileName, key))
+
+
+class ReadGroupReferenceNotFound(MalformedException):
+    """
+    A BAM file contains reference names that are not in the linked
+    ReadGroupSet.
+    """
+    def __init__(self, fileName, referenceName, referenceSetName):
+        self.message = (
+            "The BAM file '{}' contains the reference '{}' which "
+            "is not present in the ReferenceSet  '{}'".format(
+                fileName, referenceName, referenceSetName))
+
+
+class MultipleReferenceSetsInReadGroupSet(MalformedException):
+    """
+    A BAM file contains reference sequences from multiple reference
+    sets.
+    """
+    def __init__(self, fileName, referenceSetName, otherReferenceSetName):
+        self.message = (
+            "The BAM file '{}' contains the referenceSets '{}' and "
+            "'{}'; at most one referenceSet per file is allowed.".format(
+                fileName, referenceSetName, otherReferenceSetName))
+
 
 ###############################################################
 #
