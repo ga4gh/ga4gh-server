@@ -65,6 +65,13 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 self.programs = self.samFile.header['PG']
             else:
                 self.programs = []
+            if 'RG' in self.samFile.header:
+                readGroupHeader = [
+                    rgHeader for rgHeader in self.samFile.header['RG']
+                    if rgHeader['ID'] == readGroupName][0]
+                self.sampleId = readGroupHeader.get('SM', None)
+            else:
+                self.sampleId = None
 
     def __init__(self, readGroupSetId, baseDir):
         dataset = datasets.AbstractDataset("ds")
@@ -97,6 +104,15 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
 
     def getProtocolClass(self):
         return protocol.ReadGroupSet
+
+    def testSampleId(self):
+        # test that sampleId is set correctly
+        readGroupSet = self._gaObject
+        for readGroup in readGroupSet.getReadGroups():
+            readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
+            gaSampleId = readGroup.getSampleId()
+            htslibSampleId = readGroupInfo.sampleId
+            self.assertEqual(gaSampleId, htslibSampleId)
 
     def testPrograms(self):
         # test that program info is set correctly
