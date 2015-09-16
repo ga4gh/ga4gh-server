@@ -373,7 +373,7 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
                 self._fastaFilePath, numReferences)
         if fastaFile.references[0] != localId:
             raise exceptions.InconsistentReferenceNameException(
-                self._fastaFilePath, fastaFile.references[0])
+                self._fastaFilePath)
         self._length = fastaFile.lengths[0]
         try:
             self._md5checksum = metadata["md5checksum"]
