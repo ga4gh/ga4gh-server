@@ -18,3 +18,4 @@ snakefood
 sphinx
 numpy
 pyfaidx
+pyfasta

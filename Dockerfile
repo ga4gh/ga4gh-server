@@ -13,6 +13,9 @@ MAINTAINER Alastair Firth
 ADD deploy/config.py /app/ga4gh/docker_config.py
 RUN cp --no-clobber /app/ga4gh/docker_config.py /app/ga4gh/config.py
 
+# Install dependencies
+RUN pip install --upgrade -r /app/requirements.txt
+
 # Pass '-e GA4GH_DATA_SOURCE=/container/data/path' and '-v /host/data/path:/container/data/path:ro' to docker run to mount local data
 # See docs for more info
 
