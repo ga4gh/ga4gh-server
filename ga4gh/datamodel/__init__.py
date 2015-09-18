@@ -258,6 +258,14 @@ class ReadGroupCompoundId(ReadGroupSetCompoundId):
     containerIds = ReadGroupSetCompoundId.containerIds + [('readGroupId', 2)]
 
 
+class ExperimentCompoundId(ReadGroupCompoundId):
+    """
+    The compound id for an experiment
+    """
+    fields = ReadGroupCompoundId.fields + ['experiment']
+    containerIds = ReadGroupCompoundId.containerIds + [('experimentId', 3)]
+
+
 class ReadAlignmentCompoundId(ReadGroupCompoundId):
     """
     The compound id for a read alignment

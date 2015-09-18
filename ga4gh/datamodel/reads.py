@@ -254,7 +254,6 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         dataset = self.getParentContainer().getParentContainer()
         readGroup.datasetId = dataset.getId()
         readGroup.description = None
-        readGroup.experiment = None
         readGroup.info = {}
         readGroup.name = self.getLocalId()
         readGroup.predictedInsertSize = self.getPredictedInsertSize()
@@ -373,7 +372,8 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         """
         Returns the id of the experiment used for this read group
         """
-        return self.getId() + ':experiment'
+        return str(datamodel.ExperimentCompoundId(
+            self.getCompoundId(), 'experiment'))
 
 
 class SimulatedReadGroup(AbstractReadGroup):
