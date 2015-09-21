@@ -5,7 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import mock
 import tempfile
 import unittest
 
@@ -13,7 +12,6 @@ import pysam
 
 import ga4gh.protocol as protocol
 import ga4gh.converters as converters
-import tests.utils as utils
 
 
 class TestSamConverter(unittest.TestCase):
@@ -23,7 +21,7 @@ class TestSamConverter(unittest.TestCase):
     """
     readsFilePath = 'tests/unit/reads.dat'
 
-    def _getReads(self):
+    def getReads(self):
         readsFile = file(self.readsFilePath)
         lines = readsFile.readlines()
         reads = []
@@ -31,34 +29,6 @@ class TestSamConverter(unittest.TestCase):
             read = protocol.ReadAlignment.fromJsonString(line)
             reads.append(read)
         return reads
-
-    def getHttpClient(self):
-        httpClient = utils.makeHttpClient()
-        httpClient.searchReads = self.getSearchReadsResponse
-        return httpClient
-
-    def getSearchReadsRequest(self):
-        request = protocol.SearchReadsRequest()
-        return request
-
-    def getSearchReadsResponse(self, request):
-        return self._getReads()
-
-
-class TestSamConverterLogic(TestSamConverter):
-    """
-    Test the SamConverter logic
-    """
-    def testSamConverter(self):
-        mockPysam = mock.Mock()
-        with mock.patch('pysam.AlignmentFile', mockPysam):
-            httpClient = self.getHttpClient()
-            searchReadsRequest = self.getSearchReadsRequest()
-            outputFile = None
-            binaryOutput = False
-            samConverter = converters.SamConverter(
-                httpClient, searchReadsRequest, outputFile, binaryOutput)
-            samConverter.convert()
 
 
 class TestSamConverterRoundTrip(TestSamConverter):
@@ -68,11 +38,9 @@ class TestSamConverterRoundTrip(TestSamConverter):
     def _testRoundTrip(self, binaryOutput):
         with tempfile.NamedTemporaryFile() as fileHandle:
             # write SAM file
-            httpClient = self.getHttpClient()
-            searchReadsRequest = self.getSearchReadsRequest()
             filePath = fileHandle.name
             samConverter = converters.SamConverter(
-                httpClient, searchReadsRequest, filePath, binaryOutput)
+                None, self.getReads(), filePath, binaryOutput)
             samConverter.convert()
 
             # read SAM file

@@ -15,9 +15,9 @@ class ClientHelperMixin(object):
     """
     Helper methods involving the client for server tests
     """
-    def runClientCmd(self, client, command):
+    def runClientCmd(self, client, command, arguments=""):
         try:
-            client.runCommand(command)
+            client.runCommand(command, arguments)
         except subprocess.CalledProcessError as error:
             self.server.printDebugInfo()
             raise error
@@ -82,9 +82,9 @@ class RemoteServerTest(ServerTest):
     def getServer(self):
         raise NotImplementedError("Must subclass RemoteServerTest")
 
-    def runClientCmd(self, client, command):
+    def runClientCmd(self, client, command, arguments=""):
         try:
-            client.runCommand(command)
+            client.runCommand(command, arguments)
         except subprocess.CalledProcessError as error:
             self.server.printDebugInfo()
             self.remoteServer.printDebugInfo()

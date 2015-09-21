@@ -7,7 +7,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import time
 import argparse
 import logging
 import unittest
@@ -17,7 +16,6 @@ import unittest.suite
 import requests
 
 import ga4gh.client as client
-import ga4gh.protocol as protocol
 import ga4gh.converters as converters
 import ga4gh.frontend as frontend
 import ga4gh.configtest as configtest
@@ -32,173 +30,6 @@ import ga4gh.exceptions as exceptions
 # This should be removed once pysam input sanitisation has been
 # implemented.
 AVRO_LONG_MAX = 2**31 - 1
-
-
-def setCommaSeparatedAttribute(request, args, attr):
-    attribute = getattr(args, attr)
-    if attribute is not None:
-        setattr(request, attr, attribute.split(","))
-
-
-class RequestFactory(object):
-    """
-    Provides methods for easy inititalization of request objects
-    """
-    def __init__(self, args):
-        self.args = args
-
-    def createSearchVariantSetsRequest(self):
-        request = protocol.SearchVariantSetsRequest()
-        request.datasetId = self.args.datasetId
-        request.pageSize = self.args.pageSize
-        request.pageToken = None
-        return request
-
-    def createSearchVariantsRequest(self):
-        request = protocol.SearchVariantsRequest()
-        request.referenceName = self.args.referenceName
-        request.variantName = self.args.variantName
-        request.start = self.args.start
-        request.end = self.args.end
-        if self.args.callSetIds == []:
-            request.callSetIds = []
-        elif self.args.callSetIds == '*':
-            # For v0.5.1 the semantics are for the empty list to correspond
-            # to all calls. This should be set to None for v0.6
-            request.callSetIds = []
-        else:
-            request.callSetIds = self.args.callSetIds.split(",")
-        request.variantSetId = self.args.variantSetId
-        return request
-
-    def createSearchReferenceSetsRequest(self):
-        request = protocol.SearchReferenceSetsRequest()
-        request.accession = self.args.accession
-        request.md5checksum = self.args.md5checksum
-        return request
-
-    def createSearchReferencesRequest(self):
-        request = protocol.SearchReferencesRequest()
-        request.accession = self.args.accession
-        request.md5checksum = self.args.md5checksum
-        request.referenceSetId = self.args.referenceSetId
-        return request
-
-    def createSearchReadGroupSetsRequest(self):
-        request = protocol.SearchReadGroupSetsRequest()
-        request.datasetId = self.args.datasetId
-        request.name = self.args.name
-        return request
-
-    def createSearchCallSetsRequest(self):
-        request = protocol.SearchCallSetsRequest()
-        request.variantSetId = self.args.variantSetId
-        request.name = self.args.name
-        return request
-
-    def createSearchReadsRequest(self):
-        request = protocol.SearchReadsRequest()
-        setCommaSeparatedAttribute(request, self.args, 'readGroupIds')
-        request.start = self.args.start
-        request.end = self.args.end
-        request.referenceId = self.args.referenceId
-        return request
-
-    def createSearchDatasetsRequest(self):
-        request = protocol.SearchDatasetsRequest()
-        return request
-
-    def createListReferenceBasesRequest(self):
-        request = protocol.ListReferenceBasesRequest()
-        request.start = self.args.start
-        request.end = self.args.end
-        return request
-
-
-##############################################################################
-# ga2vcf
-##############################################################################
-
-
-def addOutputFileArgument(parser):
-    parser.add_argument(
-        "--outputFile", "-o", default=None,
-        help="the file to write the output to")
-
-
-def ga2vcf_main(parser=None):
-    # parse args
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description=(
-                "GA4GH VCF conversion tool. Converts variant information "
-                "stored in a GA4GH repository into VCF format."))
-    addClientGlobalOptions(parser)
-    addOutputFileArgument(parser)
-    addBinaryOutputArgument(parser)
-    addUrlArgument(parser)
-    parser.add_argument("variantSetId", help="The variant set to convert")
-    addReferenceNameArgument(parser)
-    addVariantNameArgument(parser)
-    addCallSetIdsArgument(parser)
-    addStartArgument(parser)
-    addEndArgument(parser)
-    addPageSizeArgument(parser)
-    args = parser.parse_args()
-    if "baseUrl" not in args:
-        parser.print_help()
-    else:
-        ga2vcf_run(args)
-
-
-def ga2vcf_run(args):
-    searchVariantsRequest = RequestFactory(args).createSearchVariantsRequest()
-    httpClient = client.HttpClient(
-        args.baseUrl, args.verbose, args.key)
-    # do conversion
-    vcfConverter = converters.VcfConverter(
-        httpClient, searchVariantsRequest, args.outputFile, args.binaryOutput)
-    vcfConverter.convert()
-
-
-##############################################################################
-# ga2sam
-##############################################################################
-
-
-def ga2sam_main(parser=None):
-    # parse args
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH SAM conversion tool")
-    addClientGlobalOptions(parser)
-    addReadsSearchParserArguments(parser)
-    addBinaryOutputArgument(parser)
-    addOutputFileArgument(parser)
-    args = parser.parse_args()
-    if "baseUrl" not in args:
-        parser.print_help()
-    else:
-        ga2sam_run(args)
-
-
-def ga2sam_run(args):
-    # instantiate params
-    searchReadsRequest = RequestFactory(
-        args).createSearchReadsRequest()
-    httpClient = client.HttpClient(
-        args.baseUrl, args.verbose, args.key)
-
-    # do conversion
-    samConverter = converters.SamConverter(
-        httpClient, searchReadsRequest, args.outputFile, args.binaryOutput)
-    samConverter.convert()
-
-
-def addBinaryOutputArgument(parser):
-    parser.add_argument(
-        "--binaryOutput", "-b", default=False,
-        action="store_true", help="Output a BAM (binary) file")
 
 
 ##############################################################################
@@ -259,12 +90,38 @@ class AbstractQueryRunner(object):
     """
     def __init__(self, args):
         self._key = args.key
-        self._verbosity = args.verbose
         self._httpClient = client.HttpClient(
             args.baseUrl, args.verbose, self._key)
 
 
-class AbstractGetRunner(AbstractQueryRunner):
+class FormattedOutputRunner(AbstractQueryRunner):
+    """
+    Superclass of runners that support output in common formats.
+    """
+    def __init__(self, args):
+        super(FormattedOutputRunner, self).__init__(args)
+        self._output = self._textOutput
+        if args.outputFormat == "json":
+            self._output = self._jsonOutput
+
+    def _jsonOutput(self, gaObjects):
+        """
+        Outputs the specified protocol objects as one JSON string per
+        line.
+        """
+        for gaObject in gaObjects:
+            print(gaObject.toJsonString())
+
+    def _textOutput(self, gaObjects):
+        """
+        Outputs a text summary of the specified protocol objects, one
+        per line.
+        """
+        for gaObject in gaObjects:
+            print(gaObject.id, gaObject.name, sep="\t")
+
+
+class AbstractGetRunner(FormattedOutputRunner):
     """
     Abstract base class for get runner classes
     """
@@ -274,90 +131,65 @@ class AbstractGetRunner(AbstractQueryRunner):
         self._httpClient = client.HttpClient(
             args.baseUrl, args.verbose, self._key)
 
-    def _run(self, method):
-        response = method(self._id)
-        print(response.id)
+    def run(self):
+        response = self._method(self._id)
+        self._output([response])
 
 
-class AbstractSearchRunner(AbstractQueryRunner):
+class AbstractSearchRunner(FormattedOutputRunner):
     """
     Abstract base class for search runner classes
     """
+
     def __init__(self, args):
         super(AbstractSearchRunner, self).__init__(args)
+        self._pageSize = args.pageSize
 
-    def _setRequest(self, request, args):
+    def getAllDatasets(self):
         """
-        Sets the _httpClient and other common attributes
+        Returns all datasets on the server.
         """
-        self._minimalOutput = args.minimalOutput
-        if 'pageSize' in args:
-            # ListReferenceBasesRequest does not have a pageSize attr
-            request.pageSize = args.pageSize
-        self._request = request
+        return self._httpClient.searchDatasets(pageSize=self._pageSize)
 
-    def _run(self, method, attrName=None):
+    def getAllVariantSets(self):
         """
-        Runs the request given methodname and prints out
-        the each result's attrName attribute if it is provided.
-        If not, prints each entire result object.
+        Returns all variant sets on the server.
         """
-        results = method(self._request)
-        for result in results:
-            if attrName is None:
-                print(result)
-            else:
-                attr = getattr(result, attrName)
-                print(attr)
+        for dataset in self.getAllDatasets():
+            iterator = self._httpClient.searchVariantSets(
+                datasetId=dataset.id, pageSize=self._pageSize)
+            for variantSet in iterator:
+                yield variantSet
+
+    def getAllReadGroupSets(self):
+        """
+        Returns all readgroup sets on the server.
+        """
+        for dataset in self.getAllDatasets():
+            iterator = self._httpClient.searchReadGroupSets(
+                datasetId=dataset.id, pageSize=self._pageSize)
+            for readGroupSet in iterator:
+                yield readGroupSet
+
+    def getAllReferenceSets(self):
+        """
+        Returns all reference sets on the server.
+        """
+        return self._httpClient.searchReferenceSets(pageSize=self._pageSize)
 
 
-class SearchVariantSetsRunner(AbstractSearchRunner):
+# Runners for the various search methods
+
+class SearchDatasetsRunner(AbstractSearchRunner):
     """
-    Runner class for the variantsets/search method.
-    """
-    def __init__(self, args):
-        super(SearchVariantSetsRunner, self).__init__(args)
-        request = RequestFactory(args).createSearchVariantSetsRequest()
-        self._setRequest(request, args)
-
-    def run(self):
-        self._run(self._httpClient.searchVariantSets, 'id')
-
-
-class SearchVariantsRunner(AbstractSearchRunner):
-    """
-    Runner class for the variants/search method.
+    Runner class for the datasets/search method
     """
     def __init__(self, args):
-        super(SearchVariantsRunner, self).__init__(args)
-        request = RequestFactory(args).createSearchVariantsRequest()
-        self._setRequest(request, args)
+        super(SearchDatasetsRunner, self).__init__(args)
 
     def run(self):
-        if self._minimalOutput:
-            self._run(self._httpClient.searchVariants, 'id')
-        else:
-            results = self._httpClient.searchVariants(self._request)
-            for result in results:
-                self.printVariant(result)
-
-    def printVariant(self, variant):
-        """
-        Prints out the specified Variant object in a VCF-like form.
-        """
-        print(
-            variant.id, variant.variantSetId, variant.names,
-            variant.referenceName, variant.start, variant.end,
-            variant.referenceBases, variant.alternateBases,
-            sep="\t", end="\t")
-        for key, value in variant.info.items():
-            print(key, value, sep="=", end=";")
-        print("\t", end="")
-        for c in variant.calls:
-            print(
-                c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
-                c.phaseset, sep=":", end="\t")
-        print()
+        iterator = self._httpClient.searchDatasets(pageSize=self._pageSize)
+        self._output(iterator)
 
 
 class SearchReferenceSetsRunner(AbstractSearchRunner):
@@ -366,11 +198,14 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReferenceSetsRunner, self).__init__(args)
-        request = RequestFactory(args).createSearchReferenceSetsRequest()
-        self._setRequest(request, args)
+        self._accession = args.accession
+        self._md5checksum = args.md5checksum
 
     def run(self):
-        self._run(self._httpClient.searchReferenceSets, 'id')
+        iterator = self._httpClient.searchReferenceSets(
+            accession=self._accession, md5checksum=self._md5checksum,
+            pageSize=self._pageSize)
+        self._output(iterator)
 
 
 class SearchReferencesRunner(AbstractSearchRunner):
@@ -379,11 +214,43 @@ class SearchReferencesRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReferencesRunner, self).__init__(args)
-        request = RequestFactory(args).createSearchReferencesRequest()
-        self._setRequest(request, args)
+        self._referenceSetId = args.referenceSetId
+        self._accession = args.accession
+        self._md5checksum = args.md5checksum
+
+    def _run(self, referenceSetId):
+        iterator = self._httpClient.searchReferences(
+            accession=self._accession, md5checksum=self._md5checksum,
+            referenceSetId=referenceSetId, pageSize=self._pageSize)
+        self._output(iterator)
 
     def run(self):
-        self._run(self._httpClient.searchReferences, 'id')
+        if self._referenceSetId is None:
+            for referenceSet in self.getAllReferenceSets():
+                self._run(referenceSet.id)
+        else:
+            self._run(self._referenceSetId)
+
+
+class SearchVariantSetsRunner(AbstractSearchRunner):
+    """
+    Runner class for the variantsets/search method.
+    """
+    def __init__(self, args):
+        super(SearchVariantSetsRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+
+    def _run(self, datasetId):
+        iterator = self._httpClient.searchVariantSets(
+            datasetId=datasetId, pageSize=self._pageSize)
+        self._output(iterator)
+
+    def run(self):
+        if self._datasetId is None:
+            for dataset in self.getAllDatasets():
+                self._run(dataset.id)
+        else:
+            self._run(self._datasetId)
 
 
 class SearchReadGroupSetsRunner(AbstractSearchRunner):
@@ -392,11 +259,20 @@ class SearchReadGroupSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchReadGroupSetsRunner, self).__init__(args)
-        request = RequestFactory(args).createSearchReadGroupSetsRequest()
-        self._setRequest(request, args)
+        self._datasetId = args.datasetId
+        self._name = args.name
+
+    def _run(self, datasetId):
+        iterator = self._httpClient.searchReadGroupSets(
+            datasetId=datasetId, name=self._name, pageSize=self._pageSize)
+        self._output(iterator)
 
     def run(self):
-        self._run(self._httpClient.searchReadGroupSets, 'id')
+        if self._datasetId is None:
+            for dataset in self.getAllDatasets():
+                self._run(dataset.id)
+        else:
+            self._run(self._datasetId)
 
 
 class SearchCallSetsRunner(AbstractSearchRunner):
@@ -405,67 +281,128 @@ class SearchCallSetsRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchCallSetsRunner, self).__init__(args)
-        request = RequestFactory(args).createSearchCallSetsRequest()
-        self._setRequest(request, args)
+        self._variantSetId = args.variantSetId
+        self._name = args.name
+
+    def _run(self, variantSetId):
+        iterator = self._httpClient.searchCallSets(
+            variantSetId=variantSetId, name=self._name,
+            pageSize=self._pageSize)
+        self._output(iterator)
 
     def run(self):
-        self._run(self._httpClient.searchCallSets, 'id')
+        if self._variantSetId is None:
+            for variantSet in self.getAllVariantSets():
+                self._run(variantSet.id)
+        else:
+            self._run(self._variantSetId)
+
+
+class SearchVariantsRunner(AbstractSearchRunner):
+    """
+    Runner class for the variants/search method.
+    """
+    def __init__(self, args):
+        super(SearchVariantsRunner, self).__init__(args)
+        self._referenceName = args.referenceName
+        self._variantSetId = args.variantSetId
+        self._start = args.start
+        self._end = args.end
+        if args.callSetIds == []:
+            self._callSetIds = []
+        elif args.callSetIds == '*':
+            self._callSetIds = None
+        else:
+            self._callSetIds = args.callSetIds.split(",")
+
+    def _run(self, variantSetId):
+        iterator = self._httpClient.searchVariants(
+            start=self._start, end=self._end,
+            referenceName=self._referenceName,
+            variantSetId=variantSetId, callSetIds=self._callSetIds,
+            pageSize=self._pageSize)
+        self._output(iterator)
+
+    def run(self):
+        if self._variantSetId is None:
+            for variantSet in self.getAllVariantSets():
+                self._run(variantSet.id)
+        else:
+            self._run(self._variantSetId)
+
+    def _textOutput(self, gaObjects):
+        """
+        Prints out the specified Variant objects in a VCF-like form.
+        """
+        for variant in gaObjects:
+            print(
+                variant.id, variant.variantSetId, variant.names,
+                variant.referenceName, variant.start, variant.end,
+                variant.referenceBases, variant.alternateBases,
+                sep="\t", end="\t")
+            for key, value in variant.info.items():
+                print(key, value, sep="=", end=";")
+            print("\t", end="")
+            for c in variant.calls:
+                print(
+                    c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
+                    c.phaseset, sep=":", end="\t")
+            print()
 
 
 class SearchReadsRunner(AbstractSearchRunner):
     """
     Runner class for the reads/search method
     """
-    class SearchReadsRequestGoogle(protocol.ProtocolElement):
-
-        __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds',
-                     'referenceName', 'start']
-
-        def __init__(self):
-            self.end = None
-            self.pageSize = None
-            self.pageToken = None
-            self.readGroupIds = []
-            self.referenceName = None
-            self.start = 0
-
     def __init__(self, args):
         super(SearchReadsRunner, self).__init__(args)
-        request = RequestFactory(args).createSearchReadsRequest()
-        self._setRequest(request, args)
+        self._start = args.start
+        self._end = args.end
+        self._referenceId = args.referenceId
+        self._readGroupIds = None
+        if args.readGroupIds is not None:
+            self._readGroupIds = args.readGroupIds.split(",")
 
     def run(self):
-        self._run(self._httpClient.searchReads, 'id')
+        # TODO add support for looking up ReadGroupSets and References
+        # like we do with SearchVariants and others.
+        iterator = self._httpClient.searchReads(
+            readGroupIds=self._readGroupIds, referenceId=self._referenceId,
+            start=self._start, end=self._end, pageSize=self._pageSize)
+        self._output(iterator)
+
+    def _textOutput(self, gaObjects):
+        """
+        Prints out the specified Variant objects in a VCF-like form.
+        """
+        for read in gaObjects:
+            # TODO add in some more useful output here.
+            print(read.id)
 
 
-class SearchDatasetsRunner(AbstractSearchRunner):
-    """
-    Runner class for the datasets/search method
-    """
-    def __init__(self, args):
-        super(SearchDatasetsRunner, self).__init__(args)
-        request = RequestFactory(args).createSearchDatasetsRequest()
-        self._setRequest(request, args)
+# ListReferenceBases is an oddball, and doesn't fit either get or
+# search patterns.
 
-    def run(self):
-        self._run(self._httpClient.searchDatasets, 'id')
-
-
-class ListReferenceBasesRunner(AbstractSearchRunner):
+class ListReferenceBasesRunner(AbstractQueryRunner):
     """
     Runner class for the references/{id}/bases method
     """
     def __init__(self, args):
         super(ListReferenceBasesRunner, self).__init__(args)
-        request = RequestFactory(args).createListReferenceBasesRequest()
-        self._id = args.id
-        self._setRequest(request, args)
+        self._referenceId = args.id
+        self._start = args.start
+        self._end = args.end
 
     def run(self):
-        method = self._httpClient.listReferenceBases
-        for base in method(self._request, self._id):
-            print(base.sequence)
+        iterator = self._httpClient.listReferenceBases(
+            self._referenceId, self._start, self._end)
+        # TODO add support for FASTA output.
+        for segment in iterator:
+            print(segment, end="")
+        print()
 
+
+# Runners for the various GET methods.
 
 class GetReferenceSetRunner(AbstractGetRunner):
     """
@@ -473,9 +410,7 @@ class GetReferenceSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReferenceSetRunner, self).__init__(args)
-
-    def run(self):
-        self._run(self._httpClient.getReferenceSet)
+        self._method = self._httpClient.getReferenceSet
 
 
 class GetReferenceRunner(AbstractGetRunner):
@@ -484,9 +419,7 @@ class GetReferenceRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReferenceRunner, self).__init__(args)
-
-    def run(self):
-        self._run(self._httpClient.getReference)
+        self._method = self._httpClient.getReference
 
 
 class GetReadGroupSetRunner(AbstractGetRunner):
@@ -495,9 +428,7 @@ class GetReadGroupSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReadGroupSetRunner, self).__init__(args)
-
-    def run(self):
-        self._run(self._httpClient.getReadGroupSet)
+        self._method = self._httpClient.getReadGroupSet
 
 
 class GetReadGroupRunner(AbstractGetRunner):
@@ -506,9 +437,7 @@ class GetReadGroupRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReadGroupRunner, self).__init__(args)
-
-    def run(self):
-        self._run(self._httpClient.getReadGroup)
+        self._method = self._httpClient.getReadGroup
 
 
 class GetCallsetRunner(AbstractGetRunner):
@@ -517,20 +446,16 @@ class GetCallsetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetCallsetRunner, self).__init__(args)
-
-    def run(self):
-        self._run(self._httpClient.getCallset)
+        self._method = self._httpClient.getCallset
 
 
-class GetDatasetsRunner(AbstractGetRunner):
+class GetDatasetRunner(AbstractGetRunner):
     """
     Runner class for the datasets/{id} method
     """
     def __init__(self, args):
-        super(GetDatasetsRunner, self).__init__(args)
-
-    def run(self):
-        self._run(self._httpClient.getDataset)
+        super(GetDatasetRunner, self).__init__(args)
+        self._method = self._httpClient.getDataset
 
 
 class GetVariantRunner(AbstractGetRunner):
@@ -539,35 +464,7 @@ class GetVariantRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetVariantRunner, self).__init__(args)
-
-    def run(self):
-        self._run(self._httpClient.getVariant)
-
-
-class BenchmarkRunner(SearchVariantsRunner):
-    """
-    Runner class for the client side benchmarking. This is intended to give
-    rough figures on protocol throughput on the server side over various
-    requests.
-    """
-    def run(self):
-        numVariants = 0
-        beforeCpu = time.clock()
-        beforeWall = time.time()
-        try:
-            for variant in self._httpClient.searchVariants(self._request):
-                numVariants += 1
-        except KeyboardInterrupt:
-            pass
-        cpuTime = time.clock() - beforeCpu
-        wallTime = time.time() - beforeWall
-        totalBytes = self._httpClient.getBytesRead()
-        totalBytes /= 1024 * 1024
-        s = "read {0} variants in {1:.2f} seconds; CPU time {2:.2f}".format(
-            numVariants, wallTime, cpuTime)
-        s += "; {0:.2f} MB @ {1:.2f} MB/s; {2:.2f} vars/s".format(
-            totalBytes, totalBytes / wallTime, numVariants / wallTime)
-        print(s)
+        self._method = self._httpClient.getVariant
 
 
 def addVariantSearchOptions(parser):
@@ -576,15 +473,10 @@ def addVariantSearchOptions(parser):
     """
     addVariantSetIdArgument(parser)
     addReferenceNameArgument(parser)
-    addVariantNameArgument(parser)
     addCallSetIdsArgument(parser)
     addStartArgument(parser)
     addEndArgument(parser)
     addPageSizeArgument(parser)
-    # maxCalls not in protocol; supported by google
-    parser.add_argument(
-        "--maxCalls", default=1,
-        help="The maxiumum number of calls to return")
 
 
 def addVariantSetIdArgument(parser):
@@ -599,18 +491,12 @@ def addReferenceNameArgument(parser):
         help="Only return variants on this reference.")
 
 
-def addVariantNameArgument(parser):
-    parser.add_argument(
-        "--variantName", "-n", default=None,
-        help="Only return variants which have exactly this name.")
-
-
 def addCallSetIdsArgument(parser):
     parser.add_argument(
         "--callSetIds", "-c", default=[],
         help="""Return variant calls which belong to call sets
             with these IDs. Pass in IDs as a comma separated list (no spaces).
-            Omit this option to indicate 'all call sets'.
+            Use '*' to request all call sets (the quotes are important!).
             """)
 
 
@@ -631,8 +517,9 @@ def addIdArgument(parser):
 
 
 def addGetArguments(parser):
-    addIdArgument(parser)
     addUrlArgument(parser)
+    addIdArgument(parser)
+    addOutputFormatArgument(parser)
 
 
 def addUrlArgument(parser):
@@ -640,6 +527,15 @@ def addUrlArgument(parser):
     Adds the URL endpoint argument to the specified parser.
     """
     parser.add_argument("baseUrl", help="The URL of the API endpoint")
+
+
+def addOutputFormatArgument(parser):
+    parser.add_argument(
+        "--outputFormat", "-O", choices=['text', 'json'], default="text",
+        help=(
+            "The format for object output. Currently supported are "
+            "'text' (default), which gives a short summary of the object and "
+            "'json', which outputs each object in line-delimited JSON"))
 
 
 def addAccessionArgument(parser):
@@ -682,31 +578,18 @@ def addNameArgument(parser):
 
 
 def addClientGlobalOptions(parser):
-    parser.add_argument('--verbose', '-v', action='count', default=0)
+    parser.add_argument(
+        '--verbose', '-v', action='count', default=0,
+        help="Increase verbosity; can be supplied multiple times")
     parser.add_argument(
         "--key", "-k", default='invalid',
         help="Auth Key. Found on server index page.")
-    parser.add_argument(
-        "--minimalOutput", "-O", default=False,
-        help="Use minimal output; default False",
-        action='store_true')
 
 
 def addHelpParser(subparsers):
     parser = subparsers.add_parser(
         "help", description="ga4gh_client help",
         help="show this help message and exit")
-    return parser
-
-
-def addBenchmarkingParser(subparsers):
-    parser = subparsers.add_parser(
-        "benchmark",
-        description="Run simple benchmarks on the various methods",
-        help="Benchmark server performance")
-    parser.set_defaults(runner=BenchmarkRunner)
-    addUrlArgument(parser)
-    addVariantSearchOptions(parser)
     return parser
 
 
@@ -717,6 +600,7 @@ def addVariantsSearchParser(subparsers):
         help="Search for variants.")
     parser.set_defaults(runner=SearchVariantsRunner)
     addUrlArgument(parser)
+    addOutputFormatArgument(parser)
     addVariantSearchOptions(parser)
     return parser
 
@@ -727,6 +611,7 @@ def addVariantSetsSearchParser(subparsers):
         description="Search for variantSets",
         help="Search for variantSets.")
     parser.set_defaults(runner=SearchVariantSetsRunner)
+    addOutputFormatArgument(parser)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
     addDatasetIdArgument(parser)
@@ -740,6 +625,7 @@ def addReferenceSetsSearchParser(subparsers):
         help="Search for referenceSets")
     parser.set_defaults(runner=SearchReferenceSetsRunner)
     addUrlArgument(parser)
+    addOutputFormatArgument(parser)
     addPageSizeArgument(parser)
     addAccessionArgument(parser)
     addMd5ChecksumArgument(parser)
@@ -756,6 +642,7 @@ def addReferencesSearchParser(subparsers):
         help="Search for references")
     parser.set_defaults(runner=SearchReferencesRunner)
     addUrlArgument(parser)
+    addOutputFormatArgument(parser)
     addPageSizeArgument(parser)
     addAccessionArgument(parser)
     addMd5ChecksumArgument(parser)
@@ -770,6 +657,7 @@ def addReadGroupSetsSearchParser(subparsers):
         help="Search for readGroupSets")
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
+    addOutputFormatArgument(parser)
     addPageSizeArgument(parser)
     addDatasetIdArgument(parser)
     addNameArgument(parser)
@@ -783,6 +671,7 @@ def addCallsetsSearchParser(subparsers):
         help="Search for callSets")
     parser.set_defaults(runner=SearchCallSetsRunner)
     addUrlArgument(parser)
+    addOutputFormatArgument(parser)
     addPageSizeArgument(parser)
     addNameArgument(parser)
     addVariantSetIdArgument(parser)
@@ -795,6 +684,7 @@ def addReadsSearchParser(subparsers):
         description="Search for reads",
         help="Search for reads")
     parser.set_defaults(runner=SearchReadsRunner)
+    addOutputFormatArgument(parser)
     addReadsSearchParserArguments(parser)
     return parser
 
@@ -804,7 +694,7 @@ def addDatasetsGetParser(subparsers):
         "datasets-get",
         description="Get a dataset",
         help="Get a dataset")
-    parser.set_defaults(runner=GetDatasetsRunner)
+    parser.set_defaults(runner=GetDatasetRunner)
     addGetArguments(parser)
 
 
@@ -815,6 +705,8 @@ def addDatasetsSearchParser(subparsers):
         help="Search for datasets")
     parser.set_defaults(runner=SearchDatasetsRunner)
     addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addOutputFormatArgument(parser)
     return parser
 
 
@@ -891,19 +783,18 @@ def addReferencesBasesListParser(subparsers):
         description="List bases of a reference",
         help="List bases of a reference")
     parser.set_defaults(runner=ListReferenceBasesRunner)
-    addGetArguments(parser)
+    addUrlArgument(parser)
+    addIdArgument(parser)
     addStartArgument(parser)
     addEndArgument(parser, defaultValue=None)
 
 
-def client_main(parser=None):
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH reference client")
+def getClientParser():
+    parser = argparse.ArgumentParser(
+        description="GA4GH reference client")
     addClientGlobalOptions(parser)
     subparsers = parser.add_subparsers(title='subcommands',)
     addHelpParser(subparsers)
-    addBenchmarkingParser(subparsers)
     addVariantsSearchParser(subparsers)
     addVariantSetsSearchParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
@@ -920,7 +811,11 @@ def client_main(parser=None):
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
+    return parser
 
+
+def client_main():
+    parser = getClientParser()
     args = parser.parse_args()
     if "runner" not in args:
         parser.print_help()
@@ -932,6 +827,137 @@ def client_main(parser=None):
                 requests.exceptions.RequestException) as exception:
             # TODO suppress exception unless debug settings are enabled
             raise exception
+
+
+##############################################################################
+# ga2vcf
+##############################################################################
+
+class Ga2VcfRunner(SearchVariantsRunner):
+    """
+    Runner class for the ga2vcf
+    """
+    def __init__(self, args):
+        super(Ga2VcfRunner, self).__init__(args)
+        self._outputFile = args.outputFile
+        self._binaryOutput = False
+        if args.outputFormat == "bcf":
+            self._binaryOutput = True
+
+    def run(self):
+        variantSet = self._httpClient.getVariantSet(self._variantSetId)
+        iterator = self._httpClient.searchVariants(
+            start=self._start, end=self._end,
+            referenceName=self._referenceName,
+            variantSetId=self._variantSetId,
+            callSetIds=self._callSetIds,
+            pageSize=self._pageSize)
+        # do conversion
+        vcfConverter = converters.VcfConverter(
+            variantSet, iterator, self._outputFile, self._binaryOutput)
+        vcfConverter.convert()
+
+
+def addOutputFileArgument(parser):
+    parser.add_argument(
+        "--outputFile", "-o", default=None,
+        help="the file to write the output to")
+
+
+def getGa2VcfParser():
+    parser = argparse.ArgumentParser(
+        description=(
+            "GA4GH VCF conversion tool. Converts variant information "
+            "stored in a GA4GH repository into VCF format."))
+    addClientGlobalOptions(parser)
+    addOutputFileArgument(parser)
+    addUrlArgument(parser)
+    parser.add_argument("variantSetId", help="The variant set to convert")
+    parser.add_argument(
+        "--outputFormat", "-O", choices=['vcf', 'bcf'], default="vcf",
+        help=(
+            "The format for object output. Currently supported are "
+            "'vcf' (default), which is a text-based format and "
+            "'bcf', which is the binary equivalent"))
+    addReferenceNameArgument(parser)
+    addCallSetIdsArgument(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def ga2vcf_main():
+    parser = getGa2VcfParser()
+    args = parser.parse_args()
+    if "baseUrl" not in args:
+        parser.print_help()
+    else:
+        runner = Ga2VcfRunner(args)
+        runner.run()
+
+
+##############################################################################
+# ga2sam
+##############################################################################
+
+
+class Ga2SamRunner(SearchReadsRunner):
+    """
+    Runner class for the ga2vcf
+    """
+    def __init__(self, args):
+        args.readGroupIds = args.readGroupId
+        super(Ga2SamRunner, self).__init__(args)
+        self._outputFile = args.outputFile
+        self._binaryOutput = False
+        if args.outputFormat == "bam":
+            self._binaryOutput = True
+
+    def run(self):
+        readGroup = self._httpClient.getReadGroup(self._readGroupIds[0])
+        iterator = self._httpClient.searchReads(
+            readGroupIds=self._readGroupIds, referenceId=self._referenceId,
+            start=self._start, end=self._end, pageSize=self._pageSize)
+        # do conversion
+        samConverter = converters.SamConverter(
+            readGroup, iterator, self._outputFile, self._binaryOutput)
+        samConverter.convert()
+
+
+def getGa2SamParser():
+    parser = argparse.ArgumentParser(
+        description="GA4GH SAM conversion tool")
+    addClientGlobalOptions(parser)
+    addUrlArgument(parser)
+    parser.add_argument(
+        "readGroupId",
+        help="The ReadGroup to convert to SAM/BAM format.")
+    addPageSizeArgument(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+    parser.add_argument(
+        "--referenceId", default=None,
+        help="The referenceId to search over")
+    parser.add_argument(
+        "--outputFormat", "-O", default="sam", choices=["sam", "bam"],
+        help=(
+            "The format for object output. Currently supported are "
+            "'sam' (default), which is a text-based format and "
+            "'bam', which is the binary equivalent"))
+    addOutputFileArgument(parser)
+    return parser
+
+
+def ga2sam_main():
+    parser = getGa2SamParser()
+    args = parser.parse_args()
+    if "baseUrl" not in args:
+        parser.print_help()
+    else:
+        runner = Ga2SamRunner(args)
+        runner.run()
+
 
 ##############################################################################
 # Configuration testing

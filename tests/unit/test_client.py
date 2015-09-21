@@ -63,105 +63,152 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     """
     def setUp(self):
         self.httpClient = utils.makeHttpClient()
-        self.protocolRequest = DummyRequest()
         self.httpClient.runSearchRequest = mock.Mock()
-        self.httpClient.runListRequest = mock.Mock()
         self.httpClient.runGetRequest = mock.Mock()
-        self._id = "SomeId"
+        self.objectId = "SomeId"
+        self.objectName = "objectName"
+        self.datasetId = "datasetId"
+        self.variantSetId = "variantSetId"
+        self.referenceSetId = "referenceSetId"
+        self.referenceId = "referenceId"
+        self.readGroupIds = ["readGroupId"]
+        self.referenceName = "referenceName"
+        self.start = 100
+        self.end = 101
+        self.referenceName = "referenceName"
+        self.callSetIds = ["id1", "id2"]
+        self.pageSize = 1000
+        self.assemblyId = "assemblyId"
+        self.accession = "accession"
+        self.md5checksum = "md5checksum"
 
     def testSearchVariants(self):
-        self.httpClient.searchVariants(self.protocolRequest)
+        request = protocol.SearchVariantsRequest()
+        request.referenceName = self.referenceName
+        request.start = self.start
+        request.end = self.end
+        request.variantSetId = self.variantSetId
+        request.callSetIds = self.callSetIds
+        request.pageSize = self.pageSize
+        self.httpClient.searchVariants(
+            self.variantSetId, start=self.start, end=self.end,
+            referenceName=self.referenceName, callSetIds=self.callSetIds,
+            pageSize=self.pageSize)
         self.httpClient.runSearchRequest.assert_called_once_with(
-            self.protocolRequest, "variants",
+            request, "variants",
             protocol.SearchVariantsResponse)
 
-    def testSearchVariantSets(self):
-        self.httpClient.searchVariantSets(self.protocolRequest)
+    def testSearchDatasets(self):
+        request = protocol.SearchDatasetsRequest()
+        request.pageSize = self.pageSize
+        self.httpClient.searchDatasets(self.pageSize)
         self.httpClient.runSearchRequest.assert_called_once_with(
-            self.protocolRequest, "variantsets",
-            protocol.SearchVariantSetsResponse)
+            request, "datasets", protocol.SearchDatasetsResponse)
+
+    def testSearchVariantSets(self):
+        request = protocol.SearchVariantSetsRequest()
+        request.datasetId = self.datasetId
+        request.pageSize = self.pageSize
+        self.httpClient.searchVariantSets(self.datasetId, self.pageSize)
+        self.httpClient.runSearchRequest.assert_called_once_with(
+            request, "variantsets", protocol.SearchVariantSetsResponse)
 
     def testSearchReferenceSets(self):
-        self.httpClient.searchReferenceSets(self.protocolRequest)
+        request = protocol.SearchReferenceSetsRequest()
+        request.pageSize = self.pageSize
+        request.accession = self.accession
+        request.md5checksum = self.md5checksum
+        request.assemblyId = self.assemblyId
+        self.httpClient.searchReferenceSets(
+            accession=self.accession, md5checksum=self.md5checksum,
+            assemblyId=self.assemblyId, pageSize=self.pageSize)
         self.httpClient.runSearchRequest.assert_called_once_with(
-            self.protocolRequest, "referencesets",
-            protocol.SearchReferenceSetsResponse)
+            request, "referencesets", protocol.SearchReferenceSetsResponse)
 
     def testSearchReferences(self):
-        self.httpClient.searchReferences(self.protocolRequest)
+        request = protocol.SearchReferencesRequest()
+        request.referenceSetId = self.referenceSetId
+        request.pageSize = self.pageSize
+        request.accession = self.accession
+        request.md5checksum = self.md5checksum
+        self.httpClient.searchReferences(
+            self.referenceSetId, accession=self.accession,
+            md5checksum=self.md5checksum, pageSize=self.pageSize)
         self.httpClient.runSearchRequest.assert_called_once_with(
-            self.protocolRequest, "references",
-            protocol.SearchReferencesResponse)
+            request, "references", protocol.SearchReferencesResponse)
 
     def testSearchReadGroupSets(self):
-        self.httpClient.searchReadGroupSets(self.protocolRequest)
+        request = protocol.SearchReadGroupSetsRequest()
+        request.datasetId = self.datasetId
+        request.name = self.objectName
+        request.pageSize = self.pageSize
+        self.httpClient.searchReadGroupSets(
+            self.datasetId, name=self.objectName, pageSize=self.pageSize)
         self.httpClient.runSearchRequest.assert_called_once_with(
-            self.protocolRequest, "readgroupsets",
-            protocol.SearchReadGroupSetsResponse)
+            request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
     def testSearchCallSets(self):
-        self.httpClient.searchCallSets(self.protocolRequest)
+        request = protocol.SearchCallSetsRequest()
+        request.variantSetId = self.variantSetId
+        request.name = self.objectName
+        request.pageSize = self.pageSize
+        self.httpClient.searchCallSets(
+            self.variantSetId, name=self.objectName, pageSize=self.pageSize)
         self.httpClient.runSearchRequest.assert_called_once_with(
-            self.protocolRequest, "callsets",
-            protocol.SearchCallSetsResponse)
+            request, "callsets", protocol.SearchCallSetsResponse)
 
     def testSearchReads(self):
-        self.httpClient.searchReads(self.protocolRequest)
+        request = protocol.SearchReadsRequest()
+        request.readGroupIds = self.readGroupIds
+        request.referenceId = self.referenceId
+        request.start = self.start
+        request.end = self.end
+        request.pageSize = self.pageSize
+        self.httpClient.searchReads(
+            self.readGroupIds, referenceId=self.referenceId,
+            start=self.start, end=self.end, pageSize=self.pageSize)
         self.httpClient.runSearchRequest.assert_called_once_with(
-            self.protocolRequest, "reads",
-            protocol.SearchReadsResponse)
-
-    def testSearchDatasets(self):
-        self.httpClient.searchDatasets(self.protocolRequest)
-        self.httpClient.runSearchRequest.assert_called_once_with(
-            self.protocolRequest, "datasets",
-            protocol.SearchDatasetsResponse)
+            request, "reads", protocol.SearchReadsResponse)
 
     def testGetReferenceSet(self):
-        self.httpClient.getReferenceSet(self._id)
+        self.httpClient.getReferenceSet(self.objectId)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "referencesets", protocol.ReferenceSet, self._id)
+            "referencesets", protocol.ReferenceSet, self.objectId)
 
     def testGetVariantSet(self):
-        self.httpClient.getVariantSet(self._id)
+        self.httpClient.getVariantSet(self.objectId)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "variantsets", protocol.VariantSet, self._id)
+            "variantsets", protocol.VariantSet, self.objectId)
 
     def testGetReference(self):
-        self.httpClient.getReference(self._id)
+        self.httpClient.getReference(self.objectId)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "references", protocol.Reference, self._id)
+            "references", protocol.Reference, self.objectId)
 
     def testGetReadGroupSets(self):
-        self.httpClient.getReadGroupSet(self._id)
+        self.httpClient.getReadGroupSet(self.objectId)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "readgroupsets", protocol.ReadGroupSet, self._id)
+            "readgroupsets", protocol.ReadGroupSet, self.objectId)
 
     def testGetReadGroup(self):
-        self.httpClient.getReadGroup(self._id)
+        self.httpClient.getReadGroup(self.objectId)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "readgroups", protocol.ReadGroup, self._id)
+            "readgroups", protocol.ReadGroup, self.objectId)
 
     def testGetCallsets(self):
-        self.httpClient.getCallset(self._id)
+        self.httpClient.getCallset(self.objectId)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "callsets", protocol.CallSet, self._id)
+            "callsets", protocol.CallSet, self.objectId)
 
     def testGetDatasets(self):
-        self.httpClient.getDataset(self._id)
+        self.httpClient.getDataset(self.objectId)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "datasets", protocol.Dataset, self._id)
+            "datasets", protocol.Dataset, self.objectId)
 
     def testGetVariant(self):
-        self.httpClient.getVariant(self._id)
+        self.httpClient.getVariant(self.objectId)
         self.httpClient.runGetRequest.assert_called_once_with(
-            "variants", protocol.Variant, self._id)
-
-    def testListReferenceBases(self):
-        self.httpClient.listReferenceBases(self.protocolRequest, self._id)
-        self.httpClient.runListRequest.assert_called_once_with(
-            self.protocolRequest, "references/{id}/bases",
-            protocol.ListReferenceBasesResponse, self._id)
+            "variants", protocol.Variant, self.objectId)
 
 
 class TestRunRequest(unittest.TestCase):
@@ -241,7 +288,7 @@ class TestRunRequest(unittest.TestCase):
                 httpMethod, url, params=params, headers=headers, data=data,
                 verify=False)
 
-    def testRunListRequest(self):
+    def testRunListReferenceBases(self):
         # setup
         mockGet = mock.Mock()
         with mock.patch('requests.request', mockGet):
@@ -250,23 +297,16 @@ class TestRunRequest(unittest.TestCase):
                 "sequence": "sequence",
                 "nextPageToken": "pageTok",
             }
-            mockGet.side_effect = [
-                DummyResponse(json.dumps(text)), DummyResponse('{}')]
-            protocolRequest = protocol.ListReferenceBasesRequest()
-            protocolRequest.start = 1
-            protocolRequest.end = 5
-            url = "references/{id}/bases"
-            protocolResponseClass = protocol.ListReferenceBasesResponse
+            mockGet.side_effect = [DummyResponse(json.dumps(text))]
             id_ = 'myId'
 
             # invoke SUT
-            result = [base for base in self.httpClient.runListRequest(
-                protocolRequest, url, protocolResponseClass, id_)]
+            result = [chunk for chunk in self.httpClient.listReferenceBases(
+                id_, start=1, end=5)]
 
             # verify results of invocation
-            self.assertEqual(len(result), 2)
-            self.assertEqual(result[0].offset, 123)
-            self.assertEqual(result[0].sequence, "sequence")
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0], "sequence")
 
             # verify requests.get called correctly
             httpMethod = 'GET'
@@ -281,12 +321,6 @@ class TestRunRequest(unittest.TestCase):
             firstCall = mockGet.call_args_list[0]
             self.assertRequestsCall(
                 firstCall, httpMethod, url, headers, data, params, False)
-
-            # assert second call correct
-            params['pageToken'] = 'pageTok'
-            secondCall = mockGet.call_args_list[1]
-            self.assertRequestsCall(
-                secondCall, httpMethod, url, headers, data, params, False)
 
     def assertRequestsCall(
             self, call, httpMethod, url,

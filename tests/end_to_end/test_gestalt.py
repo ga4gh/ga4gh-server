@@ -77,31 +77,33 @@ class TestGestalt(server_test.ServerTest):
     def runVariantsRequest(self):
         self.runClientCmd(
             self.client,
-            "variants-search -s 0 -e 2 -V {}".format(
-                self.simulatedVariantSetId))
+            "variants-search",
+            "-s 0 -e 2 -V {}".format(self.simulatedVariantSetId))
 
     def runReadsRequest(self):
-        cmd = (
-            "reads-search --readGroupIds {} "
-            "--referenceId {}".format(
-                self.simulatedReadGroupId, self.simulatedReferenceId))
-        self.runClientCmd(self.client, cmd)
+        args = "--readGroupIds {} --referenceId {}".format(
+            self.simulatedReadGroupId, self.simulatedReferenceId)
+        self.runClientCmd(self.client, "reads-search", args)
 
     def runReferencesRequest(self):
         referenceSetId = self.simulatedReferenceSetId
         referenceId = self.simulatedReferenceId
         cmd = "referencesets-search"
         self.runClientCmd(self.client, cmd)
-        cmd = "references-search --referenceSetId={}".format(referenceSetId)
-        self.runClientCmd(self.client, cmd)
-        cmd = "referencesets-get {}".format(referenceSetId)
-        self.runClientCmd(self.client, cmd)
-        cmd = "references-get {}".format(referenceId)
-        self.runClientCmd(self.client, cmd)
-        cmd = "references-list-bases {}".format(referenceId)
-        self.runClientCmd(self.client, cmd)
+        cmd = "references-search"
+        args = "--referenceSetId={}".format(referenceSetId)
+        self.runClientCmd(self.client, cmd, args)
+        cmd = "referencesets-get"
+        args = "{}".format(referenceSetId)
+        self.runClientCmd(self.client, cmd, args)
+        cmd = "references-get"
+        args = "{}".format(referenceId)
+        self.runClientCmd(self.client, cmd, args)
+        cmd = "references-list-bases"
+        args = "{}".format(referenceId)
+        self.runClientCmd(self.client, cmd, args)
 
     def runVariantSetsRequestDatasetTwo(self):
-        datasetId = self.simulatedDatasetId
-        cmd = "variantsets-search --datasetId {}".format(datasetId)
-        self.runClientCmd(self.client, cmd)
+        cmd = "variantsets-search"
+        args = "--datasetId {}".format(self.simulatedDatasetId)
+        self.runClientCmd(self.client, cmd, args)

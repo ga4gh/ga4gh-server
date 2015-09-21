@@ -5,78 +5,52 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import argparse
 import unittest
-import mock
 
 import ga4gh.cli as cli
-import ga4gh.protocol as protocol
-import ga4gh.client as client
-
-
-class TestNoInput(unittest.TestCase):
-    """
-    Test the cli as if there was no input; print_help should be called.
-    The development server is a special case here, as it works without
-    arguments.
-    """
-    def setUp(self):
-        self.parser = StubArgumentParser(self)
-
-    def run(self, *args, **kwargs):
-        super(TestNoInput, self).run(*args, **kwargs)
-        self.verifyInput()
-
-    def verifyInput(self):
-        self.parser.assertParseArgsCountEquals(1)
-        self.parser.assertHelpCountEquals(1)
-
-    def testGa2VcfNoInput(self):
-        cli.ga2vcf_main(self.parser)
-
-    def testGa2SamNoInput(self):
-        cli.ga2sam_main(self.parser)
-
-    def testCliNoInput(self):
-        cli.client_main(self.parser)
 
 
 class TestGa2VcfArguments(unittest.TestCase):
     """
     Tests the ga2vcf cli can parse all arguments it is supposed to
     """
-    def testVariantsSearchArguments(self):
-        cliInput = """--key KEY -O --outputFile /dev/null
-        --referenceName REFERENCENAME
-        --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
+    def testParseArguments(self):
+        cliInput = """--key KEY -O vcf --outputFile /dev/null
+        --referenceName REFERENCENAME --callSetIds CALL,SET,IDS --start 0
         --end 1 --pageSize 2 BASEURL VARIANTSETID"""
-        stubConverterModule = StubConverterModuleVcf(self)
-        with mock.patch(
-                'ga4gh.converters.VcfConverter',
-                stubConverterModule):
-            parser = StubArgumentParserCli(self, cliInput)
-            cli.ga2vcf_main(parser)
-            parser.assertParseArgsCountEquals(1)
-            stubConverterModule.assertVcfConvertCountEquals(1)
+        parser = cli.getGa2VcfParser()
+        args = parser.parse_args(cliInput.split())
+        self.assertEqual(args.key, "KEY")
+        self.assertEqual(args.outputFormat, "vcf")
+        self.assertEqual(args.outputFile, "/dev/null")
+        self.assertEqual(args.referenceName, "REFERENCENAME")
+        self.assertEqual(args.callSetIds, "CALL,SET,IDS")
+        self.assertEqual(args.start, 0)
+        self.assertEqual(args.end, 1)
+        self.assertEqual(args.pageSize, 2)
+        self.assertEquals(args.baseUrl, "BASEURL")
+        self.assertEquals(args.variantSetId, "VARIANTSETID")
 
 
 class TestGa2SamArguments(unittest.TestCase):
     """
     Tests the ga2sam cli can parse all arguments it is supposed to
     """
-    def testReadsSearchArguments(self):
-        cliInput = """--key KEY -O
+    def testParseArguments(self):
+        cliInput = """--key KEY --outputFormat sam
         --pageSize 1 --start 2 --end 3 --outputFile OUT.SAM
-        --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
-        --binaryOutput BASEURL"""
-        stubConverterModule = StubConverterModuleSam(self)
-        with mock.patch(
-                'ga4gh.converters.SamConverter',
-                stubConverterModule):
-            parser = StubArgumentParserCli(self, cliInput)
-            cli.ga2sam_main(parser)
-            parser.assertParseArgsCountEquals(1)
-            stubConverterModule.assertSamConvertCountEquals(1)
+        --referenceId REFERENCEID BASEURL READGROUPID"""
+        parser = cli.getGa2SamParser()
+        args = parser.parse_args(cliInput.split())
+        self.assertEqual(args.key, "KEY")
+        self.assertEqual(args.outputFormat, "sam")
+        self.assertEqual(args.outputFile, "OUT.SAM")
+        self.assertEqual(args.referenceId, "REFERENCEID")
+        self.assertEqual(args.start, 2)
+        self.assertEqual(args.end, 3)
+        self.assertEqual(args.pageSize, 1)
+        self.assertEquals(args.baseUrl, "BASEURL")
+        self.assertEquals(args.readGroupId, "READGROUPID")
 
 
 class TestClientArguments(unittest.TestCase):
@@ -85,178 +59,153 @@ class TestClientArguments(unittest.TestCase):
     and can initialize the runner in preparation for a request
     """
     def setUp(self):
-        # initialize the client parser
-        self.parser = StubArgumentParser(self)
-        cli.client_main(self.parser)
+        self.parser = cli.getClientParser()
 
-    def verifyInput(self):
-        # include arguments common to all commands
-        inputStr = "--verbose --key KEY {0} URL"
-        cliInput = inputStr.format(self.cliInput)
-        splits = cliInput.split()
+    # TODO we need a way to test parse failures. This is tricky because
+    # argparse calls sys.exit() on error, which we can't catch directly as
+    # an exception. Using mock to intercept this call would at least
+    # verify that an error has been raised.
 
-        # parse the arguments
-        args = self.parser.parser.parse_args(splits)
-
-        # invoke the initializer of the runner (which also parses args)
-        runner = args.runner(args)
-
-        # ensure the correct attributes on the runner are set
-        if hasattr(runner, '_request'):
-            self.assertIsInstance(runner._request, protocol.ProtocolElement)
-        self.assertIsInstance(runner._httpClient, client.HttpClient)
-
-    def run(self, *args, **kwargs):
-        super(TestClientArguments, self).run(*args, **kwargs)
-        self.verifyInput()
+    def testOutputFormat(self):
+        # Most of the commands support the output format option.
+        cliInput = "variants-search BASEURL --outputFormat=json"
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.outputFormat, "json")
+        cliInput = "variants-search BASEURL -O text"
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.outputFormat, "text")
 
     def testVariantsSearchArguments(self):
-        self.cliInput = """variants-search --referenceName REFERENCENAME
-        --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
-        --end 1 --pageSize 2 --variantSetId VARIANTSETIDS"""
+        cliInput = (
+            "variants-search --referenceName REFERENCENAME "
+            "--callSetIds CALL,SET,IDS --start 0 "
+            "--end 1 --pageSize 2 --variantSetId VARIANTSETID BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.start, 0)
+        self.assertEqual(args.end, 1)
+        self.assertEqual(args.referenceName, "REFERENCENAME")
+        self.assertEqual(args.callSetIds, "CALL,SET,IDS")
+        self.assertEqual(args.pageSize, 2)
+        self.assertEqual(args.variantSetId, "VARIANTSETID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.runner, cli.SearchVariantsRunner)
 
     def testVariantSetsSearchArguments(self):
-        self.cliInput = """variantsets-search --pageSize 1 --datasetId
-        DATASETID"""
+        cliInput = (
+            "variantsets-search --pageSize 1 --datasetId DATASETID BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.datasetId, "DATASETID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchVariantSetsRunner)
 
     def testReferenceSetsSearchArguments(self):
-        self.cliInput = """referencesets-search --pageSize 1 --accession
-        ACCESSION --md5checksum MD5CHECKSUMS --assemblyId ASSEMBLYID"""
+        cliInput = (
+            "referencesets-search --pageSize 1 --accession ACCESSION "
+            "--md5checksum MD5CHECKSUM --assemblyId ASSEMBLYID "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.md5checksum, "MD5CHECKSUM")
+        self.assertEqual(args.assemblyId, "ASSEMBLYID")
+        self.assertEqual(args.accession, "ACCESSION")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchReferenceSetsRunner)
 
     def testReferencesSearchArguments(self):
-        self.cliInput = """references-search --pageSize 1 --accession
-        ACCESSIONS --md5checksum MD5CHECKSUM"""
+        cliInput = (
+            "references-search --pageSize 10 --accession ACCESSION "
+            "--md5checksum MD5CHECKSUM BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 10)
+        self.assertEqual(args.md5checksum, "MD5CHECKSUM")
+        self.assertEqual(args.accession, "ACCESSION")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchReferencesRunner)
 
     def testReadGroupSetsSearchArguments(self):
-        self.cliInput = """readgroupsets-search --pageSize 1 --datasetId
-        DATASETID --name NAME"""
+        cliInput = (
+            "readgroupsets-search --pageSize 1 --datasetId DATASETID "
+            "--name NAME BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.datasetId, "DATASETID")
+        self.assertEqual(args.name, "NAME")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchReadGroupSetsRunner)
 
     def testCallSetsSearchArguments(self):
-        self.cliInput = """callsets-search --pageSize 1 --name NAME
-        --variantSetId VARIANTSETID"""
+        cliInput = (
+            "callsets-search --pageSize 1 --name NAME "
+            "--variantSetId VARIANTSETID BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.variantSetId, "VARIANTSETID")
+        self.assertEqual(args.name, "NAME")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchCallSetsRunner)
 
     def testReadsSearchArguments(self):
-        self.cliInput = """reads-search --pageSize 1 --start 2 --end 3
-        --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID"""
+        cliInput = (
+            "reads-search --pageSize 2 --start 5 --end 10 "
+            "--readGroupIds READ,GROUP,IDS --referenceId REFERENCEID "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 2)
+        self.assertEqual(args.start, 5)
+        self.assertEqual(args.end, 10)
+        self.assertEqual(args.readGroupIds, "READ,GROUP,IDS")
+        self.assertEqual(args.referenceId, "REFERENCEID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchReadsRunner)
 
     def testDatasetsSearchArguments(self):
-        self.cliInput = """datasets-search"""
+        cliInput = "datasets-search BASEURL"
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchDatasetsRunner)
+
+    def verifyGetArguments(self, command, runnerClass):
+        cliInput = "{} BASEURL ID".format(command)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.id, "ID")
+        self.assertEquals(args.runner, runnerClass)
 
     def testReferenceSetGetArguments(self):
-        self.cliInput = """referencesets-get ID"""
+        self.verifyGetArguments(
+            "referencesets-get", cli.GetReferenceSetRunner)
 
     def testReferenceGetArguments(self):
-        self.cliInput = """references-get ID"""
+        self.verifyGetArguments(
+            "references-get", cli.GetReferenceRunner)
 
     def testReadGroupSetGetArguments(self):
-        self.cliInput = """readgroupsets-get ID"""
+        self.verifyGetArguments(
+            "readgroupsets-get", cli.GetReadGroupSetRunner)
 
     def testReadGroupGetArguments(self):
-        self.cliInput = """readgroups-get ID"""
+        self.verifyGetArguments(
+            "readgroups-get", cli.GetReadGroupRunner)
 
     def testCallSetGetArguments(self):
-        self.cliInput = """callsets-get ID"""
+        self.verifyGetArguments(
+            "callsets-get", cli.GetCallsetRunner)
 
     def testDatasetsGetArguments(self):
-        self.cliInput = """datasets-get ID"""
+        self.verifyGetArguments(
+            "datasets-get", cli.GetDatasetRunner)
 
     def testVariantGetArguments(self):
-        self.cliInput = """variants-get ID"""
+        self.verifyGetArguments(
+            "variants-get", cli.GetVariantRunner)
 
     def testReferenceBasesListArguments(self):
-        self.cliInput = """references-list-bases ID
-        --start 1 --end 2"""
-
-
-class StubArgumentParser(object):
-    """
-    A stand-in object for an ArgumentParser that intercepts calls
-    to parse_args and print_help, but otherwise provides normal
-    behavior via passing through calls to an attribute ArgumentParser
-    """
-    def __init__(self, currentTest):
-        self.parser = argparse.ArgumentParser(description="Stub")
-        self.helpCount = 0
-        self.parseArgsCount = 0
-        self.parse_args = self._parseArgs
-        self.print_help = self._help
-        self.currentTest = currentTest
-
-    def _help(self):
-        self.helpCount += 1
-
-    def _parseArgs(self):
-        self.parseArgsCount += 1
-        return ()
-
-    def assertParseArgsCountEquals(self, parseArgsCount):
-        self.currentTest.assertEquals(self.parseArgsCount, parseArgsCount)
-
-    def assertHelpCountEquals(self, helpCount):
-        self.currentTest.assertEquals(self.helpCount, helpCount)
-
-    def __getattr__(self, name):
-        return getattr(self.parser, name)
-
-
-class StubArgumentParserCli(StubArgumentParser):
-    """
-    Like StubArgumentParser, but returns real arguments from the
-    parse_args call (that the user provides)
-    """
-    def __init__(self, currentTest, cliInput):
-        super(StubArgumentParserCli, self).__init__(currentTest)
-        self.cliInput = cliInput
-
-    def _parseArgs(self):
-        self.parseArgsCount += 1
-        splits = self.cliInput.split()
-        return self.parser.parse_args(splits)
-
-
-class StubConverterModule(object):
-    """
-    A stand-in object for the converter module.
-    Just provides access to dummy objects.
-    """
-    def __init__(self, currentTest):
-        self.currentTest = currentTest
-        self.VcfConverter = StubConverter(self.currentTest)
-        self.SamConverter = StubConverter(self.currentTest)
-
-    def assertVcfConvertCountEquals(self, convertCount):
-        self.VcfConverter.assertConvertCountEquals(convertCount)
-
-    def assertSamConvertCountEquals(self, convertCount):
-        self.SamConverter.assertConvertCountEquals(convertCount)
-
-
-class StubConverterModuleSam(StubConverterModule):
-    """
-    The StubConverterModule for Sam tests
-    """
-    def __call__(self, *args):
-        return self.SamConverter
-
-
-class StubConverterModuleVcf(StubConverterModule):
-    """
-    The StubConverterModule for Vcf tests
-    """
-    def __call__(self, *args):
-        return self.VcfConverter
-
-
-class StubConverter(object):
-    """
-    A stand-in object for a converter that does nothing
-    """
-    def __init__(self, currentTest):
-        self.currentTest = currentTest
-        self.convertCount = 0
-
-    def convert(self):
-        self.convertCount += 1
-
-    def assertConvertCountEquals(self, convertCount):
-        self.currentTest.assertEquals(self.convertCount, convertCount)
+        cliInput = (
+            "references-list-bases BASEURL ID --start 1 --end 2")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.id, "ID")
+        self.assertEqual(args.start, 1)
+        self.assertEqual(args.end, 2)
+        self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
