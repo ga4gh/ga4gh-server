@@ -142,6 +142,9 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         for readGroup in readGroupSet.getReadGroups():
             readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
             gaReadGroup = readGroup.toProtocolElement()
+            self.assertIn(
+                "experiment",
+                datamodel.CompoundId.deobfuscate(gaReadGroup.experiment.id))
             self.assertEqual(
                 readGroupInfo.instrumentModel,
                 gaReadGroup.experiment.instrumentModel)
