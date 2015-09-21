@@ -46,8 +46,7 @@ class TestGa2VcfArguments(unittest.TestCase):
     Tests the ga2vcf cli can parse all arguments it is supposed to
     """
     def testVariantsSearchArguments(self):
-        cliInput = """--workarounds WORK,AROUND
-        --key KEY -O --outputFile /dev/null
+        cliInput = """--key KEY -O --outputFile /dev/null
         --referenceName REFERENCENAME
         --variantName VARIANTNAME --callSetIds CALL,SET,IDS --start 0
         --end 1 --pageSize 2 BASEURL VARIANTSETID"""
@@ -66,7 +65,7 @@ class TestGa2SamArguments(unittest.TestCase):
     Tests the ga2sam cli can parse all arguments it is supposed to
     """
     def testReadsSearchArguments(self):
-        cliInput = """--workarounds WORK,AROUND --key KEY -O
+        cliInput = """--key KEY -O
         --pageSize 1 --start 2 --end 3 --outputFile OUT.SAM
         --readGroupIds READ,GROUP,IDS --referenceId REFERENCEID
         --binaryOutput BASEURL"""
@@ -92,7 +91,7 @@ class TestClientArguments(unittest.TestCase):
 
     def verifyInput(self):
         # include arguments common to all commands
-        inputStr = "--verbose --workarounds WORK,AROUND --key KEY {0} URL"
+        inputStr = "--verbose --key KEY {0} URL"
         cliInput = inputStr.format(self.cliInput)
         splits = cliInput.split()
 

@@ -18,13 +18,11 @@ class HttpClient(object):
     """
     GA4GH Http Client
     """
-    workaroundGoogle = 'google'
 
-    def __init__(self, urlPrefix, debugLevel=0, workarounds=[], key=None):
+    def __init__(self, urlPrefix, debugLevel=0, key=None):
         self._urlPrefix = urlPrefix
         self._debugLevel = debugLevel
         self._bytesRead = 0
-        self._workarounds = workarounds
         self._key = key
 
         # logging config
@@ -56,9 +54,6 @@ class HttpClient(object):
 
     def _getAuth(self):
         return {'key': self._key}
-
-    def _usingWorkaroundsFor(self, workaround):
-        return workaround in self._workarounds
 
     # Ordinarily logger's implementation will take care of if log messages
     # should be emitted based on the log level.  The _shouldLog* methods
