@@ -529,7 +529,6 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.alignment = protocol.LinearAlignment()
         ret.alignment.mappingQuality = read.mapping_quality
         ret.alignment.position = protocol.Position()
-        self.sanitizeGetRName(read.reference_id)
         samFile = self._parentContainer.getFileHandle(
             self._parentSamFilePath)
         ret.alignment.position.referenceName = samFile.getrname(
@@ -555,7 +554,6 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.nextMatePosition = None
         if read.next_reference_id != -1:
             ret.nextMatePosition = protocol.Position()
-            self.sanitizeGetRName(read.next_reference_id)
             ret.nextMatePosition.referenceName = samFile.getrname(
                 read.next_reference_id)
             ret.nextMatePosition.position = read.next_reference_start

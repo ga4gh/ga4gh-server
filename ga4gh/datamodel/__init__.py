@@ -367,12 +367,6 @@ class PysamDatamodelMixin(object):
         return referenceName, start, end
 
     @classmethod
-    def sanitizeGetRName(cls, referenceId):
-        cls.assertInt(referenceId, 'referenceId')
-        cls.assertInRange(
-            referenceId, cls.rNameMin, cls.rNameMax, 'referenceId')
-
-    @classmethod
     def assertValidRange(cls, start, end, startName, endName):
         if start > end:
             message = "invalid coordinates: {} ({}) " \
