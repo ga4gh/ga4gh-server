@@ -164,7 +164,7 @@ class TestAbstractBackend(unittest.TestCase):
             self.assertEqual(result, results[0])
 
     def runListReferenceBases(self, id_):
-        requestArgs = {"start": 5, "end": 10, "pageToken": "0"}
+        requestArgs = {"start": 3, "end": 5, "pageToken": "0"}
         responseStr = self._backend.runListReferenceBases(id_, requestArgs)
         response = protocol.ListReferenceBasesResponse.fromJsonString(
             responseStr)
