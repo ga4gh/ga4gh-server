@@ -48,9 +48,8 @@ def getGa4ghFilePath():
 def makeHttpClient():
     url = "http://example.com"
     debugLevel = 0
-    workarounds = set()
     key = "KEY"
-    httpClient = client.HttpClient(url, debugLevel, workarounds, key)
+    httpClient = client.HttpClient(url, debugLevel, key)
     return httpClient
 
 

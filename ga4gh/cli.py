@@ -44,28 +44,8 @@ class RequestFactory(object):
     """
     Provides methods for easy inititalization of request objects
     """
-    class SearchReadsRequestGoogle(protocol.ProtocolElement):
-
-        __slots__ = ['end', 'pageSize', 'pageToken', 'readGroupIds',
-                     'referenceName', 'start']
-
-        def __init__(self):
-            self.end = None
-            self.pageSize = None
-            self.pageToken = None
-            self.readGroupIds = []
-            self.referenceName = None
-            self.start = 0
-
     def __init__(self, args):
         self.args = args
-        self.workarounds = getWorkarounds(args)
-
-    def usingWorkaroundsFor(self, workaround):
-        """
-        Returns true if we are using the passed-in workaround
-        """
-        return workaround in self.workarounds
 
     def createSearchVariantSetsRequest(self):
         request = protocol.SearchVariantSetsRequest()
@@ -80,8 +60,6 @@ class RequestFactory(object):
         request.variantName = self.args.variantName
         request.start = self.args.start
         request.end = self.args.end
-        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
-            request.maxCalls = self.args.maxCalls
         if self.args.callSetIds == []:
             request.callSetIds = []
         elif self.args.callSetIds == '*':
@@ -120,9 +98,6 @@ class RequestFactory(object):
 
     def createSearchReadsRequest(self):
         request = protocol.SearchReadsRequest()
-        if self.usingWorkaroundsFor(client.HttpClient.workaroundGoogle):
-            # google says referenceId not a valid field
-            request = self.SearchReadsRequestGoogle()
         setCommaSeparatedAttribute(request, self.args, 'readGroupIds')
         request.start = self.args.start
         request.end = self.args.end
@@ -138,13 +113,6 @@ class RequestFactory(object):
         request.start = self.args.start
         request.end = self.args.end
         return request
-
-
-def getWorkarounds(args):
-    if args.workarounds is None:
-        return set()
-    else:
-        return set(args.workarounds.split(','))
 
 
 ##############################################################################
@@ -185,9 +153,8 @@ def ga2vcf_main(parser=None):
 
 def ga2vcf_run(args):
     searchVariantsRequest = RequestFactory(args).createSearchVariantsRequest()
-    workarounds = getWorkarounds(args)
     httpClient = client.HttpClient(
-        args.baseUrl, args.verbose, workarounds, args.key)
+        args.baseUrl, args.verbose, args.key)
     # do conversion
     vcfConverter = converters.VcfConverter(
         httpClient, searchVariantsRequest, args.outputFile, args.binaryOutput)
@@ -219,9 +186,8 @@ def ga2sam_run(args):
     # instantiate params
     searchReadsRequest = RequestFactory(
         args).createSearchReadsRequest()
-    workarounds = getWorkarounds(args)
     httpClient = client.HttpClient(
-        args.baseUrl, args.verbose, workarounds, args.key)
+        args.baseUrl, args.verbose, args.key)
 
     # do conversion
     samConverter = converters.SamConverter(
@@ -292,11 +258,10 @@ class AbstractQueryRunner(object):
     Abstract base class for runner classes
     """
     def __init__(self, args):
-        self._workarounds = getWorkarounds(args)
         self._key = args.key
         self._verbosity = args.verbose
         self._httpClient = client.HttpClient(
-            args.baseUrl, args.verbose, self._workarounds, self._key)
+            args.baseUrl, args.verbose, self._key)
 
 
 class AbstractGetRunner(AbstractQueryRunner):
@@ -307,7 +272,7 @@ class AbstractGetRunner(AbstractQueryRunner):
         super(AbstractGetRunner, self).__init__(args)
         self._id = args.id
         self._httpClient = client.HttpClient(
-            args.baseUrl, args.verbose, self._workarounds, self._key)
+            args.baseUrl, args.verbose, self._key)
 
     def _run(self, method):
         response = method(self._id)
@@ -718,8 +683,6 @@ def addNameArgument(parser):
 
 def addClientGlobalOptions(parser):
     parser.add_argument('--verbose', '-v', action='count', default=0)
-    parser.add_argument(
-        "--workarounds", "-w", default=None, help="The workarounds to use")
     parser.add_argument(
         "--key", "-k", default='invalid',
         help="Auth Key. Found on server index page.")
