@@ -120,7 +120,7 @@ class SimulatedDataset(AbstractDataset):
     A simulated dataset
     """
     def __init__(
-            self, localId, randomSeed=0,
+            self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
             numAlignments=1):
@@ -137,8 +137,8 @@ class SimulatedDataset(AbstractDataset):
             localId = 'simRgs{}'.format(i)
             seed = randomSeed + i
             readGroupSet = reads.SimulatedReadGroupSet(
-                self, localId, seed, numReadGroupsPerReadGroupSet,
-                numAlignments)
+                self, localId, referenceSet, seed,
+                numReadGroupsPerReadGroupSet, numAlignments)
             self.addReadGroupSet(readGroupSet)
 
 
@@ -146,7 +146,7 @@ class FileSystemDataset(AbstractDataset):
     """
     A dataset based on the file system
     """
-    def __init__(self, dataDir):
+    def __init__(self, dataDir, backend):
         localId = os.path.basename(os.path.normpath(dataDir))
         super(FileSystemDataset, self).__init__(localId)
 
@@ -156,13 +156,14 @@ class FileSystemDataset(AbstractDataset):
             relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
                 variantSet = variants.HtslibVariantSet(
-                    self, localId, relativePath)
+                    self, localId, relativePath, backend)
                 self.addVariantSet(variantSet)
         # Reads
         readGroupSetDir = os.path.join(dataDir, "reads")
-        for localId in os.listdir(readGroupSetDir):
-            relativePath = os.path.join(readGroupSetDir, localId)
-            if fnmatch.fnmatch(relativePath, '*.bam'):
+        for filename in os.listdir(readGroupSetDir):
+            if fnmatch.fnmatch(filename, '*.bam'):
+                localId, _ = os.path.splitext(filename)
+                bamPath = os.path.join(readGroupSetDir, filename)
                 readGroupSet = reads.HtslibReadGroupSet(
-                    self, localId, relativePath)
+                    self, localId, bamPath, backend)
                 self.addReadGroupSet(readGroupSet)

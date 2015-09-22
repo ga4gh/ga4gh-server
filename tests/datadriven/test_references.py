@@ -28,45 +28,42 @@ def testReferenceSets():
         yield test
 
 
+class ReferenceInfo(object):
+    """
+    Container class for information about a reference
+    """
+    def __init__(self, referenceName, dataDir):
+        fastaFileName = os.path.join(
+            dataDir, "{}.fa.gz".format(referenceName))
+        self.fastaFile = pysam.FastaFile(fastaFileName)
+        assert len(self.fastaFile.references) == 1
+        assert self.fastaFile.references[0] == referenceName
+        self.bases = self.fastaFile.fetch(self.fastaFile.references[0])
+        self.length = len(self.bases)
+        metadataFileName = os.path.join(
+            dataDir, "{}.json".format(referenceName))
+        with open(metadataFileName) as metadataFile:
+            self.metadata = json.load(metadataFile)
+
+
 class ReferenceSetTest(datadriven.DataDrivenTest):
     """
     Data drive test class for reference sets. Builds an alternative model of
     a reference set, and verifies that it is consistent with the model
     built by the references.ReferenceSet object.
     """
-    class ReferenceInfo(object):
-        """
-        Container class for information about a reference
-        """
-        def __init__(self, referenceName, dataDir):
-            fastaFileName = os.path.join(
-                dataDir, "{}.fa.gz".format(referenceName))
-            self.fastaFile = pysam.FastaFile(fastaFileName)
-            assert len(self.fastaFile.references) == 1
-            assert self.fastaFile.references[0] == referenceName
-            self.bases = self.fastaFile.fetch(self.fastaFile.references[0])
-            self.length = len(self.bases)
-            metadataFileName = os.path.join(
-                dataDir, "{}.json".format(referenceName))
-            with open(metadataFileName) as metadataFile:
-                self.metadata = json.load(metadataFile)
-
     def __init__(self, referenceSetId, baseDir):
-        super(ReferenceSetTest, self).__init__(None, referenceSetId, baseDir)
+        super(ReferenceSetTest, self).__init__(referenceSetId, baseDir)
         self._referenceInfos = {}
         for fastaFilePath in glob.glob(
-                os.path.join(self._dataDir, "*.fa.gz")):
+                os.path.join(self._dataPath, "*.fa.gz")):
             fastaFileName = os.path.split(fastaFilePath)[1]
             referenceName = fastaFileName.split(".")[0]
-            referenceInfo = self.ReferenceInfo(referenceName, self._dataDir)
+            referenceInfo = ReferenceInfo(referenceName, self._dataPath)
             self._referenceInfos[referenceName] = referenceInfo
 
-    def getDataModelClass(self):
-        class HtslibReferenceSetWrapper(references.HtslibReferenceSet):
-            def __init__(self, parentContainer, localId, dataDir):
-                super(HtslibReferenceSetWrapper, self).__init__(
-                    localId, dataDir)
-        return HtslibReferenceSetWrapper
+    def getDataModelInstance(self, localId, dataPath):
+        return references.HtslibReferenceSet(localId, dataPath, None)
 
     def getProtocolClass(self):
         return protocol.ReferenceSet

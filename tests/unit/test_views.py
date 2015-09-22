@@ -106,7 +106,7 @@ class TestFrontend(unittest.TestCase):
             readGroupIds = [self.readGroupId]
         request = protocol.SearchReadsRequest()
         request.readGroupIds = readGroupIds
-        request.referenceId = "chr1"
+        request.referenceId = self.referenceId
         return self.sendPostRequest('/reads/search', request)
 
     def sendDatasetsSearch(self):

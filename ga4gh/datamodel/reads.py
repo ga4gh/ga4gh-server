@@ -10,9 +10,26 @@ import datetime
 
 import pysam
 
-import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
+import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
+import ga4gh.protocol as protocol
+
+
+def parseMalformedBamHeader(headerDict):
+    """
+    Parses the (probably) intended values out of the specified
+    BAM header dictionary, which is incompletely parsed by pysam.
+    This is caused by some tools incorrectly using spaces instead
+    of tabs as a seperator.
+    """
+    headerString = " ".join(
+        "{}:{}".format(k, v) for k, v in headerDict.items())
+    ret = {}
+    for item in headerString.split():
+        key, value = item.split(":", 1)
+        ret[key] = value
+    return ret
 
 
 class SamCigar(object):
@@ -78,6 +95,7 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         super(AbstractReadGroupSet, self).__init__(parentContainer, localId)
         self._readGroupIdMap = {}
         self._readGroupIds = []
+        self._referenceSet = None
 
     def addReadGroup(self, readGroup):
         """
@@ -101,6 +119,12 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         if id_ not in self._readGroupIdMap:
             raise exceptions.ReadGroupNotFoundException(id_)
         return self._readGroupIdMap[id_]
+
+    def getReferenceSet(self):
+        """
+        Returns the ReferenceSet that this ReadGroupSet is aligned to.
+        """
+        return self._referenceSet
 
     def toProtocolElement(self):
         """
@@ -143,10 +167,11 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
     A simulated read group set
     """
     def __init__(
-            self, parentContainer, localId, randomSeed=1, numReadGroups=1,
-            numAlignments=2):
+            self, parentContainer, localId, referenceSet, randomSeed=1,
+            numReadGroups=1, numAlignments=2):
         super(SimulatedReadGroupSet, self).__init__(
             parentContainer, localId)
+        self._referenceSet = referenceSet
         self._numAlignments = numAlignments
         for i in range(numReadGroups):
             localId = "rg{}".format(i)
@@ -168,9 +193,10 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     """
     Class representing a logical collection ReadGroups.
     """
-    def __init__(self, parentContainer, localId, dataFile):
+    def __init__(
+            self, parentContainer, localId, samFilePath, backend):
         super(HtslibReadGroupSet, self).__init__(parentContainer, localId)
-        self._samFilePath = dataFile
+        self._samFilePath = samFilePath
         samFile = self.getFileHandle(self._samFilePath)
         self._setHeaderFields(samFile)
         if 'RG' not in samFile.header or len(samFile.header['RG']) == 0:
@@ -183,6 +209,27 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
                 readGroup = HtslibReadGroup(
                     self, readGroupHeader['ID'], readGroupHeader)
                 self.addReadGroup(readGroup)
+        # Find the reference set name (if there is one) by looking at
+        # the BAM headers.
+        referenceSetName = None
+        for referenceInfo in samFile.header['SQ']:
+            if 'AS' not in referenceInfo:
+                infoDict = parseMalformedBamHeader(referenceInfo)
+            else:
+                infoDict = referenceInfo
+            name = infoDict.get('AS', references.DEFAULT_REFERENCESET_NAME)
+            if referenceSetName is None:
+                referenceSetName = name
+            elif referenceSetName != name:
+                raise exceptions.MultipleReferenceSetsInReadGroupSet(
+                    samFilePath, name, referenceSetName)
+        self._referenceSet = None
+        if referenceSetName is not None:
+            self._referenceSet = backend.getReferenceSetByName(
+                referenceSetName)
+            # TODO verify that the references in the BAM file exist
+            # in the reference set. Otherwise, we won't be able to
+            # query for them.
 
     def _setHeaderFields(self, samFile):
         programs = []
@@ -258,8 +305,11 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.name = self.getLocalId()
         readGroup.predictedInsertSize = self.getPredictedInsertSize()
         readGroup.programs = []
+        referenceSet = self._parentContainer.getReferenceSet()
         readGroup.referenceSetId = None
         readGroup.sampleId = self.getSampleId()
+        if referenceSet is not None:
+            readGroup.referenceSetId = referenceSet.getId()
         stats = protocol.ReadStats()
         stats.alignedReadCount = self.getNumAlignedReads()
         stats.unalignedReadCount = self.getNumUnalignedReads()
@@ -484,26 +534,17 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     def getSamFilePath(self):
         return self._parentSamFilePath
 
-    def getReadAlignments(self, referenceId=None, start=None, end=None):
+    def getReadAlignments(self, reference, start=None, end=None):
         """
         Returns an iterator over the specified reads
         """
-        # TODO If referenceId is None, return against all references,
+        # TODO If reference is None, return against all references,
         # including unmapped reads.
-        samFile = self._parentContainer.getFileHandle(
-            self._parentSamFilePath)
-        if referenceId is not None:
-            referenceId = datamodel.CompoundId.deobfuscate(referenceId)
-        referenceId, start, end = self.sanitizeAlignmentFileFetch(
-            referenceId, start, end)
-        if (referenceId is not None and
-                referenceId not in samFile.references):
-            raise exceptions.ReferenceNotFoundInReadGroupException(
-                self.getId(), referenceId, samFile.references)
+        samFile = self._parentContainer.getFileHandle(self._parentSamFilePath)
+        referenceName = reference.getLocalId().encode()
         # TODO deal with errors from htslib
-        referenceId, start, end = self.sanitizeAlignmentFileFetch(
-            referenceId, start, end)
-        readAlignments = samFile.fetch(referenceId, start, end)
+        start, end = self.sanitizeAlignmentFileFetch(start, end)
+        readAlignments = samFile.fetch(referenceName, start, end)
         if self._filterReads:
             for readAlignment in readAlignments:
                 tags = dict(readAlignment.tags)

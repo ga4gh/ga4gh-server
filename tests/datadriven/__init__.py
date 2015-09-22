@@ -29,21 +29,21 @@ def _wrapTestMethod(method):
         method()
     testFunction.description = "{}.{}.{}:{}".format(
         method.__module__, cls.__name__, method.__name__,
-        instance.getSetId())
+        instance.getLocalId())
     return testFunction
 
 
-def makeTests(testDataDir, testClass, fnmatchGlob=None):
+def makeTests(testDataDir, testClass, fnmatchGlob="*"):
     """
     Top-level entry point for data driven tests. For every subdirectory
     in testDataDir, create an instance of testClass and then yield
     each of its testMethods in a format suitable for use with nose
     test generators.
     """
-    for testSetId in os.listdir(testDataDir):
-        if (fnmatchGlob is not None and
-                fnmatch.fnmatch(testSetId, fnmatchGlob)):
-            tester = testClass(testSetId, testDataDir)
+    for localId in os.listdir(testDataDir):
+        if fnmatch.fnmatch(localId, fnmatchGlob):
+            path = os.path.join(testDataDir, localId)
+            tester = testClass(localId, path)
             for name, _ in inspect.getmembers(testClass):
                 if name.startswith("test"):
                     yield _wrapTestMethod(getattr(tester, name))
@@ -233,19 +233,18 @@ class DataDrivenTest(TestCase):
     corresponding to this, and then test that these objects have the
     properties that we expect.
     """
-    def __init__(self, parentContainer, setId, baseDir):
-        self._setId = setId
-        self._dataDir = os.path.join(baseDir, setId)
-        self._gaObject = self.getDataModelClass()(
-            parentContainer, self._setId, self._dataDir)
+    def __init__(self, localId, dataPath):
+        self._localId = localId
+        self._dataPath = dataPath
+        self._gaObject = self.getDataModelInstance(localId, dataPath)
 
-    def getSetId(self):
+    def getLocalId(self):
         """
         Return the ID of this GA4GH datamodel object we are testing.
         """
-        return self._setId
+        return self._localId
 
-    def getDataModelClass(self):
+    def getDataModelInstance(self, localId, dataPath):
         """
         Returns the GA4GH datamodel class that this data driven test
         is exercising.

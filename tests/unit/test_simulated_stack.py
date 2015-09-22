@@ -10,7 +10,6 @@ from __future__ import unicode_literals
 import unittest
 import logging
 import random
-
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
@@ -594,15 +593,18 @@ class TestSimulatedStack(unittest.TestCase):
         path = '/reads/search'
         for dataset in self.backend.getDatasets():
             for readGroupSet in dataset.getReadGroupSets():
-                for readGroup in readGroupSet.getReadGroups():
-                    # search reads
-                    request = protocol.SearchReadsRequest()
-                    request.readGroupIds = [readGroup.getId()]
-                    request.referenceId = "chr1"
-                    responseData = self.sendSearchRequest(
-                        path, request, protocol.SearchReadsResponse)
-                    alignments = responseData.alignments
-                    self.assertGreater(len(alignments), 0)
-                    for alignment in alignments:
-                        self.assertEqual(
-                            alignment.readGroupId, readGroup.getId())
+                referenceSet = readGroupSet.getReferenceSet()
+                for reference in referenceSet.getReferences():
+                    for readGroup in readGroupSet.getReadGroups():
+                        # search reads
+                        request = protocol.SearchReadsRequest()
+                        request.readGroupIds = [readGroup.getId()]
+                        request.referenceId = reference.getId()
+                        responseData = self.sendSearchRequest(
+                            path, request, protocol.SearchReadsResponse)
+                        alignments = responseData.alignments
+                        self.assertGreater(len(alignments), 0)
+                        for alignment in alignments:
+                            # TODO more tests here: this is very weak.
+                            self.assertEqual(
+                                alignment.readGroupId, readGroup.getId())

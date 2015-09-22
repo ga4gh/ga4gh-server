@@ -33,12 +33,12 @@ class VariantSetTest(datadriven.DataDrivenTest):
     built by the variants.VariantSet object.
     """
     def __init__(self, variantSetId, baseDir):
-        dataset = datasets.AbstractDataset("ds")
-        super(VariantSetTest, self).__init__(dataset, variantSetId, baseDir)
+        self._dataset = datasets.AbstractDataset("ds")
+        super(VariantSetTest, self).__init__(variantSetId, baseDir)
         self._variantRecords = []
         self._referenceNames = set()
         # Read in all the VCF files in datadir and store each variant.
-        for vcfFile in glob.glob(os.path.join(self._dataDir, "*.vcf.gz")):
+        for vcfFile in glob.glob(os.path.join(self._dataPath, "*.vcf.gz")):
             self._readVcf(vcfFile)
 
     def _readVcf(self, vcfFileName):
@@ -59,8 +59,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 record.end = record.INFO["END"]
             self._variantRecords.append(record)
 
-    def getDataModelClass(self):
-        return variants.HtslibVariantSet
+    def getDataModelInstance(self, localId, dataPath):
+        return variants.HtslibVariantSet(
+            self._dataset, localId, dataPath, None)
 
     def getProtocolClass(self):
         return protocol.VariantSet
