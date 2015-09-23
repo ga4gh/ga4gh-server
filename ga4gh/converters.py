@@ -18,9 +18,10 @@ class AbstractConverter(object):
     """
     Abstract base class for converter classes
     """
-    def __init__(self, httpClient, apiRequest, outputFile, binaryOutput):
-        self._httpClient = httpClient
-        self._apiRequest = apiRequest
+    def __init__(
+            self, container, objectIterator, outputFile, binaryOutput):
+        self._container = container
+        self._objectIterator = objectIterator
         self._outputFile = outputFile
         self._binaryOutput = binaryOutput
 
@@ -54,8 +55,7 @@ class SamConverter(AbstractConverter):
             fileString = self._outputFile
         alignmentFile = pysam.AlignmentFile(
             fileString, flags, header=header)
-        iterator = self._httpClient.searchReads(self._apiRequest)
-        for read in iterator:
+        for read in self._objectIterator:
             alignedSegment = SamLine.toAlignedSegment(read, targetIds)
             alignmentFile.write(alignedSegment)
         alignmentFile.close()
@@ -220,9 +220,7 @@ class VcfConverter(AbstractConverter):
     VCF format using pysam.
     """
     def _writeHeader(self):
-        # We support exactly one variantSet.
-        variantSetId = self._apiRequest.variantSetIds[0]
-        variantSet = self._httpClient.getVariantSet(variantSetId)
+        variantSet = self._container
         # TODO convert this into pysam types and write to the output file.
         # For now, just print out some stuff to demonstrate how to get the
         # attributes we have.
@@ -233,7 +231,7 @@ class VcfConverter(AbstractConverter):
             print("\t", metadata)
 
     def _writeBody(self):
-        for variant in self._httpClient.searchVariants(self._apiRequest):
+        for variant in self._objectIterator:
             # TODO convert each variant object into pysam objects and write to
             # the output file. For now, just print the first variant and break.
             print(variant)

@@ -101,14 +101,6 @@ class HttpClient(object):
             jsonResponseString)
         return responseObject
 
-    def _updateNotDone(self, responseObject, protocolRequest):
-        if hasattr(responseObject, 'nextPageToken'):
-            protocolRequest.pageToken = responseObject.nextPageToken
-            notDone = responseObject.nextPageToken is not None
-        else:
-            notDone = False
-        return notDone
-
     def _doRequest(self, httpMethod, url, protocolResponseClass,
                    httpParams={}, httpData=None):
         """
@@ -146,22 +138,31 @@ class HttpClient(object):
             self._logger.info("Response pageSize={}".format(len(valueList)))
             for extract in valueList:
                 yield extract
-            notDone = self._updateNotDone(responseObject, protocolRequest)
+            notDone = responseObject.nextPageToken is not None
+            protocolRequest.pageToken = responseObject.nextPageToken
 
-    def runListRequest(self, protocolRequest, url,
-                       protocolResponseClass, id_):
+    def listReferenceBases(self, id_, start=None, end=None):
         """
-        Asks the server to list objects of type protocolResponseClass and
-        returns an iterator over the results.
+        Returns an iterator over the bases from the server in the form
+        of consecutive strings. This command does not conform to the
+        patterns of the other search and get requests, and is implemented
+        differently.
         """
+        url = "references/{id}/bases"
         fullUrl = posixpath.join(self._urlPrefix, url).format(id=id_)
+        request = protocol.ListReferenceBasesRequest()
+        request.start = start
+        request.end = end
         notDone = True
         while notDone:
-            requestDict = protocolRequest.toJsonDict()
-            responseObject = self._doRequest(
-                'GET', fullUrl, protocolResponseClass, requestDict)
-            yield responseObject
-            notDone = self._updateNotDone(responseObject, protocolRequest)
+            response = self._doRequest(
+                'GET', fullUrl, protocol.ListReferenceBasesResponse,
+                request.toJsonDict())
+            self._logger.info("Response pageSize={}".format(
+                len(response.sequence)))
+            yield response.sequence
+            notDone = response.nextPageToken is not None
+            request.pageToken = response.nextPageToken
 
     def runGetRequest(self, objectName, protocolResponseClass, id_):
         """
@@ -217,20 +218,21 @@ class HttpClient(object):
         """
         return self.runGetRequest("variants", protocol.Variant, id_)
 
-    def listReferenceBases(self, protocolRequest, id_):
-        """
-        Returns an iterator over the bases from the server
-        """
-        return self.runListRequest(
-            protocolRequest, "references/{id}/bases",
-            protocol.ListReferenceBasesResponse, id_)
-
-    def searchVariants(self, protocolRequest):
+    def searchVariants(
+            self, variantSetId, start=None, end=None, referenceName=None,
+            callSetIds=None, pageSize=None):
         """
         Returns an iterator over the Variants from the server
         """
+        request = protocol.SearchVariantsRequest()
+        request.referenceName = referenceName
+        request.start = start
+        request.end = end
+        request.variantSetId = variantSetId
+        request.callSetIds = callSetIds
+        request.pageSize = pageSize
         return self.runSearchRequest(
-            protocolRequest, "variants", protocol.SearchVariantsResponse)
+            request, "variants", protocol.SearchVariantsResponse)
 
     def getVariantSet(self, id_):
         """
@@ -238,54 +240,87 @@ class HttpClient(object):
         """
         return self.runGetRequest("variantsets", protocol.VariantSet, id_)
 
-    def searchVariantSets(self, protocolRequest):
+    def searchVariantSets(self, datasetId, pageSize=None):
         """
-        Returns an iterator over the VariantSets from the server.
+        Returns an iterator over the VariantSets on the server. If datasetId
+        is specified, return only the VariantSets in this dataset.
         """
+        request = protocol.SearchVariantSetsRequest()
+        request.datasetId = datasetId
+        request.pageSize = pageSize
         return self.runSearchRequest(
-            protocolRequest, "variantsets",
-            protocol.SearchVariantSetsResponse)
+            request, "variantsets", protocol.SearchVariantSetsResponse)
 
-    def searchReferenceSets(self, protocolRequest):
+    def searchReferenceSets(
+            self, accession=None, md5checksum=None, assemblyId=None,
+            pageSize=None):
         """
         Returns an iterator over the ReferenceSets from the server.
         """
+        request = protocol.SearchReferenceSetsRequest()
+        request.accession = accession
+        request.md5checksum = md5checksum
+        request.assemblyId = assemblyId
+        request.pageSize = pageSize
         return self.runSearchRequest(
-            protocolRequest, "referencesets",
-            protocol.SearchReferenceSetsResponse)
+            request, "referencesets", protocol.SearchReferenceSetsResponse)
 
-    def searchReferences(self, protocolRequest):
+    def searchReferences(
+            self, referenceSetId, accession=None, md5checksum=None,
+            pageSize=None):
         """
         Returns an iterator over the References from the server
         """
+        request = protocol.SearchReferencesRequest()
+        request.referenceSetId = referenceSetId
+        request.accession = accession
+        request.md5checksum = md5checksum
+        request.pageSize = pageSize
         return self.runSearchRequest(
-            protocolRequest, "references", protocol.SearchReferencesResponse)
+            request, "references", protocol.SearchReferencesResponse)
 
-    def searchCallSets(self, protocolRequest):
+    def searchCallSets(self, variantSetId, name=None, pageSize=None):
         """
         Returns an iterator over the CallSets from the server
         """
+        request = protocol.SearchCallSetsRequest()
+        request.variantSetId = variantSetId
+        request.name = name
+        request.pageSize = pageSize
         return self.runSearchRequest(
-            protocolRequest, "callsets", protocol.SearchCallSetsResponse)
+            request, "callsets", protocol.SearchCallSetsResponse)
 
-    def searchReadGroupSets(self, protocolRequest):
+    def searchReadGroupSets(self, datasetId, name=None, pageSize=None):
         """
         Returns an iterator over the ReadGroupSets from the server
         """
+        request = protocol.SearchReadGroupSetsRequest()
+        request.datasetId = datasetId
+        request.name = name
+        request.pageSize = pageSize
         return self.runSearchRequest(
-            protocolRequest, "readgroupsets",
-            protocol.SearchReadGroupSetsResponse)
+            request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
-    def searchReads(self, protocolRequest):
+    def searchReads(
+            self, readGroupIds, referenceId=None, start=None, end=None,
+            pageSize=None):
         """
         Returns an iterator over the Reads from the server
         """
+        request = protocol.SearchReadsRequest()
+        request.readGroupIds = readGroupIds
+        request.referenceId = referenceId
+        request.start = start
+        request.end = end
+        request.pageSize = pageSize
         return self.runSearchRequest(
-            protocolRequest, "reads", protocol.SearchReadsResponse)
+            request, "reads", protocol.SearchReadsResponse)
 
-    def searchDatasets(self, protocolRequest):
+    def searchDatasets(self, pageSize=None):
         """
         Returns an iterator over the Datasets from the server
         """
+        request = protocol.SearchDatasetsRequest()
+        request.pageSize = pageSize
         return self.runSearchRequest(
-            protocolRequest, "datasets", protocol.SearchDatasetsResponse)
+            request, "datasets", protocol.SearchDatasetsResponse)

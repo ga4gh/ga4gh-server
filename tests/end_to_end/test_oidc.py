@@ -84,8 +84,8 @@ class TestOidc(server_test.ServerTestClass):
             serverUrl, flags="--key {}".format('ABC'))
         with self.assertRaises(subprocess.CalledProcessError):
             test_client.runCommand(
-                "variants-search -s 0 -e 2 -V {}".format(
-                    self.simulatedVariantSetId),
+                "variants-search",
+                "-s 0 -e 2 -V {}".format(self.simulatedVariantSetId),
                 debugOnFail=False)
         test_client.cleanup()
 

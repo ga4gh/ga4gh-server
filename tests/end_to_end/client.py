@@ -21,10 +21,11 @@ class ClientForTesting(object):
         self.outFile = None
         self.errFile = None
         if flags is None:
-            self.flags = "-v -O"
+            self.flags = "-v"
         else:
             self.flags = flags
-        self.cmdLine = "python client_dev.py {flags} {command} {serverUrl}"
+        self.cmdLine = (
+            "python client_dev.py {flags} {command} {serverUrl} {arguments}")
         self._createLogFiles()
 
     def _createLogFiles(self):
@@ -41,11 +42,12 @@ class ClientForTesting(object):
     def getErrLines(self):
         return utils.getLinesFromLogFile(self.errFile)
 
-    def runCommand(self, command, debugOnFail=True):
+    def runCommand(self, command, arguments, debugOnFail=True):
         clientCmdLine = self.cmdLine.format(**{
             "flags": self.flags,
             "command": command,
-            "serverUrl": self.serverUrl})
+            "serverUrl": self.serverUrl,
+            "arguments": arguments})
         splits = shlex.split(clientCmdLine)
         try:
             subprocess.check_call(
