@@ -1,6 +1,5 @@
 Flask==0.10.1
 Flask-Cors==2.0.1
-Twisted==15.2.1
 avro==1.7.7
 coverage==3.7.1
 flake8==2.3.0  # Set due to conflict with pep8 in version 2.4.0
