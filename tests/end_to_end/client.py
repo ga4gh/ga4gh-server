@@ -21,7 +21,7 @@ class ClientForTesting(object):
         self.outFile = None
         self.errFile = None
         if flags is None:
-            self.flags = "-v"
+            self.flags = "-vv"
         else:
             self.flags = flags
         self.cmdLine = (

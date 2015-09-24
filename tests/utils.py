@@ -12,8 +12,6 @@ import os
 import signal
 import time
 
-import ga4gh.client as client
-
 
 packageName = 'ga4gh'
 
@@ -43,14 +41,6 @@ def getProjectRootFilePath():
 
 def getGa4ghFilePath():
     return os.path.join(getProjectRootFilePath(), packageName)
-
-
-def makeHttpClient():
-    url = "http://example.com"
-    debugLevel = 0
-    key = "KEY"
-    httpClient = client.HttpClient(url, debugLevel, key)
-    return httpClient
 
 
 def powerset(iterable, maxSets=None):

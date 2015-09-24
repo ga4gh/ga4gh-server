@@ -16,9 +16,9 @@ version = '0.6.4568e6f6'
 
 class Call(ProtocolElement):
     """
-    A `Call` represents the determination of genotype with respect to
-    a particular `Variant`.  It may include associated information
-    such as quality and phasing. For example, a call might assign a
+    A Call represents the determination of genotype with respect to a
+    particular Variant.  It may include associated information such as
+    quality and phasing. For example, a call might assign a
     probability of 0.32 to the occurrence of a SNP named rs1234 in a
     call set with the name NA12345.
     """
@@ -56,22 +56,64 @@ null, "doc": "", "type": ["null", "string"], "name": "phaseset"},
     def __init__(self, **kwargs):
         self.callSetId = kwargs.get(
             'callSetId', None)
+        """
+        The ID of the call set this variant call belongs to.    If
+        this field is not present, the ordering of the call sets from
+        a   SearchCallSetsRequest over this VariantSet is guaranteed
+        to match   the ordering of the calls on this Variant.   The
+        number of results will also be the same.
+        """
         self.callSetName = kwargs.get(
             'callSetName', None)
+        """
+        The name of the call set this variant call belongs to.   If
+        this field is not present, the ordering of the call sets from
+        a   SearchCallSetsRequest over this VariantSet is guaranteed
+        to match   the ordering of the calls on this Variant.   The
+        number of results will also be the same.
+        """
         self.genotype = kwargs.get(
             'genotype', [])
+        """
+        The genotype of this variant call.    A 0 value represents the
+        reference allele of the associated Variant. Any   other value
+        is a 1-based index into the alternate alleles of the
+        associated   Variant.    If a variant had a referenceBases
+        field of "T", an alternateBases   value of ["A", "C"], and the
+        genotype was [2, 1], that would mean the call   represented
+        the heterozygous value "CA" for this variant. If the genotype
+        was instead [0, 1] the represented value would be "TA".
+        Ordering of the   genotype values is important if the phaseset
+        field is present.
+        """
         self.genotypeLikelihood = kwargs.get(
             'genotypeLikelihood', [])
+        """
+        The genotype likelihoods for this variant call. Each array
+        entry   represents how likely a specific genotype is for this
+        call as   log10(P(data | genotype)), analogous to the GL tag
+        in the VCF spec. The   value ordering is defined by the GL tag
+        in the VCF spec.
+        """
         self.info = kwargs.get(
             'info', {})
+        """
+        A map of additional variant call information.
+        """
         self.phaseset = kwargs.get(
             'phaseset', None)
+        """
+        If this field is not null, this variant call's genotype
+        ordering implies   the phase of the bases and is consistent
+        with any other variant calls on   the same contig which have
+        the same phaseset string.
+        """
 
 
 class CallSet(ProtocolElement):
     """
-    A `CallSet` is a collection of variant calls for a particular
-    sample. It belongs to a `VariantSet`. This is equivalent to one
+    A CallSet is a collection of variant calls for a particular
+    sample. It belongs to a VariantSet. This is equivalent to one
     column in VCF.
     """
     _schemaSource = """
@@ -111,61 +153,84 @@ null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
     def __init__(self, **kwargs):
         self.created = kwargs.get(
             'created', None)
+        """
+        The date this call set was created in milliseconds from the
+        epoch.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The call set ID.
+        """
         self.info = kwargs.get(
             'info', {})
+        """
+        A map of additional call set information.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The call set name.
+        """
         self.sampleId = kwargs.get(
             'sampleId', None)
+        """
+        The sample this call set's data was generated from.
+        """
         self.updated = kwargs.get(
             'updated', None)
+        """
+        The time at which this call set was last updated in
+        milliseconds from the epoch.
+        """
         self.variantSetIds = kwargs.get(
             'variantSetIds', [])
+        """
+        The IDs of the variant sets this call set has calls in.
+        """
 
 
 class CigarOperation(object):
     """
     An enum for the different types of CIGAR alignment operations that
     exist. Used wherever CIGAR alignments are used. The different
-    enumerated values have the following usage:  * `ALIGNMENT_MATCH`:
-    An alignment match indicates that a sequence can be   aligned to
-    the reference without evidence of an INDEL. Unlike the
-    `SEQUENCE_MATCH` and `SEQUENCE_MISMATCH` operators, the
-    `ALIGNMENT_MATCH`   operator does not indicate whether the
-    reference and read sequences are an   exact match. This operator
-    is equivalent to SAM's `M`. * `INSERT`: The insert operator
-    indicates that the read contains evidence of   bases being
-    inserted into the reference. This operator is equivalent to
-    SAM's `I`. * `DELETE`: The delete operator indicates that the read
-    contains evidence of   bases being deleted from the reference.
-    This operator is equivalent to   SAM's `D`. * `SKIP`: The skip
-    operator indicates that this read skips a long segment of   the
-    reference, but the bases have not been deleted. This operator is
-    commonly used when working with RNA-seq data, where reads may skip
-    long   segments of the reference between exons. This operator is
-    equivalent to   SAM's 'N'. * `CLIP_SOFT`: The soft clip operator
-    indicates that bases at the start/end   of a read have not been
-    considered during alignment. This may occur if the   majority of a
-    read maps, except for low quality bases at the start/end of   a
-    read. This operator is equivalent to SAM's 'S'. Bases that are
-    soft clipped   will still be stored in the read. * `CLIP_HARD`:
-    The hard clip operator indicates that bases at the start/end of
-    a read have been omitted from this alignment. This may occur if
-    this linear   alignment is part of a chimeric alignment, or if the
-    read has been trimmed   (e.g., during error correction, or to trim
-    poly-A tails for RNA-seq). This   operator is equivalent to SAM's
-    'H'. * `PAD`: The pad operator indicates that there is padding in
-    an alignment.   This operator is equivalent to SAM's 'P'. *
-    `SEQUENCE_MATCH`: This operator indicates that this portion of the
-    aligned   sequence exactly matches the reference (e.g., all bases
-    are equal to the   reference bases). This operator is equivalent
-    to SAM's '='. * `SEQUENCE_MISMATCH`: This operator indicates that
-    this portion of the   aligned sequence is an alignment match to
-    the reference, but a sequence   mismatch (e.g., the bases are not
-    equal to the reference). This can   indicate a SNP or a read
-    error. This operator is equivalent to SAM's 'X'.
+    enumerated values have the following usage:  * ALIGNMENT_MATCH: An
+    alignment match indicates that a sequence can be   aligned to the
+    reference without evidence of an INDEL. Unlike the
+    SEQUENCE_MATCH and SEQUENCE_MISMATCH operators, the
+    ALIGNMENT_MATCH   operator does not indicate whether the reference
+    and read sequences are an   exact match. This operator is
+    equivalent to SAM's M. * INSERT: The insert operator indicates
+    that the read contains evidence of   bases being inserted into the
+    reference. This operator is equivalent to   SAM's I. * DELETE: The
+    delete operator indicates that the read contains evidence of
+    bases being deleted from the reference. This operator is
+    equivalent to   SAM's D. * SKIP: The skip operator indicates that
+    this read skips a long segment of   the reference, but the bases
+    have not been deleted. This operator is   commonly used when
+    working with RNA-seq data, where reads may skip long   segments of
+    the reference between exons. This operator is equivalent to
+    SAM's 'N'. * CLIP_SOFT: The soft clip operator indicates that
+    bases at the start/end   of a read have not been considered during
+    alignment. This may occur if the   majority of a read maps, except
+    for low quality bases at the start/end of   a read. This operator
+    is equivalent to SAM's 'S'. Bases that are soft clipped   will
+    still be stored in the read. * CLIP_HARD: The hard clip operator
+    indicates that bases at the start/end of   a read have been
+    omitted from this alignment. This may occur if this linear
+    alignment is part of a chimeric alignment, or if the read has been
+    trimmed   (e.g., during error correction, or to trim poly-A tails
+    for RNA-seq). This   operator is equivalent to SAM's 'H'. * PAD:
+    The pad operator indicates that there is padding in an alignment.
+    This operator is equivalent to SAM's 'P'. * SEQUENCE_MATCH: This
+    operator indicates that this portion of the aligned   sequence
+    exactly matches the reference (e.g., all bases are equal to the
+    reference bases). This operator is equivalent to SAM's '='. *
+    SEQUENCE_MISMATCH: This operator indicates that this portion of
+    the   aligned sequence is an alignment match to the reference, but
+    a sequence   mismatch (e.g., the bases are not equal to the
+    reference). This can   indicate a SNP or a read error. This
+    operator is equivalent to SAM's 'X'.
     """
     ALIGNMENT_MATCH = "ALIGNMENT_MATCH"
     INSERT = "INSERT"
@@ -216,10 +281,22 @@ null, "doc": "", "type": ["null", "string"], "name":
     def __init__(self, **kwargs):
         self.operation = kwargs.get(
             'operation', None)
+        """
+        The operation type.
+        """
         self.operationLength = kwargs.get(
             'operationLength', None)
+        """
+        The number of bases that the operation runs for.
+        """
         self.referenceSequence = kwargs.get(
             'referenceSequence', None)
+        """
+        referenceSequence is only used at mismatches
+        (SEQUENCE_MISMATCH)   and deletions (DELETE). Filling this
+        field replaces the MD tag.   If the relevant information is
+        not available, leave this field as null.
+        """
 
 
 class Dataset(ProtocolElement):
@@ -270,15 +347,24 @@ null, "doc": "", "type": ["null", "string"], "name": "name"},
     def __init__(self, **kwargs):
         self.description = kwargs.get(
             'description', None)
+        """
+        Additional, human-readable information on the dataset.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The dataset's id, (at least) locally unique.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The name of the dataset.
+        """
 
 
 class Experiment(ProtocolElement):
     """
-    An experimental preparation of a `Sample`.
+    An experimental preparation of a Sample.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -333,36 +419,95 @@ class Experiment(ProtocolElement):
     def __init__(self, **kwargs):
         self.description = kwargs.get(
             'description', None)
+        """
+        A description of the experiment.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The experiment UUID. This is globally unique.
+        """
         self.info = kwargs.get(
             'info', {})
+        """
+        A map of additional experiment information.
+        """
         self.instrumentDataFile = kwargs.get(
             'instrumentDataFile', None)
+        """
+        The data file generated by the instrument.   TODO: This isn't
+        actually a file is it?   Should this be instrumentData
+        instead?
+        """
         self.instrumentModel = kwargs.get(
             'instrumentModel', None)
+        """
+        The instrument model used as part of this experiment.     This
+        maps to sequencing technology in BAM.
+        """
         self.library = kwargs.get(
             'library', None)
+        """
+        The name of the library used as part of this experiment.
+        """
         self.libraryLayout = kwargs.get(
             'libraryLayout', None)
+        """
+        The configuration of sequenced reads. (e.g. Single or Paired)
+        """
         self.molecule = kwargs.get(
             'molecule', None)
+        """
+        The molecule examined in this experiment. (e.g. genomics DNA,
+        total RNA)
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The name of the experiment.
+        """
         self.platformUnit = kwargs.get(
             'platformUnit', None)
+        """
+        The platform unit used as part of this experiment. This is a
+        flowcell-barcode   or slide unique identifier.
+        """
         self.recordCreateTime = kwargs.get(
             'recordCreateTime', None)
+        """
+        The time at which this record was created.    Format: ISO
+        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
+        """
         self.recordUpdateTime = kwargs.get(
             'recordUpdateTime', None)
+        """
+        The time at which this record was last updated.   Format: ISO
+        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
+        """
         self.runTime = kwargs.get(
             'runTime', None)
+        """
+        The time at which this experiment was performed.   Granularity
+        here is variabel (e.g. date only).   Format: ISO 8601, YYYY-
+        MM-DDTHH:MM:SS (e.g. 2015-02-10T00:03:42)
+        """
         self.selection = kwargs.get(
             'selection', None)
+        """
+        The method used to enrich the target. (e.g.
+        immunoprecipitation, size   fractionation, MNase digestion)
+        """
         self.sequencingCenter = kwargs.get(
             'sequencingCenter', None)
+        """
+        The sequencing center used as part of this experiment.
+        """
         self.strategy = kwargs.get(
             'strategy', None)
+        """
+        The experiment technique or strategy applied to the sample.
+        (e.g. whole genome sequencing, RNA-seq, RIP-seq)
+        """
 
 
 class ExternalIdentifier(ProtocolElement):
@@ -400,10 +545,20 @@ class ExternalIdentifier(ProtocolElement):
     def __init__(self, **kwargs):
         self.database = kwargs.get(
             'database', None)
+        """
+        The source of the identifier.   (e.g. Ensembl)
+        """
         self.identifier = kwargs.get(
             'identifier', None)
+        """
+        The ID defined by the external database.   (e.g.
+        ENST00000000000)
+        """
         self.version = kwargs.get(
             'version', None)
+        """
+        The version of the object or the database   (e.g. 78)
+        """
 
 
 class Fragment(ProtocolElement):
@@ -440,6 +595,9 @@ class Fragment(ProtocolElement):
     def __init__(self, **kwargs):
         self.id = kwargs.get(
             'id', None)
+        """
+        The fragment ID.
+        """
 
 
 class GAException(ProtocolElement):
@@ -475,8 +633,14 @@ class GAException(ProtocolElement):
     def __init__(self, **kwargs):
         self.errorCode = kwargs.get(
             'errorCode', -1)
+        """
+        The numerical error code
+        """
         self.message = kwargs.get(
             'message', None)
+        """
+        The error message
+        """
 
 
 class LinearAlignment(ProtocolElement):
@@ -530,17 +694,27 @@ class LinearAlignment(ProtocolElement):
     def __init__(self, **kwargs):
         self.cigar = kwargs.get(
             'cigar', [])
+        """
+        Represents the local alignment of this sequence (alignment
+        matches, indels, etc)   versus the reference.
+        """
         self.mappingQuality = kwargs.get(
             'mappingQuality', None)
+        """
+        The mapping quality of this alignment. Represents how likely
+        the read maps to this position as opposed to other locations.
+        """
         self.position = kwargs.get(
             'position', None)
+        """
+        The position of this alignment.
+        """
 
 
 class ListReferenceBasesRequest(ProtocolElement):
     """
-    The query parameters for a request to `GET
-    /references/{id}/bases`, for example:  `GET
-    /references/{id}/bases?start=100&end=200`
+    The query parameters for a request to GET /references/{id}/bases,
+    for example:  GET /references/{id}/bases?start=100&end=200
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -570,15 +744,32 @@ class ListReferenceBasesRequest(ProtocolElement):
     def __init__(self, **kwargs):
         self.end = kwargs.get(
             'end', None)
+        """
+        The end position (0-based, exclusive) of this query. Defaults
+        to the length of this Reference.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
         self.start = kwargs.get(
             'start', 0)
+        """
+        The start position (0-based) of this query. Defaults to 0.
+        Genomic positions are non-negative integers less than
+        reference length.   Requests spanning the join of circular
+        genomes are represented as   two requests one on each side of
+        the join (position 0).
+        """
 
 
 class ListReferenceBasesResponse(ProtocolElement):
     """
-    The response from `GET /references/{id}/bases` expressed as JSON.
+    The response from GET /references/{id}/bases expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -610,17 +801,33 @@ class ListReferenceBasesResponse(ProtocolElement):
     def __init__(self, **kwargs):
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
         self.offset = kwargs.get(
             'offset', 0)
+        """
+        The offset position (0-based) of the given sequence from the
+        start of this   Reference. This value will differ for each
+        page in a paginated request.
+        """
         self.sequence = kwargs.get(
             'sequence', None)
+        """
+        A substring of the bases that make up this reference. Bases
+        are represented   as IUPAC-IUB codes; this string matches the
+        regexp [ACGTMRWSYKVHDBN]*.
+        """
 
 
 class Position(ProtocolElement):
     """
-    A `Position` is an unoriented base in some `Reference`. A
-    `Position` is represented by a `Reference` name, and a base number
-    on that `Reference` (0-based).
+    A Position is an unoriented base in some Reference. A Position is
+    represented by a Reference name, and a base number on that
+    Reference (0-based).
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -654,10 +861,21 @@ class Position(ProtocolElement):
     def __init__(self, **kwargs):
         self.position = kwargs.get(
             'position', None)
+        """
+        The 0-based offset from the start of the forward strand for
+        that Reference.   Genomic positions are non-negative integers
+        less than Reference length.
+        """
         self.referenceName = kwargs.get(
             'referenceName', None)
+        """
+        The name of the Reference on which the Position is located.
+        """
         self.strand = kwargs.get(
             'strand', None)
+        """
+        Strand the position is associated with.
+        """
 
 
 class Program(ProtocolElement):
@@ -694,14 +912,29 @@ null, "doc": "", "type": ["null", "string"], "name": "version"}]}
     def __init__(self, **kwargs):
         self.commandLine = kwargs.get(
             'commandLine', None)
+        """
+        The command line used to run this program.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The user specified ID of the program.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The name of the program.
+        """
         self.prevProgramId = kwargs.get(
             'prevProgramId', None)
+        """
+        The ID of the program run before this one.
+        """
         self.version = kwargs.get(
             'version', None)
+        """
+        The version of the program run.
+        """
 
 
 class ReadAlignment(ProtocolElement):
@@ -787,38 +1020,133 @@ class ReadAlignment(ProtocolElement):
     def __init__(self, **kwargs):
         self.alignedQuality = kwargs.get(
             'alignedQuality', [])
+        """
+        The quality of the read sequence contained in this alignment
+        record.   alignedSequence and alignedQuality may be shorter
+        than the full read sequence   and quality. This will occur if
+        the alignment is part of a chimeric alignment,   or if the
+        read was trimmed. When this occurs, the CIGAR for this read
+        will   begin/end with a hard clip operator that will indicate
+        the length of the excised sequence.
+        """
         self.alignedSequence = kwargs.get(
             'alignedSequence', None)
+        """
+        The bases of the read sequence contained in this alignment
+        record.   alignedSequence and alignedQuality may be shorter
+        than the full read sequence   and quality. This will occur if
+        the alignment is part of a chimeric alignment,   or if the
+        read was trimmed. When this occurs, the CIGAR for this read
+        will   begin/end with a hard clip operator that will indicate
+        the length of the excised sequence.
+        """
         self.alignment = kwargs.get(
             'alignment', None)
+        """
+        The alignment for this alignment record. This field will be
+        null if the read   is unmapped.
+        """
         self.duplicateFragment = kwargs.get(
             'duplicateFragment', None)
+        """
+        The fragment is a PCR or optical duplicate (SAM flag 0x400)
+        """
         self.failedVendorQualityChecks = kwargs.get(
             'failedVendorQualityChecks', None)
+        """
+        SAM flag 0x200
+        """
         self.fragmentId = kwargs.get(
             'fragmentId', None)
+        """
+        The fragment ID that this ReadAlignment belongs to.
+        """
         self.fragmentLength = kwargs.get(
             'fragmentLength', None)
+        """
+        The observed length of the fragment, equivalent to TLEN in
+        SAM.
+        """
         self.fragmentName = kwargs.get(
             'fragmentName', None)
+        """
+        The fragment name. Equivalent to QNAME (query template name)
+        in SAM.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The read alignment ID. This ID is unique within the read group
+        this   alignment belongs to. This field may not be provided by
+        all backends.   Its intended use is to make caching and UI
+        display easier for   genome browsers and other light weight
+        clients.
+        """
         self.info = kwargs.get(
             'info', {})
+        """
+        A map of additional read alignment information.
+        """
         self.nextMatePosition = kwargs.get(
             'nextMatePosition', None)
+        """
+        The mapping of the primary alignment of the
+        (readNumber+1)%numberReads   read in the fragment. It replaces
+        mate position and mate strand in SAM.
+        """
         self.numberReads = kwargs.get(
             'numberReads', None)
+        """
+        The number of reads in the fragment (extension to SAM flag
+        0x1)
+        """
         self.properPlacement = kwargs.get(
             'properPlacement', None)
+        """
+        The orientation and the distance between reads from the
+        fragment are   consistent with the sequencing protocol
+        (equivalent to SAM flag 0x2)
+        """
         self.readGroupId = kwargs.get(
             'readGroupId', None)
+        """
+        The ID of the read group this read belongs to.   (Every read
+        must belong to exactly one read group.)
+        """
         self.readNumber = kwargs.get(
             'readNumber', None)
+        """
+        The read number in sequencing. 0-based and less than
+        numberReads. This field   replaces SAM flag 0x40 and 0x80.
+        """
         self.secondaryAlignment = kwargs.get(
             'secondaryAlignment', None)
+        """
+        Whether this alignment is secondary. Equivalent to SAM flag
+        0x100.   A secondary alignment represents an alternative to
+        the primary alignment   for this read. Aligners may return
+        secondary alignments if a read can map   ambiguously to
+        multiple coordinates in the genome.    By convention, each
+        read has one and only one alignment where both
+        secondaryAlignment and supplementaryAlignment are false.
+        """
         self.supplementaryAlignment = kwargs.get(
             'supplementaryAlignment', None)
+        """
+        Whether this alignment is supplementary. Equivalent to SAM
+        flag 0x800.   Supplementary alignments are used in the
+        representation of a chimeric   alignment. In a chimeric
+        alignment, a read is split into multiple   linear alignments
+        that map to different reference contigs. The first   linear
+        alignment in the read will be designated as the representative
+        alignment;   the remaining linear alignments will be
+        designated as supplementary alignments.   These alignments may
+        have different mapping quality scores.    In each linear
+        alignment in a chimeric alignment, the read will be hard
+        clipped.   The alignedSequence and alignedQuality fields in
+        the alignment record will   only represent the bases for its
+        respective linear alignment.
+        """
 
 
 class ReadGroup(ProtocolElement):
@@ -909,30 +1237,72 @@ null, "doc": "", "type": ["null", "string"], "name": "prevProgramId"},
     def __init__(self, **kwargs):
         self.created = kwargs.get(
             'created', None)
+        """
+        The time at which this read group was created in milliseconds
+        from the epoch.
+        """
         self.datasetId = kwargs.get(
             'datasetId', None)
+        """
+        The ID of the dataset this read group belongs to.
+        """
         self.description = kwargs.get(
             'description', None)
+        """
+        The read group description.
+        """
         self.experiment = kwargs.get(
             'experiment', None)
+        """
+        The experiment used to generate this read group.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The read group ID.
+        """
         self.info = kwargs.get(
             'info', {})
+        """
+        A map of additional read group information.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The read group name.
+        """
         self.predictedInsertSize = kwargs.get(
             'predictedInsertSize', None)
+        """
+        The predicted insert size of this read group.
+        """
         self.programs = kwargs.get(
             'programs', [])
+        """
+        The programs used to generate this read group.
+        """
         self.referenceSetId = kwargs.get(
             'referenceSetId', None)
+        """
+        The reference set the reads in this read group are aligned to.
+        Required if there are any read alignments.
+        """
         self.sampleId = kwargs.get(
             'sampleId', None)
+        """
+        The sample this read group's data was generated from.
+        """
         self.stats = kwargs.get(
             'stats', None)
+        """
+        Statistical data on reads in this read group.
+        """
         self.updated = kwargs.get(
             'updated', None)
+        """
+        The time at which this read group was last updated in
+        milliseconds   from the epoch.
+        """
 
 
 class ReadGroupSet(ProtocolElement):
@@ -1023,14 +1393,29 @@ null, "doc": "", "type": ["null", "long"], "name": "created"},
     def __init__(self, **kwargs):
         self.datasetId = kwargs.get(
             'datasetId', None)
+        """
+        The ID of the dataset this read group set belongs to.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The read group set ID.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The read group set name.
+        """
         self.readGroups = kwargs.get(
             'readGroups', [])
+        """
+        The read groups in this set.
+        """
         self.stats = kwargs.get(
             'stats', None)
+        """
+        Statistical data on reads in this read group set.
+        """
 
 
 class ReadStats(ProtocolElement):
@@ -1065,18 +1450,28 @@ null, "doc": "", "type": ["null", "long"], "name": "baseCount"}]}
     def __init__(self, **kwargs):
         self.alignedReadCount = kwargs.get(
             'alignedReadCount', None)
+        """
+        The number of aligned reads.
+        """
         self.baseCount = kwargs.get(
             'baseCount', None)
+        """
+        The total number of bases.   This is equivalent to the sum of
+        alignedSequence.length for all reads.
+        """
         self.unalignedReadCount = kwargs.get(
             'unalignedReadCount', None)
+        """
+        The number of unaligned reads.
+        """
 
 
 class Reference(ProtocolElement):
     """
-    A `Reference` is a canonical assembled contig, intended to act as
-    a reference coordinate space for other genomic annotations. A
-    single `Reference` might represent the human chromosome 1, for
-    instance.  `Reference`s are designed to be immutable.
+    A Reference is a canonical assembled contig, intended to act as a
+    reference coordinate space for other genomic annotations. A single
+    Reference might represent the human chromosome 1, for instance.
+    References are designed to be immutable.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -1120,28 +1515,71 @@ null, "doc": "", "type": ["null", "float"], "name":
     def __init__(self, **kwargs):
         self.id = kwargs.get(
             'id', None)
+        """
+        The reference ID. Unique within the repository.
+        """
         self.isDerived = kwargs.get(
             'isDerived', False)
+        """
+        A sequence X is said to be derived from source sequence Y, if
+        X and Y   are of the same length and the per-base sequence
+        divergence at A/C/G/T bases   is sufficiently small. Two
+        sequences derived from the same official   sequence share the
+        same coordinates and annotations, and   can be replaced with
+        the official sequence for certain use cases.
+        """
         self.length = kwargs.get(
             'length', None)
+        """
+        The length of this reference's sequence.
+        """
         self.md5checksum = kwargs.get(
             'md5checksum', None)
+        """
+        The MD5 checksum uniquely representing this Reference as a
+        lower-case   hexadecimal string, calculated as the MD5 of the
+        upper-case sequence   excluding all whitespace characters
+        (this is equivalent to SQ:M5 in SAM).
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The name of this reference. (e.g. '22').
+        """
         self.ncbiTaxonId = kwargs.get(
             'ncbiTaxonId', None)
+        """
+        ID from http://www.ncbi.nlm.nih.gov/taxonomy (e.g.
+        9606->human).
+        """
         self.sourceAccessions = kwargs.get(
             'sourceAccessions', None)
+        """
+        All known corresponding accession IDs in INSDC
+        (GenBank/ENA/DDBJ) which must include   a version number, e.g.
+        GCF_000001405.26.
+        """
         self.sourceDivergence = kwargs.get(
             'sourceDivergence', None)
+        """
+        The sourceDivergence is the fraction of non-indel bases that
+        do not match the   reference this record was derived from.
+        """
         self.sourceURI = kwargs.get(
             'sourceURI', None)
+        """
+        The URI from which the sequence was obtained. Specifies a
+        FASTA format   file/string with one name, sequence pair. In
+        most cases, clients should call   the getReferenceBases()
+        method to obtain sequence bases for a Reference   instead of
+        attempting to retrieve this URI.
+        """
 
 
 class ReferenceSet(ProtocolElement):
     """
-    A `ReferenceSet` is a set of `Reference`s which typically comprise
-    a reference assembly, such as `GRCh38`. A `ReferenceSet` defines a
+    A ReferenceSet is a set of References which typically comprise a
+    reference assembly, such as GRCh38. A ReferenceSet defines a
     common coordinate space for comparing reference-aligned
     experimental data.
     """
@@ -1185,27 +1623,68 @@ class ReferenceSet(ProtocolElement):
     def __init__(self, **kwargs):
         self.assemblyId = kwargs.get(
             'assemblyId', None)
+        """
+        Public id of this reference set, such as GRCh37.
+        """
         self.description = kwargs.get(
             'description', None)
+        """
+        Optional free text description of this reference set.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The reference set ID. Unique in the repository.
+        """
         self.isDerived = kwargs.get(
             'isDerived', False)
+        """
+        A reference set may be derived from a source if it contains
+        additional sequences, or some of the sequences within it are
+        derived   (see the definition of isDerived in Reference).
+        """
         self.md5checksum = kwargs.get(
             'md5checksum', None)
+        """
+        Order-independent MD5 checksum which identifies this
+        ReferenceSet.    To compute this checksum, make a list of
+        Reference.md5checksum for all   References in this set. Then
+        sort that list, and take the MD5 hash of   all the strings
+        concatenated together. Express the hash as a lower-case
+        hexadecimal string.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The reference set name.
+        """
         self.ncbiTaxonId = kwargs.get(
             'ncbiTaxonId', None)
+        """
+        ID from http://www.ncbi.nlm.nih.gov/taxonomy (e.g.
+        9606->human) indicating   the species which this assembly is
+        intended to model. Note that contained   References may
+        specify a different ncbiTaxonId, as assemblies may   contain
+        reference sequences which do not belong to the modeled
+        species, e.g.   EBV in a human reference genome.
+        """
         self.sourceAccessions = kwargs.get(
             'sourceAccessions', None)
+        """
+        All known corresponding accession IDs in INSDC
+        (GenBank/ENA/DDBJ) ideally   with a version number, e.g.
+        NC_000001.11.
+        """
         self.sourceURI = kwargs.get(
             'sourceURI', None)
+        """
+        Specifies a FASTA format file/string.
+        """
 
 
 class SearchCallSetsRequest(SearchRequest):
     """
-    This request maps to the body of `POST /callsets/search` as JSON.
+    This request maps to the body of POST /callsets/search as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1238,18 +1717,34 @@ class SearchCallSetsRequest(SearchRequest):
     def __init__(self, **kwargs):
         self.name = kwargs.get(
             'name', None)
+        """
+        Only return call sets with this name (case-sensitive, exact
+        match).
+        """
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
         self.variantSetId = kwargs.get(
             'variantSetId', None)
+        """
+        The VariantSet to search.
+        """
 
 
 class SearchCallSetsResponse(SearchResponse):
     """
-    This is the response from `POST /callsets/search` expressed as
-    JSON.
+    This is the response from POST /callsets/search expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1293,13 +1788,22 @@ class SearchCallSetsResponse(SearchResponse):
     def __init__(self, **kwargs):
         self.callSets = kwargs.get(
             'callSets', [])
+        """
+        The list of matching call sets.
+        """
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
 
 
 class SearchDatasetsRequest(SearchRequest):
     """
-    This request maps to the body of `POST /datasets/search` as JSON.
+    This request maps to the body of POST /datasets/search as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1328,14 +1832,23 @@ class SearchDatasetsRequest(SearchRequest):
     def __init__(self, **kwargs):
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
 
 
 class SearchDatasetsResponse(SearchResponse):
     """
-    This is the response from `POST /datasets/search` expressed as
-    JSON.
+    This is the response from POST /datasets/search expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1374,13 +1887,22 @@ class SearchDatasetsResponse(SearchResponse):
     def __init__(self, **kwargs):
         self.datasets = kwargs.get(
             'datasets', [])
+        """
+        The list of datasets.
+        """
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
 
 
 class SearchReadGroupSetsRequest(SearchRequest):
     """
-    This request maps to the body of `POST /readgroupsets/search` as
+    This request maps to the body of POST /readgroupsets/search as
     JSON.
     """
     _schemaSource = """
@@ -1414,18 +1936,35 @@ class SearchReadGroupSetsRequest(SearchRequest):
     def __init__(self, **kwargs):
         self.datasetId = kwargs.get(
             'datasetId', None)
+        """
+        The dataset to search.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        Only return read group sets with this name (case-sensitive,
+        exact match).
+        """
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
 
 
 class SearchReadGroupSetsResponse(SearchResponse):
     """
-    This is the response from `POST /readgroupsets/search` expressed
-    as JSON.
+    This is the response from POST /readgroupsets/search expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1512,17 +2051,26 @@ null, "doc": "", "type": ["null", "string"], "name": "name"},
     def __init__(self, **kwargs):
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
         self.readGroupSets = kwargs.get(
             'readGroupSets', [])
+        """
+        The list of matching read group sets.
+        """
 
 
 class SearchReadsRequest(SearchRequest):
     """
-    This request maps to the body of `POST /reads/search` as JSON.  If
-    a reference is specified, all queried `ReadGroup`s must be aligned
-    to `ReferenceSet`s containing that same `Reference`. If no
-    reference is specified, all `ReadGroup`s must be aligned to the
-    same `ReferenceSet`.
+    This request maps to the body of POST /reads/search as JSON.  If a
+    reference is specified, all queried ReadGroups must be aligned to
+    ReferenceSets containing that same Reference. If no reference is
+    specified, all ReadGroups must be aligned to the same
+    ReferenceSet.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1559,21 +2107,52 @@ class SearchReadsRequest(SearchRequest):
     def __init__(self, **kwargs):
         self.end = kwargs.get(
             'end', None)
+        """
+        The end position (0-based, exclusive) of this query.   If a
+        reference is specified, this defaults to the   reference's
+        length.
+        """
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
         self.readGroupIds = kwargs.get(
             'readGroupIds', None)
+        """
+        The ReadGroups to search. At least one readGroupId must be
+        specified.
+        """
         self.referenceId = kwargs.get(
             'referenceId', None)
+        """
+        The reference to query. Leaving blank returns results from all
+        references, including unmapped reads - this could be very
+        large.
+        """
         self.start = kwargs.get(
             'start', None)
+        """
+        The start position (0-based) of this query.   If a reference
+        is specified, this defaults to 0.   Genomic positions are non-
+        negative integers less than reference length.   Requests
+        spanning the join of circular genomes are represented as   two
+        requests one on each side of the join (position 0).
+        """
 
 
 class SearchReadsResponse(SearchResponse):
     """
-    This is the response from `POST /reads/search` expressed as JSON.
+    This is the response from POST /reads/search expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1645,13 +2224,23 @@ class SearchReadsResponse(SearchResponse):
     def __init__(self, **kwargs):
         self.alignments = kwargs.get(
             'alignments', [])
+        """
+        The list of matching alignment records, sorted by position.
+        Unmapped reads, which have no position, are returned last.
+        """
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
 
 
 class SearchReferenceSetsRequest(SearchRequest):
     """
-    This request maps to the body of `POST /referencesets/search` as
+    This request maps to the body of POST /referencesets/search as
     JSON.
     """
     _schemaSource = """
@@ -1686,20 +2275,44 @@ class SearchReferenceSetsRequest(SearchRequest):
     def __init__(self, **kwargs):
         self.accession = kwargs.get(
             'accession', None)
+        """
+        If not null, return the reference sets for which the accession
+        matches this string (case-sensitive, exact match).
+        """
         self.assemblyId = kwargs.get(
             'assemblyId', None)
+        """
+        If not null, return the reference sets for which the
+        assemblyId   matches this string (case-sensitive, exact
+        match).
+        """
         self.md5checksum = kwargs.get(
             'md5checksum', None)
+        """
+        If not null, return the reference sets for which the
+        md5checksum matches this string (case-sensitive, exact match).
+        See ReferenceSet::md5checksum for details.
+        """
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
 
 
 class SearchReferenceSetsResponse(SearchResponse):
     """
-    This is the response from `POST /referencesets/search` expressed
-    as JSON.
+    This is the response from POST /referencesets/search expressed as
+    JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1745,14 +2358,22 @@ class SearchReferenceSetsResponse(SearchResponse):
     def __init__(self, **kwargs):
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
         self.referenceSets = kwargs.get(
             'referenceSets', [])
+        """
+        The list of matching reference sets.
+        """
 
 
 class SearchReferencesRequest(SearchRequest):
     """
-    This request maps to the body of `POST /references/search` as
-    JSON.
+    This request maps to the body of POST /references/search as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1788,19 +2409,41 @@ null, "doc": "", "type": ["null", "int"], "name": "pageSize"},
     def __init__(self, **kwargs):
         self.accession = kwargs.get(
             'accession', None)
+        """
+        If not null, return the references for which the accession
+        matches this string (case-sensitive, exact match).
+        """
         self.md5checksum = kwargs.get(
             'md5checksum', None)
+        """
+        If not null, return the references for which the   md5checksum
+        matches this string (case-sensitive, exact match).   See
+        ReferenceSet::md5checksum for details.
+        """
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
         self.referenceSetId = kwargs.get(
             'referenceSetId', None)
+        """
+        The ReferenceSet to search.
+        """
 
 
 class SearchReferencesResponse(SearchResponse):
     """
-    This is the response from `POST /references/search` expressed as
+    This is the response from POST /references/search expressed as
     JSON.
     """
     _schemaSource = """
@@ -1846,14 +2489,22 @@ class SearchReferencesResponse(SearchResponse):
     def __init__(self, **kwargs):
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
         self.references = kwargs.get(
             'references', [])
+        """
+        The list of matching references.
+        """
 
 
 class SearchVariantSetsRequest(SearchRequest):
     """
-    This request maps to the body of `POST /variantsets/search` as
-    JSON.
+    This request maps to the body of POST /variantsets/search as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1885,15 +2536,28 @@ class SearchVariantSetsRequest(SearchRequest):
     def __init__(self, **kwargs):
         self.datasetId = kwargs.get(
             'datasetId', None)
+        """
+        The Dataset to search.
+        """
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
 
 
 class SearchVariantSetsResponse(SearchResponse):
     """
-    This is the response from `POST /variantsets/search` expressed as
+    This is the response from POST /variantsets/search expressed as
     JSON.
     """
     _schemaSource = """
@@ -1942,13 +2606,22 @@ null, "doc": "", "type": ["null", "string"], "name":
     def __init__(self, **kwargs):
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
         self.variantSets = kwargs.get(
             'variantSets', [])
+        """
+        The list of matching variant sets.
+        """
 
 
 class SearchVariantsRequest(SearchRequest):
     """
-    This request maps to the body of `POST /variants/search` as JSON.
+    This request maps to the body of POST /variants/search as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -1988,24 +2661,56 @@ class SearchVariantsRequest(SearchRequest):
     def __init__(self, **kwargs):
         self.callSetIds = kwargs.get(
             'callSetIds', None)
+        """
+        Only return variant calls which belong to call sets with these
+        IDs.   If an empty array, returns variants without any call
+        objects.   If null, returns all variant calls.
+        """
         self.end = kwargs.get(
             'end', None)
+        """
+        Required. The end of the window (0-based, exclusive) for which
+        overlapping   variants should be returned.
+        """
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
         self.referenceName = kwargs.get(
             'referenceName', None)
+        """
+        Required. Only return variants on this reference.
+        """
         self.start = kwargs.get(
             'start', None)
+        """
+        Required. The beginning of the window (0-based, inclusive) for
+        which overlapping variants should be returned.   Genomic
+        positions are non-negative integers less than reference
+        length.   Requests spanning the join of circular genomes are
+        represented as   two requests one on each side of the join
+        (position 0).
+        """
         self.variantSetId = kwargs.get(
             'variantSetId', None)
+        """
+        The VariantSet to search.
+        """
 
 
 class SearchVariantsResponse(SearchResponse):
     """
-    This is the response from `POST /variants/search` expressed as
-    JSON.
+    This is the response from POST /variants/search expressed as JSON.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
@@ -2063,15 +2768,28 @@ class SearchVariantsResponse(SearchResponse):
     def __init__(self, **kwargs):
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
         self.variants = kwargs.get(
             'variants', [])
+        """
+        The list of matching variants.   If the callSetId field on the
+        returned calls is not present,   the ordering of the call sets
+        from a SearchCallSetsRequest   over the parent VariantSet is
+        guaranteed to match the ordering   of the calls on each
+        Variant. The number of results will also be   the same.
+        """
 
 
 class Strand(object):
     """
     Indicates the DNA strand associate for some data item. *
-    `NEG_STRAND`: The negative (-) strand. * `POS_STRAND`:  The
-    postive (+) strand.
+    NEG_STRAND: The negative (-) strand. * POS_STRAND:  The postive
+    (+) strand.
     """
     NEG_STRAND = "NEG_STRAND"
     POS_STRAND = "POS_STRAND"
@@ -2079,10 +2797,10 @@ class Strand(object):
 
 class Variant(ProtocolElement):
     """
-    A `Variant` represents a change in DNA sequence relative to some
+    A Variant represents a change in DNA sequence relative to some
     reference. For example, a variant could represent a SNP or an
-    insertion. Variants belong to a `VariantSet`. This is equivalent
-    to a row in VCF.
+    insertion. Variants belong to a VariantSet. This is equivalent to
+    a row in VCF.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Variant",
@@ -2144,35 +2862,87 @@ class Variant(ProtocolElement):
     def __init__(self, **kwargs):
         self.alternateBases = kwargs.get(
             'alternateBases', [])
+        """
+        The bases that appear instead of the reference bases. Multiple
+        alternate   alleles are possible.
+        """
         self.calls = kwargs.get(
             'calls', [])
+        """
+        The variant calls for this particular variant. Each one
+        represents the   determination of genotype with respect to
+        this variant. Calls in this array   are implicitly associated
+        with this Variant.
+        """
         self.created = kwargs.get(
             'created', None)
+        """
+        The date this variant was created in milliseconds from the
+        epoch.
+        """
         self.end = kwargs.get(
             'end', None)
+        """
+        The end position (exclusive), resulting in [start, end)
+        closed-open interval.   This is typically calculated by start
+        + referenceBases.length.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The variant ID.
+        """
         self.info = kwargs.get(
             'info', {})
+        """
+        A map of additional variant information.
+        """
         self.names = kwargs.get(
             'names', [])
+        """
+        Names for the variant, for example a RefSNP ID.
+        """
         self.referenceBases = kwargs.get(
             'referenceBases', None)
+        """
+        The reference bases for this variant. They start at the given
+        start position.
+        """
         self.referenceName = kwargs.get(
             'referenceName', None)
+        """
+        The reference on which this variant occurs.   (e.g. chr20 or
+        X)
+        """
         self.start = kwargs.get(
             'start', None)
+        """
+        The start position at which this variant occurs (0-based).
+        This corresponds to the first base of the string of reference
+        bases.   Genomic positions are non-negative integers less than
+        reference length.   Variants spanning the join of circular
+        genomes are represented as   two variants one on each side of
+        the join (position 0).
+        """
         self.updated = kwargs.get(
             'updated', None)
+        """
+        The time at which this variant was last updated in
+        milliseconds from the epoch.
+        """
         self.variantSetId = kwargs.get(
             'variantSetId', None)
+        """
+        The ID of the VariantSet this variant belongs to. This
+        transitively defines   the ReferenceSet against which the
+        Variant is to be interpreted.
+        """
 
 
 class VariantSet(ProtocolElement):
     """
-    `Variant` and `CallSet` both belong to a `VariantSet`.
-    `VariantSet` belongs to a `Dataset`. The variant set is equivalent
-    to a VCF file.
+    Variant and CallSet both belong to a VariantSet. VariantSet
+    belongs to a Dataset. The variant set is equivalent to a VCF file.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -2219,14 +2989,31 @@ class VariantSet(ProtocolElement):
     def __init__(self, **kwargs):
         self.datasetId = kwargs.get(
             'datasetId', None)
+        """
+        The ID of the dataset this variant set belongs to.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        The variant set ID.
+        """
         self.metadata = kwargs.get(
             'metadata', [])
+        """
+        The metadata associated with this variant set. This is
+        equivalent to   the VCF header information not already
+        presented in first class fields.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        The variant set name.
+        """
         self.referenceSetId = kwargs.get(
             'referenceSetId', None)
+        """
+        The reference set the variants in this variant set are using.
+        """
 
 
 class VariantSetMetadata(ProtocolElement):
@@ -2271,18 +3058,42 @@ class VariantSetMetadata(ProtocolElement):
     def __init__(self, **kwargs):
         self.description = kwargs.get(
             'description', None)
+        """
+        A textual description of this metadata.
+        """
         self.id = kwargs.get(
             'id', None)
+        """
+        User-provided ID field, not enforced by this API.   Two or
+        more pieces of structured metadata with identical   id and key
+        fields are considered equivalent.
+        """
         self.info = kwargs.get(
             'info', {})
+        """
+        Remaining structured metadata key-value pairs.
+        """
         self.key = kwargs.get(
             'key', None)
+        """
+        The top-level key.
+        """
         self.number = kwargs.get(
             'number', None)
+        """
+        The number of values that can be included in a field described
+        by this   metadata.
+        """
         self.type = kwargs.get(
             'type', None)
+        """
+        The type of data.
+        """
         self.value = kwargs.get(
             'value', None)
+        """
+        The value field for simple metadata.
+        """
 
 postMethods = \
     [('/callsets/search',

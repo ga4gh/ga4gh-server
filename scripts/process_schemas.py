@@ -161,6 +161,12 @@ class SchemaClass(object):
             self._writeWithIndent(string_, outputFile, 2)
             string_ = "'{}', {})".format(field.name, field.default)
             self._writeWithIndent(string_, outputFile, 3)
+            # Backtick quoted strings cause problems with Sphinx, so we
+            # strip them out here.
+            doc = field.doc.replace('`', '')
+            self._writeWithIndent('"""', outputFile, 2)
+            self._writeWrappedWithIndent(doc, outputFile, 2)
+            self._writeWithIndent('"""', outputFile, 2)
 
     def writeEmbeddedTypesClassMethods(self, outputFile):
         """
@@ -216,6 +222,9 @@ class SchemaClass(object):
         if doc is None:
             doc = "No documentation"
         self._writeWithIndent('"""', outputFile)
+        # Backtick quoted strings cause problems with Sphinx, so we
+        # strip them out here.
+        doc = doc.replace('`', '')
         self._writeWrappedWithIndent(doc, outputFile)
         self._writeWithIndent('"""', outputFile)
         if isinstance(self.schema, avro.schema.RecordSchema):
