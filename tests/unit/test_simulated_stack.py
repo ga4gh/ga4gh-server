@@ -113,6 +113,7 @@ class TestSimulatedStack(unittest.TestCase):
         dataset = variantSet.getParentContainer()
         self.assertEqual(gaVariantSet.id, variantSet.getId())
         self.assertEqual(gaVariantSet.datasetId, dataset.getId())
+        self.assertEqual(gaVariantSet.name, variantSet.getLocalId())
         # TODO verify the metadata and other attributes.
 
     def verifyCallSetsEqual(self, gaCallSet, callSet):
@@ -138,6 +139,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def verifyDatasetsEqual(self, gaDataset, dataset):
         self.assertEqual(gaDataset.id, dataset.getId())
+        self.assertEqual(gaDataset.name, dataset.getLocalId())
         # TODO fill out the remaining fields and test
 
     def verifyReferenceSetsEqual(self, gaReferenceSet, referenceSet):
