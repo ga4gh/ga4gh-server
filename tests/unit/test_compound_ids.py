@@ -286,3 +286,28 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.readGroup, "c")
         self.assertEqual(cid.readAlignment, "d")
         self.verifyParseFailure(idStr, datamodel.ReadAlignmentCompoundId)
+
+    def testExperiment(self):
+        readGroup = self.getReadGroup()
+        readGroupSet = readGroup.getParentContainer()
+        dataset = readGroupSet.getParentContainer()
+        localId = "experiment"
+        cid = datamodel.ExperimentCompoundId(
+            readGroup.getCompoundId(), localId)
+        self.assertRaises(
+            ValueError, datamodel.ExperimentCompoundId,
+            readGroup.getCompoundId())
+        self.assertEqual(cid.dataset, dataset.getLocalId())
+        self.assertEqual(cid.readGroupSet, readGroupSet.getLocalId())
+        self.assertEqual(cid.readGroup, readGroup.getLocalId())
+        self.assertEqual(cid.experiment, localId)
+
+    def testExperimentParse(self):
+        idStr = "a:b:c:d"
+        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        cid = datamodel.ExperimentCompoundId.parse(obfuscated)
+        self.assertEqual(cid.dataset, "a")
+        self.assertEqual(cid.readGroupSet, "b")
+        self.assertEqual(cid.readGroup, "c")
+        self.assertEqual(cid.experiment, "d")
+        self.verifyParseFailure(idStr, datamodel.ExperimentCompoundId)
