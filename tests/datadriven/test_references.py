@@ -28,6 +28,16 @@ def testReferenceSets():
         yield test
 
 
+class ReferenceSetInfo(object):
+    """
+    Container class for information about a reference set
+    """
+    def __init__(self, dataDir):
+        metadataFilePath = '{}.json'.format(dataDir)
+        with open(metadataFilePath) as metadataFile:
+            self.metadata = json.load(metadataFile)
+
+
 class ReferenceInfo(object):
     """
     Container class for information about a reference
@@ -54,6 +64,7 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
     """
     def __init__(self, referenceSetId, baseDir):
         super(ReferenceSetTest, self).__init__(referenceSetId, baseDir)
+        self._referenceSetInfo = ReferenceSetInfo(baseDir)
         self._referenceInfos = {}
         for fastaFilePath in glob.glob(
                 os.path.join(self._dataPath, "*.fa.gz")):
@@ -83,6 +94,19 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         # Check that the metadata loaded from the JSON file is
         # consistent with returned objects.
         referenceSet = self._gaObject
+        metadata = self._referenceSetInfo.metadata
+        self.assertEqual(
+            referenceSet.getAssemblyId(), metadata['assemblyId'])
+        self.assertEqual(
+            referenceSet.getDescription(), metadata['description'])
+        self.assertEqual(
+            referenceSet.getIsDerived(), metadata['isDerived'])
+        self.assertEqual(
+            referenceSet.getNcbiTaxonId(), metadata['ncbiTaxonId'])
+        self.assertEqual(
+            referenceSet.getSourceAccessions(), metadata['sourceAccessions'])
+        self.assertEqual(
+            referenceSet.getSourceUri(), metadata['sourceUri'])
         for reference in referenceSet.getReferences():
             referenceInfo = self._referenceInfos[reference.getLocalId()]
             metadata = referenceInfo.metadata

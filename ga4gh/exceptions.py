@@ -447,7 +447,19 @@ class MissingReferenceMetadata(MalformedException):
     """
     def __init__(self, fileName, key):
         self.message = (
-            "JSON metadata for file {} is missing key {}".format(
+            "JSON reference metadata for file {} is missing key {}".format(
+                fileName, key))
+
+
+class MissingReferenceSetMetadata(MalformedException):
+    """
+    A directory containing FASTA files is missing some metadata in the
+    corresponding JSON file.
+    """
+    def __init__(self, fileName, key):
+        self.message = (
+            "JSON reference set metadata for file {} "
+            "is missing key {}".format(
                 fileName, key))
 
 

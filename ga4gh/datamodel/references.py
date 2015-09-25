@@ -91,7 +91,7 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
 
     def getMd5Checksum(self):
         """
-        Returns the MD5 checksum for this reference. This checksum is
+        Returns the MD5 checksum for this reference set. This checksum is
         calculated by making a list of `Reference.md5checksum` for all
         `Reference`s in this set. We then sort this list, and take the
         MD5 hash of all the strings concatenated together.
@@ -155,15 +155,15 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         Returns the GA4GH protocol representation of this ReferenceSet.
         """
         ret = protocol.ReferenceSet()
-        ret.assemblyId = self._assemblyId
-        ret.description = self._description
+        ret.assemblyId = self.getAssemblyId()
+        ret.description = self.getDescription()
         ret.id = self.getId()
-        ret.isDerived = self._isDerived
+        ret.isDerived = self.getIsDerived()
         ret.md5checksum = self.getMd5Checksum()
-        ret.ncbiTaxonId = self._ncbiTaxonId
+        ret.ncbiTaxonId = self.getNcbiTaxonId()
         ret.referenceIds = self._referenceIds
-        ret.sourceAccessions = self._sourceAccessions
-        ret.sourceURI = self._sourceUri
+        ret.sourceAccessions = self.getSourceAccessions()
+        ret.sourceURI = self.getSourceUri()
         return ret
 
 
@@ -363,7 +363,23 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     def __init__(self, localId, dataDir, backend):
         super(HtslibReferenceSet, self).__init__(localId)
         self._dataDir = dataDir
+        self._setMetadata()
         self._scanDataFiles(dataDir, ["*.fa.gz"])
+
+    def _setMetadata(self):
+        metadataFileName = '{}.json'.format(self._dataDir)
+        with open(metadataFileName) as metadataFile:
+            metadata = json.load(metadataFile)
+            try:
+                self._assemblyId = metadata['assemblyId']
+                self._description = metadata['description']
+                self._isDerived = metadata['isDerived']
+                self._ncbiTaxonId = metadata['ncbiTaxonId']
+                self._sourceAccessions = metadata['sourceAccessions']
+                self._sourceUri = metadata['sourceUri']
+            except KeyError as err:
+                raise exceptions.MissingReferenceSetMetadata(
+                    metadataFileName, str(err))
 
     def _addDataFile(self, path):
         dirname, filename = os.path.split(path)
