@@ -41,7 +41,8 @@ def makeTests(testDataDir, testClass, fnmatchGlob="*"):
     test generators.
     """
     for localId in os.listdir(testDataDir):
-        if fnmatch.fnmatch(localId, fnmatchGlob):
+        if (fnmatch.fnmatch(localId, fnmatchGlob) and
+                not fnmatch.fnmatch(localId, '*.json')):
             path = os.path.join(testDataDir, localId)
             tester = testClass(localId, path)
             for name, _ in inspect.getmembers(testClass):

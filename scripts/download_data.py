@@ -61,7 +61,7 @@ def cleanDir():
     utils.log("Cleaning out directory '{}'".format(cwd))
     globs = [
         "*.tbi", "*.vcf", "*.vcf.gz", "*.bam", "*.bam.bai", "*.fa.gz",
-        "*.fa", "*.fa.gz.fai", "*.fa.gz.gzi", "*.unsampled"]
+        "*.fa", "*.fa.gz.fai", "*.fa.gz.gzi", "*.unsampled", "*.json"]
     for fileGlob in globs:
         fileNames = glob.glob(fileGlob)
         for fileName in fileNames:
@@ -72,6 +72,14 @@ def escapeDir(levels=4):
     # back to orig dir
     for _ in range(levels):
         os.chdir('..')
+
+
+def dumpDictToFileAsJson(data, filename):
+    """
+    Writes a dictionary to a file as a json dump
+    """
+    with open(filename, 'w') as dumpFile:
+        json.dump(data, dumpFile, indent=4)
 
 
 class ChromMinMax(object):
@@ -292,8 +300,23 @@ class AbstractFileDownloader(object):
         escapeDir(3)
 
     def downloadFastas(self):
-        dirList = [self.dirName, 'references', self.referenceSetName]
+        dirList = [self.dirName, 'references']
         mkdirAndChdirList(dirList)
+        # Assemble reference set metadata
+        referenceSetMetadata = {
+            "assemblyId": 'TODO',
+            "description": 'TODO',
+            "isDerived": False,
+            "ncbiTaxonId": 9606,
+            "sourceAccessions": [],
+            "sourceUri": 'TODO',
+        }
+        referenceSetMetadataFilename = "{}.json".format(
+            self.referenceSetName)
+        dumpDictToFileAsJson(
+            referenceSetMetadata, referenceSetMetadataFilename)
+        # Download chromosomes
+        mkdirAndChdirList([self.referenceSetName])
         cleanDir()
         baseUrl = 'http://www.ebi.ac.uk/ena/data/view/'
         for chromosome in self.chromosomes:
@@ -334,9 +357,8 @@ class AbstractFileDownloader(object):
                 "sourceDivergence": None,
                 "sourceAccessions": [accession + ".subset"],
             }
-            fileName = "{}.json".format(chromosome)
-            with open(fileName, "w") as metadataFile:
-                json.dump(metadata, metadataFile, indent=4)
+            metadataFilename = "{}.json".format(chromosome)
+            dumpDictToFileAsJson(metadata, metadataFilename)
         escapeDir(3)
 
 

@@ -140,3 +140,47 @@ class TestInconsistentReferenceName(FaultyReferenceDataTest):
         self.assertRaises(
             exceptions.InconsistentReferenceNameException,
             references.HtslibReferenceSet, localId, path, None)
+
+
+class FaultyReferenceSetDataTest(unittest.TestCase):
+    """
+    Superclass of faulty reference set data tests
+    """
+    def getFullPath(self, localId):
+        testDataDir = "tests/faultydata/references"
+        return os.path.join(testDataDir, localId)
+
+
+class TestNoReferenceSetMetadata(FaultyReferenceSetDataTest):
+    """
+    Tests an error is thrown with a missing reference set metadata file
+    """
+    def testNoReferenceSetMetadata(self):
+        localId = "no_refset_meta"
+        path = self.getFullPath(localId)
+        with self.assertRaises(IOError):
+            references.HtslibReferenceSet(localId, path, None)
+
+
+class TestMissingReferenceSetMetadata(FaultyReferenceSetDataTest):
+    """
+    Tests an error is thrown with a reference set metadata file that
+    is missing entries
+    """
+    def testMissingReferenceSetMetadata(self):
+        localId = "missing_refset_meta"
+        path = self.getFullPath(localId)
+        with self.assertRaises(exceptions.MissingReferenceSetMetadata):
+            references.HtslibReferenceSet(localId, path, None)
+
+
+class TestInvalidReferenceSetMetadata(FaultyReferenceSetDataTest):
+    """
+    Tests an error is thrown with a reference set metadata file that
+    can not be parsed
+    """
+    def testMissingReferenceSetMetadata(self):
+        localId = "invalid_refset_meta"
+        path = self.getFullPath(localId)
+        with self.assertRaises(ValueError):
+            references.HtslibReferenceSet(localId, path, None)
