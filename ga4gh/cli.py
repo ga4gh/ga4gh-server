@@ -144,20 +144,20 @@ class AbstractSearchRunner(FormattedOutputRunner):
     def __init__(self, args):
         super(AbstractSearchRunner, self).__init__(args)
         self._pageSize = args.pageSize
+        self._httpClient.setPageSize(self._pageSize)
 
     def getAllDatasets(self):
         """
         Returns all datasets on the server.
         """
-        return self._httpClient.searchDatasets(pageSize=self._pageSize)
+        return self._httpClient.searchDatasets()
 
     def getAllVariantSets(self):
         """
         Returns all variant sets on the server.
         """
         for dataset in self.getAllDatasets():
-            iterator = self._httpClient.searchVariantSets(
-                datasetId=dataset.id, pageSize=self._pageSize)
+            iterator = self._httpClient.searchVariantSets(datasetId=dataset.id)
             for variantSet in iterator:
                 yield variantSet
 
@@ -167,7 +167,7 @@ class AbstractSearchRunner(FormattedOutputRunner):
         """
         for dataset in self.getAllDatasets():
             iterator = self._httpClient.searchReadGroupSets(
-                datasetId=dataset.id, pageSize=self._pageSize)
+                datasetId=dataset.id)
             for readGroupSet in iterator:
                 yield readGroupSet
 
@@ -175,7 +175,7 @@ class AbstractSearchRunner(FormattedOutputRunner):
         """
         Returns all reference sets on the server.
         """
-        return self._httpClient.searchReferenceSets(pageSize=self._pageSize)
+        return self._httpClient.searchReferenceSets()
 
 
 # Runners for the various search methods
@@ -188,7 +188,7 @@ class SearchDatasetsRunner(AbstractSearchRunner):
         super(SearchDatasetsRunner, self).__init__(args)
 
     def run(self):
-        iterator = self._httpClient.searchDatasets(pageSize=self._pageSize)
+        iterator = self._httpClient.searchDatasets()
         self._output(iterator)
 
 
@@ -203,8 +203,7 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
 
     def run(self):
         iterator = self._httpClient.searchReferenceSets(
-            accession=self._accession, md5checksum=self._md5checksum,
-            pageSize=self._pageSize)
+            accession=self._accession, md5checksum=self._md5checksum)
         self._output(iterator)
 
 
@@ -221,7 +220,7 @@ class SearchReferencesRunner(AbstractSearchRunner):
     def _run(self, referenceSetId):
         iterator = self._httpClient.searchReferences(
             accession=self._accession, md5checksum=self._md5checksum,
-            referenceSetId=referenceSetId, pageSize=self._pageSize)
+            referenceSetId=referenceSetId)
         self._output(iterator)
 
     def run(self):
@@ -241,8 +240,7 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
         self._datasetId = args.datasetId
 
     def _run(self, datasetId):
-        iterator = self._httpClient.searchVariantSets(
-            datasetId=datasetId, pageSize=self._pageSize)
+        iterator = self._httpClient.searchVariantSets(datasetId=datasetId)
         self._output(iterator)
 
     def run(self):
@@ -264,7 +262,7 @@ class SearchReadGroupSetsRunner(AbstractSearchRunner):
 
     def _run(self, datasetId):
         iterator = self._httpClient.searchReadGroupSets(
-            datasetId=datasetId, name=self._name, pageSize=self._pageSize)
+            datasetId=datasetId, name=self._name)
         self._output(iterator)
 
     def run(self):
@@ -286,8 +284,7 @@ class SearchCallSetsRunner(AbstractSearchRunner):
 
     def _run(self, variantSetId):
         iterator = self._httpClient.searchCallSets(
-            variantSetId=variantSetId, name=self._name,
-            pageSize=self._pageSize)
+            variantSetId=variantSetId, name=self._name)
         self._output(iterator)
 
     def run(self):
@@ -319,8 +316,7 @@ class SearchVariantsRunner(AbstractSearchRunner):
         iterator = self._httpClient.searchVariants(
             start=self._start, end=self._end,
             referenceName=self._referenceName,
-            variantSetId=variantSetId, callSetIds=self._callSetIds,
-            pageSize=self._pageSize)
+            variantSetId=variantSetId, callSetIds=self._callSetIds)
         self._output(iterator)
 
     def run(self):
@@ -368,7 +364,7 @@ class SearchReadsRunner(AbstractSearchRunner):
         # like we do with SearchVariants and others.
         iterator = self._httpClient.searchReads(
             readGroupIds=self._readGroupIds, referenceId=self._referenceId,
-            start=self._start, end=self._end, pageSize=self._pageSize)
+            start=self._start, end=self._end)
         self._output(iterator)
 
     def _textOutput(self, gaObjects):
@@ -850,8 +846,7 @@ class Ga2VcfRunner(SearchVariantsRunner):
             start=self._start, end=self._end,
             referenceName=self._referenceName,
             variantSetId=self._variantSetId,
-            callSetIds=self._callSetIds,
-            pageSize=self._pageSize)
+            callSetIds=self._callSetIds)
         # do conversion
         vcfConverter = converters.VcfConverter(
             variantSet, iterator, self._outputFile, self._binaryOutput)
@@ -918,7 +913,7 @@ class Ga2SamRunner(SearchReadsRunner):
         readGroup = self._httpClient.getReadGroup(self._readGroupIds[0])
         iterator = self._httpClient.searchReads(
             readGroupIds=self._readGroupIds, referenceId=self._referenceId,
-            start=self._start, end=self._end, pageSize=self._pageSize)
+            start=self._start, end=self._end)
         # do conversion
         samConverter = converters.SamConverter(
             readGroup, iterator, self._outputFile, self._binaryOutput)

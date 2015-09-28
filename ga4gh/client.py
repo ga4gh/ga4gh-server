@@ -24,6 +24,7 @@ class HttpClient(object):
         self._debugLevel = debugLevel
         self._bytesRead = 0
         self._key = key
+        self._pageSize = None
 
         # logging config
         # TODO we need to revisit this logging setup so that we can
@@ -45,12 +46,26 @@ class HttpClient(object):
             requests.packages.urllib3.disable_warnings()
         requestsLog.propagate = True
 
+    def getPageSize(self):
+        """
+        Returns the suggested maximum size of pages of results returned by
+        the server.
+        """
+        return self._pageSize
+
     def getBytesRead(self):
         """
         Returns the total number of (non HTTP) bytes read from the server
         by this client.
         """
         return self._bytesRead
+
+    def setPageSize(self, pageSize):
+        """
+        Sets the requested maximum size of pages of results returned by the
+        server to the specified value.
+        """
+        self._pageSize = pageSize
 
     def _getAuth(self):
         return {'key': self._key}
@@ -220,7 +235,7 @@ class HttpClient(object):
 
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
-            callSetIds=None, pageSize=None):
+            callSetIds=None):
         """
         Returns an iterator over the Variants from the server
         """
@@ -230,7 +245,7 @@ class HttpClient(object):
         request.end = end
         request.variantSetId = variantSetId
         request.callSetIds = callSetIds
-        request.pageSize = pageSize
+        request.pageSize = self._pageSize
         return self.runSearchRequest(
             request, "variants", protocol.SearchVariantsResponse)
 
@@ -240,20 +255,19 @@ class HttpClient(object):
         """
         return self.runGetRequest("variantsets", protocol.VariantSet, id_)
 
-    def searchVariantSets(self, datasetId, pageSize=None):
+    def searchVariantSets(self, datasetId):
         """
         Returns an iterator over the VariantSets on the server. If datasetId
         is specified, return only the VariantSets in this dataset.
         """
         request = protocol.SearchVariantSetsRequest()
         request.datasetId = datasetId
-        request.pageSize = pageSize
+        request.pageSize = self._pageSize
         return self.runSearchRequest(
             request, "variantsets", protocol.SearchVariantSetsResponse)
 
     def searchReferenceSets(
-            self, accession=None, md5checksum=None, assemblyId=None,
-            pageSize=None):
+            self, accession=None, md5checksum=None, assemblyId=None):
         """
         Returns an iterator over the ReferenceSets from the server.
         """
@@ -261,13 +275,12 @@ class HttpClient(object):
         request.accession = accession
         request.md5checksum = md5checksum
         request.assemblyId = assemblyId
-        request.pageSize = pageSize
+        request.pageSize = self._pageSize
         return self.runSearchRequest(
             request, "referencesets", protocol.SearchReferenceSetsResponse)
 
     def searchReferences(
-            self, referenceSetId, accession=None, md5checksum=None,
-            pageSize=None):
+            self, referenceSetId, accession=None, md5checksum=None):
         """
         Returns an iterator over the References from the server
         """
@@ -275,35 +288,34 @@ class HttpClient(object):
         request.referenceSetId = referenceSetId
         request.accession = accession
         request.md5checksum = md5checksum
-        request.pageSize = pageSize
+        request.pageSize = self._pageSize
         return self.runSearchRequest(
             request, "references", protocol.SearchReferencesResponse)
 
-    def searchCallSets(self, variantSetId, name=None, pageSize=None):
+    def searchCallSets(self, variantSetId, name=None):
         """
         Returns an iterator over the CallSets from the server
         """
         request = protocol.SearchCallSetsRequest()
         request.variantSetId = variantSetId
         request.name = name
-        request.pageSize = pageSize
+        request.pageSize = self._pageSize
         return self.runSearchRequest(
             request, "callsets", protocol.SearchCallSetsResponse)
 
-    def searchReadGroupSets(self, datasetId, name=None, pageSize=None):
+    def searchReadGroupSets(self, datasetId, name=None):
         """
         Returns an iterator over the ReadGroupSets from the server
         """
         request = protocol.SearchReadGroupSetsRequest()
         request.datasetId = datasetId
         request.name = name
-        request.pageSize = pageSize
+        request.pageSize = self._pageSize
         return self.runSearchRequest(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
     def searchReads(
-            self, readGroupIds, referenceId=None, start=None, end=None,
-            pageSize=None):
+            self, readGroupIds, referenceId=None, start=None, end=None):
         """
         Returns an iterator over the Reads from the server
         """
@@ -312,15 +324,15 @@ class HttpClient(object):
         request.referenceId = referenceId
         request.start = start
         request.end = end
-        request.pageSize = pageSize
+        request.pageSize = self._pageSize
         return self.runSearchRequest(
             request, "reads", protocol.SearchReadsResponse)
 
-    def searchDatasets(self, pageSize=None):
+    def searchDatasets(self):
         """
         Returns an iterator over the Datasets from the server
         """
         request = protocol.SearchDatasetsRequest()
-        request.pageSize = pageSize
+        request.pageSize = self._pageSize
         return self.runSearchRequest(
             request, "datasets", protocol.SearchDatasetsResponse)

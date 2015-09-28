@@ -78,9 +78,18 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.referenceName = "referenceName"
         self.callSetIds = ["id1", "id2"]
         self.pageSize = 1000
+        self.httpClient.setPageSize(self.pageSize)
         self.assemblyId = "assemblyId"
         self.accession = "accession"
         self.md5checksum = "md5checksum"
+
+    def testSetPageSize(self):
+        httpClient = utils.makeHttpClient()
+        # pageSize is None by default
+        self.assertIsNone(httpClient.getPageSize())
+        for pageSize in [1, 10, 100]:
+            httpClient.setPageSize(pageSize)
+            self.assertEqual(httpClient.getPageSize(), pageSize)
 
     def testSearchVariants(self):
         request = protocol.SearchVariantsRequest()
@@ -92,8 +101,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.pageSize = self.pageSize
         self.httpClient.searchVariants(
             self.variantSetId, start=self.start, end=self.end,
-            referenceName=self.referenceName, callSetIds=self.callSetIds,
-            pageSize=self.pageSize)
+            referenceName=self.referenceName, callSetIds=self.callSetIds)
         self.httpClient.runSearchRequest.assert_called_once_with(
             request, "variants",
             protocol.SearchVariantsResponse)
@@ -101,7 +109,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     def testSearchDatasets(self):
         request = protocol.SearchDatasetsRequest()
         request.pageSize = self.pageSize
-        self.httpClient.searchDatasets(self.pageSize)
+        self.httpClient.searchDatasets()
         self.httpClient.runSearchRequest.assert_called_once_with(
             request, "datasets", protocol.SearchDatasetsResponse)
 
@@ -109,7 +117,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request = protocol.SearchVariantSetsRequest()
         request.datasetId = self.datasetId
         request.pageSize = self.pageSize
-        self.httpClient.searchVariantSets(self.datasetId, self.pageSize)
+        self.httpClient.searchVariantSets(self.datasetId)
         self.httpClient.runSearchRequest.assert_called_once_with(
             request, "variantsets", protocol.SearchVariantSetsResponse)
 
@@ -121,7 +129,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.assemblyId = self.assemblyId
         self.httpClient.searchReferenceSets(
             accession=self.accession, md5checksum=self.md5checksum,
-            assemblyId=self.assemblyId, pageSize=self.pageSize)
+            assemblyId=self.assemblyId)
         self.httpClient.runSearchRequest.assert_called_once_with(
             request, "referencesets", protocol.SearchReferenceSetsResponse)
 
@@ -133,7 +141,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.md5checksum = self.md5checksum
         self.httpClient.searchReferences(
             self.referenceSetId, accession=self.accession,
-            md5checksum=self.md5checksum, pageSize=self.pageSize)
+            md5checksum=self.md5checksum)
         self.httpClient.runSearchRequest.assert_called_once_with(
             request, "references", protocol.SearchReferencesResponse)
 
@@ -143,7 +151,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.name = self.objectName
         request.pageSize = self.pageSize
         self.httpClient.searchReadGroupSets(
-            self.datasetId, name=self.objectName, pageSize=self.pageSize)
+            self.datasetId, name=self.objectName)
         self.httpClient.runSearchRequest.assert_called_once_with(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
@@ -153,7 +161,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.name = self.objectName
         request.pageSize = self.pageSize
         self.httpClient.searchCallSets(
-            self.variantSetId, name=self.objectName, pageSize=self.pageSize)
+            self.variantSetId, name=self.objectName)
         self.httpClient.runSearchRequest.assert_called_once_with(
             request, "callsets", protocol.SearchCallSetsResponse)
 
@@ -166,7 +174,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.pageSize = self.pageSize
         self.httpClient.searchReads(
             self.readGroupIds, referenceId=self.referenceId,
-            start=self.start, end=self.end, pageSize=self.pageSize)
+            start=self.start, end=self.end)
         self.httpClient.runSearchRequest.assert_called_once_with(
             request, "reads", protocol.SearchReadsResponse)
 
