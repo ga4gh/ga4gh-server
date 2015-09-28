@@ -389,6 +389,12 @@ class AbstractBackend(object):
         """
         yield (datamodelObject.toProtocolElement(), None)
 
+    def _noObjectGenerator(self):
+        """
+        Returns a generator yielding no results
+        """
+        return iter([])
+
     def datasetsGenerator(self, request):
         """
         Returns a generator over the (dataset, nextPageToken) pairs
@@ -408,7 +414,10 @@ class AbstractBackend(object):
                 request, dataset.getNumReadGroupSets(),
                 dataset.getReadGroupSetByIndex)
         else:
-            readGroupSet = dataset.getReadGroupSetByName(request.name)
+            try:
+                readGroupSet = dataset.getReadGroupSetByName(request.name)
+            except exceptions.ReadGroupSetNameNotFoundException:
+                return self._noObjectGenerator()
             return self._singleObjectGenerator(readGroupSet)
 
     def referenceSetsGenerator(self, request):
