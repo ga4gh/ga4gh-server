@@ -277,7 +277,8 @@ class TestSimulatedStack(unittest.TestCase):
                     request = protocol.SearchCallSetsRequest()
                     request.variantSetId = variantSet.getId()
                     request.name = badId
-                    self.verifySearchMethodFails(request, path)
+                    self.verifySearchResultsEmpty(
+                        request, path, protocol.SearchCallSetsResponse)
         # Check for searches within missing variantSets.
         for badId in self.getBadIds():
             request = protocol.SearchCallSetsRequest()
