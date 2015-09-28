@@ -49,6 +49,7 @@ class AbstractDataset(datamodel.DatamodelObject):
     def toProtocolElement(self):
         dataset = protocol.Dataset()
         dataset.id = self.getId()
+        dataset.name = self.getLocalId()
         return dataset
 
     def getVariantSets(self):

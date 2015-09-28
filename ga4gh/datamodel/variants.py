@@ -158,6 +158,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement.datasetId = self.getParentContainer().getId()
         protocolElement.referenceSetId = self._referenceSetId
         protocolElement.metadata = self.getMetadata()
+        protocolElement.name = self.getLocalId()
         return protocolElement
 
     def getNumVariants(self):
