@@ -515,9 +515,10 @@ class AbstractBackend(object):
                 request, variantSet.getNumCallSets(),
                 variantSet.getCallSetByIndex)
         else:
-            # Since names are unique within a callSet, we either have one
-            # result or we 404.
-            callSet = variantSet.getCallSetByName(request.name)
+            try:
+                callSet = variantSet.getCallSetByName(request.name)
+            except exceptions.CallSetNameNotFoundException:
+                return self._noObjectGenerator()
             return self._singleObjectGenerator(callSet)
 
     ###########################################################
