@@ -6,11 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
-import os
-import random
 import tempfile
 import shlex
-import string
 import subprocess
 import socket
 
@@ -226,27 +223,6 @@ class Ga4ghServerForTestingDataSource(Ga4ghServerForTesting):
 DATA_SOURCE = "{}"
 DEBUG = True""".format(self.dataDir)
         return config
-
-
-class RemoteServerForTesting(ServerForTesting):
-    """
-    Simulates a remote server on localhost
-    """
-    def __init__(self, path):
-        super(RemoteServerForTesting, self).__init__(remotePort)
-        self.path = path
-        self.pidFileName = \
-            ''.join(random.sample(string.letters, 10)) + '.pid'
-
-    def getCmdLine(self):
-        cmdLine = "twistd  --pidfile={} -no web -p {} --path={}".format(
-            self.pidFileName, self.port, self.path)
-        return cmdLine
-
-    def shutdown(self):
-        super(RemoteServerForTesting, self).shutdown()
-        if os.path.exists(self.pidFileName):
-            os.remove(self.pidFileName)
 
 
 class OidcOpServerForTesting(ServerForTesting):
