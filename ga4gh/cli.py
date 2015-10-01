@@ -56,9 +56,7 @@ def addServerOptions(parser):
     parser.add_argument(
         "--dont-use-reloader", default=False, action="store_true",
         help="Don't use the flask reloader")
-    parser.add_argument(
-        "--disable-urllib-warnings", default=False, action="store_true",
-        help="Disable urllib3 warnings")
+    addDisableUrllibWarningsArgument(parser)
 
 
 def server_main(parser=None):
@@ -84,6 +82,18 @@ def server_main(parser=None):
 ##############################################################################
 
 
+def verbosityToLogLevel(verbosity):
+    """
+    Returns the specfied verbosity level interpreted as a logging level.
+    """
+    ret = 0
+    if verbosity == 1:
+        ret = logging.INFO
+    elif verbosity >= 2:
+        ret = logging.DEBUG
+    return ret
+
+
 class AbstractQueryRunner(object):
     """
     Abstract base class for runner classes
@@ -91,7 +101,7 @@ class AbstractQueryRunner(object):
     def __init__(self, args):
         self._key = args.key
         self._httpClient = client.HttpClient(
-            args.baseUrl, args.verbose, self._key)
+            args.baseUrl, verbosityToLogLevel(args.verbose), self._key)
 
 
 class FormattedOutputRunner(AbstractQueryRunner):
@@ -129,7 +139,7 @@ class AbstractGetRunner(FormattedOutputRunner):
         super(AbstractGetRunner, self).__init__(args)
         self._id = args.id
         self._httpClient = client.HttpClient(
-            args.baseUrl, args.verbose, self._key)
+            args.baseUrl, verbosityToLogLevel(args.verbose), self._key)
 
     def run(self):
         response = self._method(self._id)
@@ -295,7 +305,31 @@ class SearchCallSetsRunner(AbstractSearchRunner):
             self._run(self._variantSetId)
 
 
-class SearchVariantsRunner(AbstractSearchRunner):
+class VariantFormatterMixin(object):
+    """
+    Simple mixin to format variant objects.
+    """
+    def _textOutput(self, gaObjects):
+        """
+        Prints out the specified Variant objects in a VCF-like form.
+        """
+        for variant in gaObjects:
+            print(
+                variant.id, variant.variantSetId, variant.names,
+                variant.referenceName, variant.start, variant.end,
+                variant.referenceBases, variant.alternateBases,
+                sep="\t", end="\t")
+            for key, value in variant.info.items():
+                print(key, value, sep="=", end=";")
+            print("\t", end="")
+            for c in variant.calls:
+                print(
+                    c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
+                    c.phaseset, sep=":", end="\t")
+            print()
+
+
+class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
     """
     Runner class for the variants/search method.
     """
@@ -325,25 +359,6 @@ class SearchVariantsRunner(AbstractSearchRunner):
                 self._run(variantSet.id)
         else:
             self._run(self._variantSetId)
-
-    def _textOutput(self, gaObjects):
-        """
-        Prints out the specified Variant objects in a VCF-like form.
-        """
-        for variant in gaObjects:
-            print(
-                variant.id, variant.variantSetId, variant.names,
-                variant.referenceName, variant.start, variant.end,
-                variant.referenceBases, variant.alternateBases,
-                sep="\t", end="\t")
-            for key, value in variant.info.items():
-                print(key, value, sep="=", end=";")
-            print("\t", end="")
-            for c in variant.calls:
-                print(
-                    c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
-                    c.phaseset, sep=":", end="\t")
-            print()
 
 
 class SearchReadsRunner(AbstractSearchRunner):
@@ -454,13 +469,19 @@ class GetDatasetRunner(AbstractGetRunner):
         self._method = self._httpClient.getDataset
 
 
-class GetVariantRunner(AbstractGetRunner):
+class GetVariantRunner(VariantFormatterMixin, AbstractGetRunner):
     """
     Runner class for the variants/{id} method
     """
     def __init__(self, args):
         super(GetVariantRunner, self).__init__(args)
         self._method = self._httpClient.getVariant
+
+
+def addDisableUrllibWarningsArgument(parser):
+    parser.add_argument(
+        "--disable-urllib-warnings", default=False, action="store_true",
+        help="Disable urllib3 warnings")
 
 
 def addVariantSearchOptions(parser):
@@ -580,6 +601,7 @@ def addClientGlobalOptions(parser):
     parser.add_argument(
         "--key", "-k", default='invalid',
         help="Auth Key. Found on server index page.")
+    addDisableUrllibWarningsArgument(parser)
 
 
 def addHelpParser(subparsers):
@@ -816,6 +838,8 @@ def client_main():
     if "runner" not in args:
         parser.print_help()
     else:
+        if args.disable_urllib_warnings:
+            requests.packages.urllib3.disable_warnings()
         try:
             runner = args.runner(args)
             runner.run()

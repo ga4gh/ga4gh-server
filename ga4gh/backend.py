@@ -578,7 +578,6 @@ class AbstractBackend(object):
         Runs a listReferenceBases request for the specified ID and
         request arguments.
         """
-        # parse arguments
         compoundId = datamodel.ReferenceCompoundId.parse(id_)
         referenceSet = self.getReferenceSet(compoundId.referenceSetId)
         reference = referenceSet.getReference(id_)

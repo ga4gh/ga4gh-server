@@ -89,7 +89,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         Returns the list of ReadGroupSets in this dataset
         """
-        return self._readGroupSetIdMap.values()
+        return [self._readGroupSetIdMap[id_] for id_ in self._readGroupSetIds]
 
     def getReadGroupSetByName(self, name):
         """
