@@ -34,5 +34,5 @@ This is the the documentation for the reference implementation of the API.
     The code follows the `Python Packaging User Guide
     <http://python-packaging-user-guide.readthedocs.org/en/latest/>`_.
     Specifically, pip is used to handle python package dependencies (see below
-    for details). This allows for easy installation of the ``ga4gh`` reference code
+    for details). This provides easy installation of the ``ga4gh`` reference code
     across a range of operating systems.

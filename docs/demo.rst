@@ -18,9 +18,9 @@ the :ref:`installation` section for a detailed guide on production installation.
 To run the demo, you will need a working installation of
 `Python 2.7 <https://www.python.org/download/releases/2.7/>`_
 and also have `virtualenv <https://virtualenv.pypa.io/en/latest/>`_
-installed. We also need to have `zlib <http://www.zlib.net/>`_
-installed so that we can build some of the packages that the
-reference server depends on.
+installed. We also need to have `zlib <http://www.zlib.net/>`_ and
+a few other common libraries installed so that we can build some of the
+packages that the reference server depends on.
 
 On Debian/Ubuntu, for example, we can install these
 packages using:
@@ -59,22 +59,24 @@ Now we can download some example data, which we'll use for our demo:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar
-    (ga4gh-env) $ tar -xvf ga4gh-example-data.tar
+    (ga4gh-env) $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data-v2.1.tar
+    (ga4gh-env) $ tar -xvf ga4gh-example-data-v2.1.tar
 
 After extracting the data, we can then run the ``ga4gh_server`` application:
 
 .. code-block:: bash
 
     (ga4gh-env) $ ga4gh_server
-    * Running on http://0.0.0.0:8000/ (Press CTRL+C to quit)
+    * Running on http://127.0.0.1:8000/ (Press CTRL+C to quit)
     * Restarting with stat
 
 (The server is using a default configuration which assumes the
 existence of the ``ga4gh-example-data`` directory for simplicity here; see
 the :ref:`configuration` section for detailed information on how we configure the
 server.) We now have a server running in the foreground. When it receives requests,
-it will print out log entries to the terminal.
+it will print out log entries to the terminal. A summary of the server's
+configuration and data is available in HTML format at
+``http://locahost:8000``, which can be viewed in a web browser.
 Leave the server running and open another terminal to complete the
 rest of the demo.
 
@@ -85,31 +87,65 @@ server using `cURL <http://curl.haxx.se/>`_:
 
 .. code-block:: bash
 
-    $ curl --data '{"datasetIds":[XXXX], "name":null}' --header 'Content-Type: application/json' \
-    http://localhost:8000/current/readgroupsets/search
+    $ curl --data '{}' --header 'Content-Type: application/json' \
+    http://localhost:8000/datasets/search | jq .
 
-In this example, we used the `searchReadGroupSets
-<http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.searchReadGroupSets>`_
-method to ask the server for all the ReadGroupSets on the server. It responded
-by sending back some JSON, which cURL then printed to the terminal.
 
-Creating these JSON requests by hand is tedious and error prone, and
-so there is a client application to do this for us. To try this out, we
-start another instance of our virtualenv, and then send the
-equivalent command using:
+In this example, we used the `searchDatasets
+<http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.searchDatasets>`_
+method to ask the server for all the Datasets on the server. It responded
+by sending back some JSON, which we piped into the `jq <https://stedolan.github.io/jq/>`_
+JSON processor to make it easier to read. We get the following result:
+
+.. code-block:: json
+
+    {
+      "nextPageToken": null,
+      "datasets": [
+        {
+          "description": null,
+          "name": "1kg-p3-subset",
+          "id": "MWtnLXAzLXN1YnNldA=="
+        }
+      ]
+    }
+
+In this example we sent a SearchDatasetsRequest object to the server
+and received a SearchDatasetsResponse object in return. This response object
+contained one Dataset object, which is contained in the ``datasets`` array.
+This approach to interacting with the server is tedious and error prone, as
+we have to hand-craft the request objects. It is also quite inconvenient, as
+we may have to request many pages of objects to get all the objects
+that satisfy our search criteria.
+
+To simplify interacting with the server and to abstract away the low-level
+network-level details of the server, we provide a client application.
+To try this out, we start another instance of our virtualenv, and then send
+the equivalent command using:
 
 .. code-block:: bash
 
     $ source ga4gh-env/bin/activate
-    (ga4gh-env) $ ga4gh_client readgroupsets-search --datasetIds XXXX http://localhost:8000/current
+    (ga4gh-env) $ ga4gh_client datasets-search http://localhost:8000
 
-The output of this command is a simple summary of the ReadGroupSets that
-are present on the server. We can also see the JSON messages passing
-between the client and the server if we increase the verbosity level:
+::
+
+    MWtnLXAzLXN1YnNldA==    1kg-p3-subset
+
+The output of this command is a summary of the Datasets on that are present on the
+server. We can also get the output in JSON form such that each
+object is written on one line:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ ga4gh_client -vv readgroupsets-search --datasetIds XXXX http://localhost:8000/current
+    (ga4gh-env) $ ga4gh_client datasets-search -O json http://localhost:8000
+
+::
+
+    {"description": null, "name": "1kg-p3-subset", "id": "MWtnLXAzLXN1YnNldA=="}
+
+This format is quite useful for larger queries, and can be piped into jq
+to extract fields of interest, pretty printing and so on.
 
 We can perform similar queries for variant data using the
 `searchVariants
@@ -121,29 +157,27 @@ method:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ ga4gh_client variantsets-search --datasetIds XXXX http://localhost:8000/current
-    1kg-phase1
-    1kg-phase3
+    (ga4gh-env) $ ga4gh_client variantsets-search http://localhost:8000
 
-This tells us that we have two VariantSets on the server, with IDs ``1kg-phase1``
-and ``1kg-phase3``. In our example data, these correspond to a subset of the
-data from `1000 Genomes <http://www.1000genomes.org/>`_ phases 1 and 3.
+::
 
-We can then search for variants overlapping a given interval in a VariantSet
+    MWtnLXAzLXN1YnNldDptdm5jYWxs    mvncall
+
+This tells us that we have one VariantSet on the server, with ID ``MWtnLXAzLXN1YnNldDptdm5jYWxs``
+and name ``mvncall``. We can then search for variants overlapping a given interval in a VariantSet
 as follows:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ ga4gh_client variants-search --datasetIds XXXX http://localhost:8000/v0.5.1 \
-    --variantSetIds=1kg-phase1 --referenceName=2 --start=33100 --end=34000
+    (ga4gh-env) $ ga4gh_client variants-search http://localhost:8000 \
+    --referenceName=1 --start=45000 --end=50000
 
 The output of the client program is a summary of the data received in a
 free text form. This is not intended to be used as the input to other
 programs, and is simply a data exploration tool for users.
 To really *use* our data, we should use a GA4GH client library.
 
-Part of the GA4GH reference implementation is a Python client-side
-library. This makes sending requests to the server and using the
+Part of the GA4GH reference implementation is a :ref:`client-library`. This makes sending requests to the server and using the
 responses very easy. For example, to run the same query as we
 performed above, we can use the following code:
 
@@ -152,15 +186,19 @@ performed above, we can use the following code:
     from __future__ import print_function
 
     import ga4gh.client as client
-    import ga4gh.protocol as protocol
 
-    httpClient = client.HttpClient("http://localhost:8000/v0.5.1")
-    request = protocol.GASearchVariantsRequest()
-    request.variantSetIds = ["1kg-phase1"]
-    request.referenceName = "2"
-    request.start = 33100
-    request.end = 34000
-    for variant in httpClient.searchVariants(request):
+    httpClient = client.HttpClient("http://localhost:8000")
+    # Get the datasets on the server.
+    datasets = list(httpClient.searchDatasets())
+    # Get the variantSets in the first dataset.
+    variantSets = list(httpClient.searchVariantSets(
+        datasetId=datasets[0].id))
+    # Now get the variants in the interval [45000, 50000) on chromosome 1
+    # in the first variantSet.
+    iterator = httpClient.searchVariants(
+        variantSetId=variantSets[0].id,
+        referenceName="1", start=45000, end=50000)
+    for variant in iterator:
         print(
             variant.referenceName, variant.start, variant.end,
             variant.referenceBases, variant.alternateBases, sep="\t")
@@ -173,9 +211,20 @@ using:
 
     (ga4gh-env) $ python ga4gh-demo.py
 
+.. todo:: Add more examples of using the reads API and give
+   examples of using the references API. We should aim to have
+   a single complete example, where we start with a given
+   variant, and drill down into the reads in question programatically.
+   values as parameters which have sensible defaults.
+
 ---------
 With OIDC
 ---------
+
+.. todo:: Should we move the OIDC documentation into its own section?
+    It is quite a lot of complication to add here to a beginners HOWTO.
+
+
 
 If we want authentication, we must have an OIDC authentication provider.
 One can be found in ``oidc-provider``, and run with the ``run.sh`` script.
@@ -207,17 +256,7 @@ as follows:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ ga4gh_client --key <key from homepage> variantsets-search --datasetIds XXXX https://localhost:8000/current
-    1kg-phase1
-    1kg-phase3
+    (ga4gh-env) $ ga4gh_client --key <key from homepage> variantsets-search https://localhost:8000/current
+    MWtnLXAzLXN1YnNldDptdm5jYWxs    mvncall
 
-**TODO**
 
-1. Add more examples of using the reads API and give
-   examples of using the references API. We should aim to have
-   a single complete example, where we start with a given
-   variant, and drill down into the reads in question programatically.
-2. Update the client API to be more user-friendly. We shouldn't need
-   to create an instance of ``GASearchVariantsRequest`` to call
-   ``searchVariants``. Rather, ``searchVariants`` should have the corresponding
-   values as parameters which have sensible defaults.
