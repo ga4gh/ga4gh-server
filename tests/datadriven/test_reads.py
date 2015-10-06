@@ -20,7 +20,7 @@ import pysam
 
 
 def testReads():
-    testDataDir = "tests/data/dataset1/reads"
+    testDataDir = "tests/data/datasets/dataset1/reads"
     for test in datadriven.makeTests(
             testDataDir, ReadGroupSetTest, '*.bam'):
         yield test

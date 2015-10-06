@@ -23,7 +23,7 @@ import tests.datadriven as datadriven
 
 
 def testReferenceSets():
-    testDataDir = "tests/data/references"
+    testDataDir = "tests/data/referenceSets"
     for test in datadriven.makeTests(testDataDir, ReferenceSetTest):
         yield test
 

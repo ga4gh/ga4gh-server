@@ -21,7 +21,7 @@ import tests.utils as utils
 
 
 def testVariantSets():
-    testDataDir = "tests/data/dataset1/variants"
+    testDataDir = "tests/data/datasets/dataset1/variants"
     for test in datadriven.makeTests(testDataDir, VariantSetTest):
         yield test
 

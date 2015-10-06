@@ -801,24 +801,14 @@ class FileSystemBackend(AbstractBackend):
     def __init__(self, dataDir):
         super(FileSystemBackend, self).__init__()
         self._dataDir = dataDir
-        # TODO this code is very ugly and should be regarded as a temporary
-        # stop-gap until we deal with iterating over the data tree properly.
-
-        # References
-        referencesDirName = "references"
-        referenceSetDir = os.path.join(self._dataDir, referencesDirName)
-        for referenceSetName in os.listdir(referenceSetDir):
-            relativePath = os.path.join(referenceSetDir, referenceSetName)
-            if os.path.isdir(relativePath):
-                referenceSet = references.HtslibReferenceSet(
-                    referenceSetName, relativePath, self)
-                self.addReferenceSet(referenceSet)
-        # Datasets
-        datasetDirs = [
-            os.path.join(self._dataDir, directory)
-            for directory in os.listdir(self._dataDir)
-            if os.path.isdir(os.path.join(self._dataDir, directory)) and
-            directory != referencesDirName]
-        for datasetDir in datasetDirs:
-            dataset = datasets.FileSystemDataset(datasetDir, self)
-            self.addDataset(dataset)
+        sourceDirNames = ["referenceSets", "datasets"]
+        constructors = [
+            references.HtslibReferenceSet, datasets.FileSystemDataset]
+        objectAdders = [self.addReferenceSet, self.addDataset]
+        for sourceDirName, constructor, objectAdder in zip(
+                sourceDirNames, constructors, objectAdders):
+            sourceDir = os.path.join(self._dataDir, sourceDirName)
+            for setName in os.listdir(sourceDir):
+                relativePath = os.path.join(sourceDir, setName)
+                if os.path.isdir(relativePath):
+                    objectAdder(constructor(setName, relativePath, self))
