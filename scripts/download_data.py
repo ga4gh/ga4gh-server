@@ -170,7 +170,8 @@ class AbstractFileDownloader(object):
 
     def _prepareDir(self):
         dirList = [
-            self.dirName, self.datasetName, 'variants', self.variantSetName]
+            self.dirName, "datasets", self.datasetName, 'variants',
+            self.variantSetName]
         mkdirAndChdirList(dirList)
         cleanDir()
 
@@ -228,7 +229,7 @@ class AbstractFileDownloader(object):
         self._prepareDir()
         for chromosome in self.chromosomes:
             self._downloadVcf(chromosome)
-        escapeDir()
+        escapeDir(5)
 
     def createBamHeader(self, baseHeader):
         """
@@ -257,7 +258,7 @@ class AbstractFileDownloader(object):
         return header
 
     def downloadBams(self):
-        dirList = [self.dirName, self.datasetName, 'reads']
+        dirList = [self.dirName, "datasets", self.datasetName, 'reads']
         mkdirAndChdirList(dirList)
         cleanDir()
         baseUrl = self.getBamBaseUrl()
@@ -297,10 +298,10 @@ class AbstractFileDownloader(object):
             os.remove(baiFileName)
             utils.log("Indexing '{}'".format(destFileName))
             pysam.index(destFileName.encode('utf-8'))
-        escapeDir(3)
+        escapeDir(4)
 
     def downloadFastas(self):
-        dirList = [self.dirName, 'references']
+        dirList = [self.dirName, 'referenceSets']
         mkdirAndChdirList(dirList)
         # Assemble reference set metadata
         referenceSetMetadata = {

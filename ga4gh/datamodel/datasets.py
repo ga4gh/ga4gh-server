@@ -147,8 +147,7 @@ class FileSystemDataset(AbstractDataset):
     """
     A dataset based on the file system
     """
-    def __init__(self, dataDir, backend):
-        localId = os.path.basename(os.path.normpath(dataDir))
+    def __init__(self, localId, dataDir, backend):
         super(FileSystemDataset, self).__init__(localId)
 
         # Variants
