@@ -62,8 +62,8 @@ Download and unpack the example data:
 
 .. code-block:: bash
 
-  $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar
-  $ tar -xf ga4gh-example-data.tar
+  $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data-v3.0.tar
+  $ tar -xf ga4gh-example-data-v3.0.tar
 
 Create the WSGI file at ``/srv/ga4gh/application.wsgi`` and write the following
 contents:
@@ -164,7 +164,7 @@ Please reference the `platform specific Docker installation instructions <https:
 
 **Local Dataset Mounted as Volume**
 
-If you already have a dataset on your machine, you can download and deploy the apache server in one command: 
+If you already have a dataset on your machine, you can download and deploy the apache server in one command:
 
 .. code-block:: bash
 
@@ -176,7 +176,7 @@ This will:
 
 * pull the automatically built image from `Dockerhub <https://registry.hub.docker.com/u/afirth/ga4gh-server/>`_
 * start an apache server running mod_wsgi on container port 80
-* mount your data read-only to the docker container 
+* mount your data read-only to the docker container
 * assign a name to the container
 * forward port 8000 to the container.
 
@@ -190,11 +190,11 @@ If you do not have a dataset yet, you can deploy a container which includes the 
 
   $ docker run -d -p 8000:80 --name ga4gh_demo afirth/ga4gh-server:develop-demo
 
-This is identical to the production container, except that a copy of the demo data is included and appropriate defaults are set. 
+This is identical to the production container, except that a copy of the demo data is included and appropriate defaults are set.
 
 **Developing Client Code: Run a Client Container and a Server**
 
-In this example you run a server as a daemon in one container, and the client as an ephemeral instance in another container. 
+In this example you run a server as a daemon in one container, and the client as an ephemeral instance in another container.
 From the client, the server is accessible at ``http://server/``, and the ``/tmp/mydev`` directory is mounted at ``/app/mydev/``. Any changes you make to scripts in ``mydev`` will be reflected on the host and container and persist even after the container dies.
 
 .. code-block:: bash
@@ -215,7 +215,7 @@ From the client, the server is accessible at ``http://server/``, and the ``/tmp/
   # call the client code script
   root@md5:/app# ./mydev/demo_example.py
 
-  # call the command line client 
+  # call the command line client
   root@md5:/app# ga4gh_client variantsets-search http://server/current
 
   #exit and destroy the client container
@@ -281,7 +281,7 @@ Troubleshooting Docker
 **DNS**
 
 The docker daemon's DNS may be corrupted if you switch networks, especially if run in a VM.
-For boot2docker, running udhcpc on the VM usually fixes it. 
+For boot2docker, running udhcpc on the VM usually fixes it.
 From a terminal on the host:
 
 .. code-block:: bash
