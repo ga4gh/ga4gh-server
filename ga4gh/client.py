@@ -245,6 +245,26 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "variants", protocol.SearchVariantsResponse)
 
+    def searchVariantAnnotations(
+            self, variantAnnotationSetId, referenceName=None, referenceId=None,
+            start=None, end=None, featureIds=[], effects=[]):
+        """
+        Returns an iterator over the Annotations fulfilling the specified
+        conditions from the specified AnnotationSet.
+        """
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variantAnnotationSetId = variantAnnotationSetId
+        request.referenceName = referenceName
+        request.referenceId = referenceId
+        request.start = start
+        request.end = end
+        request.feature_ids = featureIds
+        request.effects = effects
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "variantannotations",
+            protocol.SearchVariantAnnotationsResponse)
+
     def searchDatasets(self):
         """
         Returns an iterator over the Datasets on the server.
@@ -272,6 +292,23 @@ class AbstractClient(object):
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "variantsets", protocol.SearchVariantSetsResponse)
+
+    def searchVariantAnnotationSets(self, datasetId):
+        """
+        Returns an iterator over the AnnotationSets fulfilling the specified
+        conditions from the specified Dataset.
+
+        :param str datasetId: The ID of the :class:`ga4gh.protocol.Dataset`
+            of interest.
+        :return: An iterator over the :class:`ga4gh.protocol.AnnotationSet`
+            objects defined by the query parameters.
+        """
+        request = protocol.SearchVariantAnnotationSetsRequest()
+        request.datasetId = datasetId
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "variantannotationsets",
+            protocol.SearchVariantAnnotationSetsResponse)
 
     def searchReferenceSets(
             self, accession=None, md5checksum=None, assemblyId=None):

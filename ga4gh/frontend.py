@@ -491,6 +491,18 @@ def searchVariants():
         flask.request, app.backend.runSearchVariants)
 
 
+@DisplayedRoute('/variantannotationsets/search', postMethod=True)
+def searchVariantAnnotationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchVariantAnnotationSets)
+
+
+@DisplayedRoute('/variantannotations/search', postMethod=True)
+def searchVariantAnnotations():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchVariantAnnotations)
+
+
 @DisplayedRoute('/datasets/search', postMethod=True)
 def searchDatasets():
     return handleFlaskPostRequest(
