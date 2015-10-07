@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import datetime
 import random
 import hashlib
+import re
 
 import pysam
 
@@ -178,6 +179,46 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         ret.variantSetId = self.getId()
         return ret
 
+    def _createGaVariantAnnotation(self):
+        """
+        Convenience method to set the common fields in a GA VariantAnnotation
+        object from this variant set.
+        """
+        ret = protocol.VariantAnnotation()
+        ret.created = self._creationTime
+        ret.updated = self._updatedTime
+        ret.variantAnnotationSetId = self.getId()
+        return ret
+
+    def _createGaTranscriptEffect(self):
+        """
+        Convenience method to set the common fields in a GA TranscriptEffect
+        object.
+        """
+        ret = protocol.TranscriptEffect()
+        ret.created = self._creationTime
+        ret.updated = self._updatedTime
+        return ret
+
+    def _createGaOntologyTermSo(self):
+        """
+        Convenience method to set the common fields in a GA OntologyTerm
+        object for Sequence Ontology.
+        """
+        ret = protocol.OntologyTerm()
+        ret.ontologySource = "Sequence Ontology"
+        return ret
+
+    def _createGaAlleleLocation(self):
+        """
+        Convenience method to set the common fields in a AlleleLocation
+        object.
+        """
+        ret = protocol.AlleleLocation()
+        ret.created = self._creationTime
+        ret.updated = self._updatedTime
+        return ret
+
     def getVariantId(self, gaVariant):
         """
         Returns an ID string suitable for the specified GA Variant
@@ -207,6 +248,13 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         return hashlib.md5(
             gaVariant.referenceBases +
             str(tuple(gaVariant.alternateBases))).hexdigest()
+
+
+class AbstractVariantAnnotationSet(AbstractVariantSet):
+    """
+    An abstract base class of a variant annotation set
+    """
+    compoundIdClass = datamodel.VariantAnnotationSetCompoundId
 
 
 class SimulatedVariantSet(AbstractVariantSet):
@@ -437,13 +485,14 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         sampleData = record.__str__().split()[9:]  # REMOVAL
         variant.calls = []
         sampleIterator = 0  # REMOVAL
-        for name, call in record.samples.iteritems():
-            if self.getCallSetId(name) in callSetIds:
-                genotypeData = sampleData[sampleIterator].split(
-                    ":")[0]  # REMOVAL
-                variant.calls.append(self._convertGaCall(
-                    record.id, name, call, genotypeData))  # REPLACE
-            sampleIterator += 1  # REMOVAL
+        if callSetIds:
+            for name, call in record.samples.iteritems():
+                if self.getCallSetId(name) in callSetIds:
+                    genotypeData = sampleData[sampleIterator].split(
+                        ":")[0]  # REMOVAL
+                    variant.calls.append(self._convertGaCall(
+                        record.id, name, call, genotypeData))  # REPLACE
+                sampleIterator += 1  # REMOVAL
         variant.id = self.getVariantId(variant)
         return variant
 
@@ -543,3 +592,160 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                         number="{}".format(value.number),
                         description=description))
         return ret
+
+
+class HtslibVariantAnnotationSet(HtslibVariantSet):
+    """
+    Class representing a single variant annotation set backed by a directory of
+    indexed VCF or BCF files.
+    """
+    def __init__(self, parentContainer, localId, dataDir, backend):
+        super(HtslibVariantAnnotationSet, self).__init__(
+            parentContainer, localId, dataDir, backend)
+        self.compoundIdClass = datamodel.VariantAnnotationSetCompoundId
+        self._compoundId = datamodel.VariantAnnotationSetCompoundId(
+            self.getCompoundId(), 'variantannotations')
+        self._sequenceOntology = backend.getOntology('sequence_ontology')
+
+    def getVariantAnnotations(self, referenceName, startPosition, endPosition):
+        """
+        Returns an iterator over the specified variant annotaitons.
+        """
+        if referenceName in self._chromFileMap:
+            varFileName = self._chromFileMap[referenceName]
+            referenceName, startPosition, endPosition = \
+                self.sanitizeVariantFileFetch(
+                    referenceName, startPosition, endPosition)
+            cursor = self.getFileHandle(varFileName).fetch(
+                referenceName, startPosition, endPosition)
+            for record in cursor:
+                yield self.convertVariantAnnotation(record)
+
+    def convertLocation(self, pos):
+        if pos == '':
+            return None
+        coordLen = pos.split('/')
+        allLoc = self._createGaAlleleLocation()
+        allLoc.overlapStart = int(coordLen[0])
+        return allLoc
+
+    def convertLocationHgvsC(self, hgvsc):
+        if hgvsc == '':
+            return None
+        match = re.match("c.(\d+)(\D+)>(\D+)", hgvsc)
+        if match:
+            pos = int(match.group(1))
+            if pos > 0:
+                allLoc = self._createGaAlleleLocation()
+                allLoc.overlapStart = pos
+                allLoc.referenceSequence = match.group(2)
+                allLoc.alternateSequence = match.group(3)
+                return allLoc
+        return None
+
+    def convertLocationHgvsP(self, hgvsp):
+        if hgvsp == '':
+            return None
+        match = re.match("p.(\D+)(\d+)(\D+)", hgvsp)
+        if match is not None:
+            allLoc = self._createGaAlleleLocation()
+            allLoc.referenceSequence = match.group(1)
+            allLoc.overlapStart = int(match.group(2))
+            allLoc.alternateSequence = match.group(3)
+            return allLoc
+        return None
+
+    def convertTranscriptEffect(self, ann):
+        effect = self._createGaTranscriptEffect()
+        (alt, effects, impact, geneName, geneId, featureType,
+            featureId, trBiotype, rank, hgvsC, hgvsP, cdnaPos,
+            cdsPos, protPos, distance, errsWarns) = ann.split('|')
+        effect.alternateBases = alt
+        effect.effects = self.convertSeqOntology(effects)
+        effect.impact = impact
+        effect.featureId = featureId
+        effect.HGVSc = hgvsC
+        effect.HGVSp = hgvsP
+        if hgvsP != '':
+            effect.proteinLocation = self.convertLocationHgvsP(hgvsP)
+        if effect.proteinLocation is None:
+            effect.proteinLocation = self.convertLocation(protPos)
+        if hgvsC != '':
+            effect.CDSLocation = self.convertLocationHgvsC(hgvsC)
+        if effect.CDSLocation is None:
+            effect.CDSLocation = self.convertLocation(cdnaPos)
+        effect.cDNALocation = self.convertLocation(cdnaPos)
+        effect.id = self.getTranscriptEffectId(effect)
+        return effect
+
+    def convertSeqOntology(self, seqOntStr):
+        seqOntTerms = seqOntStr.split('&')
+        soTerms = []
+        for soName in seqOntTerms:
+            so = self._createGaOntologyTermSo()
+            so.name = soName
+            if self._sequenceOntology is not None:
+                so.id = self._sequenceOntology.getId(soName)
+            soTerms.append(so)
+            # TODO We must fill the ontology ID based on the SO name
+        return soTerms
+
+    def convertVariantAnnotation(self, record):
+        """
+        Converts the specified record into a GA4GH Annotaiton object.
+        """
+        # First we need the Variant
+        variant = self.convertVariant(record, None)
+        # Create annotaiton
+        annotation = self._createGaVariantAnnotation()
+        annotation.variant = variant
+        annotation.variantId = variant.id
+        if record.id is not None:
+            annotation.coLocatedVariants = record.id.split(';')
+        # Convert annotations from INFO field into TranscriptEffect
+        annStr = record.info.get('ANN')
+        transcriptEffects = []
+        if annStr:
+            for ann in annStr.split(','):
+                transcriptEffects.append(self.convertTranscriptEffect(ann))
+        annotation.transcriptEffects = transcriptEffects
+        annotation.id = self.getVariantAnnotationId(variant, annotation)
+        return annotation
+
+    def getVariantAnnotationId(self, gaVariant, gaAnnotation):
+        md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
+        compoundId = datamodel.VariantAnnotationCompoundId(
+            self.getCompoundId(), gaVariant.referenceName,
+            gaVariant.start, md5)
+        return str(compoundId)
+
+    def getVariantId(self, gaVariant):
+        """
+        Returns an ID string suitable for the specified GA Variant Annotation
+        object in this variant set.
+        """
+        md5 = self.hashVariant(gaVariant)
+        compoundId = datamodel.VariantAnnotationCompoundId(
+            self.getCompoundId(), gaVariant.referenceName,
+            gaVariant.start, md5)
+        return str(compoundId)
+
+    def getTranscriptEffectId(self, gaTranscriptEffect):
+        effs = [eff.name for eff in gaTranscriptEffect.effects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t{}\t{}".format(
+                gaTranscriptEffect.alternateBases,
+                gaTranscriptEffect.featureId, effs, gaTranscriptEffect.HGVSp,
+                gaTranscriptEffect.HGVSc)
+            ).hexdigest()
+
+    def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
+        """
+        Produces an MD5 hash of the ga variant and gaVariantAnnotaiton objects
+        """
+        treffs = [treff.id for treff in gaVariantAnnotation.transcriptEffects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t".format(
+                gaVariant.referenceBases, tuple(gaVariant.alternateBases),
+                treffs)
+            ).hexdigest()

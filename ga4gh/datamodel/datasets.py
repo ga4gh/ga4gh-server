@@ -29,6 +29,8 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
+        self._variantAnnotationSetIds = []
+        self._variantAnnotationSetIdMap = {}
         self._description = None
 
     def addVariantSet(self, variantSet):
@@ -38,6 +40,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         id_ = variantSet.getId()
         self._variantSetIdMap[id_] = variantSet
         self._variantSetIds.append(id_)
+
+    def addVariantAnnotationSet(self, variantAnnotationSet):
+        """
+        Adds the specified variantAnnotationSet to this dataset.
+        """
+        id_ = variantAnnotationSet.getId()
+        self._variantAnnotationSetIdMap[id_] = variantAnnotationSet
+        self._variantAnnotationSetIds.append(id_)
 
     def addReadGroupSet(self, readGroupSet):
         """
@@ -67,6 +77,27 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return len(self._variantSetIds)
 
+    def getVariantAnnotationSets(self):
+        """
+        Returns the list of VariantAnnotationSets in this dataset
+        """
+        return [self._variantAnnotationSetIdMap[id_] for id_ in
+                self._variantAnnotationSetIds]
+
+    def getVariantAnnotationSet(self, id_):
+        """
+        Returns the AnnotationSet in this dataset with the specified 'id'
+        """
+        if id_ not in self._variantAnnotationSetIdMap:
+            raise exceptions.AnnotationSetNotFoundException(id_)
+        return self._variantAnnotationSetIdMap[id_]
+
+    def getNumVariantAnnotationSets(self):
+        """
+        Returns the number of variant annotation sets in this dataset.
+        """
+        return len(self._variantAnnotationSetIds)
+
     def getVariantSet(self, id_):
         """
         Returns the VariantSet with the specified name, or raises a
@@ -81,6 +112,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         Returns the variant set at the specified index in this dataset.
         """
         return self._variantSetIdMap[self._variantSetIds[index]]
+
+    def getVariantAnnotationSetByIndex(self, index):
+        """
+        Returns the variant annotation set at the specified index in this
+        dataset.
+        """
+        return self._variantAnnotationSetIdMap[
+            self._variantAnnotationSetIds[index]]
 
     def getNumReadGroupSets(self):
         """
@@ -170,6 +209,14 @@ class FileSystemDataset(AbstractDataset):
                 variantSet = variants.HtslibVariantSet(
                     self, localId, relativePath, backend)
                 self.addVariantSet(variantSet)
+            # Variant annotations sets
+            variantAnnotationSetDir = os.path.join(
+                relativePath, "variantAnnotations")
+            if os.path.isdir(variantAnnotationSetDir):
+                variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+                        self, localId, variantAnnotationSetDir, backend)
+                self.addVariantAnnotationSet(variantAnnotationSet)
+
         # Reads
         readGroupSetDir = os.path.join(dataDir, "reads")
         for filename in os.listdir(readGroupSetDir):
@@ -190,3 +237,69 @@ class FileSystemDataset(AbstractDataset):
                 except KeyError as err:
                     raise exceptions.MissingDatasetMetadataException(
                         metadataFileName, str(err))
+
+
+class AbstractOntology(object):
+    """
+    The base class of storing an ontology
+    At this moment an "Ontology" is just a map between names and IDs (e.g.
+    in Sequence Ontology we would have "SO:0001583 <-> missense_variant")
+    This is a tempotrary solution adn must be replaced by more comprehensive
+    ontology object.
+    """
+
+    def __init__(self):
+        self._nameIdMap = dict()
+        self._idNameMap = dict()
+
+    def add(self, id_, name):
+        self._nameIdMap[id_] = name
+        self._idNameMap[name] = id_
+
+    def getId(self, name):
+        return self._idNameMap[name]
+
+    def getName(self, id_):
+        return self._nameIdMap[id_]
+
+
+class FileSystemOntology(object):
+    """
+    An ontology read from the file system.
+    Simple implementation using tab separated TXT file: "id\tname"
+    """
+
+    def __init__(self, localId, dataDir, backend):
+        self._ontologyNameMap = dict()
+        self.readOntologies(dataDir)
+
+    def add(self, ontologyName, ontology):
+        self._ontologyNameMap[ontologyName] = ontology
+
+    def get(self, ontologyName):
+        return self._ontologyNameMap[ontologyName]
+
+    def keys(self):
+        return self._ontologyNameMap.keys()
+
+    def len(self):
+        return len(self._ontologyNameMap)
+
+    def readOntologies(self, dataDir):
+        self._dataDir = dataDir
+        # Find TXT files
+        for filename in os.listdir(dataDir):
+            if fnmatch.fnmatch(filename, '*.txt'):
+                ontologyName, _ = os.path.splitext(filename)
+                path = os.path.join(dataDir, filename)
+                ontology = self.readOntology(path)
+                self.add(ontologyName, ontology)
+
+    def readOntology(self, filename):
+        ontology = AbstractOntology()
+        with open(filename) as f:
+            for line in f:
+                # File format: id \t name
+                fields = line.rstrip().split("\t")
+                ontology.add(fields[0], fields[1])
+        return ontology
