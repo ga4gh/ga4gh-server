@@ -295,9 +295,17 @@ class SideGraph(object):
         # segments and joins are the arrays being built up,
         # and joinTaken, when not null, is the join just traversed
         # to arrive at the current position.
-        def _getSubgraph(seqId, pos, rad,
-                         segments, joins,
-                         joinTaken=None):
+
+        # How not to needlessly re-explore taken joins:
+        # Make a dictionary keyed by (seqId, pos) and taking the value
+        # of remaining radius. This way, if a join is being explored that
+        # leads to a sequence/position with less than its historic radius,
+        # then there's no point in taking it. This is NOT the same as painting
+        # a join, as the same join _can_ still be taken repeatedly if doing so
+        # could lead to new segments being added to the subgraph.
+        exploredRadiusAt = dict()
+
+        def _getSubgraph(seqId, pos, rad, segments, joins, joinTaken=None):
             """
             First three inputs describe current search "head":
               seqId - sequence id
@@ -310,11 +318,16 @@ class SideGraph(object):
             Nothing is returned: it's a tail recursion, with the result
             being built up in the segments and joins arrays passed in.
             """
-            self._logger.debug("at {}:{}{}{} via {}".format(
+            self._logger.debug("at {}:{} radius:{} via {}".format(
                 seqId, pos, rad, joinTaken))
             if rad <= 0:
                 self._logger.debug("radius reached zero")
                 return
+            if exploredRadiusAt.get((seqId, pos), 0) >= rad:
+                self._logger.debug("not exploring: exploredRadius > current radius.")
+                return
+            else:
+                exploredRadiusAt[(seqId, pos)] = rad
             if joinTaken is not None and joinTaken not in joins:
                 joins.append(joinTaken)
 
@@ -374,15 +387,16 @@ class SideGraph(object):
                 pos2 = int(foundJoin["side2Position"])
                 # make recursive calls to follow all joins
                 # encountered on the segment
+
                 if seq1 == seqId and segStart <= pos1 <= segEnd:
                     # check 1st side of join
                     _getSubgraph(
-                        seq2, pos2, rad - pos1 + pos - 1,
+                        seq2, pos2, rad - abs(pos1 - pos) - 1,
                         segments, joins, foundJoin)
                 if seq2 == seqId and segStart <= pos2 <= segEnd:
                     # check 2nd side of join
                     _getSubgraph(
-                        seq1, pos1, fwd1, rad - pos2 + pos - 1,
+                        seq1, pos1, rad - abs(pos2 - pos) - 1,
                         segments, joins, foundJoin)
             self._logger.debug("end {}:{}~{} via {}".format(
                 seqId, pos, rad, joinTaken))
