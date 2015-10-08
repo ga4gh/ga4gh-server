@@ -21,7 +21,7 @@ def getExceptionClass(errorCode):
     """
     classMap = {}
     for name, class_ in inspect.getmembers(sys.modules[__name__]):
-        if inspect.isclass(class_) and issubclass(class_, Exception):
+        if inspect.isclass(class_) and issubclass(class_, BaseServerException):
             classMap[class_.getErrorCode()] = class_
     return classMap[errorCode]
 
