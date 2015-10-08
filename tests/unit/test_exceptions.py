@@ -110,6 +110,17 @@ class TestExceptionConsistency(unittest.TestCase):
             self.assertGreater(len(message), 0)
             self.assertEqual(instance.getErrorCode(), class_.getErrorCode())
 
+    def testGetExceptionClass(self):
+        for class_ in self._getExceptionClasses():
+            code = class_.getErrorCode()
+            self.assertEqual(class_, exceptions.getExceptionClass(code))
+
+
+class TestValidationExceptions(unittest.TestCase):
+    """
+    Tests for exceptions that occur when validation fails.
+    """
+
     def testValidationFailureExceptionMessages(self):
         # RequestValidationFailureException
         wrongString = "thisIsWrong"
