@@ -286,6 +286,20 @@ class GetProtocolClassesTest(SchemaTest):
             self.assertGreater(len(valueListName), 0)
 
 
+class EmbeddedValuesTest(SchemaTest):
+    """
+    Tests for the embedded values maps in ProtocolElements.
+    """
+    def testEmbeddedValues(self):
+        for cls in protocol.getProtocolClasses():
+            for member in cls.__slots__:
+                if cls.isEmbeddedType(member):
+                    instance = cls.getEmbeddedType(member)()
+                    self.assertIsInstance(instance, protocol.ProtocolElement)
+                else:
+                    self.assertRaises(KeyError, cls.getEmbeddedType, member)
+
+
 class SearchResponseBuilderTest(SchemaTest):
     """
     Tests the SearchResponseBuilder class to ensure that it behaves
