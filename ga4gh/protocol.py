@@ -119,11 +119,7 @@ class ProtocolElementEncoder(json.JSONEncoder):
     Class responsible for encoding ProtocolElements as JSON.
     """
     def default(self, obj):
-        if isinstance(obj, ProtocolElement):
-            ret = {a: getattr(obj, a) for a in obj.__slots__}
-        else:
-            ret = super(ProtocolElementEncoder, self).default(obj)
-        return ret
+        return {a: getattr(obj, a) for a in obj.__slots__}
 
 
 class ProtocolElement(object):
