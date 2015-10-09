@@ -390,7 +390,7 @@ class PysamDatamodelMixin(object):
 
     @classmethod
     def assertInt(cls, attr, attrName):
-        if not isinstance(attr, int):
+        if not isinstance(attr, (int, long)):
             message = "invalid {} '{}' not an int".format(attrName, attr)
             raise exceptions.DatamodelValidationException(message)
 
