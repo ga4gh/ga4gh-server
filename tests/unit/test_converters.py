@@ -10,48 +10,60 @@ import unittest
 
 import pysam
 
-import ga4gh.protocol as protocol
+import ga4gh.backend as backend
+import ga4gh.client as client
 import ga4gh.converters as converters
 
 
 class TestSamConverter(unittest.TestCase):
     """
-    Base class for SAM converter tests.
-    Provides common  methods.
+    Tests for the GA4GH reads API -> SAM conversion.
     """
-    readsFilePath = 'tests/unit/reads.dat'
+    def setUp(self):
+        self._backend = backend.FileSystemBackend("tests/data")
+        self._client = client.LocalClient(self._backend)
 
-    def getReads(self):
-        readsFile = file(self.readsFilePath)
-        lines = readsFile.readlines()
-        reads = []
-        for line in lines:
-            read = protocol.ReadAlignment.fromJsonString(line)
-            reads.append(read)
-        return reads
+    def verifySamRecordsEqual(self, sourceReads, convertedReads):
+        self.assertEqual(len(sourceReads), len(convertedReads))
+        for source, converted in zip(sourceReads, convertedReads):
+            self.assertEqual(source.query_sequence, converted.query_sequence)
+            # TODO add more comparisons.
 
-
-class TestSamConverterRoundTrip(TestSamConverter):
-    """
-    Write a sam file and see if pysam can read it
-    """
-    def _testRoundTrip(self, binaryOutput):
+    def verifyFullConversion(self, readGroupSet, readGroup, reference):
+        """
+        Verify that the conversion of the specified readGroup in the
+        specified readGroupSet for the specified reference is correct.
+        This involves pulling out the reads from the original BAM file
+        and comparing these with the converted SAM records.
+        """
         with tempfile.NamedTemporaryFile() as fileHandle:
-            # write SAM file
-            filePath = fileHandle.name
-            samConverter = converters.SamConverter(
-                None, self.getReads(), filePath, binaryOutput)
-            samConverter.convert()
+            converter = converters.SamConverter(
+                self._client, readGroup.getId(), reference.getId(),
+                outputFileName=fileHandle.name)
+            converter.convert()
+            samFile = pysam.AlignmentFile(fileHandle.name, "r")
+            try:
+                convertedReads = list(samFile.fetch())
+            finally:
+                samFile.close()
+            samFile = pysam.AlignmentFile(readGroupSet.getSamFilePath(), "rb")
+            try:
+                sourceReads = []
+                referenceName = reference.getName().encode()
+                readGroupName = readGroup.getLocalId().encode()
+                for readAlignment in samFile.fetch(referenceName):
+                    tags = dict(readAlignment.tags)
+                    if 'RG' in tags and tags['RG'] == readGroupName:
+                        sourceReads.append(readAlignment)
+            finally:
+                samFile.close()
+            self.verifySamRecordsEqual(sourceReads, convertedReads)
 
-            # read SAM file
-            samfile = pysam.AlignmentFile(filePath, "r")
-            reads = list(samfile.fetch())
-            self.assertEqual(reads[0].query_name, "SRR622461.77861202")
-            # TODO more in-depth testing
-            samfile.close()
-
-    def testPlainText(self):
-        self._testRoundTrip(False)
-
-    def testBinary(self):
-        self._testRoundTrip(True)
+    def testSamConversion(self):
+        # TODO generalise to all readGroupSets in the test data backend.
+        dataset = self._backend.getDatasetByIndex(0)
+        readGroupSet = dataset.getReadGroupSetByIndex(0)
+        referenceSet = readGroupSet.getReferenceSet()
+        for reference in referenceSet.getReferences():
+            for readGroup in readGroupSet.getReadGroups():
+                self.verifyFullConversion(readGroupSet, readGroup, reference)

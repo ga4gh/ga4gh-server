@@ -37,10 +37,21 @@ class SamException(Exception):
     """
 
 
-class SamConverter(AbstractConverter):
+class SamConverter(object):
     """
-    Converts a request to a SAM file
+    Converts a requested range from a GA4GH server into a SAM file.
     """
+    def __init__(
+            self, client, readGroupId=None, referenceId=None,
+            start=None, end=None, outputFileName=None, binaryOutput=False):
+        self._client = client
+        self._readGroup = self._client.getReadGroup(readGroupId)
+        self._reference = self._client.getReference(referenceId)
+        self._start = start
+        self._end = end
+        self._outputFileName = outputFileName
+        self._binaryOutput = binaryOutput
+
     def convert(self):
         header = self._getHeader()
         targetIds = self._getTargetIds(header)
@@ -51,11 +62,12 @@ class SamConverter(AbstractConverter):
         else:
             flags = "wh"  # h for header
         fileString = "-"
-        if self._outputFile is not None:
-            fileString = self._outputFile
-        alignmentFile = pysam.AlignmentFile(
-            fileString, flags, header=header)
-        for read in self._objectIterator:
+        if self._outputFileName is not None:
+            fileString = self._outputFileName
+        alignmentFile = pysam.AlignmentFile(fileString, flags, header=header)
+        iterator = self._client.searchReads(
+            [self._readGroup.id], self._reference.id, self._start, self._end)
+        for read in iterator:
             alignedSegment = SamLine.toAlignedSegment(read, targetIds)
             alignmentFile.write(alignedSegment)
         alignmentFile.close()

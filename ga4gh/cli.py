@@ -934,13 +934,10 @@ class Ga2SamRunner(SearchReadsRunner):
             self._binaryOutput = True
 
     def run(self):
-        readGroup = self._httpClient.getReadGroup(self._readGroupIds[0])
-        iterator = self._httpClient.searchReads(
-            readGroupIds=self._readGroupIds, referenceId=self._referenceId,
-            start=self._start, end=self._end)
-        # do conversion
         samConverter = converters.SamConverter(
-            readGroup, iterator, self._outputFile, self._binaryOutput)
+            self._httpClient, readGroupId=self._readGroupIds[0],
+            referenceId=self._referenceId, start=self._start, end=self._end,
+            outputFileName=self._outputFile, binaryOutput=self._binaryOutput)
         samConverter.convert()
 
 
