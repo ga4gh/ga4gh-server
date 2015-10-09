@@ -160,6 +160,7 @@ class ImportGraphLayerChecker(object):
         'exceptions': ['ga4gh/exceptions.py'],
         'datamodel': ['ga4gh/datamodel/reads.py',
                       'ga4gh/datamodel/references.py',
+                      'ga4gh/datamodel/rna_quantification.py',
                       'ga4gh/datamodel/variants.py',
                       'ga4gh/datamodel/datasets.py'],
         'libraries': ['ga4gh/converters.py',

@@ -215,6 +215,29 @@ class TestClientArguments(unittest.TestCase):
         self.assertEquals(args.outputFormat, "fasta")
         self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
 
+    def testRnaQuantificationSearchArguments(self):
+        cliInput = ("rnaquantification-search --rnaQuantificationId ID")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.rnaQuantificationId, "ID")
+        self.assertEqual(args.runner, cli.SearchRnaQuantificationRunner)
+
+    def testExpressionLevelSearchArguments(self):
+        cliInput = (
+            "expressionlevel-search --expressionLevelId ID "
+            "--rnaQuantificationId rID --featureGroupId fID")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.expressionLevelId, "ID")
+        self.assertEqual(args.rnaQuantificationID, "rID")
+        self.assertEqual(args.featureGroupId, "fID")
+        self.assertEqual(args.runner, cli.SearchExpressionLevelRunner)
+
+    def testFeatureGroupSearchArguments(self):
+        cliInput = ("featuregroup-search --featureGroupId ID --threshold 0.0")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.featureGroupId, "ID")
+        self.assertEqual(args.threshold, 0.0)
+        self.assertEqual(args.runner, cli.SearchFeatureGroupRunner)
+
 
 class TestOutputFormats(unittest.TestCase):
     """

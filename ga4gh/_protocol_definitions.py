@@ -1682,6 +1682,782 @@ class ReferenceSet(ProtocolElement):
         """
 
 
+class ExpressionLevel(ProtocolElement):
+    """
+    The actual FPKM data for each feature.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh", "type": "record", "name":
+"ExpressionLevel", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": "string", "name": "featureGroupId"},
+{"doc": "", "type": "string", "name": "annotationId"}, {"doc": "",
+"type": "float", "name": "rawReadCount"}, {"default": null, "doc": "",
+"type": ["null", "float"], "name": "expression"}, {"default": null,
+"doc": "", "type": ["null", "boolean"], "name": "isNormalized"},
+{"default": null, "doc": "", "type": ["null", {"symbols": ["FPKM",
+"RPM"], "doc": "", "type": "enum", "name": "ExpressionUnits"}],
+"name": "units"}, {"default": null, "doc": "", "type": ["null",
+"float"], "name": "score"}, {"default": [], "doc": "", "type":
+{"items": "float", "type": "array"}, "name": "confInterval"}], "doc":
+""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "annotationId",
+        "featureGroupId",
+        "id",
+        "rawReadCount",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return embeddedTypes[fieldName]
+    __slots__ = [
+        'annotationId', 'confInterval', 'expression',
+        'featureGroupId', 'id', 'isNormalized', 'rawReadCount',
+        'score', 'units'
+    ]
+
+    def __init__(self, **kwargs):
+        self.annotationId = kwargs.get(
+            'annotationId', None)
+        self.confInterval = kwargs.get(
+            'confInterval', [])
+        self.expression = kwargs.get(
+            'expression', None)
+        self.featureGroupId = kwargs.get(
+            'featureGroupId', None)
+        self.id = kwargs.get(
+            'id', None)
+        self.isNormalized = kwargs.get(
+            'isNormalized', None)
+        self.rawReadCount = kwargs.get(
+            'rawReadCount', None)
+        self.score = kwargs.get(
+            'score', None)
+        self.units = kwargs.get(
+            'units', None)
+
+
+class ExpressionUnits(object):
+    """
+    Units for expression level
+    """
+    FPKM = "FPKM"
+    RPM = "RPM"
+
+
+class Feature(ProtocolElement):
+    """
+    Node in the annotation graph that annotates a contiguous region of
+    a   sequence.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name": "Feature",
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
+"type": {"items": "string", "type": "array"}, "name": "parentIds"},
+{"doc": "", "type": "string", "name": "featureSetId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "referenceName"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"start"}, {"default": null, "doc": "", "type": ["null", "long"],
+"name": "end"}, {"doc": "", "type": {"doc": "", "type": "record",
+"name": "OntologyTerm", "fields": [{"doc": "", "type": "string",
+"name": "ontologySource"}, {"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}]}, "name": "featureType"}, {"doc": "", "type": {"doc":
+"", "type": "record", "name": "Attributes", "fields": [{"default": {},
+"type": {"values": {"items": ["string", {"doc": "", "type": "record",
+"name": "ExternalIdentifier", "fields": [{"doc": "", "type": "string",
+"name": "database"}, {"doc": "", "type": "string", "name":
+"identifier"}, {"doc": "", "type": "string", "name": "version"}]},
+"OntologyTerm"], "type": "array"}, "type": "map"}, "name": "vals"}]},
+"name": "attributes"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "attributes",
+        "featureSetId",
+        "featureType",
+        "id",
+        "parentIds",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'attributes': Attributes,
+            'featureType': OntologyTerm,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'attributes': Attributes,
+            'featureType': OntologyTerm,
+        }
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'attributes', 'end', 'featureSetId', 'featureType', 'id',
+        'parentIds', 'referenceName', 'start'
+    ]
+
+    def __init__(self, **kwargs):
+        self.attributes = kwargs.get(
+            'atttributes', None)
+        self.end = kwargs.get(
+            'end', None)
+        self.featureSetId = kwargs.get(
+            'featureSetId', None)
+        self.featureType = kwargs.get(
+            'featureType', None)
+        self.id = kwargs.get(
+            'id', None)
+        self.parentIds = kwargs.get(
+            'parentIds', None)
+        self.referenceName = kwargs.get(
+            'referenceName', None)
+        self.start = kwargs.get(
+            'start', None)
+
+
+class FeatureGroup(ProtocolElement):
+    """
+    Identifying information for annotated features.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh", "type": "record", "name": "FeatureGroup",
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
+"type": "string", "name": "analysisId"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "name"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "description"},
+{"default": {}, "doc": "", "type": {"values": {"items":
+"string", "type": "array"}, "type": "map"}, "name": "info"}], "doc":
+""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "analysisId",
+        "id",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'analysisId', 'description', 'id', 'info', 'name'
+    ]
+
+    def __init__(self, **kwargs):
+        self.analysisId = kwargs.get(
+            'analysisId', None)
+        self.description = kwargs.get(
+            'description', None)
+        self.id = kwargs.get(
+            'id', None)
+        self.info = kwargs.get(
+            'info', {})
+        self.name = kwargs.get(
+            'name', None)
+
+
+class FeatureSet(ProtocolElement):
+    """
+    No documentation
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"FeatureSet", "fields": [{"doc": "", "type": "string", "name": "id"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"datasetId"}, {"doc": "", "type": ["null", "string"], "name":
+"referenceSetId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceURI"}, {"doc": "", "type": {"doc":
+"", "type": "record", "name": "Attributes", "fields": [{"default": {},
+"type": {"values": {"items": ["string", {"doc": "", "type": "record",
+"name": "ExternalIdentifier", "fields": [{"doc": "", "type": "string",
+"name": "database"}, {"doc": "", "type": "string", "name":
+"identifier"}, {"doc": "", "type": "string", "name": "version"}]},
+{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
+[{"doc": "", "type": "string", "name": "ontologySource"}, {"doc": "",
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}]}], "type": "array"}, "type":
+"map"}, "name": "vals"}]}, "name": "attributes"}]}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "attributes",
+        "id",
+        "referenceSetId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'attributes': Attributes,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'attributes': Attributes,
+        }
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'attributes', 'datasetId', 'id', 'name', 'referenceSetId',
+        'sourceURI'
+    ]
+
+    def __init__(self, **kwargs):
+        self.attributes = kwargs.get(
+            'attributes', None)
+        self.datasetId = kwargs.get(
+            'datasetId', None)
+        self.id = kwargs.get(
+            'id', None)
+        self.name = kwargs.get(
+            'name', None)
+        self.referenceSetId = kwargs.get(
+            'referenceSetId', None)
+        self.sourceURI = kwargs.get(
+            'sourceURI', None)
+
+
+class ReadCounts(ProtocolElement):
+    """
+    Details of the read counts.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh", "type": "record", "name": "ReadCounts",
+"fields": [{"doc": "", "type": "string", "name": "analysisId"},
+{"doc": "", "type": "int", "name": "totalReadCount"}, {"doc": "",
+"type": "int", "name": "uniqueCount"}, {"doc": "", "type": "int",
+"name": "multiCount"}, {"doc": "", "type": "int", "name":
+"uniqueSpliceCount"}, {"doc": "", "type": "int", "name":
+"multiSpliceCount"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "analysisId",
+        "multiCount",
+        "multiSpliceCount",
+        "totalReadCount",
+        "uniqueCount",
+        "uniqueSpliceCount",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'analysisId', 'multiCount', 'multiSpliceCount',
+        'totalReadCount', 'uniqueCount', 'uniqueSpliceCount'
+    ]
+
+    def __init__(self, **kwargs):
+        self.analysisId = kwargs.get(
+            'analysisId', None)
+        self.multiCount = kwargs.get(
+            'multiCount', None)
+        self.multiSpliceCount = kwargs.get(
+            'multiSpliceCount', None)
+        self.totalReadCount = kwargs.get(
+            'totalReadCount', None)
+        self.uniqueCount = kwargs.get(
+            'uniqueCount', None)
+        self.uniqueSpliceCount = kwargs.get(
+            'uniqueSpliceCount', None)
+
+
+class RnaQuantification(ProtocolElement):
+    """
+    Top level identifying information
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh", "type": "record", "name":
+"RnaQuantification", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}, {"doc": "", "type": "string",
+"name": "readGroupId"}, {"default": [], "doc": "", "type": {"items":
+"string", "type": "array"}, "name": "programIds"}, {"default": [],
+"doc": "", "type": {"items": "string", "type": "array"}, "name":
+"annotationIds"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "id",
+        "readGroupId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'annotationIds', 'description', 'id', 'name', 'programIds',
+        'readGroupId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.annotationIds = kwargs.get(
+            'annotationIds', [])
+        self.description = kwargs.get(
+            'description', None)
+        self.id = kwargs.get(
+            'id', None)
+        self.name = kwargs.get(
+            'name', None)
+        self.programIds = kwargs.get(
+            'programIds', [])
+        self.readGroupId = kwargs.get(
+            'readGroupIds', None)
+
+
+class SearchExpressionLevelRequest(SearchRequest):
+    """
+    This request maps to the body of 'POST /expressionlevel/search' as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchExpressionLevelRequest", "fields": [{"default": null, "doc":
+"", "type": ["null", "string"], "name": "expressionLevelId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"featureGroupId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "rnaQuantificationId"}, {"default": null, "doc":
+"", "type": ["null", "float"], "name": "threshold"}, {"default": null,
+"doc": "", "type": ["null", "int"], "name": "pageSize"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "pageToken"}],
+"doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "rnaQuantificationId"
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'expressionLevelId', 'featureGroupId', 'pageSize',
+        'pageToken', 'rnaQuantificationId', 'threshold'
+    ]
+
+    def __init__(self, **kwargs):
+        self.expressionLevelId = kwargs.get(
+            'expressionLevelId', None)
+        self.featureGroupId = kwargs.get(
+            'featureGroupId', None)
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        self.rnaQuantificationId = kwargs.get(
+            'rnaQuantificationId', None)
+        self.threshold = kwargs.get(
+            'threshold', None)
+
+
+class SearchExpressionLevelResponse(SearchResponse):
+    """
+    This is the response from 'POST /expressionlevel/search' expressed
+    as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchExpressionLevelResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"namespace": "org.ga4gh", "type": "record", "name":
+"ExpressionLevel", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": "string", "name": "featureGroupId"},
+{"doc": "", "type": "string", "name": "annotationId"}, {"doc": "",
+"type": "float", "name": "rawReadCount"}, {"default": null, "doc": "",
+"type": ["null", "float"], "name": "expression"}, {"default": null,
+"doc": "", "type": ["null", "boolean"], "name": "isNormalized"},
+{"default": null, "doc": "", "type": ["null", {"symbols": ["FPKM",
+"RPM"], "doc": "", "type": "enum", "name": "ExpressionUnits"}],
+"name": "units"}, {"default": null, "doc": "", "type": ["null",
+"float"], "name": "score"}, {"default": [], "doc": "", "type":
+{"items": "float", "type": "array"}, "name": "confInterval"}], "doc":
+""}, "type": "array"}, "name": "expressionLevel"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "nextPageToken"}],
+"doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "expressionLevel"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'expressionLevel': ExpressionLevel,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'expressionLevel': ExpressionLevel,
+        }
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'expressionLevel', 'nextPageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.expressionLevel = kwargs.get(
+            'expressionLevel', [])
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+
+
+class SearchFeatureGroupRequest(SearchRequest):
+    """
+    This request maps to the body of 'POST /featuregroup/search' as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchFeatureGroupRequest", "fields": [{"default": null, "doc": "",
+"type": ["null", "string"], "name": "rnaQuantificationId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "featureGroupId"},
+{"default": null, "doc": "", "type": ["null", "int"], "name": "pageSize"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "rnaQuantificationId", "featureGroupId"
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'rnaQuantificationId', 'featureGroupId', 'pageSize', 'pageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.featureGroupId = kwargs.get(
+            'rnaQuantificationId', None)
+        self.featureGroupId = kwargs.get(
+            'featureGroupId', None)
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+
+
+class SearchFeatureGroupResponse(SearchResponse):
+    """
+    This is the response from 'POST /featuregroup/search' expressed as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchFeatureGroupResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"namespace": "org.ga4gh", "type": "record", "name":
+"FeatureGroup", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": "string", "name": "analysisId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"default": null, "doc": "", "type": ["null",
+"long"], "name": "created"}, {"default": null, "doc": "", "type":
+["null", "long"], "name": "updated"}, {"default": {}, "doc": "",
+"type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}, "type": "array"}, "name":
+"featureGroup"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "featureGroup"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'featureGroup': FeatureGroup,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'featureGroup': FeatureGroup,
+        }
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'featureGroup', 'nextPageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.featureGroup = kwargs.get(
+            'featureGroup', [])
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+
+
+class SearchFeaturesRequest(SearchRequest):
+    """
+    This request maps to the body of `POST /features/search` as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchFeaturesRequest", "fields": [{"doc": "", "type": ["null",
+"string"], "name": "featureSetId"}, {"doc": "", "type": ["null",
+"string"], "name": "parentId"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "referenceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceId"}, {"doc": "",
+"type": "long", "name": "start"}, {"doc": "", "type": "long", "name":
+"end"}, {"default": [], "doc": "", "type": {"items": {"namespace":
+"org.ga4gh.models", "type": "record", "name": "OntologyTerm",
+"fields": [{"doc": "", "type": "string", "name": "ontologySource"},
+{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "name"}], "doc": ""}, "type":
+"array"}, "name": "features"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "end",
+        "featureSetId",
+        "parentId",
+        "start",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'features': OntologyTerm,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'features': OntologyTerm,
+        }
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'end', 'featureSetId', 'features', 'pageSize', 'pageToken',
+        'parentId', 'referenceId', 'referenceName', 'start'
+    ]
+
+    def __init__(self, **kwargs):
+        self.end = kwargs.get(
+            'end', None)
+        self.featureSetId = kwargs.get(
+            'featureSetId', None)
+        self.features = kwargs.get(
+            'features', [])
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        self.parentId = kwargs.get(
+            'parentId', None)
+        self.referenceId = kwargs.get(
+            'referenceId', None)
+        self.referenceName = kwargs.get(
+            'referenceName', None)
+        self.start = kwargs.get(
+            'start', None)
+
+
+class SearchFeaturesResponse(SearchResponse):
+    """
+    This is the response from `POST /features/search` expressed as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchFeaturesResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
+"name": "Feature", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": {"items": "string", "type": "array"},
+"name": "parentIds"}, {"doc": "", "type": "string", "name":
+"featureSetId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "referenceName"}, {"default": null, "doc": "",
+"type": ["null", "long"], "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "long"], "name": "end"}, {"doc": "", "type":
+{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
+[{"doc": "", "type": "string", "name": "ontologySource"}, {"doc": "",
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}]}, "name": "featureType"}, {"doc":
+"", "type": {"doc": "", "type": "record", "name": "Attributes",
+"fields": [{"default": {}, "type": {"values": {"items": ["string",
+{"doc": "", "type": "record", "name": "ExternalIdentifier", "fields":
+[{"doc": "", "type": "string", "name": "database"}, {"doc": "",
+"type": "string", "name": "identifier"}, {"doc": "", "type": "string",
+"name": "version"}]}, "OntologyTerm"], "type": "array"}, "type":
+"map"}, "name": "vals"}]}, "name": "attributes"}], "doc": ""}, "type":
+"array"}, "name": "features"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "features"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'features': Feature,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'features': Feature,
+        }
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'features', 'nextPageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.features = kwargs.get(
+            'features', [])
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+
+
+class SearchRnaQuantificationRequest(SearchRequest):
+    """
+    This request maps to the body of 'POST /rnaquantification/search'
+    as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchRnaQuantificationRequest", "fields": [{"default": null, "doc":
+"", "type": ["null", "string"], "name": "rnaQuantificationId"},
+{"default": null, "doc": "", "type": ["null", "int"], "name":
+"pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'pageSize', 'pageToken', 'rnaQuantificationId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        self.rnaQuantificationId = kwargs.get(
+            'rnaQuantificationId', None)
+
+
+class SearchRnaQuantificationResponse(SearchResponse):
+    """
+    This is the response from 'POST /rnaquantification/search'
+    expressed as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchRnaQuantificationResponse", "fields": [{"default": [], "doc":
+"", "type": {"items": {"namespace": "org.ga4gh", "type": "record",
+"name": "RnaQuantification", "fields": [{"doc": "", "type": "string",
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "description"}, {"doc": "", "type":
+"string", "name": "readGroupId"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "programIds"},
+{"default": [], "doc": "", "type": {"items": "string", "type":
+"array"}, "name": "annotationIds"}], "doc": ""}, "type": "array"},
+"name": "rnaQuantification"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "rnaQuantification"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'rnaQuantification': RnaQuantification,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'rnaQuantification': RnaQuantification,
+        }
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'nextPageToken', 'rnaQuantification'
+    ]
+
+    def __init__(self, **kwargs):
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+        self.rnaQuantification = kwargs.get(
+            'rnaQuantification', [])
+
+
 class SearchCallSetsRequest(SearchRequest):
     """
     This request maps to the body of POST /callsets/search as JSON.
@@ -3117,6 +3893,18 @@ postMethods = \
      ('/variants/search',
       SearchVariantsRequest,
       SearchVariantsResponse),
+     ('/rnaquantification/search',
+      SearchRnaQuantificationRequest,
+      SearchRnaQuantificationResponse),
+     ('/expressionlevel/search',
+      SearchExpressionLevelRequest,
+      SearchExpressionLevelResponse),
+     ('/featuregroup/search',
+      SearchFeatureGroupRequest,
+      SearchFeatureGroupResponse),
+     ('/features/search',
+      SearchFeaturesRequest,
+      SearchFeaturesResponse),
      ('/variantsets/search',
       SearchVariantSetsRequest,
       SearchVariantSetsResponse)]

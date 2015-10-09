@@ -208,6 +208,8 @@ class AbstractBackend(object):
         self._referenceSetIdMap = {}
         self._referenceSetNameMap = {}
         self._referenceSetIds = []
+        self._featureIdMap = {}
+        self._featureIds = []
 
     def addDataset(self, dataset):
         """
@@ -321,6 +323,12 @@ class AbstractBackend(object):
         if name not in self._referenceSetNameMap:
             raise exceptions.ReferenceSetNameNotFoundException(name)
         return self._referenceSetNameMap[name]
+
+    def getFeature(self, id_):
+        """
+        Returns a feature with the given id_
+        """
+        return self.runGetRequest(self._featureIdMap, id_)
 
     def startProfile(self):
         """
@@ -531,6 +539,72 @@ class AbstractBackend(object):
                 return self._noObjectGenerator()
             return self._singleObjectGenerator(callSet)
 
+    def rnaQuantificationGenerator(self, request):
+        """
+        Returns a generator over the (rnaQuantification, nextPageToken) pairs
+        defined by the specified request.
+        """
+        if request.rnaQuantificationId is None:
+            allRnaQuants = []
+            for dataset in self.getDatasets():
+                for rnaQuant in dataset.getRnaQuantifications():
+                    allRnaQuants.append(rnaQuant)
+            return self._objectListGenerator(request, allRnaQuants)
+        else:
+            compoundId = datamodel.RnaQuantificationCompoundId.parse(
+                request.rnaQuantificationId)
+            dataset = self.getDataset(compoundId.datasetId)
+            try:
+                rnaQuant = dataset.getRnaQuantification(
+                    compoundId.rnaQuantificationId)
+            except exceptions.RnaQuantificationNotFoundException:
+                return self._noObjectGenerator()
+            return self._singleObjectGenerator(rnaQuant)
+
+    def expressionLevelGenerator(self, request):
+        """
+        Returns a generator over the (expressionLevel, nextPageToken) pairs
+        defined by the specified request.
+
+        Currently only supports searching over a specified rnaQuantification
+        """
+        rnaQuantificationId = request.rnaQuantificationId
+        compoundId = datamodel.RnaQuantificationCompoundId.parse(
+            request.rnaQuantificationId)
+        dataset = self.getDataset(compoundId.datasetId)
+        rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
+        expressionLevelId = request.expressionLevelId
+        featureGroupId = request.featureGroupId
+        if expressionLevelId is not None:
+            try:
+                return self._singleObjectGenerator(
+                    rnaQuant.getExpressionLevel(expressionLevelId,
+                                                featureGroupId=featureGroupId)
+                    )
+            except exceptions.ExpressionLevelNotFoundException:
+                return self._noObjectGenerator()
+        return self._objectListGenerator(
+            request,
+            rnaQuant.getExpressionLevels(featureGroupId=featureGroupId))
+
+    def featureGroupGenerator(self, request):
+        """
+        Returns a generator over the (featureGroup, nextPageToken) pairs
+        defined by the specified request.
+
+        Currently only supports searching over a specified rnaQuantification
+        """
+        rnaQuantificationId = request.rnaQuantificationId
+        compoundId = datamodel.RnaQuantificationCompoundId.parse(
+            rnaQuantificationId)
+        dataset = self.getDataset(compoundId.datasetId)
+        rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
+        featureGroupId = request.featureGroupId
+        if featureGroupId is not None:
+            return self._singleObjectGenerator(
+                rnaQuant.getFeatureGroup(featureGroupId))
+        return self._objectListGenerator(request, rnaQuant.getFeatureGroups())
+
     ###########################################################
     #
     # Public API methods. Each of these methods implements the
@@ -688,6 +762,15 @@ class AbstractBackend(object):
         dataset = self.getDataset(id_)
         return self.runGetRequest(dataset)
 
+    def runGetRnaQuantification(self, id_):
+        """
+        Runs a getRnaQuantification request for the specified ID.
+        """
+        compoundId = datamodel.RnaQuantificationCompoundId.parse(id_)
+        dataset = self.getDataset(compoundId.datasetId)
+        rnaQuantification = dataset.getRnaQuantification(id_)
+        return self.runGetRequest(rnaQuantification)
+
     # Search requests.
 
     def runSearchReadGroupSets(self, request):
@@ -762,6 +845,45 @@ class AbstractBackend(object):
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
 
+    def runSearchFeatures(self, request):
+        """
+        Returns a SearchFeaturesResponse for the specified
+        SearchFeaturesRequest object.
+        """
+        # TODO: here we are for implementation of sequence annotation search
+        # features
+        raise exceptions.NotImplementedException("Implement me!")
+
+    def runSearchRnaQuantification(self, request):
+        """
+        Returns a SearchRnaQuantificationResponse for the specified
+        SearchRnaQuantificationRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchRnaQuantificationRequest,
+            protocol.SearchRnaQuantificationResponse,
+            self.rnaQuantificationGenerator)
+
+    def runSearchExpressionLevel(self, request):
+        """
+        Returns a SearchExpressionLevelResponse for the specified
+        SearchExpressionLevelRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchExpressionLevelRequest,
+            protocol.SearchExpressionLevelResponse,
+            self.expressionLevelGenerator)
+
+    def runSearchFeatureGroup(self, request):
+        """
+        Returns a SearchFeatureGroupResponse for the specified
+        SearchFeatureGroupRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchFeatureGroupRequest,
+            protocol.SearchFeatureGroupResponse,
+            self.featureGroupGenerator)
+
 
 class EmptyBackend(AbstractBackend):
     """
@@ -802,6 +924,9 @@ class SimulatedBackend(AbstractBackend):
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
                 numAlignments=numAlignments)
             self.addDataset(dataset)
+
+        # Features
+        self._featureIdMap = {}
 
 
 class FileSystemBackend(AbstractBackend):

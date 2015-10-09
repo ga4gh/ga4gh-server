@@ -14,6 +14,8 @@ import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.rna_quantification as rnaQuantification
+import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 
 
 class AbstractDataset(datamodel.DatamodelObject):
@@ -30,6 +32,10 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
         self._description = None
+        self._rnaQuantificationIds = []
+        self._rnaQuantificationIdMap = {}
+        self._sequenceAnnotationIds = []
+        self._sequenceAnnotationIdMap = {}
 
     def addVariantSet(self, variantSet):
         """
@@ -47,6 +53,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIdMap[id_] = readGroupSet
         self._readGroupSetNameMap[readGroupSet.getLocalId()] = readGroupSet
         self._readGroupSetIds.append(id_)
+
+    def addRnaQuantification(self, rnaQuant):
+        """
+        Adds the specified rnaQuantification to this dataset.
+        """
+        id_ = rnaQuant.getId()
+        self._rnaQuantificationIdMap[id_] = rnaQuant
+        self._rnaQuantificationIds.append(id_)
 
     def toProtocolElement(self):
         dataset = protocol.Dataset()
@@ -124,6 +138,47 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return self._description
 
+    def getRnaQuantificationIds(self):
+        """
+        Return a list of ids of rna quants that this dataset has
+        """
+        return self._rnaQuantificationIds
+
+    def getRnaQuantificationIdMap(self):
+        """
+        Return a map of the dataset's rna quant ids to rna quants
+        """
+        return self._rnaQuantificationIdMap
+
+    def getRnaQuantifications(self):
+        """
+        Returns the list of RnaQuantifications in this dataset
+        """
+        return [self._rnaQuantificationIdMap[id_] for
+                id_ in self._rnaQuantificationIds]
+
+    def getRnaQuantification(self, id_):
+        """
+        Returns the RnaQuantification with the specified name, or raises
+        a RnaQuantificationNotFoundException otherwise.
+        """
+        if id_ not in self._rnaQuantificationIdMap:
+            raise exceptions.RnaQuantificationNotFoundException(id_)
+        return self._rnaQuantificationIdMap[id_]
+
+    def getSequenceAnnotationIdMap(self):
+        """
+        Returns a map of the dataset's sequence annotation ids to sequence
+        annotations
+        """
+        return self._sequenceAnnotationIdMap
+
+    def getSequenceAnnotations(self):
+        """
+        Returns the list of sequence annotations in this dataset
+        """
+        return self._sequenceAnnotationIds
+
 
 class SimulatedDataset(AbstractDataset):
     """
@@ -179,6 +234,24 @@ class FileSystemDataset(AbstractDataset):
                 readGroupSet = reads.HtslibReadGroupSet(
                     self, localId, bamPath, backend)
                 self.addReadGroupSet(readGroupSet)
+        # Rna Quantification
+        rnaQuantDir = os.path.join(dataDir, "rnaQuant")
+        for localId in os.listdir(rnaQuantDir):
+            relativePath = os.path.join(rnaQuantDir, localId)
+            if os.path.isdir(relativePath):
+                rnaQuant = rnaQuantification.RNASeqResult(
+                    self, localId, relativePath)
+                self.addRnaQuantification(rnaQuant)
+        # Sequence Annotations
+        seqAnnotationDir = os.path.join(dataDir, "sequenceAnnotations")
+        for gffFile in os.listdir(seqAnnotationDir):
+            relativePath = os.path.join(seqAnnotationDir, gffFile)
+            annotation = sequenceAnnotations.SequenceAnnotation(gffFile,
+                                                                relativePath)
+            annotationId = os.path.splitext(gffFile)
+            self._sequenceAnnotationIdMap[annotationId] = annotation
+        self._sequenceAnnotationIds = sorted(
+            self._sequenceAnnotationIdMap.keys())
 
     def _setMetadata(self):
         metadataFileName = '{}.json'.format(self._dataDir)
