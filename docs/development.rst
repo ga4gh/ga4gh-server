@@ -23,7 +23,7 @@ libraries. On Debian or Ubuntu, we can install these using
 
 .. code-block:: bash
 
-    $ sudo apt-get install python-dev zlib1g-dev git libxslt1-dev
+    $ sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev
 
 .. note::
     TODO: Document this basic step for other platforms? We definitely want

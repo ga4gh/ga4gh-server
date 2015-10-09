@@ -27,7 +27,7 @@ packages using:
 
 .. code-block:: bash
 
-    $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev
+    $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev
 
 On Fedora 22+ (current), the equivalent would be:
 
