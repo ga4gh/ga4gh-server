@@ -191,7 +191,13 @@ class AbstractFileDownloader(object):
             ".20130502.genotypes.vcf.gz").format(chromosome)
         url = os.path.join(self.getVcfBaseUrl(), sourceFileName)
         utils.log("Downloading '{}'".format(url))
-        response = urllib2.urlopen(url)
+        try:
+            response = urllib2.urlopen(url)
+        except Exception as e:
+            dpnds = ['bcftools', 'bgzip', 'tabix', 'samtools']
+            message = "Possibly unsatisfied dependencies: {}".format(
+                    dpnds)
+            raise type(e)(e.message + message)
         megabyte = 1024 * 1024
         data = response.read(megabyte)
         localFileName = "{}.vcf".format(chromosome)

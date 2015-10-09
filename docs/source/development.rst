@@ -25,9 +25,17 @@ libraries. On Debian or Ubuntu, we can install these using
 
     $ sudo apt-get install python-dev zlib1g-dev git libxslt1-dev
 
-.. note::
-    TODO: Document this basic step for other platforms? We definitely want
-    to tell people how to do this with Brew or ports on a Mac.
+Alternatively, on Mac computers, install Anaconda Python
+<http://continuum.io/downloads> by following the installation instructions
+presented on the Continuum download page. Anaconda Python is a Python suite
+that includes many of the packages required for GA4GH development. Once
+Anaconda Python has finished installing, (it will take 10 minutes or so
+depending on available bandwidth) install the following tools:
+
+.. code-block:: bash
+
+    $ brew install python-dev zlib1g-dev git libxslt1-dev
+
 
 If you don't have admin access to your machine, please contact your system
 administrator, and ask them to install the development version of Python 2.7
