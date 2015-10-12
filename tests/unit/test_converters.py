@@ -24,9 +24,15 @@ class TestSamConverter(unittest.TestCase):
         self._client = client.LocalClient(self._backend)
 
     def verifySamRecordsEqual(self, sourceReads, convertedReads):
+        """
+        Verify that a read from pysam matches a read from the reference server
+        """
         self.assertEqual(len(sourceReads), len(convertedReads))
         for source, converted in zip(sourceReads, convertedReads):
+            self.assertEqual(source.query_name, converted.query_name)
             self.assertEqual(source.query_sequence, converted.query_sequence)
+            self.assertEqual(source.qual, converted.qual)
+            self.assertEqual(source.flag, converted.flag)
             # TODO add more comparisons.
 
     def verifyFullConversion(self, readGroupSet, readGroup, reference):

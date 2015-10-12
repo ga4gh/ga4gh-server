@@ -82,7 +82,7 @@ class SamFlags(object):
 
     @staticmethod
     def setFlag(flagAttr, flag):
-        flagAttr |= flag
+        return flagAttr | flag
 
 
 class AbstractReadGroupSet(datamodel.DatamodelObject):
@@ -608,7 +608,11 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         ret.readNumber = None
         if SamFlags.isFlagSet(read.flag, SamFlags.NUMBER_READS):
             ret.numberReads = 2
-            if SamFlags.isFlagSet(read.flag, SamFlags.READ_NUMBER_ONE):
+            if SamFlags.isFlagSet(read.flag,
+                                  SamFlags.READ_NUMBER_ONE |
+                                  SamFlags.READ_NUMBER_TWO):
+                ret.readNumber = 2
+            elif SamFlags.isFlagSet(read.flag, SamFlags.READ_NUMBER_ONE):
                 ret.readNumber = 0
             elif SamFlags.isFlagSet(read.flag, SamFlags.READ_NUMBER_TWO):
                 ret.readNumber = 1
