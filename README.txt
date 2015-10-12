@@ -5,6 +5,10 @@
 GA4GH Reference Implementation
 ==============================
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/ga4gh/server
+   :target: https://gitter.im/ga4gh/server?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 This is an early alpha of the GA4GH reference client
 and server applications.
 It is under heavy development, and many aspects of
