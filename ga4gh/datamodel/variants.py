@@ -493,6 +493,13 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
     def getMetadata(self):
         return self._metadata
 
+    def getMetadataId(self, metadata):
+        """
+        Returns the id of a metadata
+        """
+        return str(datamodel.VariantSetMetadataCompoundId(
+                    self.getCompoundId(), 'metadata:' + metadata.key))
+
     def _getMetadataFromVcf(self, varFile):
         # All the metadata is available via each varFile.header, including:
         #    records: header records
@@ -504,15 +511,17 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         #    formats
 
         def buildMetadata(
-                key, type="String", number="1", value="", id="",
+                key, type_="String", number="1", value="", id_="",
                 description=""):  # All input are strings
             metadata = protocol.VariantSetMetadata()
             metadata.key = key
             metadata.value = value
-            metadata.id = id
-            metadata.type = type
+            metadata.type = type_
             metadata.number = number
             metadata.description = description
+            if id_ == '':
+                id_ = self.getMetadataId(metadata)
+            metadata.id = id_
             return metadata
 
         ret = []
@@ -534,7 +543,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 key = "{0}.{1}".format(prefix, value.name)
                 if key != "FORMAT.GT":
                     ret.append(buildMetadata(
-                        key=key, type=value.type,
+                        key=key, type_=value.type,
                         number="{}".format(value.number),
                         description=description))
         return ret
