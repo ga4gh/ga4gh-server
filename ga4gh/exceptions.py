@@ -323,6 +323,15 @@ class ReferenceSetNameNotFoundException(NotFoundException):
         self.message = "ReferenceSet with name '{0}' not found".format(name)
 
 
+class DatasetNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for a Dataset with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "Dataset with name '{0}' not found".format(name)
+
+
 class DataException(BaseServerException):
     """
     Exceptions thrown during the server startup, and processing faulty VCFs
