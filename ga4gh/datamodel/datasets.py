@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import fnmatch
+import json
 import os
 
 import ga4gh.datamodel as datamodel
@@ -28,6 +29,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
+        self._description = None
 
     def addVariantSet(self, variantSet):
         """
@@ -50,6 +52,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         dataset = protocol.Dataset()
         dataset.id = self.getId()
         dataset.name = self.getLocalId()
+        dataset.description = self.getDescription()
         return dataset
 
     def getVariantSets(self):
@@ -115,6 +118,12 @@ class AbstractDataset(datamodel.DatamodelObject):
             raise exceptions.ReadGroupNotFoundException(id_)
         return self._readGroupSetIdMap[id_]
 
+    def getDescription(self):
+        """
+        Returns the free text description of this dataset.
+        """
+        return self._description
+
 
 class SimulatedDataset(AbstractDataset):
     """
@@ -126,6 +135,7 @@ class SimulatedDataset(AbstractDataset):
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
             numAlignments=1):
         super(SimulatedDataset, self).__init__(localId)
+        self._description = "Simulated dataset {}".format(localId)
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)
@@ -149,6 +159,8 @@ class FileSystemDataset(AbstractDataset):
     """
     def __init__(self, localId, dataDir, backend):
         super(FileSystemDataset, self).__init__(localId)
+        self._dataDir = dataDir
+        self._setMetadata()
 
         # Variants
         variantSetDir = os.path.join(dataDir, "variants")
@@ -167,3 +179,14 @@ class FileSystemDataset(AbstractDataset):
                 readGroupSet = reads.HtslibReadGroupSet(
                     self, localId, bamPath, backend)
                 self.addReadGroupSet(readGroupSet)
+
+    def _setMetadata(self):
+        metadataFileName = '{}.json'.format(self._dataDir)
+        if os.path.isfile(metadataFileName):
+            with open(metadataFileName) as metadataFile:
+                metadata = json.load(metadataFile)
+                try:
+                    self._description = metadata['description']
+                except KeyError as err:
+                    raise exceptions.MissingDatasetMetadataException(
+                        metadataFileName, str(err))

@@ -140,7 +140,7 @@ class TestSimulatedStack(unittest.TestCase):
     def verifyDatasetsEqual(self, gaDataset, dataset):
         self.assertEqual(gaDataset.id, dataset.getId())
         self.assertEqual(gaDataset.name, dataset.getLocalId())
-        # TODO fill out the remaining fields and test
+        self.assertEqual(gaDataset.description, dataset.getDescription())
 
     def verifyReferenceSetsEqual(self, gaReferenceSet, referenceSet):
         self.assertEqual(gaReferenceSet.id, referenceSet.getId())
