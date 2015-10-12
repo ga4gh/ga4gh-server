@@ -201,11 +201,6 @@ class DatasetNotFoundException(NotFoundException):
             datasetId)
 
 
-class ReadGroupSetNotFoundException(ObjectNotFoundException):
-    def __init__(self, readGroupSetId):
-        self.message = "readGroupSetId '{}' not found".format(readGroupSetId)
-
-
 class ReadGroupNotFoundException(ObjectNotFoundException):
     def __init__(self, readGroupId):
         self.message = "readGroupId '{}' not found".format(readGroupId)
@@ -250,10 +245,6 @@ class ReferenceRangeErrorException(RangeErrorException):
         self.message = (
             "Query ({}, {}) outside of range for reference {}".format(
                 start, end, referenceId))
-
-
-class VersionNotSupportedException(NotFoundException):
-    message = "API version not supported"
 
 
 class MethodNotAllowedException(RuntimeException):
