@@ -411,7 +411,9 @@ class SchemaProcessor(object):
         destDir = os.path.join(self.schemaDir, self.avroPath)
         if not os.path.exists(destDir):
             os.makedirs(destDir)
-        avdlFiles = glob.iglob(os.path.join(self.sourceDir, "*.avdl"))
+        avdlFiles = glob.glob(os.path.join(self.sourceDir, "*.avdl"))
+        if len(avdlFiles) <= 0:
+            raise Exception("no .avdl files found in input directory")
         for avdlFile in avdlFiles:
             if os.path.isfile(avdlFile):
                 shutil.copy2(avdlFile, destDir)
