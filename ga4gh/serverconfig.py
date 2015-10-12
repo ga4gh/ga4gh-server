@@ -20,7 +20,7 @@ class BaseConfig(object):
     REQUEST_VALIDATION = False
     RESPONSE_VALIDATION = False
     DEFAULT_PAGE_SIZE = 100
-    DATA_SOURCE = "__EMPTY__"
+    DATA_SOURCE = "empty://"
 
     # Options for the simulated backend.
     SIMULATED_BACKEND_RANDOM_SEED = 0

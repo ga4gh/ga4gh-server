@@ -22,7 +22,7 @@ class TestFrontend(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config = {
-            "DATA_SOURCE": "__SIMULATED__",
+            "DATA_SOURCE": "simulated://",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
             "SIMULATED_BACKEND_NUM_CALLS": 1,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,

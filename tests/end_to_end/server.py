@@ -172,7 +172,7 @@ class Ga4ghServerForTesting(ServerForTesting):
         config = """
 SIMULATED_BACKEND_NUM_VARIANT_SETS = 10
 SIMULATED_BACKEND_VARIANT_DENSITY = 1
-DATA_SOURCE = "__SIMULATED__"
+DATA_SOURCE = "simulated://"
 DEBUG = True
 """
         if self.useOidc:
