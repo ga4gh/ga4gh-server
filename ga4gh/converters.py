@@ -137,10 +137,16 @@ class SamLine(object):
         # CIGAR
         ret.cigar = cls.toCigar(read)
         # RNEXT
-        nextRefName = read.nextMatePosition.referenceName
-        ret.next_reference_id = targetIds[nextRefName]
+        if read.nextMatePosition is None:
+            ret.next_reference_id = -1
+        else:
+            nextRefName = read.nextMatePosition.referenceName
+            ret.next_reference_id = targetIds[nextRefName]
         # PNEXT
-        ret.next_reference_start = int(read.nextMatePosition.position)
+        if read.nextMatePosition is None:
+            ret.next_reference_start = -1
+        else:
+            ret.next_reference_start = int(read.nextMatePosition.position)
         # TLEN
         ret.template_length = read.fragmentLength
         # QUAL
@@ -160,7 +166,8 @@ class SamLine(object):
         if read.alignment.position.strand == protocol.Strand.NEG_STRAND:
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.REVERSED)
-        if read.nextMatePosition.strand == protocol.Strand.NEG_STRAND:
+        if (read.nextMatePosition is not None and
+                read.nextMatePosition.strand == protocol.Strand.NEG_STRAND):
             reads.SamFlags.setFlag(
                 flag, reads.SamFlags.NEXT_MATE_REVERSED)
         if read.readNumber:
