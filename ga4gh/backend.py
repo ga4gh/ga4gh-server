@@ -12,6 +12,7 @@ import os
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
+import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
@@ -521,6 +522,15 @@ class AbstractBackend(object):
                 return self._noObjectGenerator()
             return self._singleObjectGenerator(callSet)
 
+    def genotypePhenotypeGenerator(self, request):
+        """
+        Returns a generator over the (genotypePhenotype, nextPageToken)
+        pairs defined by the specified request.
+        """
+        intervalIterator = GenotypePhenotypeIterator(
+            request, self._g2pDataset)
+        return intervalIterator
+
     ###########################################################
     #
     # Public API methods. Each of these methods implements the
@@ -752,6 +762,16 @@ class AbstractBackend(object):
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
 
+    def runSearchGenotypePhenotype(self, request):
+        """
+        Runs the specified SearchGenotypePhenotypeRequest.
+        """
+        # TODO verify evidence maps to drug
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypePhenotypeRequest,
+            protocol.SearchGenotypePhenotypeResponse,
+            self.genotypePhenotypeGenerator)
+
 
 class EmptyBackend(AbstractBackend):
     """
@@ -792,6 +812,10 @@ class SimulatedBackend(AbstractBackend):
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
                 numAlignments=numAlignments)
             self.addDataset(dataset)
+        self._g2pDataset = genotype_phenotype.G2PDataset(
+            [
+                {'source': 'tests/data/cgd-test.ttl', 'format': "n3"}
+            ])
 
 
 class FileSystemBackend(AbstractBackend):
@@ -812,3 +836,92 @@ class FileSystemBackend(AbstractBackend):
                 relativePath = os.path.join(sourceDir, setName)
                 if os.path.isdir(relativePath):
                     objectAdder(constructor(setName, relativePath, self))
+
+        self._g2pDataset = genotype_phenotype.G2PDataset(
+            [
+                {'source': 'tests/data/cgd.ttl', 'format': "n3"},
+                {'source':
+                    'https://raw.githubusercontent.com/oborel/obo-relations'
+                    '/master/ro.owl',
+                    'format': "xml"}
+            ])
+
+
+class GenotypePhenotypeIterator(IntervalIterator):
+    """
+    An interval iterator for evidence
+    """
+    def __init__(self, request, backend):
+        self.backend = backend
+        if request.pageToken is not None:
+            request.offset = request.pageToken.split(':')[1]
+        else:
+            request.offset = 0
+        super(GenotypePhenotypeIterator, self).__init__(request, None)
+
+    def _getContainer(self):
+        if (self._request.evidence is None and
+                self._request.phenotype is None and
+                self._request.feature is None):
+            msg = "Error:One of evidence,phenotype or feature must be non-null"
+            raise exceptions.BadRequestException(msg)
+        return None   # read from request
+
+    def _initialiseIteration(self):
+        """
+        Starts a new iteration.  Performs the search
+        """
+        self._searchIterator = self.backend._search(self._request)
+        self._currentObject = next(self._searchIterator, None)
+        if self._currentObject is not None:
+            self._nextObject = next(self._searchIterator, None)
+            self._searchAnchor = 0
+            self._distanceFromAnchor = self.backend.associationsLength
+            self._nextPageToken = "{}:{}".format(
+                self._searchAnchor, self._distanceFromAnchor)
+            if (self._distanceFromAnchor < self._request.pageSize):
+                self._nextPageToken = None
+
+    def _search(self, start, end):
+        pass
+
+    @classmethod
+    def _getStart(cls, readAlignment):
+        return readAlignment
+
+    @classmethod
+    def _getEnd(cls, readAlignment):
+        return readAlignment
+
+    def _pickUpIteration(self, searchAnchor, objectsToSkip):
+        """
+        Picks up iteration from a previously provided page token. There are two
+        different phases here:
+        1) We are iterating over the initial set of intervals in which start
+        is < the search start coorindate.
+        2) We are iterating over the remaining intervals in which start >= to
+        the search start coordinate.
+        """
+        self._searchAnchor = searchAnchor
+        self._searchIterator = self.backend._search(
+            self._request)
+        self._distanceFromAnchor = objectsToSkip +\
+            self.backend.associationsLength
+        self._currentObject = next(self._searchIterator, None)
+        if self._currentObject is not None:
+            self._nextObject = next(self._searchIterator, None)
+            self._nextPageToken = "{}:{}".format(
+                self._searchAnchor, self._distanceFromAnchor)
+            if (self._distanceFromAnchor < self._request.pageSize):
+                self._nextPageToken = None
+
+    def next(self):
+        """
+        Returns the next (object, nextPageToken) pair.
+        """
+        if self._currentObject is None:
+            raise StopIteration()
+        ret = self._currentObject, self._nextPageToken
+        self._currentObject = self._nextObject
+        self._nextObject = next(self._searchIterator, None)
+        return ret

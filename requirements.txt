@@ -18,3 +18,4 @@ oic==0.7.6
 pyOpenSSL==0.15.1
 lxml==3.4.4
 CherryPy==3.8.0
+RDFLib==4.2.1

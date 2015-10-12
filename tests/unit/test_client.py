@@ -40,6 +40,9 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.assemblyId = "assemblyId"
         self.accession = "accession"
         self.md5checksum = "md5checksum"
+        self.feature = ["feature"]
+        self.phenotype = "phenotype"
+        self.evidence = "evidence"
 
     def testSetPageSize(self):
         testClient = client.AbstractClient()
@@ -134,6 +137,19 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
             start=self.start, end=self.end)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "reads", protocol.SearchReadsResponse)
+
+    def testSearchGenotypePhenotype(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.feature = self.feature
+        request.phenotype = self.phenotype
+        request.evidence = self.evidence
+        request.pageSize = self.pageSize
+        self.httpClient.searchGenotypePhenotype(
+            feature=self.feature, phenotype=self.phenotype,
+            evidence=self.evidence)
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "genotypephenotype",
+            protocol.SearchGenotypePhenotypeResponse)
 
     def testGetReferenceSet(self):
         self.httpClient.getReferenceSet(self.objectId)

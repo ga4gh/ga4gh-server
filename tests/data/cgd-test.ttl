@@ -1,0 +1,137 @@
+@prefix ns1: <http://purl.org/oban/> .
+@prefix ns2: <http://purl.obolibrary.org/obo/> .
+@prefix ns3: <http://purl.org/dc/elements/1.1/> .
+@prefix ns4: <http://biohackathon.org/resource/faldo#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+<http://ohsu.edu/cgd/058f5c46> a ns1:association ;
+    ns2:RO_0002558 ns2:ECO_0000033 ;
+    ns2:RO_has_environment <http://www.drugbank.ca/drugs/DB00619> ;
+    ns3:source <http://www.ncbi.nlm.nih.gov/pubmed/17259998>,
+        <http://www.ncbi.nlm.nih.gov/pubmed/21689725>,
+        <http://www.ncbi.nlm.nih.gov/pubmed/23582185> ;
+    ns1:association_has_object <http://ohsu.edu/cgd/3660373b> ;
+    ns1:association_has_object_property ns2:RO_0002200 ;
+    ns1:association_has_subject <http://ohsu.edu/cgd/d8c2d551> .
+
+<http://ohsu.edu/cgd/4657f28c> a ns1:association ;
+    ns2:RO_0002558 ns2:ECO_0000033 ;
+    ns2:RO_has_environment <http://www.drugbank.ca/drugs/DB00619> ;
+    ns3:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    ns1:association_has_object <http://ohsu.edu/cgd/1b6442aa> ;
+    ns1:association_has_object_property ns2:RO_0002200 ;
+    ns1:association_has_subject <http://ohsu.edu/cgd/27d2169c> .
+
+<http://ohsu.edu/cgd/76acc42d> a ns1:association ;
+    ns2:RO_0002558 ns2:ECO_0000033 ;
+    ns2:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+    ns3:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    ns1:association_has_object <http://ohsu.edu/cgd/bff18fe6> ;
+    ns1:association_has_object_property ns2:RO_0002200 ;
+    ns1:association_has_subject <http://ohsu.edu/cgd/24228ad6> .
+
+<http://ohsu.edu/cgd/81a533a4> a ns1:association ;
+    ns2:RO_0002558 ns2:ECO_0000033 ;
+    ns2:RO_has_environment <http://www.drugbank.ca/drugs/DB01254> ;
+    ns3:source <http://www.ncbi.nlm.nih.gov/pubmed/16397263> ;
+    ns1:association_has_object <http://ohsu.edu/cgd/9a0c7b6e> ;
+    ns1:association_has_object_property ns2:RO_0002200 ;
+    ns1:association_has_subject <http://ohsu.edu/cgd/d212cbf9> .
+
+<http://ohsu.edu/cgd/9aa29531> a ns1:association ;
+    ns2:RO_has_environment <http://www.drugbank.ca/drugs/DB00398> ;
+    ns1:association_has_object <http://ohsu.edu/cgd/37da8697> ;
+    ns1:association_has_object_property ns2:RO_0002200 ;
+    ns1:association_has_subject <http://ohsu.edu/cgd/4841bf74> .
+
+<http://ohsu.edu/cgd/24228ad6> a ns2:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    ns2:RO_0002200 <http://ohsu.edu/cgd/bff18fe6> ;
+    rdf:label "KIT  wild type no mutation" .
+
+<http://ohsu.edu/cgd/27d2169c> a ns2:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    ns2:RO_0002200 <http://ohsu.edu/cgd/1b6442aa> ;
+    rdf:label "KIT  wild type no mutation" .
+
+<http://ohsu.edu/cgd/4841bf74> a ns2:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    ns2:RO_0002200 <http://ohsu.edu/cgd/37da8697> ;
+    rdf:label "KIT  wild type no mutation" .
+
+<http://ohsu.edu/cgd/d212cbf9> a ns2:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    ns2:RO_0002200 <http://ohsu.edu/cgd/9a0c7b6e> ;
+    rdf:label "KIT  wild type no mutation" .
+
+<http://ohsu.edu/cgd/d8c2d551> a ns2:SO_0001059,
+        ns2:SO_0001583,
+        <http://www.w3.org/2002/07/owl#NamedIndividual> ;
+    rdfs:label "KIT V559I, H687Y, T670, V654A, A829P, D816, N822, Y823D missense mutation" ;
+    ns4:location <http://www.monarchinitiative.org/_CGD:d8c2d551UniProtKB:P10721#P10721-1Region> ;
+    ns2:GENO_0000408 <http://www.ncbi.nlm.nih.gov/gene/3815> ;
+    ns2:GENO_reference_amino_acid "V" ;
+    ns2:GENO_results_in_amino_acid_change "A" ;
+    ns2:RO_0002200 <http://ohsu.edu/cgd/3660373b> ;
+    ns2:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3496.1> ;
+    rdf:label "KIT V559I, H687Y, T670, V654A, A829P, D816, N822, Y823D missense mutation" .
+
+<http://www.drugbank.ca/drugs/DB00398> a <http://www.w3.org/2002/07/owl#Class> ;
+    rdfs:label "sorafenib" ;
+    rdf:label "sorafenib" ;
+    rdfs:subClassOf ns2:CHEBI_23888 .
+
+<http://www.drugbank.ca/drugs/DB01254> a <http://www.w3.org/2002/07/owl#Class> ;
+    rdfs:label "dasatinib" ;
+    rdf:label "dasatinib" ;
+    rdfs:subClassOf ns2:CHEBI_23888 .
+
+<http://www.drugbank.ca/drugs/DB01268> a <http://www.w3.org/2002/07/owl#Class> ;
+    rdfs:label "sunitinib" ;
+    rdf:label "sunitinib" ;
+    rdfs:subClassOf ns2:CHEBI_23888 .
+
+<http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3496.1> rdf:label "CCDS3496.1" .
+
+<http://www.ncbi.nlm.nih.gov/gene/3815> a owl:Class ;
+    rdfs:label "KIT" .
+
+<http://ohsu.edu/cgd/1b6442aa> a ns2:OMIM_606764 ;
+    rdfs:label "GIST with decreased sensitivity to therapy" ;
+    ns2:BFO_0000159 <http://ohsu.edu/cgd/decreased_sensitivity> ;
+    rdf:label "GIST with decreased sensitivity to therapy" .
+
+<http://ohsu.edu/cgd/3660373b> a ns2:OMIM_606764 ;
+    rdfs:label "GIST with resistance to therapy" ;
+    ns2:BFO_0000159 <http://ohsu.edu/cgd/resistance> ;
+    rdf:label "GIST with resistance to therapy" .
+
+<http://ohsu.edu/cgd/37da8697> a ns2:OMIM_606764 ;
+    rdfs:label "GIST with response to therapy" ;
+    ns2:BFO_0000159 <http://ohsu.edu/cgd/response> ;
+    rdf:label "GIST with response to therapy" .
+
+<http://ohsu.edu/cgd/9a0c7b6e> a ns2:OMIM_606764 ;
+    rdfs:label "GIST with sensitivity to therapy" ;
+    ns2:BFO_0000159 <http://ohsu.edu/cgd/sensitivity> ;
+    rdf:label "GIST with sensitivity to therapy" .
+
+<http://ohsu.edu/cgd/bff18fe6> a ns2:OMIM_606764 ;
+    rdfs:label "GIST with response to therapy" ;
+    ns2:BFO_0000159 <http://ohsu.edu/cgd/response> ;
+    rdf:label "GIST with response to therapy" .
+
+<http://www.drugbank.ca/drugs/DB00619> a <http://www.w3.org/2002/07/owl#Class> ;
+    rdfs:label "imatinib" ;
+    rdf:label "imatinib" ;
+    rdfs:subClassOf ns2:CHEBI_23888 .
+
+ns2:OMIM_606764 a <http://www.w3.org/2002/07/owl#Class> ;
+    rdfs:label "GIST" ;
+    rdfs:subClassOf ns2:DOID_4 .
+
+ns2:RO_0002200 rdf:label "has phenotype"@en .

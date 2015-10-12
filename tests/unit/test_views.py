@@ -119,6 +119,11 @@ class TestFrontend(unittest.TestCase):
         response = self.sendPostRequest(path, request)
         return response
 
+    def sendGenotypePhenotypeSearch(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        return response
+
     def sendGetVariant(self, id_=None):
         if id_ is None:
             id_ = self.variantId
@@ -214,6 +219,7 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendReferencesSearch())
         assertHeaders(self.sendReferenceBasesList())
         assertHeaders(self.sendDatasetsSearch())
+        assertHeaders(self.sendGenotypePhenotypeSearch())
         # Get-based accessor methods
         assertHeaders(self.sendGetVariantSet())
         assertHeaders(self.sendGetReference())
@@ -377,6 +383,161 @@ class TestFrontend(unittest.TestCase):
         datasets = list(responseData.datasets)
         self.assertEqual(self.datasetId, datasets[0].id)
 
+    def testGenotypePhenotypeSearchBadRequest(self):
+        """
+        If nothing is provided to search on,
+        the system should return `bad request`
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(501, response.status_code)
+
     def testNoAuthentication(self):
         path = '/oauth2callback'
         self.assertEqual(501, self.app.get(path).status_code)
+
+    def testGenotypePhenotypeSearchFeature(self):
+        """
+        Search for evidence on a genomic feature given feature name
+        """
+        # simple string regexp
+        request = protocol.SearchGenotypePhenotypeRequest()
+
+        request.feature = "KIT *wild"
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations[0].features))
+
+        request.evidence = "imatinib"
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations[0].features))
+
+        request.phenotype = "GIST"
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations[0].features))
+
+        request.phenotype = "FOOBAR"
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(0, len(response.associations))
+
+        # identifiers
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.feature = protocol.ExternalIdentifierQuery()
+        id = protocol.ExternalIdentifier()
+        id.database = "http://www.monarchinitiative.org/_"
+        id.identifier = "CGD:d8c2d551UniProtKB:P10721#P10721-1Region"
+        id.version = "*"
+        request.feature.ids = [id]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations[0].features))
+
+        request.phenotype = protocol.ExternalIdentifierQuery()
+        id = protocol.ExternalIdentifier()
+        id.database = "http://purl.obolibrary.org/obo/OMIM_"
+        id.identifier = "606764"
+        id.version = "*"
+        request.phenotype.ids = [id]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations[0].features))
+
+        request.evidence = protocol.ExternalIdentifierQuery()
+        id = protocol.ExternalIdentifier()
+        id.database = "http://www.drugbank.ca/drugs/"
+        id.identifier = "DB00619"
+        id.version = "*"
+        request.evidence.ids = [id]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertNotEqual(0, len(response.associations))
+        self.assertEqual(1, len(response.associations[0].features))
+
+        request.evidence = protocol.ExternalIdentifierQuery()
+        id = protocol.ExternalIdentifier()
+        id.database = "FOO"
+        id.identifier = "DB00619"
+        id.version = "*"
+        request.evidence.ids = [id]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(0, len(response.associations))
+        self.testGenotypePhenotypeSearchFeaturePagingOne()
+        self.testGenotypePhenotypeSearchFeaturePagingMore()
+
+    def testGenotypePhenotypeSearchFeaturePagingOne(self):
+        """
+        If page size is set to 1 only one association should be returned
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.pageSize = 1
+        request.feature = "KIT *wild"
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations))
+        self.assertEqual(1, len(response.associations[0].features))
+        self.assertIsNotNone(response.nextPageToken)
+
+    def testGenotypePhenotypeSearchFeaturePagingMore(self):
+        """
+        If page size is not set to more than one association should be returned
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.feature = "KIT *wild"
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertGreater(len(response.associations), 1)
+        self.assertIsNone(response.nextPageToken)
+
+    def testGenotypePhenotypeSearchFeaturePagingAll(self):
+        """
+        Loop through all pages
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.pageSize = 1
+        request.feature = "KIT *wild"
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations))
+        self.assertIsNotNone(response.nextPageToken)
+
+        for i in range(3):
+            previous_id = response.associations[0].id
+            request = protocol.SearchGenotypePhenotypeRequest()
+            request.pageToken = response.nextPageToken
+            request.pageSize = 1
+            request.feature = "KIT *wild"
+            response = self.sendPostRequest(
+                         '/genotypephenotype/search', request)
+            self.assertEqual(200, response.status_code)
+            response = protocol.SearchGenotypePhenotypeResponse().\
+                fromJsonString(response.data)
+            self.assertEqual(1, len(response.associations))
+            self.assertNotEqual(previous_id, response.associations[0].id)
+            self.assertIsNotNone(response.nextPageToken)
+        # from IPython.core.debugger import Pdb ;        Pdb().set_trace()

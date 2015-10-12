@@ -497,6 +497,12 @@ def searchDatasets():
         flask.request, app.backend.runSearchDatasets)
 
 
+@DisplayedRoute('/genotypephenotype/search', postMethod=True)
+def searchGenotypePhenotype():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchGenotypePhenotype)
+
+
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')

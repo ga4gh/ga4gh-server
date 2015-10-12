@@ -165,6 +165,19 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEquals(args.runner, cli.SearchDatasetsRunner)
 
+    def testGenotypePhenotypeSearchArguments(self):
+        cliInput = (
+            "genotypephenotype-search --feature FEATURE "
+            "--evidence EVIDENCE --phenotype PHENOTYPE --pageSize 1 "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.feature, "FEATURE")
+        self.assertEqual(args.phenotype, "PHENOTYPE")
+        self.assertEqual(args.evidence, "EVIDENCE")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchGenotypePhenotypeRunner)
+
     def verifyGetArguments(self, command, runnerClass):
         cliInput = "{} BASEURL ID".format(command)
         args = self.parser.parse_args(cliInput.split())
