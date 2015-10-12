@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import random
 
 import pysam
 
@@ -432,17 +433,32 @@ class SimulatedReadGroup(AbstractReadGroup):
     """
     def __init__(self, parentContainer, localId, randomSeed, numAlignments=2):
         super(SimulatedReadGroup, self).__init__(parentContainer, localId)
+        self._randomSeed = randomSeed
 
     def getReadAlignments(self, referenceId=None, start=None, end=None):
-        for i in range(self.getNumAlignedReads()):
-            yield self._createReadAlignment(i)
+        rng = random.Random(self._randomSeed)
 
-    def _createReadAlignment(self, i):
+        # We seed reads with sequential seeds starting from here. We hope no
+        # ranges for two different simulated read groups ever overlap (because
+        # then we'd start seeing identical reads in the two groups.)
+        read_seed_start = rng.getrandbits(64)
+
+        for i in range(self.getNumAlignedReads()):
+            seed = read_seed_start + i
+            yield self._createReadAlignment(i, seed)
+
+    def _createReadAlignment(self, i, seed):
         # TODO fill out a bit more
+        rng = random.Random(seed)
         alignment = protocol.ReadAlignment()
-        alignment.alignedQuality = [1, 2, 3]
-        alignment.alignedSequence = "ACT"
-        alignment.fragmentId = 'TODO'
+        alignment.fragmentLength = rng.randint(10, 100)
+        alignment.alignedQuality = []
+        alignment.alignedSequence = ""
+        for i in range(alignment.fragmentLength):
+            # TODO: are these reasonable quality values?
+            alignment.alignedQuality.append(rng.randint(1, 20))
+            alignment.alignedSequence += rng.choice("ACGT")
+        alignment.fragmentId = "frag{}".format(seed)
         gaPosition = protocol.Position()
         gaPosition.position = 0
         gaPosition.referenceName = "NotImplemented"
@@ -452,7 +468,7 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.alignment = gaLinearAlignment
         alignment.duplicateFragment = False
         alignment.failedVendorQualityChecks = False
-        alignment.fragmentLength = 3
+
         alignment.fragmentName = "simulated{}".format(i)
         alignment.info = {}
         alignment.nextMatePosition = None
