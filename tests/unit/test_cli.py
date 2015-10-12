@@ -202,10 +202,12 @@ class TestClientArguments(unittest.TestCase):
 
     def testReferenceBasesListArguments(self):
         cliInput = (
-            "references-list-bases BASEURL ID --start 1 --end 2")
+            "references-list-bases BASEURL ID --start 1 --end 2 "
+            "--outputFormat fasta")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.id, "ID")
         self.assertEqual(args.start, 1)
         self.assertEqual(args.end, 2)
+        self.assertEquals(args.outputFormat, "fasta")
         self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
