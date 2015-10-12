@@ -478,6 +478,18 @@ class MultipleReferenceSetsInReadGroupSet(MalformedException):
                 fileName, referenceSetName, otherReferenceSetName))
 
 
+class MissingDatasetMetadataException(MalformedException):
+    """
+    A directory containing datasets is missing some metadata
+    in the corresponding JSON file
+    """
+    def __init__(self, fileName, key):
+        self.message = (
+            "JSON dataset metadata for file {} "
+            "is missing key {}".format(
+                fileName, key))
+
+
 ###############################################################
 #
 # Internal errors. These are exceptions that we regard as bugs.
