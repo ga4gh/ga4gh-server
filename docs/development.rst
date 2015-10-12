@@ -23,7 +23,7 @@ libraries. On Debian or Ubuntu, we can install these using
 
 .. code-block:: bash
 
-    $ sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev
+    $ sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libdb-dev
 
 .. note::
     TODO: Document this basic step for other platforms? We definitely want
@@ -86,24 +86,14 @@ local copy of this repo. This might look something like:
 
     $ git clone git@github.com:username/server.git
 
-We can then install all of the packages that we need for developing the
-GA4GH reference server:
-
-.. code-block:: bash
-
-    $ cd server
-    $ pip install -r requirements.txt --user
-
-This will take a little time as the libraries that we require are
-fetched from PyPI and built.
-
-It is also important to set up an
+We can now set up an
 `upstream remote <https://help.github.com/articles/configuring-a-remote-for-a-fork/>`_
 for your repo so that you can sync up with the changes that other people
 are making:
 
 .. code-block:: bash
 
+    $ cd server
     $ git remote add upstream https://github.com/ga4gh/server.git
 
 All development is done against the ``develop`` branch.  The ``stable``
@@ -112,14 +102,28 @@ based on -- don't touch it!  These are the two mainline branches.
 Our branching model is loosely based on the one described
 `here <http://nvie.com/posts/a-successful-git-branching-model/>`__.
 
-All development should be done in a topic branch.  That is, a branch
-that the developer creates him or herself.  These steps will create
-a topic branch (replace ``TOPIC_BRANCH_NAME`` appropriately):
-
 .. code-block:: bash
 
     $ git fetch --all
     $ git checkout develop
+    
+We can now install all of the packages that we need for developing the
+GA4GH reference server:
+
+.. code-block:: bash
+
+    $ pip install -r requirements.txt --user
+
+This will take a little time as the libraries that we require are
+fetched from PyPI and built.
+
+
+All development should be done in a topic branch.  That is, a branch
+that the developer creates him or herself.  These steps will create
+a topic branch (replace ``TOPIC_BRANCH_NAME`` appropriately):
+
+.. code-block:: bash    
+    
     $ git merge --ff-only upstream/develop
     $ git checkout -b TOPIC_BRANCH_NAME
 
