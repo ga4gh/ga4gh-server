@@ -157,6 +157,8 @@ class TestSimulatedStack(unittest.TestCase):
             referenceSet.getSourceAccessions())
         self.assertEqual(
             gaReferenceSet.isDerived, referenceSet.getIsDerived())
+        self.assertEqual(
+            gaReferenceSet.name, referenceSet.getLocalId())
 
     def verifyReferencesEqual(self, gaReference, reference):
         self.assertEqual(gaReference.id, reference.getId())

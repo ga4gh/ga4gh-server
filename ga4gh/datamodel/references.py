@@ -164,6 +164,7 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         ret.referenceIds = self._referenceIds
         ret.sourceAccessions = self.getSourceAccessions()
         ret.sourceURI = self.getSourceUri()
+        ret.name = self.getLocalId()
         return ret
 
 
