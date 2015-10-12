@@ -322,6 +322,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
         keyMap = {}
         for metadata in self._gaObject.getMetadata():
             keyMap[metadata.key] = metadata
+            # Check that ID is present and has the right 'structure'
+            deobfuscatedId = datamodel.CompoundId.deobfuscate(metadata.id)
+            self.assertTrue(deobfuscatedId.endswith(metadata.key))
 
         metadata = keyMap["version"]
         self.assertEqual(metadata.value, self._vcfVersion)
