@@ -158,34 +158,40 @@ class SamLine(object):
     def toSamFlag(cls, read):
         flag = 0
         if read.numberReads:
-            reads.SamFlags.setFlag(
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.NUMBER_READS)
         if read.properPlacement:
-            reads.SamFlags.setFlag(
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.PROPER_PLACEMENT)
         if read.alignment.position.strand == protocol.Strand.NEG_STRAND:
-            reads.SamFlags.setFlag(
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.REVERSED)
         if (read.nextMatePosition is not None and
                 read.nextMatePosition.strand == protocol.Strand.NEG_STRAND):
-            reads.SamFlags.setFlag(
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.NEXT_MATE_REVERSED)
-        if read.readNumber:
-            reads.SamFlags.setFlag(
+        if read.readNumber == 0:
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.READ_NUMBER_ONE)
-            reads.SamFlags.setFlag(
+        elif read.readNumber == 1:
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.READ_NUMBER_TWO)
+        elif read.readNumber == 2:
+            flag = reads.SamFlags.setFlag(
+                flag,
+                reads.SamFlags.READ_NUMBER_ONE |
+                reads.SamFlags.READ_NUMBER_TWO)
         if read.secondaryAlignment:
-            reads.SamFlags.setFlag(
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.SECONDARY_ALIGNMENT)
         if read.failedVendorQualityChecks:
-            reads.SamFlags.setFlag(
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
         if read.duplicateFragment:
-            reads.SamFlags.setFlag(
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.DUPLICATE_FRAGMENT)
         if read.supplementaryAlignment:
-            reads.SamFlags.setFlag(
+            flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.SUPPLEMENTARY_ALIGNMENT)
         return flag
 
