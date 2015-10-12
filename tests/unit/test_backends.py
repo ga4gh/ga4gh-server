@@ -242,3 +242,15 @@ class TestPrivateBackendMethods(unittest.TestCase):
         goodPageToken = "12:34:567:8:9000"
         parsedToken = backend._parsePageToken(goodPageToken, 5)
         self.assertEqual(parsedToken[2], 567)
+
+    def testParseIntegerArgument(self):
+        good = {"one": "1", "minusone": "-1"}
+        expected = {"one": 1, "minusone": -1}
+        bad = {"string": "A", "float": "0.98"}
+        self.assertEqual(backend._parseIntegerArgument({}, "missing", 0), 0)
+        for key in good:
+            self.assertEqual(
+                backend._parseIntegerArgument(good, key, 0), expected[key])
+        for key in bad:
+            with self.assertRaises(exceptions.BadRequestIntegerException):
+                backend._parseIntegerArgument(bad, key, 0)
