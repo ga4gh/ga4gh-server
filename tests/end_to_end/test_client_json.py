@@ -73,3 +73,8 @@ class TestClientJson(unittest.TestCase):
         for dataset in self._client.searchDatasets():
             self.verifyParsedOutputsEqual(
                 [dataset], "datasets-get", dataset.id)
+
+    def testSearchAllReadGroups(self):
+        # TODO: add more rigorous testing here
+        cliOutput = self.captureJsonOutput("reads-search")
+        self.assertGreater(len(cliOutput), 0)
