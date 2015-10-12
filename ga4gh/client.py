@@ -217,11 +217,20 @@ class AbstractClient(object):
 
         :param str variantSetId: The ID of the
             :class:`ga4gh.protocol.VariantSet` of interest.
-        :param int start: TODO
-        :param int end: TODO
+        :param int start: Required. The beginning of the window (0-based,
+            inclusive) for which overlapping variants should be returned.
+            Genomic positions are non-negative integers less than reference
+            length. Requests spanning the join of circular genomes are
+            represented as two requests one on each side of the join
+            (position 0).
+        :param int end: Required. The end of the window (0-based, exclusive)
+            for which overlapping variants should be returned.
         :param str referenceName: The name of the
             :class:`ga4gh.protocol.Reference` we wish to return variants from.
-        :param list callSetIds: TODO
+        :param list callSetIds: Only return variant calls which belong to call
+            sets with these IDs. If an empty array, returns variants without
+            any call objects. If null, returns all variant calls.
+
         :return: An iterator over the :class:`ga4gh.protocol.Variant` objects
             defined by the query parameters.
         :rtype: iter
@@ -270,9 +279,14 @@ class AbstractClient(object):
         Returns an iterator over the ReferenceSets fulfilling the specified
         conditions.
 
-        :param str accession: TODO
-        :param str md5checksum: TODO
-        :param str assemblyId: TODO
+        :param str accession: If not null, return the reference sets for which
+            the `accession` matches this string (case-sensitive, exact match).
+        :param str md5checksum: If not null, return the reference sets for
+            which the `md5checksum` matches this string (case-sensitive, exact
+            match). See :class:`ga4gh.protocol.ReferenceSet::md5checksum` for
+            details.
+        :param str assemblyId: If not null, return the reference sets for which
+            the `assemblyId` matches this string (case-sensitive, exact match).
         :return: An iterator over the :class:`ga4gh.protocol.ReferenceSet`
             objects defined by the query parameters.
         """
@@ -290,8 +304,12 @@ class AbstractClient(object):
         Returns an iterator over the References fulfilling the specified
         conditions from the specified Dataset.
 
-        :param str accession: TODO
-        :param str md5checksum: TODO
+        :param str referenceSetId: The ReferenceSet to search.
+        :param str accession: If not None, return the references for which the
+            `accession` matches this string (case-sensitive, exact match).
+        :param str md5checksum: If not None, return the references for which
+            the `md5checksum` matches this string (case-sensitive, exact
+            match).
         :return: An iterator over the :class:`ga4gh.protocol.Reference`
             objects defined by the query parameters.
         """
@@ -349,8 +367,14 @@ class AbstractClient(object):
         :param str referenceId: The name of the
             :class:`ga4gh.protocol.Reference` we wish to return reads
             mapped to.
-        :param int start: TODO
-        :param int end: TODO
+        :param int start: The start position (0-based) of this query. If a
+            reference is specified, this defaults to 0. Genomic positions are
+            non-negative integers less than reference length. Requests spanning
+            the join of circular genomes are represented as two requests one on
+            each side of the join (position 0).
+        :param int end: The end position (0-based, exclusive) of this query.
+            If a reference is specified, this defaults to the reference's
+            length.
         :return: An iterator over the
             :class:`ga4gh.protocol.ReadAlignment` objects defined by
             the query parameters.
