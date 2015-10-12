@@ -56,7 +56,8 @@ class ServerForTesting(object):
         """
         Start the server
         """
-        assert not self.isRunning(), "Another server is running"
+        assert not self.isRunning(), "Another server is running at {}".format(
+            self.serverUrl)
         self.outFile = tempfile.TemporaryFile()
         self.errFile = tempfile.TemporaryFile()
         splits = shlex.split(self.getCmdLine())
