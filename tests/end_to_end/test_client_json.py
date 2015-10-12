@@ -7,14 +7,13 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import StringIO
 import json
-import sys
 import unittest
 
 import ga4gh.client as client
 import ga4gh.backend as backend
 import ga4gh.cli as cli
+import tests.utils as utils
 
 
 class TestClientJson(unittest.TestCase):
@@ -29,30 +28,18 @@ class TestClientJson(unittest.TestCase):
         self._backend = backend.FileSystemBackend(self._dataDir)
         self._client = client.LocalClient(self._backend)
 
-    def captureOutput(self, command):
-        """
-        Runs the specified client command, capturing the output written
-        to stdout. This is returned as a string.
-        """
-        stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-        try:
-            cli.client_main(command.split())
-            output = sys.stdout.getvalue()
-        finally:
-            sys.stdout.close()
-            sys.stdout = stdout
-        return output
-
     def captureJsonOutput(self, command, arguments=""):
         """
         Runs the specified command add the JSON output option and
         returns the result as a list of JSON parsed dictionaries.
         """
-        output = self.captureOutput("{} {} {} -O json".format(
-            command, self._dataUrl, arguments))
+        clientCommand = "{} {} {} -O json".format(
+            command, self._dataUrl, arguments)
+        stdout, stderr = utils.captureOutput(
+            cli.client_main, clientCommand.split())
         cliOutput = []
-        for line in output.splitlines():
+        self.assertEqual(len(stderr), 0)
+        for line in stdout.splitlines():
             cliOutput.append(json.loads(line))
         return cliOutput
 
