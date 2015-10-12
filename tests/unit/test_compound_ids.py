@@ -311,3 +311,25 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.readGroup, "c")
         self.assertEqual(cid.experiment, "d")
         self.verifyParseFailure(idStr, datamodel.ExperimentCompoundId)
+
+    def testVariantSetMetadataCompoundId(self):
+        varSet = self.getVariantSet()
+        dataSet = varSet.getParentContainer()
+        localId = "metadata_key"
+        cid = datamodel.VariantSetMetadataCompoundId(
+            varSet.getCompoundId(), localId)
+        self.assertRaises(
+            ValueError, datamodel.VariantSetMetadataCompoundId,
+            varSet.getCompoundId())
+        self.assertEqual(cid.dataset, dataSet.getLocalId())
+        self.assertEqual(cid.variantSet, varSet.getLocalId())
+        self.assertEqual(cid.key, localId)
+
+    def testVariantSetMetadataCompoundIdParse(self):
+        idStr = "a:b:c"
+        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        cid = datamodel.VariantSetMetadataCompoundId.parse(obfuscated)
+        self.assertEqual(cid.dataset, "a")
+        self.assertEqual(cid.variantSet, "b")
+        self.assertEqual(cid.key, "c")
+        self.verifyParseFailure(idStr, datamodel.VariantSetMetadataCompoundId)

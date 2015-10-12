@@ -228,6 +228,15 @@ class VariantSetCompoundId(DatasetCompoundId):
     containerIds = DatasetCompoundId.containerIds + [('variantSetId', 1)]
 
 
+class VariantSetMetadataCompoundId(VariantSetCompoundId):
+    """
+    The compound id for a variant set
+    """
+    fields = VariantSetCompoundId.fields + ['key']
+    containerIds = VariantSetCompoundId.containerIds + [
+        ('variantSetMetadataId', 1)]
+
+
 class VariantCompoundId(VariantSetCompoundId):
     """
     The compound id for a variant
