@@ -447,14 +447,21 @@ class ListReferenceBasesRunner(AbstractQueryRunner):
         self._referenceId = args.id
         self._start = args.start
         self._end = args.end
+        self._outputFormat = args.outputFormat
 
     def run(self):
-        iterator = self._client.listReferenceBases(
+        sequence = self._client.listReferenceBases(
             self._referenceId, self._start, self._end)
-        # TODO add support for FASTA output.
-        for segment in iterator:
-            print(segment, end="")
-        print()
+        if self._outputFormat == "text":
+            print(sequence)
+        else:
+            start = self._start if self._start else ""
+            end = self._end if self._end else ""
+            print(">{}:{}-{}".format(self._referenceId, start, end))
+
+            textWidth = 70
+            for index in xrange(0, len(sequence), textWidth):
+                print(sequence[index: index+textWidth])
 
 
 # Runners for the various GET methods.
@@ -844,6 +851,12 @@ def addReferencesBasesListParser(subparsers):
         "references-list-bases",
         description="List bases of a reference",
         help="List bases of a reference")
+    parser.add_argument(
+        "--outputFormat", "-O", choices=['text', 'fasta'], default="text",
+        help=(
+            "The format for sequence output. Currently supported are "
+            "'text' (default), which prints the sequence out directly and "
+            "'fasta', which formats the sequence into fixed width FASTA"))
     parser.set_defaults(runner=ListReferenceBasesRunner)
     addUrlArgument(parser)
     addIdArgument(parser)
