@@ -42,7 +42,7 @@ class CpuProfilerBackend(ga4gh.backend.FileSystemBackend):
         self.profiler.disable()
 
 
-def _heavyQuery(variantSetId, repeatLimit, pageLimit):
+def _heavyQuery(backend, variantSetId, repeatLimit, pageLimit):
     """
     Very heavy query: calls for the specified list of callSetIds
     on chromosome 2 (11 pages, 90 seconds to fetch the entire thing
@@ -56,12 +56,12 @@ def _heavyQuery(variantSetId, repeatLimit, pageLimit):
     return request
 
 
-def timeOneSearch(queryString):
+def timeOneSearch(backend, queryString):
     """
     Returns (search result as JSON string, time elapsed during search)
     """
     startTime = time.clock()
-    resultString = __BACKEND__.runSearchVariants(queryString)
+    resultString = backend.runSearchVariants(queryString)
     endTime = time.clock()
     elapsedTime = endTime - startTime
     return resultString, elapsedTime
@@ -80,7 +80,7 @@ def extractNextPageToken(resultString):
     return None
 
 
-def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
+def benchmarkOneQuery(backend, request, repeatLimit=3, pageLimit=3):
     """
     Repeat the query several times; perhaps don't go through *all* the
     pages.  Returns minimum time to run backend.searchVariants() to execute
@@ -90,7 +90,7 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
     times = []
     queryString = request.toJsonString()
     for i in range(0, repeatLimit):
-        resultString, elapsedTime = timeOneSearch(queryString)
+        resultString, elapsedTime = timeOneSearch(backend, queryString)
         accruedTime = elapsedTime
         pageCount = 1
         token = extractNextPageToken(resultString)
@@ -99,7 +99,7 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
             pageRequest = request
             pageRequest.pageToken = token
             pageRequestString = pageRequest.toJsonString()
-            resultString, elapsedTime = timeOneSearch(pageRequestString)
+            resultString, elapsedTime = timeOneSearch(backend, pageRequestString)
             accruedTime += elapsedTime
             pageCount = pageCount + 1
             token = extractNextPageToken(resultString)
@@ -115,7 +115,10 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
 
 
 def main(args):
-    global __BACKEND__
+    """
+    Parse arguments, fill in defaults, instantiate backend and launch
+    test
+    """
     parser = argparse.ArgumentParser(
         description="GA4GH reference server benchmark")
     parser.add_argument(
@@ -145,16 +148,16 @@ def main(args):
     elif args.profile == 'cpu':
         backendClass = CpuProfilerBackend
 
-    __BACKEND__ = backendClass(args.dataDir)
-    dataset = __BACKEND__.getDatasetByIndex(0)
+    backend = backendClass(args.dataDir)
+    dataset = backend.getDatasetByIndex(0)
     variantSet = dataset.getVariantSetByIndex(0)
-    minTime = benchmarkOneQuery(
-        _heavyQuery(variantSet.getId(), args.repeatLimit, args.pageLimit))
+    minTime = benchmarkOneQuery(backend,
+        _heavyQuery(backend,variantSet.getId(), args.repeatLimit, args.pageLimit))
 
     print(minTime)
 
     if args.profile == 'cpu':
-        stats = pstats.Stats(__BACKEND__.profiler)
+        stats = pstats.Stats(backend.profiler)
         stats.sort_stats('time')
         stats.print_stats(.25)
 
