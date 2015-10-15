@@ -203,6 +203,7 @@ class AbstractBackend(object):
         self._defaultPageSize = 100
         self._maxResponseLength = 2**20  # 1 MiB
         self._datasetIdMap = {}
+        self._datasetNameMap = {}
         self._datasetIds = []
         self._referenceSetIdMap = {}
         self._referenceSetNameMap = {}
@@ -214,6 +215,7 @@ class AbstractBackend(object):
         """
         id_ = dataset.getId()
         self._datasetIdMap[id_] = dataset
+        self._datasetNameMap[dataset.getLocalId()] = dataset
         self._datasetIds.append(id_)
 
     def addReferenceSet(self, referenceSet):
@@ -276,6 +278,14 @@ class AbstractBackend(object):
         Returns the dataset at the specified index.
         """
         return self._datasetIdMap[self._datasetIds[index]]
+
+    def getDatasetByName(self, name):
+        """
+        Returns the dataset with the specified name.
+        """
+        if name not in self._datasetNameMap:
+            raise exceptions.DatasetNameNotFoundException(name)
+        return self._datasetNameMap[name]
 
     def getReferenceSets(self):
         """
