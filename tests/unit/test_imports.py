@@ -152,25 +152,34 @@ class ImportGraphLayerChecker(object):
     ])
 
     # each file/module is in one and only one moduleGroup
+    # keep keys and values in this dict in alpha order
     moduleGroupNames = {
+        'avrotools': ['ga4gh/avrotools.py'],
+        'backend': ['ga4gh/backend.py'],
         'cli': ['ga4gh/cli.py'],
         'client': ['ga4gh/client.py'],
-        'frontend': ['ga4gh/frontend.py'],
-        'backend': ['ga4gh/backend.py'],
-        'exceptions': ['ga4gh/exceptions.py'],
-        'datamodel': ['ga4gh/datamodel/reads.py',
-                      'ga4gh/datamodel/references.py',
-                      'ga4gh/datamodel/variants.py',
-                      'ga4gh/datamodel/datasets.py'],
-        'libraries': ['ga4gh/converters.py',
-                      'ga4gh/configtest.py'],
-        'protocol': ['ga4gh/protocol.py',
-                     'ga4gh/_protocol_definitions.py'],
         'config': ['ga4gh/serverconfig.py'],
-        'avrotools': ['ga4gh/avrotools.py'],
+        'frontend': ['ga4gh/frontend.py'],
+        'exceptions': ['ga4gh/exceptions.py'],
+        'datamodel': [
+            'ga4gh/datamodel/datasets.py',
+            'ga4gh/datamodel/reads.py',
+            'ga4gh/datamodel/references.py',
+            'ga4gh/datamodel/variants.py',
+            ],
+        'libraries': [
+            'ga4gh/configtest.py',
+            'ga4gh/converters.py',
+            ],
+        'protocol': [
+            'ga4gh/_protocol_definitions.py',
+            'ga4gh/protocol.py',
+            ],
+        'utils': ['ga4gh/utils/seqfetcher.py'],
     }
 
     # each moduleGroupName has one and only one entry here
+    # order here implies expected dependency ordering -- don't sort!
     layers = [
         ['cli'],
         ['client'],
@@ -182,6 +191,7 @@ class ImportGraphLayerChecker(object):
         ['avrotools'],
         ['config'],
         ['protocol'],
+        ['utils'],
     ]
 
     def __init__(self, graph):
