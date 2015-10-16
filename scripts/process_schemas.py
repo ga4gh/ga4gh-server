@@ -100,6 +100,10 @@ class SchemaClass(object):
                             t0.type == "null"):
                         if isinstance(t1, avro.schema.RecordSchema):
                             ret.append((field.name, t1.name))
+                    elif (isinstance(t1, avro.schema.PrimitiveSchema) and
+                            t1.type == "null"):
+                        if isinstance(t0, avro.schema.RecordSchema):
+                            ret.append((field.name, t0.name))
                     else:
                         raise Exception("Schema union assumptions violated")
         return ret
@@ -163,10 +167,11 @@ class SchemaClass(object):
             self._writeWithIndent(string_, outputFile, 3)
             # Backtick quoted strings cause problems with Sphinx, so we
             # strip them out here.
-            doc = field.doc.replace('`', '')
-            self._writeWithIndent('"""', outputFile, 2)
-            self._writeWrappedWithIndent(doc, outputFile, 2)
-            self._writeWithIndent('"""', outputFile, 2)
+            if field.doc is not None:
+                doc = field.doc.replace('`', '')
+                self._writeWithIndent('"""', outputFile, 2)
+                self._writeWrappedWithIndent(doc, outputFile, 2)
+                self._writeWithIndent('"""', outputFile, 2)
 
     def writeEmbeddedTypesClassMethods(self, outputFile):
         """
