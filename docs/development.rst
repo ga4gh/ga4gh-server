@@ -158,6 +158,13 @@ branch.  Since you (almost) always want to be developing off of the
 latest version of the code, you need to perform a rebase to incorporate
 the most recent changes from ``develop`` into your branch.
 
+.. warning::
+
+    We recommend against using ``git pull``.  Use ``git fetch`` and ``git
+    rebase`` to update your topic branch against mainline branches
+    instead.  See the :ref:`Git Workflow Appendix <git-appendix>` for
+    elaboration.
+
 .. code-block:: bash
 
     $ git fetch --all
@@ -194,16 +201,16 @@ exactly what a force push does.
 
 .. warning::
 
-    Never use the force flag to push to ``upstream``.  Never use the force
-    flag to push to ``develop`` or ``stable``.  Only use the force flag on
-    your repository and on your topic branches.  Otherwise you run the risk of
-    screwing up the mainline branches, which will require manual
-    intervention by a senior developer and manual changes by every
-    downstream developer.  That is a recoverable situation, but also one
-    that we would rather avoid.  (Note: a hint that this has happened is
-    that one of the above listed merge commands that uses the ``--ff-only``
-    flag to merge a remote mainline branch into a local mainline branch
-    fails.)
+    Never use the force flag to push to the ``upstream`` repository.  Never use
+    the force flag to push to the ``develop`` or ``stable`` branches.  Only use
+    the force flag on your repository and on your topic branches.
+    Otherwise you run the risk of screwing up the mainline branches, which
+    will require manual intervention by a senior developer and manual
+    changes by every downstream developer.  That is a recoverable
+    situation, but also one that we would rather avoid.  (Note: a hint that
+    this has happened is that one of the above listed merge commands that
+    uses the ``--ff-only`` flag to merge a remote mainline branch into a
+    local mainline branch fails.)
 
 One task that you might be asked to do before your topic branch can be
 merged is "squashing your commits."  We want the git history to be clean
@@ -215,7 +222,7 @@ it can be merged.  Do this with (assuming you are in your topic branch):
 
 .. code-block:: bash
 
-    $ git rebase -i develop
+    $ git rebase -i `git merge-base develop HEAD`
 
 This will launch an editor that will give you control over how you want
 to structure your commits.  Usually you just want to "pick" the first
@@ -231,10 +238,8 @@ remote repository (which will require a force push if you reordered
 or deleted commits that existed in the remote version of the branch).
 
 (It usually is a good idea to squash commits before rebasing your topic
-branch on top of a mainline branch.  Any commit in your topic branch
-could cause a merge conflict, and it's usually easier to ensure only
-one merge conflict will potentially occur, rather than performing a merge
-conflict resolution for each commit in your topic branch -- the worst case.)
+branch on top of a mainline branch.  See the elaboration in the :ref:`Git
+Workflow Appendix <git-appendix>` on this topic.)
 
 Once your pull request has been merged into ``develop``, you can close
 the pull request and delete the remote branch in the GitHub interface.
@@ -327,3 +332,123 @@ Where ``desiredVersion`` is the version that will be written to the
 ``_protocol_definitions.py`` file.  This version must be in the form
 ``major.minor.revision`` where major, minor and revision can be any
 alphanumeric string.
+
+.. _git-appendix:
+
+*********************
+Git Workflow Appendix
+*********************
+
+++++++++++++++++++++++
+Don't use ``git pull``
+++++++++++++++++++++++
+
+We recommend against using ``git pull``.  The ``git pull`` command by
+default combines the ``git fetch`` and the ``git merge`` command.  If your
+local branch has diverged from its remote tracking branch, running ``git
+pull`` will create a merge commit locally to join the two branches.
+
+In some workflows, this is not an issue.  For us, however, it creates a
+problem in the future.  When you are ready to submit your topic branch in a
+pull request, we ask you to squash your commits (usually down to one
+commit).  Given the complex graph topography created by all of the merges, the
+order in which git applies commits in the squash is very difficult to
+reason about and will likely create merge conflicts that you find
+unnecessary and nonsensical (and therefore, highly aggravating!).
+
+We instead recommend using ``git fetch`` and ``git rebase`` to update your
+local topic branch against a mainline branch.  This will create a linear
+commit history in your topic branch, which will be easy to squash, since the
+commits are applied in the squash in the order that you made them.
+
+``git pull`` does have the ``--rebase`` option which will do a rebase
+instead of a merge to incorporate the remote branch.  One can also set the
+``branch.autosetuprebase always`` config option to have ``git pull`` do a
+rebase by default (i.e. without passing the ``--rebase`` flag) instead of a
+merge.  This will avoid the issue of squashing a non-linear commit history.
+
+So, in truth, we are really recommending against squashing local branches
+with many merge commits in them.  However, using the default settings for
+``git pull`` is the easiest way to end up in this situation.  Therefore,
+don't use ``git pull`` unless you know what you are doing.
+
++++++++++++++++++++
+Squash, then rebase
++++++++++++++++++++
+
+When updating a local topic branch with changes from a mainline branch, we
+recommend squashing commits in your topic branch down to one commit before
+rebasing on top of the mainline branch.  The reason for this is that, under the
+hood, to apply the rebase ``git rebase`` essentially cherry-picks each
+commit from your topic branch not in the mainline branch and applies it to the
+mainline branch.  Each one of these applications can cause a merge
+conflict.  It is much better to face the potential of only one merge
+conflict than N merge conflicts (where N is the number of unique commits in the
+local branch)!
+
+The difficulty of proceeding the opposite way (rebasing, then squashing) is
+only compounded because of the unintuitiveness of the N merge conflicts.
+When presented with a merge conflict, your likely intuition is to put the
+file in the state that you think it ought to be in, namely the condition it was
+in after the Nth commit.  However, if that state was different than the
+state that git thinks it should be in -- namely, the state of the file at
+commit X where X<N -- then you have only created the potential for more
+merge conflicts.  When the next intermediate commit, Y (where X<Y<N) is
+applied, it too will create a merge conflict.  And so on.
+
+So squash, then rebase, and avoid this whole dilemma.  The terms are a bit
+confusing since both "squashing" and "rebasing" are accomplished via the
+``git rebase`` command.  As mentioned above, squash the commits in your
+topic branch with (assuming you have branched off of the ``develop``
+mainline branch):
+
+.. code-block:: bash
+
+    $ git rebase -i `git merge-base develop HEAD`
+
+(``git merge-base develop HEAD`` specifies the most recent commit that both
+``develop`` and your topic branch share in common.  Normally this is
+equivalent to the most recent commit of ``develop``, but that's not
+guaranteed -- for instance, if you have updated your local ``develop``
+branch with additional commits from the remote ``develop`` since you
+created your topic branch which branched off of the local ``develop``.)
+
+And rebase with (again, assuming ``develop`` as the mainline branch):
+
+.. code-block:: bash
+
+    $ git rebase develop
+
+++++++++++++++++++++++++++++++
+GitHub's broken merge/CI model
+++++++++++++++++++++++++++++++
+
+GitHub supports continuous integration (CI) via `Travis CI
+<https://travis-ci.com/>`_.  On every pull request, Travis runs a suite of
+tests to determine if the PR is safe to merge into the mainline branch that it
+targets.  Unfortunately, the way that GitHub's merge model is structured
+does not guarantee this property.  That is, it is possible for a PR to pass the
+Travis tests but for the mainline branch to fail them after that PR is
+merged.
+
+How can this happen?  Let's illustrate by example: suppose PR A and PR B
+both branch off of commit M, which is the most recent commit in the
+mainline branch.  A and B both pass CI, so it appears that it is safe to
+merge them into the mainline branch.  However, it is also true that the
+changes in A and B have never been tested `together` until CI is run on the
+mainline branch after both have been merged.  If PR A and B have
+incompatible changes, even if both merge cleanly, CI will fail in the
+mainline branch.
+
+GitHub could solve this issue by not allowing a PR to be merged unless it
+both passed CI and its branch contained (in addition to the commits it
+wanted to merge in to mainline) every commit in the mainline branch.  That is,
+no PR could be merged into mainline unless its commits were tested with
+every commit already in mainline.  Right now GitHub does not mandate this
+strict sequencing of commits, which is why it can never guarantee that the
+mainline CI will pass, even if all the PR CIs passed.
+
+Developers could also enforce this property manually, but we have
+determined that not using GitHub's UI merging features and judiciously
+re-submitting PRs for additional CI would be more effort than fixing a
+broken test in a mainline branch once in a while.
