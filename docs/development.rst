@@ -252,6 +252,10 @@ For instance, get help on the ``git commit`` command by running:
 
     $ git help commit
 
+To master git, we recommend reading this free book (save chapter four,
+which is about git server configuration): `Pro Git
+<https://git-scm.com/book/en/v2>`_.
+
 
 ************
 Contributing
