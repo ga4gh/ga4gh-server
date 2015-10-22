@@ -158,6 +158,13 @@ branch.  Since you (almost) always want to be developing off of the
 latest version of the code, you need to perform a rebase to incorporate
 the most recent changes from ``develop`` into your branch.
 
+.. warning::
+
+    We recommend against using ``git pull``.  Use ``git fetch`` and ``git
+    rebase`` to update your topic branch against mainline branches
+    instead.  See the :ref:`Git Workflow Appendix <git-appendix>` for
+    elaboration.
+
 .. code-block:: bash
 
     $ git fetch --all
@@ -194,16 +201,16 @@ exactly what a force push does.
 
 .. warning::
 
-    Never use the force flag to push to ``upstream``.  Never use the force
-    flag to push to ``develop`` or ``stable``.  Only use the force flag on
-    your repository and on your topic branches.  Otherwise you run the risk of
-    screwing up the mainline branches, which will require manual
-    intervention by a senior developer and manual changes by every
-    downstream developer.  That is a recoverable situation, but also one
-    that we would rather avoid.  (Note: a hint that this has happened is
-    that one of the above listed merge commands that uses the ``--ff-only``
-    flag to merge a remote mainline branch into a local mainline branch
-    fails.)
+    Never use the force flag to push to the ``upstream`` repository.  Never use
+    the force flag to push to the ``develop`` or ``stable`` branches.  Only use
+    the force flag on your repository and on your topic branches.
+    Otherwise you run the risk of screwing up the mainline branches, which
+    will require manual intervention by a senior developer and manual
+    changes by every downstream developer.  That is a recoverable
+    situation, but also one that we would rather avoid.  (Note: a hint that
+    this has happened is that one of the above listed merge commands that
+    uses the ``--ff-only`` flag to merge a remote mainline branch into a
+    local mainline branch fails.)
 
 One task that you might be asked to do before your topic branch can be
 merged is "squashing your commits."  We want the git history to be clean
@@ -231,10 +238,8 @@ remote repository (which will require a force push if you reordered
 or deleted commits that existed in the remote version of the branch).
 
 (It usually is a good idea to squash commits before rebasing your topic
-branch on top of a mainline branch.  Any commit in your topic branch
-could cause a merge conflict, and it's usually easier to ensure only
-one merge conflict will potentially occur, rather than performing a merge
-conflict resolution for each commit in your topic branch -- the worst case.)
+branch on top of a mainline branch.  See the elaboration in the :ref:`Git
+Workflow Appendix <git-appendix>` on this topic.)
 
 Once your pull request has been merged into ``develop``, you can close
 the pull request and delete the remote branch in the GitHub interface.
@@ -327,3 +332,70 @@ Where ``desiredVersion`` is the version that will be written to the
 ``_protocol_definitions.py`` file.  This version must be in the form
 ``major.minor.revision`` where major, minor and revision can be any
 alphanumeric string.
+
+.. _git-appendix:
+
+*********************
+Git Workflow Appendix
+*********************
+
+++++++++++++++++++++++
+Don't use ``git pull``
+++++++++++++++++++++++
+
+We recommend against using ``git pull``.  The ``git pull`` command by
+default combines the ``git fetch`` and the ``git merge`` command.  If your
+local branch has diverged from its remote tracking branch, running ``git
+pull`` will create a merge commit locally to join the two branches.
+
+In some workflows, this is not an issue.  For us, however, it creates a
+problem in the future.  When you are ready to submit your topic branch in a
+pull request, we ask you to squash your commits (usually down to one
+commit).  Given the complex graph topography created by all of the merges, the
+order in which git applies commits in the squash is very difficult to
+reason about and will likely create merge conflicts that you find
+unnecessary and nonsensical (and therefore, highly aggravating!).
+
+We instead recommend using ``git fetch`` and ``git rebase`` to update your
+local topic branch against a mainline branch.  This will create a linear
+commit history in your topic branch, which will be easy to squash, since the
+commits are applied in the squash in the order that you made them.
+
+``git pull`` does have the ``--rebase`` option which will do a rebase
+instead of a merge to incorporate the remote branch.  One can also set the
+``branch.autosetuprebase always`` config option to have ``git pull`` do a
+rebase by default (i.e. without passing the ``--rebase`` flag) instead of a
+merge.  This will avoid the issue of squashing a non-linear commit history.
+
+So, in truth, we are really recommending against squashing local branches
+with many merge commits in them.  However, using the default settings for
+``git pull`` is the easiest way to end up in this situation.  Therefore,
+don't use ``git pull`` unless you know what you are doing.
+
++++++++++++++++++++
+Squash, then rebase
++++++++++++++++++++
+
+When updating a local topic branch with changes from a mainline branch, we
+recommend squashing commits in your topic branch down to one commit before
+rebasing on top of the mainline branch.  The reason for this is that, under the
+hood, to apply the rebase ``git rebase`` essentially cherry-picks each
+commit from your topic branch not in the mainline branch and applies it to the
+mainline branch.  Each one of these applications can cause a merge
+conflict.  It is much better to face the potential of only one merge
+conflict than N merge conflicts (where N is the number of unique commits in the
+local branch)!
+
+The difficulty of proceeding the opposite way (rebasing, then squashing) is
+only compounded because of the unintuitiveness of the N merge conflicts.
+When presented with a merge conflict, your likely intuition is to put the
+file in the state that you think it ought to be in, namely the condition it was
+in after the Nth commit.  However, if that state was different than the
+state that git thinks it should be in -- namely, the state of the file at
+commit X where X<N -- then you have only created the potential for more
+merge conflicts.  When the next intermediate commit, Y (where X<Y<N) is
+applied, it too will create a merge conflict.  And so on.
+
+So squash, then rebase, and avoid this whole dilemma.  (The terms are a bit
+confusing since both "squashing" and "rebasing" are accomplished via the
+``git rebase`` command.)
