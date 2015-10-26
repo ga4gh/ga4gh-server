@@ -15,8 +15,8 @@ import gzip
 import json
 import hashlib
 import os
+import requests
 import tempfile
-import urllib
 import urllib2
 
 import pysam
@@ -116,6 +116,45 @@ class ChromMinMax(object):
         return minMax.maxPos
 
 
+def _fetchSequence(ac, startIndex=None, endIndex=None):
+    """Fetch sequences from NCBI using the eutils interface.
+
+    An interbase interval may be optionally provided with startIndex and
+    endIndex. NCBI eutils will return just the requested subsequence, which
+    might greatly reduce payload sizes (especially with chromosome-scale
+    sequences). When wrapped is True, return list of sequence lines rather
+    than concatenated sequence.
+
+    >>> len(_fetchSequence('NP_056374.2'))
+    1596
+
+    Pass the desired interval rather than using Python's [] slice
+    operator.
+
+    >>> _fetchSequence('NP_056374.2',0,10)
+    'MESRETLSSS'
+
+    >>> _fetchSequence('NP_056374.2')[0:10]
+    'MESRETLSSS'
+
+    """
+
+    urlFmt = ("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
+              "db=nucleotide&id={ac}&rettype=fasta")
+    if startIndex is None or endIndex is None:
+        url = urlFmt.format(ac=ac)
+    else:
+        urlFmt += "&seq_start={start}&seq_stop={stop}"
+        url = urlFmt.format(ac=ac, start=startIndex + 1, stop=endIndex)
+    resp = requests.get(url)
+    resp.raise_for_status()
+    seqlines = resp.content.splitlines()[1:]
+    print("{ac}[{s},{e}) => {n} lines ({u})".format(
+        ac=ac, s=startIndex, e=endIndex, n=len(seqlines), u=url))
+    # return response as list of lines, already line wrapped
+    return seqlines
+
+
 class AbstractFileDownloader(object):
     """
     Base class for individual site genome file downloaders
@@ -130,31 +169,31 @@ class AbstractFileDownloader(object):
         self.dirName = args.dir_name
         self.datasetName = '1kg-p3-subset'
         self.variantSetName = 'mvncall'
-        self.referenceSetName = 'GRCh38-subset'
+        self.referenceSetName = 'GRCh37-subset'
         self.chromMinMax = ChromMinMax()
         self.accessions = {
-            '1': 'CM000663.2',
-            '2': 'CM000664.2',
-            '3': 'CM000665.2',
-            '4': 'CM000666.2',
-            '5': 'CM000667.2',
-            '6': 'CM000668.2',
-            '7': 'CM000669.2',
-            '8': 'CM000670.2',
-            '9': 'CM000671.2',
-            '10': 'CM000672.2',
-            '11': 'CM000673.2',
-            '12': 'CM000674.2',
-            '13': 'CM000675.2',
-            '14': 'CM000676.2',
-            '15': 'CM000677.2',
-            '16': 'CM000678.2',
-            '17': 'CM000679.2',
-            '18': 'CM000680.2',
-            '19': 'CM000681.2',
-            '20': 'CM000682.2',
-            '21': 'CM000683.2',
-            '22': 'CM000684.2',
+            '1': 'CM000663.1',
+            '2': 'CM000664.1',
+            '3': 'CM000665.1',
+            '4': 'CM000666.1',
+            '5': 'CM000667.1',
+            '6': 'CM000668.1',
+            '7': 'CM000669.1',
+            '8': 'CM000670.1',
+            '9': 'CM000671.1',
+            '10': 'CM000672.1',
+            '11': 'CM000673.1',
+            '12': 'CM000674.1',
+            '13': 'CM000675.1',
+            '14': 'CM000676.1',
+            '15': 'CM000677.1',
+            '16': 'CM000678.1',
+            '17': 'CM000679.1',
+            '18': 'CM000680.1',
+            '19': 'CM000681.1',
+            '20': 'CM000682.1',
+            '21': 'CM000683.1',
+            '22': 'CM000684.1',
         }
         self.studyMap = {
             'HG00096': 'GBR',
@@ -316,34 +355,21 @@ class AbstractFileDownloader(object):
             self.referenceSetName)
         dumpDictToFileAsJson(
             referenceSetMetadata, referenceSetMetadataFilename)
+
         # Download chromosomes
         mkdirAndChdirList([self.referenceSetName])
         cleanDir()
-        baseUrl = 'http://www.ebi.ac.uk/ena/data/view/'
         for chromosome in self.chromosomes:
             accession = self.accessions[chromosome]
-            path = os.path.join(baseUrl, accession)
-            maxPos = self.chromMinMax.getMaxPos(chromosome)
+            fileName = '{}.fa'.format(chromosome)
             minPos = 0
             if self.excludeReferenceMin:
                 minPos = self.chromMinMax.getMinPos(chromosome)
-            args = urllib.urlencode({
-                'display': 'fasta',
-                'range': '{}-{}'.format(minPos, maxPos)})
-            url = '{}%26{}'.format(path, args)
-            tempFileName = '{}.fa.temp'.format(chromosome)
-            fileName = '{}.fa'.format(chromosome)
-            downloader = utils.HttpFileDownloader(url, tempFileName)
-            downloader.download()
-            # We need to replace the header on the downloaded FASTA
-            with open(tempFileName, "r") as inFasta,\
-                    open(fileName, "w") as outFasta:
-                # Write the new header
+            maxPos = self.chromMinMax.getMaxPos(chromosome)
+            with open(fileName, "w") as outFasta:
                 print(">{}".format(chromosome), file=outFasta)
-                inFasta.readline()
-                for line in inFasta:
-                    print(line, file=outFasta, end="")
-            os.unlink(tempFileName)
+                for line in _fetchSequence(accession, minPos, maxPos):
+                    print(line, file=outFasta)
             utils.log("Compressing {}".format(fileName))
             utils.runCommand("bgzip {}".format(fileName))
             compressedFileName = fileName + '.gz'
@@ -352,7 +378,7 @@ class AbstractFileDownloader(object):
             # Assemble the metadata.
             metadata = {
                 "md5checksum": getReferenceChecksum(compressedFileName),
-                "sourceUri": url,
+                "sourceUri": None,
                 "ncbiTaxonId": 9606,
                 "isDerived": False,
                 "sourceDivergence": None,
