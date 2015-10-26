@@ -8,6 +8,7 @@ scripts/auth.yml
 *.pid
 *.fai
 *.gzi
+*.bak
 
 # Below based off of https://gist.github.com/octocat/9257657
 # and https://github.com/github/gitignore/blob/master/Python.gitignore
