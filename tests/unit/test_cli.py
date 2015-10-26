@@ -5,9 +5,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
+import mock
 import unittest
 
 import ga4gh.cli as cli
+import ga4gh.protocol as protocol
 
 
 class TestGa2VcfArguments(unittest.TestCase):
@@ -211,3 +214,63 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.end, 2)
         self.assertEquals(args.outputFormat, "fasta")
         self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
+
+
+class TestOutputFormats(unittest.TestCase):
+    """
+    Tests the different output formats of the cli
+    """
+    class FakeArgs(object):
+        def __init__(self, outputFormat='text'):
+            self.outputFormat = outputFormat
+            self.id = 'id'
+            self.key = 'key'
+            self.baseUrl = 'baseUrl'
+            self.verbose = 'verbose'
+
+    class FakeObject(protocol.ProtocolElement):
+
+        __slots__ = ['id', 'name']
+
+        def __init__(self):
+            self.id = 'id'
+            self.name = 'name'
+
+    def _getRunPrintMethodCalls(self, runner):
+        printCalls = []
+        with mock.patch('__builtin__.print') as printMethod:
+            printMethod.side_effect = \
+                lambda *args, **kwargs: printCalls.append((args, kwargs))
+            runner.run()
+        return printCalls
+
+    def testListReferenceBasesFasta(self):
+        args = self.FakeArgs('fasta')
+        args.start = 1
+        args.end = 100
+        returnVal = 'AGCT' * 100  # 400 bases
+        runner = cli.ListReferenceBasesRunner(args)
+        runner._client.listReferenceBases = mock.Mock(
+            return_value=returnVal)
+        printCalls = self._getRunPrintMethodCalls(runner)
+        self.assertEqual(printCalls[0][0][0], '>id:1-100')
+        self.assertEqual(len(printCalls), 7)
+        self.assertEqual(
+            printCalls[-1][0][0],
+            returnVal[-50:])  # 50 = 400 % 70
+
+    def testTextOutput(self):
+        returnObj = self.FakeObject()
+        args = self.FakeArgs()
+        runner = cli.AbstractGetRunner(args)
+        runner._method = mock.Mock(return_value=returnObj)
+        printCalls = self._getRunPrintMethodCalls(runner)
+        self.assertEqual(printCalls, [((u'id', u'name'), {'sep': u'\t'})])
+
+    def testJsonOutput(self):
+        returnObj = self.FakeObject()
+        args = self.FakeArgs('json')
+        runner = cli.AbstractGetRunner(args)
+        runner._method = mock.Mock(return_value=returnObj)
+        printCalls = self._getRunPrintMethodCalls(runner)
+        self.assertEqual(json.loads(printCalls[0][0][0])['name'], 'name')
