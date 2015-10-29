@@ -25,7 +25,7 @@ def parseVersion(moduleFile):
     match = re.findall("__version__ = '([^']+)'", s)
     return match[0]
 
-f = open("README.txt")
+f = open("README.pypi.rst")
 ga4ghReadme = f.read()
 f.close()
 ga4ghVersion = parseVersion("ga4gh/__init__.py")

@@ -9,24 +9,26 @@ GA4GH Reference Implementation
    :alt: Join the chat at https://gitter.im/ga4gh/server
    :target: https://gitter.im/ga4gh/server?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
-This is an early alpha of the GA4GH reference client
-and server applications.
-It is under heavy development, and many aspects of
+This is the development version of the GA4GH reference implementation.
+If you would like to install the stable version of the server, please
+see the instructions on `the PyPI page <https://pypi.python.org/pypi/ga4gh>`_.
+
+The server is currently under heavy development, and many aspects of
 the layout and APIs will change as requirements are better understood.
 If you would like to help, please check out our list of
 `issues <https://github.com/ga4gh/server/issues>`_!
 
-Full documentation is available at `read-the-docs.org
-<http://ga4gh-reference-implementation.readthedocs.org/>`_.
+The latest bleeding-edge documentation is available at `read-the-docs.org
+<http://ga4gh-reference-implementation.readthedocs.org/en/develop>`_.
 
 - For a quick start with the GA4GH API, please see our
-  `demo <http://ga4gh-reference-implementation.readthedocs.org/en/stable/demo.html>`_.
+  `demo <http://ga4gh-reference-implementation.readthedocs.org/en/develop/demo.html>`_.
 - To configure and deploy the GA4GH server in production
   please see the
   `installation
-  <http://ga4gh-reference-implementation.readthedocs.org/en/stable/installation.html>`_
+  <http://ga4gh-reference-implementation.readthedocs.org/en/develop/installation.html>`_
   page.
 - If you would like to contribute to the project, please see the
   `development
-  <http://ga4gh-reference-implementation.readthedocs.org/en/stable/development.html>`_
+  <http://ga4gh-reference-implementation.readthedocs.org/en/develop/development.html>`_
   page.
