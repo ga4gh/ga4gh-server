@@ -16,11 +16,9 @@ import ga4gh.cli as cli
 import tests.utils as utils
 
 
-class TestClientJson(unittest.TestCase):
+class TestClientOutput(unittest.TestCase):
     """
-    Tests that the JSON output by the client on the command line for
-    various options is equal to the values we find using the Python
-    client API.
+    Base class for client output tests
     """
     def setUp(self):
         self._dataDir = "tests/data"
@@ -28,17 +26,54 @@ class TestClientJson(unittest.TestCase):
         self._backend = backend.FileSystemBackend(self._dataDir)
         self._client = client.LocalClient(self._backend)
 
+    def captureCliOutput(self, command, arguments, outputFormat):
+        clientCommand = "{} {} {} -O {}".format(
+            command, self._dataUrl, arguments, outputFormat)
+        stdout, stderr = utils.captureOutput(
+            cli.client_main, clientCommand.split())
+        self.assertEqual(len(stderr), 0)
+        return stdout
+
+
+class TestClientFasta(TestClientOutput):
+    """
+    Tests client FASTA output
+    """
+    def captureFastaOutput(self, command, arguments=""):
+        stdout = self.captureCliOutput(command, arguments, "fasta")
+        lines = stdout.split()
+        return lines
+
+    def testListReferenceBases(self):
+        referenceSetIterator = self._client.searchReferenceSets()
+        referenceSet = next(referenceSetIterator)
+        referencesIterator = self._client.searchReferences(referenceSet.id)
+        reference = next(referencesIterator)
+        start = 1
+        end = 5
+        lines = self.captureFastaOutput(
+            "references-list-bases --start {} --end {}".format(start, end),
+            reference.id)
+        self.assertEqual(
+            lines[0], ">{}:{}-{}".format(reference.id, start, end))
+        cliBases = ''.join(lines[1:])
+        bases = self._client.listReferenceBases(reference.id, start, end)
+        self.assertEqual(cliBases, bases)
+
+
+class TestClientJson(TestClientOutput):
+    """
+    Tests that the JSON output by the client on the command line for
+    various options is equal to the values we find using the Python
+    client API.
+    """
     def captureJsonOutput(self, command, arguments=""):
         """
         Runs the specified command add the JSON output option and
         returns the result as a list of JSON parsed dictionaries.
         """
-        clientCommand = "{} {} {} -O json".format(
-            command, self._dataUrl, arguments)
-        stdout, stderr = utils.captureOutput(
-            cli.client_main, clientCommand.split())
+        stdout = self.captureCliOutput(command, arguments, "json")
         cliOutput = []
-        self.assertEqual(len(stderr), 0)
         for line in stdout.splitlines():
             cliOutput.append(json.loads(line))
         return cliOutput
