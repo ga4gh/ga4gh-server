@@ -21,8 +21,8 @@ before_script:
 # under it that we want to run (and want to be able to run) as local tests
 script: 
   - flake8 *.py tests ga4gh scripts --exclude=ez_setup.py
-  - coverage erase
   - nosetests --with-coverage --cover-package ga4gh
               --cover-inclusive --cover-min-percentage 85
+              --cover-branches --cover-erase
   - make clean -C docs
   - make -C docs
