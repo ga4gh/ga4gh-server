@@ -498,7 +498,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         Returns the id of a metadata
         """
         return str(datamodel.VariantSetMetadataCompoundId(
-                    self.getCompoundId(), 'metadata:' + metadata.key))
+            self.getCompoundId(), 'metadata:' + metadata.key))
 
     def _getMetadataFromVcf(self, varFile):
         # All the metadata is available via each varFile.header, including:
