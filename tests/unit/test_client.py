@@ -332,7 +332,7 @@ class ExhaustiveListingsMixin(object):
         for referenceSet in self.client.searchReferenceSets():
             references = list(self.client.searchReferences(referenceSet.id))
             datamodelReferences = self.backend.getReferenceSet(
-                    referenceSet.id).getReferences()
+                referenceSet.id).getReferences()
             self.verifyObjectList(
                 references, datamodelReferences, self.client.getReference)
             for datamodelReference in datamodelReferences:
@@ -346,7 +346,7 @@ class ExhaustiveListingsMixin(object):
         for dataset in self.client.searchDatasets():
             variantSets = list(self.client.searchVariantSets(dataset.id))
             datamodelVariantSets = self.backend.getDataset(
-                    dataset.id).getVariantSets()
+                dataset.id).getVariantSets()
             self.verifyObjectList(
                 variantSets, datamodelVariantSets, self.client.getVariantSet)
 
@@ -372,7 +372,7 @@ class ExhaustiveListingsMixin(object):
         for dataset in self.client.searchDatasets():
             readGroupSets = list(self.client.searchReadGroupSets(dataset.id))
             datamodelReadGroupSets = self.backend.getDataset(
-                    dataset.id).getReadGroupSets()
+                dataset.id).getReadGroupSets()
             self.verifyObjectList(
                 readGroupSets, datamodelReadGroupSets,
                 self.client.getReadGroupSet)
