@@ -27,13 +27,13 @@ packages using:
 
 .. code-block:: bash
 
-    $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev libssl-dev
+    $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev libssl-dev virtualenv
 
 On Fedora 22+ (current), the equivalent would be:
 
 .. code-block:: bash
 
-    $ sudo dnf install python-devel python-virtualenv zlib-devel libxslt-devel openssl-devel
+    $ sudo dnf install python-devel python-virtualenv zlib-devel libxslt-devel openssl-devel python-virtualenv
 
 First, we create a virtualenv sandbox to isolate the demo from the
 rest of the system, and then activate it:
