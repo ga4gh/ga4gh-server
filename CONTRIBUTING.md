@@ -26,6 +26,7 @@ Some general rules to follow:
 * Create a branch for each update that you're working on. These branches 
   are often called "feature" or "topic" branches. Any changes that you 
   push to your feature branch will automatically be shown in the pull request.
+* Test your code (by running `nosetests`) before creating a pull request.
 * Keep your pull requests as small as possible. Large pull requests are 
   hard to review. Try to break up your changes into self-contained and 
   incremental pull requests.

@@ -29,7 +29,7 @@ class TestSimulatedStack(unittest.TestCase):
         # Set the random seed to make tests reproducible.
         random.seed(1)
         config = {
-            "DATA_SOURCE": "__SIMULATED__",
+            "DATA_SOURCE": "simulated://",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
             "SIMULATED_BACKEND_NUM_CALLS": 5,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,

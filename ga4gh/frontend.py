@@ -172,12 +172,13 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     cors.CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
     # Allocate the backend
-    # TODO is this a good way to determine what type of backend we should
-    # instantiate? We should think carefully about this. The approach of
-    # using the special strings __SIMULATED__ and __EMPTY__ seems OK for
-    # now, but is certainly not ideal.
-    dataSource = app.config["DATA_SOURCE"]
-    if dataSource == "__SIMULATED__":
+    # We use URLs to specify the backend. Currently we have file:// URLs (or
+    # URLs with no scheme) for the FileSystemBackend, and special empty:// and
+    # simulated:// URLs for empty or simulated data sources.
+    dataSource = urlparse.urlparse(app.config["DATA_SOURCE"], "file")
+
+    if dataSource.scheme == "simulated":
+        # Ignore the query string
         randomSeed = app.config["SIMULATED_BACKEND_RANDOM_SEED"]
         numCalls = app.config["SIMULATED_BACKEND_NUM_CALLS"]
         variantDensity = app.config["SIMULATED_BACKEND_VARIANT_DENSITY"]
@@ -186,18 +187,22 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_REFERENCE_SETS"]
         numReferencesPerReferenceSet = app.config[
             "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET"]
-        numAlignments = app.config[
+        numAlignmentsPerReadGroup = app.config[
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
         theBackend = backend.SimulatedBackend(
             randomSeed=randomSeed, numCalls=numCalls,
             variantDensity=variantDensity, numVariantSets=numVariantSets,
             numReferenceSets=numReferenceSets,
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
-            numAlignments=numAlignments)
-    elif dataSource == "__EMPTY__":
+            numAlignments=numAlignmentsPerReadGroup)
+    elif dataSource.scheme == "empty":
         theBackend = backend.EmptyBackend()
+    elif dataSource.scheme == "file":
+        theBackend = backend.FileSystemBackend(os.path.join(
+            dataSource.netLoc, dataSource.path))
     else:
-        theBackend = backend.FileSystemBackend(dataSource)
+        raise exceptions.ConfigurationException(
+            "Unsupported data source scheme: " + dataSource.scheme)
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])
