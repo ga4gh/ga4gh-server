@@ -126,12 +126,17 @@ class SamLine(object):
         # FLAG
         ret.flag = cls.toSamFlag(read)
         # RNAME
-        refName = read.alignment.position.referenceName
-        ret.reference_id = targetIds[refName]
+        if read.alignment is not None:
+            refName = read.alignment.position.referenceName
+            ret.reference_id = targetIds[refName]
         # POS
-        ret.reference_start = int(read.alignment.position.position)
+        if read.alignment is None:
+            ret.reference_start = 0
+        else:
+            ret.reference_start = int(read.alignment.position.position)
         # MAPQ
-        ret.mapping_quality = read.alignment.mappingQuality
+        if read.alignment is not None:
+            ret.mapping_quality = read.alignment.mappingQuality
         # CIGAR
         ret.cigar = cls.toCigar(read)
         # RNEXT
@@ -154,40 +159,53 @@ class SamLine(object):
 
     @classmethod
     def toSamFlag(cls, read):
+        # based on algorithm here:
+        # https://github.com/googlegenomics/readthedocs/
+        # blob/master/docs/source/migrating_tips.rst
         flag = 0
-        if read.numberReads:
+        if read.numberReads == 2:
             flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.NUMBER_READS)
+                flag, reads.SamFlags.READ_PAIRED)
         if read.properPlacement:
             flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.PROPER_PLACEMENT)
-        if read.alignment.position.strand == protocol.Strand.NEG_STRAND:
+                flag, reads.SamFlags.READ_PROPER_PAIR)
+        if read.alignment is None:
             flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.REVERSED)
+                flag, reads.SamFlags.READ_UNMAPPED)
+        if read.nextMatePosition is None:
+            flag = reads.SamFlags.setFlag(
+                flag, reads.SamFlags.MATE_UNMAPPED)
+        if (read.alignment is not None and
+                read.alignment.position.strand ==
+                protocol.Strand.NEG_STRAND):
+            flag = reads.SamFlags.setFlag(
+                flag, reads.SamFlags.READ_REVERSE_STRAND)
         if (read.nextMatePosition is not None and
                 read.nextMatePosition.strand == protocol.Strand.NEG_STRAND):
             flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.NEXT_MATE_REVERSED)
-        if read.readNumber == 0:
+                flag, reads.SamFlags.MATE_REVERSE_STRAND)
+        if read.readNumber is None:
+            pass
+        elif read.readNumber == 0:
             flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.READ_NUMBER_ONE)
+                flag, reads.SamFlags.FIRST_IN_PAIR)
         elif read.readNumber == 1:
             flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.READ_NUMBER_TWO)
-        elif read.readNumber == 2:
+                flag, reads.SamFlags.SECOND_IN_PAIR)
+        else:
             flag = reads.SamFlags.setFlag(
-                flag,
-                reads.SamFlags.READ_NUMBER_ONE |
-                reads.SamFlags.READ_NUMBER_TWO)
+                flag, reads.SamFlags.FIRST_IN_PAIR)
+            flag = reads.SamFlags.setFlag(
+                flag, reads.SamFlags.SECOND_IN_PAIR)
         if read.secondaryAlignment:
             flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.SECONDARY_ALIGNMENT)
         if read.failedVendorQualityChecks:
             flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
+                flag, reads.SamFlags.FAILED_QUALITY_CHECK)
         if read.duplicateFragment:
             flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.DUPLICATE_FRAGMENT)
+                flag, reads.SamFlags.DUPLICATE_READ)
         if read.supplementaryAlignment:
             flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.SUPPLEMENTARY_ALIGNMENT)
@@ -196,11 +214,12 @@ class SamLine(object):
     @classmethod
     def toCigar(cls, read):
         cigarTuples = []
-        for gaCigarUnit in read.alignment.cigar:
-            operation = reads.SamCigar.ga2int(gaCigarUnit.operation)
-            length = int(gaCigarUnit.operationLength)
-            cigarTuple = (operation, length)
-            cigarTuples.append(cigarTuple)
+        if read.alignment is not None:
+            for gaCigarUnit in read.alignment.cigar:
+                operation = reads.SamCigar.ga2int(gaCigarUnit.operation)
+                length = int(gaCigarUnit.operationLength)
+                cigarTuple = (operation, length)
+                cigarTuples.append(cigarTuple)
         return tuple(cigarTuples)
 
     @classmethod
