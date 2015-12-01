@@ -236,13 +236,6 @@ class OidcOpServerForTesting(ServerForTesting):
             subdirectory="oidc-provider/simple_op",
             pingStatusCode=404)
 
-    def start(self):
-        # Setup environment for OP server
-        with tempfile.TemporaryFile() as tempFile:
-            subprocess.check_call(["./setupenv.sh"], cwd="oidc-provider",
-                                  stdout=tempFile, stderr=subprocess.STDOUT)
-        super(OidcOpServerForTesting, self).start()
-
     def getCmdLine(self):
         return ("python src/run.py --base https://localhost:{}" +
                 " -p {} -d settings.yaml").format(oidcOpPort, oidcOpPort)
