@@ -8,8 +8,9 @@ from __future__ import unicode_literals
 
 import requests
 import subprocess
-from lxml import html
 from urlparse import urlparse
+
+import lxml.html as html
 
 import client
 import server
