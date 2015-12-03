@@ -199,7 +199,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         theBackend = backend.EmptyBackend()
     elif dataSource.scheme == "file":
         theBackend = backend.FileSystemBackend(os.path.join(
-            dataSource.netLoc, dataSource.path))
+            dataSource.netloc, dataSource.path))
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)
