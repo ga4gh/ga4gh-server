@@ -332,6 +332,24 @@ class DatasetNameNotFoundException(NotFoundException):
         self.message = "Dataset with name '{0}' not found".format(name)
 
 
+class RnaQuantificationNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "RnaQuantification with name '{0}' not found".format(name))
+
+
+class ExpressionLevelNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "ExpressionLevel with name '{0}' not found".format(name))
+
+
+class FeatureGroupNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "FeatureGroup with name '{0}' not found".format(name))
+
+
 class DataException(BaseServerException):
     """
     Exceptions thrown during the server startup, and processing faulty VCFs

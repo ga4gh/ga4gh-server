@@ -208,6 +208,15 @@ class AbstractClient(object):
         return self._runGetRequest(
             "variantsets", protocol.VariantSet, variantSetId)
 
+    def getFeature(self, featureId):
+        """
+        Returns a Feature with the specified ID from the server.
+        :param str featureId: The ID of the Feature of interest.
+        :return: The Feature of interest.
+        :rtype: :class:`ga4gh.protocol.Feature`
+        """
+        return self._runGetRequest("features", protocol.Feature, featureId)
+
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
             callSetIds=None):
@@ -389,6 +398,90 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "reads", protocol.SearchReadsResponse)
 
+    def searchFeatures(self, featureSetId=None, parentId=None,
+                       referenceName=None, referenceId=None, start=None,
+                       end=None):
+        """
+        Returns an iterator over the Features from the server
+
+        :param str featureSetId: The ID of the
+            :class:`ga4gh.protocol.FeatureSet` of interest
+        :param str parentId: The ID of the parent
+            :class:`ga4gh.protocol.Feature` of the
+            :class:`ga4gh.protocol.Feature` of interest
+        :param str referenceName: The name of the
+            :class:`ga4gh.protocol.Reference` of interest.
+        :param str referenceId: The ID of the
+            :class:`ga4gh.protocol.Reference` of interest.
+        :param int start: The start position of this query.
+        :param int stop: The end position of this query.
+        """
+        request = protocol.SearchFeaturesRequest()
+        request.featureSetId = featureSetId
+        request.parentId = parentId
+        request.referenceName = referenceName
+        request.referenceId = referenceId
+        request.start = start
+        request.end = end
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "features", protocol.SearchFeaturesResponse)
+
+    def searchRnaQuantification(self, rnaQuantificationId):
+        """
+        Returns an iterator over the RnaQuantification objects from the server
+
+        :param str rnaQuantificationId: The ID of the
+            :class:`ga4gh.protocol.RnaQuantification` of interest.
+        """
+        request = protocol.SearchRnaQuantificationRequest()
+        request.rnaQuantificationId = rnaQuantificationId
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "rnaquantification",
+            protocol.SearchRnaQuantificationResponse)
+
+    def searchExpressionLevel(self, expressionLevelId=None,
+                              featureGroupId=None, rnaQuantificationId=None,
+                              threshold=None):
+        """
+        Returns an iterator over the ExpressionLevel objects from the server
+
+        :param str expressionLevelId: The ID of the
+            :class:`ga4gh.protocol.ExpressionLevel` of interest.
+        :param str featureGroupId: The ID of the
+            :class:`ga4gh.protocol.FeatureGroup` of interest.
+        :param str rnaQuantificationIdIDs: The ID of the
+            :class:`ga4gh.protocol.RnaQuantification` of interest.
+        :param float threshold: Minimum expression of responses to return.
+        """
+        request = protocol.SearchExpressionLevelRequest()
+        request.expressionLevelId = expressionLevelId
+        request.featureGroupId = featureGroupId
+        request.rnaQuantificationId = rnaQuantificationId
+        request.threshold = threshold
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "expressionlevel",
+            protocol.SearchExpressionLevelResponse)
+
+    def searchFeatureGroup(self, rnaQuantificationId=None,
+                           featureGroupId=None, threshold=0.0):
+        """
+        Returns an iterator over the FeatureGroup objects from the server
+
+        :param: str featureGroupId: The ID of the
+            :class:`ga4gh.protocol.FeatureGroup` of interest.
+        """
+        request = protocol.SearchFeatureGroupRequest()
+        request.rnaQuantificationId = rnaQuantificationId
+        request.featureGroupId = featureGroupId
+        request.threshold = threshold
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "featuregroup",
+            protocol.SearchFeatureGroupResponse)
+
 
 class HttpClient(AbstractClient):
     """
@@ -494,6 +587,9 @@ class LocalClient(AbstractClient):
             "variants": self._backend.runSearchVariants,
             "readgroupsets": self._backend.runSearchReadGroupSets,
             "reads": self._backend.runSearchReads,
+            "rnaquantification": self._backend.runSearchRnaQuantification,
+            "expressionlevel": self._backend.runSearchExpressionLevel,
+            "featuregroup": self._backend.runSearchFeatureGroup,
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):
