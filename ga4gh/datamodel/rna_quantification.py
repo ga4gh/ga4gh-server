@@ -284,7 +284,7 @@ class RNASeqResult(AbstractRNAQuantification):
                     (self._expressionLevelIdMap[id_].getFeatureGroup() ==
                      featureGroupId)]
 
-    def getExpressionLevel(self, id_, featureGrpId=None):
+    def getExpressionLevel(self, id_, featureGroupId=None):
         """
         Returns a ExpressionLevel with the specified id, or raises a
         ExpressionLevelNotFoundException if it does not exist.
@@ -292,9 +292,9 @@ class RNASeqResult(AbstractRNAQuantification):
         self.parseExpressionData()
         if id_ not in self._expressionLevelIdMap:
             raise exceptions.ExpressionLevelNotFoundException(id_)
-        if featureGrpId is not None:
+        if featureGroupId is not None:
             if (self._expressionLevelIdMap[id_].getFeatureGroup() !=
-                    featureGrpId):
+                    featureGroupId):
                 raise exceptions.ExpressionLevelNotFoundException(id_)
         return self._expressionLevelIdMap[id_]
 
