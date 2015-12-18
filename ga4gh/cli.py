@@ -392,7 +392,7 @@ class AnnotationFormatterMixin(object):
             for effect in variantAnnotation.transcriptEffects:
                 print(effect.alternateBases, sep="|", end="|")
                 for so in effect.effects:
-                    print(so.name, sep="&", end="|")
+                    print(so.ontologySourceName, sep="&", end="|")
                 print(effect.impact, effect.featureId, effect.HGVSc,
                       effect.HGVSp, sep="|", end="\t")
             print()
@@ -460,6 +460,16 @@ class SearchVariantAnnotationsRunner(
             start=self._start, end=self._end,
             featureIds=self._featureIds, effects=self._effects)
         self._output(iterator)
+
+    def getAllAnnotaionSets(self):
+        """
+        Returns all variant annotation sets on the server.
+        """
+        for dataset in self.getAllDatasets():
+            iterator = self._client.searchVariantAnnotationSets(
+                datasetId=dataset.id)
+            for variantSet in iterator:
+                yield variantSet
 
     def run(self):
         if self._variantAnnotationSetId is None:
