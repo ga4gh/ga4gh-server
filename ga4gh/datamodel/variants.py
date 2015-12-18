@@ -206,7 +206,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         object for Sequence Ontology.
         """
         ret = protocol.OntologyTerm()
-        ret.ontologySourceVersion = "Sequence_Ontology"
+        ret.ontologySource = "Sequence Ontology"
         return ret
 
     def _createGaAlleleLocation(self):
@@ -680,9 +680,9 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         soTerms = []
         for soName in seqOntTerms:
             so = self._createGaOntologyTermSo()
-            so.ontologySourceName = soName
+            so.name = soName
             if self._sequenceOntology is not None:
-                so.ontologySourceID = self._sequenceOntology.getId(soName)
+                so.id = self._sequenceOntology.getId(soName)
             soTerms.append(so)
             # TODO We must fill the ontology ID based on the SO name
         return soTerms
@@ -702,7 +702,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
         transcriptEffects = []
-        if annStr is None:
+        if annStr is not None:
             for ann in annStr.split(','):
                 transcriptEffects.append(self.convertTranscriptEffect(ann))
         annotation.transcriptEffects = transcriptEffects
@@ -728,7 +728,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         return str(compoundId)
 
     def getTranscriptEffectId(self, gaTranscriptEffect):
-        effs = [eff.ontologySourceName for eff in gaTranscriptEffect.effects]
+        effs = [eff.name for eff in gaTranscriptEffect.effects]
         return hashlib.md5(
             "{}\t{}\t{}\t{}\t{}".format(
                 gaTranscriptEffect.alternateBases,

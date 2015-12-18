@@ -249,7 +249,7 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         if len(self._effects) == 0:
             return True
         for eff in teff.effects:
-            if eff.ontologySourceName in self._effects:
+            if eff.name in self._effects:
                 return True
         return False
 

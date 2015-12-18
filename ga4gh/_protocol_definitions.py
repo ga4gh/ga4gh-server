@@ -3074,8 +3074,6 @@ class VariantSetMetadata(ProtocolElement):
 #    AlleleLocation(ProtocolElement):
 #    Analysis(ProtocolElement):
 #    AnalysisResult(ProtocolElement):
-#    AnnotateVariantsRequest(ProtocolElement):
-#    AnnotateVariantsResponse(ProtocolElement):
 #    Impact(object):
 #    OntologyTerm(ProtocolElement):
 #    SearchVariantAnnotationSetsRequest(SearchRequest):
@@ -3152,29 +3150,25 @@ class AlleleLocation(ProtocolElement):
 class Analysis(ProtocolElement):
     """
     An analysis contains an interpretation of one or several
-    experiments.   (e.g. SNVs, copy number variations, methylation
-    status) together with   information about the methodology used.
-    TODO: review
+    experiments. (e.g. SNVs, copy number variations, methylation
+    status) together with information about the methodology used.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "Analysis", "fields": [{"doc": "", "type": "string", "name": "id"},
-{"default": null, "type": ["null", "string"], "name": "guid"},
-{"default": null, "type": ["null", "string"], "name": "name"},
-{"default": null, "type": ["null", "string"], "name": "description"},
-{"type": {"items": "string", "type": "array"}, "name": "accessions"},
-{"doc": "", "type": "string", "name": "recordCreateTime"}, {"type":
-"string", "name": "recordUpdateTime"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "type"}, {"default": [], "doc":
-"", "type": {"items": "string", "type": "array"}, "name": "software"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "recordCreateTime"}, {"doc": "", "type": "string",
+"name": "recordUpdateTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "type"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "software"},
 {"default": {}, "doc": "", "type": {"values": {"items": "string",
 "type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
-        "accessions",
         "id",
-        "recordCreateTime",
         "recordUpdateTime",
     ])
 
@@ -3190,39 +3184,43 @@ class Analysis(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'accessions', 'description', 'guid', 'id', 'info', 'name',
-        'recordCreateTime', 'recordUpdateTime', 'software', 'type'
+        'description', 'id', 'info', 'name', 'recordCreateTime',
+        'recordUpdateTime', 'software', 'type'
     ]
 
     def __init__(self, **kwargs):
-        self.accessions = kwargs.get(
-            'accessions', None)
         self.description = kwargs.get(
             'description', None)
-        self.guid = kwargs.get(
-            'guid', None)
+        """
+        A description of the analysis.
+        """
         self.id = kwargs.get(
             'id', None)
         """
-        Formats of id | guid | name | description | accessions are
-        described in the     documentation on general attributes and
-        formats.
+        The analysis UUID. This is globally unique.
         """
         self.info = kwargs.get(
             'info', {})
         """
-        A map of additional information.
+        A map of additional analysis information.
         """
         self.name = kwargs.get(
             'name', None)
+        """
+        The name of the analysis.
+        """
         self.recordCreateTime = kwargs.get(
             'recordCreateTime', None)
         """
-        The times at which this record was created / updated.
-        Format: ISO 8601 (cf. documentation on time formats)
+        The time at which this record was created.    Format: ISO
+        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
         """
         self.recordUpdateTime = kwargs.get(
             'recordUpdateTime', None)
+        """
+        The time at which this record was last updated.   Format: ISO
+        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
+        """
         self.software = kwargs.get(
             'software', [])
         """
@@ -3244,19 +3242,18 @@ class AnalysisResult(ProtocolElement):
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "AnalysisResult", "fields": [{"doc": "", "type": {"doc": "", "type":
 "record", "name": "Analysis", "fields": [{"doc": "", "type": "string",
-"name": "id"}, {"default": null, "type": ["null", "string"], "name":
-"guid"}, {"default": null, "type": ["null", "string"], "name":
-"name"}, {"default": null, "type": ["null", "string"], "name":
-"description"}, {"type": {"items": "string", "type": "array"}, "name":
-"accessions"}, {"doc": "", "type": "string", "name":
-"recordCreateTime"}, {"type": "string", "name": "recordUpdateTime"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"type"}, {"default": [], "doc": "", "type": {"items": "string",
-"type": "array"}, "name": "software"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type":
-"map"}, "name": "info"}]}, "name": "analysis"}, {"doc": "", "type":
-["null", "string"], "name": "analysisResult"}, {"doc": "", "type":
-["null", "int"], "name": "analysisScore"}], "doc": ""}
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "description"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "recordCreateTime"}, {"doc":
+"", "type": "string", "name": "recordUpdateTime"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "type"}, {"default":
+[], "doc": "", "type": {"items": "string", "type": "array"}, "name":
+"software"}, {"default": {}, "doc": "", "type": {"values": {"items":
+"string", "type": "array"}, "type": "map"}, "name": "info"}]}, "name":
+"analysis"}, {"doc": "", "type": ["null", "string"], "name":
+"analysisResult"}, {"doc": "", "type": ["null", "int"], "name":
+"analysisScore"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -3324,14 +3321,16 @@ class OntologyTerm(ProtocolElement):
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
-"OntologyTerm", "fields": [{"default": null, "doc": "", "type":
-["null", "string"], "name": "ontologySourceName"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "ontologySourceID"},
+"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
+"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"ontologySourceVersion"}], "doc": ""}
+"name"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([])
+    requiredFields = set([
+        "id",
+        "ontologySource",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -3345,31 +3344,26 @@ class OntologyTerm(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'ontologySourceID', 'ontologySourceName',
-        'ontologySourceVersion'
+        'id', 'name', 'ontologySource'
     ]
 
     def __init__(self, **kwargs):
-        self.ontologySourceID = kwargs.get(
-            'ontologySourceID', None)
+        self.id = kwargs.get(
+            'id', None)
         """
-        ontology source identifier - the identifier, a CURIE
-        (preferred) or     PURL for an ontology source e.g.
-        http://purl.obolibrary.org/obo/hp.obo
+        The ID defined by the external onotology source.     (e.g.
+        http://purl.obolibrary.org/obo/OBI_0001271)
         """
-        self.ontologySourceName = kwargs.get(
-            'ontologySourceName', None)
+        self.name = kwargs.get(
+            'name', None)
         """
-        ontology source name - the name of ontology from which the
-        term is obtained     e.g. 'Human Phenotype Ontology'
+        The name of the onotology term. (e.g. RNA-seq assay)
         """
-        self.ontologySourceVersion = kwargs.get(
-            'ontologySourceVersion', None)
+        self.ontologySource = kwargs.get(
+            'ontologySource', None)
         """
-        ontology source version - the version of the ontology from
-        which the     OntologyTerm is obtained; e.g. 2.6.1.     There
-        is no standard for ontology versioning and some frequently
-        released ontologies may use a datestamp, or build number.
+        The source of the onotology term.     (e.g. Ontology for
+        Biomedical Investigation)
         """
 
 
@@ -3448,16 +3442,15 @@ class SearchVariantAnnotationSetsResponse(SearchResponse):
 "type": "string", "name": "id"}, {"doc": "", "type": "string", "name":
 "variantSetId"}, {"doc": "", "type": {"doc": "", "type": "record",
 "name": "Analysis", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"default": null, "type": ["null", "string"], "name": "guid"},
-{"default": null, "type": ["null", "string"], "name": "name"},
-{"default": null, "type": ["null", "string"], "name": "description"},
-{"type": {"items": "string", "type": "array"}, "name": "accessions"},
-{"doc": "", "type": "string", "name": "recordCreateTime"}, {"type":
-"string", "name": "recordUpdateTime"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "type"}, {"default": [], "doc":
-"", "type": {"items": "string", "type": "array"}, "name": "software"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}]}, "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "recordCreateTime"}, {"doc": "",
+"type": "string", "name": "recordUpdateTime"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "type"}, {"default":
+[], "doc": "", "type": {"items": "string", "type": "array"}, "name":
+"software"}, {"default": {}, "doc": "", "type": {"values": {"items":
+"string", "type": "array"}, "type": "map"}, "name": "info"}]}, "name":
 "analysis"}], "doc": ""}, "type": "array"}, "name":
 "variantAnnotationSets"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "nextPageToken"}], "doc": ""}
@@ -3518,14 +3511,13 @@ class SearchVariantAnnotationsRequest(SearchRequest):
 "type": ["null", {"items": "string", "type": "array"}], "name":
 "featureIds"}, {"default": null, "doc": "", "type": ["null", {"items":
 {"namespace": "org.ga4gh.models", "type": "record", "name":
-"OntologyTerm", "fields": [{"default": null, "doc": "", "type":
-["null", "string"], "name": "ontologySourceName"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "ontologySourceID"},
+"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
+"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"ontologySourceVersion"}], "doc": ""}, "type": "array"}], "name":
-"effects"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "pageToken"}], "doc": ""}
+"name"}], "doc": ""}, "type": "array"}], "name": "effects"},
+{"default": null, "doc": "", "type": ["null", "int"], "name":
+"pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -3645,18 +3637,17 @@ class SearchVariantAnnotationsResponse(SearchResponse):
 "id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name":
 "alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
-"record", "name": "OntologyTerm", "fields": [{"default": null, "doc":
-"", "type": ["null", "string"], "name": "ontologySourceName"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"ontologySourceID"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "ontologySourceVersion"}]}, "type": "array"},
-"name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
-"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
-"Impact"}, "name": "impact"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "HGVSg"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "HGVSc"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "HGVSp"}, {"default": null,
-"doc": "", "type": ["null", {"doc": "", "type": "record", "name":
+"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
+"string", "name": "ontologySource"}, {"doc": "", "type": "string",
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}]}, "type": "array"}, "name": "effects"},
+{"doc": "", "type": {"symbols": ["HIGH", "MODERATE", "LOW",
+"MODIFIER"], "doc": "", "type": "enum", "name": "Impact"}, "name":
+"impact"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "HGVSg"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "HGVSc"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "HGVSp"}, {"default": null, "doc": "",
+"type": ["null", {"doc": "", "type": "record", "name":
 "AlleleLocation", "fields": [{"doc": "", "type": "int", "name":
 "overlapStart"}, {"default": null, "doc": "", "type": ["null", "int"],
 "name": "overlapEnd"}, {"default": null, "doc": "", "type": ["null",
@@ -3668,14 +3659,13 @@ null, "doc": "", "type": ["null", "string"], "name":
 {"items": {"doc": "", "type": "record", "name": "AnalysisResult",
 "fields": [{"doc": "", "type": {"doc": "", "type": "record", "name":
 "Analysis", "fields": [{"doc": "", "type": "string", "name": "id"},
-{"default": null, "type": ["null", "string"], "name": "guid"},
-{"default": null, "type": ["null", "string"], "name": "name"},
-{"default": null, "type": ["null", "string"], "name": "description"},
-{"type": {"items": "string", "type": "array"}, "name": "accessions"},
-{"doc": "", "type": "string", "name": "recordCreateTime"}, {"type":
-"string", "name": "recordUpdateTime"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "type"}, {"default": [], "doc":
-"", "type": {"items": "string", "type": "array"}, "name": "software"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "recordCreateTime"}, {"doc": "", "type": "string",
+"name": "recordUpdateTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "type"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "software"},
 {"default": {}, "doc": "", "type": {"values": {"items": "string",
 "type": "array"}, "type": "map"}, "name": "info"}]}, "name":
 "analysis"}, {"doc": "", "type": ["null", "string"], "name":
@@ -3739,18 +3729,17 @@ class TranscriptEffect(ProtocolElement):
 "id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name":
 "alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
-"record", "name": "OntologyTerm", "fields": [{"default": null, "doc":
-"", "type": ["null", "string"], "name": "ontologySourceName"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"ontologySourceID"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "ontologySourceVersion"}]}, "type": "array"},
-"name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
-"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
-"Impact"}, "name": "impact"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "HGVSg"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "HGVSc"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "HGVSp"}, {"default": null,
-"doc": "", "type": ["null", {"doc": "", "type": "record", "name":
+"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
+"string", "name": "ontologySource"}, {"doc": "", "type": "string",
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}]}, "type": "array"}, "name": "effects"},
+{"doc": "", "type": {"symbols": ["HIGH", "MODERATE", "LOW",
+"MODIFIER"], "doc": "", "type": "enum", "name": "Impact"}, "name":
+"impact"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "HGVSg"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "HGVSc"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "HGVSp"}, {"default": null, "doc": "",
+"type": ["null", {"doc": "", "type": "record", "name":
 "AlleleLocation", "fields": [{"doc": "", "type": "int", "name":
 "overlapStart"}, {"default": null, "doc": "", "type": ["null", "int"],
 "name": "overlapEnd"}, {"default": null, "doc": "", "type": ["null",
@@ -3762,14 +3751,13 @@ null, "doc": "", "type": ["null", "string"], "name":
 {"items": {"doc": "", "type": "record", "name": "AnalysisResult",
 "fields": [{"doc": "", "type": {"doc": "", "type": "record", "name":
 "Analysis", "fields": [{"doc": "", "type": "string", "name": "id"},
-{"default": null, "type": ["null", "string"], "name": "guid"},
-{"default": null, "type": ["null", "string"], "name": "name"},
-{"default": null, "type": ["null", "string"], "name": "description"},
-{"type": {"items": "string", "type": "array"}, "name": "accessions"},
-{"doc": "", "type": "string", "name": "recordCreateTime"}, {"type":
-"string", "name": "recordUpdateTime"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "type"}, {"default": [], "doc":
-"", "type": {"items": "string", "type": "array"}, "name": "software"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "recordCreateTime"}, {"doc": "", "type": "string",
+"name": "recordUpdateTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "type"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "software"},
 {"default": {}, "doc": "", "type": {"values": {"items": "string",
 "type": "array"}, "type": "map"}, "name": "info"}]}, "name":
 "analysis"}, {"doc": "", "type": ["null", "string"], "name":
@@ -3892,18 +3880,17 @@ class VariantAnnotation(ProtocolElement):
 "id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name":
 "alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
-"record", "name": "OntologyTerm", "fields": [{"default": null, "doc":
-"", "type": ["null", "string"], "name": "ontologySourceName"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"ontologySourceID"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "ontologySourceVersion"}]}, "type": "array"},
-"name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
-"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
-"Impact"}, "name": "impact"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "HGVSg"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "HGVSc"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "HGVSp"}, {"default": null,
-"doc": "", "type": ["null", {"doc": "", "type": "record", "name":
+"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
+"string", "name": "ontologySource"}, {"doc": "", "type": "string",
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}]}, "type": "array"}, "name": "effects"},
+{"doc": "", "type": {"symbols": ["HIGH", "MODERATE", "LOW",
+"MODIFIER"], "doc": "", "type": "enum", "name": "Impact"}, "name":
+"impact"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "HGVSg"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "HGVSc"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "HGVSp"}, {"default": null, "doc": "",
+"type": ["null", {"doc": "", "type": "record", "name":
 "AlleleLocation", "fields": [{"doc": "", "type": "int", "name":
 "overlapStart"}, {"default": null, "doc": "", "type": ["null", "int"],
 "name": "overlapEnd"}, {"default": null, "doc": "", "type": ["null",
@@ -3915,14 +3902,13 @@ null, "doc": "", "type": ["null", "string"], "name":
 {"items": {"doc": "", "type": "record", "name": "AnalysisResult",
 "fields": [{"doc": "", "type": {"doc": "", "type": "record", "name":
 "Analysis", "fields": [{"doc": "", "type": "string", "name": "id"},
-{"default": null, "type": ["null", "string"], "name": "guid"},
-{"default": null, "type": ["null", "string"], "name": "name"},
-{"default": null, "type": ["null", "string"], "name": "description"},
-{"type": {"items": "string", "type": "array"}, "name": "accessions"},
-{"doc": "", "type": "string", "name": "recordCreateTime"}, {"type":
-"string", "name": "recordUpdateTime"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "type"}, {"default": [], "doc":
-"", "type": {"items": "string", "type": "array"}, "name": "software"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "recordCreateTime"}, {"doc": "", "type": "string",
+"name": "recordUpdateTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "type"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "software"},
 {"default": {}, "doc": "", "type": {"values": {"items": "string",
 "type": "array"}, "type": "map"}, "name": "info"}]}, "name":
 "analysis"}, {"doc": "", "type": ["null", "string"], "name":
@@ -4017,17 +4003,16 @@ class VariantAnnotationSet(ProtocolElement):
 "name": "id"}, {"doc": "", "type": "string", "name": "variantSetId"},
 {"doc": "", "type": {"doc": "", "type": "record", "name": "Analysis",
 "fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
-null, "type": ["null", "string"], "name": "guid"}, {"default": null,
-"type": ["null", "string"], "name": "name"}, {"default": null, "type":
-["null", "string"], "name": "description"}, {"type": {"items":
-"string", "type": "array"}, "name": "accessions"}, {"doc": "", "type":
-"string", "name": "recordCreateTime"}, {"type": "string", "name":
-"recordUpdateTime"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "type"}, {"default": [], "doc": "", "type":
-{"items": "string", "type": "array"}, "name": "software"}, {"default":
-{}, "doc": "", "type": {"values": {"items": "string", "type":
-"array"}, "type": "map"}, "name": "info"}]}, "name": "analysis"}],
-"doc": ""}
+null, "doc": "", "type": ["null", "string"], "name": "name"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"description"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "recordCreateTime"}, {"doc": "", "type": "string",
+"name": "recordUpdateTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "type"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "software"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}]}, "name":
+"analysis"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
