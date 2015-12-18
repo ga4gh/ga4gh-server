@@ -392,7 +392,7 @@ class AnnotationFormatterMixin(object):
             for effect in variantAnnotation.transcriptEffects:
                 print(effect.alternateBases, sep="|", end="|")
                 for so in effect.effects:
-                    print(so.ontologySourceName, sep="&", end="|")
+                    print(so.name, sep="&", end="|")
                 print(effect.impact, effect.featureId, effect.HGVSc,
                       effect.HGVSp, sep="|", end="\t")
             print()
