@@ -1,7 +1,5 @@
 #!/bin/bash
 
-./setupenv.sh
-. bin/activate
 HOSTNAME=`python -c 'import socket; print socket.gethostname()'`
 cd simple_op && python src/run.py --base https://${HOSTNAME}:8443 -p 8443 -d settings.yaml
 

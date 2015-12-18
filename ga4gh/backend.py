@@ -164,7 +164,12 @@ class ReadsIntervalIterator(IntervalIterator):
 
     @classmethod
     def _getStart(cls, readAlignment):
-        return readAlignment.alignment.position.position
+        if readAlignment.alignment is None:
+            # unmapped read with mapped mate; see SAM standard 2.4.1
+            return readAlignment.nextMatePosition.position
+        else:
+            # usual case
+            return readAlignment.alignment.position.position
 
     @classmethod
     def _getEnd(cls, readAlignment):

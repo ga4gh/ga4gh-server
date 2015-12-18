@@ -31,9 +31,34 @@ class TestSamConverter(unittest.TestCase):
         for source, converted in zip(sourceReads, convertedReads):
             self.assertEqual(source.query_name, converted.query_name)
             self.assertEqual(source.query_sequence, converted.query_sequence)
-            self.assertEqual(source.qual, converted.qual)
             self.assertEqual(source.flag, converted.flag)
-            # TODO add more comparisons.
+            self.assertEqual(source.reference_id, converted.reference_id)
+            self.assertEqual(
+                source.mapping_quality,
+                converted.mapping_quality)
+            self.assertEqual(
+                source.template_length,
+                converted.template_length)
+            self.assertEqual(
+                source.query_qualities, converted.query_qualities)
+            # TODO the below fields can not be tested since we don't
+            # encode them in the case that either the read is not mapped
+            # or the read pair is not mapped
+            # self.assertEqual(
+            #     source.reference_start,
+            #     converted.reference_start)
+            # self.assertEqual(source.cigar, converted.cigar)
+            # self.assertEqual(
+            #     source.next_reference_id,
+            #     converted.next_reference_id)
+            # self.assertEqual(
+            #     source.next_reference_start,
+            #     converted.next_reference_start)
+            # TODO can't uncomment until round trip tags are fixed;
+            # see schemas issue 758
+            # self.assertEqual(
+            #     source.tags,
+            #     converted.tags)
 
     def verifyFullConversion(self, readGroupSet, readGroup, reference):
         """
@@ -52,7 +77,8 @@ class TestSamConverter(unittest.TestCase):
                 convertedReads = list(samFile.fetch())
             finally:
                 samFile.close()
-            samFile = pysam.AlignmentFile(readGroupSet.getSamFilePath(), "rb")
+            samFile = pysam.AlignmentFile(
+                readGroupSet.getSamFilePath(), "rb")
             try:
                 sourceReads = []
                 referenceName = reference.getName().encode()
@@ -66,10 +92,12 @@ class TestSamConverter(unittest.TestCase):
             self.verifySamRecordsEqual(sourceReads, convertedReads)
 
     def testSamConversion(self):
-        # TODO generalise to all readGroupSets in the test data backend.
-        dataset = self._backend.getDatasetByIndex(0)
-        readGroupSet = dataset.getReadGroupSetByIndex(0)
-        referenceSet = readGroupSet.getReferenceSet()
-        for reference in referenceSet.getReferences():
-            for readGroup in readGroupSet.getReadGroups():
-                self.verifyFullConversion(readGroupSet, readGroup, reference)
+        datasets = self._backend.getDatasets()
+        for dataset in datasets:
+            readGroupSets = dataset.getReadGroupSets()
+            for readGroupSet in readGroupSets:
+                referenceSet = readGroupSet.getReferenceSet()
+                for reference in referenceSet.getReferences():
+                    for readGroup in readGroupSet.getReadGroups():
+                        self.verifyFullConversion(
+                            readGroupSet, readGroup, reference)

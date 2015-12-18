@@ -172,7 +172,7 @@ class Ga4ghServerForTesting(ServerForTesting):
         config = """
 SIMULATED_BACKEND_NUM_VARIANT_SETS = 10
 SIMULATED_BACKEND_VARIANT_DENSITY = 1
-DATA_SOURCE = "__SIMULATED__"
+DATA_SOURCE = "simulated://"
 DEBUG = True
 """
         if self.useOidc:
@@ -235,13 +235,6 @@ class OidcOpServerForTesting(ServerForTesting):
             oidcOpPort, protocol="https",
             subdirectory="oidc-provider/simple_op",
             pingStatusCode=404)
-
-    def start(self):
-        # Setup environment for OP server
-        with tempfile.TemporaryFile() as tempFile:
-            subprocess.check_call(["./setupenv.sh"], cwd="oidc-provider",
-                                  stdout=tempFile, stderr=subprocess.STDOUT)
-        super(OidcOpServerForTesting, self).start()
 
     def getCmdLine(self):
         return ("python src/run.py --base https://localhost:{}" +

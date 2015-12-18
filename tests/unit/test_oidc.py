@@ -100,11 +100,11 @@ class TestFrontendOidc(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config = {
-            "DATA_SOURCE": "__SIMULATED__",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
             "SIMULATED_BACKEND_NUM_CALLS": 1,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
             "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
+            "DATA_SOURCE": "simulated://",
             "OIDC_CLIENT_ID": "123",
             "OIDC_CLIENT_SECRET": RANDSTR,
             "OIDC_PROVIDER": "http://auth.com"
