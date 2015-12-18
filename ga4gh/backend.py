@@ -11,6 +11,7 @@ import os
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
@@ -938,7 +939,7 @@ class FileSystemBackend(AbstractBackend):
         self._dataDir = dataDir
         sourceDirNames = ["referenceSets", "ontologies", "datasets"]
         constructors = [
-            references.HtslibReferenceSet, datasets.FileSystemOntology,
+            references.HtslibReferenceSet, ontologies.FileSystemOntologies,
             datasets.FileSystemDataset]
         objectAdders = [
             self.addReferenceSet, self.addOntologies, self.addDataset]
