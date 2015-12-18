@@ -250,13 +250,6 @@ class AbstractVariantSet(datamodel.DatamodelObject):
             str(tuple(gaVariant.alternateBases))).hexdigest()
 
 
-class AbstractVariantAnnotationSet(AbstractVariantSet):
-    """
-    An abstract base class of a variant annotation set
-    """
-    compoundIdClass = datamodel.VariantAnnotationSetCompoundId
-
-
 class SimulatedVariantSet(AbstractVariantSet):
     """
     A variant set that doesn't derive from a data store.
@@ -485,7 +478,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         sampleData = record.__str__().split()[9:]  # REMOVAL
         variant.calls = []
         sampleIterator = 0  # REMOVAL
-        if callSetIds:
+        if callSetIds is not None:
             for name, call in record.samples.iteritems():
                 if self.getCallSetId(name) in callSetIds:
                     genotypeData = sampleData[sampleIterator].split(
@@ -709,7 +702,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
         transcriptEffects = []
-        if annStr:
+        if annStr is None:
             for ann in annStr.split(','):
                 transcriptEffects.append(self.convertTranscriptEffect(ann))
         annotation.transcriptEffects = transcriptEffects
