@@ -205,7 +205,11 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
     def __init__(self, request, parentContainer):
         super(VariantAnnotationsIntervalIterator, self).__init__(
             request, parentContainer)
-        self._featureIds = set(self._request.feature_ids)
+        print('self._request.featureIds: ', self._request.featureIds)
+        if self._request.featureIds is None:
+            self._featureIds = []
+        else:
+            self._featureIds = set(self._request.featureIds)
         self._effects = set(self._request.effects)
 
     def _search(self, start, end):
@@ -244,7 +248,7 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         if len(self._effects) == 0:
             return True
         for eff in teff.effects:
-            if eff.name in self._effects:
+            if eff.ontologySourceName in self._effects:
                 return True
         return False
 
