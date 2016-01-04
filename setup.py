@@ -36,7 +36,7 @@ requirements = [
     "Flask==0.10.1",
     "avro==1.7.7",
     "humanize==0.5.1",
-    "pysam==0.8.3",
+    "pysam==0.8.4",
     "oic==0.7.6",
     "requests==2.7.0",
 ]
