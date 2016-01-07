@@ -19,9 +19,9 @@ For more detail on individual development issues, please see the project's
 Release Notes
 +++++++++++++
 
-*******
-0.2.0a1
-*******
+*****
+0.2.0
+*****
 
 Alpha pre-release supporting major schema update. This release is backwards
 incompatible with previous releases, and requires a revised data directory
