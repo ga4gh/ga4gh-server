@@ -430,6 +430,7 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
     def getBases(self, start, end):
         self.checkQueryRange(start, end)
         fastaFile = self.getFileHandle(self._fastaFilePath)
+        localId = self.getLocalId().encode()
         # TODO we should have some error checking here...
-        bases = fastaFile.fetch(self.getLocalId(), start, end)
+        bases = fastaFile.fetch(localId, start, end)
         return bases
