@@ -2,4 +2,9 @@
 Reference implementation of the GA4GH APIs.
 """
 
-__version__ = '0.2.0a1'
+__version__ = "undefined"
+try:
+    from . import _version
+    __version__ = _version.version
+except ImportError:
+    pass
