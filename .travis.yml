@@ -9,9 +9,9 @@ cache:
 
 install:
   - pip install pip --upgrade 
-  - pip --version
   - pip install -r requirements.txt
-  - python setup.py install
+  - python setup.py sdist
+  - pip install dist/ga4gh*.tar.gz
 
 before_script:
   # the following two lines are to prevent travis from
