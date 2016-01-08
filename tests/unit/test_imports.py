@@ -147,9 +147,7 @@ class ImportGraphLayerChecker(object):
     but as it stands the time for these tests is dominated by file
     operations and and parsing the ASTs
     """
-    excludedPythonFilenames = set([
-        '__init__.py',
-    ])
+    excludedPythonFilenames = set(['__init__.py', '_version.py'])
 
     # each file/module is in one and only one moduleGroup
     moduleGroupNames = {
