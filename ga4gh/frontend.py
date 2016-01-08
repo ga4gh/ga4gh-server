@@ -572,6 +572,14 @@ def getRnaQuantification(id):
         id, flask.request, app.backend.runGetRnaQuantification)
 
 
+@DisplayedRoute(
+    '/features/<no(search):id>',
+    pathDisplay='/features/<id>')
+def getFeature(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetFeature)
+
+
 @app.route('/oauth2callback', methods=['GET'])
 def oidcCallback():
     """

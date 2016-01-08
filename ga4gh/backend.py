@@ -331,9 +331,12 @@ class AbstractBackend(object):
 
     def getFeature(self, id_):
         """
-        Returns a feature with the given id_
+        Returns the feature with the specified ID, or raises a
+        FeatureNotFoundException if it does not exist.
         """
-        return self.runGetRequest(self._featureIdMap, id_)
+        if id_ not in self._featureIdMap:
+            raise exceptions.FeatureNotFoundException(id_)
+        return self._featureIdMap[id_]
 
     def startProfile(self):
         """
@@ -775,6 +778,16 @@ class AbstractBackend(object):
         dataset = self.getDataset(compoundId.datasetId)
         rnaQuantification = dataset.getRnaQuantification(id_)
         return self.runGetRequest(rnaQuantification)
+
+    def runGetFeature(self, id_):
+        """
+        Runs a getFeature request for the specified ID.
+        """
+        compoundId = datamodel.FeatureCompoundId.parse(id_)
+        dataset = self.getDataset(compoundId.datasetId)
+        sequenceAnnotation = dataset.getSequenceAnnotation(compoundId.sequenceAnnotationId)
+        feature = sequenceAnnotation.getFeature(id_)
+        return self.runGetRequest(feature)
 
     # Search requests.
 

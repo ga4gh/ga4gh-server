@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import copy
 import os
 
+import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.gff3 as gff3
 
@@ -29,10 +30,17 @@ import ga4gh.gff3 as gff3
 """
 
 
-class SequenceAnnotation(object):
-    def __init__(self, gffFileName, gffFilePath):
+class SequenceAnnotation(datamodel.DatamodelObject):
+    """
+    Class representing a single SequenceAnnotation in the GA4GH model.
+    """
+    compoundIdClass = datamodel.SequenceAnnotationCompoundId
+
+    def __init__(self, parentContainer, gffFileName, gffFilePath):
+        self._localId = os.path.splitext(gffFileName)
+        super(SequenceAnnotation, self).__init__(parentContainer, self._localId)
         self._gffFile = os.path.join(gffFilePath, gffFileName)
-        self._annotationId = os.path.splitext(gffFileName)
+        #self._annotationId = os.path.splitext(gffFileName)
         self._gff3Parser = gff3.Gff3Parser(self._gffFile)
 
     def getFeature(self, start, stop, referenceName=None, referenceId=None,
@@ -58,11 +66,19 @@ class SequenceAnnotation(object):
             featureReference = featureData.seqName
             if ((start >= int(featureData.start)) and (stop <= int(
                                                        featureData.stop))):
-                gffFeature = Feature(id, copy.copy(featureData.parents),
+                gffFeature = Feature(self, id, copy.copy(featureData.parents),
                                      featureSetId, featureReference,
                                      featureData.start, featureData.end,
                                      featureData.type, featureData.attributes)
                 yield gffFeature.toProtocolElement()
+
+    def getFeatureById(self, featureId):
+        """
+        Parse the gff file, extract Feature data for specified id and return
+        as ga4gh object
+        """
+        # TODO: not implemented
+        pass
 
     def getFeatureSet(self):
         """
@@ -107,13 +123,16 @@ class Attributes(dict):
         return gaAttributes
 
 
-class Feature(object):
+class Feature(datamodel.DatamodelObject):
     """
-    Class representing a Feature annotations
+    Class representing a Feature annotation in the GA4GH model
     """
+    compoundIdClass = datamodel.FeatureCompoundId
+
     def __init__(
-            self, id, parentIds, featureSetId,
+            self, parentContainer, id, parentIds, featureSetId,
             referenceName, start, end, featureType, attributes):
+        super(SequenceAnnotation, self).__init__(parentContainer, id)
         self._id = id
         self._parentIds = parentIds
         self._featureSetId = featureSetId

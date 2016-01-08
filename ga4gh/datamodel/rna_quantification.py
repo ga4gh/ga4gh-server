@@ -357,10 +357,10 @@ class SimulatedRNASeqResult(AbstractRNAQuantification):
     An RNA Quantification that doesn't derive from a data store.
     Used mostly for testing.
     """
-    def __init__(self, parentContainer, localId, rnaQuantDataPath):
+    def __init__(self, parentContainer, localId, rnaQuantDataPath=""):
         super(SimulatedRNASeqResult, self).__init__(parentContainer, localId,
                                                     rnaQuantDataPath)
-        self.generateRnaQuantMetadataFile()
+        self.generateRnaQuantMetadata()
         self.generateCharacterization()
         self.generateReadCounts()
 

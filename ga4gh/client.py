@@ -466,7 +466,7 @@ class AbstractClient(object):
             protocol.SearchExpressionLevelResponse)
 
     def searchFeatureGroup(self, rnaQuantificationId=None,
-                           featureGroupId=None, threshold=0.0):
+                           featureGroupId=None):
         """
         Returns an iterator over the FeatureGroup objects from the server
 
@@ -476,7 +476,6 @@ class AbstractClient(object):
         request = protocol.SearchFeatureGroupRequest()
         request.rnaQuantificationId = rnaQuantificationId
         request.featureGroupId = featureGroupId
-        request.threshold = threshold
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "featuregroup",

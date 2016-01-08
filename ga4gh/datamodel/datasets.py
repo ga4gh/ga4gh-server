@@ -62,6 +62,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._rnaQuantificationIdMap[id_] = rnaQuant
         self._rnaQuantificationIds.append(id_)
 
+    def addSequenceAnnotation(self, annotation):
+        """
+        Adds the specified sequenceAnnotation to this dataset.
+        """
+        id_ = annotation.getId()
+        self._sequenceAnnotationIdMap[id_] = annotation
+        self._sequenceAnnotationIds.append(id_)
+
     def toProtocolElement(self):
         dataset = protocol.Dataset()
         dataset.id = self.getId()
@@ -179,6 +187,15 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return self._sequenceAnnotationIds
 
+    def getSequenceAnnotation(self, id_):
+        """
+        Returns the SequenceAnnotation with the specified name, or raises a
+        SequenceAnnotationNotFoundException otherwise.
+        """
+        if id_ not in self._sequenceAnnotationIdMap:
+            raise exceptions.SequenceAnnotationNotFoundException(id_)
+        return self._sequenceAnnotationIdMap[id_]
+
 
 class SimulatedDataset(AbstractDataset):
     """
@@ -188,7 +205,7 @@ class SimulatedDataset(AbstractDataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1):
+            numAlignments=1, numRnaQuants=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
         # Variants
@@ -206,6 +223,12 @@ class SimulatedDataset(AbstractDataset):
                 self, localId, referenceSet, seed,
                 numReadGroupsPerReadGroupSet, numAlignments)
             self.addReadGroupSet(readGroupSet)
+        # RnaQuantifications
+        for i in range(numRnaQuants):
+            localId = 'simRq{}'.format(i)
+            rnaQuant = rnaQuantification.SimulatedRNASeqResult(
+                self, localId)
+            self.addRnaQuantification(rnaQuant)
 
 
 class FileSystemDataset(AbstractDataset):
@@ -246,12 +269,9 @@ class FileSystemDataset(AbstractDataset):
         seqAnnotationDir = os.path.join(dataDir, "sequenceAnnotations")
         for gffFile in os.listdir(seqAnnotationDir):
             relativePath = os.path.join(seqAnnotationDir, gffFile)
-            annotation = sequenceAnnotations.SequenceAnnotation(gffFile,
+            annotation = sequenceAnnotations.SequenceAnnotation(self, gffFile,
                                                                 relativePath)
-            annotationId = os.path.splitext(gffFile)
-            self._sequenceAnnotationIdMap[annotationId] = annotation
-        self._sequenceAnnotationIds = sorted(
-            self._sequenceAnnotationIdMap.keys())
+            self.addSequenceAnnotation(annotation)
 
     def _setMetadata(self):
         metadataFileName = '{}.json'.format(self._dataDir)

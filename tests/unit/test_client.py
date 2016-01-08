@@ -144,10 +144,11 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.expressionLevelId = self.expressionLevelId
         request.featureGroupId = self.featureGroupId
         request.rnaQuantificationId = self.rnaQuantificationId
+        request.threshold = self.threshold
         request.pageSize = self._pageSize
         self.httpClient.searchExpressionLevel(
             self.expressionLevelId, self.featureGroupId,
-            self.rnaQuantificationId)
+            self.rnaQuantificationId, self.threshold)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "expressionlevel",
             protocol.SearchExpressionLevelResponse)
@@ -164,8 +165,8 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     def testSearchFeatureGroup(self):
         request = protocol.SearchFeatureGroupRequest()
         request.featureGroupId = self.featureGroupId
-        request.threshold = self.threshold
-        self.httpClient.searchFeatureGroup(self.featureGroupId, self.threshold)
+        self.httpClient.searchFeatureGroup(self.rnaQuantificationId,
+            self.featureGroupId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "featuregroup",
             protocol.SearchFeatureGroupResponse)
