@@ -448,3 +448,58 @@ Developers could also enforce this property manually, but we have
 determined that not using GitHub's UI merging features and judiciously
 re-submitting PRs for additional CI would be more effort than fixing a
 broken test in a mainline branch once in a while.
+
+***************
+Release process
+***************
+
+There are two types of releases: development releases, and stable
+bugfix releases. Development releases happen as a matter of
+course while we are working on a given minor version series, and
+may be either a result of some new features being ready for use
+or a minor bugfix. Stable bugfix releases occur when mainline development
+has moved on to another minor version, and a bugfix is required for the
+currently released version. These two cases are handled in different
+ways.
+
+++++++++++++++++++++
+Development releases
+++++++++++++++++++++
+
+Version numbers are MAJOR.MINOR.PATCH triples. Minor version increments
+happen when significant changes are required to the server codebase,
+which will result in a significant departure from the previously
+released version, either in code layout or in functionality. During
+the normal process of development within a minor version series,
+patch updates are routinely and regularly released.
+
+This entails:
+
+1) Create a PR against ``master`` with the release notes;
+2) Once this has been merged, tag the release on GitHub with the
+   appropriate version number.
+3) Fetch the tag from the upstream repo, and checkout this tag.
+   Create the distribution tarball using ``python setup.py sdist``,
+   and then upload the resulting tarball to PyPI.
+4) Verify that the documentation at
+   http://ga4gh-reference-implementation.readthedocs.org/en/stable/
+   is for the correct version (it may take a few minutes for this to
+   happen after the release has been tagged on GitHub).
+
++++++++++++++++++++++
+Stable bugfix release
++++++++++++++++++++++
+
+When a minor version series has ended because of some significant shift
+in the server internals, there will be a period when the ``master`` branch is not
+in a releasable state. If a bugfix release is required during this period,
+we create a release using the following process:
+
+1) If it does not already exist, create a release branch called
+   ``release-$MAJOR.MINOR`` from the tag of the last release.
+2) Fix the bug by either cherry picking the relevant commits
+   from ``master``, or creating PRs against the ``release-$MAJOR.$MINOR``
+   branch if the bug does not apply to ``master``.
+3) Follow steps 1-4 in the process for `Development releases`_ above,
+   except using the ``release-$MAJOR.$MINOR`` branch as the base
+   instead of ``master``.
