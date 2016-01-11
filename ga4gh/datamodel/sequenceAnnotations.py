@@ -38,9 +38,10 @@ class SequenceAnnotation(datamodel.DatamodelObject):
 
     def __init__(self, parentContainer, gffFileName, gffFilePath):
         self._localId = os.path.splitext(gffFileName)
-        super(SequenceAnnotation, self).__init__(parentContainer, self._localId)
+        super(SequenceAnnotation, self).__init__(parentContainer,
+                                                 self._localId)
         self._gffFile = os.path.join(gffFilePath, gffFileName)
-        #self._annotationId = os.path.splitext(gffFileName)
+        # self._annotationId = os.path.splitext(gffFileName)
         self._gff3Parser = gff3.Gff3Parser(self._gffFile)
 
     def getFeature(self, start, stop, referenceName=None, referenceId=None,

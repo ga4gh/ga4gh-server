@@ -358,8 +358,8 @@ class SimulatedRNASeqResult(AbstractRNAQuantification):
     Used mostly for testing.
     """
     def __init__(self, parentContainer, localId, rnaQuantDataPath=""):
-        super(SimulatedRNASeqResult, self).__init__(parentContainer, localId,
-                                                    rnaQuantDataPath)
+        super(SimulatedRNASeqResult, self).__init__(parentContainer, localId)
+        self._rnaQuantDataPath = rnaQuantDataPath
         self.generateRnaQuantMetadata()
         self.generateCharacterization()
         self.generateReadCounts()

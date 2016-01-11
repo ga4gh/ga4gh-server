@@ -785,7 +785,8 @@ class AbstractBackend(object):
         """
         compoundId = datamodel.FeatureCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
-        sequenceAnnotation = dataset.getSequenceAnnotation(compoundId.sequenceAnnotationId)
+        sequenceAnnotation = dataset.getSequenceAnnotation(
+            compoundId.sequenceAnnotationId)
         feature = sequenceAnnotation.getFeature(id_)
         return self.runGetRequest(feature)
 

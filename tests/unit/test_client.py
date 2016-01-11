@@ -145,7 +145,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.featureGroupId = self.featureGroupId
         request.rnaQuantificationId = self.rnaQuantificationId
         request.threshold = self.threshold
-        request.pageSize = self._pageSize
+        request.pageSize = self.pageSize
         self.httpClient.searchExpressionLevel(
             self.expressionLevelId, self.featureGroupId,
             self.rnaQuantificationId, self.threshold)
@@ -156,7 +156,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     def testSearchRnaQuantification(self):
         request = protocol.SearchRnaQuantificationRequest()
         request.rnaQuantificationId = self.rnaQuantificationId
-        request.pageSize = self._pageSize
+        request.pageSize = self.pageSize
         self.httpClient.searchRnaQuantification(self.rnaQuantificationId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "rnaquantification",
@@ -166,7 +166,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request = protocol.SearchFeatureGroupRequest()
         request.featureGroupId = self.featureGroupId
         self.httpClient.searchFeatureGroup(self.rnaQuantificationId,
-            self.featureGroupId)
+                                           self.featureGroupId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "featuregroup",
             protocol.SearchFeatureGroupResponse)

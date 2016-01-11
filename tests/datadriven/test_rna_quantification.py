@@ -17,7 +17,7 @@ import tests.datadriven as datadriven
 
 
 def testReferenceSets():
-    testDataDir = "tests/data/dataset1/rnaQuant"
+    testDataDir = "tests/data/datasets/dataset1/rnaQuant"
     for test in datadriven.makeTests(testDataDir, RnaQuantificationTest):
         yield test
 
