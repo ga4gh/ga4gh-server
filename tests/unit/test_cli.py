@@ -241,7 +241,7 @@ class TestClientArguments(unittest.TestCase):
                     "--rnaQuantificationId rID BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.featureGroupId, "ID")
-        self.assertEqual(args.rnaQuantificationID, "rID")
+        self.assertEqual(args.rnaQuantificationId, "rID")
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.runner, cli.SearchFeatureGroupRunner)
 
