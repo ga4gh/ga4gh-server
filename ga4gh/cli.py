@@ -1039,6 +1039,9 @@ def addExpressionLevelSearchParser(subparsers):
     parser.add_argument(
         "--featureGroupId", default=None,
         help="The feature group Id to search over")
+    parser.add_argument(
+        "--threshold", default=None, type=float,
+        help="The minimum value for expression results to report.")
     addOutputFormatArgument(parser)
     return parser
 
@@ -1057,9 +1060,6 @@ def addFeatureGroupSearchParser(subparsers):
     parser.add_argument(
         "--featureGroupId", default=None,
         help="The feature group Id to search over")
-    parser.add_argument(
-        "--threshold", default=None, type=float,
-        help="The minimum value for expression results to report.")
     addOutputFormatArgument(parser)
     return parser
 

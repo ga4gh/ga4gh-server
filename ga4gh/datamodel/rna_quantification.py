@@ -129,7 +129,7 @@ class ReadCounts(datamodel.DatamodelObject):
 
 class FeatureGroup(datamodel.DatamodelObject):
     """
-    Class represnting a single FeatureGroup in the GA4GH model.
+    Class representing a single FeatureGroup in the GA4GH model.
     """
     compoundIdClass = datamodel.FeatureGroupCompoundId
 
@@ -347,7 +347,7 @@ class RNASeqResult(AbstractRNAQuantification):
         relevant expression data file
         """
         self.parseExpressionData()
-        if id_ not in self._featureGroupIdMap:
+        if id_ not in self._featureGroupIdMap.keys():
             raise exceptions.FeatureGroupNotFoundException(id_)
         return self._featureGroupIdMap[id_]
 

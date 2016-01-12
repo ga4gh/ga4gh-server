@@ -7,9 +7,13 @@ from __future__ import unicode_literals
 
 import os
 import random
+
+import ga4gh.datamodel as datamodel
+import ga4gh.datamodel.datasets as datasets
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.rna_quantification as rna_quantification
 import tests.datadriven as datadriven
+import ga4gh.exceptions as exceptions
 
 # TODO: tests are a bit silly now as it is reading the flat file in the same
 # way as the module.  Will have more meaning once rna_quantification is
@@ -96,16 +100,18 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             for expressionData in expressionLevelData.readlines():
                 fields = expressionData.strip().split('\t')
                 id = fields[0]
-                self.expressionLevel[id] = {}
-                self.expressionLevel[id]["annotationId"] = fields[1]
-                self.expressionLevel[id]["expression"] = fields[2]
-                self.expressionLevel[id]["featureGroupId"] = fields[3]
-                self.expressionLevel[id]["isNormalized"] = fields[4]
-                self.expressionLevel[id]["rawReadCount"] = fields[5]
-                self.expressionLevel[id]["score"] = fields[6]
-                self.expressionLevel[id]["units"] = fields[7]
+                self.expressionLevel[id] = {
+                    "annotationId": fields[1],
+                    "expression": fields[2],
+                    "featureGroupId": fields[3],
+                    "isNormalized": fields[4],
+                    "rawReadCount": fields[5],
+                    "score": fields[6],
+                    "units": fields[7]
+                }
 
     def __init__(self, rnaQuantificationId, baseDir):
+        self._dataset = datasets.AbstractDataset("ds")
         super(RnaQuantificationTest, self).__init__(rnaQuantificationId,
                                                     baseDir)
         self._rnaQuantFileName = os.path.join(baseDir, "rnaseq.table")
@@ -119,19 +125,19 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self._expressionLevelInfo = self.ExpressionLevelInfo(
             self._expressionFileName)
         self._featureGroupInfo = self._getFeatureGroupInfo(
-            self._expressionLevelInfo, rnaQuantificationId)
+            self._expressionLevelInfo, self._gaObject.getId())
 
     def _getFeatureGroupInfo(self, expressionInfo, rnaQuantId):
         featureGroupInfo = {}
-        for expressionId in expressionInfo.keys():
-            id = expressionInfo[expressionId]["featureGroupId"]
-            featureGroupInfo[id] = {"analysisId": rnaQuantId}
-            featureGroupInfo[id] = {"name": id}
+        for expressionId in expressionInfo.expressionLevel.keys():
+            id = expressionInfo.expressionLevel[expressionId]["featureGroupId"]
+            featureGroupInfo[id] = {"analysisId": rnaQuantId, "name": id}
 
         return featureGroupInfo
 
-    def getDataModelClass(self):
-        return rna_quantification.RNASeqResult
+    def getDataModelInstance(self, localId, dataPath):
+        return rna_quantification.RNASeqResult(self._dataset, localId,
+                                               dataPath)
 
     def getProtocolClass(self):
         return protocol.RnaQuantification
@@ -143,12 +149,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertValid(
             protocol.RnaQuantification, rnaQuantificationPe.toJsonDict())
 
-    def testGetRnaQuantification(self):
-        # test searching with no arguments succeeds
-        rnaQuantification = self._gaObject
-        for gaRnaQuant in rnaQuantification.getRnaQuantification(None):
-            self.assertRnaQuantsEqual(gaRnaQuant, self._rnaQuantInfo)
-
     def assertRnaQuantsEqual(self, gaRnaQuant, rnaQuant):
         self.assertEqual(gaRnaQuant.id, rnaQuant.id)
         self.assertEqual(gaRnaQuant.annotationIds, rnaQuant.annotationIds)
@@ -158,9 +158,9 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
 
     def testGetCharacterization(self):
         rnaQuantification = self._gaObject
-        for gaCharacterization in rnaQuantification.getCharacterization(None):
-            self.assertCharacterizationEqual(gaCharacterization,
-                                             self._characterizationInfo)
+        gaChar = rnaQuantification.getCharacterization()
+        self.assertCharacterizationEqual(gaChar.toProtocolElement(),
+                                         self._characterizationInfo)
 
     def assertCharacterizationEqual(self, gaCharacterization,
                                     characterization):
@@ -179,8 +179,9 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
 
     def testGetReadCounts(self):
         rnaQuantification = self._gaObject
-        for gaReadCounts in rnaQuantification.getReadCounts(None):
-            self.assertReadCountsEqual(gaReadCounts, self._readCountInfo)
+        gaReadCounts = rnaQuantification.getReadCounts()
+        self.assertReadCountsEqual(gaReadCounts.toProtocolElement(),
+                                   self._readCountInfo)
 
     def assertReadCountsEqual(self, gaReadCounts, readCounts):
         self.assertEqual(gaReadCounts.analysisId, readCounts.analysisId)
@@ -194,14 +195,24 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
                          readCounts.uniqueSpliceCount)
 
     def testGetExpressionLevel(self):
-        # test searching with no arguments succeeds
         rnaQuantification = self._gaObject
-        for gaExpression in rnaQuantification.getExpressionLevel(None, None):
-            self.assertExpressionEqual(gaExpression,
-                                       self._expressionLevelInfo)
+        # positive test: get the expected expression level
+        expressionID = self._expressionLevelInfo.expressionLevel.keys()[0]
+        compoundId = datamodel.ExpressionLevelCompoundId(
+            rnaQuantification.getCompoundId(), expressionID)
+        gaExpression = rnaQuantification.getExpressionLevel(str(compoundId),
+                                                            None)
+        self.assertExpressionEqual(gaExpression,
+                                   self._expressionLevelInfo.expressionLevel)
 
-    def assertExpressionEqual(self, gaExpression, expressionLevel):
-        id = gaExpression.id
+        # negative test: bad name
+        with self.assertRaises(exceptions.ExpressionLevelNotFoundException):
+            rnaQuantification.getExpressionLevel("not here", None)
+
+    def assertExpressionEqual(self, gaExpressionObj,
+                              expressionLevel):
+        id = gaExpressionObj.getName()
+        gaExpression = gaExpressionObj.toProtocolElement()
         self.assertIn(id, expressionLevel.keys())
         self.assertEqual(gaExpression.annotationId,
                          expressionLevel[id]["annotationId"])
@@ -217,21 +228,30 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(gaExpression.units, expressionLevel[id]["units"])
 
     def testGetFeatureGroup(self):
-        # test searching with no arguments succeeds
         rnaQuantification = self._gaObject
-        groupId = self.getRandomFeatureGroup()
-        for gaFeatureGroup in rnaQuantification.getFeatureGroup(groupId):
-            self.assertFeatureGroupEqual(gaFeatureGroup,
-                                         self._featureGroupInfo)
+        # positive test: get the expected feature group
+        groupId = self.getRandomFeatureGroupId()
+        compoundId = datamodel.FeatureGroupCompoundId(
+            rnaQuantification.getCompoundId(), groupId)
+        gaFeatureGroup = rnaQuantification.getFeatureGroup(str(compoundId))
+        self.assertFeatureGroupEqual(gaFeatureGroup, self._featureGroupInfo)
 
-    def getRandomFeatureGroup(self):
-        expressionId = random.choice(self._expressionLevelInfo.keys())
-        return self._expressionLevelInfo[expressionId]["featureGroupId"]
+        # negative test: bad name
+        with self.assertRaises(exceptions.FeatureGroupNotFoundException):
+            rnaQuantification.getFeatureGroup("not here")
 
-    def assertFeatureGroupEqual(self, gaFeatureGroup, featureGroupInfo):
-        id = gaFeatureGroup.id
+    def getRandomFeatureGroupId(self):
+        idList = self._expressionLevelInfo.expressionLevel.keys()
+        expressionId = random.choice(idList)
+        expression = self._expressionLevelInfo.expressionLevel[expressionId]
+        return expression["featureGroupId"]
+
+    def assertFeatureGroupEqual(self, gaFeatureGroupObj,
+                                featureGroupInfo):
+        gaFeatureGroup = gaFeatureGroupObj.toProtocolElement()
+        id = gaFeatureGroupObj.getLocalId()
         self.assertIn(id, featureGroupInfo.keys())
-        self.assertEqual(gaFeatureGroup.annotationId,
+        self.assertEqual(gaFeatureGroup.analysisId,
                          featureGroupInfo[id]["analysisId"])
-        self.assertEqual(gaFeatureGroup.FeatureGroup,
+        self.assertEqual(gaFeatureGroup.name,
                          featureGroupInfo[id]["name"])
