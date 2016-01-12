@@ -206,12 +206,14 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
     def __init__(self, request, parentContainer):
         super(VariantAnnotationsIntervalIterator, self).__init__(
             request, parentContainer)
-        print('self._request.featureIds: ', self._request.featureIds)
-        if self._request.featureIds is None:
-            self._featureIds = []
+        # if self._request.featureIds is None:
+        #     self._featureIds = []
+        # else:
+        #     self._featureIds = set(self._request.featureIds)
+        if self._request.effects is None:
+            self._effects = []
         else:
-            self._featureIds = set(self._request.featureIds)
-        self._effects = set(self._request.effects)
+            self._effects = set(self._request.effects)
 
     def _search(self, start, end):
         return self._parentContainer.getVariantAnnotations(
