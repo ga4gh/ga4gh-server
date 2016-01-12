@@ -569,7 +569,8 @@ class AbstractBackend(object):
         Returns a generator over the (variantAnnotationSet, nextPageToken)
         pairs defined by the specified request.
         """
-        dataset = self.getDataset(request.datasetId)
+        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
+        dataset = self.getDataset(compoundId.datasetId)
         return self._topLevelObjectGenerator(
             request, dataset.getNumVariantAnnotationSets(),
             dataset.getVariantAnnotationSetByIndex)
