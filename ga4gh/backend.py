@@ -206,12 +206,10 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
     def __init__(self, request, parentContainer):
         super(VariantAnnotationsIntervalIterator, self).__init__(
             request, parentContainer)
-        print('self._request.featureIds: ', self._request.featureIds)
-        if self._request.featureIds is None:
-            self._featureIds = []
+        if self._request.effects is None:
+            self._effects = []
         else:
-            self._featureIds = set(self._request.featureIds)
-        self._effects = set(self._request.effects)
+            self._effects = set(self._request.effects)
 
     def _search(self, start, end):
         return self._parentContainer.getVariantAnnotations(
@@ -234,13 +232,12 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         return None
 
     def filterVariantAnnotation(self, vann):
-        if len(self._featureIds) == 0 and len(self._effects) == 0:
+        # TODO reintroduce feature ID search
+        if len(self._effects) == 0:
             return True
         if not vann.transcriptEffects:
             return False
         for teff in vann.transcriptEffects:
-            if not self.filterFeatureId(teff):
-                return False
             if not self.filterEffect(teff):
                 return False
         return True
@@ -569,7 +566,8 @@ class AbstractBackend(object):
         Returns a generator over the (variantAnnotationSet, nextPageToken)
         pairs defined by the specified request.
         """
-        dataset = self.getDataset(request.datasetId)
+        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
+        dataset = self.getDataset(compoundId.datasetId)
         return self._topLevelObjectGenerator(
             request, dataset.getNumVariantAnnotationSets(),
             dataset.getVariantAnnotationSetByIndex)

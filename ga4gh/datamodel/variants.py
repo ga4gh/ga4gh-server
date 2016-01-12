@@ -657,8 +657,11 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         effect.effects = self.convertSeqOntology(effects)
         effect.impact = impact
         effect.featureId = featureId
-        effect.HGVSc = hgvsC
-        effect.HGVSp = hgvsP
+        # TODO what is actually meant to go in here?
+        effect.hgvsAnnotation = protocol.HGVSAnnotation()
+        effect.hgvsAnnotation.genomic = None
+        effect.hgvsAnnotation.coding = hgvsC
+        effect.hgvsAnnotation.protein = hgvsP
         if hgvsP != '':
             effect.proteinLocation = self.convertLocationHgvsP(hgvsP)
         if effect.proteinLocation is None:
@@ -669,6 +672,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             effect.CDSLocation = self.convertLocation(cdnaPos)
         effect.cDNALocation = self.convertLocation(cdnaPos)
         effect.id = self.getTranscriptEffectId(effect)
+        effect.analysisResults = []
         return effect
 
     def convertSeqOntology(self, seqOntStr):
@@ -687,14 +691,10 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         """
         Converts the specified record into a GA4GH Annotaiton object.
         """
-        # First we need the Variant
         variant = self.convertVariant(record, None)
-        # Create annotaiton
         annotation = self._createGaVariantAnnotation()
         annotation.variant = variant
         annotation.variantId = variant.id
-        if record.id is not None:
-            annotation.coLocatedVariants = record.id.split(';')
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
         transcriptEffects = []
@@ -726,10 +726,10 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
     def getTranscriptEffectId(self, gaTranscriptEffect):
         effs = [eff.name for eff in gaTranscriptEffect.effects]
         return hashlib.md5(
-            "{}\t{}\t{}\t{}\t{}".format(
+            "{}\t{}\t{}\t{}".format(
                 gaTranscriptEffect.alternateBases,
-                gaTranscriptEffect.featureId, effs, gaTranscriptEffect.HGVSp,
-                gaTranscriptEffect.HGVSc)
+                gaTranscriptEffect.featureId,
+                effs, gaTranscriptEffect.hgvsAnnotation)
             ).hexdigest()
 
     def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
