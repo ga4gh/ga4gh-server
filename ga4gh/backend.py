@@ -11,6 +11,7 @@ import os
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
@@ -164,7 +165,12 @@ class ReadsIntervalIterator(IntervalIterator):
 
     @classmethod
     def _getStart(cls, readAlignment):
-        return readAlignment.alignment.position.position
+        if readAlignment.alignment is None:
+            # unmapped read with mapped mate; see SAM standard 2.4.1
+            return readAlignment.nextMatePosition.position
+        else:
+            # usual case
+            return readAlignment.alignment.position.position
 
     @classmethod
     def _getEnd(cls, readAlignment):
@@ -192,6 +198,68 @@ class VariantsIntervalIterator(IntervalIterator):
         return variant.end
 
 
+class VariantAnnotationsIntervalIterator(IntervalIterator):
+    """
+    An interval iterator for annotations
+    """
+
+    def __init__(self, request, parentContainer):
+        super(VariantAnnotationsIntervalIterator, self).__init__(
+            request, parentContainer)
+        print('self._request.featureIds: ', self._request.featureIds)
+        if self._request.featureIds is None:
+            self._featureIds = []
+        else:
+            self._featureIds = set(self._request.featureIds)
+        self._effects = set(self._request.effects)
+
+    def _search(self, start, end):
+        return self._parentContainer.getVariantAnnotations(
+            self._request.referenceName, start, end)
+
+    @classmethod
+    def _getStart(cls, annotation):
+        return annotation.variant.start
+
+    @classmethod
+    def _getEnd(cls, annotation):
+        return annotation.variant.end
+
+    def next(self):
+        while True:
+            ret = super(VariantAnnotationsIntervalIterator, self).next()
+            vann = ret[0]
+            if self.filterVariantAnnotation(vann):
+                return ret
+        return None
+
+    def filterVariantAnnotation(self, vann):
+        if len(self._featureIds) == 0 and len(self._effects) == 0:
+            return True
+        if not vann.transcriptEffects:
+            return False
+        for teff in vann.transcriptEffects:
+            if not self.filterFeatureId(teff):
+                return False
+            if not self.filterEffect(teff):
+                return False
+        return True
+
+    def filterEffect(self, teff):
+        if len(self._effects) == 0:
+            return True
+        for eff in teff.effects:
+            if eff.name in self._effects:
+                return True
+        return False
+
+    def filterFeatureId(self, teff):
+        if (len(self._featureIds) > 0 and
+                teff.featureId not in self._featureIds):
+            return False
+        return True
+
+
 class AbstractBackend(object):
     """
     An abstract GA4GH backend.
@@ -208,6 +276,8 @@ class AbstractBackend(object):
         self._referenceSetIdMap = {}
         self._referenceSetNameMap = {}
         self._referenceSetIds = []
+        self._ontologyNameMap = {}
+        self._ontologyNames = []
 
     def addDataset(self, dataset):
         """
@@ -217,6 +287,14 @@ class AbstractBackend(object):
         self._datasetIdMap[id_] = dataset
         self._datasetNameMap[dataset.getLocalId()] = dataset
         self._datasetIds.append(id_)
+
+    def addOntologies(self, ontologies):
+        """
+        Adds ontologies to this backend.
+        """
+        for name in ontologies.keys():
+            self._ontologyNameMap[name] = ontologies.get(name)
+            self._ontologyNames.append(name)
 
     def addReferenceSet(self, referenceSet):
         """
@@ -321,6 +399,12 @@ class AbstractBackend(object):
         if name not in self._referenceSetNameMap:
             raise exceptions.ReferenceSetNameNotFoundException(name)
         return self._referenceSetNameMap[name]
+
+    def getOntology(self, name):
+        """
+        Returns ontologies
+        """
+        return self._ontologyNameMap[name]
 
     def startProfile(self):
         """
@@ -480,6 +564,16 @@ class AbstractBackend(object):
             request, dataset.getNumVariantSets(),
             dataset.getVariantSetByIndex)
 
+    def variantAnnotationSetsGenerator(self, request):
+        """
+        Returns a generator over the (variantAnnotationSet, nextPageToken)
+        pairs defined by the specified request.
+        """
+        dataset = self.getDataset(request.datasetId)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumVariantAnnotationSets(),
+            dataset.getVariantAnnotationSetByIndex)
+
     def readsGenerator(self, request):
         """
         Returns a generator over the (read, nextPageToken) pairs defined
@@ -510,6 +604,20 @@ class AbstractBackend(object):
         dataset = self.getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         intervalIterator = VariantsIntervalIterator(request, variantSet)
+        return intervalIterator
+
+    def variantAnnotationsGenerator(self, request):
+        """
+        Returns a generator over the (variantAnnotaitons, nextPageToken) pairs
+        defined by the specified request.
+        """
+        compoundId = datamodel.VariantAnnotationSetCompoundId.parse(
+            request.variantAnnotationSetId)
+        dataset = self.getDataset(compoundId.datasetId)
+        variantAnnotationSet = dataset.getVariantAnnotationSet(
+            request.variantAnnotationSetId)
+        intervalIterator = VariantAnnotationsIntervalIterator(
+            request, variantAnnotationSet)
         return intervalIterator
 
     def callSetsGenerator(self, request):
@@ -735,6 +843,15 @@ class AbstractBackend(object):
             protocol.SearchVariantSetsResponse,
             self.variantSetsGenerator)
 
+    def runSearchVariantAnnotationSets(self, request):
+        """
+        Runs the specified SearchVariantAnnotationSetsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchVariantAnnotationSetsRequest,
+            protocol.SearchVariantAnnotationSetsResponse,
+            self.variantAnnotationSetsGenerator)
+
     def runSearchVariants(self, request):
         """
         Runs the specified SearchVariantRequest.
@@ -743,6 +860,15 @@ class AbstractBackend(object):
             request, protocol.SearchVariantsRequest,
             protocol.SearchVariantsResponse,
             self.variantsGenerator)
+
+    def runSearchVariantAnnotations(self, request):
+        """
+        Runs the specified SearchVariantAnnotationsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchVariantAnnotationsRequest,
+            protocol.SearchVariantAnnotationsResponse,
+            self.variantAnnotationsGenerator)
 
     def runSearchCallSets(self, request):
         """
@@ -811,10 +937,12 @@ class FileSystemBackend(AbstractBackend):
     def __init__(self, dataDir):
         super(FileSystemBackend, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = ["referenceSets", "datasets"]
+        sourceDirNames = ["referenceSets", "ontologies", "datasets"]
         constructors = [
-            references.HtslibReferenceSet, datasets.FileSystemDataset]
-        objectAdders = [self.addReferenceSet, self.addDataset]
+            references.HtslibReferenceSet, ontologies.FileSystemOntologies,
+            datasets.FileSystemDataset]
+        objectAdders = [
+            self.addReferenceSet, self.addOntologies, self.addDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)
