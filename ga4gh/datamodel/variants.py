@@ -653,22 +653,47 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         (alt, effects, impact, geneName, geneId, featureType,
             featureId, trBiotype, rank, hgvsC, hgvsP, cdnaPos,
             cdsPos, protPos, distance, errsWarns) = ann.split('|')
+        
+        # alternateBases str
         effect.alternateBases = alt
+        
+        # effects array<OntologyTerm> 
         effect.effects = self.convertSeqOntology(effects)
+        
+        # impact enum
         effect.impact = impact
+        
+        # featureId str
         effect.featureId = featureId
-        effect.HGVSc = hgvsC
-        effect.HGVSp = hgvsP
+        
+        # hgvsAnnotation HGVSAnnotation
+        # TODO what is actually meant to go in here?
+        effect.hgvsAnnotation = {
+            'genomic': None,
+            'coding': hgvsC,
+            'protein': hgvsP
+        }
+        
+        # proteinLocation AlleleLoc
         if hgvsP != '':
             effect.proteinLocation = self.convertLocationHgvsP(hgvsP)
         if effect.proteinLocation is None:
             effect.proteinLocation = self.convertLocation(protPos)
+        
+        # CDSLocation AlleleLoc
         if hgvsC != '':
             effect.CDSLocation = self.convertLocationHgvsC(hgvsC)
         if effect.CDSLocation is None:
             effect.CDSLocation = self.convertLocation(cdnaPos)
+            
+        # cDNALocation AlleleLoc
         effect.cDNALocation = self.convertLocation(cdnaPos)
+        
+        # id str
         effect.id = self.getTranscriptEffectId(effect)
+        
+        # analysisResults array<AnalysisResult>
+        effect.analysisResults = []
         return effect
 
     def convertSeqOntology(self, seqOntStr):
@@ -726,10 +751,9 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
     def getTranscriptEffectId(self, gaTranscriptEffect):
         effs = [eff.name for eff in gaTranscriptEffect.effects]
         return hashlib.md5(
-            "{}\t{}\t{}\t{}\t{}".format(
+            "{}\t{}\t{}\t{}".format(
                 gaTranscriptEffect.alternateBases,
-                gaTranscriptEffect.featureId, effs, gaTranscriptEffect.HGVSp,
-                gaTranscriptEffect.HGVSc)
+                gaTranscriptEffect.featureId, effs, gaTranscriptEffect.hgvsAnnotation)
             ).hexdigest()
 
     def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
