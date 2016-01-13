@@ -3,13 +3,15 @@ python:
   - "2.7"
 sudo: false
 
-before_install:
-  - wget 'http://www.well.ox.ac.uk/~jk/wheelhouse.tar'
-  - tar -xvf wheelhouse.tar
+cache:
+  directories:
+    - $HOME/.cache/pip
 
 install:
-  - pip install --use-wheel --find-links=wheelhouse/ -r requirements.txt
-  - python setup.py install
+  - pip install pip --upgrade 
+  - pip install -r requirements.txt
+  - python setup.py sdist
+  - pip install dist/ga4gh*.tar.gz
 
 before_script:
   # the following two lines are to prevent travis from

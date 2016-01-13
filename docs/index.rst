@@ -4,8 +4,8 @@
 GA4GH Reference Implementation
 ==============================
 
-This the documentation for the GA4GH reference client and
-server applications.
+This the documentation for version |version| of the GA4GH reference
+implementation.
 
 ********
 Contents
