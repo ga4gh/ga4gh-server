@@ -206,6 +206,7 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
     def __init__(self, request, parentContainer):
         super(VariantAnnotationsIntervalIterator, self).__init__(
             request, parentContainer)
+        # TODO featureId search is currently removed from the schemas
         # if self._request.featureIds is None:
         #     self._featureIds = []
         # else:
@@ -236,13 +237,16 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         return None
 
     def filterVariantAnnotation(self, vann):
-        if len(self._featureIds) == 0 and len(self._effects) == 0:
+        # TODO reintroduce feature ID search
+        # if len(self._featureIds) == 0 and len(self._effects) == 0:
+        #     return True
+        if len(self._effects) == 0:
             return True
         if not vann.transcriptEffects:
             return False
         for teff in vann.transcriptEffects:
-            if not self.filterFeatureId(teff):
-                return False
+            # if not self.filterFeatureId(teff):
+            #     return False
             if not self.filterEffect(teff):
                 return False
         return True
