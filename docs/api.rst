@@ -6,7 +6,9 @@ Python Client Library
 
 This is the GA4GH client API library. This is a convenient wrapper for
 the low-level HTTP GA4GH API, and abstracts away network centric
-details such as paging.
+details such as paging.  The methods and types used by the client
+library are defined by the
+`GA4GH schema <https://ga4gh-schemas.readthedocs.org/en/latest/>`_.
 
 
 .. warning:: This client API should be considered early alpha quality,

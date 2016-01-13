@@ -535,11 +535,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         # NOTE: filters in not included in metadata unless needed
         for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
             for contentKey, value in content:
-                attrs = dict(value.header.attrs)
-                # TODO: refactor description at next pysam release
-                # since description will be implemented as a member of
-                # VariantMetadata
-                description = attrs.get('Description', '').strip('"')
+                description = value.description.strip('"')
                 key = "{0}.{1}".format(prefix, value.name)
                 if key != "FORMAT.GT":
                     ret.append(buildMetadata(

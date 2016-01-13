@@ -7,7 +7,7 @@ Introduction
 The `Data Working Group <http://ga4gh.org/#/>`_ of the
 `Global Alliance for Genomics and Health <http://genomicsandhealth.org/>`_
 has defined an
-`API <http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/>`_
+`API <https://ga4gh-schemas.readthedocs.org/en/latest/>`_
 to facilitate interoperable exchange of genomic data.
 This is the the documentation for the reference implementation of the API.
 
