@@ -714,12 +714,13 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         """
         # First we need the Variant
         variant = self.convertVariant(record, None)
-        # Create annotaiton
+        # Create annotation
         annotation = self._createGaVariantAnnotation()
         annotation.variant = variant
         annotation.variantId = variant.id
-        if record.id is not None:
-            annotation.coLocatedVariants = record.id.split(';')
+        # TODO colocated variants will be added in a future version
+        #if record.id is not None:
+        #    annotation.coLocatedVariants = record.id.split(';')
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
         transcriptEffects = []
