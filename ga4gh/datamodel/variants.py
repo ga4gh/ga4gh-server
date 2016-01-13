@@ -653,19 +653,14 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         (alt, effects, impact, geneName, geneId, featureType,
             featureId, trBiotype, rank, hgvsC, hgvsP, cdnaPos,
             cdsPos, protPos, distance, errsWarns) = ann.split('|')
-        
         # alternateBases str
         effect.alternateBases = alt
-        
-        # effects array<OntologyTerm> 
+        # effects array<OntologyTerm>
         effect.effects = self.convertSeqOntology(effects)
-        
         # impact enum
         effect.impact = impact
-        
         # featureId str
         effect.featureId = featureId
-        
         # hgvsAnnotation HGVSAnnotation
         # TODO what is actually meant to go in here?
         effect.hgvsAnnotation = {
@@ -673,25 +668,20 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             'coding': hgvsC,
             'protein': hgvsP
         }
-        
         # proteinLocation AlleleLoc
         if hgvsP != '':
             effect.proteinLocation = self.convertLocationHgvsP(hgvsP)
         if effect.proteinLocation is None:
             effect.proteinLocation = self.convertLocation(protPos)
-        
         # CDSLocation AlleleLoc
         if hgvsC != '':
             effect.CDSLocation = self.convertLocationHgvsC(hgvsC)
         if effect.CDSLocation is None:
             effect.CDSLocation = self.convertLocation(cdnaPos)
-            
         # cDNALocation AlleleLoc
         effect.cDNALocation = self.convertLocation(cdnaPos)
-        
         # id str
         effect.id = self.getTranscriptEffectId(effect)
-        
         # analysisResults array<AnalysisResult>
         effect.analysisResults = []
         return effect
@@ -719,7 +709,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         annotation.variant = variant
         annotation.variantId = variant.id
         # TODO colocated variants will be added in a future version
-        #if record.id is not None:
+        # if record.id is not None:
         #    annotation.coLocatedVariants = record.id.split(';')
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
@@ -754,7 +744,8 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         return hashlib.md5(
             "{}\t{}\t{}\t{}".format(
                 gaTranscriptEffect.alternateBases,
-                gaTranscriptEffect.featureId, effs, gaTranscriptEffect.hgvsAnnotation)
+                gaTranscriptEffect.featureId,
+                effs, gaTranscriptEffect.hgvsAnnotation)
             ).hexdigest()
 
     def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
