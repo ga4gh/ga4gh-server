@@ -21,6 +21,7 @@ import ga4gh.converters as converters
 import ga4gh.frontend as frontend
 import ga4gh.configtest as configtest
 import ga4gh.exceptions as exceptions
+import ga4gh.repo_manager as repo_manager
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -1090,3 +1091,178 @@ def configtest_main(parser=None):
     for result in results.skipped:
         if result is not None:
             log.info('Skipped: {0}: {1}'.format(result[0].id(), result[1]))
+
+##############################################################################
+# data repository management tool
+##############################################################################
+
+
+class AbstractRepoCommandRunner(object):
+
+    def __init__(self, args):
+        self.args = args
+        self.repoPath = args.repoPath
+        self.repoManager = repo_manager.RepoManager(self.repoPath)
+
+
+class AbstractRepoAddCommandRunner(AbstractRepoCommandRunner):
+
+    def __init__(self, args):
+        super(AbstractRepoAddCommandRunner, self).__init__(args)
+        self.filePath = args.filePath
+
+
+class AbstractRepoDatasetCommandRunner(AbstractRepoCommandRunner):
+
+    def __init__(self, args):
+        super(AbstractRepoDatasetCommandRunner, self).__init__(args)
+        self.datasetName = args.datasetName
+
+
+class AbstractRepoDatasetFilepathCommandRunner(
+        AbstractRepoDatasetCommandRunner):
+
+    def __init__(self, args):
+        super(AbstractRepoDatasetFilepathCommandRunner, self).__init__(args)
+        self.filePath = args.filePath
+
+
+class CheckRunner(AbstractRepoCommandRunner):
+
+    def __init__(self, args):
+        super(CheckRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.check()
+
+
+class ListRunner(AbstractRepoCommandRunner):
+
+    def __init__(self, args):
+        super(ListRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.list()
+
+
+class InitRunner(AbstractRepoCommandRunner):
+
+    def __init__(self, args):
+        super(InitRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.init()
+
+
+class AddDatasetRunner(AbstractRepoDatasetCommandRunner):
+
+    def __init__(self, args):
+        super(AddDatasetRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.addDataset(self.datasetName)
+
+
+class AddReferenceSetRunner(AbstractRepoAddCommandRunner):
+
+    def __init__(self, args):
+        super(AddReferenceSetRunner, self).__init__(args)
+
+    def run(self):
+        pass
+
+
+class AddReadGroupSetRunner(AbstractRepoDatasetFilepathCommandRunner):
+
+    def __init__(self, args):
+        super(AddReadGroupSetRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.addReadGroupSet(self.datasetName, self.filePath)
+
+
+class AddVariantSetRunner(AbstractRepoAddCommandRunner):
+
+    def __init__(self, args):
+        super(AddVariantSetRunner, self).__init__(args)
+
+    def run(self):
+        pass
+
+
+def addRepoArgument(subparser):
+    subparser.add_argument(
+        "repoPath", help="the file path of the data repository")
+
+
+def addDatasetNameArgument(subparser):
+    subparser.add_argument(
+        "datasetName", help="the name of the dataset to create/modify")
+
+
+def addFilePathArgument(subparser):
+    subparser.add_argument(
+        "filePath", help="the path of the file to be moved into the repo")
+
+
+def addSubparser(subparsers, subcommand, description):
+    parser = subparsers.add_parser(
+        subcommand, description=description, help=description)
+    return parser
+
+
+def repo_main(parser=None):
+    if parser is None:
+        parser = argparse.ArgumentParser(
+            description="GA4GH data repository management tool")
+    subparsers = parser.add_subparsers(title='subcommands',)
+
+    initParser = addSubparser(
+        subparsers, "init", description="Initialize a data repository")
+    initParser.set_defaults(runner=InitRunner)
+    addRepoArgument(initParser)
+
+    checkParser = addSubparser(
+        subparsers, "check", "Check to see if repo is well-formed")
+    checkParser.set_defaults(runner=CheckRunner)
+    addRepoArgument(checkParser)
+
+    listParser = addSubparser(
+        subparsers, "list", "List the contents of the repo")
+    listParser.set_defaults(runner=ListRunner)
+    addRepoArgument(listParser)
+
+    addDatasetParser = addSubparser(
+        subparsers, "add-dataset", "Add a dataset to the data repo")
+    addDatasetParser.set_defaults(runner=AddDatasetRunner)
+    addRepoArgument(addDatasetParser)
+    addDatasetNameArgument(addDatasetParser)
+
+    addReferenceSetParser = addSubparser(
+        subparsers, "add-referenceset",
+        "Add a reference set to the data repo")
+    addReferenceSetParser.set_defaults(runner=AddReferenceSetRunner)
+    addRepoArgument(addReferenceSetParser)
+
+    addReadGroupSetParser = addSubparser(
+        subparsers, "add-readgroupset",
+        "Add a read group set to the data repo")
+    addReadGroupSetParser.set_defaults(runner=AddReadGroupSetRunner)
+    addRepoArgument(addReadGroupSetParser)
+    addDatasetNameArgument(addReadGroupSetParser)
+    addFilePathArgument(addReadGroupSetParser)
+
+    addVariantSetParser = addSubparser(
+        subparsers, "add-variantset", "Add a variant set to the data repo")
+    addVariantSetParser.set_defaults(runner=AddVariantSetRunner)
+    addRepoArgument(addVariantSetParser)
+
+    args = parser.parse_args()
+    if "runner" not in args:
+        parser.print_help()
+    else:
+        runner = args.runner(args)
+        try:
+            runner.run()
+        except repo_manager.RepoManagerException as exception:
+            print(exception.message)
