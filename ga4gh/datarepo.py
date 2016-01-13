@@ -160,10 +160,13 @@ class FileSystemDataRepository(AbstractDataRepository):
     """
     A data repository based on the file system
     """
+    referenceSetsDirName = "referenceSets"
+    datasetsDirName = "datasets"
+
     def __init__(self, dataDir, doConsistencyCheck=True):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = ["referenceSets", "datasets"]
+        sourceDirNames = [self.referenceSetsDirName, self.datasetsDirName]
         constructors = [
             references.HtslibReferenceSet, datasets.FileSystemDataset]
         objectAdders = [self.addReferenceSet, self.addDataset]
