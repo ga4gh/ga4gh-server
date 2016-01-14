@@ -182,6 +182,10 @@ class SimulatedDataset(AbstractDataset):
             variantSet = variants.SimulatedVariantSet(
                 self, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
+            # Variant Annotations
+            variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
+                self, "simVas{}".format(i), variantSet)
+            self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
             localId = 'simRgs{}'.format(i)

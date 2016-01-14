@@ -332,6 +332,134 @@ class SimulatedVariantSet(AbstractVariantSet):
         return variant
 
 
+class SimulatedVariantAnnotationSet(AbstractVariantSet):
+    """
+    A variant annotation set that doesn't derive from a data store.
+    Used mostly for testing.
+    """
+    def __init__(
+            self, parentContainer, localId, variantSet, randomSeed=1):
+        super(SimulatedVariantAnnotationSet, self).__init__(
+            parentContainer, localId)
+
+        self._variants = variantSet.getVariants('ref', 100, 125)
+        self._randomSeed = randomSeed
+        now = protocol.convertDatetime(datetime.datetime.now())
+        self._creationTime = now
+        self._updatedTime = now
+        # TODO make some reasonable connection to seqont
+        # self._sequenceOntology = backend.getOntology('sequence_ontology')
+
+    def getNumVariantAnnotations(self):
+        # TODO find out where this is used and how
+        return 0
+
+    def getMetadata(self):
+        ret = []
+        # TODO Add simulated metadata.
+        return ret
+
+    def getVariantAnnotation(self, variant, randomNumberGenerator):
+        ann = self.generateVariantAnnotation(
+            variant, randomNumberGenerator)
+        return ann
+
+    def getVariantAnnotations(self):
+        """
+        Given a list of variants return randomized annotations for each.
+        """
+        randomNumberGenerator = random.Random()
+        randomNumberGenerator.seed(self._randomSeed)
+        # TODO allow changing amount of results
+        for v in self._variants:
+            ann = self.getVariantAnnotation(v, randomNumberGenerator)
+            yield ann
+
+    def generateVariantAnnotation(self, variant, randomNumberGenerator):
+        """
+        Generate a random variant annotation based on a given variant.
+        This generator should be seeded with a value that is unique to the
+        variant so that the same annotation will always be produced regardless
+        of the order it is generated in.
+        """
+        # variantAnnotationSetId str
+        ann = self._createGaVariantAnnotation()
+        # variantId str
+        ann.variantId = variant.id
+        # transcriptEffects [TranscriptEffect]
+        # make a transcript effect for each alternate base element
+        ann.transcriptEffects = []
+        for i in range(0, len(variant.alternateBases)):
+            ann.transcriptEffects.append(self.generateTranscriptEffect(
+                ann, variant.alternateBases[i], randomNumberGenerator))
+        ann.id = self.getVariantAnnotationId(variant, ann)
+        return ann
+
+    def getTranscriptEffectId(self, gaTranscriptEffect):
+        effs = [eff.name for eff in gaTranscriptEffect.effects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t{}".format(
+                gaTranscriptEffect.alternateBases,
+                gaTranscriptEffect.featureId,
+                effs, gaTranscriptEffect.hgvsAnnotation)
+            ).hexdigest()
+
+    def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
+        """
+        Produces an MD5 hash of the ga variant and gaVariantAnnotaiton objects
+        """
+        treffs = [treff.id for treff in gaVariantAnnotation.transcriptEffects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t".format(
+                gaVariant.referenceBases, tuple(gaVariant.alternateBases),
+                treffs)
+            ).hexdigest()
+
+    def getVariantAnnotationId(self, gaVariant, gaAnnotation):
+        md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
+        compoundId = datamodel.VariantAnnotationCompoundId(
+            self.getCompoundId(), gaVariant.referenceName,
+            gaVariant.start, md5, None)
+        return str(compoundId)
+
+    def generateTranscriptEffect(self, ann, alts, randomNumberGenerator):
+        effect = self._createGaTranscriptEffect()
+        # alternateBases str
+        effect.alternateBases = alts
+        # effects array<OntologyTerm>
+        # TODO get a random one
+        effect.effects = []
+        # impact enum
+        impacts = [
+            "HIGH",
+            "LOW",
+            "MODERATE",
+            "MODIFIER"
+        ]
+        effect.impact = randomNumberGenerator.choice(impacts)
+        # featureId str
+        # TODO how to make these sensical?
+        effect.featureId = "E4TB33F"
+        # hgvsAnnotation HGVSAnnotation
+        # TODO what is actually meant to go in here?
+        effect.hgvsAnnotation = {
+            'genomic': None,
+            'coding': None,
+            'protein': None
+        }
+        # proteinLocation AlleleLoc
+        effect.proteinLocation = self._createGaAlleleLocation()
+        # CDSLocation AlleleLoc
+        effect.CDSLocation = self._createGaAlleleLocation()
+        # cDNALocation AlleleLoc
+        effect.cDNALocation = self._createGaAlleleLocation()
+        # id str
+        effect.id = self.getTranscriptEffectId(effect)
+        # analysisResults array<AnalysisResult>
+        effect.analysisResults = []
+        return effect
+
+
 def _encodeValue(value):
     if isinstance(value, (list, tuple)):
         return [str(v) for v in value]
@@ -700,7 +828,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
 
     def convertVariantAnnotation(self, record):
         """
-        Converts the specified record into a GA4GH Annotaiton object.
+        Converts the specified record into a GA4GH Annotation object.
         """
         # First we need the Variant
         variant = self.convertVariant(record, None)
