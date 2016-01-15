@@ -353,13 +353,22 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
             self, parentContainer, localId, variantSet, randomSeed=1):
         super(SimulatedVariantAnnotationSet, self).__init__(
             parentContainer, localId)
-
         self._variantSet = variantSet
         self._randomSeed = randomSeed
         now = protocol.convertDatetime(datetime.datetime.now())
         self._creationTime = now
         self._updatedTime = now
         # TODO make some reasonable connection to seqont
+
+    def toProtocolElement(self):
+        """
+        Converts this VariantAnnotationSet into its GA4GH protocol equivalent.
+        """
+        protocolElement = protocol.VariantAnnotationSet()
+        protocolElement.variantSetId = self._variantSet.getId()
+        protocolElement.id = self.getId()
+        protocolElement.name = self.getLocalId()
+        return protocolElement
 
     def getNumVariantAnnotations(self):
         # TODO find out where this is used and how
