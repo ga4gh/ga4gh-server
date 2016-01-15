@@ -121,13 +121,13 @@ class TestSimulatedVariantSet(unittest.TestCase):
 
 class TestSimulatedVariantAnnotationSet(unittest.TestCase):
     def setUp(self):
-        self.randomSeed = 0
+        self.randomSeed = 1
         self.numCalls = 2
         # ensure variantDensity is >= 1 so we get deterministic behavoir
         self.variantDensity = 1
         self.referenceName = 'ref'
         self.startPosition = 100
-        self.endPosition = 103
+        self.endPosition = 120
         self.callSetIds = ['unused']
         self.bases = ["A", "C", "G", "T"]
 
@@ -138,8 +138,9 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
             dataset, 'variantSet1', randomSeed=self.randomSeed,
             numCalls=self.numCalls, variantDensity=self.variantDensity)
         simulatedVariantAnnotationSet = variants.SimulatedVariantAnnotationSet(
-            dataset, localId, simulatedVariantSet)
-        annotations = simulatedVariantAnnotationSet.getVariantAnnotations()
+            dataset, localId, simulatedVariantSet, self.randomSeed)
+        annotations = simulatedVariantAnnotationSet.getVariantAnnotations(
+                    self.referenceName, self.startPosition, self.endPosition)
         for ann in annotations:
             self.assertEquals(True, hasattr(ann, "transcriptEffects"))
 
