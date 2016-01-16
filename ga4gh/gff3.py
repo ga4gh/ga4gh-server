@@ -1,5 +1,6 @@
 """
 Object representation of GFF3 data and parser for GFF3 files.
+
 See: http://www.sequenceontology.org/gff3.shtml
 """
 
@@ -14,21 +15,52 @@ import gzip
 import bz2
 import collections
 
+GFF3_HEADER = "##gff-version 3"
+
 
 class GFF3Exception(Exception):
     """
-    exception associated with GFF3 data
+    Exception associated with GFF3 data.
     """
     def __init__(self, message, fileName=None, lineNumber=None):
         if fileName is not None:
-            message = "{}:{}: {}".format(str(fileName), str(lineNumber),
-                                         message)
+            message = "{}:{}: {}".format(fileName, lineNumber, message)
         super(GFF3Exception, self).__init__(message)
+
+# characters forcing encode for columns
+_encodeColReStr = "\t|\n|\r|%|[\x00-\x1F]|\x7f"
+_encodeColRe = re.compile(_encodeColReStr)
+
+# characters forcing encode for attribute names or values
+_encodeAttrReStr = _encodeColReStr + "|;|=|&|,"
+_encodeAttrRe = re.compile(_encodeAttrReStr)
+
+
+def _encodeCol(v):
+    """
+    Encode a column if is has special characters.
+    """
+    if _encodeColRe.search(v):
+        return urllib.quote(v)
+    else:
+        return v
+
+
+def _encodeAttr(v):
+    """
+    Encode a attribute name or value if is has special characters.
+    """
+    if _encodeAttrRe.search(v):
+        return urllib.quote(v)
+    else:
+        return v
 
 
 class Feature(object):
-    """One feature notation from a GFF3, missing attribute, as code by `.' in
-    the file are stored as None """
+    """
+    One feature notation from a GFF3, missing attribute, as code by `.' in
+    the file are stored as None.
+    """
 
     __slots__ = ("seqname", "source", "type", "start", "end", "score",
                  "strand", "frame", "attributes", "gff3Set", "lineNumber",
@@ -60,35 +92,43 @@ class Feature(object):
 
     def __attributeStr(self, name):
         """
-        return name=value for a single attributed
+        Return name=value for a single attribute
         """
-        return "{}={}".format(name, ",".join(urllib.quote(v)
-                                             for v in self.attributes[name]))
+        return "{}={}".format(
+            _encodeAttr(name),
+            ",".join([_encodeAttr(v) for v in self.attributes[name]]))
 
     def __attributeStrs(self):
         """
-        return name=value, semi-colon-separated string for attributes,
+        Return name=value, semi-colon-separated string for attributes,
         including url-style quoting
         """
-        return "{}".format(";".join([self.__attributeStr(name)
-                           for name in self.attributes.attributes.iterkeys()]))
+        return ";".join([self.__attributeStr(name)
+                         for name in self.attributes.iterkeys()])
 
     def __str__(self):
-        "return the object as a valid GFF3 record line"
-        return "{}".format("\t".join([self.seqname, self.source, self.type,
-                           self.start, self.end, self.__dotIfNone(self.score),
-                           self.__dotIfNone(self.strand),
-                           self.__dotIfNone(self.frame)] +
-                           self.__attributeStrs()))
+        """
+        Return the object as a valid GFF3 record line.
+        """
+        return "\t".join([self.seqname, self.source, self.type,
+                          str(self.start), str(self.end),
+                          self.__dotIfNone(self.score),
+                          self.__dotIfNone(self.strand),
+                          self.__dotIfNone(self.frame),
+                          self.__attributeStrs()])
 
     @property
     def featureId(self):
-        return self.getRequiredAttribute("ID")[0]
+        """
+        ID attribute or None if records doesn't have an ID
+        """
+        featId = self.attributes.get("ID")
+        if featId is not None:
+            featId = featId[0]
+        return featId
 
     def getRequiredAttribute(self, name):
-        """
-        get a require attributes list of values, error if not found
-        """
+        "get a require attributes list of values, error if not found"
         values = self.attributes.get(name)
         if values is None:
             raise GFF3Exception(
@@ -105,16 +145,20 @@ class Gff3Set(object):
         self.fileName = fileName
         self.roots = set()     # root nodes (those with out parents)
         # index of features by id. GFF3 allows disjoint features with
-        # the same id, although this is rarely used.
+        # the same id.  None is used to store features without ids
         self.byFeatureId = collections.defaultdict(list)
 
     def add(self, feature):
         """
-        add a feature record
+        Add a feature record
         """
+        # None featureId allowed
         self.byFeatureId[feature.featureId].append(feature)
 
     def __linkFeature(self, feature):
+        """
+        Link a feature with it's parents.
+        """
         parentIds = feature.attributes.get("Parent")
         if parentIds is None:
             self.roots.add(feature)
@@ -123,6 +167,9 @@ class Gff3Set(object):
                 self.__linkToParent(feature, parentId)
 
     def __linkToParent(self, feature, parentId):
+        """
+        Link a feature with it's children
+        """
         parentParts = self.byFeatureId.get(parentId)
         if parentParts is None:
             raise GFF3Exception(
@@ -142,17 +189,35 @@ class Gff3Set(object):
             for feature in featureParts:
                 self.__linkFeature(feature)
 
+    @staticmethod
+    def __recSortKey(r):
+        return (r.seqname, r.start, -r.end, r.type)
+
+    def __writeRec(self, fh, rec):
+        fh.write(str(rec) + "\n")
+        for child in sorted(rec.children, key=self.__recSortKey):
+            self.__writeRec(fh, child)
+
+    def write(self, fh):
+        """
+        Write set to a GFF3 format file.
+        """
+        fh.write(GFF3_HEADER+"\n")
+        for root in sorted(self.roots, key=self.__recSortKey):
+            self.__writeRec(fh, root)
+
 
 class Gff3Parser(object):
     """
     Parser for GFF3 files.  This parse does basic validation, but does not
     fully test for conformance.
     """
+
     def __init__(self, fileName):
         """
         If fileName ends with .gz or .bz2, it will decompressed.  If fh is
         specified, then parse the already opened stream, with file name still
-        used for error message, otherwise the file be opened and parsed
+        used for error message, otherwise the file be opened and parsed.
         """
         self.fileName = fileName
         self.lineNumber = 0
@@ -168,33 +233,29 @@ class Gff3Parser(object):
         else:
             return open(self.fileName)
 
-    SPLIT_ATTR_RE = re.compile("^([a-zA-Z_]+)=(.+)$")  # parses `attr=val'
+    # parses `attr=val'; GFF3 spec is not very specific on the allowed values.
+    SPLIT_ATTR_RE = re.compile("^([a-zA-Z][^=]*)=(.*)$")
 
     def __parseAttrVal(self, attrStr):
         """
-        returns tuple of tuple of (attr, value), multiple are returned to
-        handle multi-value attributes
+        Returns tuple of tuple of (attr, value), multiple are returned to
+        handle multi-value attributes.
         """
         m = self.SPLIT_ATTR_RE.match(attrStr)
         if m is None:
-            raise GFF3Exception(
-                "can't parse attribute/value: '{}'".format(attrStr),
-                self.fileName, self.lineNumber)
-        name = m.group(1)
+            raise GFF3Exception("can't parse attribute/value: '" + attrStr +
+                                "'", self.fileName, self.lineNumber)
+        name = urllib.unquote(m.group(1))
         val = m.group(2)
-        # FIXME: parsing of value is ambiguous. Unquote then comma separate,
-        # or coma separate and then unquote? Target attribute space separation
-        # is also ambiguous as it has space separated arguments.  It appears
-        # like special per attribute name handling is actually required.  Also
-        # when to split by comma seems attribute-specific, which is
-        # problematic for user-defined. attributes.
-        return (name, urllib.unquote(val).split(','))
+        # Split by comma separate then unquote.  Commas in values must be
+        # url encoded.
+        return (name, [urllib.unquote(v) for v in val.split(',')])
 
     SPLIT_ATTR_COL_RE = re.compile("; *")
 
     def __parseAttrs(self, attrsStr):
         """
-        parse the attributes and values
+        Parse the attributes and values
         """
         attributes = dict()
         for attrStr in self.SPLIT_ATTR_COL_RE.split(attrsStr):
@@ -209,39 +270,44 @@ class Gff3Parser(object):
     GFF3_NUM_COLS = 9
 
     def __parseRecord(self, gff3Set, line):
+        """
+        Parse one record.
+        """
         row = line.split("\t")
         if len(row) != self.GFF3_NUM_COLS:
-            errorMsg = "Wrong number of columns, expected {}, got {}".format(
-                str(self.GFF3_NUM_COLS), str(len(row)))
-            raise GFF3Exception(errorMsg, self.fileName, self.lineNumber)
-        feature = Feature(row[0], row[1], row[2], int(row[3]), int(row[4]),
-                          row[5], row[6], row[7], self.__parseAttrs(row[8]),
-                          gff3Set, self.lineNumber)
+            raise GFF3Exception(
+                "Wrong number of columns, expected {}, got {}".format(
+                    self.GFF3_NUM_COLS, len(row)),
+                self.fileName, self.lineNumber)
+        feature = Feature(urllib.unquote(row[0]), urllib.unquote(row[1]),
+                          urllib.unquote(row[2]),
+                          int(row[3]), int(row[4]), row[5], row[6], row[7],
+                          self.__parseAttrs(row[8]), gff3Set, self.lineNumber)
         gff3Set.add(feature)
 
     # spaces or comment line
     IGNORED_LINE_RE = re.compile("(^[ ]*$)|(^[ ]*#.*$)")
 
     @staticmethod
-    def __ignoredLine(line):
+    def __isIgnoredLine(line):
         return Gff3Parser.IGNORED_LINE_RE.search(line) is not None
 
     def __checkHeader(self, line):
-        GFF3_HEADER = "##gff-version 3"
-        if line.rstrip() != GFF3_HEADER:
-            errorMsg = "First line is not GFF3 header ({}), got: {}".format(
-                GFF3_HEADER, line)
-            raise GFF3Exception(errorMsg, self.fileName, self.lineNumber)
+        # split to allow multiple spaces and tabs
+        if line.split() != GFF3_HEADER.split():
+            raise GFF3Exception(
+                "First line is not GFF3 header ({}), got: {}".format(
+                    GFF3_HEADER, line), self.fileName, self.lineNumber)
 
     def __parseLine(self, gff3Set, line):
         if self.lineNumber == 1:
             self.__checkHeader(line)
-        elif not self.__ignoredLine(line):
+        elif not self.__isIgnoredLine(line):
             self.__parseRecord(gff3Set, line)
 
     def parse(self):
         """
-        parse and return a Gff3Set object
+        Parse and return a Gff3Set object in format.
         """
         fh = self.__open()
         try:
