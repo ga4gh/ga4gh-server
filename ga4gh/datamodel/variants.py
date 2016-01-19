@@ -356,6 +356,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         self._variantSet = variantSet
         self._randomSeed = randomSeed
         now = protocol.convertDatetime(datetime.datetime.now())
+        self._compoundId = datamodel.VariantAnnotationSetCompoundId(
+            self.getCompoundId(), 'variantannotations')
         self._creationTime = now
         self._updatedTime = now
         # TODO make some reasonable connection to seqont
@@ -368,6 +370,9 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         protocolElement.variantSetId = self._variantSet.getId()
         protocolElement.id = self.getId()
         protocolElement.name = self.getLocalId()
+        protocolElement.analysis = protocol.Analysis()
+        protocolElement.analysis.recordUpdateTime = datetime.datetime.now().isoformat()
+        protocolElement.analysis.id = "F33DM3"
         return protocolElement
 
     def getNumVariantAnnotations(self):
