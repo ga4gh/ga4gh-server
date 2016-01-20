@@ -592,12 +592,11 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
     Class representing a single variant annotation set backed by a directory of
     indexed VCF or BCF files.
     """
+    compoundIdClass = datamodel.VariantAnnotationSetCompoundId
+
     def __init__(self, parentContainer, localId, dataDir, backend):
         super(HtslibVariantAnnotationSet, self).__init__(
             parentContainer, localId, dataDir, backend)
-        self.compoundIdClass = datamodel.VariantAnnotationSetCompoundId
-        self._compoundId = datamodel.VariantAnnotationSetCompoundId(
-            self.getCompoundId(), 'variantannotations')
         self._sequenceOntology = backend.getOntology('sequence_ontology')
 
     def getVariantAnnotations(self, referenceName, startPosition, endPosition):
@@ -693,6 +692,12 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         """
         variant = self.convertVariant(record, None)
         annotation = self._createGaVariantAnnotation()
+        # TODO is this _really_ necessary here? This breaks a lot of isolation
+        # rules, and will cause major problems when we move over to protobuf.
+        # This should be removed and an alternative approach found. It's not
+        # entirely clear ho_ this is being used at the moment, so it could
+        # just be deleted, but I'm leaving it for the moment until we get
+        # some test coverage on this code.
         annotation.variant = variant
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
@@ -707,17 +712,6 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
 
     def getVariantAnnotationId(self, gaVariant, gaAnnotation):
         md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
-        compoundId = datamodel.VariantAnnotationCompoundId(
-            self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5)
-        return str(compoundId)
-
-    def getVariantId(self, gaVariant):
-        """
-        Returns an ID string suitable for the specified GA Variant Annotation
-        object in this variant set.
-        """
-        md5 = self.hashVariant(gaVariant)
         compoundId = datamodel.VariantAnnotationCompoundId(
             self.getCompoundId(), gaVariant.referenceName,
             gaVariant.start, md5)
