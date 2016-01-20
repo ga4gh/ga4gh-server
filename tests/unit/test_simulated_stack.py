@@ -211,12 +211,26 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertGreater(error.errorCode, 0)
         self.assertGreater(len(error.message), 0)
 
+    def assertObjectNotSupported(self, response):
+        """
+        Checks that the specified response returns a not supported 501 status
+        """
+        self.assertEqual(501, response.status_code)
+        error = protocol.GAException.fromJsonString(response.data)
+        self.assertTrue(error.validate(error.toJsonDict()))
+        self.assertGreater(error.errorCode, 0)
+        self.assertGreater(len(error.message), 0)
+
     def verifySearchMethodFails(self, request, path):
         """
         Verify that the specified search request fails with a 404.
         """
         response = self.sendJsonPostRequest(path, request.toJsonString())
         self.assertObjectNotFound(response)
+
+    def verifySearchMethodNotSupported(self, request, path):
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        self.assertObjectNotSupported(response)
 
     def verifyGetMethodFails(self, path, id_):
         """
@@ -537,7 +551,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.variantSetId = "b4d=="
         path = '/variantannotationsets/search'
         response = self.sendJsonPostRequest(path, request.toJsonString())
-        responseData = protocol.SearchVariantAnnotationSetsResponse.fromJsonString(response.data)
+        responseData = protocol.SearchVariantAnnotationSetsResponse. \
+            fromJsonString(response.data)
         self.assertTrue(responseData.validate(responseData.toJsonDict()))
         self.assertIsNone(responseData.nextPageToken)
         self.assertEqual([], responseData.variantAnnotationSets)
@@ -655,3 +670,21 @@ class TestSimulatedStack(unittest.TestCase):
                             # TODO more tests here: this is very weak.
                             self.assertEqual(
                                 alignment.readGroupId, readGroup.getId())
+
+    def testUnsupportedReadOperations(self):
+        path = '/reads/search'
+        dataset = self.backend.getDatasets()[0]
+        readGroupSet = dataset.getReadGroupSets()[0]
+        readGroup = readGroupSet.getReadGroups()[0]
+        reference = readGroupSet.getReferenceSet().getReferences()[0]
+
+        # unmapped Reads
+        request = protocol.SearchReadsRequest()
+        request.readGroupIds = [readGroup.getId()]
+        request.referenceId = None
+        self.verifySearchMethodNotSupported(request, path)
+
+        # multiple ReadGroupSets
+        request.readGroupIds = [readGroup.getId(), "42"]
+        request.referenceId = reference.getId()
+        self.verifySearchMethodNotSupported(request, path)
