@@ -215,6 +215,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         object.
         """
         ret = protocol.AlleleLocation()
+        ret.start = 0
         ret.created = self._creationTime
         ret.updated = self._updatedTime
         return ret
@@ -371,7 +372,9 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         protocolElement.id = self.getId()
         protocolElement.name = self.getLocalId()
         protocolElement.analysis = protocol.Analysis()
-        protocolElement.analysis.recordUpdateTime = datetime.datetime.now().isoformat()
+        protocolElement.analysis.recordUpdateTime = \
+            datetime.datetime.now().isoformat()
+        # TODO is there an analysis ID somewhere?
         protocolElement.analysis.id = "F33DM3"
         return protocolElement
 
@@ -401,6 +404,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         randomNumberGenerator = random.Random()
         randomNumberGenerator.seed(seed)
         ann = self._createGaVariantAnnotation()
+        ann.variant = variant
         ann.variantId = variant.id
         # make a transcript effect for each alternate base element
         ann.transcriptEffects = []
@@ -423,7 +427,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
         compoundId = datamodel.VariantAnnotationCompoundId(
             self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5, None)
+            gaVariant.start, md5)
         return str(compoundId)
 
     def generateTranscriptEffect(self, ann, alts, randomNumberGenerator):
