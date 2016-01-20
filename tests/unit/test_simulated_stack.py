@@ -73,6 +73,7 @@ class TestSimulatedStack(unittest.TestCase):
         parses the result into an instance of the specified response.
         """
         response = self.sendJsonPostRequest(path, request.toJsonString())
+        # TODO Why are we asserting response 200?
         self.assertEqual(200, response.status_code)
         responseData = responseClass.fromJsonString(response.data)
         self.assertTrue(responseData.validate(responseData.toJsonDict()))
@@ -524,6 +525,46 @@ class TestSimulatedStack(unittest.TestCase):
 
         # TODO: Add more useful test scenarios, including some covering
         # pagination behavior.
+    def testVariantAnnotationSetsSearch(self):
+        dataset = self.backend.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        variantAnnotationSet = dataset.getVariantAnnotationSets()[0]
+        self.assertIsNotNone(variantAnnotationSet)
+
+        request = protocol.SearchVariantAnnotationSetsRequest()
+
+        # I expect no results for a bad ID
+        request.variantSetId = "b4d=="
+        path = '/variantannotationsets/search'
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationSetsResponse.fromJsonString(response.data)
+        self.assertTrue(responseData.validate(responseData.toJsonDict()))
+        self.assertIsNone(responseData.nextPageToken)
+        self.assertEqual([], responseData.variantAnnotationSets)
+
+        # I expect some results for a known good ID
+        request.variantSetId = variantSet.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchVariantAnnotationSetsResponse)
+        self.assertTrue(protocol.SearchVariantAnnotationSetsResponse.validate(
+            responseData.toJsonDict()))
+        self.assertGreater(len(responseData.variantAnnotationSets), 0)
+
+    def testVariantAnnotationsSearch(self):
+        dataset = self.backend.getDatasets()[0]
+        variantAnnotationSet = dataset.getVariantAnnotationSets()[0]
+        self.assertIsNotNone(variantAnnotationSet)
+
+        request = protocol.SearchVariantAnnotationsRequest()
+
+        path = '/variantannotations/search'
+        # I expect more than one page of results
+        request.start = 0
+        request.end = 1000
+        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchVariantAnnotationsResponse)
+        self.assertIsNotNone(responseData.nextPageToken)
 
     def testListReferenceBases(self):
         for referenceSet in self.backend.getReferenceSets():
