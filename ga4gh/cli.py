@@ -60,12 +60,16 @@ def addServerOptions(parser):
     addDisableUrllibWarningsArgument(parser)
 
 
-def server_main(parser=None):
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH reference server")
+def getServerParser():
+    parser = argparse.ArgumentParser(
+        description="GA4GH reference server")
     addServerOptions(parser)
-    args = parser.parse_args()
+    return parser
+
+
+def server_main(args=None):
+    parser = getServerParser()
+    args = parser.parse_args(args)
     if args.disable_urllib_warnings:
         requests.packages.urllib3.disable_warnings()
     frontend.configure(
