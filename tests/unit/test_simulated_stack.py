@@ -49,6 +49,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def setUp(self):
         self.backend = frontend.app.backend
+        self.dataRepo = self.backend.getDataRepository()
         self.backend.setMaxResponseLength(10000)
 
     def getBadIds(self):
@@ -240,7 +241,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testGetDataset(self):
         path = "/datasets"
-        for dataset in self.backend.getDatasets():
+        for dataset in self.dataRepo.getDatasets():
             responseObject = self.sendGetObject(
                 path, dataset.getId(), protocol.Dataset)
             self.verifyDatasetsEqual(responseObject, dataset)
@@ -249,7 +250,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testDatasetsSearch(self):
         request = protocol.SearchDatasetsRequest()
-        datasets = self.backend.getDatasets()
+        datasets = self.dataRepo.getDatasets()
         path = '/datasets/search'
         self.verifySearchMethod(
             request, path, protocol.SearchDatasetsResponse, datasets,
@@ -257,7 +258,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testVariantSetsSearch(self):
         path = '/variantsets/search'
-        for dataset in self.backend.getDatasets():
+        for dataset in self.dataRepo.getDatasets():
             variantSets = dataset.getVariantSets()
             request = protocol.SearchVariantSetsRequest()
             request.datasetId = dataset.getId()
@@ -271,7 +272,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testCallSetsSearch(self):
         path = '/callsets/search'
-        for dataset in self.backend.getDatasets():
+        for dataset in self.dataRepo.getDatasets():
             for variantSet in dataset.getVariantSets():
                 callSets = variantSet.getCallSets()
                 self.assertGreater(len(callSets), 0)
@@ -303,7 +304,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testReadGroupSetsSearch(self):
         path = '/readgroupsets/search'
-        for dataset in self.backend.getDatasets():
+        for dataset in self.dataRepo.getDatasets():
             readGroupSets = dataset.getReadGroupSets()
             request = protocol.SearchReadGroupSetsRequest()
             request.datasetId = dataset.getId()
@@ -332,7 +333,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testReferenceSetsSearch(self):
         request = protocol.SearchReferenceSetsRequest()
-        referenceSets = self.backend.getReferenceSets()
+        referenceSets = self.dataRepo.getReferenceSets()
         path = '/referencesets/search'
         self.verifySearchMethod(
             request, path, protocol.SearchReferenceSetsResponse, referenceSets,
@@ -340,7 +341,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testReferencesSearch(self):
         path = '/references/search'
-        for referenceSet in self.backend.getReferenceSets():
+        for referenceSet in self.dataRepo.getReferenceSets():
             references = referenceSet.getReferences()
             request = protocol.SearchReferencesRequest()
             request.referenceSetId = referenceSet.getId()
@@ -394,7 +395,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testReferencesSearchFilters(self):
         path = '/references/search'
-        for referenceSet in self.backend.getReferenceSets():
+        for referenceSet in self.dataRepo.getReferenceSets():
 
             def requestFactory():
                 request = protocol.SearchReferencesRequest()
@@ -410,13 +411,13 @@ class TestSimulatedStack(unittest.TestCase):
         def requestFactory():
             return protocol.SearchReferenceSetsRequest()
         self.verifyReferenceSearchFilters(
-            self.backend.getReferenceSets(), True, path, requestFactory,
+            self.dataRepo.getReferenceSets(), True, path, requestFactory,
             protocol.SearchReferenceSetsResponse,
             self.verifyReferenceSetsEqual)
 
     def testGetVariantSet(self):
         path = "/variantsets"
-        for dataset in self.backend.getDatasets():
+        for dataset in self.dataRepo.getDatasets():
             for variantSet in dataset.getVariantSets():
                 responseObject = self.sendGetObject(
                     path, variantSet.getId(), protocol.VariantSet)
@@ -431,7 +432,7 @@ class TestSimulatedStack(unittest.TestCase):
         # get a variant from the search method
         referenceName = '1'
         start = 0
-        dataset = self.backend.getDatasets()[0]
+        dataset = self.dataRepo.getDatasets()[0]
         variantSet = dataset.getVariantSets()[0]
         request = protocol.SearchVariantsRequest()
         request.variantSetId = variantSet.getId()
@@ -452,7 +453,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testGetReferenceSet(self):
         path = "/referencesets"
-        for referenceSet in self.backend.getReferenceSets():
+        for referenceSet in self.dataRepo.getReferenceSets():
             responseObject = self.sendGetObject(
                 path, referenceSet.getId(), protocol.ReferenceSet)
             self.verifyReferenceSetsEqual(responseObject, referenceSet)
@@ -461,7 +462,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testGetReference(self):
         path = "/references"
-        for referenceSet in self.backend.getReferenceSets():
+        for referenceSet in self.dataRepo.getReferenceSets():
             for reference in referenceSet.getReferences():
                 responseObject = self.sendGetObject(
                     path, reference.getId(), protocol.Reference)
@@ -474,7 +475,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testGetCallSet(self):
         path = "/callsets"
-        for dataset in self.backend.getDatasets():
+        for dataset in self.dataRepo.getDatasets():
             for variantSet in dataset.getVariantSets():
                 for callSet in variantSet.getCallSets():
                     responseObject = self.sendGetObject(
@@ -488,7 +489,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testGetReadGroup(self):
         path = "/readgroups"
-        for dataset in self.backend.getDatasets():
+        for dataset in self.dataRepo.getDatasets():
             for readGroupSet in dataset.getReadGroupSets():
                 for readGroup in readGroupSet.getReadGroups():
                     responseObject = self.sendGetObject(
@@ -504,7 +505,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifyGetMethodFails(path, badId)
 
     def testVariantsSearch(self):
-        dataset = self.backend.getDatasets()[0]
+        dataset = self.dataRepo.getDatasets()[0]
         variantSet = dataset.getVariantSets()[0]
         referenceName = '1'
 
@@ -540,7 +541,7 @@ class TestSimulatedStack(unittest.TestCase):
         # pagination behavior.
 
     def testListReferenceBases(self):
-        for referenceSet in self.backend.getReferenceSets():
+        for referenceSet in self.dataRepo.getReferenceSets():
             for reference in referenceSet.getReferences():
                 id_ = reference.getId()
                 length = reference.getLength()
@@ -560,7 +561,7 @@ class TestSimulatedStack(unittest.TestCase):
                     self.assertEqual(response.offset, start)
 
     def testListReferenceBasesErrors(self):
-        referenceSet = self.backend.getReferenceSets()[0]
+        referenceSet = self.dataRepo.getReferenceSets()[0]
         for badId in self.getBadIds():
             path = '/references/{}/bases'.format(badId)
             response = self.app.get(path)
@@ -580,7 +581,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.assertEqual(response.status_code, 416)
 
     def testListReferenceBasesPaging(self):
-        referenceSet = self.backend.getReferenceSets()[0]
+        referenceSet = self.dataRepo.getReferenceSets()[0]
         reference = referenceSet.getReferences()[0]
         id_ = reference.getId()
         length = reference.getLength()
@@ -611,7 +612,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testReads(self):
         path = '/reads/search'
-        for dataset in self.backend.getDatasets():
+        for dataset in self.dataRepo.getDatasets():
             for readGroupSet in dataset.getReadGroupSets():
                 referenceSet = readGroupSet.getReferenceSet()
                 for reference in referenceSet.getReferences():
@@ -631,7 +632,7 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testUnsupportedReadOperations(self):
         path = '/reads/search'
-        dataset = self.backend.getDatasets()[0]
+        dataset = self.dataRepo.getDatasets()[0]
         readGroupSet = dataset.getReadGroupSets()[0]
         readGroup = readGroupSet.getReadGroups()[0]
         reference = readGroupSet.getReferenceSet().getReferences()[0]

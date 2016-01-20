@@ -27,6 +27,7 @@ import ga4gh.backend as backend
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
+import ga4gh.datarepo as datarepo
 
 
 MIMETYPE = "application/json"
@@ -122,25 +123,27 @@ class ServerStatus(object):
         """
         Returns the list of datasetIds for this backend
         """
-        return app.backend.getDatasets()
+        return app.backend.getDataRepository().getDatasets()
 
     def getVariantSets(self, datasetId):
         """
         Returns the list of variant sets for the dataset
         """
-        return app.backend.getDataset(datasetId).getVariantSets()
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getVariantSets()
 
     def getReadGroupSets(self, datasetId):
         """
         Returns the list of ReadGroupSets for the dataset
         """
-        return app.backend.getDataset(datasetId).getReadGroupSets()
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getReadGroupSets()
 
     def getReferenceSets(self):
         """
         Returns the list of ReferenceSets for this server.
         """
-        return app.backend.getReferenceSets()
+        return app.backend.getDataRepository().getReferenceSets()
 
 
 def reset():
@@ -189,20 +192,21 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET"]
         numAlignmentsPerReadGroup = app.config[
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
-        theBackend = backend.SimulatedBackend(
+        dataRepository = datarepo.SimulatedDataRepository(
             randomSeed=randomSeed, numCalls=numCalls,
             variantDensity=variantDensity, numVariantSets=numVariantSets,
             numReferenceSets=numReferenceSets,
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
             numAlignments=numAlignmentsPerReadGroup)
     elif dataSource.scheme == "empty":
-        theBackend = backend.EmptyBackend()
+        dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        theBackend = backend.FileSystemBackend(os.path.join(
+        dataRepository = backend.FileSystemDataRepository(os.path.join(
             dataSource.netloc, dataSource.path))
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)
+    theBackend = backend.Backend(dataRepository)
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])

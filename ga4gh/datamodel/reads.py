@@ -197,7 +197,7 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     Class representing a logical collection ReadGroups.
     """
     def __init__(
-            self, parentContainer, localId, samFilePath, backend):
+            self, parentContainer, localId, samFilePath, dataRepository):
         super(HtslibReadGroupSet, self).__init__(parentContainer, localId)
         self._samFilePath = samFilePath
         samFile = self.getFileHandle(self._samFilePath)
@@ -228,7 +228,7 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
                     samFilePath, name, referenceSetName)
         self._referenceSet = None
         if referenceSetName is not None:
-            self._referenceSet = backend.getReferenceSetByName(
+            self._referenceSet = dataRepository.getReferenceSetByName(
                 referenceSetName)
             # TODO verify that the references in the BAM file exist
             # in the reference set. Otherwise, we won't be able to
