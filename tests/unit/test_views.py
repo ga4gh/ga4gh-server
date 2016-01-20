@@ -117,6 +117,11 @@ class TestFrontend(unittest.TestCase):
         response = self.sendPostRequest(path, request)
         return response
 
+    def sendGenotypePhenotypeSearch(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        return response
+
     def sendGetVariant(self, id_=None):
         if id_ is None:
             id_ = self.variantId
@@ -212,6 +217,7 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendReferencesSearch())
         assertHeaders(self.sendReferenceBasesList())
         assertHeaders(self.sendDatasetsSearch())
+        assertHeaders(self.sendGenotypePhenotypeSearch())
         # Get-based accessor methods
         assertHeaders(self.sendGetVariantSet())
         assertHeaders(self.sendGetReference())

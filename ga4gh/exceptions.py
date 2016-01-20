@@ -109,6 +109,9 @@ class BadRequestException(RuntimeException):
     httpStatus = 400
     message = "Bad request"
 
+    def __init__(self, messageToDisplay):
+        self.message = messageToDisplay
+
 
 class BadRequestIntegerException(BadRequestException):
     def __init__(self, attrName, intString):

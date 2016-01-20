@@ -14,6 +14,7 @@ import unittest.loader
 import unittest.suite
 
 import requests
+import json
 
 import ga4gh.backend as backend
 import ga4gh.client as client
@@ -428,15 +429,49 @@ class SearchReadsRunner(AbstractSearchRunner):
 
     def _textOutput(self, gaObjects):
         """
-        Prints out the specified Variant objects in a VCF-like form.
+        Prints out the specified Read objects.
         """
         for read in gaObjects:
             # TODO add in some more useful output here.
             print(read.id)
 
 
+class SearchGenotypePhenotypeRunner(AbstractSearchRunner):
+    """
+    Runner class for the genotypephenotype/search method.
+    """
+    def __init__(self, args):
+        super(SearchGenotypePhenotypeRunner, self).__init__(args)
+
+        # if arg is JSON; parse; else return as string
+        def checkJson(value):
+            if value is not None:
+                try:
+                    return json.loads(value)
+                except ValueError:
+                    return value
+
+        self._feature = checkJson(args.feature)
+        self._phenotype = checkJson(args.phenotype)
+        self._evidence = checkJson(args.evidence)
+
+    def run(self):
+        iterator = self._client.searchGenotypePhenotype(
+            feature=self._feature, phenotype=self._phenotype,
+            evidence=self._evidence)
+        self._output(iterator)
+
+    def _textOutput(self, gaObjects):
+        """
+        Prints out the specified FeaturePhenotypeAssociation objects.
+        """
+        for association in gaObjects:
+            # TODO add in some more useful output here.
+            print(association.id)
+
 # ListReferenceBases is an oddball, and doesn't fit either get or
 # search patterns.
+
 
 class ListReferenceBasesRunner(AbstractQueryRunner):
     """
@@ -545,6 +580,24 @@ def addVariantSearchOptions(parser):
     addStartArgument(parser)
     addEndArgument(parser)
     addPageSizeArgument(parser)
+
+
+def addGenotypePhenotypeSearchOptions(parser):
+    """
+    Adds options to a g2p searches command line parser.
+    """
+    parser.add_argument(
+        "--feature", "-f", default=None,
+        help="Only return associations to this feature."
+    )
+    parser.add_argument(
+        "--evidence", "-E", default=None,
+        help="Only return associations to this evidence."
+    )
+    parser.add_argument(
+        "--phenotype", "-p", default=None,
+        help="Only return associations to this phenotype."
+    )
 
 
 def addVariantSetIdArgument(parser):
@@ -659,6 +712,20 @@ def addHelpParser(subparsers):
     parser = subparsers.add_parser(
         "help", description="ga4gh_client help",
         help="show this help message and exit")
+    return parser
+
+
+def addGenotypePhenotypeSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "genotypephenotype-search",
+        description="Search for genotype to phenotype associations",
+        help="Search for genotype to phenotype associations."
+    )
+    parser.set_defaults(runner=SearchGenotypePhenotypeRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addGenotypePhenotypeSearchOptions(parser)
+    addPageSizeArgument(parser)
     return parser
 
 
@@ -886,6 +953,7 @@ def getClientParser():
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
+    addGenotypePhenotypeSearchParser(subparsers)
     return parser
 
 

@@ -12,6 +12,7 @@ import os
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
+import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
@@ -213,6 +214,7 @@ class AbstractBackend(object):
         self._referenceSetIdMap = {}
         self._referenceSetNameMap = {}
         self._referenceSetIds = []
+        self._g2pDataset = None
 
     def addDataset(self, dataset):
         """
@@ -231,6 +233,12 @@ class AbstractBackend(object):
         self._referenceSetIdMap[id_] = referenceSet
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
+
+    def addG2PDataset(self, g2pDataset):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        self._g2pDataset = g2pDataset
 
     def setRequestValidation(self, requestValidation):
         """
@@ -378,6 +386,7 @@ class AbstractBackend(object):
         (object, nextPageToken) pairs, which allows this iteration to be picked
         up at any point.
         """
+
         currentIndex = 0
         if request.pageToken is not None:
             currentIndex, = _parsePageToken(request.pageToken, 1)
@@ -767,6 +776,29 @@ class AbstractBackend(object):
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
 
+    def runSearchGenotypePhenotype(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypePhenotypeRequest,
+            protocol.SearchGenotypePhenotypeResponse,
+            self.genotypePhenotypeGenerator)
+
+    def genotypePhenotypeGenerator(self, request):
+        if (request.evidence is None and
+                request.phenotype is None and
+                request.feature is None):
+            msg = "Error:One of evidence,phenotype or feature must be non-null"
+            raise exceptions.BadRequestException(msg)
+        # determine offset for paging
+        if request.pageToken is not None:
+            offset, = _parsePageToken(request.pageToken, 1)
+        else:
+            offset = 0
+        annotationList = self._g2pDataset.queryLabels(
+            request.feature, request.evidence, request.phenotype,
+            request.pageSize, offset)
+
+        return self._objectListGenerator(request, annotationList)
+
 
 class EmptyBackend(AbstractBackend):
     """
@@ -808,6 +840,9 @@ class SimulatedBackend(AbstractBackend):
                 numAlignments=numAlignments)
             self.addDataset(dataset)
 
+        # g2pDatasets
+        self._g2pDataset = genotype_phenotype.G2PDataset()
+
 
 class FileSystemBackend(AbstractBackend):
     """
@@ -816,10 +851,13 @@ class FileSystemBackend(AbstractBackend):
     def __init__(self, dataDir):
         super(FileSystemBackend, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = ["referenceSets", "datasets"]
+        sourceDirNames = ["referenceSets", "datasets",
+                          "g2pDatasets"]
         constructors = [
-            references.HtslibReferenceSet, datasets.FileSystemDataset]
-        objectAdders = [self.addReferenceSet, self.addDataset]
+            references.HtslibReferenceSet, datasets.FileSystemDataset,
+            genotype_phenotype.G2PDataset]
+        objectAdders = [self.addReferenceSet, self.addDataset,
+                        self.addG2PDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)
