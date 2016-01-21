@@ -693,6 +693,15 @@ class Backend(object):
 
     # Search requests.
 
+    def runGetVariantAnnotationSet(self, id_):
+        """
+        Runs a getVariantSet request for the specified ID.
+        """
+        compoundId = datamodel.VariantAnnotationSetCompoundId.parse(id_)
+        dataset = self.getDataset(compoundId.datasetId)
+        variantAnnotationSet = dataset.getVariantAnnotationSet(id_)
+        return self.runGetRequest(variantAnnotationSet)
+
     def runSearchReadGroupSets(self, request):
         """
         Runs the specified SearchReadGroupSetsRequest.

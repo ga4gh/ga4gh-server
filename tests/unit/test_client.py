@@ -141,6 +141,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._runGetRequest.assert_called_once_with(
             "referencesets", protocol.ReferenceSet, self.objectId)
 
+    def testGetVariantAnnotationSet(self):
+        self.httpClient.getVariantAnnotationSet(self.objectId)
+        self.httpClient._runGetRequest.assert_called_once_with(
+            "variantannotationsets", protocol.VariantAnnotationSet,
+            self.objectId)
+
     def testGetVariantSet(self):
         self.httpClient.getVariantSet(self.objectId)
         self.httpClient._runGetRequest.assert_called_once_with(
