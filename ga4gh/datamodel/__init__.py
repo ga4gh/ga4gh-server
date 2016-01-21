@@ -261,6 +261,13 @@ class VariantAnnotationCompoundId(VariantAnnotationSetCompoundId):
         'referenceName', 'start', 'md5']
 
 
+class VariantAnnotationSetAnalysisCompoundId(VariantAnnotationSetCompoundId):
+    """
+    The compound id for a variant annotaiton set's Analysis
+    """
+    fields = VariantAnnotationSetCompoundId.fields + ['analysis']
+
+
 class CallSetCompoundId(VariantSetCompoundId):
     """
     The compound id for a callset

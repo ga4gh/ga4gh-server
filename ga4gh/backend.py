@@ -202,10 +202,11 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
     def __init__(self, request, parentContainer):
         super(VariantAnnotationsIntervalIterator, self).__init__(
             request, parentContainer)
+        # TODO do input validation somewhere more sensible
         if self._request.effects is None:
             self._effects = []
         else:
-            self._effects = set(self._request.effects)
+            self._effects = self._request.effects
 
     def _search(self, start, end):
         return self._parentContainer.getVariantAnnotations(
@@ -224,8 +225,22 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
             ret = super(VariantAnnotationsIntervalIterator, self).next()
             vann = ret[0]
             if self.filterVariantAnnotation(vann):
-                return ret
+                return self._removeNonMatchingTranscriptEffects(vann), ret[1]
         return None
+
+    def _removeNonMatchingTranscriptEffects(self, ann):
+        newTxE = []
+        if self._effects == []:
+            return ann
+        for txe in ann.transcriptEffects:
+            add = False
+            for effect in txe.effects:
+                if self._matchAnyEffects(effect):
+                    add = True
+            if add:
+                newTxE.append(txe)
+        ann.transcriptEffects = newTxE
+        return ann
 
     def filterVariantAnnotation(self, vann):
         # TODO reintroduce feature ID search
@@ -240,12 +255,41 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
                 return False
         return True
 
+    def _checkTermEquality(self, requestedEffect, effect):
+        return self._termPresent(requestedEffect) and (
+            effect.term == requestedEffect['term'])
+
+    def _checkIdEquality(self, requestedEffect, effect):
+        return self._idPresent(requestedEffect) and (
+            effect.id == requestedEffect['id'])
+
+    def _idPresent(self, requestedEffect):
+        return "id" in requestedEffect
+
+    def _termPresent(self, requestedEffect):
+        return "term" in requestedEffect
+
+    def _matchOntologyTerm(self, requestedEffect, effect):
+        if self._idPresent(requestedEffect):
+            if self._checkIdEquality(requestedEffect, effect):
+                if self._checkTermEquality(requestedEffect, effect):
+                    return True
+                elif not self._termPresent(requestedEffect):
+                    return True
+        elif self._termPresent(requestedEffect):
+            if self._checkTermEquality(requestedEffect, effect):
+                return True
+        return False
+
+    def _matchAnyEffects(self, effect):
+        for requestedEffect in self._effects:
+            return self._matchOntologyTerm(requestedEffect, effect)
+
     def filterEffect(self, teff):
         if len(self._effects) == 0:
             return True
-        for eff in teff.effects:
-            if eff.name in self._effects:
-                return True
+        for effect in teff.effects:
+            return self._matchAnyEffects(effect)
         return False
 
     def filterFeatureId(self, teff):
@@ -699,16 +743,16 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(id_)
         return self.runGetRequest(dataset)
 
-    # Search requests.
-
     def runGetVariantAnnotationSet(self, id_):
         """
         Runs a getVariantSet request for the specified ID.
         """
         compoundId = datamodel.VariantAnnotationSetCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantAnnotationSet = dataset.getVariantAnnotationSet(id_)
         return self.runGetRequest(variantAnnotationSet)
+
+    # Search requests.
 
     def runSearchReadGroupSets(self, request):
         """

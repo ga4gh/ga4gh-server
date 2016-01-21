@@ -334,6 +334,195 @@ class SimulatedVariantSet(AbstractVariantSet):
         return variant
 
 
+class SimulatedVariantAnnotationSet(AbstractVariantSet):
+    """
+    A variant annotation set that doesn't derive from a data store.
+    Used mostly for testing.
+    """
+    def __init__(
+            self, parentContainer, localId, variantSet, randomSeed=1):
+        super(SimulatedVariantAnnotationSet, self).__init__(
+            parentContainer, localId)
+        self._variantSet = variantSet
+        self._variantSetId = str(variantSet.getCompoundId())
+        self._randomSeed = randomSeed
+        now = protocol.convertDatetime(datetime.datetime.now())
+        self._compoundId = datamodel.VariantAnnotationSetCompoundId(
+            self.getCompoundId(), 'variantannotations')
+        self._creationTime = now
+        self._updatedTime = now
+        # TODO make some reasonable connection to seqont
+
+    def getAnalysis(self):
+        analysis = protocol.Analysis()
+        analysis.recordCreateTime = datetime.datetime.now().strftime(
+            "%Y-%m-%dT%H:%M:%S.%fZ")
+        analysis.recordUpdateTime = datetime.datetime.now().strftime(
+            "%Y-%m-%dT%H:%M:%S.%fZ")
+        analysis.software.append("software")
+        analysis.name = "name"
+        analysis.description = "description"
+        analysis.id = str(datamodel.VariantAnnotationSetAnalysisCompoundId(
+            self._compoundId, "analysis"))
+        return analysis
+
+    def toProtocolElement(self):
+        """
+        Converts this VariantAnnotationSet into its GA4GH protocol equivalent.
+        """
+        protocolElement = protocol.VariantAnnotationSet()
+        protocolElement.variantSetId = self._variantSet.getId()
+        protocolElement.id = self.getId()
+        protocolElement.name = self.getLocalId()
+        protocolElement.analysis = self.getAnalysis()
+        return protocolElement
+
+    def getNumVariantAnnotations(self):
+        # TODO find out where this is used and how
+        return 0
+
+    def getVariantAnnotation(self, variant, randomNumberGenerator):
+        ann = self.generateVariantAnnotation(
+            variant, randomNumberGenerator)
+        return ann
+
+    def getVariantAnnotations(self, referenceName, start, end):
+        for variant in self._variantSet.getVariants(referenceName, start, end):
+            yield self.generateVariantAnnotation(variant)
+
+    def generateVariantAnnotation(self, variant):
+        """
+        Generate a random variant annotation based on a given variant.
+        This generator should be seeded with a value that is unique to the
+        variant so that the same annotation will always be produced regardless
+        of the order it is generated in.
+        """
+        # To make this reproducible, make a seed based on this
+        # specific variant.
+        seed = self._randomSeed + variant.start + variant.end
+        randomNumberGenerator = random.Random()
+        randomNumberGenerator.seed(seed)
+        ann = protocol.VariantAnnotation()
+        ann.variantAnnotationSetId = str(self.getCompoundId())
+        ann.variantId = variant.id
+        ann.start = variant.start
+        ann.end = variant.end
+        ann.created = int(datetime.datetime.now().strftime("%s"))
+        # make a transcript effect for each alternate base element
+        # multiplied by a random integer (0,5)
+        ann.transcriptEffects = []
+        for base in variant.alternateBases * (
+                randomNumberGenerator.randint(0, 5)):
+            ann.transcriptEffects.append(self.generateTranscriptEffect(
+                ann, base, randomNumberGenerator))
+        ann.id = self.getVariantAnnotationId(variant, ann)
+        return ann
+
+    def getTranscriptEffectId(self, gaTranscriptEffect):
+        effs = [eff.term for eff in gaTranscriptEffect.effects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t{}".format(
+                gaTranscriptEffect.alternateBases,
+                gaTranscriptEffect.featureId,
+                effs, gaTranscriptEffect.hgvsAnnotation)
+            ).hexdigest()
+
+    def getVariantAnnotationId(self, gaVariant, gaAnnotation):
+        md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
+        compoundId = datamodel.VariantAnnotationCompoundId(
+            self.getCompoundId(), gaVariant.referenceName,
+            gaVariant.start, md5)
+        return str(compoundId)
+
+    def _addTranscriptEffectLocations(self, effect, ann):
+        # TODO Make these valid HGVS values
+        effect.hgvsAnnotation = protocol.HGVSAnnotation()
+        effect.hgvsAnnotation.genomic = str(ann.start)
+        effect.hgvsAnnotation.transcript = str(ann.start)
+        effect.hgvsAnnotation.protein = str(ann.start)
+        effect.proteinLocation = self._createGaAlleleLocation()
+        effect.proteinLocation.start = ann.start
+        effect.CDSLocation = self._createGaAlleleLocation()
+        effect.CDSLocation.start = ann.start
+        effect.cDNALocation = self._createGaAlleleLocation()
+        effect.cDNALocation.start = ann.start
+        return effect
+
+    def _addTranscriptEffectImpact(self, effect, randomNumberGenerator):
+        # TODO use a protocol based method of accessing this enum
+        impacts = [
+            "HIGH",
+            "LOW",
+            "MODERATE",
+            "MODIFIER"
+        ]
+        effect.impact = randomNumberGenerator.choice(impacts)
+        return effect
+
+    def _addTranscriptEffectId(self, effect):
+        effect.id = str(self.getTranscriptEffectId(effect))
+        return effect
+
+    def _getRandomOntologyTerm(self, effect, randomNumberGenerator):
+        # TODO more mock options from simulated seqOnt?
+        ontologyTuples = [("intron_variant", "SO:0001627"),
+                          ("exon_variant", "SO:0001791")]
+        term = protocol.OntologyTerm()
+        ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
+        term.term, term.id = ontologyTuple[0], ontologyTuple[1]
+        term.sourceName = "sequenceOntology"
+        term.sourceVersion = "0"
+        return term
+
+    def _addTranscriptEffectOntologyTerm(self, effect, randomNumberGenerator):
+        effect.effects.append(
+            self._getRandomOntologyTerm(
+                effect, randomNumberGenerator))
+        return effect
+
+    def _generateAnalysisResult(self, effect, ann, randomNumberGenerator):
+        # TODO make these sensible
+        analysisResult = protocol.AnalysisResult()
+        analysisResult.analysisId = "analysisId"
+        analysisResult.result = "result string"
+        analysisResult.score = randomNumberGenerator.randint(0, 100)
+        return analysisResult
+
+    def _addAnalysisResult(self, effect, ann, randomNumberGenerator):
+        effect.analysisResults.append(
+            self._generateAnalysisResult(
+                effect, ann, randomNumberGenerator))
+        return effect
+
+    def generateTranscriptEffect(self, ann, alts, randomNumberGenerator):
+        effect = self._createGaTranscriptEffect()
+        effect.alternateBases = alts
+        effect.effects = []
+        effect.analysisResults = []
+        # TODO how to make these featureIds sensical?
+        effect.featureId = "E4TB33F"
+        effect = self._addTranscriptEffectImpact(effect, randomNumberGenerator)
+        effect = self._addTranscriptEffectLocations(effect, ann)
+        effect = self._addTranscriptEffectOntologyTerm(
+            effect, randomNumberGenerator)
+        effect = self._addTranscriptEffectOntologyTerm(
+            effect, randomNumberGenerator)
+        effect = self._addTranscriptEffectId(effect)
+        effect = self._addAnalysisResult(effect, ann, randomNumberGenerator)
+        return effect
+
+    def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
+        """
+        Produces an MD5 hash of the gaVariant and gaVariantAnnotation objects
+        """
+        treffs = [treff.id for treff in gaVariantAnnotation.transcriptEffects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t".format(
+                gaVariant.referenceBases, tuple(gaVariant.alternateBases),
+                treffs)
+            ).hexdigest()
+
+
 def _encodeValue(value):
     if isinstance(value, (list, tuple)):
         return [str(v) for v in value]
@@ -607,7 +796,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         return os.path.join(path, localId + ".json")
 
-    def _isAnnotated(self, path, localId):
+    def isAnnotated(self, path, localId):
         ret = False
         fname = self._getMetadataFilename(path, localId)
         if self._metadataFileExists(fname):
@@ -653,7 +842,8 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             return None
         coordLen = pos.split('/')
         allLoc = self._createGaAlleleLocation()
-        allLoc.overlapStart = int(coordLen[0])
+        allLoc.start = int(coordLen[0]) - 1
+        allLoc.end = int(coordLen[1])
         return allLoc
 
     def convertLocationHgvsC(self, hgvsc):
@@ -693,7 +883,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         effect.featureId = featureId
         effect.hgvsAnnotation = protocol.HGVSAnnotation()
         effect.hgvsAnnotation.genomic = hgvsG
-        effect.hgvsAnnotation.coding = hgvsC
+        effect.hgvsAnnotation.transcript = hgvsC
         effect.hgvsAnnotation.protein = hgvsP
         if hgvsP != '':
             effect.proteinLocation = self.convertLocationHgvsP(hgvsP)
@@ -713,7 +903,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         soTerms = []
         for soName in seqOntTerms:
             so = self._createGaOntologyTermSo()
-            so.name = soName
+            so.term = soName
             if self._sequenceOntology is not None:
                 so.id = self._sequenceOntology.getId(soName)
             soTerms.append(so)
@@ -748,16 +938,6 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             gaVariant.start, md5)
         return str(compoundId)
 
-    def toProtocolElement(self):
-        """
-        Converts this VariantSet into its GA4GH protocol equivalent.
-        """
-        protocolElement = protocol.VariantAnnotationSet()
-        protocolElement.id = self.getId()
-        protocolElement.variantSetId = str(self._variantSetId)
-        protocolElement.name = self.getLocalId()
-        return protocolElement
-
     def getVariantId(self, gaVariant):
         """
         Returns an ID string suitable for the specified GA Variant Annotation
@@ -769,8 +949,55 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             gaVariant.start, md5)
         return str(compoundId)
 
+    def getAnalysis(self):
+        metadata = self.getMetadata()
+        analysis = protocol.Analysis()
+        formats = metadata.formats.items()
+        infos = metadata.info.items()
+        for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
+            for contentKey, value in content:
+                key = "{0}.{1}".format(prefix, value.name)
+                if key not in analysis.info:
+                    analysis.info[key] = []
+                    analysis.info[key].append(value.description)
+        analysis.recordCreateTime = datetime.datetime.now().strftime(
+            "%Y-%m-%dT%H:%M:%S.%fZ")
+        analysis.recordUpdateTime = datetime.datetime.now().strftime(
+            "%Y-%m-%dT%H:%M:%S.%fZ")
+        for r in metadata.records:
+            if r.key not in analysis.info:
+                analysis.info[r.key] = []
+            analysis.info[r.key].append(r.value)
+            if r.key == "created":
+                analysis.recordCreateTime = datetime.datetime.strptime(
+                    r.value, "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+            if r.key == "software":
+                analysis.software.append(r.value)
+            if r.key == "name":
+                analysis.name = r.value
+            if r.key == "description":
+                analysis.description = r.value
+        analysis.id = str(datamodel.VariantAnnotationSetAnalysisCompoundId(
+            self._compoundId, "analysis"))
+        return analysis
+
+    def _getMetadataFromVcf(self, varFile):
+        header = varFile.header
+        return header
+
+    def toProtocolElement(self):
+        """
+        Converts this VariantSet into its GA4GH protocol equivalent.
+        """
+        protocolElement = protocol.VariantAnnotationSet()
+        protocolElement.id = self.getId()
+        protocolElement.variantSetId = str(self._variantSetId)
+        protocolElement.name = self.getLocalId()
+        protocolElement.analysis = self.getAnalysis()
+        return protocolElement
+
     def getTranscriptEffectId(self, gaTranscriptEffect):
-        effs = [eff.name for eff in gaTranscriptEffect.effects]
+        effs = [eff.term for eff in gaTranscriptEffect.effects]
         return hashlib.md5(
             "{}\t{}\t{}\t{}".format(
                 gaTranscriptEffect.alternateBases,
