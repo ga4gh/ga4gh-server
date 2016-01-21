@@ -208,6 +208,20 @@ class AbstractClient(object):
         return self._runGetRequest(
             "variantsets", protocol.VariantSet, variantSetId)
 
+    def getVariantAnnotationSet(self, variantAnnotationSetId):
+        """
+        Returns the VariantAnnotationSet with the specified ID from
+        the server.
+
+        :param str variantAnnotationSetId: The ID of the
+            VariantAnnotationSet of interest.
+        :return: The VariantAnnotationSet of interest.
+        :rtype: :class:`ga4gh.protocol.VariantAnnotationSet`
+        """
+        return self._runGetRequest(
+            "variantannotationsets", protocol.VariantAnnotationSet,
+            variantAnnotationSetId)
+
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
             callSetIds=None):
@@ -293,7 +307,7 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "variantsets", protocol.SearchVariantSetsResponse)
 
-    def searchVariantAnnotationSets(self, datasetId):
+    def searchVariantAnnotationSets(self, variantSetId):
         """
         Returns an iterator over the AnnotationSets fulfilling the specified
         conditions from the specified Dataset.
@@ -304,7 +318,7 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchVariantAnnotationSetsRequest()
-        request.datasetId = datasetId
+        request.variantSetId = variantSetId
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "variantannotationsets",
@@ -522,6 +536,7 @@ class LocalClient(AbstractClient):
             "variants": self._backend.runGetVariant,
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
+            "variantannotationsets": self._backend.runGetVariantAnnotationSet
         }
         self._searchMethodMap = {
             "datasets": self._backend.runSearchDatasets,
@@ -531,6 +546,8 @@ class LocalClient(AbstractClient):
             "variants": self._backend.runSearchVariants,
             "readgroupsets": self._backend.runSearchReadGroupSets,
             "reads": self._backend.runSearchReads,
+            "variantannotationsets":
+                self._backend.runSearchVariantAnnotationSets
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):

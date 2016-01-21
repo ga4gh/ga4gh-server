@@ -210,12 +210,11 @@ class FileSystemDataset(AbstractDataset):
                     self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
             # Variant annotations sets
-            variantAnnotationSetDir = os.path.join(
-                relativePath, "variantAnnotations")
-            if os.path.isdir(variantAnnotationSetDir):
-                variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                    self, localId, variantAnnotationSetDir, dataRepository)
-                self.addVariantAnnotationSet(variantAnnotationSet)
+                if variantSet._isAnnotated(relativePath, localId):
+                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+                            self, localId, relativePath, dataRepository,
+                            variantSet)
+                    self.addVariantAnnotationSet(variantAnnotationSet)
 
         # Reads
         readGroupSetDir = os.path.join(dataDir, "reads")
