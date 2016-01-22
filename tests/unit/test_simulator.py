@@ -128,7 +128,7 @@ class TestSimulatedReadGroupSet(unittest.TestCase):
         localId = "readGroupSetId"
         referenceSet = references.SimulatedReferenceSet("srs1")
         simulatedReadGroupSet = reads.SimulatedReadGroupSet(
-                dataset, localId, referenceSet)
+            dataset, localId, referenceSet)
         for readGroup in simulatedReadGroupSet.getReadGroups():
             alignments = list(readGroup.getReadAlignments())
             self.assertGreater(len(alignments), 0)

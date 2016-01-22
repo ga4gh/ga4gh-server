@@ -13,6 +13,7 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.protocol as protocol
+import ga4gh.datarepo as datarepo
 import tests.datadriven as datadriven
 import tests.utils as utils
 
@@ -88,7 +89,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     Data driven test for read group sets
     """
     def __init__(self, localId, dataPath):
-        self._backend = backend.AbstractBackend()
+        self._backend = backend.Backend(datarepo.AbstractDataRepository())
         self._referenceSet = None
         self._dataset = datasets.AbstractDataset("ds")
         self._readGroupInfos = {}
@@ -116,7 +117,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
 
     def _addReferenceSet(self, referenceSetName):
         self._referenceSet = references.AbstractReferenceSet(referenceSetName)
-        self._backend.addReferenceSet(self._referenceSet)
+        self._backend.getDataRepository().addReferenceSet(self._referenceSet)
 
     def _addReference(self, referenceName):
         reference = references.AbstractReference(
@@ -139,7 +140,8 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
 
     def getDataModelInstance(self, localId, dataPath):
         return reads.HtslibReadGroupSet(
-            self._dataset, localId, dataPath, self._backend)
+            self._dataset, localId, dataPath,
+            self._backend.getDataRepository())
 
     def getProtocolClass(self):
         return protocol.ReadGroupSet
@@ -284,8 +286,9 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 length = len(alignments)
                 if length < 2:
                     continue
-                positions = [read.alignment.position.position
-                             for read in alignments]
+                positions = [
+                    read.alignment.position.position for read in alignments
+                    if read.alignment is not None]
                 if length != len(set(positions)):
                     continue
                 begin = positions[0]
@@ -320,26 +323,30 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         self.assertEqual(
             gaAlignment.alignedSequence,
             pysamAlignment.query_sequence)
-        self.assertEqual(
-            gaAlignment.alignment.mappingQuality,
-            pysamAlignment.mapping_quality)
-        self.assertEqual(
-            gaAlignment.alignment.position.referenceName,
-            readGroupInfo.samFile.getrname(pysamAlignment.reference_id))
-        self.assertEqual(
-            gaAlignment.alignment.position.position,
-            pysamAlignment.reference_start)
-        # TODO test reverseStrand on position and on nextMatePosition once
-        # it has been implemented.
-        self.assertCigarEqual(
-            gaAlignment.alignment.cigar,
-            pysamAlignment.cigar)
+        if reads.SamFlags.isFlagSet(
+                pysamAlignment.flag, reads.SamFlags.READ_UNMAPPED):
+            self.assertIsNone(gaAlignment.alignment)
+        else:
+            self.assertEqual(
+                gaAlignment.alignment.mappingQuality,
+                pysamAlignment.mapping_quality)
+            self.assertEqual(
+                gaAlignment.alignment.position.referenceName,
+                readGroupInfo.samFile.getrname(pysamAlignment.reference_id))
+            self.assertEqual(
+                gaAlignment.alignment.position.position,
+                pysamAlignment.reference_start)
+            # TODO test reverseStrand on position and on
+            # nextMatePosition once it has been implemented.
+            self.assertCigarEqual(
+                gaAlignment.alignment.cigar,
+                pysamAlignment.cigar)
         self.assertFlag(
             gaAlignment.duplicateFragment,
-            pysamAlignment, reads.SamFlags.DUPLICATE_FRAGMENT)
+            pysamAlignment, reads.SamFlags.DUPLICATE_READ)
         self.assertFlag(
             gaAlignment.failedVendorQualityChecks,
-            pysamAlignment, reads.SamFlags.FAILED_VENDOR_QUALITY_CHECKS)
+            pysamAlignment, reads.SamFlags.FAILED_QUALITY_CHECK)
         self.assertEqual(
             gaAlignment.fragmentLength,
             pysamAlignment.template_length)
@@ -353,19 +360,56 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         self.assertEqual(
             gaAlignment.info,
             {key: [str(value)] for key, value in pysamAlignment.tags})
-        if pysamAlignment.next_reference_id != -1:
+        if reads.SamFlags.isFlagSet(
+                pysamAlignment.flag, reads.SamFlags.MATE_UNMAPPED):
+            self.assertIsNone(gaAlignment.nextMatePosition)
+        else:
             self.assertEqual(
                 gaAlignment.nextMatePosition.position,
                 pysamAlignment.next_reference_start)
-            self.assertEqual(
-                gaAlignment.nextMatePosition.referenceName,
-                readGroupInfo.samFile.getrname(
-                    pysamAlignment.next_reference_id))
+            if pysamAlignment.next_reference_id != -1:
+                self.assertEqual(
+                    gaAlignment.nextMatePosition.referenceName,
+                    readGroupInfo.samFile.getrname(
+                        pysamAlignment.next_reference_id))
+            else:
+                self.assertEqual(
+                    gaAlignment.nextMatePosition.referenceName, "")
+        if gaAlignment.numberReads == 1:
+            self.assertFlag(
+                False, pysamAlignment, reads.SamFlags.READ_PAIRED)
+        elif gaAlignment.numberReads == 2:
+            self.assertFlag(
+                True, pysamAlignment, reads.SamFlags.READ_PAIRED)
         else:
-            self.assertIsNone(gaAlignment.nextMatePosition)
+            # we shouldn't be setting numberReads to anything else
+            self.assertTrue(False)
+        if gaAlignment.readNumber is None:
+            self.assertFlag(
+                False, pysamAlignment, reads.SamFlags.FIRST_IN_PAIR)
+            self.assertFlag(
+                False, pysamAlignment, reads.SamFlags.SECOND_IN_PAIR)
+        elif gaAlignment.readNumber == 0:
+            self.assertFlag(
+                True, pysamAlignment, reads.SamFlags.FIRST_IN_PAIR)
+            self.assertFlag(
+                False, pysamAlignment, reads.SamFlags.SECOND_IN_PAIR)
+        elif gaAlignment.readNumber == 1:
+            self.assertFlag(
+                False, pysamAlignment, reads.SamFlags.FIRST_IN_PAIR)
+            self.assertFlag(
+                True, pysamAlignment, reads.SamFlags.SECOND_IN_PAIR)
+        elif gaAlignment.readNumber == 2:
+            self.assertFlag(
+                True, pysamAlignment, reads.SamFlags.FIRST_IN_PAIR)
+            self.assertFlag(
+                True, pysamAlignment, reads.SamFlags.SECOND_IN_PAIR)
+        else:
+            # we shouldn't be setting readNumber to anything else
+            self.assertTrue(False)
         self.assertFlag(
             gaAlignment.properPlacement,
-            pysamAlignment, reads.SamFlags.PROPER_PLACEMENT)
+            pysamAlignment, reads.SamFlags.READ_PROPER_PAIR)
         self.assertEqual(
             gaAlignment.readGroupId,
             readGroupInfo.id)
@@ -375,9 +419,6 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         self.assertFlag(
             gaAlignment.supplementaryAlignment,
             pysamAlignment, reads.SamFlags.SUPPLEMENTARY_ALIGNMENT)
-        # TODO test readNumber and numberReads (nice naming guys...) once
-        # we have figured out what they mean and how the map back to
-        # the SAM flags 0x1, 0x40 and 0x80
 
     def assertFlag(self, gaAlignmentAttr, pysamAlignment, mask):
         flagSet = reads.SamFlags.isFlagSet(pysamAlignment.flag, mask)

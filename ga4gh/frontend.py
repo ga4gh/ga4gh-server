@@ -27,6 +27,7 @@ import ga4gh.backend as backend
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
+import ga4gh.datarepo as datarepo
 
 
 MIMETYPE = "application/json"
@@ -122,25 +123,27 @@ class ServerStatus(object):
         """
         Returns the list of datasetIds for this backend
         """
-        return app.backend.getDatasets()
+        return app.backend.getDataRepository().getDatasets()
 
     def getVariantSets(self, datasetId):
         """
         Returns the list of variant sets for the dataset
         """
-        return app.backend.getDataset(datasetId).getVariantSets()
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getVariantSets()
 
     def getReadGroupSets(self, datasetId):
         """
         Returns the list of ReadGroupSets for the dataset
         """
-        return app.backend.getDataset(datasetId).getReadGroupSets()
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getReadGroupSets()
 
     def getReferenceSets(self):
         """
         Returns the list of ReferenceSets for this server.
         """
-        return app.backend.getReferenceSets()
+        return app.backend.getDataRepository().getReferenceSets()
 
 
 def reset():
@@ -172,12 +175,13 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     cors.CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
     # Allocate the backend
-    # TODO is this a good way to determine what type of backend we should
-    # instantiate? We should think carefully about this. The approach of
-    # using the special strings __SIMULATED__ and __EMPTY__ seems OK for
-    # now, but is certainly not ideal.
-    dataSource = app.config["DATA_SOURCE"]
-    if dataSource == "__SIMULATED__":
+    # We use URLs to specify the backend. Currently we have file:// URLs (or
+    # URLs with no scheme) for the FileSystemBackend, and special empty:// and
+    # simulated:// URLs for empty or simulated data sources.
+    dataSource = urlparse.urlparse(app.config["DATA_SOURCE"], "file")
+
+    if dataSource.scheme == "simulated":
+        # Ignore the query string
         randomSeed = app.config["SIMULATED_BACKEND_RANDOM_SEED"]
         numCalls = app.config["SIMULATED_BACKEND_NUM_CALLS"]
         variantDensity = app.config["SIMULATED_BACKEND_VARIANT_DENSITY"]
@@ -186,18 +190,23 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_REFERENCE_SETS"]
         numReferencesPerReferenceSet = app.config[
             "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET"]
-        numAlignments = app.config[
+        numAlignmentsPerReadGroup = app.config[
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
-        theBackend = backend.SimulatedBackend(
+        dataRepository = datarepo.SimulatedDataRepository(
             randomSeed=randomSeed, numCalls=numCalls,
             variantDensity=variantDensity, numVariantSets=numVariantSets,
             numReferenceSets=numReferenceSets,
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
-            numAlignments=numAlignments)
-    elif dataSource == "__EMPTY__":
-        theBackend = backend.EmptyBackend()
+            numAlignments=numAlignmentsPerReadGroup)
+    elif dataSource.scheme == "empty":
+        dataRepository = datarepo.EmptyDataRepository()
+    elif dataSource.scheme == "file":
+        dataRepository = backend.FileSystemDataRepository(os.path.join(
+            dataSource.netloc, dataSource.path))
     else:
-        theBackend = backend.FileSystemBackend(dataSource)
+        raise exceptions.ConfigurationException(
+            "Unsupported data source scheme: " + dataSource.scheme)
+    theBackend = backend.Backend(dataRepository)
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])
