@@ -647,7 +647,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             return allLoc
         return None
 
-    def convertTranscriptEffect(self, ann):
+    def convertTranscriptEffect(self, ann, hgvsG):
         effect = self._createGaTranscriptEffect()
         (alt, effects, impact, geneName, geneId, featureType,
             featureId, trBiotype, rank, hgvsC, hgvsP, cdnaPos,
@@ -658,7 +658,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         effect.featureId = featureId
         # TODO what is actually meant to go in here?
         effect.hgvsAnnotation = protocol.HGVSAnnotation()
-        effect.hgvsAnnotation.genomic = None
+        effect.hgvsAnnotation.genomic = hgvsG
         effect.hgvsAnnotation.coding = hgvsC
         effect.hgvsAnnotation.protein = hgvsP
         if hgvsP != '':
@@ -702,10 +702,12 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
+        hgvsG = record.info.get('HGVS.g')
         transcriptEffects = []
         if annStr is not None:
             for ann in annStr.split(','):
-                transcriptEffects.append(self.convertTranscriptEffect(ann))
+                transcriptEffects.append(
+                    self.convertTranscriptEffect(ann, hgvsG))
         annotation.transcriptEffects = transcriptEffects
         annotation.id = self.getVariantAnnotationId(variant, annotation)
         return annotation
