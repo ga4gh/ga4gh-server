@@ -215,6 +215,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         object.
         """
         ret = protocol.AlleleLocation()
+        ret.start = 0
         ret.created = self._creationTime
         ret.updated = self._updatedTime
         return ret
@@ -248,6 +249,18 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         return hashlib.md5(
             gaVariant.referenceBases +
             str(tuple(gaVariant.alternateBases))).hexdigest()
+
+    @classmethod
+    def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
+        """
+        Produces an MD5 hash of the ga variant and gaVariantAnnotaiton objects
+        """
+        treffs = [treff.id for treff in gaVariantAnnotation.transcriptEffects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t".format(
+                gaVariant.referenceBases, tuple(gaVariant.alternateBases),
+                treffs)
+            ).hexdigest()
 
 
 class SimulatedVariantSet(AbstractVariantSet):
@@ -330,6 +343,117 @@ class SimulatedVariantSet(AbstractVariantSet):
             variant.calls.append(call)
         variant.id = self.getVariantId(variant)
         return variant
+
+
+class SimulatedVariantAnnotationSet(AbstractVariantSet):
+    """
+    A variant annotation set that doesn't derive from a data store.
+    Used mostly for testing.
+    """
+    def __init__(
+            self, parentContainer, localId, variantSet, randomSeed=1):
+        super(SimulatedVariantAnnotationSet, self).__init__(
+            parentContainer, localId)
+        self._variantSet = variantSet
+        self._randomSeed = randomSeed
+        now = protocol.convertDatetime(datetime.datetime.now())
+        self._compoundId = datamodel.VariantAnnotationSetCompoundId(
+            self.getCompoundId(), 'variantannotations')
+        self._creationTime = now
+        self._updatedTime = now
+        # TODO make some reasonable connection to seqont
+
+    def toProtocolElement(self):
+        """
+        Converts this VariantAnnotationSet into its GA4GH protocol equivalent.
+        """
+        protocolElement = protocol.VariantAnnotationSet()
+        protocolElement.variantSetId = self._variantSet.getId()
+        protocolElement.id = self.getId()
+        protocolElement.name = self.getLocalId()
+        protocolElement.analysis = protocol.Analysis()
+        protocolElement.analysis.recordUpdateTime = \
+            datetime.datetime.now().isoformat()
+        # TODO is there an analysis ID somewhere?
+        protocolElement.analysis.id = "F33DM3"
+        return protocolElement
+
+    def getNumVariantAnnotations(self):
+        # TODO find out where this is used and how
+        return 0
+
+    def getVariantAnnotation(self, variant, randomNumberGenerator):
+        ann = self.generateVariantAnnotation(
+            variant, randomNumberGenerator)
+        return ann
+
+    def getVariantAnnotations(self, referenceName, start, end):
+        for variant in self._variantSet.getVariants(referenceName, start, end):
+            yield self.generateVariantAnnotation(variant)
+
+    def generateVariantAnnotation(self, variant):
+        """
+        Generate a random variant annotation based on a given variant.
+        This generator should be seeded with a value that is unique to the
+        variant so that the same annotation will always be produced regardless
+        of the order it is generated in.
+        """
+        # To make this reproducible, make a seed based on this
+        # specific variant.
+        seed = self._randomSeed + variant.start + variant.end
+        randomNumberGenerator = random.Random()
+        randomNumberGenerator.seed(seed)
+        ann = self._createGaVariantAnnotation()
+        ann.variant = variant
+        ann.variantId = variant.id
+        # make a transcript effect for each alternate base element
+        ann.transcriptEffects = []
+        for base in variant.alternateBases:
+            ann.transcriptEffects.append(self.generateTranscriptEffect(
+                ann, base, randomNumberGenerator))
+        ann.id = self.getVariantAnnotationId(variant, ann)
+        return ann
+
+    def getTranscriptEffectId(self, gaTranscriptEffect):
+        effs = [eff.name for eff in gaTranscriptEffect.effects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t{}".format(
+                gaTranscriptEffect.alternateBases,
+                gaTranscriptEffect.featureId,
+                effs, gaTranscriptEffect.hgvsAnnotation)
+            ).hexdigest()
+
+    def getVariantAnnotationId(self, gaVariant, gaAnnotation):
+        md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
+        compoundId = datamodel.VariantAnnotationCompoundId(
+            self.getCompoundId(), gaVariant.referenceName,
+            gaVariant.start, md5)
+        return str(compoundId)
+
+    def generateTranscriptEffect(self, ann, alts, randomNumberGenerator):
+        effect = self._createGaTranscriptEffect()
+        effect.alternateBases = alts
+        # TODO get a random one
+        effect.effects = []
+        impacts = [
+            "HIGH",
+            "LOW",
+            "MODERATE",
+            "MODIFIER"
+        ]
+        effect.impact = randomNumberGenerator.choice(impacts)
+        # TODO how to make these sensical?
+        effect.featureId = "E4TB33F"
+        effect.hgvsAnnotation = protocol.HGVSAnnotation()
+        effect.hgvsAnnotation.genomic = None
+        effect.hgvsAnnotation.coding = None
+        effect.hgvsAnnotation.protein = None
+        effect.proteinLocation = self._createGaAlleleLocation()
+        effect.CDSLocation = self._createGaAlleleLocation()
+        effect.cDNALocation = self._createGaAlleleLocation()
+        effect.id = self.getTranscriptEffectId(effect)
+        effect.analysisResults = []
+        return effect
 
 
 def _encodeValue(value):
@@ -688,7 +812,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
 
     def convertVariantAnnotation(self, record):
         """
-        Converts the specified record into a GA4GH Annotaiton object.
+        Converts the specified record into a GA4GH Annotation object.
         """
         variant = self.convertVariant(record, None)
         annotation = self._createGaVariantAnnotation()
@@ -726,15 +850,4 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
                 gaTranscriptEffect.alternateBases,
                 gaTranscriptEffect.featureId,
                 effs, gaTranscriptEffect.hgvsAnnotation)
-            ).hexdigest()
-
-    def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
-        """
-        Produces an MD5 hash of the ga variant and gaVariantAnnotaiton objects
-        """
-        treffs = [treff.id for treff in gaVariantAnnotation.transcriptEffects]
-        return hashlib.md5(
-            "{}\t{}\t{}\t".format(
-                gaVariant.referenceBases, tuple(gaVariant.alternateBases),
-                treffs)
             ).hexdigest()
