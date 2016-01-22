@@ -106,11 +106,7 @@ are making:
 
     $ git remote add upstream https://github.com/ga4gh/server.git
 
-All development is done against the ``develop`` branch.  The ``stable``
-branch is meant to be kept stable since it is the branch releases are
-based on -- don't touch it!  These are the two mainline branches.
-Our branching model is loosely based on the one described
-`here <http://nvie.com/posts/a-successful-git-branching-model/>`__.
+All development is done against the ``master`` branch.
 
 All development should be done in a topic branch.  That is, a branch
 that the developer creates him or herself.  These steps will create
@@ -119,8 +115,8 @@ a topic branch (replace ``TOPIC_BRANCH_NAME`` appropriately):
 .. code-block:: bash
 
     $ git fetch --all
-    $ git checkout develop
-    $ git merge --ff-only upstream/develop
+    $ git checkout master
+    $ git merge --ff-only upstream/master
     $ git checkout -b TOPIC_BRANCH_NAME
 
 Topic branch names should include the issue number (if there is a tracked
@@ -148,15 +144,15 @@ topic branch to GitHub:
     $ git push origin TOPIC_BRANCH_NAME
 
 Then create a pull request using the GitHub interface.  This pull request
-should be against the ``develop`` branch (this should happen automatically).
+should be against the ``master`` branch (this should happen automatically).
 
 At this point, other developers will weigh in on your changes and will
 likely suggest modifications before the change can be merged into
-``develop``.  When you get around to incorporating these suggestions,
-it is likely that more commits will have been added to the ``develop``
+``master``.  When you get around to incorporating these suggestions,
+it is likely that more commits will have been added to the ``master``
 branch.  Since you (almost) always want to be developing off of the
 latest version of the code, you need to perform a rebase to incorporate
-the most recent changes from ``develop`` into your branch.
+the most recent changes from ``master`` into your branch.
 
 .. warning::
 
@@ -168,16 +164,16 @@ the most recent changes from ``develop`` into your branch.
 .. code-block:: bash
 
     $ git fetch --all
-    $ git checkout develop
-    $ git merge --ff-only upstream/develop
+    $ git checkout master
+    $ git merge --ff-only upstream/master
     $ git checkout TOPIC_BRANCH_NAME
-    $ git rebase develop
+    $ git rebase master
 
 At this point, several things could happen.  In the best case, the rebase
 will complete without problems and you can continue developing.  In other
 cases, the rebase will stop midway and report a merge conflict.  That is,
 git has determined that it is impossible for it to determine how to
-combine the changes from the new commits in the ``develop`` branch and
+combine the changes from the new commits in the ``master`` branch and
 your changes in your topic branch and needs manual intervention to
 proceed.  GitHub has some
 `documentation <https://help.github.com/articles/resolving-merge-conflicts-after-a-git-rebase/>`_ on how to resolve rebase merge conflicts.
@@ -202,7 +198,7 @@ exactly what a force push does.
 .. warning::
 
     Never use the force flag to push to the ``upstream`` repository.  Never use
-    the force flag to push to the ``develop`` or ``stable`` branches.  Only use
+    the force flag to push to the ``master``.  Only use
     the force flag on your repository and on your topic branches.
     Otherwise you run the risk of screwing up the mainline branches, which
     will require manual intervention by a senior developer and manual
@@ -222,7 +218,7 @@ it can be merged.  Do this with (assuming you are in your topic branch):
 
 .. code-block:: bash
 
-    $ git rebase -i `git merge-base develop HEAD`
+    $ git rebase -i `git merge-base master HEAD`
 
 This will launch an editor that will give you control over how you want
 to structure your commits.  Usually you just want to "pick" the first
@@ -241,7 +237,7 @@ or deleted commits that existed in the remote version of the branch).
 branch on top of a mainline branch.  See the elaboration in the :ref:`Git
 Workflow Appendix <git-appendix>` on this topic.)
 
-Once your pull request has been merged into ``develop``, you can close
+Once your pull request has been merged into ``master``, you can close
 the pull request and delete the remote branch in the GitHub interface.
 Locally, run this command to delete the topic branch:
 
@@ -399,25 +395,25 @@ applied, it too will create a merge conflict.  And so on.
 So squash, then rebase, and avoid this whole dilemma.  The terms are a bit
 confusing since both "squashing" and "rebasing" are accomplished via the
 ``git rebase`` command.  As mentioned above, squash the commits in your
-topic branch with (assuming you have branched off of the ``develop``
+topic branch with (assuming you have branched off of the ``master``
 mainline branch):
 
 .. code-block:: bash
 
-    $ git rebase -i `git merge-base develop HEAD`
+    $ git rebase -i `git merge-base master HEAD`
 
-(``git merge-base develop HEAD`` specifies the most recent commit that both
-``develop`` and your topic branch share in common.  Normally this is
-equivalent to the most recent commit of ``develop``, but that's not
-guaranteed -- for instance, if you have updated your local ``develop``
-branch with additional commits from the remote ``develop`` since you
-created your topic branch which branched off of the local ``develop``.)
+(``git merge-base master HEAD`` specifies the most recent commit that both
+``master`` and your topic branch share in common.  Normally this is
+equivalent to the most recent commit of ``master``, but that's not
+guaranteed -- for instance, if you have updated your local ``master``
+branch with additional commits from the remote ``master`` since you
+created your topic branch which branched off of the local ``master``.)
 
-And rebase with (again, assuming ``develop`` as the mainline branch):
+And rebase with (again, assuming ``master`` as the mainline branch):
 
 .. code-block:: bash
 
-    $ git rebase develop
+    $ git rebase master
 
 ++++++++++++++++++++++++++++++
 GitHub's broken merge/CI model
@@ -452,3 +448,58 @@ Developers could also enforce this property manually, but we have
 determined that not using GitHub's UI merging features and judiciously
 re-submitting PRs for additional CI would be more effort than fixing a
 broken test in a mainline branch once in a while.
+
+***************
+Release process
+***************
+
+There are two types of releases: development releases, and stable
+bugfix releases. Development releases happen as a matter of
+course while we are working on a given minor version series, and
+may be either a result of some new features being ready for use
+or a minor bugfix. Stable bugfix releases occur when mainline development
+has moved on to another minor version, and a bugfix is required for the
+currently released version. These two cases are handled in different
+ways.
+
+++++++++++++++++++++
+Development releases
+++++++++++++++++++++
+
+Version numbers are MAJOR.MINOR.PATCH triples. Minor version increments
+happen when significant changes are required to the server codebase,
+which will result in a significant departure from the previously
+released version, either in code layout or in functionality. During
+the normal process of development within a minor version series,
+patch updates are routinely and regularly released.
+
+This entails:
+
+1) Create a PR against ``master`` with the release notes;
+2) Once this has been merged, tag the release on GitHub with the
+   appropriate version number.
+3) Fetch the tag from the upstream repo, and checkout this tag.
+   Create the distribution tarball using ``python setup.py sdist``,
+   and then upload the resulting tarball to PyPI.
+4) Verify that the documentation at
+   http://ga4gh-reference-implementation.readthedocs.org/en/stable/
+   is for the correct version (it may take a few minutes for this to
+   happen after the release has been tagged on GitHub).
+
++++++++++++++++++++++
+Stable bugfix release
++++++++++++++++++++++
+
+When a minor version series has ended because of some significant shift
+in the server internals, there will be a period when the ``master`` branch is not
+in a releasable state. If a bugfix release is required during this period,
+we create a release using the following process:
+
+1) If it does not already exist, create a release branch called
+   ``release-$MAJOR.MINOR`` from the tag of the last release.
+2) Fix the bug by either cherry picking the relevant commits
+   from ``master``, or creating PRs against the ``release-$MAJOR.$MINOR``
+   branch if the bug does not apply to ``master``.
+3) Follow steps 1-4 in the process for `Development releases`_ above,
+   except using the ``release-$MAJOR.$MINOR`` branch as the base
+   instead of ``master``.

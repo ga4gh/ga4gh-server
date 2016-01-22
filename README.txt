@@ -19,16 +19,16 @@ If you would like to help, please check out our list of
 `issues <https://github.com/ga4gh/server/issues>`_!
 
 The latest bleeding-edge documentation is available at `read-the-docs.org
-<http://ga4gh-reference-implementation.readthedocs.org/en/develop>`_.
+<http://ga4gh-reference-implementation.readthedocs.org/en/latest>`_.
 
 - For a quick start with the GA4GH API, please see our
-  `demo <http://ga4gh-reference-implementation.readthedocs.org/en/develop/demo.html>`_.
+  `demo <http://ga4gh-reference-implementation.readthedocs.org/en/latest/demo.html>`_.
 - To configure and deploy the GA4GH server in production
   please see the
   `installation
-  <http://ga4gh-reference-implementation.readthedocs.org/en/develop/installation.html>`_
+  <http://ga4gh-reference-implementation.readthedocs.org/en/latest/installation.html>`_
   page.
 - If you would like to contribute to the project, please see the
   `development
-  <http://ga4gh-reference-implementation.readthedocs.org/en/develop/development.html>`_
+  <http://ga4gh-reference-implementation.readthedocs.org/en/latest/development.html>`_
   page.

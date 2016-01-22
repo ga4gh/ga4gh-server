@@ -196,7 +196,7 @@ class FileSystemDataset(AbstractDataset):
     """
     A dataset based on the file system
     """
-    def __init__(self, localId, dataDir, backend):
+    def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
         self._dataDir = dataDir
         self._setMetadata()
@@ -207,14 +207,14 @@ class FileSystemDataset(AbstractDataset):
             relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
                 variantSet = variants.HtslibVariantSet(
-                    self, localId, relativePath, backend)
+                    self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
             # Variant annotations sets
             variantAnnotationSetDir = os.path.join(
                 relativePath, "variantAnnotations")
             if os.path.isdir(variantAnnotationSetDir):
                 variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                    self, localId, variantAnnotationSetDir, backend)
+                    self, localId, variantAnnotationSetDir, dataRepository)
                 self.addVariantAnnotationSet(variantAnnotationSet)
 
         # Reads
@@ -224,7 +224,7 @@ class FileSystemDataset(AbstractDataset):
                 localId, _ = os.path.splitext(filename)
                 bamPath = os.path.join(readGroupSetDir, filename)
                 readGroupSet = reads.HtslibReadGroupSet(
-                    self, localId, bamPath, backend)
+                    self, localId, bamPath, dataRepository)
                 self.addReadGroupSet(readGroupSet)
 
     def _setMetadata(self):
