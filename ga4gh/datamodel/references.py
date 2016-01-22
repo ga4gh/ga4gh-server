@@ -361,7 +361,7 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     """
     A referenceSet based on data on a file system
     """
-    def __init__(self, localId, dataDir, backend):
+    def __init__(self, localId, dataDir, dataRepository):
         super(HtslibReferenceSet, self).__init__(localId)
         self._dataDir = dataDir
         self._setMetadata()

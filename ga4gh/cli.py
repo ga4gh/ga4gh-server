@@ -21,6 +21,7 @@ import ga4gh.converters as converters
 import ga4gh.frontend as frontend
 import ga4gh.configtest as configtest
 import ga4gh.exceptions as exceptions
+import ga4gh.datarepo as datarepo
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -114,7 +115,8 @@ class AbstractQueryRunner(object):
         filePrefix = "file://"
         if args.baseUrl.startswith(filePrefix):
             dataDir = args.baseUrl[len(filePrefix):]
-            theBackend = backend.FileSystemBackend(dataDir)
+            theBackend = backend.Backend(
+                datarepo.FileSystemDataRepository(dataDir))
             self._client = client.LocalClient(theBackend)
         else:
             self._client = client.HttpClient(
