@@ -194,7 +194,6 @@ class VariantsIntervalIterator(IntervalIterator):
         return variant.end
 
 
-
 class VariantAnnotationsIntervalIterator(IntervalIterator):
     """
     An interval iterator for annotations
@@ -463,7 +462,7 @@ class Backend(object):
         pairs defined by the specified request.
         """
         compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         return self._topLevelObjectGenerator(
             request, dataset.getNumVariantAnnotationSets(),
             dataset.getVariantAnnotationSetByIndex)
@@ -507,7 +506,7 @@ class Backend(object):
         """
         compoundId = datamodel.VariantAnnotationSetCompoundId.parse(
             request.variantAnnotationSetId)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantAnnotationSet = dataset.getVariantAnnotationSet(
             request.variantAnnotationSetId)
         intervalIterator = VariantAnnotationsIntervalIterator(
@@ -783,4 +782,3 @@ class Backend(object):
             request, protocol.SearchDatasetsRequest,
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
-

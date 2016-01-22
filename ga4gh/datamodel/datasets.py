@@ -214,7 +214,7 @@ class FileSystemDataset(AbstractDataset):
                 relativePath, "variantAnnotations")
             if os.path.isdir(variantAnnotationSetDir):
                 variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                    self, localId, variantAnnotationSetDir, backend)
+                    self, localId, variantAnnotationSetDir, dataRepository)
                 self.addVariantAnnotationSet(variantAnnotationSet)
 
         # Reads
