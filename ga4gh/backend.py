@@ -7,12 +7,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
-import os
 
 import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.ontologies as ontologies
-import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
@@ -198,6 +194,7 @@ class VariantsIntervalIterator(IntervalIterator):
         return variant.end
 
 
+
 class VariantAnnotationsIntervalIterator(IntervalIterator):
     """
     An interval iterator for annotations
@@ -257,50 +254,23 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         return True
 
 
-class AbstractBackend(object):
+class Backend(object):
     """
-    An abstract GA4GH backend.
+    Backend for handling the server requests.
     This class provides methods for all of the GA4GH protocol end points.
     """
-    def __init__(self):
+    def __init__(self, dataRepository):
         self._requestValidation = False
         self._responseValidation = False
         self._defaultPageSize = 100
         self._maxResponseLength = 2**20  # 1 MiB
-        self._datasetIdMap = {}
-        self._datasetNameMap = {}
-        self._datasetIds = []
-        self._referenceSetIdMap = {}
-        self._referenceSetNameMap = {}
-        self._referenceSetIds = []
-        self._ontologyNameMap = {}
-        self._ontologyNames = []
+        self._dataRepository = dataRepository
 
-    def addDataset(self, dataset):
+    def getDataRepository(self):
         """
-        Adds the specified dataset to this backend.
+        Get the data repository used by this backend
         """
-        id_ = dataset.getId()
-        self._datasetIdMap[id_] = dataset
-        self._datasetNameMap[dataset.getLocalId()] = dataset
-        self._datasetIds.append(id_)
-
-    def addOntologies(self, ontologies):
-        """
-        Adds ontologies to this backend.
-        """
-        for name in ontologies.keys():
-            self._ontologyNameMap[name] = ontologies.get(name)
-            self._ontologyNames.append(name)
-
-    def addReferenceSet(self, referenceSet):
-        """
-        Adds the specified reference set to this backend.
-        """
-        id_ = referenceSet.getId()
-        self._referenceSetIdMap[id_] = referenceSet
-        self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
-        self._referenceSetIds.append(id_)
+        return self._dataRepository
 
     def setRequestValidation(self, requestValidation):
         """
@@ -326,82 +296,6 @@ class AbstractBackend(object):
         value.
         """
         self._maxResponseLength = maxResponseLength
-
-    def getDatasets(self):
-        """
-        Returns a list of datasets in this backend
-        """
-        return [self._datasetIdMap[id_] for id_ in self._datasetIds]
-
-    def getNumDatasets(self):
-        """
-        Returns the number of datasets in this backend.
-        """
-        return len(self._datasetIds)
-
-    def getDataset(self, id_):
-        """
-        Returns a dataset with the specified ID, or raises a
-        DatasetNotFoundException if it does not exist.
-        """
-        if id_ not in self._datasetIdMap:
-            raise exceptions.DatasetNotFoundException(id_)
-        return self._datasetIdMap[id_]
-
-    def getDatasetByIndex(self, index):
-        """
-        Returns the dataset at the specified index.
-        """
-        return self._datasetIdMap[self._datasetIds[index]]
-
-    def getDatasetByName(self, name):
-        """
-        Returns the dataset with the specified name.
-        """
-        if name not in self._datasetNameMap:
-            raise exceptions.DatasetNameNotFoundException(name)
-        return self._datasetNameMap[name]
-
-    def getReferenceSets(self):
-        """
-        Returns the list of ReferenceSets in this backend
-        """
-        return [self._referenceSetIdMap[id_] for id_ in self._referenceSetIds]
-
-    def getNumReferenceSets(self):
-        """
-        Returns the number of reference sets in this backend.
-        """
-        return len(self._referenceSetIds)
-
-    def getReferenceSet(self, id_):
-        """
-        Retuns the ReferenceSet with the specified ID, or raises a
-        ReferenceSetNotFoundException if it does not exist.
-        """
-        if id_ not in self._referenceSetIdMap:
-            raise exceptions.ReferenceSetNotFoundException(id_)
-        return self._referenceSetIdMap[id_]
-
-    def getReferenceSetByIndex(self, index):
-        """
-        Returns the reference set at the specified index.
-        """
-        return self._referenceSetIdMap[self._referenceSetIds[index]]
-
-    def getReferenceSetByName(self, name):
-        """
-        Returns the reference set with the specified name.
-        """
-        if name not in self._referenceSetNameMap:
-            raise exceptions.ReferenceSetNameNotFoundException(name)
-        return self._referenceSetNameMap[name]
-
-    def getOntology(self, name):
-        """
-        Returns ontologies
-        """
-        return self._ontologyNameMap[name]
 
     def startProfile(self):
         """
@@ -492,14 +386,15 @@ class AbstractBackend(object):
         defined by the specified request
         """
         return self._topLevelObjectGenerator(
-            request, self.getNumDatasets(), self.getDatasetByIndex)
+            request, self.getDataRepository().getNumDatasets(),
+            self.getDataRepository().getDatasetByIndex)
 
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
         defined by the specified request.
         """
-        dataset = self.getDataset(request.datasetId)
+        dataset = self.getDataRepository().getDataset(request.datasetId)
         if request.name is None:
             return self._topLevelObjectGenerator(
                 request, dataset.getNumReadGroupSets(),
@@ -517,7 +412,7 @@ class AbstractBackend(object):
         defined by the specified request.
         """
         results = []
-        for obj in self.getReferenceSets():
+        for obj in self.getDataRepository().getReferenceSets():
             include = True
             if request.md5checksum is not None:
                 if request.md5checksum != obj.getMd5Checksum():
@@ -537,7 +432,8 @@ class AbstractBackend(object):
         Returns a generator over the (reference, nextPageToken) pairs
         defined by the specified request.
         """
-        referenceSet = self.getReferenceSet(request.referenceSetId)
+        referenceSet = self.getDataRepository().getReferenceSet(
+            request.referenceSetId)
         results = []
         for obj in referenceSet.getReferences():
             include = True
@@ -556,7 +452,7 @@ class AbstractBackend(object):
         Returns a generator over the (variantSet, nextPageToken) pairs defined
         by the specified request.
         """
-        dataset = self.getDataset(request.datasetId)
+        dataset = self.getDataRepository().getDataset(request.datasetId)
         return self._topLevelObjectGenerator(
             request, dataset.getNumVariantSets(),
             dataset.getVariantSetByIndex)
@@ -584,7 +480,7 @@ class AbstractBackend(object):
                 "Exactly one read group id must be specified")
         compoundId = datamodel.ReadGroupCompoundId.parse(
             request.readGroupIds[0])
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
         readGroup = readGroupSet.getReadGroup(compoundId.readGroupId)
         # Find the reference.
@@ -599,7 +495,7 @@ class AbstractBackend(object):
         by the specified request.
         """
         compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         intervalIterator = VariantsIntervalIterator(request, variantSet)
         return intervalIterator
@@ -624,7 +520,7 @@ class AbstractBackend(object):
         by the specified request.
         """
         compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         if request.name is None:
             return self._topLevelObjectGenerator(
@@ -695,7 +591,8 @@ class AbstractBackend(object):
         request arguments.
         """
         compoundId = datamodel.ReferenceCompoundId.parse(id_)
-        referenceSet = self.getReferenceSet(compoundId.referenceSetId)
+        referenceSet = self.getDataRepository().getReferenceSet(
+            compoundId.referenceSetId)
         reference = referenceSet.getReference(id_)
         start = _parseIntegerArgument(requestArgs, 'start', 0)
         end = _parseIntegerArgument(requestArgs, 'end', reference.getLength())
@@ -724,7 +621,7 @@ class AbstractBackend(object):
         Returns a callset with the given id
         """
         compoundId = datamodel.CallSetCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         callSet = variantSet.getCallSet(id_)
         return self.runGetRequest(callSet)
@@ -734,7 +631,7 @@ class AbstractBackend(object):
         Returns a variant with the given id
         """
         compoundId = datamodel.VariantCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         gaVariant = variantSet.getVariant(compoundId)
         # TODO variant is a special case here, as it's returning a
@@ -748,7 +645,7 @@ class AbstractBackend(object):
         Returns a readGroupSet with the given id_
         """
         compoundId = datamodel.ReadGroupSetCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(id_)
         return self.runGetRequest(readGroupSet)
 
@@ -757,7 +654,7 @@ class AbstractBackend(object):
         Returns a read group with the given id_
         """
         compoundId = datamodel.ReadGroupCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
         readGroup = readGroupSet.getReadGroup(id_)
         return self.runGetRequest(readGroup)
@@ -767,7 +664,8 @@ class AbstractBackend(object):
         Runs a getReference request for the specified ID.
         """
         compoundId = datamodel.ReferenceCompoundId.parse(id_)
-        referenceSet = self.getReferenceSet(compoundId.referenceSetId)
+        referenceSet = self.getDataRepository().getReferenceSet(
+            compoundId.referenceSetId)
         reference = referenceSet.getReference(id_)
         return self.runGetRequest(reference)
 
@@ -775,7 +673,7 @@ class AbstractBackend(object):
         """
         Runs a getReferenceSet request for the specified ID.
         """
-        referenceSet = self.getReferenceSet(id_)
+        referenceSet = self.getDataRepository().getReferenceSet(id_)
         return self.runGetRequest(referenceSet)
 
     def runGetVariantSet(self, id_):
@@ -783,7 +681,7 @@ class AbstractBackend(object):
         Runs a getVariantSet request for the specified ID.
         """
         compoundId = datamodel.VariantSetCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(id_)
         return self.runGetRequest(variantSet)
 
@@ -791,7 +689,7 @@ class AbstractBackend(object):
         """
         Runs a getDataset request for the specified ID.
         """
-        dataset = self.getDataset(id_)
+        dataset = self.getDataRepository().getDataset(id_)
         return self.runGetRequest(dataset)
 
     # Search requests.
@@ -886,65 +784,3 @@ class AbstractBackend(object):
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
 
-
-class EmptyBackend(AbstractBackend):
-    """
-    A GA4GH backend that contains no data.
-    """
-
-
-class SimulatedBackend(AbstractBackend):
-    """
-    A GA4GH backend backed by no data; used mostly for testing
-    """
-    def __init__(
-            self, randomSeed=0, numDatasets=2,
-            numVariantSets=1, numCalls=1, variantDensity=0.5,
-            numReferenceSets=1, numReferencesPerReferenceSet=1,
-            numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=2):
-        super(SimulatedBackend, self).__init__()
-
-        # References
-        for i in range(numReferenceSets):
-            localId = "referenceSet{}".format(i)
-            seed = randomSeed + i
-            referenceSet = references.SimulatedReferenceSet(
-                localId, seed, numReferencesPerReferenceSet)
-            self.addReferenceSet(referenceSet)
-
-        # Datasets
-        for i in range(numDatasets):
-            seed = randomSeed + i
-            localId = "simulatedDataset{}".format(i)
-            referenceSet = self.getReferenceSetByIndex(i % numReferenceSets)
-            dataset = datasets.SimulatedDataset(
-                localId, referenceSet=referenceSet, randomSeed=seed,
-                numCalls=numCalls, variantDensity=variantDensity,
-                numVariantSets=numVariantSets,
-                numReadGroupSets=numReadGroupSets,
-                numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
-                numAlignments=numAlignments)
-            self.addDataset(dataset)
-
-
-class FileSystemBackend(AbstractBackend):
-    """
-    A GA4GH backend backed by data on the file system
-    """
-    def __init__(self, dataDir):
-        super(FileSystemBackend, self).__init__()
-        self._dataDir = dataDir
-        sourceDirNames = ["referenceSets", "ontologies", "datasets"]
-        constructors = [
-            references.HtslibReferenceSet, ontologies.FileSystemOntologies,
-            datasets.FileSystemDataset]
-        objectAdders = [
-            self.addReferenceSet, self.addOntologies, self.addDataset]
-        for sourceDirName, constructor, objectAdder in zip(
-                sourceDirNames, constructors, objectAdders):
-            sourceDir = os.path.join(self._dataDir, sourceDirName)
-            for setName in os.listdir(sourceDir):
-                relativePath = os.path.join(sourceDir, setName)
-                if os.path.isdir(relativePath):
-                    objectAdder(constructor(setName, relativePath, self))

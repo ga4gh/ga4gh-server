@@ -14,6 +14,7 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.backend as backend
+import ga4gh.datarepo as datarepo
 
 
 class FaultyVariantDataTest(unittest.TestCase):
@@ -205,6 +206,6 @@ class TestBadDatasetMetadata(FaultyDatasetTest):
     def testBadReferenceDatasetMetadata(self):
         localId = "bad_metadata"
         path = self.getFullPath(localId)
-        localBackend = backend.EmptyBackend()
+        localBackend = backend.Backend(datarepo.EmptyDataRepository())
         with self.assertRaises(exceptions.MissingDatasetMetadataException):
             datasets.FileSystemDataset(localId, path, localBackend)
