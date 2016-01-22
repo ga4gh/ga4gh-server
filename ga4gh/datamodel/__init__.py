@@ -187,14 +187,17 @@ class CompoundId(object):
         fashion. This is not intended for security purposes, but rather to
         dissuade users from depending on our internal ID structures.
         """
-        return base64.b64encode(idStr)
+        return base64.urlsafe_b64encode(str(idStr)).replace(b'=', b'')
 
     @classmethod
-    def deobfuscate(cls, idStr):
+    def deobfuscate(cls, data):
         """
         Reverses the obfuscation done by the :meth:`obfuscate` method.
+        If an identifier arrives without correct base64 padding this
+        function will append it to the end.
         """
-        return base64.b64decode(idStr)
+        return base64.urlsafe_b64decode(str((
+            data + b'A=='[(len(data) - 1) % 4:])))
 
 
 class ReferenceSetCompoundId(CompoundId):
