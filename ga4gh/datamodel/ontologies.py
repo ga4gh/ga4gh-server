@@ -1,5 +1,5 @@
 """
-Ontology objects
+Support for Ontologies.
 """
 from __future__ import division
 from __future__ import print_function
@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import fnmatch
 import os
+import ga4gh.protocol as protocol
 
 
 class FileSystemOntology(object):
@@ -32,7 +33,27 @@ class FileSystemOntology(object):
     def getName(self, id_):
         return self._nameIdMap[id_]
 
+    def getGaTermByName(self, name):
+        term = protocol.OntologyTerm()
+        term.term = name
+        term.id = self.getId(name)
+        # TODO set source name smarter
+        term.sourceName = self._sourceName
+        # TODO how do we get the right version?
+        term.sourceVersion = None
+        return term
+
+    def getGaTermById(self, id_):
+        term = protocol.OntologyTerm()
+        term.term = self.getName(id_)
+        term.id = id_
+        term.sourceName = self._sourceName
+        # TODO how do we get the right version?
+        term.sourceVersion = None
+        return term
+
     def readOntology(self, filename):
+        self._sourceName = filename
         with open(filename) as f:
             for line in f:
                 # File format: id \t name

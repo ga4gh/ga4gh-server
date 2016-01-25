@@ -244,8 +244,8 @@ class AbstractVariantSet(datamodel.DatamodelObject):
     @classmethod
     def hashVariant(cls, gaVariant):
         """
-        Produces an MD5 hash of the ga variant object to uniquely
-        identify it
+        Produces an MD5 hash of the ga variant object to distinguish
+        it from other variants at the same genomic coordinate.
         """
         return hashlib.md5(
             gaVariant.referenceBases +

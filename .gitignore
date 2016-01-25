@@ -4,11 +4,13 @@
 ga4gh-example-data*
 ga4gh-downloaded-data*
 scripts/auth.yml
+ga4gh/_version.py
 *.fa
 *.pid
 *.fai
 *.gzi
 *.bak
+.eggs
 
 # Below based off of https://gist.github.com/octocat/9257657
 # and https://github.com/github/gitignore/blob/master/Python.gitignore

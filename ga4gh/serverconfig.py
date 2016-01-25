@@ -40,6 +40,8 @@ class DevelopmentConfig(BaseConfig):
     """
     DATA_SOURCE = "ga4gh-example-data"
     DEBUG = True
+    REQUEST_VALIDATION = True
+    RESPONSE_VALIDATION = True
 
 
 class LocalOidConfig(DevelopmentConfig):
@@ -57,6 +59,13 @@ class ProductionConfig(BaseConfig):
     # We should complain loudly if data source is not set, rather than
     # mysteriously serve no data.
     DATA_SOURCE = None
+
+
+class SimulatedConfig(BaseConfig):
+    DATA_SOURCE = "simulated://"
+    DEBUG = True
+    REQUEST_VALIDATION = True
+    RESPONSE_VALIDATION = True
 
 
 class GoogleOidcConfig(ProductionConfig):
