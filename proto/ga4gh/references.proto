@@ -1,0 +1,219 @@
+syntax = "proto3";
+
+package ga4gh;
+
+service ReferenceService {
+  // Searches for reference sets which match the given criteria.
+  //
+  // Implements [GlobalAllianceApi.searchReferenceSets](http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.searchReferenceSets)
+  rpc SearchReferenceSets(SearchReferenceSetsRequest)
+      returns (SearchReferenceSetsResponse);
+
+  // Gets a reference set.
+  //
+  // Implements [GlobalAllianceApi.getReferenceSet](http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.getReferenceSet").
+  rpc GetReferenceSet(GetReferenceSetRequest) returns (ReferenceSet);
+
+  // Searches for references which match the given criteria.
+  //
+  // Implements [GlobalAllianceApi.searchReferences](http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.searchReferences).
+  rpc SearchReferences(SearchReferencesRequest)
+      returns (SearchReferencesResponse);
+
+  // Gets a reference.
+  //
+  // Implements [GlobalAllianceApi.getReference](http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.getReference).
+  rpc GetReference(GetReferenceRequest) returns (Reference);
+
+  // Lists the bases in a reference, optionally restricted to a range.
+  //
+  // Implements [GlobalAllianceApi.getReferenceBases](http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.getReferenceBases).
+  rpc ListBases(ListBasesRequest) returns (ListBasesResponse);
+}
+
+// A reference is a canonical assembled DNA sequence, intended to act as a
+// reference coordinate space for other genomic annotations. A single reference
+// might represent the human chromosome 1 or mitochandrial DNA, for instance. A
+// reference belongs to one or more reference sets.
+message Reference {
+  // The server-generated immutable ID of the reference.
+  string id = 1;
+
+  // The length of this reference's sequence.
+  int64 length = 2;
+
+  // MD5 of the upper-case sequence excluding all whitespace characters (this
+  // is equivalent to SQ:M5 in SAM). This value is represented in lower case
+  // hexadecimal format.
+  string md5checksum = 3;
+
+  // The name of this reference, for example `22`.
+  string name = 4;
+
+  // The URI from which the sequence was obtained. Specifies a FASTA format
+  // file/string with one name, sequence pair.
+  string source_uri = 5;
+
+  // All known corresponding accession IDs in INSDC (GenBank/ENA/DDBJ) ideally
+  // with a version number, for example `GCF_000001405.26`.
+  repeated string source_accessions = 6;
+
+  // ID from http://www.ncbi.nlm.nih.gov/taxonomy (e.g. 9606->human) if not
+  // specified by the containing reference set.
+  int32 ncbi_taxon_id = 7;
+}
+
+// A reference set is a set of references which typically comprise a reference
+// assembly for a species, such as `GRCh38` which is representative
+// of the human genome. A reference set defines a common coordinate space for
+// comparing reference-aligned experimental data. A reference set contains 1 or
+// more references.
+message ReferenceSet {
+  // The server-generated immutable ID of the reference set.
+  string id = 1;
+
+  // The IDs of the reference objects that are part of this set.
+  // `Reference.md5checksum` must be unique within this set.
+  repeated string reference_ids = 2;
+
+  // Order-independent MD5 checksum which identifies this reference set. The
+  // checksum is computed by sorting all lower case hexidecimal string
+  // `reference.md5checksum` (for all reference in this set) in
+  // ascending lexicographic order, concatenating, and taking the MD5 of that
+  // value. The resulting value is represented in lower case hexadecimal format.
+  string md5checksum = 3;
+
+  // ID from http://www.ncbi.nlm.nih.gov/taxonomy (e.g. 9606->human) indicating
+  // the species which this assembly is intended to model. Note that contained
+  // references may specify a different `ncbiTaxonId`, as assemblies
+  // may contain reference sequences which do not belong to the modeled species,
+  // e.g. EBV in a human reference genome.
+  int32 ncbi_taxon_id = 4;
+
+  // Free text description of this reference set.
+  string description = 5;
+
+  // Public id of this reference set, such as `GRCh37`.
+  string assembly_id = 6;
+
+  // The URI from which the references were obtained.
+  string source_uri = 7;
+
+  // All known corresponding accession IDs in INSDC (GenBank/ENA/DDBJ) ideally
+  // with a version number, for example `NC_000001.11`.
+  repeated string source_accessions = 8;
+}
+
+message SearchReferenceSetsRequest {
+  // If present, return references for which the `md5checksum`
+  // matches. See `ReferenceSet.md5checksum` for details.
+  repeated string md5checksums = 1;
+
+  // If present, return references for which the accession matches any of these
+  // strings. Best to give a version number, for example
+  // `GCF_000001405.26`. If only the main accession number is given
+  // then all records with that main accession will be returned, whichever
+  // version. Note that different versions will have different sequences.
+  repeated string accessions = 2;
+
+  // If present, return reference sets for which a substring of their
+  // `assemblyId` matches this string (case insensitive).
+  string assembly_id = 3;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 4;
+
+  // Specifies the maximum number of results to return in a single page.
+  int32 page_size = 5;
+}
+
+message SearchReferenceSetsResponse {
+  // The matching references sets.
+  repeated ReferenceSet reference_sets = 1;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 2;
+}
+
+message GetReferenceSetRequest {
+  // The ID of the reference set.
+  string reference_set_id = 1;
+}
+
+message SearchReferencesRequest {
+  // If present, return references for which the `md5checksum`
+  // matches. See `Reference.md5checksum` for construction details.
+  repeated string md5checksums = 1;
+
+  // If present, return references for which the accession
+  // matches this string. Best to give a version number, for example
+  // `GCF_000001405.26`. If only the main accession number is given
+  // then all records with that main accession will be returned, whichever
+  // version. Note that different versions will have different sequences.
+  repeated string accessions = 2;
+
+  // If present, return only references which belong to this reference set.
+  string reference_set_id = 3;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 4;
+
+  // Specifies the maximum number of results to return in a single page.
+  int32 page_size = 5;
+}
+
+message SearchReferencesResponse {
+  // The matching references.
+  repeated Reference references = 1;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 2;
+}
+
+message GetReferenceRequest {
+  // The ID of the reference.
+  string reference_id = 1;
+}
+
+message ListBasesRequest {
+  // The ID of the reference.
+  string reference_id = 1;
+
+  // The start position (0-based) of this query. Defaults to 0.
+  int64 start = 2;
+
+  // The end position (0-based, exclusive) of this query. Defaults to the length
+  // of this reference.
+  int64 end = 3;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 4;
+
+  // Specifies the maximum number of bases to return in a single page.
+  int32 page_size = 5;
+}
+
+message ListBasesResponse {
+  // The offset position (0-based) of the given `sequence` from the
+  // start of this `Reference`. This value will differ for each page
+  // in a paginated request.
+  int64 offset = 1;
+
+  // A substring of the bases that make up this reference.
+  string sequence = 2;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 3;
+}
