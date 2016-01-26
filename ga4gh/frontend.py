@@ -201,7 +201,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        dataRepository = backend.FileSystemDataRepository(os.path.join(
+        dataRepository = datarepo.FileSystemDataRepository(os.path.join(
             dataSource.netloc, dataSource.path))
     else:
         raise exceptions.ConfigurationException(

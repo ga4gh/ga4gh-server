@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package ga4gh;
+
+// This service manages datasets, which are collections of genomic data.
+service DatasetService {
+  // Gets a dataset by ID.
+  rpc GetDataset(GetDatasetRequest) returns (Dataset);
+}
+
+// A Dataset is a collection of genomic data.
+message Dataset {
+  // The server-assigned dataset ID, immutable.
+  string id = 1;
+
+  // The dataset name.
+  string name = 3;
+
+  // Text description of the dataset.
+  string description = 4;
+}
+
+message GetDatasetRequest {
+  // The ID of the dataset.
+  string dataset_id = 1;
+}
