@@ -6,8 +6,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import json
-
 import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
@@ -21,11 +19,14 @@ def _parseIntegerArgument(args, key, defaultValue):
     return the specified default value.
     """
     ret = defaultValue
-    if key in args:
-        try:
-            ret = int(args[key])
-        except ValueError:
-            raise exceptions.BadRequestIntegerException(key, args[key])
+    try:
+        if key in args:
+            try:
+                ret = int(args[key])
+            except ValueError:
+                raise exceptions.BadRequestIntegerException(key, args[key])
+    except TypeError:
+        raise Exception((key, args))
     return ret
 
 
@@ -65,12 +66,13 @@ class IntervalIterator(object):
         self._nextObject = None
         self._searchAnchor = None
         self._distanceFromAnchor = None
-        if request.pageToken is None:
+        if not request.page_token:
             self._initialiseIteration()
         else:
             # Set the search start point and the number of records to skip from
             # the page token.
-            searchAnchor, objectsToSkip = _parsePageToken(request.pageToken, 2)
+            searchAnchor, objectsToSkip = _parsePageToken(
+                request.page_token, 2)
             self._pickUpIteration(searchAnchor, objectsToSkip)
 
     def _initialiseIteration(self):
@@ -78,7 +80,8 @@ class IntervalIterator(object):
         Starts a new iteration.
         """
         self._searchIterator = self._search(
-            self._request.start, self._request.end)
+            self._request.start,
+            self._request.end if self._request.end != 0 else None)
         self._currentObject = next(self._searchIterator, None)
         if self._currentObject is not None:
             self._nextObject = next(self._searchIterator, None)
@@ -162,9 +165,9 @@ class ReadsIntervalIterator(IntervalIterator):
 
     @classmethod
     def _getStart(cls, readAlignment):
-        if readAlignment.alignment is None:
+        if readAlignment.alignment.position.position == 0:
             # unmapped read with mapped mate; see SAM standard 2.4.1
-            return readAlignment.nextMatePosition.position
+            return readAlignment.next_mate_position.position
         else:
             # usual case
             return readAlignment.alignment.position.position
@@ -173,7 +176,7 @@ class ReadsIntervalIterator(IntervalIterator):
     def _getEnd(cls, readAlignment):
         return (
             cls._getStart(readAlignment) +
-            len(readAlignment.alignedSequence))
+            len(readAlignment.aligned_sequence))
 
 
 class VariantsIntervalIterator(IntervalIterator):
@@ -183,8 +186,8 @@ class VariantsIntervalIterator(IntervalIterator):
 
     def _search(self, start, end):
         return self._parentContainer.getVariants(
-            self._request.referenceName, start, end,
-            self._request.callSetIds)
+            self._request.reference_name, start, end,
+            self._request.call_set_ids)
 
     @classmethod
     def _getStart(cls, variant):
@@ -348,20 +351,9 @@ class Backend(object):
         Throws an error if the data is invalid
         """
         if self._requestValidation:
-            if not requestClass.validate(jsonDict):
+            if not protocol.validate(jsonDict, requestClass):
                 raise exceptions.RequestValidationFailureException(
                     jsonDict, requestClass)
-
-    def validateResponse(self, jsonString, responseClass):
-        """
-        Ensures the jsonDict corresponds to a valid instance of responseClass
-        Throws an error if the data is invalid
-        """
-        if self._responseValidation:
-            jsonDict = json.loads(jsonString)
-            if not responseClass.validate(jsonDict):
-                raise exceptions.ResponseValidationFailureException(
-                    jsonDict, responseClass)
 
     ###########################################################
     #
@@ -381,8 +373,8 @@ class Backend(object):
         up at any point.
         """
         currentIndex = 0
-        if request.pageToken is not None:
-            currentIndex, = _parsePageToken(request.pageToken, 1)
+        if request.page_token:
+            currentIndex, = _parsePageToken(request.page_token, 1)
         while currentIndex < numObjects:
             object_ = getByIndexMethod(currentIndex)
             currentIndex += 1
@@ -426,8 +418,8 @@ class Backend(object):
         Returns a generator over the (readGroupSet, nextPageToken) pairs
         defined by the specified request.
         """
-        dataset = self.getDataRepository().getDataset(request.datasetId)
-        if request.name is None:
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        if request.name == "":
             return self._topLevelObjectGenerator(
                 request, dataset.getNumReadGroupSets(),
                 dataset.getReadGroupSetByIndex)
@@ -446,14 +438,14 @@ class Backend(object):
         results = []
         for obj in self.getDataRepository().getReferenceSets():
             include = True
-            if request.md5checksum is not None:
+            if request.md5checksum:
                 if request.md5checksum != obj.getMd5Checksum():
                     include = False
-            if request.accession is not None:
+            if request.accession:
                 if request.accession not in obj.getSourceAccessions():
                     include = False
-            if request.assemblyId is not None:
-                if request.assemblyId != obj.getAssemblyId():
+            if request.assembly_id:
+                if request.assembly_id != obj.getAssemblyId():
                     include = False
             if include:
                 results.append(obj)
@@ -465,14 +457,14 @@ class Backend(object):
         defined by the specified request.
         """
         referenceSet = self.getDataRepository().getReferenceSet(
-            request.referenceSetId)
+            request.reference_set_id)
         results = []
         for obj in referenceSet.getReferences():
             include = True
-            if request.md5checksum is not None:
+            if request.md5checksum:
                 if request.md5checksum != obj.getMd5Checksum():
                     include = False
-            if request.accession is not None:
+            if request.accession:
                 if request.accession not in obj.getSourceAccessions():
                     include = False
             if include:
@@ -484,7 +476,7 @@ class Backend(object):
         Returns a generator over the (variantSet, nextPageToken) pairs defined
         by the specified request.
         """
-        dataset = self.getDataRepository().getDataset(request.datasetId)
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
         return self._topLevelObjectGenerator(
             request, dataset.getNumVariantSets(),
             dataset.getVariantSetByIndex)
@@ -511,43 +503,43 @@ class Backend(object):
         Returns a generator over the (read, nextPageToken) pairs defined
         by the specified request
         """
-        if request.referenceId is None:
+        if not request.reference_id:
             raise exceptions.UnmappedReadsNotSupported()
-        if len(request.readGroupIds) < 1:
-            raise exceptions.BadRequestException(
-                "At least one readGroupId must be specified")
-        elif len(request.readGroupIds) == 1:
+        if len(request.read_group_ids) != 1:
+            raise exceptions.NotImplementedException(
+                "Exactly one read group id must be specified")
+        elif len(request.read_group_ids) == 1:
             return self._readsGeneratorSingle(request)
         else:
             return self._readsGeneratorMultiple(request)
 
     def _readsGeneratorSingle(self, request):
         compoundId = datamodel.ReadGroupCompoundId.parse(
-            request.readGroupIds[0])
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
+            request.read_group_ids[0])
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        readGroupSet = dataset.getReadGroupSet(compoundId.read_group_set_id)
         referenceSet = readGroupSet.getReferenceSet()
         if referenceSet is None:
             raise exceptions.ReadGroupSetNotMappedToReferenceSetException(
                     readGroupSet.getId())
-        reference = referenceSet.getReference(request.referenceId)
-        readGroup = readGroupSet.getReadGroup(compoundId.readGroupId)
+        reference = referenceSet.getReference(request.reference_id)
+        readGroup = readGroupSet.getReadGroup(compoundId.read_group_id)
         intervalIterator = ReadsIntervalIterator(
             request, readGroup, reference)
         return intervalIterator
 
     def _readsGeneratorMultiple(self, request):
         compoundId = datamodel.ReadGroupCompoundId.parse(
-            request.readGroupIds[0])
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
+            request.read_group_ids[0])
+        dataset = self.getDataRepository().getDataset(compoundId.data_set_id)
+        readGroupSet = dataset.getReadGroupSet(compoundId.read_group_set_id)
         referenceSet = readGroupSet.getReferenceSet()
         if referenceSet is None:
             raise exceptions.ReadGroupSetNotMappedToReferenceSetException(
                     readGroupSet.getId())
-        reference = referenceSet.getReference(request.referenceId)
+        reference = referenceSet.getReference(request.reference_id)
         readGroupIds = readGroupSet.getReadGroupIds()
-        if set(readGroupIds) != set(request.readGroupIds):
+        if set(readGroupIds) != set(request.read_group_ids):
             raise exceptions.BadRequestException(
                 "If multiple readGroupIds are specified, "
                 "they must be all of the readGroupIds in a ReadGroup")
@@ -560,9 +552,10 @@ class Backend(object):
         Returns a generator over the (variant, nextPageToken) pairs defined
         by the specified request.
         """
-        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        compoundId = datamodel.VariantSetCompoundId \
+            .parse(request.variant_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        variantSet = dataset.getVariantSet(compoundId.variant_set_id)
         intervalIterator = VariantsIntervalIterator(request, variantSet)
         return intervalIterator
 
@@ -625,11 +618,10 @@ class Backend(object):
         by the specified request.
         """
         compoundId = datamodel.VariantSetCompoundId.parse(
-            request.variantSetId)
-        dataset = self.getDataRepository().getDataset(
-            compoundId.datasetId)
-        variantSet = dataset.getVariantSet(compoundId.variantSetId)
-        if request.name is None:
+            request.variant_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        variantSet = dataset.getVariantSet(compoundId.variant_set_id)
+        if request.name == "":
             return self._topLevelObjectGenerator(
                 request, variantSet.getNumCallSets(),
                 variantSet.getCallSetByIndex)
@@ -664,7 +656,7 @@ class Backend(object):
         object into its protocol representation.
         """
         protocolElement = obj.toProtocolElement()
-        jsonString = protocolElement.toJsonString()
+        jsonString = protocol.toJson(protocolElement)
         return jsonString
 
     def runSearchRequest(
@@ -680,25 +672,21 @@ class Backend(object):
         """
         self.startProfile()
         try:
-            requestDict = json.loads(requestStr)
-        except ValueError:
+            request = protocol.fromJson(requestStr, requestClass)
+        except protocol.json_format.ParseError:
             raise exceptions.InvalidJsonException(requestStr)
-        self.validateRequest(requestDict, requestClass)
-        request = requestClass.fromJsonDict(requestDict)
-        if request.pageSize is None:
-            request.pageSize = self._defaultPageSize
-        if request.pageSize <= 0:
-            raise exceptions.BadPageSizeException(request.pageSize)
+        # TODO How do we detect when the page size is not set?
+        if request.page_size < 0:
+            raise exceptions.BadPageSizeException(request.page_size)
         responseBuilder = protocol.SearchResponseBuilder(
-            responseClass, request.pageSize, self._maxResponseLength)
+            responseClass, request.page_size, self._maxResponseLength)
         nextPageToken = None
         for obj, nextPageToken in objectGenerator(request):
             responseBuilder.addValue(obj)
             if responseBuilder.isFull():
                 break
         responseBuilder.setNextPageToken(nextPageToken)
-        responseString = responseBuilder.getJsonString()
-        self.validateResponse(responseString, responseClass)
+        responseString = responseBuilder.getSerializedResponse()
         self.endProfile()
         return responseString
 
@@ -709,13 +697,16 @@ class Backend(object):
         """
         compoundId = datamodel.ReferenceCompoundId.parse(id_)
         referenceSet = self.getDataRepository().getReferenceSet(
-            compoundId.referenceSetId)
+            compoundId.reference_set_id)
         reference = referenceSet.getReference(id_)
         start = _parseIntegerArgument(requestArgs, 'start', 0)
         end = _parseIntegerArgument(requestArgs, 'end', reference.getLength())
+        if end == 0:  # assume meant "get all"
+            end = reference.getLength()
         if 'pageToken' in requestArgs:
             pageTokenStr = requestArgs['pageToken']
-            start = _parsePageToken(pageTokenStr, 1)[0]
+            if pageTokenStr != "":
+                start = _parsePageToken(pageTokenStr, 1)[0]
 
         chunkSize = self._maxResponseLength
         nextPageToken = None
@@ -728,8 +719,9 @@ class Backend(object):
         response = protocol.ListReferenceBasesResponse()
         response.offset = start
         response.sequence = sequence
-        response.nextPageToken = nextPageToken
-        return response.toJsonString()
+        if nextPageToken is not None:
+            response.next_page_token = nextPageToken
+        return protocol.toJson(response)
 
     # Get requests.
 
@@ -738,8 +730,8 @@ class Backend(object):
         Returns a callset with the given id
         """
         compoundId = datamodel.CallSetCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        variantSet = dataset.getVariantSet(compoundId.variant_set_id)
         callSet = variantSet.getCallSet(id_)
         return self.runGetRequest(callSet)
 
@@ -748,13 +740,13 @@ class Backend(object):
         Returns a variant with the given id
         """
         compoundId = datamodel.VariantCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        variantSet = dataset.getVariantSet(compoundId.variant_set_id)
         gaVariant = variantSet.getVariant(compoundId)
         # TODO variant is a special case here, as it's returning a
         # protocol element rather than a datamodel object. We should
         # fix this for consistency.
-        jsonString = gaVariant.toJsonString()
+        jsonString = protocol.toJson(gaVariant)
         return jsonString
 
     def runGetFeature(self, id_):
@@ -774,7 +766,7 @@ class Backend(object):
         Returns a readGroupSet with the given id_
         """
         compoundId = datamodel.ReadGroupSetCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         readGroupSet = dataset.getReadGroupSet(id_)
         return self.runGetRequest(readGroupSet)
 
@@ -783,8 +775,8 @@ class Backend(object):
         Returns a read group with the given id_
         """
         compoundId = datamodel.ReadGroupCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        readGroupSet = dataset.getReadGroupSet(compoundId.read_group_set_id)
         readGroup = readGroupSet.getReadGroup(id_)
         return self.runGetRequest(readGroup)
 
@@ -794,7 +786,7 @@ class Backend(object):
         """
         compoundId = datamodel.ReferenceCompoundId.parse(id_)
         referenceSet = self.getDataRepository().getReferenceSet(
-            compoundId.referenceSetId)
+            compoundId.reference_set_id)
         reference = referenceSet.getReference(id_)
         return self.runGetRequest(reference)
 
@@ -810,7 +802,7 @@ class Backend(object):
         Runs a getVariantSet request for the specified ID.
         """
         compoundId = datamodel.VariantSetCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         variantSet = dataset.getVariantSet(id_)
         return self.runGetRequest(variantSet)
 

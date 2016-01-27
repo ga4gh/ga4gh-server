@@ -71,27 +71,27 @@ class TestSimulatedVariantSet(unittest.TestCase):
             variantCompoundId = datamodel.VariantCompoundId.parse(
                 simulatedVariant.id)
             self.assertEqual(
-                variantSetCompoundId.variantSetId,
+                variantSetCompoundId.variant_set_id,
                 self.simulatedVariantSet.getId())
             self.assertEqual(
-                variantSetCompoundId.variantSetId,
-                variantCompoundId.variantSetId)
+                variantSetCompoundId.variant_set_id,
+                variantCompoundId.variant_set_id)
             self.assertEqual(
-                variantCompoundId.referenceName, self.referenceName)
+                variantCompoundId.reference_name, self.referenceName)
             self.assertEqual(
                 variantCompoundId.start, str(simulatedVariant.start))
             self.assertEqual(
-                simulatedVariant.variantSetId,
+                simulatedVariant.variant_set_id,
                 self.simulatedVariantSet.getId())
             self.assertEqual(
-                simulatedVariant.referenceName, self.referenceName)
+                simulatedVariant.reference_name, self.referenceName)
             self.assertEqual(
                 simulatedVariant.created, simulatedVariant.updated)
             self.assertEqual(simulatedVariant.start, start)
             self.assertEqual(simulatedVariant.end, start + 1)
-            self.assertIn(simulatedVariant.referenceBases, self.bases)
+            self.assertIn(simulatedVariant.reference_bases, self.bases)
             self.assertIn(
-                simulatedVariant.alternateBases[0], self.bases)
+                simulatedVariant.alternate_bases[0], self.bases)
             self.assertEqual(len(simulatedVariant.calls), self.numCalls)
 
     def testConsistency(self):

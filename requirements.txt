@@ -36,7 +36,7 @@ pyjwkest==1.0.1
 # prefix due to a setuptools bug.
 Flask-Cors==2.0.1
 Flask==0.10.1
-avro==1.7.7
+protobuf==3.0.0b1.post1
 humanize==0.5.1
 pysam==0.9.0
 requests==2.7.0

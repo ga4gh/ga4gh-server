@@ -34,7 +34,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetNameMap = {}
         self._variantAnnotationSetIds = []
         self._variantAnnotationSetIdMap = {}
-        self._description = None
+        self._description = ""
 
     def addVariantSet(self, variantSet):
         """

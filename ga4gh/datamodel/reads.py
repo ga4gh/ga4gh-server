@@ -15,6 +15,7 @@ import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.pb as pb
 
 
 def parseMalformedBamHeader(headerDict):
@@ -43,15 +44,15 @@ class SamCigar(object):
     # see http://pysam.readthedocs.org/en/latest/api.html
     # #pysam.AlignedSegment.cigartuples
     cigarStrings = [
-        protocol.CigarOperation.ALIGNMENT_MATCH,
-        protocol.CigarOperation.INSERT,
-        protocol.CigarOperation.DELETE,
-        protocol.CigarOperation.SKIP,
-        protocol.CigarOperation.CLIP_SOFT,
-        protocol.CigarOperation.CLIP_HARD,
-        protocol.CigarOperation.PAD,
-        protocol.CigarOperation.SEQUENCE_MATCH,
-        protocol.CigarOperation.SEQUENCE_MISMATCH,
+        protocol.CigarUnit.ALIGNMENT_MATCH,
+        protocol.CigarUnit.INSERT,
+        protocol.CigarUnit.DELETE,
+        protocol.CigarUnit.SKIP,
+        protocol.CigarUnit.CLIP_SOFT,
+        protocol.CigarUnit.CLIP_HARD,
+        protocol.CigarUnit.PAD,
+        protocol.CigarUnit.SEQUENCE_MATCH,
+        protocol.CigarUnit.SEQUENCE_MISMATCH,
     ]
 
     @classmethod
@@ -259,15 +260,15 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         """
         readGroupSet = protocol.ReadGroupSet()
         readGroupSet.id = self.getId()
-        readGroupSet.readGroups = [
-            readGroup.toProtocolElement()
-            for readGroup in self.getReadGroups()]
+        readGroupSet.read_groups.extend(
+            [readGroup.toProtocolElement()
+                for readGroup in self.getReadGroups()]
+        )
         readGroupSet.name = self.getLocalId()
-        readGroupSet.datasetId = self.getParentContainer().getId()
-        stats = protocol.ReadStats()
-        stats.alignedReadCount = self.getNumAlignedReads()
-        stats.unalignedReadCount = self.getNumUnalignedReads()
-        readGroupSet.stats = stats
+        readGroupSet.dataset_id = self.getParentContainer().getId()
+        stats = readGroupSet.stats
+        stats.aligned_read_count = pb.int(self.getNumAlignedReads())
+        stats.unaligned_read_count = pb.int(self.getNumUnalignedReads())
         return readGroupSet
 
     def getNumAlignedReads(self):
@@ -401,12 +402,14 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
         if 'PG' in samFile.header:
             htslibPrograms = samFile.header['PG']
             for htslibProgram in htslibPrograms:
-                program = protocol.Program()
+                program = protocol.ReadGroup.Program()
                 program.id = htslibProgram['ID']
-                program.commandLine = htslibProgram.get('CL', None)
-                program.name = htslibProgram.get('PN', None)
-                program.prevProgramId = htslibProgram.get('PP', None)
-                program.version = htslibProgram.get('VN', None)
+                program.command_line = htslibProgram.get(
+                    'CL', pb.DEFAULT_STRING)
+                program.name = htslibProgram.get('PN', pb.DEFAULT_STRING)
+                program.prev_program_id = htslibProgram.get(
+                    'PP', pb.DEFAULT_STRING)
+                program.version = htslibProgram.get('VN', pb.DEFAULT_STRING)
                 programs.append(program)
         self._programs = programs
 
@@ -461,42 +464,28 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.created = self._creationTime
         readGroup.updated = self._updateTime
         dataset = self.getParentContainer().getParentContainer()
-        readGroup.datasetId = dataset.getId()
-        readGroup.description = None
-        readGroup.info = {}
+        readGroup.dataset_id = dataset.getId()
         readGroup.name = self.getLocalId()
-        readGroup.predictedInsertSize = self.getPredictedInsertSize()
-        readGroup.programs = []
+        readGroup.predicted_insert_size = pb.int(self.getPredictedInsertSize())
         referenceSet = self._parentContainer.getReferenceSet()
-        readGroup.referenceSetId = None
-        readGroup.sampleId = self.getSampleId()
+        readGroup.sample_id = pb.string(self.getSampleId())
         if referenceSet is not None:
-            readGroup.referenceSetId = referenceSet.getId()
-        stats = protocol.ReadStats()
-        stats.alignedReadCount = self.getNumAlignedReads()
-        stats.unalignedReadCount = self.getNumUnalignedReads()
-        stats.baseCount = None  # TODO requires iterating through all reads
-        readGroup.stats = stats
-        readGroup.programs = self.getPrograms()
-        readGroup.description = self.getDescription()
-        experiment = protocol.Experiment()
+            readGroup.reference_set_id = referenceSet.getId()
+        stats = readGroup.stats
+        stats.aligned_read_count = self.getNumAlignedReads()
+        stats.unaligned_read_count = self.getNumUnalignedReads()
+        readGroup.programs.extend(self.getPrograms())
+        readGroup.description = pb.string(self.getDescription())
+        experiment = readGroup.experiment
         experiment.id = self.getExperimentId()
-        experiment.instrumentModel = self.getInstrumentModel()
-        experiment.sequencingCenter = self.getSequencingCenter()
-        experiment.description = self.getExperimentDescription()
-        experiment.info = {}
-        experiment.instrumentDataFile = None
-        experiment.library = self.getLibrary()
-        experiment.libraryLayout = None
-        experiment.molecule = None
-        experiment.name = None
-        experiment.platformUnit = self.getPlatformUnit()
-        experiment.createDateTime = self._iso8601
-        experiment.updateDateTime = self._iso8601
-        experiment.runTime = self.getRunTime()
-        experiment.selection = None
-        experiment.strategy = None
-        readGroup.experiment = experiment
+        experiment.instrument_model = pb.string(self.getInstrumentModel())
+        experiment.sequencing_center = pb.string(self.getSequencingCenter())
+        experiment.description = pb.string(self.getExperimentDescription())
+        experiment.library = pb.string(self.getLibrary())
+        experiment.platform_unit = pb.string(self.getPlatformUnit())
+        experiment.message_create_time = self._iso8601
+        experiment.message_update_time = self._iso8601
+        experiment.run_time = pb.string(self.getRunTime())
         return readGroup
 
     def getNumAlignedReads(self):
@@ -603,35 +592,33 @@ class SimulatedReadGroup(AbstractReadGroup):
         # TODO fill out a bit more
         rng = random.Random(seed)
         alignment = protocol.ReadAlignment()
-        alignment.fragmentLength = rng.randint(10, 100)
-        alignment.alignedQuality = []
-        alignment.alignedSequence = ""
-        for i in range(alignment.fragmentLength):
+        alignment.fragment_length = rng.randint(10, 100)
+        alignment.aligned_sequence = ""
+        for i in range(alignment.fragment_length):
             # TODO: are these reasonable quality values?
-            alignment.alignedQuality.append(rng.randint(1, 20))
-            alignment.alignedSequence += rng.choice("ACGT")
-        alignment.fragmentId = "frag{}".format(seed)
-        gaPosition = protocol.Position()
-        gaPosition.position = 0
-        gaPosition.referenceName = "NotImplemented"
-        gaPosition.strand = protocol.Strand.POS_STRAND
-        gaLinearAlignment = protocol.LinearAlignment()
-        gaLinearAlignment.position = gaPosition
-        alignment.alignment = gaLinearAlignment
-        alignment.duplicateFragment = False
-        alignment.failedVendorQualityChecks = False
+            alignment.aligned_quality.append(rng.randint(1, 20))
+            alignment.aligned_sequence += rng.choice("ACGT")
+        alignment.fragment_id = "frag{}".format(seed)
 
-        alignment.fragmentName = "{}$simulated{}".format(
+        gaLinearAlignment = alignment.alignment
+        gaPosition = gaLinearAlignment.position
+        gaPosition.position = 0
+        gaPosition.reference_name = "NotImplemented"
+        gaPosition.strand = protocol.POS_STRAND
+        alignment.duplicate_fragment = False
+        alignment.failed_vendor_quality_checks = False
+
+        alignment.fragment_name = "{}$simulated{}".format(
             self.getLocalId(), i)
-        alignment.info = {}
-        alignment.nextMatePosition = None
-        alignment.numberReads = None
-        alignment.improperPlacement = False
-        alignment.readGroupId = self.getId()
-        alignment.readNumber = None
-        alignment.secondaryAlignment = False
-        alignment.supplementaryAlignment = False
-        alignment.id = self._parentContainer.getReadAlignmentId(alignment)
+        alignment.info.clear()
+        alignment.next_mate_position.Clear()
+        alignment.number_reads = 0
+        alignment.proper_placement = False
+        alignment.read_group_id = self.getId()
+        alignment.read_number = -1
+        alignment.secondary_alignment = False
+        alignment.supplementary_alignment = False
+        alignment.id = self.getReadAlignmentId(alignment)
         return alignment
 
     def getNumAlignedReads(self):

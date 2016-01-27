@@ -280,8 +280,8 @@ class ReferenceSetCompoundId(CompoundId):
     """
     The compound ID for reference sets.
     """
-    fields = ['referenceSet']
-    containerIds = [('referenceSetId', 0)]
+    fields = ['reference_set']
+    containerIds = [('reference_set_id', 0)]
 
 
 class ReferenceCompoundId(ReferenceSetCompoundId):
@@ -296,7 +296,7 @@ class DatasetCompoundId(CompoundId):
     The compound id for a data set
     """
     fields = ['dataset']
-    containerIds = [('datasetId', 0)]
+    containerIds = [('dataset_id', 0)]
 
 
 class VariantSetCompoundId(DatasetCompoundId):
@@ -304,8 +304,8 @@ class VariantSetCompoundId(DatasetCompoundId):
     The compound id for a variant set
     """
     fields = DatasetCompoundId.fields + [
-        CompoundId.differentiatorFieldName, 'variantSet']
-    containerIds = DatasetCompoundId.containerIds + [('variantSetId', 2)]
+        CompoundId.differentiatorFieldName, 'variant_set']
+    containerIds = DatasetCompoundId.containerIds + [('variant_set_id', 2)]
     differentiator = 'vs'
 
 
@@ -313,9 +313,9 @@ class VariantAnnotationSetCompoundId(VariantSetCompoundId):
     """
     The compound id for a variant annotation set
     """
-    fields = VariantSetCompoundId.fields + ['variantAnnotationSet']
+    fields = VariantSetCompoundId.fields + ['variant_annotation_set']
     containerIds = VariantSetCompoundId.containerIds + [
-        ('variantAnnotationSetId', 3)]
+        ('variant_annotation_set_id', 3)]
 
 
 class VariantSetMetadataCompoundId(VariantSetCompoundId):
@@ -324,14 +324,14 @@ class VariantSetMetadataCompoundId(VariantSetCompoundId):
     """
     fields = VariantSetCompoundId.fields + ['key']
     containerIds = VariantSetCompoundId.containerIds + [
-        ('variantSetMetadataId', 2)]
+        ('variant_set_metadata_id', 2)]
 
 
 class VariantCompoundId(VariantSetCompoundId):
     """
     The compound id for a variant
     """
-    fields = VariantSetCompoundId.fields + ['referenceName', 'start', 'md5']
+    fields = VariantSetCompoundId.fields + ['reference_name', 'start', 'md5']
 
 
 class VariantAnnotationCompoundId(VariantAnnotationSetCompoundId):
@@ -339,7 +339,7 @@ class VariantAnnotationCompoundId(VariantAnnotationSetCompoundId):
     The compound id for a variant annotaiton
     """
     fields = VariantAnnotationSetCompoundId.fields + [
-        'referenceName', 'start', 'md5']
+        'reference_name', 'start', 'md5']
 
 
 class VariantAnnotationSetAnalysisCompoundId(VariantAnnotationSetCompoundId):
@@ -360,8 +360,8 @@ class FeatureSetCompoundId(DatasetCompoundId):
     """
     The compound id for a feature set
     """
-    fields = DatasetCompoundId.fields + ['featureSet']
-    containerIds = DatasetCompoundId.containerIds + [('featureSetId', 1)]
+    fields = DatasetCompoundId.fields + ['feature_set']
+    containerIds = DatasetCompoundId.containerIds + [('feature_set_id', 1)]
 
 
 class FeatureCompoundId(FeatureSetCompoundId):
@@ -376,8 +376,8 @@ class ReadGroupSetCompoundId(DatasetCompoundId):
     The compound id for a read group set
     """
     fields = DatasetCompoundId.fields + [
-        CompoundId.differentiatorFieldName, 'readGroupSet']
-    containerIds = DatasetCompoundId.containerIds + [('readGroupSetId', 2)]
+        CompoundId.differentiatorFieldName, 'read_group_set']
+    containerIds = DatasetCompoundId.containerIds + [('read_group_set_id', 2)]
     differentiator = 'rgs'
 
 
@@ -385,8 +385,8 @@ class ReadGroupCompoundId(ReadGroupSetCompoundId):
     """
     The compound id for a read group
     """
-    fields = ReadGroupSetCompoundId.fields + ['readGroup']
-    containerIds = ReadGroupSetCompoundId.containerIds + [('readGroupId', 3)]
+    fields = ReadGroupSetCompoundId.fields + ['read_group']
+    containerIds = ReadGroupSetCompoundId.containerIds + [('read_group_id', 3)]
 
 
 class ExperimentCompoundId(ReadGroupCompoundId):
@@ -394,16 +394,16 @@ class ExperimentCompoundId(ReadGroupCompoundId):
     The compound id for an experiment
     """
     fields = ReadGroupCompoundId.fields + ['experiment']
-    containerIds = ReadGroupCompoundId.containerIds + [('experimentId', 3)]
+    containerIds = ReadGroupCompoundId.containerIds + [('experiment_id', 3)]
 
 
 class ReadAlignmentCompoundId(ReadGroupSetCompoundId):
     """
     The compound id for a read alignment
     """
-    fields = ReadGroupSetCompoundId.fields + ['readAlignment']
+    fields = ReadGroupSetCompoundId.fields + ['read_alignment']
     containerIds = ReadGroupSetCompoundId.containerIds + \
-        [('readAlignmentId', 2)]
+        [('read_alignment_id', 2)]
 
 
 class DatamodelObject(object):
