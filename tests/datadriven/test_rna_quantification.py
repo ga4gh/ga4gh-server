@@ -20,7 +20,7 @@ import ga4gh.exceptions as exceptions
 # switched over to use the parsers
 
 
-def testReferenceSets():
+def testRnaQuantification():
     testDataDir = "tests/data/datasets/dataset1/rnaQuant"
     for test in datadriven.makeTests(testDataDir, RnaQuantificationTest):
         yield test

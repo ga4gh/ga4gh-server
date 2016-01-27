@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import sqlite3
 
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
@@ -158,7 +159,8 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(AbstractRNAQuantification, self).__init__(parentContainer,
                                                         localId)
-        self._rnaQuantificationId = localId
+        # self._rnaQuantificationId = localId
+        self._name = localId
         self._expressionLevelIdMap = {}
         self._expressionLevelIds = []
         self._featureGroupNames = []
@@ -350,6 +352,16 @@ class RNASeqResult(AbstractRNAQuantification):
         if id_ not in self._featureGroupIdMap.keys():
             raise exceptions.FeatureGroupNotFoundException(id_)
         return self._featureGroupIdMap[id_]
+
+
+class SqliteRNASeqResult(AbstractRNAQuantification):
+    """
+    An RNA Quantification stored as a SQLite DB.
+    """
+    def __init__(self, parentContainer, localId,
+                 rnaQuantSqlFile="ga4gh-rnaQuant.db"):
+        super(SimulatedRNASeqResult, self).__init__(parentContainer, localId)
+        self._dbConn = sqlite3.connect(rnaQuantSqlFile)
 
 
 class SimulatedRNASeqResult(AbstractRNAQuantification):
