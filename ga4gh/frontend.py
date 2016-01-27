@@ -623,6 +623,14 @@ def getDataset(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetDataset)
 
+
+@DisplayedRoute(
+    '/variantannotationsets/<no(search):id>',
+    pathDisplay='/variantannotationsets/<id>')
+def getVariantAnnotationSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetVariantAnnotationSet)
+
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html
 
