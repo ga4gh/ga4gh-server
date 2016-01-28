@@ -406,10 +406,10 @@ class AbstractFileDownloader(object):
         # Assemble the metadata.
         metadata = {
             "md5checksum": getReferenceChecksum(compressedFileName),
-            "sourceUri": None,
+            "sourceUri": "TODO",
             "ncbiTaxonId": 9606,
             "isDerived": False,
-            "sourceDivergence": None,
+            "sourceDivergence": 0.0,
             "sourceAccessions": [accession + ".subset"],
         }
         metadataFilename = "{}.json".format(chromosome)

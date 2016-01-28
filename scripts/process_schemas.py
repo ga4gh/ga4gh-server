@@ -108,7 +108,7 @@ class ProtobufGenerator(object):
 
 def main():
     parser = argparse.ArgumentParser(
-            description="Script to process GA4GH Protocol buffer schemas")
+        description="Script to process GA4GH Protocol buffer schemas")
     parser.add_argument(
         "version", help="Version number of the schema we're compiling")
     parser.add_argument(
