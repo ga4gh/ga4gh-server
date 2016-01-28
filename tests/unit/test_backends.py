@@ -147,7 +147,7 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertRaises(IndexError, self._dataRepo.getReferenceSetByIndex, 1)
 
 
-class TestFileSystemBackend(TestAbstractBackend):
+class TestFileSystemBackend(unittest.TestCase):
     """
     Tests proper initialization of the filesystem backend using indexed
     files in the tests/data directory.
