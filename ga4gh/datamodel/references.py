@@ -15,6 +15,7 @@ import pysam
 
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
+import ga4gh.pb as pb
 import ga4gh.exceptions as exceptions
 
 
@@ -155,15 +156,15 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         Returns the GA4GH protocol representation of this ReferenceSet.
         """
         ret = protocol.ReferenceSet()
-        ret.assemblyId = self.getAssemblyId()
+        ret.assembly_id = self.getAssemblyId()
         ret.description = self.getDescription()
         ret.id = self.getId()
-        ret.isDerived = self.getIsDerived()
+        ret.is_derived = self.getIsDerived()
         ret.md5checksum = self.getMd5Checksum()
-        ret.ncbiTaxonId = self.getNcbiTaxonId()
-        ret.referenceIds = self._referenceIds
-        ret.sourceAccessions = self.getSourceAccessions()
-        ret.sourceURI = self.getSourceUri()
+        ret.ncbi_taxon_id = self.getNcbiTaxonId()
+        ret.reference_ids.extend(self._referenceIds)
+        ret.source_accessions.extend(self.getSourceAccessions())
+        ret.source_uri = self.getSourceUri()
         ret.name = self.getLocalId()
         return ret
 
@@ -181,11 +182,11 @@ class AbstractReference(datamodel.DatamodelObject):
         super(AbstractReference, self).__init__(parentContainer, localId)
         self._length = -1
         self._md5checksum = ""
-        self._sourceUri = None
+        self._sourceUri = ""
         self._sourceAccessions = []
         self._isDerived = False
-        self._sourceDivergence = None
-        self._ncbiTaxonId = None
+        self._sourceDivergence = pb.DEFAULT_INT
+        self._ncbiTaxonId = ""
 
     def getLength(self):
         """
@@ -259,14 +260,14 @@ class AbstractReference(datamodel.DatamodelObject):
         """
         reference = protocol.Reference()
         reference.id = self.getId()
-        reference.isDerived = self.getIsDerived()
+        reference.is_derived = self.getIsDerived()
         reference.length = self.getLength()
         reference.md5checksum = self.getMd5Checksum()
         reference.name = self.getName()
-        reference.ncbiTaxonId = self.getNcbiTaxonId()
-        reference.sourceAccessions = self.getSourceAccessions()
-        reference.sourceDivergence = self.getSourceDivergence()
-        reference.sourceURI = self.getSourceUri()
+        reference.ncbi_taxon_id = self.getNcbiTaxonId()
+        reference.source_accessions.extend(self.getSourceAccessions())
+        reference.source_divergence = pb.int(self.getSourceDivergence())
+        reference.source_uri = self.getSourceUri()
         return reference
 
     def checkQueryRange(self, start, end):
@@ -276,7 +277,7 @@ class AbstractReference(datamodel.DatamodelObject):
         """
         condition = (
             (start < 0 or end > self.getLength()) or
-            start > end)
+            start > end or start == end)
         if condition:
             raise exceptions.ReferenceRangeErrorException(
                 self.getId(), start, end)

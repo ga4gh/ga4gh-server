@@ -15,6 +15,7 @@ import unittest.suite
 
 import requests
 
+import ga4gh.protocol as protocol
 import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.converters as converters
@@ -139,7 +140,7 @@ class FormattedOutputRunner(AbstractQueryRunner):
         line.
         """
         for gaObject in gaObjects:
-            print(gaObject.toJsonString())
+            print(protocol.toJson(gaObject))
 
     def _textOutput(self, gaObjects):
         """
@@ -207,7 +208,7 @@ class AbstractSearchRunner(FormattedOutputRunner):
                 datasetId=dataset.id)
             for readGroupSet in iterator:
                 readGroupSet = self._client.getReadGroupSet(readGroupSet.id)
-                for readGroup in readGroupSet.readGroups:
+                for readGroup in readGroupSet.read_groups:
                     yield readGroup.id
 
     def getAllReferenceSets(self):
@@ -344,16 +345,16 @@ class VariantFormatterMixin(object):
         """
         for variant in gaObjects:
             print(
-                variant.id, variant.variantSetId, variant.names,
-                variant.referenceName, variant.start, variant.end,
-                variant.referenceBases, variant.alternateBases,
+                variant.id, variant.variant_set_id, variant.names,
+                variant.reference_name, variant.start, variant.end,
+                variant.reference_bases, variant.alternate_bases,
                 sep="\t", end="\t")
             for key, value in variant.info.items():
                 print(key, value, sep="=", end=";")
             print("\t", end="")
             for c in variant.calls:
                 print(
-                    c.callSetId, c.genotype, c.genotypeLikelihood, c.info,
+                    c.call_set_id, c.genotype, c.genotype_likelihood, c.info,
                     c.phaseset, sep=":", end="\t")
             print()
 
@@ -412,7 +413,7 @@ class SearchReadsRunner(AbstractSearchRunner):
             referenceId = self._referenceId
         if referenceId is None:
             rg = self._client.getReadGroup(readGroupId=referenceGroupId)
-            iterator = self._client.searchReferences(rg.referenceSetId)
+            iterator = self._client.searchReferences(rg.reference_set_id)
             for reference in iterator:
                 self._run(referenceGroupId, reference.id)
         else:

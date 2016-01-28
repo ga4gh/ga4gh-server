@@ -5,14 +5,49 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys
+import datetime
 import json
 import inspect
-import datetime
-import itertools
-from cStringIO import StringIO
 
-import avro.io
+import google.protobuf.json_format as json_format
+import google.protobuf.message as message
+
+import ga4gh.pb as pb
+
+from proto.ga4gh.common_pb2 import *  # noqa
+from proto.ga4gh.metadata_pb2 import *  # noqa
+from proto.ga4gh.read_service_pb2 import *  # noqa
+from proto.ga4gh.reads_pb2 import *  # noqa
+from proto.ga4gh.reference_service_pb2 import *  # noqa
+from proto.ga4gh.references_pb2 import *  # noqa
+from proto.ga4gh.variant_service_pb2 import *  # noqa
+from proto.ga4gh.variants_pb2 import *  # noqa
+import proto.google.protobuf.struct_pb2 as struct_pb2
+
+import proto
+
+version = proto.version
+
+# A map of response objects to the name of the attribute used to
+# store the values returned.
+_valueListNameMap = {
+    SearchVariantSetsResponse: "variant_sets",
+    SearchVariantsResponse: "variants",
+    SearchDatasetsResponse: "datasets",
+    SearchReferenceSetsResponse: "reference_sets",
+    SearchReferencesResponse: "references",
+    SearchReadGroupSetsResponse: "read_group_sets",
+    SearchReadsResponse: "alignments",
+    SearchCallSetsResponse: "call_sets",
+}
+
+
+def getValueListName(protocolResponseClass):
+    """
+    Returns the name of the attribute in the specified protocol class
+    that is used to hold the values in a search response.
+    """
+    return _valueListNameMap[protocolResponseClass]
 
 
 def convertDatetime(t):
@@ -26,29 +61,73 @@ def convertDatetime(t):
     return int(millis)
 
 
+def getValueFromValue(value):
+    """
+    Extract the currently set field from a Value structure
+    """
+    if type(value) != struct_pb2.Value:
+        raise TypeError("Expected a Value, but got {}".format(type(value)))
+    if value.WhichOneof("kind") is None:
+        raise AttributeError("Nothing set for {}".format(value))
+    return getattr(value, value.WhichOneof("kind"))
+
+
+def toJson(protoObject, indent=None):
+    """
+    Serialises a protobuf object as json
+    """
+    # Using the internal method because this way we can reformat the JSON
+    js = json_format._MessageToJsonObject(protoObject, True)
+    return json.dumps(js, indent=indent)
+
+
+def toJsonDict(protoObject):
+    """
+    Converts a protobuf object to the raw attributes
+    i.e. a key/value dictionary
+    """
+    return json.loads(toJson(protoObject))
+
+
+def fromJson(json, protoClass):
+    """
+    Deserialise json into an instance of protobuf class
+    """
+    return json_format.Parse(json, protoClass())
+
+
+def validate(json, protoClass):
+    """
+    Check that json represents data that could be used to make
+    a given protobuf class
+    """
+    try:
+        fromJson(json, protoClass)
+        # The json conversion automatically validates
+        return True
+    except Exception:
+        return False
+
+
 class SearchResponseBuilder(object):
     """
     A class to allow sequential building of SearchResponse objects.
-    This is a performance tweak which allows us to substantially
-    reduce the number of live objects we require in the server when
-    we are building responses, as we write the JSON representation
-    of ProtocolElements directly to a buffer.
     """
     def __init__(self, responseClass, pageSize, maxResponseLength):
         """
         Allocates a new SearchResponseBuilder for the specified
-        subclass of SearchResponse, with the specified
-        user-requested pageSize and the system mandated
+        responseClass, user-requested pageSize and the system mandated
         maxResponseLength (in bytes). The maxResponseLength is an
-        approximate limit on the overall length of the JSON
+        approximate limit on the overall length of the serialised
         response.
         """
         self._responseClass = responseClass
         self._pageSize = pageSize
         self._maxResponseLength = maxResponseLength
-        self._valueListBuffer = StringIO()
         self._numElements = 0
         self._nextPageToken = None
+        self._protoObject = responseClass()
+        self._valueListName = getValueListName(responseClass)
 
     def getPageSize(self):
         """
@@ -85,10 +164,17 @@ class SearchResponseBuilder(object):
         Appends the specified protocolElement to the value list for this
         response.
         """
-        if self._numElements > 0:
-            self._valueListBuffer.write(", ")
         self._numElements += 1
-        self._valueListBuffer.write(protocolElement.toJsonString())
+        attr = getattr(self._protoObject, self._valueListName)
+        obj = attr.add()
+        obj.CopyFrom(protocolElement)
+
+    def getResponseLength(self):
+        """
+        As the response form is JSON, we need to convert to JSON before getting
+        the length. The length of the _protoObject itself would be incorrect
+        """
+        return len(toJson(self._protoObject))
 
     def isFull(self):
         """
@@ -96,149 +182,30 @@ class SearchResponseBuilder(object):
         The buffer is full if either (1) the number of items in the value
         list is >= pageSize or (2) the total length of the serialised
         elements in the page is >= maxResponseLength.
-        """
-        return (
-            self._numElements >= self._pageSize or
-            self._valueListBuffer.tell() >= self._maxResponseLength)
 
-    def getJsonString(self):
+        If page_size or max_response_length were not set in the request
+        then they're not checked.
+        """
+
+        return (
+            (self._pageSize > 0 and self._numElements >= self._pageSize) or
+            # We check _maxResponseLength first as getResponseLength is
+            # expensive and Python lazy evaluates "and" operations
+            (self._maxResponseLength > 0 and
+             self.getResponseLength() >= self._maxResponseLength)
+        )
+
+    def getSerializedResponse(self):
         """
         Returns a string version of the SearchResponse that has
-        been built by this SearchResponseBuilder. This is a fully
-        formed JSON document, and consists of the pageToken and
-        the value list.
+        been built by this SearchResponseBuilder.
         """
-        pageListString = "[{}]".format(self._valueListBuffer.getvalue())
-        return '{{"nextPageToken": {},"{}": {}}}'.format(
-            json.dumps(self._nextPageToken),
-            self._responseClass.getValueListName(), pageListString)
+        self._protoObject.next_page_token = pb.string(self._nextPageToken)
+        s = toJson(self._protoObject)
+        return s
 
 
-class ProtocolElementEncoder(json.JSONEncoder):
-    """
-    Class responsible for encoding ProtocolElements as JSON.
-    """
-    def default(self, obj):
-        return {a: getattr(obj, a) for a in obj.__slots__}
-
-
-class ProtocolElement(object):
-    """
-    Superclass of GA4GH protocol elements. These elements are in one-to-one
-    correspondence with the Avro definitions, and provide the basic elements
-    of the on-the-wire protocol.
-    """
-    def __str__(self):
-        return "{0}({1})".format(self.__class__.__name__, self.toJsonString())
-
-    def __eq__(self, other):
-        """
-        Returns True if all fields in this protocol element are equal to the
-        fields in the specified protocol element.
-        """
-        if type(other) != type(self):
-            return False
-
-        fieldNames = itertools.imap(lambda f: f.name, self.schema.fields)
-        return all(getattr(self, k) == getattr(other, k) for k in fieldNames)
-
-    def __ne__(self, other):
-        return not self == other
-
-    def toJsonString(self):
-        """
-        Returns a JSON encoded string representation of this ProtocolElement.
-        """
-        return json.dumps(self, cls=ProtocolElementEncoder)
-
-    def toJsonDict(self):
-        """
-        Returns a JSON dictionary representation of this ProtocolElement.
-        """
-        out = {}
-        for field in self.schema.fields:
-            val = getattr(self, field.name)
-            if self.isEmbeddedType(field.name):
-                if isinstance(val, list):
-                    out[field.name] = list(el.toJsonDict() for el in val)
-                elif val is None:
-                    out[field.name] = None
-                else:
-                    out[field.name] = val.toJsonDict()
-            elif isinstance(val, list):
-                out[field.name] = list(val)
-            else:
-                out[field.name] = val
-        return out
-
-    @classmethod
-    def validate(cls, jsonDict):
-        """
-        Validates the specified JSON dictionary to determine if it is an
-        instance of this element's schema.
-        """
-        return avro.io.validate(cls.schema, jsonDict)
-
-    @classmethod
-    def fromJsonString(cls, jsonStr):
-        """
-        Returns a decoded ProtocolElement from the specified JSON string.
-        """
-        jsonDict = json.loads(jsonStr)
-        return cls.fromJsonDict(jsonDict)
-
-    @classmethod
-    def fromJsonDict(cls, jsonDict):
-        """
-        Returns a decoded ProtocolElement from the specified JSON dictionary.
-        """
-        if jsonDict is None:
-            raise ValueError("Required values not set in {0}".format(cls))
-
-        instance = cls()
-        for field in cls.schema.fields:
-            instanceVal = field.default
-            if field.name in jsonDict:
-                val = jsonDict[field.name]
-                if cls.isEmbeddedType(field.name):
-                    instanceVal = cls._decodeEmbedded(field, val)
-                else:
-                    instanceVal = val
-            setattr(instance, field.name, instanceVal)
-        return instance
-
-    @classmethod
-    def _decodeEmbedded(cls, field, val):
-        if val is None:
-            return None
-
-        embeddedType = cls.getEmbeddedType(field.name)
-        if isinstance(field.type, avro.schema.ArraySchema):
-            return list(embeddedType.fromJsonDict(elem) for elem in val)
-        else:
-            return embeddedType.fromJsonDict(val)
-
-
-class SearchRequest(ProtocolElement):
-    """
-    The superclass of all SearchRequest classes in the protocol.
-    """
-
-
-class SearchResponse(ProtocolElement):
-    """
-    The superclass of all SearchResponse classes in the protocol.
-    """
-    @classmethod
-    def getValueListName(cls):
-        """
-        Returns the name of the list used to store the values held
-        in a page of results.
-        """
-        return cls._valueListName
-
-
-def getProtocolClasses(superclass=ProtocolElement):
+def getProtocolClasses(superclass=message.Message):
     """
     Returns all the protocol classes that are subclasses of the
     specified superclass. Only 'leaf' classes are returned,
@@ -248,7 +215,7 @@ def getProtocolClasses(superclass=ProtocolElement):
     # so we can filter them out when we're getting the protocol
     # classes.
     superclasses = set([
-        ProtocolElement, SearchRequest, SearchResponse])
+        message.Message])
     thisModule = sys.modules[__name__]
     subclasses = []
     for name, class_ in inspect.getmembers(thisModule):
@@ -258,7 +225,28 @@ def getProtocolClasses(superclass=ProtocolElement):
             subclasses.append(class_)
     return subclasses
 
-
-# We can now import the definitions of the protocol elements from the
-# generated file.
-from _protocol_definitions import *  # NOQA
+postMethods = \
+    [('/callsets/search',
+      SearchCallSetsRequest,
+      SearchCallSetsResponse),
+     ('/datasets/search',
+      SearchDatasetsRequest,
+      SearchDatasetsResponse),
+     ('/readgroupsets/search',
+      SearchReadGroupSetsRequest,
+      SearchReadGroupSetsResponse),
+     ('/reads/search',
+      SearchReadsRequest,
+      SearchReadsResponse),
+     ('/references/search',
+      SearchReferencesRequest,
+      SearchReferencesResponse),
+     ('/referencesets/search',
+      SearchReferenceSetsRequest,
+      SearchReferenceSetsResponse),
+     ('/variants/search',
+      SearchVariantsRequest,
+      SearchVariantsResponse),
+     ('/variantsets/search',
+      SearchVariantSetsRequest,
+      SearchVariantSetsResponse)]

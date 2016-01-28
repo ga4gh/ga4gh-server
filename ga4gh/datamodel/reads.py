@@ -15,6 +15,7 @@ import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.pb as pb
 
 
 def parseMalformedBamHeader(headerDict):
@@ -40,15 +41,15 @@ class SamCigar(object):
     # see http://pysam.readthedocs.org/en/latest/api.html
     # #pysam.AlignedSegment.cigartuples
     cigarStrings = [
-        protocol.CigarOperation.ALIGNMENT_MATCH,
-        protocol.CigarOperation.INSERT,
-        protocol.CigarOperation.DELETE,
-        protocol.CigarOperation.SKIP,
-        protocol.CigarOperation.CLIP_SOFT,
-        protocol.CigarOperation.CLIP_HARD,
-        protocol.CigarOperation.PAD,
-        protocol.CigarOperation.SEQUENCE_MATCH,
-        protocol.CigarOperation.SEQUENCE_MISMATCH,
+        protocol.CigarUnit.ALIGNMENT_MATCH,
+        protocol.CigarUnit.INSERT,
+        protocol.CigarUnit.DELETE,
+        protocol.CigarUnit.SKIP,
+        protocol.CigarUnit.CLIP_SOFT,
+        protocol.CigarUnit.CLIP_HARD,
+        protocol.CigarUnit.PAD,
+        protocol.CigarUnit.SEQUENCE_MATCH,
+        protocol.CigarUnit.SEQUENCE_MISMATCH,
     ]
 
     @classmethod
@@ -135,15 +136,15 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         """
         readGroupSet = protocol.ReadGroupSet()
         readGroupSet.id = self.getId()
-        readGroupSet.readGroups = [
-            readGroup.toProtocolElement()
-            for readGroup in self.getReadGroups()]
+        readGroupSet.read_groups.extend(
+            [readGroup.toProtocolElement()
+                for readGroup in self.getReadGroups()]
+        )
         readGroupSet.name = self.getLocalId()
-        readGroupSet.datasetId = self.getParentContainer().getId()
-        stats = protocol.ReadStats()
-        stats.alignedReadCount = self.getNumAlignedReads()
-        stats.unalignedReadCount = self.getNumUnalignedReads()
-        readGroupSet.stats = stats
+        readGroupSet.dataset_id = self.getParentContainer().getId()
+        stats = readGroupSet.stats
+        stats.aligned_read_count = pb.int(self.getNumAlignedReads())
+        stats.unaligned_read_count = pb.int(self.getNumUnalignedReads())
         return readGroupSet
 
     def getNumAlignedReads(self):
@@ -239,12 +240,14 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
         if 'PG' in samFile.header:
             htslibPrograms = samFile.header['PG']
             for htslibProgram in htslibPrograms:
-                program = protocol.Program()
+                program = protocol.ReadGroup.Program()
                 program.id = htslibProgram['ID']
-                program.commandLine = htslibProgram.get('CL', None)
-                program.name = htslibProgram.get('PN', None)
-                program.prevProgramId = htslibProgram.get('PP', None)
-                program.version = htslibProgram.get('VN', None)
+                program.command_line = htslibProgram.get(
+                    'CL', pb.DEFAULT_STRING)
+                program.name = htslibProgram.get('PN', pb.DEFAULT_STRING)
+                program.prev_program_id = htslibProgram.get(
+                    'PP', pb.DEFAULT_STRING)
+                program.version = htslibProgram.get('VN', pb.DEFAULT_STRING)
                 programs.append(program)
         self._programs = programs
 
@@ -302,42 +305,28 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.created = self._creationTime
         readGroup.updated = self._updateTime
         dataset = self.getParentContainer().getParentContainer()
-        readGroup.datasetId = dataset.getId()
-        readGroup.description = None
-        readGroup.info = {}
+        readGroup.dataset_id = dataset.getId()
         readGroup.name = self.getLocalId()
-        readGroup.predictedInsertSize = self.getPredictedInsertSize()
-        readGroup.programs = []
+        readGroup.predicted_insert_size = pb.int(self.getPredictedInsertSize())
         referenceSet = self._parentContainer.getReferenceSet()
-        readGroup.referenceSetId = None
-        readGroup.sampleId = self.getSampleId()
+        readGroup.sample_id = pb.string(self.getSampleId())
         if referenceSet is not None:
-            readGroup.referenceSetId = referenceSet.getId()
-        stats = protocol.ReadStats()
-        stats.alignedReadCount = self.getNumAlignedReads()
-        stats.unalignedReadCount = self.getNumUnalignedReads()
-        stats.baseCount = None  # TODO requires iterating through all reads
-        readGroup.stats = stats
-        readGroup.programs = self.getPrograms()
-        readGroup.description = self.getDescription()
-        experiment = protocol.Experiment()
+            readGroup.reference_set_id = referenceSet.getId()
+        stats = readGroup.stats
+        stats.aligned_read_count = self.getNumAlignedReads()
+        stats.unaligned_read_count = self.getNumUnalignedReads()
+        readGroup.programs.extend(self.getPrograms())
+        readGroup.description = pb.string(self.getDescription())
+        experiment = readGroup.experiment
         experiment.id = self.getExperimentId()
-        experiment.instrumentModel = self.getInstrumentModel()
-        experiment.sequencingCenter = self.getSequencingCenter()
-        experiment.description = self.getExperimentDescription()
-        experiment.info = {}
-        experiment.instrumentDataFile = None
-        experiment.library = self.getLibrary()
-        experiment.libraryLayout = None
-        experiment.molecule = None
-        experiment.name = None
-        experiment.platformUnit = self.getPlatformUnit()
-        experiment.recordCreateTime = self._iso8601
-        experiment.recordUpdateTime = self._iso8601
-        experiment.runTime = self.getRunTime()
-        experiment.selection = None
-        experiment.strategy = None
-        readGroup.experiment = experiment
+        experiment.instrument_model = pb.string(self.getInstrumentModel())
+        experiment.sequencing_center = pb.string(self.getSequencingCenter())
+        experiment.description = pb.string(self.getExperimentDescription())
+        experiment.library = pb.string(self.getLibrary())
+        experiment.platform_unit = pb.string(self.getPlatformUnit())
+        experiment.message_create_time = self._iso8601
+        experiment.message_update_time = self._iso8601
+        experiment.run_time = pb.string(self.getRunTime())
         return readGroup
 
     def getReadAlignmentId(self, gaAlignment):
@@ -346,7 +335,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         ReadAlignment object in this ReadGroup.
         """
         compoundId = datamodel.ReadAlignmentCompoundId(
-            self.getCompoundId(), gaAlignment.fragmentName)
+            self.getCompoundId(), gaAlignment.fragment_name)
         return str(compoundId)
 
     def getNumAlignedReads(self):
@@ -453,33 +442,31 @@ class SimulatedReadGroup(AbstractReadGroup):
         # TODO fill out a bit more
         rng = random.Random(seed)
         alignment = protocol.ReadAlignment()
-        alignment.fragmentLength = rng.randint(10, 100)
-        alignment.alignedQuality = []
-        alignment.alignedSequence = ""
-        for i in range(alignment.fragmentLength):
+        alignment.fragment_length = rng.randint(10, 100)
+        alignment.aligned_sequence = ""
+        for i in range(alignment.fragment_length):
             # TODO: are these reasonable quality values?
-            alignment.alignedQuality.append(rng.randint(1, 20))
-            alignment.alignedSequence += rng.choice("ACGT")
-        alignment.fragmentId = "frag{}".format(seed)
-        gaPosition = protocol.Position()
-        gaPosition.position = 0
-        gaPosition.referenceName = "NotImplemented"
-        gaPosition.strand = protocol.Strand.POS_STRAND
-        gaLinearAlignment = protocol.LinearAlignment()
-        gaLinearAlignment.position = gaPosition
-        alignment.alignment = gaLinearAlignment
-        alignment.duplicateFragment = False
-        alignment.failedVendorQualityChecks = False
+            alignment.aligned_quality.append(rng.randint(1, 20))
+            alignment.aligned_sequence += rng.choice("ACGT")
+        alignment.fragment_id = "frag{}".format(seed)
 
-        alignment.fragmentName = "simulated{}".format(i)
-        alignment.info = {}
-        alignment.nextMatePosition = None
-        alignment.numberReads = None
-        alignment.properPlacement = False
-        alignment.readGroupId = self.getId()
-        alignment.readNumber = None
-        alignment.secondaryAlignment = False
-        alignment.supplementaryAlignment = False
+        gaLinearAlignment = alignment.alignment
+        gaPosition = gaLinearAlignment.position
+        gaPosition.position = 0
+        gaPosition.reference_name = "NotImplemented"
+        gaPosition.strand = protocol.POS_STRAND
+        alignment.duplicate_fragment = False
+        alignment.failed_vendor_quality_checks = False
+
+        alignment.fragment_name = "simulated{}".format(i)
+        alignment.info.clear()
+        alignment.next_mate_position.Clear()
+        alignment.number_reads = 0
+        alignment.proper_placement = False
+        alignment.read_group_id = self.getId()
+        alignment.read_number = -1
+        alignment.secondary_alignment = False
+        alignment.supplementary_alignment = False
         alignment.id = self.getReadAlignmentId(alignment)
         return alignment
 
@@ -581,69 +568,66 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.ReadAlignment()
-        ret.fragmentId = 'TODO'
+        ret.fragment_id = 'TODO'
         if read.query_qualities is None:
-            ret.alignedQuality = []
+            pass  # ret.aligned_quality.clear()
         else:
-            ret.alignedQuality = list(read.query_qualities)
-        ret.alignedSequence = read.query_sequence
+            ret.aligned_quality.extend(read.query_qualities)
+        ret.aligned_sequence = read.query_sequence
         if SamFlags.isFlagSet(read.flag, SamFlags.READ_UNMAPPED):
-            ret.alignment = None
+            ret.alignment.Clear()
         else:
-            ret.alignment = protocol.LinearAlignment()
-            ret.alignment.mappingQuality = read.mapping_quality
-            ret.alignment.position = protocol.Position()
-            ret.alignment.position.referenceName = samFile.getrname(
+            ret.alignment.mapping_quality = read.mapping_quality
+            ret.alignment.position.reference_name = samFile.getrname(
                 read.reference_id)
             ret.alignment.position.position = read.reference_start
-            ret.alignment.position.strand = protocol.Strand.POS_STRAND
+            ret.alignment.position.strand = protocol.POS_STRAND
             if SamFlags.isFlagSet(read.flag, SamFlags.READ_REVERSE_STRAND):
-                ret.alignment.position.strand = protocol.Strand.NEG_STRAND
-            ret.alignment.cigar = []
+                ret.alignment.position.strand = protocol.NEG_STRAND
             for operation, length in read.cigar:
                 gaCigarUnit = protocol.CigarUnit()
                 gaCigarUnit.operation = SamCigar.int2ga(operation)
-                gaCigarUnit.operationLength = length
-                gaCigarUnit.referenceSequence = None  # TODO fix this!
-                ret.alignment.cigar.append(gaCigarUnit)
-        ret.duplicateFragment = SamFlags.isFlagSet(
+                gaCigarUnit.operation_length = length
+                gaCigarUnit.reference_sequence = ""  # TODO fix this!
+                ret.alignment.cigar.extend([gaCigarUnit])
+        ret.duplicate_fragment = SamFlags.isFlagSet(
             read.flag, SamFlags.DUPLICATE_READ)
-        ret.failedVendorQualityChecks = SamFlags.isFlagSet(
+        ret.failed_vendor_quality_checks = SamFlags.isFlagSet(
             read.flag, SamFlags.FAILED_QUALITY_CHECK)
-        ret.fragmentLength = read.template_length
-        ret.fragmentName = read.query_name
-        ret.info = {key: [str(value)] for key, value in read.tags}
+        ret.fragment_length = read.template_length
+        ret.fragment_name = read.query_name
+        for key, value in read.tags:
+            ret.info[key].values.add(string_value=str(value))
         if SamFlags.isFlagSet(read.flag, SamFlags.MATE_UNMAPPED):
-            ret.nextMatePosition = None
+            pass
         else:
-            ret.nextMatePosition = protocol.Position()
             if read.next_reference_id != -1:
-                ret.nextMatePosition.referenceName = samFile.getrname(
+                ret.next_mate_position.reference_name = samFile.getrname(
                     read.next_reference_id)
             else:
-                ret.nextMatePosition.referenceName = ""
-            ret.nextMatePosition.position = read.next_reference_start
-            ret.nextMatePosition.strand = protocol.Strand.POS_STRAND
+                ret.next_mate_position.reference_name = ""
+            ret.next_mate_position.position = read.next_reference_start
+            ret.next_mate_position.strand = protocol.POS_STRAND
             if SamFlags.isFlagSet(read.flag, SamFlags.MATE_REVERSE_STRAND):
-                ret.nextMatePosition.strand = protocol.Strand.NEG_STRAND
+                ret.next_mate_position.strand = protocol.NEG_STRAND
         if SamFlags.isFlagSet(read.flag, SamFlags.READ_PAIRED):
-            ret.numberReads = 2
+            ret.number_reads = 2
         else:
-            ret.numberReads = 1
-        ret.readNumber = None
+            ret.number_reads = 1
+        ret.read_number = -1
         if SamFlags.isFlagSet(read.flag, SamFlags.FIRST_IN_PAIR):
             if SamFlags.isFlagSet(read.flag, SamFlags.SECOND_IN_PAIR):
-                ret.readNumber = 2
+                ret.read_number = 2
             else:
-                ret.readNumber = 0
+                ret.read_number = 0
         elif SamFlags.isFlagSet(read.flag, SamFlags.SECOND_IN_PAIR):
-            ret.readNumber = 1
-        ret.properPlacement = SamFlags.isFlagSet(
+            ret.read_number = 1
+        ret.proper_placement = SamFlags.isFlagSet(
             read.flag, SamFlags.READ_PROPER_PAIR)
-        ret.readGroupId = self.getId()
-        ret.secondaryAlignment = SamFlags.isFlagSet(
+        ret.read_group_id = self.getId()
+        ret.secondary_alignment = SamFlags.isFlagSet(
             read.flag, SamFlags.SECONDARY_ALIGNMENT)
-        ret.supplementaryAlignment = SamFlags.isFlagSet(
+        ret.supplementary_alignment = SamFlags.isFlagSet(
             read.flag, SamFlags.SUPPLEMENTARY_ALIGNMENT)
         ret.id = self.getReadAlignmentId(ret)
         return ret

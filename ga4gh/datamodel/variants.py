@@ -13,15 +13,18 @@ import hashlib
 import pysam
 
 import ga4gh.protocol as protocol
+import ga4gh.pb as pb
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
+import proto.google.protobuf.struct_pb2 as struct_pb2
 
 
 def convertVCFPhaseset(vcfPhaseset):
     """
     Parses the VCF phaseset string
     """
-    if vcfPhaseset is not None and vcfPhaseset != ".":
+    if vcfPhaseset is not None and vcfPhaseset != "." \
+            and vcfPhaseset is not "":
         phaseset = vcfPhaseset
     else:
         phaseset = "*"
@@ -65,8 +68,8 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.updated = variantSet.getUpdatedTime()
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
-        gaCallSet.sampleId = self.getLocalId()
-        gaCallSet.variantSetIds = [variantSet.getId()]
+        gaCallSet.sample_id = self.getLocalId()
+        gaCallSet.variant_set_ids.append(variantSet.getId())
         return gaCallSet
 
     def getSampleName(self):
@@ -155,10 +158,12 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         protocolElement = protocol.VariantSet()
         protocolElement.id = self.getId()
-        protocolElement.datasetId = self.getParentContainer().getId()
-        protocolElement.referenceSetId = self._referenceSetId
-        protocolElement.metadata = self.getMetadata()
+        protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.name = self.getLocalId()
+        protocolElement.reference_set_id = self._referenceSetId
+        for metadata in self.getMetadata():
+            newValue = protocolElement.metadata.add()
+            newValue.CopyFrom(metadata)
         return protocolElement
 
     def getNumVariants(self):
@@ -175,7 +180,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         ret = protocol.Variant()
         ret.created = self._creationTime
         ret.updated = self._updatedTime
-        ret.variantSetId = self.getId()
+        ret.variant_set_id = self.getId()
         return ret
 
     def getVariantId(self, gaVariant):
@@ -185,7 +190,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         md5 = self.hashVariant(gaVariant)
         compoundId = datamodel.VariantCompoundId(
-            self.getCompoundId(), gaVariant.referenceName,
+            self.getCompoundId(), gaVariant.reference_name,
             gaVariant.start, md5)
         return str(compoundId)
 
@@ -204,9 +209,9 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         Produces an MD5 hash of the ga variant object to uniquely
         identify it
         """
-        return hashlib.md5(
-            gaVariant.referenceBases +
-            str(tuple(gaVariant.alternateBases))).hexdigest()
+        hash_str = gaVariant.reference_bases + \
+            str(tuple(gaVariant.alternate_bases))
+        return hashlib.md5(hash_str).hexdigest()
 
 
 class SimulatedVariantSet(AbstractVariantSet):
@@ -240,7 +245,7 @@ class SimulatedVariantSet(AbstractVariantSet):
         start = int(compoundId.start)
         randomNumberGenerator.seed(self._randomSeed + start)
         variant = self.generateVariant(
-            compoundId.referenceName, start, randomNumberGenerator)
+            compoundId.reference_name, start, randomNumberGenerator)
         return variant
 
     def getVariants(self, referenceName, startPosition, endPosition,
@@ -263,39 +268,36 @@ class SimulatedVariantSet(AbstractVariantSet):
         will always be produced regardless of the order it is generated in.
         """
         variant = self._createGaVariant()
-        variant.names = []
-        variant.referenceName = referenceName
+        variant.reference_name = referenceName
         variant.start = position
         variant.end = position + 1  # SNPs only for now
         bases = ["A", "C", "G", "T"]
         ref = randomNumberGenerator.choice(bases)
-        variant.referenceBases = ref
+        variant.reference_bases = ref
         alt = randomNumberGenerator.choice(
             [base for base in bases if base != ref])
-        variant.alternateBases = [alt]
-        variant.calls = []
+        variant.alternate_bases.append(alt)
         for callSet in self.getCallSets():
-            call = protocol.Call()
-            call.callSetId = callSet.getId()
+            call = variant.calls.add()
+            call.call_set_id = callSet.getId()
             # for now, the genotype is either [0,1], [1,1] or [1,0] with equal
             # probability; probably will want to do something more
             # sophisticated later.
             randomChoice = randomNumberGenerator.choice(
                 [[0, 1], [1, 0], [1, 1]])
-            call.genotype = randomChoice
+            call.genotype.extend(randomChoice)
             # TODO What is a reasonable model for generating these likelihoods?
             # Are these log-scaled? Spec does not say.
-            call.genotypeLikelihood = [-100, -100, -100]
-            variant.calls.append(call)
+            call.genotype_likelihood.extend([-100, -100, -100])
         variant.id = self.getVariantId(variant)
         return variant
 
 
 def _encodeValue(value):
     if isinstance(value, (list, tuple)):
-        return [str(v) for v in value]
+        return [struct_pb2.Value(string_value=str(v)) for v in value]
     else:
-        return [str(value)]
+        return [struct_pb2.Value(string_value=str(value))]
 
 
 _nothing = object()
@@ -378,19 +380,19 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 self._chromFileMap[chrom] = filename
         varFile.close()
 
-    def _convertGaCall(self, recordId, name, pysamCall, genotypeData):
+    def _convertGaCall(self, call, recordId, name, pysamCall, genotypeData):
         compoundId = self.getCallSetId(name)
         callSet = self.getCallSet(compoundId)
-        call = protocol.Call()
-        call.callSetId = callSet.getId()
-        call.callSetName = callSet.getSampleName()
-        call.sampleId = callSet.getSampleName()
+        call.call_set_id = callSet.getId()
+        call.call_set_name = callSet.getSampleName()
+        # call.sampleId = callSet.getSampleName()
         # TODO:
-        # NOTE: THE FOLLOWING TWO LINES IS NOT THE INTENDED IMPLEMENTATION,
+        # NOTE: THE FOLLOWING THREE LINES IS NOT THE INTENDED IMPLEMENTATION,
         ###########################################
-        call.phaseset = None
-        call.genotype, call.phaseset = convertVCFGenotype(
-            genotypeData, call.phaseset)
+        genotype, phaseset = convertVCFGenotype(genotypeData, call.phaseset)
+        call.genotype.extend(genotype)
+        call.phaseset = pb.string(phaseset)
+
         ###########################################
 
         # THEY SHOULD BE REPLACED BY THE FOLLOWING, ONCE NEW PYSAM
@@ -402,13 +404,11 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         # call.phaseset = pysamCall.phaseset
         ###########################################
 
-        call.genotypeLikelihood = []
         for key, value in pysamCall.iteritems():
             if key == 'GL' and value is not None:
-                call.genotypeLikelihood = list(value)
+                call.genotype_likelihood.extend(list(value))
             elif key != 'GT':
-                call.info[key] = _encodeValue(value)
-        return call
+                call.info[key].values.extend(_encodeValue(value))
 
     def convertVariant(self, record, callSetIds):
         """
@@ -417,45 +417,45 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         be included.
         """
         variant = self._createGaVariant()
-        variant.referenceName = record.contig
+        variant.reference_name = record.contig
         if record.id is not None:
-            variant.names = record.id.split(';')
+            variant.names.extend(record.id.split(';'))
         variant.start = record.start          # 0-based inclusive
         variant.end = record.stop             # 0-based exclusive
-        variant.referenceBases = record.ref
+        variant.reference_bases = record.ref
         if record.alts is not None:
-            variant.alternateBases = list(record.alts)
+            variant.alternate_bases.extend(list(record.alts))
         # record.filter and record.qual are also available, when supported
         # by GAVariant.
         for key, value in record.info.iteritems():
             if value is not None:
-                variant.info[key] = _encodeValue(value)
+                variant.info[key].values.extend(_encodeValue(value))
 
         # NOTE: THE LABELED LINES SHOULD BE REMOVED ONCE PYSAM SUPPORTS
         # phaseset
 
         sampleData = record.__str__().split()[9:]  # REMOVAL
-        variant.calls = []
         sampleIterator = 0  # REMOVAL
         for name, call in record.samples.iteritems():
             if self.getCallSetId(name) in callSetIds:
                 genotypeData = sampleData[sampleIterator].split(
                     ":")[0]  # REMOVAL
-                variant.calls.append(self._convertGaCall(
-                    record.id, name, call, genotypeData))  # REPLACE
+                gaCall = variant.calls.add()
+                self._convertGaCall(
+                    gaCall, record.id, name, call, genotypeData)  # REPLACE
             sampleIterator += 1  # REMOVAL
         variant.id = self.getVariantId(variant)
         return variant
 
     def getVariant(self, compoundId):
-        if compoundId.referenceName in self._chromFileMap:
-            varFileName = self._chromFileMap[compoundId.referenceName]
+        if compoundId.reference_name in self._chromFileMap:
+            varFileName = self._chromFileMap[compoundId.reference_name]
         else:
             raise exceptions.ObjectNotFoundException(compoundId)
         start = int(compoundId.start)
         referenceName, startPosition, endPosition = \
             self.sanitizeVariantFileFetch(
-                compoundId.referenceName, start, start + 1)
+                compoundId.reference_name, start, start + 1)
         cursor = self.getFileHandle(varFileName).fetch(
             referenceName, startPosition, endPosition)
         for record in cursor:
@@ -465,7 +465,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 return variant
             elif record.start > start:
                 raise exceptions.ObjectNotFoundException()
-        raise exceptions.ObjectNotFoundException(compoundId)
+        raise exceptions.ObjectWithIdNotFoundException(compoundId)
 
     def getVariants(self, referenceName, startPosition, endPosition,
                     callSetIds=None):

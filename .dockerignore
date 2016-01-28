@@ -2,3 +2,4 @@ Dockerfile
 .git
 .dockerignore
 *.swp
+ga4gh-env
