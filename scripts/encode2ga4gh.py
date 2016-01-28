@@ -239,7 +239,7 @@ def makeParser(usage):
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("--dataset", dest="dataset")
     parser.add_option("--description", dest="description")
-    parser.add_option("--annotation", dest="annotationId")
+    parser.add_option("--annotationId", dest="annotationId")
     parser.add_option("--file_limit", type="int", dest="subset")
     parser.add_option("--readGroupId", dest="readGroupId")
     parser.add_option("--expressionType", dest="expressionType")

@@ -10,6 +10,7 @@ import unittest
 
 import ga4gh.exceptions as exceptions
 import ga4gh.backend as backend
+import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.datasets as datasets
 
@@ -81,7 +82,7 @@ class TestAbstractVariantSet(unittest.TestCase):
     """
     def setUp(self):
         self._variantSetName = "testVariantSet"
-        self._backend = backend.AbstractBackend()
+        self._backend = backend.Backend(datarepo.AbstractDataRepository())
         self._dataset = datasets.AbstractDataset(self._backend)
         self._variantSet = variants.AbstractVariantSet(
             self._dataset, self._variantSetName)

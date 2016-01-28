@@ -13,6 +13,7 @@ import pysam
 import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.converters as converters
+import ga4gh.datarepo as datarepo
 
 
 class TestSamConverter(unittest.TestCase):
@@ -20,7 +21,8 @@ class TestSamConverter(unittest.TestCase):
     Tests for the GA4GH reads API -> SAM conversion.
     """
     def setUp(self):
-        self._backend = backend.FileSystemBackend("tests/data")
+        self._backend = backend.Backend(
+            datarepo.FileSystemDataRepository("tests/data"))
         self._client = client.LocalClient(self._backend)
 
     def verifySamRecordsEqual(self, sourceReads, convertedReads):
@@ -92,7 +94,7 @@ class TestSamConverter(unittest.TestCase):
             self.verifySamRecordsEqual(sourceReads, convertedReads)
 
     def testSamConversion(self):
-        datasets = self._backend.getDatasets()
+        datasets = self._backend.getDataRepository().getDatasets()
         for dataset in datasets:
             readGroupSets = dataset.getReadGroupSets()
             for readGroupSet in readGroupSets:

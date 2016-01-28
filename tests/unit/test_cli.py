@@ -13,6 +13,23 @@ import ga4gh.cli as cli
 import ga4gh.protocol as protocol
 
 
+class TestServerArguments(unittest.TestCase):
+    """
+    Tests that the server can parse expected arguments
+    """
+    def testParseArguments(self):
+        cliInput = """--port 7777 --host 123.4.5.6 --config MockConfigName
+        --config-file /path/to/config --tls --dont-use-reloader"""
+        parser = cli.getServerParser()
+        args = parser.parse_args(cliInput.split())
+        self.assertEqual(args.port, 7777)
+        self.assertEqual(args.host, "123.4.5.6")
+        self.assertEqual(args.config, "MockConfigName")
+        self.assertEqual(args.config_file, "/path/to/config")
+        self.assertTrue(args.tls)
+        self.assertTrue(args.dont_use_reloader)
+
+
 class TestGa2VcfArguments(unittest.TestCase):
     """
     Tests the ga2vcf cli can parse all arguments it is supposed to
@@ -216,26 +233,33 @@ class TestClientArguments(unittest.TestCase):
         self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
 
     def testRnaQuantificationSearchArguments(self):
-        cliInput = ("rnaquantification-search --rnaQuantificationId ID")
+        cliInput = ("rnaquantification-search --rnaQuantificationId ID "
+                    "BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.rnaQuantificationId, "ID")
+        self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.runner, cli.SearchRnaQuantificationRunner)
 
     def testExpressionLevelSearchArguments(self):
         cliInput = (
             "expressionlevel-search --expressionLevelId ID "
-            "--rnaQuantificationId rID --featureGroupId fID")
+            "--rnaQuantificationId rID --featureGroupId fID "
+            "--threshold 0.0 BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.expressionLevelId, "ID")
-        self.assertEqual(args.rnaQuantificationID, "rID")
+        self.assertEqual(args.rnaQuantificationId, "rID")
         self.assertEqual(args.featureGroupId, "fID")
+        self.assertEqual(args.threshold, 0.0)
+        self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.runner, cli.SearchExpressionLevelRunner)
 
     def testFeatureGroupSearchArguments(self):
-        cliInput = ("featuregroup-search --featureGroupId ID --threshold 0.0")
+        cliInput = ("featuregroup-search --featureGroupId ID "
+                    "--rnaQuantificationId rID BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.featureGroupId, "ID")
-        self.assertEqual(args.threshold, 0.0)
+        self.assertEqual(args.rnaQuantificationId, "rID")
+        self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.runner, cli.SearchFeatureGroupRunner)
 
 

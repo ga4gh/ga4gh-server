@@ -282,6 +282,24 @@ class ReadAlignmentCompoundId(ReadGroupCompoundId):
     fields = ReadGroupCompoundId.fields + ['readAlignment']
 
 
+class SequenceAnnotationCompoundId(DatasetCompoundId):
+    """
+    The compound id for a sequence annotation
+    """
+    fields = DatasetCompoundId.fields + ['sequenceAnnotation']
+    container = [('sequenceAnnotationId', 1)]
+    containerIds = DatasetCompoundId.containerIds + container
+
+
+class FeatureCompoundId(SequenceAnnotationCompoundId):
+    """
+    The compound id for a feature
+    """
+    fields = SequenceAnnotationCompoundId.fields + ['feature']
+    container = [('featureId', 2)]
+    containerIds = SequenceAnnotationCompoundId.containerIds + container
+
+
 class RnaQuantificationCompoundId(DatasetCompoundId):
     """
     The compound id for a rna quantification

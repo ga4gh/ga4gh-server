@@ -350,6 +350,12 @@ class FeatureGroupNotFoundException(NotFoundException):
             "FeatureGroup with name '{0}' not found".format(name))
 
 
+class SequenceAnnotationNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "SequenceAnnotation with name '{0}' not found".format(name))
+
+
 class DataException(BaseServerException):
     """
     Exceptions thrown during the server startup, and processing faulty VCFs

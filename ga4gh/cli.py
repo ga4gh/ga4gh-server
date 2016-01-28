@@ -21,6 +21,7 @@ import ga4gh.converters as converters
 import ga4gh.frontend as frontend
 import ga4gh.configtest as configtest
 import ga4gh.exceptions as exceptions
+import ga4gh.datarepo as datarepo
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -60,12 +61,16 @@ def addServerOptions(parser):
     addDisableUrllibWarningsArgument(parser)
 
 
-def server_main(parser=None):
-    if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH reference server")
+def getServerParser():
+    parser = argparse.ArgumentParser(
+        description="GA4GH reference server")
     addServerOptions(parser)
-    args = parser.parse_args()
+    return parser
+
+
+def server_main(args=None):
+    parser = getServerParser()
+    args = parser.parse_args(args)
     if args.disable_urllib_warnings:
         requests.packages.urllib3.disable_warnings()
     frontend.configure(
@@ -110,7 +115,8 @@ class AbstractQueryRunner(object):
         filePrefix = "file://"
         if args.baseUrl.startswith(filePrefix):
             dataDir = args.baseUrl[len(filePrefix):]
-            theBackend = backend.FileSystemBackend(dataDir)
+            theBackend = backend.Backend(
+                datarepo.FileSystemDataRepository(dataDir))
             self._client = client.LocalClient(theBackend)
         else:
             self._client = client.HttpClient(
@@ -1039,6 +1045,9 @@ def addExpressionLevelSearchParser(subparsers):
     parser.add_argument(
         "--featureGroupId", default=None,
         help="The feature group Id to search over")
+    parser.add_argument(
+        "--threshold", default=None, type=float,
+        help="The minimum value for expression results to report.")
     addOutputFormatArgument(parser)
     return parser
 
@@ -1057,9 +1066,6 @@ def addFeatureGroupSearchParser(subparsers):
     parser.add_argument(
         "--featureGroupId", default=None,
         help="The feature group Id to search over")
-    parser.add_argument(
-        "--threshold", default=None, type=float,
-        help="The minimum value for expression results to report.")
     addOutputFormatArgument(parser)
     return parser
 

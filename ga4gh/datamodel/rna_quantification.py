@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import sqlite3
 
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
@@ -129,7 +130,7 @@ class ReadCounts(datamodel.DatamodelObject):
 
 class FeatureGroup(datamodel.DatamodelObject):
     """
-    Class represnting a single FeatureGroup in the GA4GH model.
+    Class representing a single FeatureGroup in the GA4GH model.
     """
     compoundIdClass = datamodel.FeatureGroupCompoundId
 
@@ -158,7 +159,8 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(AbstractRNAQuantification, self).__init__(parentContainer,
                                                         localId)
-        self._rnaQuantificationId = localId
+        # self._rnaQuantificationId = localId
+        self._name = localId
         self._expressionLevelIdMap = {}
         self._expressionLevelIds = []
         self._featureGroupNames = []
@@ -347,9 +349,19 @@ class RNASeqResult(AbstractRNAQuantification):
         relevant expression data file
         """
         self.parseExpressionData()
-        if id_ not in self._featureGroupIdMap:
+        if id_ not in self._featureGroupIdMap.keys():
             raise exceptions.FeatureGroupNotFoundException(id_)
         return self._featureGroupIdMap[id_]
+
+
+class SqliteRNASeqResult(AbstractRNAQuantification):
+    """
+    An RNA Quantification stored as a SQLite DB.
+    """
+    def __init__(self, parentContainer, localId,
+                 rnaQuantSqlFile="ga4gh-rnaQuant.db"):
+        super(SimulatedRNASeqResult, self).__init__(parentContainer, localId)
+        self._dbConn = sqlite3.connect(rnaQuantSqlFile)
 
 
 class SimulatedRNASeqResult(AbstractRNAQuantification):
@@ -357,10 +369,10 @@ class SimulatedRNASeqResult(AbstractRNAQuantification):
     An RNA Quantification that doesn't derive from a data store.
     Used mostly for testing.
     """
-    def __init__(self, parentContainer, localId, rnaQuantDataPath):
-        super(SimulatedRNASeqResult, self).__init__(parentContainer, localId,
-                                                    rnaQuantDataPath)
-        self.generateRnaQuantMetadataFile()
+    def __init__(self, parentContainer, localId, rnaQuantDataPath=""):
+        super(SimulatedRNASeqResult, self).__init__(parentContainer, localId)
+        self._rnaQuantDataPath = rnaQuantDataPath
+        self.generateRnaQuantMetadata()
         self.generateCharacterization()
         self.generateReadCounts()
 
