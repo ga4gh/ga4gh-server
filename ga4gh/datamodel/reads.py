@@ -448,7 +448,6 @@ class SimulatedReadGroup(AbstractReadGroup):
             # TODO: are these reasonable quality values?
             alignment.aligned_quality.append(rng.randint(1, 20))
             alignment.aligned_sequence += rng.choice("ACGT")
-        alignment.fragment_id = "frag{}".format(seed)
 
         gaLinearAlignment = alignment.alignment
         gaPosition = gaLinearAlignment.position
@@ -568,7 +567,6 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.ReadAlignment()
-        ret.fragment_id = 'TODO'
         if read.query_qualities is None:
             pass  # ret.aligned_quality.clear()
         else:

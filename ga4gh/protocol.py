@@ -11,22 +11,21 @@ import inspect
 
 import google.protobuf.json_format as json_format
 import google.protobuf.message as message
+import google.protobuf.struct_pb2 as struct_pb2
 
 import ga4gh.pb as pb
 
-from proto.ga4gh.common_pb2 import *  # noqa
-from proto.ga4gh.metadata_pb2 import *  # noqa
-from proto.ga4gh.read_service_pb2 import *  # noqa
-from proto.ga4gh.reads_pb2 import *  # noqa
-from proto.ga4gh.reference_service_pb2 import *  # noqa
-from proto.ga4gh.references_pb2 import *  # noqa
-from proto.ga4gh.variant_service_pb2 import *  # noqa
-from proto.ga4gh.variants_pb2 import *  # noqa
-import proto.google.protobuf.struct_pb2 as struct_pb2
+from ga4gh._protocol_version import version  # noqa
+from ga4gh.common_pb2 import *  # noqa
+from ga4gh.metadata_pb2 import *  # noqa
+from ga4gh.metadata_service_pb2 import *  # noqa
+from ga4gh.read_service_pb2 import *  # noqa
+from ga4gh.reads_pb2 import *  # noqa
+from ga4gh.reference_service_pb2 import *  # noqa
+from ga4gh.references_pb2 import *  # noqa
+from ga4gh.variant_service_pb2 import *  # noqa
+from ga4gh.variants_pb2 import *  # noqa
 
-import proto
-
-version = proto.version
 
 # A map of response objects to the name of the attribute used to
 # store the values returned.
