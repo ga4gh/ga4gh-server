@@ -87,7 +87,6 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         referenceSetPe = referenceSet.toProtocolElement()
         self.assertValid(
             protocol.ReferenceSet, protocol.toJson(referenceSetPe))
-        self.assertGreater(len(referenceSetPe.reference_ids), 0)
         for gaReference in referenceSet.getReferences():
             reference = protocol.toJson(gaReference.toProtocolElement())
             self.assertValid(protocol.Reference, reference)

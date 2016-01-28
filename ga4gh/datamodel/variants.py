@@ -14,12 +14,12 @@ import os
 import glob
 
 import pysam
+import google.protobuf.struct_pb2 as struct_pb2
 
 import ga4gh.protocol as protocol
 import ga4gh.pb as pb
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
-import proto.google.protobuf.struct_pb2 as struct_pb2
 
 
 def isUnspecified(str):
