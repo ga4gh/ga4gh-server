@@ -13,6 +13,7 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.protocol as protocol
+import ga4gh.datarepo as datarepo
 import tests.datadriven as datadriven
 import tests.utils as utils
 
@@ -88,7 +89,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     Data driven test for read group sets
     """
     def __init__(self, localId, dataPath):
-        self._backend = backend.AbstractBackend()
+        self._backend = backend.Backend(datarepo.AbstractDataRepository())
         self._referenceSet = None
         self._dataset = datasets.AbstractDataset("ds")
         self._readGroupInfos = {}
@@ -116,7 +117,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
 
     def _addReferenceSet(self, referenceSetName):
         self._referenceSet = references.AbstractReferenceSet(referenceSetName)
-        self._backend.addReferenceSet(self._referenceSet)
+        self._backend.getDataRepository().addReferenceSet(self._referenceSet)
 
     def _addReference(self, referenceName):
         reference = references.AbstractReference(
@@ -139,7 +140,8 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
 
     def getDataModelInstance(self, localId, dataPath):
         return reads.HtslibReadGroupSet(
-            self._dataset, localId, dataPath, self._backend)
+            self._dataset, localId, dataPath,
+            self._backend.getDataRepository())
 
     def getProtocolClass(self):
         return protocol.ReadGroupSet

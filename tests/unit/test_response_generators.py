@@ -12,6 +12,7 @@ import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.datarepo as datarepo
 
 
 def generateVariant():
@@ -37,8 +38,8 @@ class TestVariantsGenerator(unittest.TestCase):
     """
     def setUp(self):
         self.request = protocol.SearchVariantsRequest()
-        self.backend = backend.SimulatedBackend()
-        self.dataset = self.backend.getDatasets()[0]
+        self.backend = backend.Backend(datarepo.SimulatedDataRepository())
+        self.dataset = self.backend.getDataRepository().getDatasets()[0]
 
     def testNonexistantVariantSet(self):
         # a request for a variant set that doesn't exist should throw an error
@@ -110,11 +111,13 @@ class TestReadsGenerator(unittest.TestCase):
     """
     def setUp(self):
         self.request = protocol.SearchReadsRequest()
-        self.backend = backend.SimulatedBackend(numAlignments=0)
-        referenceSet = self.backend.getReferenceSetByIndex(0)
+        self.backend = backend.Backend(
+            datarepo.SimulatedDataRepository(numAlignments=0))
+        dataRepo = self.backend.getDataRepository()
+        referenceSet = dataRepo.getReferenceSetByIndex(0)
         reference = referenceSet.getReferenceByIndex(0)
         self.request.referenceId = reference.getId()
-        self.dataset = self.backend.getDatasets()[0]
+        self.dataset = dataRepo.getDatasets()[0]
         self.readGroupSet = self.dataset.getReadGroupSets()[0]
 
     def testNoReadGroupsNotSupported(self):

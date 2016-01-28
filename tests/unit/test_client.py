@@ -12,6 +12,7 @@ import mock
 import ga4gh.protocol as protocol
 import ga4gh.backend as backend
 import ga4gh.client as client
+import ga4gh.datarepo as datarepo
 import tests.utils as utils
 
 
@@ -334,12 +335,13 @@ class ExhaustiveListingsMixin(object):
     """
     @classmethod
     def setUpClass(cls):
-        cls.backend = backend.SimulatedBackend(
+        cls.backend = backend.Backend(datarepo.SimulatedDataRepository(
             randomSeed=100, numDatasets=3,
             numVariantSets=3, numCalls=3, variantDensity=0.5,
             numReferenceSets=3, numReferencesPerReferenceSet=3,
             numReadGroupSets=3, numReadGroupsPerReadGroupSet=3,
-            numAlignments=3)
+            numAlignments=3))
+        cls.dataRepo = cls.backend.getDataRepository()
 
     def setUp(self):
         self.client = self.getClient()
@@ -358,18 +360,18 @@ class ExhaustiveListingsMixin(object):
     def testAllDatasets(self):
         datasets = list(self.client.searchDatasets())
         self.verifyObjectList(
-            datasets, self.backend.getDatasets(), self.client.getDataset)
+            datasets, self.dataRepo.getDatasets(), self.client.getDataset)
 
     def testAllReferenceSets(self):
         referenceSets = list(self.client.searchReferenceSets())
         self.verifyObjectList(
-            referenceSets, self.backend.getReferenceSets(),
+            referenceSets, self.dataRepo.getReferenceSets(),
             self.client.getReferenceSet)
 
     def testAllReferences(self):
         for referenceSet in self.client.searchReferenceSets():
             references = list(self.client.searchReferences(referenceSet.id))
-            datamodelReferences = self.backend.getReferenceSet(
+            datamodelReferences = self.dataRepo.getReferenceSet(
                 referenceSet.id).getReferences()
             self.verifyObjectList(
                 references, datamodelReferences, self.client.getReference)
@@ -383,13 +385,13 @@ class ExhaustiveListingsMixin(object):
     def testAllVariantSets(self):
         for dataset in self.client.searchDatasets():
             variantSets = list(self.client.searchVariantSets(dataset.id))
-            datamodelVariantSets = self.backend.getDataset(
+            datamodelVariantSets = self.dataRepo.getDataset(
                 dataset.id).getVariantSets()
             self.verifyObjectList(
                 variantSets, datamodelVariantSets, self.client.getVariantSet)
 
     def testAllVariants(self):
-        for datamodelDataset in self.backend.getDatasets():
+        for datamodelDataset in self.dataRepo.getDatasets():
             for datamodelVariantSet in datamodelDataset.getVariantSets():
                 # TODO the values should be derived from the datamodel
                 # variant set object.
@@ -409,7 +411,7 @@ class ExhaustiveListingsMixin(object):
     def testAllReadGroupSets(self):
         for dataset in self.client.searchDatasets():
             readGroupSets = list(self.client.searchReadGroupSets(dataset.id))
-            datamodelReadGroupSets = self.backend.getDataset(
+            datamodelReadGroupSets = self.dataRepo.getDataset(
                 dataset.id).getReadGroupSets()
             self.verifyObjectList(
                 readGroupSets, datamodelReadGroupSets,
@@ -423,7 +425,7 @@ class ExhaustiveListingsMixin(object):
                     self.client.getReadGroup)
 
     def testAllReads(self):
-        for dmDataset in self.backend.getDatasets():
+        for dmDataset in self.dataRepo.getDatasets():
             for dmReadGroupSet in dmDataset.getReadGroupSets():
                 dmReferenceSet = dmReadGroupSet.getReferenceSet()
                 for dmReadGroup in dmReadGroupSet.getReadGroups():
@@ -466,13 +468,15 @@ class PagingMixin(object):
     @classmethod
     def setUpClass(cls):
         cls.numReferences = 25
-        cls.backend = backend.SimulatedBackend(
+        cls.backend = backend.Backend(datarepo.SimulatedDataRepository(
             randomSeed=100, numDatasets=0,
-            numReferenceSets=1, numReferencesPerReferenceSet=cls.numReferences)
+            numReferenceSets=1,
+            numReferencesPerReferenceSet=cls.numReferences))
+        cls.dataRepo = cls.backend.getDataRepository()
 
     def setUp(self):
         self.client = self.getClient()
-        self.datamodelReferenceSet = self.backend.getReferenceSetByIndex(0)
+        self.datamodelReferenceSet = self.dataRepo.getReferenceSetByIndex(0)
         self.datamodelReferences = self.datamodelReferenceSet.getReferences()
         self.references = [
             dmReference.toProtocolElement()

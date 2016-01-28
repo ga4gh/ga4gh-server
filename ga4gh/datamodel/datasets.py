@@ -235,7 +235,7 @@ class FileSystemDataset(AbstractDataset):
     """
     A dataset based on the file system
     """
-    def __init__(self, localId, dataDir, backend):
+    def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
         self._dataDir = dataDir
         self._setMetadata()
@@ -246,7 +246,7 @@ class FileSystemDataset(AbstractDataset):
             relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
                 variantSet = variants.HtslibVariantSet(
-                    self, localId, relativePath, backend)
+                    self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
         # Reads
         readGroupSetDir = os.path.join(dataDir, "reads")
@@ -255,7 +255,7 @@ class FileSystemDataset(AbstractDataset):
                 localId, _ = os.path.splitext(filename)
                 bamPath = os.path.join(readGroupSetDir, filename)
                 readGroupSet = reads.HtslibReadGroupSet(
-                    self, localId, bamPath, backend)
+                    self, localId, bamPath, dataRepository)
                 self.addReadGroupSet(readGroupSet)
         # Rna Quantification
         rnaQuantDir = os.path.join(dataDir, "rnaQuant")

@@ -154,7 +154,7 @@ class ImportGraphLayerChecker(object):
         'cli': ['ga4gh/cli.py'],
         'client': ['ga4gh/client.py'],
         'frontend': ['ga4gh/frontend.py'],
-        'backend': ['ga4gh/backend.py'],
+        'backend': ['ga4gh/backend.py', 'ga4gh/datarepo.py'],
         'exceptions': ['ga4gh/exceptions.py'],
         'datamodel': ['ga4gh/datamodel/reads.py',
                       'ga4gh/datamodel/references.py',

@@ -38,11 +38,12 @@ class TestFrontend(unittest.TestCase):
 
         # example test values
         cls.backend = frontend.app.backend
-        cls.referenceSet = cls.backend.getReferenceSets()[0]
+        cls.dataRepo = cls.backend.getDataRepository()
+        cls.referenceSet = cls.dataRepo.getReferenceSets()[0]
         cls.referenceSetId = cls.referenceSet.getId()
         cls.reference = cls.referenceSet.getReferences()[0]
         cls.referenceId = cls.reference.getId()
-        cls.dataset = cls.backend.getDatasets()[0]
+        cls.dataset = cls.backend.getDataRepository().getDatasets()[0]
         cls.datasetId = cls.dataset.getId()
         cls.variantSet = cls.dataset.getVariantSets()[0]
         cls.variantSetId = cls.variantSet.getId()
@@ -101,12 +102,10 @@ class TestFrontend(unittest.TestCase):
         request.variantSetId = variantSets[0].id
         return self.sendPostRequest('/callsets/search', request)
 
-    def sendReadsSearch(self, readGroupIds=None):
-        if readGroupIds is None:
-            readGroupIds = [self.readGroupId]
+    def sendReadsSearch(self, readGroupIds=None, referenceId=None):
         request = protocol.SearchReadsRequest()
         request.readGroupIds = readGroupIds
-        request.referenceId = self.referenceId
+        request.referenceId = referenceId
         return self.sendPostRequest('/reads/search', request)
 
     def sendDatasetsSearch(self):
@@ -361,7 +360,8 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(len(responseData.callSets), 1)
 
     def testReadsSearch(self):
-        response = self.sendReadsSearch()
+        response = self.sendReadsSearch(readGroupIds=[self.readGroupId],
+                                        referenceId=self.referenceId)
         self.assertEqual(200, response.status_code)
         responseData = protocol.SearchReadsResponse.fromJsonString(
             response.data)
@@ -380,3 +380,13 @@ class TestFrontend(unittest.TestCase):
     def testNoAuthentication(self):
         path = '/oauth2callback'
         self.assertEqual(501, self.app.get(path).status_code)
+
+    def testSearchUnmappedReads(self):
+        response = self.sendReadsSearch(readGroupIds=[self.readGroupId],
+                                        referenceId=None)
+        self.assertEqual(501, response.status_code)
+
+    def testSearchReadsMultipleReadGroupSets(self):
+        response = self.sendReadsSearch(readGroupIds=[self.readGroupId, "42"],
+                                        referenceId=self.referenceId)
+        self.assertEqual(501, response.status_code)
