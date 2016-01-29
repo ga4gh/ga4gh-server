@@ -11,15 +11,17 @@ import pstats
 import argparse
 import cProfile
 
-import ga4gh.backend
+import ga4gh.backend as backend
 import ga4gh.protocol as protocol
+import ga4gh.datarepo as datarepo
 
 import guppy
 
 
-class HeapProfilerBackend(ga4gh.backend.FileSystemBackend):
+class HeapProfilerBackend(backend.Backend):
     def __init__(self, dataDir):
-        super(HeapProfilerBackend, self).__init__(dataDir)
+        dataRepository = datarepo.FileSystemDataRepository(dataDir)
+        super(HeapProfilerBackend, self).__init__(dataRepository)
         self.profiler = guppy.hpy()
 
     def startProfile(self):
@@ -29,9 +31,10 @@ class HeapProfilerBackend(ga4gh.backend.FileSystemBackend):
         print(self.profiler.heap())
 
 
-class CpuProfilerBackend(ga4gh.backend.FileSystemBackend):
+class CpuProfilerBackend(backend.Backend):
     def __init__(self, dataDir):
-        super(CpuProfilerBackend, self).__init__(dataDir)
+        dataRepository = datarepo.FileSystemDataRepository(dataDir)
+        super(CpuProfilerBackend, self).__init__(dataRepository)
         self.profiler = cProfile.Profile()
 
     def startProfile(self):
@@ -141,13 +144,16 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    backendClass = ga4gh.backend.FileSystemBackend
+    dataDir = "ga4gh-example-data"
+    backend = backend.Backend(datarepo.FileSystemDataRepository(dataDir))
     if args.profile == 'heap':
         backendClass = HeapProfilerBackend
+        backend = backendClass(dataDir)
         args.repeatLimit = 1
         args.pageLimit = 1
     elif args.profile == 'cpu':
         backendClass = CpuProfilerBackend
+        backend = backendClass(dataDir)
     # Get our list of callSetids
     callSetIds = args.callSetIds
     if callSetIds != []:
@@ -155,7 +161,6 @@ if __name__ == '__main__':
         if args.callSetIds != "*":
             callSetIds = args.callSetIds.split(",")
 
-    backend = backendClass("ga4gh-example-data")
     minTime = benchmarkOneQuery(
         _heavyQuery(args.variantSetId, callSetIds), args.repeatLimit,
         args.pageLimit)

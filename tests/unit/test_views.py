@@ -38,11 +38,12 @@ class TestFrontend(unittest.TestCase):
 
         # example test values
         cls.backend = frontend.app.backend
-        cls.referenceSet = cls.backend.getReferenceSets()[0]
+        cls.dataRepo = cls.backend.getDataRepository()
+        cls.referenceSet = cls.dataRepo.getReferenceSets()[0]
         cls.referenceSetId = cls.referenceSet.getId()
         cls.reference = cls.referenceSet.getReferences()[0]
         cls.referenceId = cls.reference.getId()
-        cls.dataset = cls.backend.getDatasets()[0]
+        cls.dataset = cls.backend.getDataRepository().getDatasets()[0]
         cls.datasetId = cls.dataset.getId()
         cls.variantSet = cls.dataset.getVariantSets()[0]
         cls.variantSetId = cls.variantSet.getId()

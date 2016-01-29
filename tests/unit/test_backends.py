@@ -12,6 +12,7 @@ import unittest
 
 import ga4gh.exceptions as exceptions
 import ga4gh.backend as backend
+import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
 
@@ -21,56 +22,58 @@ class TestAbstractBackend(unittest.TestCase):
     Tests for shared functionality between backends.
     """
     def setUp(self):
-        self._backend = backend.AbstractBackend()
+        self._backend = backend.Backend(datarepo.AbstractDataRepository())
+        self._dataRepo = self._backend.getDataRepository()
 
     def testAddOneDataset(self):
         datasetName = "ds"
         dataset = datasets.AbstractDataset(datasetName)
-        self.assertEqual(self._backend.getNumDatasets(), 0)
-        self.assertEqual(self._backend.getDatasets(), [])
-        self._backend.addDataset(dataset)
-        self.assertEqual(self._backend.getNumDatasets(), 1)
-        self.assertEqual(self._backend.getDatasets(), [dataset])
-        self.assertEqual(self._backend.getDatasetByIndex(0), dataset)
-        self.assertEqual(self._backend.getDatasetByName(datasetName), dataset)
-        self.assertEqual(self._backend.getDataset(dataset.getId()), dataset)
+        self.assertEqual(self._dataRepo.getNumDatasets(), 0)
+        self.assertEqual(self._dataRepo.getDatasets(), [])
+        self._dataRepo.addDataset(dataset)
+        self.assertEqual(self._dataRepo.getNumDatasets(), 1)
+        self.assertEqual(self._dataRepo.getDatasets(), [dataset])
+        self.assertEqual(self._dataRepo.getDatasetByIndex(0), dataset)
+        self.assertEqual(self._dataRepo.getDatasetByName(datasetName), dataset)
+        self.assertEqual(self._dataRepo.getDataset(dataset.getId()), dataset)
 
     def testAddMultipleDatasets(self):
         firstDatasetName = "ds1"
         firstDataset = datasets.AbstractDataset(firstDatasetName)
         secondDatasetName = "ds2"
         secondDataset = datasets.AbstractDataset(secondDatasetName)
-        self.assertEqual(self._backend.getNumDatasets(), 0)
-        self.assertEqual(self._backend.getDatasets(), [])
-        self._backend.addDataset(firstDataset)
-        self._backend.addDataset(secondDataset)
-        self.assertEqual(self._backend.getNumDatasets(), 2)
-        self.assertEqual(self._backend.getDatasets(),
+        self.assertEqual(self._dataRepo.getNumDatasets(), 0)
+        self.assertEqual(self._dataRepo.getDatasets(), [])
+        self._dataRepo.addDataset(firstDataset)
+        self._dataRepo.addDataset(secondDataset)
+        self.assertEqual(self._dataRepo.getNumDatasets(), 2)
+        self.assertEqual(self._dataRepo.getDatasets(),
                          [firstDataset, secondDataset])
-        self.assertEqual(self._backend.getDatasetByIndex(0), firstDataset)
-        self.assertEqual(self._backend.getDatasetByIndex(1), secondDataset)
-        self.assertEqual(self._backend.getDatasetByName(firstDatasetName),
+        self.assertEqual(self._dataRepo.getDatasetByIndex(0), firstDataset)
+        self.assertEqual(self._dataRepo.getDatasetByIndex(1), secondDataset)
+        self.assertEqual(self._dataRepo.getDatasetByName(firstDatasetName),
                          firstDataset)
-        self.assertEqual(self._backend.getDatasetByName(secondDatasetName),
+        self.assertEqual(self._dataRepo.getDatasetByName(secondDatasetName),
                          secondDataset)
-        self.assertEqual(self._backend.getDataset(firstDataset.getId()),
+        self.assertEqual(self._dataRepo.getDataset(firstDataset.getId()),
                          firstDataset)
-        self.assertEqual(self._backend.getDataset(secondDataset.getId()),
+        self.assertEqual(self._dataRepo.getDataset(secondDataset.getId()),
                          secondDataset)
 
     def testAddOneReferenceSet(self):
         referenceSetLocalId = "id"
         referenceSet = references.AbstractReferenceSet(referenceSetLocalId)
-        self.assertEqual(self._backend.getNumReferenceSets(), 0)
-        self.assertEqual(self._backend.getReferenceSets(), [])
-        self._backend.addReferenceSet(referenceSet)
-        self.assertEqual(self._backend.getNumReferenceSets(), 1)
-        self.assertEqual(self._backend.getReferenceSets(), [referenceSet])
-        self.assertEqual(self._backend.getReferenceSetByIndex(0), referenceSet)
+        self.assertEqual(self._dataRepo.getNumReferenceSets(), 0)
+        self.assertEqual(self._dataRepo.getReferenceSets(), [])
+        self._dataRepo.addReferenceSet(referenceSet)
+        self.assertEqual(self._dataRepo.getNumReferenceSets(), 1)
+        self.assertEqual(self._dataRepo.getReferenceSets(), [referenceSet])
         self.assertEqual(
-            self._backend.getReferenceSetByName(referenceSet.getLocalId()),
+            self._dataRepo.getReferenceSetByIndex(0), referenceSet)
+        self.assertEqual(
+            self._dataRepo.getReferenceSetByName(referenceSet.getLocalId()),
             referenceSet)
-        self.assertEqual(self._backend.getReferenceSet(referenceSet.getId()),
+        self.assertEqual(self._dataRepo.getReferenceSet(referenceSet.getId()),
                          referenceSet)
 
     def testAddMultipleReferenceSet(self):
@@ -78,70 +81,70 @@ class TestAbstractBackend(unittest.TestCase):
         firstRS = references.AbstractReferenceSet(firstRSLocalId)
         secondRSLocalId = "id2"
         secondRS = references.AbstractReferenceSet(secondRSLocalId)
-        self.assertEqual(self._backend.getNumReferenceSets(), 0)
-        self.assertEqual(self._backend.getReferenceSets(), [])
-        self._backend.addReferenceSet(firstRS)
-        self._backend.addReferenceSet(secondRS)
-        self.assertEqual(self._backend.getNumReferenceSets(), 2)
-        self.assertEqual(self._backend.getReferenceSets(),
+        self.assertEqual(self._dataRepo.getNumReferenceSets(), 0)
+        self.assertEqual(self._dataRepo.getReferenceSets(), [])
+        self._dataRepo.addReferenceSet(firstRS)
+        self._dataRepo.addReferenceSet(secondRS)
+        self.assertEqual(self._dataRepo.getNumReferenceSets(), 2)
+        self.assertEqual(self._dataRepo.getReferenceSets(),
                          [firstRS, secondRS])
-        self.assertEqual(self._backend.getReferenceSetByIndex(0),
+        self.assertEqual(self._dataRepo.getReferenceSetByIndex(0),
                          firstRS)
-        self.assertEqual(self._backend.getReferenceSetByIndex(1),
+        self.assertEqual(self._dataRepo.getReferenceSetByIndex(1),
                          secondRS)
         self.assertEqual(
-            self._backend.getReferenceSetByName(firstRS.getLocalId()),
+            self._dataRepo.getReferenceSetByName(firstRS.getLocalId()),
             firstRS)
         self.assertEqual(
-            self._backend.getReferenceSetByName(secondRS.getLocalId()),
+            self._dataRepo.getReferenceSetByName(secondRS.getLocalId()),
             secondRS)
-        self.assertEqual(self._backend.getReferenceSet(firstRS.getId()),
+        self.assertEqual(self._dataRepo.getReferenceSet(firstRS.getId()),
                          firstRS)
-        self.assertEqual(self._backend.getReferenceSet(secondRS.getId()),
+        self.assertEqual(self._dataRepo.getReferenceSet(secondRS.getId()),
                          secondRS)
 
     def testGetDatasetBadId(self):
         for badId in ["", None, "NO SUCH ID"]:
             self.assertRaises(
                 exceptions.DatasetNotFoundException,
-                self._backend.getDataset, badId)
+                self._dataRepo.getDataset, badId)
 
     def testGetReferenceSetBadId(self):
         for badId in ["", None, "NO SUCH ID"]:
             self.assertRaises(
                 exceptions.ReferenceSetNotFoundException,
-                self._backend.getReferenceSet, badId)
+                self._dataRepo.getReferenceSet, badId)
 
     def testGetDatasetBadName(self):
         for badName in ["", None, "NO SUCH NAME"]:
             self.assertRaises(
                 exceptions.DatasetNameNotFoundException,
-                self._backend.getDatasetByName, badName)
+                self._dataRepo.getDatasetByName, badName)
 
     def testGetReferenceSetBadName(self):
         for badName in ["", None, "NO SUCH NAME"]:
             self.assertRaises(
                 exceptions.ReferenceSetNameNotFoundException,
-                self._backend.getReferenceSetByName, badName)
+                self._dataRepo.getReferenceSetByName, badName)
 
     def testGetDatasetByIndexBadIndex(self):
-        self.assertRaises(IndexError, self._backend.getDatasetByIndex, 0)
-        self.assertRaises(TypeError, self._backend.getDatasetByIndex, None)
-        self.assertRaises(TypeError, self._backend.getDatasetByIndex, "")
+        self.assertRaises(IndexError, self._dataRepo.getDatasetByIndex, 0)
+        self.assertRaises(TypeError, self._dataRepo.getDatasetByIndex, None)
+        self.assertRaises(TypeError, self._dataRepo.getDatasetByIndex, "")
         datasetName = "ds"
         dataset = datasets.AbstractDataset(datasetName)
-        self._backend.addDataset(dataset)
-        self.assertRaises(IndexError, self._backend.getDatasetByIndex, 1)
+        self._dataRepo.addDataset(dataset)
+        self.assertRaises(IndexError, self._dataRepo.getDatasetByIndex, 1)
 
     def testGetReferenceSetByIndexBadIndex(self):
-        self.assertRaises(IndexError, self._backend.getReferenceSetByIndex, 0)
+        self.assertRaises(IndexError, self._dataRepo.getReferenceSetByIndex, 0)
         self.assertRaises(TypeError,
-                          self._backend.getReferenceSetByIndex, None)
-        self.assertRaises(TypeError, self._backend.getReferenceSetByIndex, "")
+                          self._dataRepo.getReferenceSetByIndex, None)
+        self.assertRaises(TypeError, self._dataRepo.getReferenceSetByIndex, "")
         referenceSetName = "id"
         referenceSet = references.AbstractReferenceSet(referenceSetName)
-        self._backend.addReferenceSet(referenceSet)
-        self.assertRaises(IndexError, self._backend.getReferenceSetByIndex, 1)
+        self._dataRepo.addReferenceSet(referenceSet)
+        self.assertRaises(IndexError, self._dataRepo.getReferenceSetByIndex, 1)
 
 
 class TestFileSystemBackend(unittest.TestCase):
@@ -151,26 +154,28 @@ class TestFileSystemBackend(unittest.TestCase):
     """
     def setUp(self):
         self._dataDir = os.path.join("tests", "data")
-        self._backend = backend.FileSystemBackend(self._dataDir)
+        self._backend = backend.Backend(
+            datarepo.FileSystemDataRepository(self._dataDir))
+        self._dataRepo = self._backend.getDataRepository()
 
     def testDatasets(self):
-        self.assertEqual(self._backend.getNumDatasets(), 1)
-        dataset = self._backend.getDatasetByIndex(0)
+        self.assertEqual(self._dataRepo.getNumDatasets(), 1)
+        dataset = self._dataRepo.getDatasetByIndex(0)
         self.assertEqual(dataset.getLocalId(), "dataset1")
-        self.assertEqual(self._backend.getDatasetByName("dataset1"), dataset)
+        self.assertEqual(self._dataRepo.getDatasetByName("dataset1"), dataset)
 
     def testReferenceSets(self):
-        self.assertEqual(self._backend.getNumReferenceSets(), 4)
-        referenceSets = enumerate(self._backend.getReferenceSets())
+        self.assertEqual(self._dataRepo.getNumReferenceSets(), 4)
+        referenceSets = enumerate(self._dataRepo.getReferenceSets())
         referenceSetsByName = sorted(
             referenceSets, key=lambda x: x[1].getLocalId())
         expected_names = sorted(
             ["Default", "NCBI37", "example_1", "example_2"])
         for name, (index, rs) in zip(expected_names, referenceSetsByName):
             self.assertEqual(rs.getLocalId(), name)
-            self.assertEqual(self._backend.getReferenceSetByIndex(index), rs)
-            self.assertEqual(self._backend.getReferenceSet(rs.getId()), rs)
-            self.assertEqual(self._backend.getReferenceSetByName(name), rs)
+            self.assertEqual(self._dataRepo.getReferenceSetByIndex(index), rs)
+            self.assertEqual(self._dataRepo.getReferenceSet(rs.getId()), rs)
+            self.assertEqual(self._dataRepo.getReferenceSetByName(name), rs)
 
 
 class TestTopLevelObjectGenerator(unittest.TestCase):
@@ -189,7 +194,7 @@ class TestTopLevelObjectGenerator(unittest.TestCase):
         self.request.pageToken = None
         self.numObjects = 3
         self.objects = [FakeTopLevelObject() for j in range(self.numObjects)]
-        self.backend = backend.AbstractBackend()
+        self.backend = backend.Backend(datarepo.AbstractDataRepository())
 
     def getObjectByIndex(self, index):
         return self.objects[index]

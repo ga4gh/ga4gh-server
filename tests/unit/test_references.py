@@ -11,6 +11,7 @@ import unittest
 import ga4gh.backend as backend
 import ga4gh.datamodel.references as references
 import ga4gh.exceptions as exceptions
+import ga4gh.datarepo as datarepo
 
 
 class TestAbstractReferenceSet(unittest.TestCase):
@@ -18,7 +19,7 @@ class TestAbstractReferenceSet(unittest.TestCase):
     Unit tests for the abstract reference set.
     """
     def setUp(self):
-        self._backend = backend.AbstractBackend()
+        self._backend = backend.Backend(datarepo.AbstractDataRepository())
         self._referenceSet = references.AbstractReferenceSet(
             self._backend)
 
@@ -78,7 +79,8 @@ class TestAbstractReference(unittest.TestCase):
     Unit tests for the abstract reference object.
     """
     def setUp(self):
-        self._backend = backend.AbstractBackend()
+        self._backend = backend.Backend(
+            datarepo.AbstractDataRepository())
         self._referenceSet = references.AbstractReferenceSet(
             self._backend)
         self._reference = references.AbstractReference(
