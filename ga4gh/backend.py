@@ -213,11 +213,11 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
 
     @classmethod
     def _getStart(cls, annotation):
-        return annotation.variant.start
+        return annotation.start
 
     @classmethod
     def _getEnd(cls, annotation):
-        return annotation.variant.end
+        return annotation.end
 
     def next(self):
         while True:
@@ -234,7 +234,9 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         if not vann.transcriptEffects:
             return False
         for teff in vann.transcriptEffects:
-            if not self.filterEffect(teff):
+            if self.filterEffect(teff):
+                return True
+            else:
                 return False
         return True
 
@@ -463,9 +465,15 @@ class Backend(object):
         """
         compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        return self._topLevelObjectGenerator(
-            request, dataset.getNumVariantAnnotationSets(),
-            dataset.getVariantAnnotationSetByIndex)
+        results = []
+        for annset in dataset.getVariantAnnotationSets():
+            try:
+                variantSetId = request.variantSetId
+            except ValueError:
+                variantSetId = ""
+            if str(annset._variantSetId) == str(variantSetId):
+                results.append(annset)
+        return self._objectListGenerator(request, results)
 
     def readsGenerator(self, request):
         """

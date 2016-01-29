@@ -307,7 +307,7 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "variantsets", protocol.SearchVariantSetsResponse)
 
-    def searchVariantAnnotationSets(self, datasetId):
+    def searchVariantAnnotationSets(self, variantSetId):
         """
         Returns an iterator over the AnnotationSets fulfilling the specified
         conditions from the specified Dataset.
@@ -318,7 +318,7 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchVariantAnnotationSetsRequest()
-        request.datasetId = datasetId
+        request.variantSetId = variantSetId
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "variantannotationsets",

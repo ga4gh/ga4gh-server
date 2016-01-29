@@ -145,6 +145,13 @@ class ServerStatus(object):
         """
         return app.backend.getDataRepository().getReferenceSets()
 
+    def getVariantAnnotationSets(self, datasetId):
+        """
+        Returns the list of ReferenceSets for this server.
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getVariantAnnotationSets()
+
 
 def reset():
     """

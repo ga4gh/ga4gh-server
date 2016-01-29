@@ -10,6 +10,8 @@ import datetime
 import random
 import hashlib
 import re
+import os
+import json
 
 import pysam
 
@@ -586,22 +588,55 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                         description=description))
         return ret
 
+    def _metadataFileExists(self, fname):
+        """
+        Check for existence of description JSON.
+        """
+        return os.path.exists(fname)
+
+    def _parseMetadataJson(self, str):
+        """
+        Parse metadata JSON into python dict.
+        """
+        return json.loads(str)
+
+    def _getMetadataFilename(self, path, localId):
+        """
+        Given a path and identifier create a path
+        to the expected metadata JSON.
+        """
+        return os.path.join(path, localId + ".json")
+
+    def _isAnnotated(self, path, localId):
+        ret = False
+        fname = self._getMetadataFilename(path, localId)
+        if self._metadataFileExists(fname):
+            with open(fname) as metadataJson:
+                metadata = json.loads(metadataJson.read())
+            if metadata['isAnnotated']:
+                ret = True
+        return ret
+
 
 class HtslibVariantAnnotationSet(HtslibVariantSet):
     """
     Class representing a single variant annotation set backed by a directory of
     indexed VCF or BCF files.
     """
-    compoundIdClass = datamodel.VariantAnnotationSetCompoundId
-
-    def __init__(self, parentContainer, localId, dataDir, backend):
+    def __init__(self, parentContainer, localId, dataDir,
+                 backend, variantSet):
         super(HtslibVariantAnnotationSet, self).__init__(
             parentContainer, localId, dataDir, backend)
+        self.compoundIdClass = datamodel.VariantAnnotationSetCompoundId
+        self._variantSetId = variantSet.getCompoundId()
+        self._variantSet = variantSet
+        self._compoundId = datamodel.VariantAnnotationSetCompoundId(
+            self.getCompoundId(), 'variantannotations')
         self._sequenceOntology = backend.getOntology('sequence_ontology')
 
     def getVariantAnnotations(self, referenceName, startPosition, endPosition):
         """
-        Returns an iterator over the specified variant annotaitons.
+        Returns an iterator over the specified variant annotations.
         """
         if referenceName in self._chromFileMap:
             varFileName = self._chromFileMap[referenceName]
@@ -656,7 +691,6 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         effect.effects = self.convertSeqOntology(effects)
         effect.impact = impact
         effect.featureId = featureId
-        # TODO what is actually meant to go in here?
         effect.hgvsAnnotation = protocol.HGVSAnnotation()
         effect.hgvsAnnotation.genomic = hgvsG
         effect.hgvsAnnotation.coding = hgvsC
@@ -692,13 +726,8 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         """
         variant = self.convertVariant(record, None)
         annotation = self._createGaVariantAnnotation()
-        # TODO is this _really_ necessary here? This breaks a lot of isolation
-        # rules, and will cause major problems when we move over to protobuf.
-        # This should be removed and an alternative approach found. It's not
-        # entirely clear ho_ this is being used at the moment, so it could
-        # just be deleted, but I'm leaving it for the moment until we get
-        # some test coverage on this code.
-        annotation.variant = variant
+        annotation.start = variant.start
+        annotation.end = variant.end
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
@@ -719,6 +748,27 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             gaVariant.start, md5)
         return str(compoundId)
 
+    def toProtocolElement(self):
+        """
+        Converts this VariantSet into its GA4GH protocol equivalent.
+        """
+        protocolElement = protocol.VariantAnnotationSet()
+        protocolElement.id = self.getId()
+        protocolElement.variantSetId = str(self._variantSetId)
+        protocolElement.name = self.getLocalId()
+        return protocolElement
+
+    def getVariantId(self, gaVariant):
+        """
+        Returns an ID string suitable for the specified GA Variant Annotation
+        object in this variant set.
+        """
+        md5 = self.hashVariant(gaVariant)
+        compoundId = datamodel.VariantCompoundId(
+            self._variantSetId, gaVariant.referenceName,
+            gaVariant.start, md5)
+        return str(compoundId)
+
     def getTranscriptEffectId(self, gaTranscriptEffect):
         effs = [eff.name for eff in gaTranscriptEffect.effects]
         return hashlib.md5(
@@ -730,7 +780,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
 
     def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
         """
-        Produces an MD5 hash of the ga variant and gaVariantAnnotaiton objects
+        Produces an MD5 hash of the gaVariant and gaVariantAnnotation objects
         """
         treffs = [treff.id for treff in gaVariantAnnotation.transcriptEffects]
         return hashlib.md5(
