@@ -24,8 +24,8 @@ class TestClientOutput(unittest.TestCase):
     def setUp(self):
         self._dataDir = "tests/data"
         self._dataUrl = "file://{}".format(self._dataDir)
-        self._backend = backend.Backend(
-            datarepo.FileSystemDataRepository(self._dataDir))
+        dataRepository = datarepo.FileSystemDataRepository(self._dataDir)
+        self._backend = backend.Backend(dataRepository)
         self._client = client.LocalClient(self._backend)
 
     def captureCliOutput(self, command, arguments, outputFormat):

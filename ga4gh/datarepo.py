@@ -160,7 +160,7 @@ class FileSystemDataRepository(AbstractDataRepository):
     """
     A data repository based on the file system
     """
-    def __init__(self, dataDir):
+    def __init__(self, dataDir, doConsistencyCheck=True):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
         sourceDirNames = ["referenceSets", "datasets"]
@@ -174,3 +174,10 @@ class FileSystemDataRepository(AbstractDataRepository):
                 relativePath = os.path.join(sourceDir, setName)
                 if os.path.isdir(relativePath):
                     objectAdder(constructor(setName, relativePath, self))
+        if doConsistencyCheck:
+            self._checkConsistency()
+
+    def _checkConsistency(self):
+        for dataset in self.getDatasets():
+            for readGroupSet in dataset.getReadGroupSets():
+                readGroupSet.checkConsistency(self)

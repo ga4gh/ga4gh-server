@@ -203,6 +203,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "file":
         dataRepository = datarepo.FileSystemDataRepository(os.path.join(
             dataSource.netloc, dataSource.path))
+        dataRepository.checkConsistency()
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)
