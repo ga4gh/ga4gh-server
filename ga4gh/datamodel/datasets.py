@@ -182,6 +182,9 @@ class SimulatedDataset(AbstractDataset):
             variantSet = variants.SimulatedVariantSet(
                 self, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
+            variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
+                self, "simVas{}".format(i), variantSet)
+            self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
             localId = 'simRgs{}'.format(i)
@@ -210,7 +213,7 @@ class FileSystemDataset(AbstractDataset):
                     self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
             # Variant annotations sets
-                if variantSet._isAnnotated(relativePath, localId):
+                if variantSet.isAnnotated(relativePath, localId):
                     variantAnnotationSet = variants.HtslibVariantAnnotationSet(
                             self, localId, relativePath, dataRepository,
                             variantSet)

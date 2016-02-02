@@ -83,15 +83,15 @@ class Analysis(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "Analysis", "fields": [{"doc": "", "type": "string", "name": "id"},
+{"default": null, "type": ["null", "string"], "name": "name"},
+{"default": null, "type": ["null", "string"], "name": "description"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "description"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "recordCreateTime"}, {"doc": "", "type": "string",
-"name": "recordUpdateTime"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "type"}, {"default": [], "doc": "",
-"type": {"items": "string", "type": "array"}, "name": "software"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
+"recordCreateTime"}, {"doc": "", "type": "string", "name":
+"recordUpdateTime"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "type"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "software"}, {"default":
+{}, "doc": "", "type": {"values": {"items": "string", "type":
+"array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -118,13 +118,11 @@ class Analysis(ProtocolElement):
     def __init__(self, **kwargs):
         self.description = kwargs.get(
             'description', None)
-        """
-        A description of the analysis.
-        """
         self.id = kwargs.get(
             'id', None)
         """
-        The analysis UUID. This is globally unique.
+        Formats of id | name | description | accessions are described
+        in the   documentation on general attributes and formats.
         """
         self.info = kwargs.get(
             'info', {})
@@ -133,9 +131,6 @@ class Analysis(ProtocolElement):
         """
         self.name = kwargs.get(
             'name', None)
-        """
-        The name of the analysis.
-        """
         self.recordCreateTime = kwargs.get(
             'recordCreateTime', None)
         """
@@ -799,13 +794,17 @@ class HGVSAnnotation(ProtocolElement):
     A HGVSAnnotation record holds Human Genome Variation Society
     descriptions of the sequence change with respect to genomic,
     transcript and protein sequences. See:
-    http://www.hgvs.org/mutnomen/recs.html.
+    http://www.hgvs.org/mutnomen/recs.html. Descriptions should be
+    provided at genomic level. Descriptions at transcript level should
+    be provided when the allele lies within a transcript. Descriptions
+    at protein level should be provided when the allele lies within
+    the translated sequence or stop codon.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "HGVSAnnotation", "fields": [{"default": null, "type": ["null",
 "string"], "name": "genomic"}, {"default": null, "type": ["null",
-"string"], "name": "coding"}, {"default": null, "type": ["null",
+"string"], "name": "transcript"}, {"default": null, "type": ["null",
 "string"], "name": "protein"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
@@ -823,16 +822,16 @@ class HGVSAnnotation(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'coding', 'genomic', 'protein'
+        'genomic', 'protein', 'transcript'
     ]
 
     def __init__(self, **kwargs):
-        self.coding = kwargs.get(
-            'coding', None)
         self.genomic = kwargs.get(
             'genomic', None)
         self.protein = kwargs.get(
             'protein', None)
+        self.transcript = kwargs.get(
+            'transcript', None)
 
 
 class Impact(object):
@@ -1040,14 +1039,14 @@ class OntologyTerm(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
-"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}], "doc": ""}
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
         "id",
-        "ontologySource",
     ])
 
     @classmethod
@@ -1062,26 +1061,38 @@ class OntologyTerm(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'id', 'name', 'ontologySource'
+        'id', 'sourceName', 'sourceVersion', 'term'
     ]
 
     def __init__(self, **kwargs):
         self.id = kwargs.get(
             'id', None)
         """
-        The ID defined by the external onotology source.     (e.g.
-        http://purl.obolibrary.org/obo/OBI_0001271)
+        Ontology source identifier - the identifier, a CURIE
+        (preferred) or   PURL for an ontology source e.g.
+        http://purl.obolibrary.org/obo/hp.obo   It differs from the
+        standard GA4GH schema's :ref:id <apidesign_object_ids>   in
+        that it is a URI pointing to an information resource outside
+        of the scope   of the schema or its resource implementation.
         """
-        self.name = kwargs.get(
-            'name', None)
+        self.sourceName = kwargs.get(
+            'sourceName', None)
         """
-        The name of the onotology term. (e.g. RNA-seq assay)
+        Ontology source name - the name of ontology from which the
+        term is obtained   e.g. 'Human Phenotype Ontology'
         """
-        self.ontologySource = kwargs.get(
-            'ontologySource', None)
+        self.sourceVersion = kwargs.get(
+            'sourceVersion', None)
         """
-        The source of the onotology term.     (e.g. Ontology for
-        Biomedical Investigation)
+        Ontology source version - the version of the ontology from
+        which the   OntologyTerm is obtained; e.g. 2.6.1.   There is
+        no standard for ontology versioning and some frequently
+        released ontologies may use a datestamp, or build number.
+        """
+        self.term = kwargs.get(
+            'term', None)
+        """
+        Ontology term - the representation the id is pointing to.
         """
 
 
@@ -2846,15 +2857,15 @@ class SearchVariantAnnotationSetsResponse(SearchResponse):
 "variantSetId"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "name"}, {"doc": "", "type": {"doc": "", "type":
 "record", "name": "Analysis", "fields": [{"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "description"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "recordCreateTime"}, {"doc":
-"", "type": "string", "name": "recordUpdateTime"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "type"}, {"default":
-[], "doc": "", "type": {"items": "string", "type": "array"}, "name":
-"software"}, {"default": {}, "doc": "", "type": {"values": {"items":
-"string", "type": "array"}, "type": "map"}, "name": "info"}]}, "name":
+"name": "id"}, {"default": null, "type": ["null", "string"], "name":
+"name"}, {"default": null, "type": ["null", "string"], "name":
+"description"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "recordCreateTime"}, {"doc": "", "type": "string",
+"name": "recordUpdateTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "type"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "software"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}]}, "name":
 "analysis"}], "doc": ""}, "type": "array"}, "name":
 "variantAnnotationSets"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "nextPageToken"}], "doc": ""}
@@ -2913,12 +2924,13 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceId"},
 "long", "name": "end"}, {"default": null, "doc": "", "type": ["null",
 {"items": {"namespace": "org.ga4gh.models", "type": "record", "name":
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
-"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}], "doc": ""}, "type": "array"}], "name": "effects"},
-{"default": null, "doc": "", "type": ["null", "int"], "name":
-"pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "pageToken"}], "doc": ""}
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}, "type":
+"array"}], "name": "effects"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -2948,7 +2960,8 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceId"},
             'effects', None)
         """
         Only return variant annotations including these effects (SO
-        terms).   If null, return all variant annotations.
+        terms). Exact   matching across all fields of the OntologyTerm
+        is required. If null, return   all variant annotations.
         """
         self.end = kwargs.get(
             'end', None)
@@ -3023,35 +3036,36 @@ class SearchVariantAnnotationsResponse(SearchResponse):
 null, "doc": "", "type": ["null", "string"], "name":
 "alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
 "record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "ontologySource"}, {"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "type": "array"}, "name": "effects"},
-{"doc": "", "type": {"symbols": ["HIGH", "MODERATE", "LOW",
-"MODIFIER"], "doc": "", "type": "enum", "name": "Impact"}, "name":
-"impact"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
-"HGVSAnnotation", "fields": [{"default": null, "type": ["null",
-"string"], "name": "genomic"}, {"default": null, "type": ["null",
-"string"], "name": "coding"}, {"default": null, "type": ["null",
-"string"], "name": "protein"}]}, "name": "hgvsAnnotation"},
-{"default": null, "doc": "", "type": ["null", {"doc": "", "type":
-"record", "name": "AlleleLocation", "fields": [{"doc": "", "type":
-"int", "name": "start"}, {"default": null, "doc": "", "type": ["null",
-"int"], "name": "end"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceSequence"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "alternateSequence"}]}], "name":
-"cDNALocation"}, {"default": null, "type": ["null", "AlleleLocation"],
-"name": "CDSLocation"}, {"default": null, "doc": "", "type": ["null",
-"AlleleLocation"], "name": "proteinLocation"}, {"doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "AnalysisResult",
-"fields": [{"doc": "", "type": "string", "name": "analysisId"},
-{"doc": "", "type": ["null", "string"], "name": "result"}, {"doc": "",
-"type": ["null", "int"], "name": "score"}]}, "type": "array"}, "name":
-"analysisResults"}]}, "type": "array"}, "name": "transcriptEffects"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}], "doc": ""},
-"type": "array"}, "name": "variantAnnotations"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "nextPageToken"}],
-"doc": ""}
+"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "term"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
+"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
+"Impact"}, "name": "impact"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "HGVSAnnotation", "fields": [{"default": null,
+"type": ["null", "string"], "name": "genomic"}, {"default": null,
+"type": ["null", "string"], "name": "transcript"}, {"default": null,
+"type": ["null", "string"], "name": "protein"}]}, "name":
+"hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "AlleleLocation", "fields":
+[{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "end"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceSequence"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"alternateSequence"}]}], "name": "cDNALocation"}, {"default": null,
+"type": ["null", "AlleleLocation"], "name": "CDSLocation"},
+{"default": null, "doc": "", "type": ["null", "AlleleLocation"],
+"name": "proteinLocation"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "AnalysisResult", "fields": [{"doc": "",
+"type": "string", "name": "analysisId"}, {"doc": "", "type": ["null",
+"string"], "name": "result"}, {"doc": "", "type": ["null", "int"],
+"name": "score"}]}, "type": "array"}, "name": "analysisResults"}]},
+"type": "array"}, "name": "transcriptEffects"}, {"default": {}, "doc":
+"", "type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}, "type": "array"}, "name":
+"variantAnnotations"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -3397,30 +3411,32 @@ class TranscriptEffect(ProtocolElement):
 null, "doc": "", "type": ["null", "string"], "name":
 "alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
 "record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "ontologySource"}, {"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "type": "array"}, "name": "effects"},
-{"doc": "", "type": {"symbols": ["HIGH", "MODERATE", "LOW",
-"MODIFIER"], "doc": "", "type": "enum", "name": "Impact"}, "name":
-"impact"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
-"HGVSAnnotation", "fields": [{"default": null, "type": ["null",
-"string"], "name": "genomic"}, {"default": null, "type": ["null",
-"string"], "name": "coding"}, {"default": null, "type": ["null",
-"string"], "name": "protein"}]}, "name": "hgvsAnnotation"},
-{"default": null, "doc": "", "type": ["null", {"doc": "", "type":
-"record", "name": "AlleleLocation", "fields": [{"doc": "", "type":
-"int", "name": "start"}, {"default": null, "doc": "", "type": ["null",
-"int"], "name": "end"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceSequence"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "alternateSequence"}]}], "name":
-"cDNALocation"}, {"default": null, "type": ["null", "AlleleLocation"],
-"name": "CDSLocation"}, {"default": null, "doc": "", "type": ["null",
-"AlleleLocation"], "name": "proteinLocation"}, {"doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "AnalysisResult",
-"fields": [{"doc": "", "type": "string", "name": "analysisId"},
-{"doc": "", "type": ["null", "string"], "name": "result"}, {"doc": "",
-"type": ["null", "int"], "name": "score"}]}, "type": "array"}, "name":
-"analysisResults"}], "doc": ""}
+"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "term"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
+"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
+"Impact"}, "name": "impact"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "HGVSAnnotation", "fields": [{"default": null,
+"type": ["null", "string"], "name": "genomic"}, {"default": null,
+"type": ["null", "string"], "name": "transcript"}, {"default": null,
+"type": ["null", "string"], "name": "protein"}]}, "name":
+"hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "AlleleLocation", "fields":
+[{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "end"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceSequence"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"alternateSequence"}]}], "name": "cDNALocation"}, {"default": null,
+"type": ["null", "AlleleLocation"], "name": "CDSLocation"},
+{"default": null, "doc": "", "type": ["null", "AlleleLocation"],
+"name": "proteinLocation"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "AnalysisResult", "fields": [{"doc": "",
+"type": "string", "name": "analysisId"}, {"doc": "", "type": ["null",
+"string"], "name": "result"}, {"doc": "", "type": ["null", "int"],
+"name": "score"}]}, "type": "array"}, "name": "analysisResults"}],
+"doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -3675,32 +3691,34 @@ class VariantAnnotation(ProtocolElement):
 null, "doc": "", "type": ["null", "string"], "name":
 "alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
 "record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "ontologySource"}, {"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "type": "array"}, "name": "effects"},
-{"doc": "", "type": {"symbols": ["HIGH", "MODERATE", "LOW",
-"MODIFIER"], "doc": "", "type": "enum", "name": "Impact"}, "name":
-"impact"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
-"HGVSAnnotation", "fields": [{"default": null, "type": ["null",
-"string"], "name": "genomic"}, {"default": null, "type": ["null",
-"string"], "name": "coding"}, {"default": null, "type": ["null",
-"string"], "name": "protein"}]}, "name": "hgvsAnnotation"},
-{"default": null, "doc": "", "type": ["null", {"doc": "", "type":
-"record", "name": "AlleleLocation", "fields": [{"doc": "", "type":
-"int", "name": "start"}, {"default": null, "doc": "", "type": ["null",
-"int"], "name": "end"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceSequence"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "alternateSequence"}]}], "name":
-"cDNALocation"}, {"default": null, "type": ["null", "AlleleLocation"],
-"name": "CDSLocation"}, {"default": null, "doc": "", "type": ["null",
-"AlleleLocation"], "name": "proteinLocation"}, {"doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "AnalysisResult",
-"fields": [{"doc": "", "type": "string", "name": "analysisId"},
-{"doc": "", "type": ["null", "string"], "name": "result"}, {"doc": "",
-"type": ["null", "int"], "name": "score"}]}, "type": "array"}, "name":
-"analysisResults"}]}, "type": "array"}, "name": "transcriptEffects"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
+"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "term"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
+"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
+"Impact"}, "name": "impact"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "HGVSAnnotation", "fields": [{"default": null,
+"type": ["null", "string"], "name": "genomic"}, {"default": null,
+"type": ["null", "string"], "name": "transcript"}, {"default": null,
+"type": ["null", "string"], "name": "protein"}]}, "name":
+"hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "AlleleLocation", "fields":
+[{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "end"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceSequence"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"alternateSequence"}]}], "name": "cDNALocation"}, {"default": null,
+"type": ["null", "AlleleLocation"], "name": "CDSLocation"},
+{"default": null, "doc": "", "type": ["null", "AlleleLocation"],
+"name": "proteinLocation"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "AnalysisResult", "fields": [{"doc": "",
+"type": "string", "name": "analysisId"}, {"doc": "", "type": ["null",
+"string"], "name": "result"}, {"doc": "", "type": ["null", "int"],
+"name": "score"}]}, "type": "array"}, "name": "analysisResults"}]},
+"type": "array"}, "name": "transcriptEffects"}, {"default": {}, "doc":
+"", "type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -3778,16 +3796,16 @@ class VariantAnnotationSet(ProtocolElement):
 {"default": null, "doc": "", "type": ["null", "string"], "name":
 "name"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
 "Analysis", "fields": [{"doc": "", "type": "string", "name": "id"},
+{"default": null, "type": ["null", "string"], "name": "name"},
+{"default": null, "type": ["null", "string"], "name": "description"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "description"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "recordCreateTime"}, {"doc": "", "type": "string",
-"name": "recordUpdateTime"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "type"}, {"default": [], "doc": "",
-"type": {"items": "string", "type": "array"}, "name": "software"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}]}, "name":
-"analysis"}], "doc": ""}
+"recordCreateTime"}, {"doc": "", "type": "string", "name":
+"recordUpdateTime"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "type"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "software"}, {"default":
+{}, "doc": "", "type": {"values": {"items": "string", "type":
+"array"}, "type": "map"}, "name": "info"}]}, "name": "analysis"}],
+"doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([

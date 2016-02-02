@@ -47,7 +47,7 @@ class AbstractDataRepository(object):
 
     def addOntology(self, ontology):
         """
-        Adds ontologies to this backend.
+        Add an ontology to this data repository.
         """
         for name in ontology.keys():
             self._ontologyNameMap[name] = ontology.get(name)

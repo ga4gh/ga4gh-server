@@ -12,6 +12,7 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
+import ga4gh.protocol as protocol
 
 
 class TestSimulatedVariantSet(unittest.TestCase):
@@ -117,6 +118,38 @@ class TestSimulatedVariantSet(unittest.TestCase):
                 for field in timeDependentFields:
                     setattr(variant, field, 0)
         self.assertEqual(variantListOne, variantListTwo)
+
+
+class TestSimulatedVariantAnnotationSet(unittest.TestCase):
+    def setUp(self):
+        self.randomSeed = 1
+        self.numCalls = 2
+        # ensure variantDensity is >= 1 so we get deterministic behavoir
+        self.variantDensity = 1
+        self.referenceName = 'ref'
+        self.startPosition = 100
+        self.endPosition = 120
+        self.callSetIds = ['unused']
+        self.bases = ["A", "C", "G", "T"]
+
+    def testCreation(self):
+        dataset = datasets.AbstractDataset('dataset1')
+        localId = "variantAnnotationSetId"
+        simulatedVariantSet = variants.SimulatedVariantSet(
+            dataset, 'variantSet1', randomSeed=self.randomSeed,
+            numCalls=self.numCalls, variantDensity=self.variantDensity)
+        simulatedVariantAnnotationSet = variants.SimulatedVariantAnnotationSet(
+            dataset, localId, simulatedVariantSet, self.randomSeed)
+        annotations = simulatedVariantAnnotationSet.getVariantAnnotations(
+                    self.referenceName, self.startPosition, self.endPosition)
+        self.assertEquals(
+            simulatedVariantSet.toProtocolElement().id,
+            simulatedVariantAnnotationSet.toProtocolElement().variantSetId,
+            "Variant Set ID should match the annotation's variant set ID")
+        for ann in annotations:
+            for key in protocol.VariantAnnotation().requiredFields:
+                self.assertTrue(hasattr(ann, key),
+                                "Failed to find required key: " + key)
 
 
 class TestSimulatedReadGroupSet(unittest.TestCase):
