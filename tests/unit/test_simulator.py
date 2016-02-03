@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import unittest
+import datetime
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -148,6 +149,10 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
             "Variant Set ID should match the annotation's variant set ID")
         for ann in annotations:
             for key in protocol.VariantAnnotation().requiredFields:
+                self.assertEquals(datetime.datetime.strptime(
+                    ann.created, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"), ann.created,
+                        "Expect time format to be in ISO8601")
                 self.assertTrue(hasattr(ann, key),
                                 "Failed to find required key: " + key)
 
