@@ -14,6 +14,7 @@ import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.converters as converters
 import ga4gh.datarepo as datarepo
+import tests.paths as paths
 
 
 class TestSamConverter(unittest.TestCase):
@@ -21,7 +22,8 @@ class TestSamConverter(unittest.TestCase):
     Tests for the GA4GH reads API -> SAM conversion.
     """
     def setUp(self):
-        dataRepository = datarepo.FileSystemDataRepository("tests/data")
+        dataRepository = datarepo.FileSystemDataRepository(
+            paths.testDataDir)
         self._backend = backend.Backend(dataRepository)
         self._client = client.LocalClient(self._backend)
 
