@@ -16,6 +16,7 @@ import ga4gh.backend as backend
 import ga4gh.cli as cli
 import ga4gh.datarepo as datarepo
 import tests.utils as utils
+import tests.paths as paths
 
 import freezegun
 
@@ -27,7 +28,7 @@ class TestClientOutput(unittest.TestCase):
     """
     def setUp(self):
         self._maxDiff = None
-        self._dataDir = "tests/data"
+        self._dataDir = paths.testDataDir
         self._dataUrl = "file://{}".format(self._dataDir)
         dataRepository = datarepo.FileSystemDataRepository(self._dataDir)
         self._backend = backend.Backend(dataRepository)

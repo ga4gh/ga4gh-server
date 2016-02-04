@@ -11,27 +11,13 @@ import unittest
 
 import ga4gh.repo_manager as repo_manager
 import ga4gh.exceptions as exceptions
+import tests.paths as paths
 
 
 class AbstractRepoManagerTest(unittest.TestCase):
     """
     Base class for repo manager tests
     """
-    vcfDirPath = os.path.abspath(
-        'tests/data/datasets/dataset1/variants/1kgPhase1')
-    vcfDirPath2 = os.path.abspath(
-        'tests/data/datasets/dataset1/variants/1kgPhase3')
-    faPath = os.path.abspath(
-        'tests/data/referenceSets/Default/chr17.fa.gz')
-    faPath2 = os.path.abspath(
-        'tests/data/referenceSets/example_1/simple.fa.gz')
-    faPath3 = os.path.abspath(
-        'tests/data/referenceSets/example_2/random1.fa.gz')
-    bamPath = os.path.abspath(
-        'tests/data/datasets/dataset1/reads/chr17.1-250.bam')
-    bamPath2 = os.path.abspath(
-        'tests/data/datasets/dataset1/reads/'
-        'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample.bam')
     moveMode = 'link'
 
     def getTempDirPath(self):
@@ -59,16 +45,18 @@ class RepoManagerTest(AbstractRepoManagerTest):
         self.repoManager.addDataset(datasetName)
         metadata = {'description': 'aDescription'}
         self.repoManager.addReferenceSet(
-            self.faPath, self.moveMode, metadata)
+            paths.faPath, self.moveMode, metadata)
         self.repoManager.addReadGroupSet(
-            datasetName, self.bamPath, self.moveMode)
+            datasetName, paths.bamPath, self.moveMode)
         self.repoManager.addVariantSet(
-            datasetName, self.vcfDirPath, self.moveMode)
+            datasetName, paths.vcfDirPath, self.moveMode)
         self.repoManager.check()
         self.repoManager.list()
-        self.repoManager.removeReadGroupSet(datasetName, 'chr17.1-250')
-        self.repoManager.removeVariantSet(datasetName, '1kgPhase1')
-        self.repoManager.removeReferenceSet('chr17')
+        self.repoManager.removeReadGroupSet(
+            datasetName, paths.readGroupSetName)
+        self.repoManager.removeVariantSet(
+            datasetName, paths.variantSetName)
+        self.repoManager.removeReferenceSet(paths.referenceSetName)
         self.repoManager.removeDataset(datasetName)
 
 
@@ -118,70 +106,76 @@ class RepoManagerInidividualCommandTest(AbstractRepoManagerTest):
 
     def testAddReferenceSet(self):
         with self.assertRaises(exceptions.RepoManagerException):
-            self.repoManager.addReferenceSet(self.bamPath, 'link', {})
+            self.repoManager.addReferenceSet(paths.bamPath, 'link', {})
         self.repoManager.addReferenceSet(
-            self.faPath, 'link', {'description': 'aDescription'})
+            paths.faPath, 'link', {'description': 'aDescription'})
         self.repoManager.addReferenceSet(
-            self.faPath2, 'copy', {})
+            paths.faPath2, 'copy', {})
         with self.assertRaises(exceptions.RepoManagerException):
-            self.repoManager.addReferenceSet(self.faPath, 'link', {})
+            self.repoManager.addReferenceSet(paths.faPath, 'link', {})
 
     def testRemoveReferenceSet(self):
         with self.assertRaises(exceptions.RepoManagerException):
-            self.repoManager.removeReferenceSet('chr17')
-        self.repoManager.addReferenceSet(self.faPath, 'link', {})
-        self.repoManager.removeReferenceSet('chr17')
+            self.repoManager.removeReferenceSet(paths.referenceSetName)
+        self.repoManager.addReferenceSet(paths.faPath, 'link', {})
+        self.repoManager.removeReferenceSet(paths.referenceSetName)
         with self.assertRaises(exceptions.RepoManagerException):
-            self.repoManager.removeReferenceSet('chr17')
+            self.repoManager.removeReferenceSet(paths.referenceSetName)
 
     def testAddReadGroupSet(self):
         with self.assertRaises(exceptions.RepoManagerException):
             self.repoManager.addReadGroupSet(
-                'dataset1', self.bamPath, 'link')
+                'dataset1', paths.bamPath, 'link')
         self.repoManager.addDataset('dataset1')
         self.repoManager.addDataset('dataset2')
         self.repoManager.addReadGroupSet(
-            'dataset1', self.bamPath, 'link')
+            'dataset1', paths.bamPath, 'link')
         self.repoManager.addReadGroupSet(
-            'dataset1', self.bamPath2, 'link')
+            'dataset1', paths.bamPath2, 'link')
         self.repoManager.addReadGroupSet(
-            'dataset2', self.bamPath, 'link')
+            'dataset2', paths.bamPath, 'link')
         with self.assertRaises(exceptions.RepoManagerException):
             self.repoManager.addReadGroupSet(
-                'dataset1', self.bamPath, 'link')
+                'dataset1', paths.bamPath, 'link')
 
     def testRemoveReadGroupSet(self):
         self.repoManager.addDataset('dataset1')
         self.repoManager.addReadGroupSet(
-            'dataset1', self.bamPath, 'link')
+            'dataset1', paths.bamPath, 'link')
         with self.assertRaises(exceptions.RepoManagerException):
-            self.repoManager.removeReadGroupSet('dataset2', 'chr17.1-250')
-        self.repoManager.removeReadGroupSet('dataset1', 'chr17.1-250')
+            self.repoManager.removeReadGroupSet(
+                'dataset2', paths.readGroupSetName)
+        self.repoManager.removeReadGroupSet(
+            'dataset1', paths.readGroupSetName)
         with self.assertRaises(exceptions.RepoManagerException):
-            self.repoManager.removeReadGroupSet('dataset1', 'chr17.1-250')
+            self.repoManager.removeReadGroupSet(
+                'dataset1', paths.readGroupSetName)
 
     def testAddVariantSet(self):
         with self.assertRaises(exceptions.RepoManagerException):
             self.repoManager.addVariantSet(
-                'dataset1', self.vcfDirPath, 'link')
+                'dataset1', paths.vcfDirPath, 'link')
         self.repoManager.addDataset('dataset1')
         self.repoManager.addDataset('dataset2')
         self.repoManager.addVariantSet(
-            'dataset1', self.vcfDirPath, 'link')
+            'dataset1', paths.vcfDirPath, 'link')
         self.repoManager.addVariantSet(
-            'dataset1', self.vcfDirPath2, 'link')
+            'dataset1', paths.vcfDirPath2, 'link')
         self.repoManager.addVariantSet(
-            'dataset2', self.vcfDirPath, 'link')
+            'dataset2', paths.vcfDirPath, 'link')
         with self.assertRaises(exceptions.RepoManagerException):
             self.repoManager.addVariantSet(
-                'dataset1', self.vcfDirPath, 'link')
+                'dataset1', paths.vcfDirPath, 'link')
 
     def testRemoveVariantSet(self):
         self.repoManager.addDataset('dataset1')
         self.repoManager.addVariantSet(
-            'dataset1', self.vcfDirPath, 'link')
+            'dataset1', paths.vcfDirPath, 'link')
         with self.assertRaises(exceptions.RepoManagerException):
-            self.repoManager.removeVariantSet('dataset2', '1kgPhase1')
-        self.repoManager.removeVariantSet('dataset1', '1kgPhase1')
+            self.repoManager.removeVariantSet(
+                'dataset2', paths.variantSetName)
+        self.repoManager.removeVariantSet(
+            'dataset1', paths.variantSetName)
         with self.assertRaises(exceptions.RepoManagerException):
-            self.repoManager.removeVariantSet('dataset1', '1kgPhase1')
+            self.repoManager.removeVariantSet(
+                'dataset1', paths.variantSetName)

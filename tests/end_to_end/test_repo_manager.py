@@ -14,20 +14,13 @@ import subprocess
 import tempfile
 import unittest
 
+import tests.paths as paths
+
 
 class RepoManagerEndToEndTest(unittest.TestCase):
 
     datasetName = 'datasetOne'
     metadata = {'description': 'aDescription'}
-    variantSetName = '1kgPhase1'
-    readGroupSetName = 'chr17.1-250'
-    referenceSetName = 'chr17'
-    vcfDirPath = os.path.abspath(
-        'tests/data/datasets/dataset1/variants/1kgPhase1')
-    faPath = os.path.abspath(
-        'tests/data/referenceSets/Default/chr17.fa.gz')
-    bamPath = os.path.abspath(
-        'tests/data/datasets/dataset1/reads/chr17.1-250.bam')
 
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()
@@ -47,16 +40,16 @@ class RepoManagerEndToEndTest(unittest.TestCase):
 
     def testEndToEnd(self):
         self._runCmd("init")
-        self._runCmd("add-referenceset", self.faPath)
+        self._runCmd("add-referenceset", paths.faPath)
         self._runCmd("add-dataset", self.datasetName)
-        self._runCmd("add-readgroupset", self.datasetName, self.bamPath)
-        self._runCmd("add-variantset", self.datasetName, self.vcfDirPath)
+        self._runCmd("add-readgroupset", self.datasetName, paths.bamPath)
+        self._runCmd("add-variantset", self.datasetName, paths.vcfDirPath)
         self._runCmd("check")
         self._runCmd("list")
         self._runCmd(
-            "remove-variantset", self.datasetName, self.variantSetName)
+            "remove-variantset", self.datasetName, paths.variantSetName)
         self._runCmd(
-            "remove-readgroupset", self.datasetName, self.readGroupSetName)
+            "remove-readgroupset", self.datasetName, paths.readGroupSetName)
         self._runCmd("remove-dataset", self.datasetName)
-        self._runCmd("remove-referenceset", self.referenceSetName)
+        self._runCmd("remove-referenceset", paths.referenceSetName)
         self._runCmd("destroy")
