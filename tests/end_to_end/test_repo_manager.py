@@ -1,19 +1,16 @@
 """
 End to end test that invokes the repo manager
 """
-# TODO make this faster
-# eliminate repo_dev.py invocatations by calling the cli module
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import shlex
 import shutil
-import subprocess
 import tempfile
 import unittest
 
+import ga4gh.cli as cli
 import tests.paths as paths
 
 
@@ -31,12 +28,8 @@ class RepoManagerEndToEndTest(unittest.TestCase):
             shutil.rmtree(self.tempdir)
 
     def _runCmd(self, cmd, *args):
-        argString = ' '.join(args)
-        command = "python repo_dev.py {} {} {}".format(
-            cmd, self.tempdir, argString)
-        splits = shlex.split(command)
-        with open(os.devnull, 'w') as devnull:
-            subprocess.check_call(splits, stdout=devnull, stderr=devnull)
+        command = [cmd] + [self.tempdir] + list(args)
+        cli.repo_main(command)
 
     def testEndToEnd(self):
         self._runCmd("init")

@@ -71,17 +71,18 @@ def getServerParser():
 
 def server_main(args=None):
     parser = getServerParser()
-    args = parser.parse_args(args)
-    if args.disable_urllib_warnings:
+    parsedArgs = parser.parse_args(args)
+    if parsedArgs.disable_urllib_warnings:
         requests.packages.urllib3.disable_warnings()
     frontend.configure(
-        args.config_file, args.config, args.port)
+        parsedArgs.config_file, parsedArgs.config, parsedArgs.port)
     sslContext = None
-    if args.tls or ("OIDC_PROVIDER" in frontend.app.config):
+    if parsedArgs.tls or ("OIDC_PROVIDER" in frontend.app.config):
         sslContext = "adhoc"
     frontend.app.run(
-        host=args.host, port=args.port,
-        use_reloader=not args.dont_use_reloader, ssl_context=sslContext)
+        host=parsedArgs.host, port=parsedArgs.port,
+        use_reloader=not parsedArgs.dont_use_reloader,
+        ssl_context=sslContext)
 
 
 ##############################################################################
@@ -898,14 +899,14 @@ def getClientParser():
 
 def client_main(args=None):
     parser = getClientParser()
-    args = parser.parse_args(args)
-    if "runner" not in args:
+    parsedArgs = parser.parse_args(args)
+    if "runner" not in parsedArgs:
         parser.print_help()
     else:
-        if args.disable_urllib_warnings:
+        if parsedArgs.disable_urllib_warnings:
             requests.packages.urllib3.disable_warnings()
         try:
-            runner = args.runner(args)
+            runner = parsedArgs.runner(parsedArgs)
             runner.run()
         except (exceptions.BaseClientException,
                 requests.exceptions.RequestException) as exception:
@@ -1400,13 +1401,13 @@ def getRepoParser():
     return parser
 
 
-def repo_main():
+def repo_main(args=None):
     parser = getRepoParser()
-    args = parser.parse_args()
-    if "runner" not in args:
+    parsedArgs = parser.parse_args(args)
+    if "runner" not in parsedArgs:
         parser.print_help()
     else:
-        runner = args.runner(args)
+        runner = parsedArgs.runner(parsedArgs)
         try:
             runner.run()
         except exceptions.RepoManagerException as exception:
