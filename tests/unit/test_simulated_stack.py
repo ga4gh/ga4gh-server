@@ -661,6 +661,8 @@ class TestSimulatedStack(unittest.TestCase):
         for ann in responseData.variantAnnotations:
             effectPresent = False
             for effect in ann.transcriptEffects:
+                self.assertGreater(len(effect.analysisResults), 0,
+                                   "Some analysis result should be present")
                 for ontologyTerm in effect.effects:
                     if ontologyTerm.id in map(
                             lambda e: e['id'], request.effects):
