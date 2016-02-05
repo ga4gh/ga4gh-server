@@ -428,6 +428,19 @@ class TestSimulatedStack(unittest.TestCase):
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
 
+    def testGetVariantAnnotationSet(self):
+        path = "/variantannotationsets"
+        for dataset in self.dataRepo.getDatasets():
+            for variantAnnotationSet in dataset.getVariantAnnotationSets():
+                responseObject = self.sendGetObject(
+                    path, variantAnnotationSet.getId(),
+                    protocol.VariantAnnotationSet)
+                self.assertEqual(variantAnnotationSet.getId(),
+                                 responseObject.id,
+                                 "The requested ID should match the returned")
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
+
     def testGetVariant(self):
         # get a variant from the search method
         referenceName = '1'
