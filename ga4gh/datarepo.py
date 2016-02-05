@@ -184,7 +184,9 @@ class FileSystemDataRepository(AbstractDataRepository):
     def __init__(self, dataDir, doConsistencyCheck=True):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = [self.referenceSetsDirName, self.ontologiesDirName, self.datasetsDirName]
+        sourceDirNames = [self.referenceSetsDirName,
+                          self.ontologiesDirName,
+                          self.datasetsDirName]
         constructors = [
             references.HtslibReferenceSet, ontologies.FileSystemOntologies,
             datasets.FileSystemDataset]
@@ -198,9 +200,9 @@ class FileSystemDataRepository(AbstractDataRepository):
                 if os.path.isdir(relativePath):
                     objectAdder(constructor(setName, relativePath, self))
         if doConsistencyCheck:
-            self._checkConsistency()
+            self.checkConsistency()
 
-    def _checkConsistency(self):
+    def checkConsistency(self):
         for dataset in self.getDatasets():
             for readGroupSet in dataset.getReadGroupSets():
                 readGroupSet.checkConsistency(self)
