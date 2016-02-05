@@ -510,12 +510,12 @@ class GetReadGroupRunner(AbstractGetRunner):
         self._method = self._client.getReadGroup
 
 
-class GetCallsetRunner(AbstractGetRunner):
+class GetCallSetRunner(AbstractGetRunner):
     """
     Runner class for the callsets/{id} method
     """
     def __init__(self, args):
-        super(GetCallsetRunner, self).__init__(args)
+        super(GetCallSetRunner, self).__init__(args)
         self._method = self._client.getCallSet
 
 
@@ -759,7 +759,7 @@ def addReadGroupSetsSearchParser(subparsers):
     return parser
 
 
-def addCallsetsSearchParser(subparsers):
+def addCallSetsSearchParser(subparsers):
     parser = subparsers.add_parser(
         "callsets-search",
         description="Search for callSets",
@@ -854,12 +854,12 @@ def addReadGroupsGetParser(subparsers):
     addGetArguments(parser)
 
 
-def addCallsetsGetParser(subparsers):
+def addCallSetsGetParser(subparsers):
     parser = subparsers.add_parser(
         "callsets-get",
-        description="Get a callset",
-        help="Get a callset")
-    parser.set_defaults(runner=GetCallsetRunner)
+        description="Get a callSet",
+        help="Get a callSet")
+    parser.set_defaults(runner=GetCallSetRunner)
     addGetArguments(parser)
 
 
@@ -902,14 +902,14 @@ def getClientParser():
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
-    addCallsetsSearchParser(subparsers)
+    addCallSetsSearchParser(subparsers)
     addReadsSearchParser(subparsers)
     addDatasetsSearchParser(subparsers)
     addReferenceSetsGetParser(subparsers)
     addReferencesGetParser(subparsers)
     addReadGroupSetsGetParser(subparsers)
     addReadGroupsGetParser(subparsers)
-    addCallsetsGetParser(subparsers)
+    addCallSetsGetParser(subparsers)
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)

@@ -155,7 +155,7 @@ class TestClientJson(TestClientOutput):
                 self.verifyParsedOutputsEqual(
                     [variantSet], "variantsets-get", variantSet.id)
 
-    def testSearchCallsets(self):
+    def testSearchCallSets(self):
         for dataset in self._client.searchDatasets():
             for variantSet in self._client.searchVariantSets(dataset.id):
                 iterator = self._client.searchCallSets(variantSet.id)

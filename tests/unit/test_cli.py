@@ -210,7 +210,7 @@ class TestClientArguments(unittest.TestCase):
 
     def testCallSetGetArguments(self):
         self.verifyGetArguments(
-            "callsets-get", cli.GetCallsetRunner)
+            "callsets-get", cli.GetCallSetRunner)
 
     def testDatasetsGetArguments(self):
         self.verifyGetArguments(
