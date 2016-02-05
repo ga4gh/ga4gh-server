@@ -537,6 +537,15 @@ class GetVariantRunner(VariantFormatterMixin, AbstractGetRunner):
         self._method = self._client.getVariant
 
 
+class GetVariantSetRunner(AbstractGetRunner):
+    """
+    Runner class for the variantsets/{id} method
+    """
+    def __init__(self, args):
+        super(GetVariantSetRunner, self).__init__(args)
+        self._method = self._client.getVariantSet
+
+
 def addDisableUrllibWarningsArgument(parser):
     parser.add_argument(
         "--disable-urllib-warnings", default=False, action="store_true",
@@ -693,6 +702,15 @@ def addVariantSetsSearchParser(subparsers):
     addPageSizeArgument(parser)
     addDatasetIdArgument(parser)
     return parser
+
+
+def addVariantSetsGetParser(subparsers):
+    parser = subparsers.add_parser(
+        "variantsets-get",
+        description="Get a variantSet",
+        help="Get a variantSet")
+    parser.set_defaults(runner=GetVariantSetRunner)
+    addGetArguments(parser)
 
 
 def addReferenceSetsSearchParser(subparsers):
@@ -880,6 +898,7 @@ def getClientParser():
     addHelpParser(subparsers)
     addVariantsSearchParser(subparsers)
     addVariantSetsSearchParser(subparsers)
+    addVariantSetsGetParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
