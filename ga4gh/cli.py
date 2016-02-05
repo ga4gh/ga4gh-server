@@ -516,7 +516,7 @@ class GetCallsetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetCallsetRunner, self).__init__(args)
-        self._method = self._client.getCallset
+        self._method = self._client.getCallSet
 
 
 class GetDatasetRunner(AbstractGetRunner):

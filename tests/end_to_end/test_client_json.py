@@ -98,6 +98,13 @@ class TestClientJson(TestClientOutput):
         self.assertEqual(clientOutput, cliOutput)
         return len(clientOutput)
 
+    def testGetCallSet(self):
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                for callSet in self._client.searchCallSets(variantSet.id):
+                    self.verifyParsedOutputsEqual(
+                        [callSet], "callsets-get", callSet.id)
+
     def testGetDataset(self):
         for dataset in self._client.searchDatasets():
             self.verifyParsedOutputsEqual(
@@ -147,6 +154,14 @@ class TestClientJson(TestClientOutput):
             for variantSet in self._client.searchVariantSets(dataset.id):
                 self.verifyParsedOutputsEqual(
                     [variantSet], "variantsets-get", variantSet.id)
+
+    def testSearchCallsets(self):
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                iterator = self._client.searchCallSets(variantSet.id)
+                args = "--variantSetId {}".format(variantSet.id)
+                self.verifyParsedOutputsEqual(
+                    iterator, "callsets-search", args)
 
     def testSearchDatasets(self):
         iterator = self._client.searchDatasets()

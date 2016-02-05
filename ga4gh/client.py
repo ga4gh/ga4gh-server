@@ -478,6 +478,7 @@ class LocalClient(AbstractClient):
         super(LocalClient, self).__init__()
         self._backend = backend
         self._getMethodMap = {
+            "callsets": self._backend.runGetCallset,
             "datasets": self._backend.runGetDataset,
             "referencesets": self._backend.runGetReferenceSet,
             "references": self._backend.runGetReference,
@@ -487,6 +488,7 @@ class LocalClient(AbstractClient):
             "readgroups": self._backend.runGetReadGroup,
         }
         self._searchMethodMap = {
+            "callsets": self._backend.runSearchCallSets,
             "datasets": self._backend.runSearchDatasets,
             "referencesets": self._backend.runSearchReferenceSets,
             "references": self._backend.runSearchReferences,
