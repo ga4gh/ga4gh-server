@@ -407,7 +407,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         ann.variantId = variant.id
         ann.start = variant.start
         ann.end = variant.end
-        ann.created = int(datetime.datetime.now().strftime("%s"))
+        ann.created = datetime.datetime.now().strftime(
+            "%Y-%m-%dT%H:%M:%S.%fZ")
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (0,5)
         ann.transcriptEffects = []
@@ -918,6 +919,11 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         annotation = self._createGaVariantAnnotation()
         annotation.start = variant.start
         annotation.end = variant.end
+        for r in self.getMetadata().records:
+            # TODO handle more date formats
+            if r.key == "created":
+                annotation.created = datetime.datetime.strptime(
+                    r.value, "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%S.%fZ")
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
@@ -969,6 +975,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
                 analysis.info[r.key] = []
             analysis.info[r.key].append(r.value)
             if r.key == "created":
+                # TODO handle more date formats
                 analysis.recordCreateTime = datetime.datetime.strptime(
                     r.value, "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%S.%fZ")
             if r.key == "software":
