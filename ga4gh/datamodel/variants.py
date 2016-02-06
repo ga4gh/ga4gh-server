@@ -662,6 +662,8 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         # by GAVariant.
         for key, value in record.info.iteritems():
             if value is not None:
+                if isinstance(value, str):
+                    value = value.split(',')
                 variant.info[key] = _encodeValue(value)
 
         # NOTE: THE LABELED LINES SHOULD BE REMOVED ONCE PYSAM SUPPORTS
