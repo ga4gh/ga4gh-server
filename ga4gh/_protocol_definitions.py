@@ -134,14 +134,14 @@ class Analysis(ProtocolElement):
         self.recordCreateTime = kwargs.get(
             'recordCreateTime', None)
         """
-        The time at which this record was created.    Format: ISO
-        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
+        The time at which this record was created.    Format: :ref:ISO
+        8601 <metadata_date_time>
         """
         self.recordUpdateTime = kwargs.get(
             'recordUpdateTime', None)
         """
-        The time at which this record was last updated.   Format: ISO
-        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
+        The time at which this record was last updated.   Format:
+        :ref:ISO 8601 <metadata_date_time>
         """
         self.software = kwargs.get(
             'software', [])
@@ -660,21 +660,21 @@ class Experiment(ProtocolElement):
         self.recordCreateTime = kwargs.get(
             'recordCreateTime', None)
         """
-        The time at which this record was created.    Format: ISO
-        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
+        The time at which this record was created.    Format: :ref:ISO
+        8601 <metadata_date_time>
         """
         self.recordUpdateTime = kwargs.get(
             'recordUpdateTime', None)
         """
-        The time at which this record was last updated.   Format: ISO
-        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
+        The time at which this record was last updated.   Format:
+        :ref:ISO 8601 <metadata_date_time>
         """
         self.runTime = kwargs.get(
             'runTime', None)
         """
         The time at which this experiment was performed.   Granularity
-        here is variable (e.g. date only).   Format: ISO 8601, YYYY-
-        MM-DDTHH:MM:SS (e.g. 2015-02-10T00:03:42)
+        here is variable (e.g. date only).   Format: :ref:ISO 8601
+        <metadata_date_time>
         """
         self.selection = kwargs.get(
             'selection', None)
@@ -2959,9 +2959,14 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceId"},
         self.effects = kwargs.get(
             'effects', None)
         """
-        Only return variant annotations including these effects (SO
-        terms). Exact   matching across all fields of the OntologyTerm
-        is required. If null, return   all variant annotations.
+        This filter allows variant, transcript combinations to be
+        extracted by effect   type(s).   Only return variant
+        annotations including any of these effects and only return
+        transcript effects including any of these effects. Exact
+        matching across all   fields of the Sequence Ontology
+        OntologyTerm is required.   (A transcript effect may have
+        multiple SO effects which will all be reported.)   If null,
+        return all variant annotations.
         """
         self.end = kwargs.get(
             'end', None)
@@ -3029,7 +3034,7 @@ class SearchVariantAnnotationsResponse(SearchResponse):
 "string", "name": "id"}, {"doc": "", "type": "string", "name":
 "variantId"}, {"doc": "", "type": "string", "name":
 "variantAnnotationSetId"}, {"default": null, "doc": "", "type":
-["null", "long"], "name": "created"}, {"default": [], "doc": "",
+["null", "string"], "name": "created"}, {"default": [], "doc": "",
 "type": {"items": {"doc": "", "type": "record", "name":
 "TranscriptEffect", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
@@ -3684,7 +3689,7 @@ class VariantAnnotation(ProtocolElement):
 "VariantAnnotation", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"doc": "", "type": "string", "name": "variantId"}, {"doc": "",
 "type": "string", "name": "variantAnnotationSetId"}, {"default": null,
-"doc": "", "type": ["null", "long"], "name": "created"}, {"default":
+"doc": "", "type": ["null", "string"], "name": "created"}, {"default":
 [], "doc": "", "type": {"items": {"doc": "", "type": "record", "name":
 "TranscriptEffect", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
@@ -3751,8 +3756,8 @@ null, "doc": "", "type": ["null", "string"], "name":
         self.created = kwargs.get(
             'created', None)
         """
-        The date this annotation was created in milliseconds from the
-        epoch.
+        The :ref:ISO 8601 <metadata_date_time> time at which this
+        record was created.
         """
         self.id = kwargs.get(
             'id', None)
