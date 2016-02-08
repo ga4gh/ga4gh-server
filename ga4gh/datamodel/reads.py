@@ -335,8 +335,8 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         experiment.molecule = None
         experiment.name = None
         experiment.platformUnit = self.getPlatformUnit()
-        experiment.recordCreateTime = self._iso8601
-        experiment.recordUpdateTime = self._iso8601
+        experiment.created = self._iso8601
+        experiment.updated = self._iso8601
         experiment.runTime = self.getRunTime()
         experiment.selection = None
         experiment.strategy = None

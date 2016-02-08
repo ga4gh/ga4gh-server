@@ -2281,3 +2281,4 @@ SO:1001287	distant_three_prime_recoding_signal
 SO:1001288	stop_codon_signal
 SO:2000061	databank_entry
 SO:3000000	gene_segment
+SO:3000001	non_coding_exon_variant

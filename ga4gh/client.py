@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import requests
 import posixpath
 import logging
+import json
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -265,6 +266,9 @@ class AbstractClient(object):
         """
         Returns an iterator over the Annotations fulfilling the specified
         conditions from the specified AnnotationSet.
+
+        The JSON string for an effect term must be specified on the
+        command line : `--effects '{"term": "exon_variant"}'`.
         """
         request = protocol.SearchVariantAnnotationsRequest()
         request.variantAnnotationSetId = variantAnnotationSetId
@@ -272,8 +276,17 @@ class AbstractClient(object):
         request.referenceId = referenceId
         request.start = start
         request.end = end
-        request.feature_ids = featureIds
-        request.effects = effects
+        # request.feature_ids = featureIds
+        soTerms = []
+        for eff in effects:
+            try:
+                soTerms.append(json.loads(eff))
+            except ValueError:
+                print("The effect argument is malformed.")
+                print("e.g. command line : `--effects "
+                      "'{\"term\": \"exon_variant\"}'`")
+                exit()
+        request.effects = soTerms
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "variantannotations",

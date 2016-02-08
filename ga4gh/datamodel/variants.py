@@ -11,7 +11,7 @@ import random
 import hashlib
 import re
 import os
-import json
+import glob
 
 import pysam
 
@@ -346,19 +346,17 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         self._variantSet = variantSet
         self._variantSetId = str(variantSet.getCompoundId())
         self._randomSeed = randomSeed
-        now = protocol.convertDatetime(datetime.datetime.now())
+        # TODO refactor all the time stuff into protocol when schemas agree
         self._compoundId = datamodel.VariantAnnotationSetCompoundId(
             self.getCompoundId(), 'variantannotations')
-        self._creationTime = now
-        self._updatedTime = now
+        self._creationTime = datetime.datetime.now().isoformat() + "Z"
+        self._updatedTime = datetime.datetime.now().isoformat() + "Z"
         # TODO make some reasonable connection to seqont
 
     def getAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.recordCreateTime = datetime.datetime.now().strftime(
-            "%Y-%m-%dT%H:%M:%S.%fZ")
-        analysis.recordUpdateTime = datetime.datetime.now().strftime(
-            "%Y-%m-%dT%H:%M:%S.%fZ")
+        analysis.created = self._creationTime
+        analysis.updated = self._updatedTime
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -407,8 +405,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         ann.variantId = variant.id
         ann.start = variant.start
         ann.end = variant.end
-        ann.created = datetime.datetime.now().strftime(
-            "%Y-%m-%dT%H:%M:%S.%fZ")
+        ann.created = self._creationTime
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (0,5)
         ann.transcriptEffects = []
@@ -780,34 +777,10 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                         description=description))
         return ret
 
-    def _metadataFileExists(self, fname):
-        """
-        Check for existence of description JSON.
-        """
-        return os.path.exists(fname)
-
-    def _parseMetadataJson(self, str):
-        """
-        Parse metadata JSON into python dict.
-        """
-        return json.loads(str)
-
-    def _getMetadataFilename(self, path, localId):
-        """
-        Given a path and identifier create a path
-        to the expected metadata JSON.
-        """
-        return os.path.join(path, localId + ".json")
-
-    def isAnnotated(self, path, localId):
-        ret = False
-        fname = self._getMetadataFilename(path, localId)
-        if self._metadataFileExists(fname):
-            with open(fname) as metadataJson:
-                metadata = json.loads(metadataJson.read())
-            if metadata['isAnnotated']:
-                ret = True
-        return ret
+    def isAnnotated(self, path):
+        pysamreader = self.openFile(
+            glob.glob(os.path.join(path, "*.vcf.gz"))[0])
+        return 'ANN' in [x[0] for x in pysamreader.header.info.items()]
 
 
 class HtslibVariantAnnotationSet(HtslibVariantSet):
@@ -825,10 +798,17 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         self._compoundId = datamodel.VariantAnnotationSetCompoundId(
             self.getCompoundId(), 'variantannotations')
         self._sequenceOntology = backend.getOntology('sequence_ontology')
+        self._creationTime = datetime.datetime.now().isoformat() + "Z"
+        self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
     def getVariantAnnotations(self, referenceName, startPosition, endPosition):
         """
-        Returns an iterator over the specified variant annotations.
+        Generator for iterating through variant annotations in this
+        variant annotation set.
+        :param referenceName:
+        :param startPosition:
+        :param endPosition:
+        :return: generator of protocol.VariantAnnotation
         """
         if referenceName in self._chromFileMap:
             varFileName = self._chromFileMap[referenceName]
@@ -837,49 +817,123 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
                     referenceName, startPosition, endPosition)
             cursor = self.getFileHandle(varFileName).fetch(
                 referenceName, startPosition, endPosition)
-            for record in cursor:
-                yield self.convertVariantAnnotation(record)
+            if "VEP" in self.toProtocolElement().analysis.info:
+                for record in cursor:
+                    yield self.convertVariantAnnotationVEP(record)
+            else:
+                for record in cursor:
+                    yield self.convertVariantAnnotationSnpEff(record)
 
     def convertLocation(self, pos):
+        """
+        Accepts a position string (start/length) and returns
+        a GA4GH AlleleLocation with populated fields.
+        :param pos:
+        :return: protocol.AlleleLocation
+        """
         if pos == '':
             return None
         coordLen = pos.split('/')
-        allLoc = self._createGaAlleleLocation()
-        allLoc.start = int(coordLen[0]) - 1
-        allLoc.end = int(coordLen[1])
-        return allLoc
+        if len(coordLen) > 1:
+            allLoc = self._createGaAlleleLocation()
+            allLoc.start = int(coordLen[0]) - 1
+            return allLoc
+        return None
 
     def convertLocationHgvsC(self, hgvsc):
+        """
+        Accepts an annotation in HGVS notation and returns
+        an AlleleLocation with populated fields.
+        :param hgvsc:
+        :return:
+        """
         if hgvsc == '':
             return None
-        match = re.match("c.(\d+)(\D+)>(\D+)", hgvsc)
+        match = re.match(".*c.(\d+)(\D+)>(\D+)", hgvsc)
         if match:
             pos = int(match.group(1))
             if pos > 0:
                 allLoc = self._createGaAlleleLocation()
-                allLoc.overlapStart = pos
+                allLoc.start = pos - 1
                 allLoc.referenceSequence = match.group(2)
                 allLoc.alternateSequence = match.group(3)
                 return allLoc
         return None
 
     def convertLocationHgvsP(self, hgvsp):
+        """
+        Accepts an annotation in HGVS notation and returns
+        an AlleleLocation with populated fields.
+        :param hgvsp:
+        :return: protocol.AlleleLocation
+        """
         if hgvsp == '':
             return None
-        match = re.match("p.(\D+)(\d+)(\D+)", hgvsp)
+        match = re.match(".*p.(\D+)(\d+)(\D+)", hgvsp, flags=re.UNICODE)
         if match is not None:
             allLoc = self._createGaAlleleLocation()
             allLoc.referenceSequence = match.group(1)
-            allLoc.overlapStart = int(match.group(2))
+            allLoc.start = int(match.group(2)) - 1
             allLoc.alternateSequence = match.group(3)
             return allLoc
         return None
 
-    def convertTranscriptEffect(self, ann, hgvsG):
+    def addCDSLocation(self, effect, cdnaPos):
+        hgvsC = effect.hgvsAnnotation.transcript
+        if hgvsC != '':
+            effect.CDSLocation = self.convertLocationHgvsC(hgvsC)
+        if effect.CDSLocation is None:
+            effect.CDSLocation = self.convertLocation(cdnaPos)
+        else:
+            # These are not stored in the VCF
+            effect.CDSLocation.alternateSequence = None
+            effect.CDSLocation.referenceSequence = None
+
+    def addProteinLocation(self, effect, protPos):
+        hgvsP = effect.hgvsAnnotation.protein
+        if hgvsP != '':
+            effect.proteinLocation = self.convertLocationHgvsP(hgvsP)
+        if effect.proteinLocation is None:
+            effect.proteinLocation = self.convertLocation(protPos)
+
+    def addCDNALocation(self, effect, cdnaPos):
+        hgvsC = effect.hgvsAnnotation.transcript
+        effect.cDNALocation = self.convertLocation(cdnaPos)
+        if self.convertLocationHgvsC(hgvsC):
+            effect.cDNALocation.alternateSequence = \
+                self.convertLocationHgvsC(hgvsC).alternateSequence
+            effect.cDNALocation.referenceSequence = \
+                self.convertLocationHgvsC(hgvsC).referenceSequence
+
+    def addLocations(self, effect, protPos, cdnaPos):
+        """
+        Adds locations to a GA4GH transcript effect object
+        by parsing HGVS annotation fields in concert with
+        and supplied position values.
+        :param effect: protocol.TranscriptEffect
+        :param protPos: String representing protein position from VCF
+        :param cdnaPos: String representing coding DNA location
+        :return: effect protocol.TranscriptEffect
+        """
+        self.addCDSLocation(effect, cdnaPos)
+        self.addCDNALocation(effect, cdnaPos)
+        self.addProteinLocation(effect, protPos)
+        return effect
+
+    def convertTranscriptEffectVEP(self, annStr, hgvsG):
+        """
+        Takes the ANN string of a VEP generated VCF, splits it
+        and returns a populated GA4GH transcript effect object.
+        :param annStr: String
+        :param hgvsG: String
+        :return: effect protocol.TranscriptEffect
+        """
         effect = self._createGaTranscriptEffect()
-        (alt, effects, impact, geneName, geneId, featureType,
-            featureId, trBiotype, rank, hgvsC, hgvsP, cdnaPos,
-            cdsPos, protPos, distance, errsWarns) = ann.split('|')
+        (alt, effects, impact, symbol, geneName, featureType,
+         featureId, trBiotype, exon, intron, hgvsC, hgvsP,
+         cdnaPos, cdsPos, protPos, aminos, codons,
+         existingVar, distance, strand, symbolSource,
+         hgncId, hgvsOffset) = annStr.split('|')
         effect.alternateBases = alt
         effect.effects = self.convertSeqOntology(effects)
         effect.impact = impact
@@ -888,20 +942,45 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         effect.hgvsAnnotation.genomic = hgvsG
         effect.hgvsAnnotation.transcript = hgvsC
         effect.hgvsAnnotation.protein = hgvsP
-        if hgvsP != '':
-            effect.proteinLocation = self.convertLocationHgvsP(hgvsP)
-        if effect.proteinLocation is None:
-            effect.proteinLocation = self.convertLocation(protPos)
-        if hgvsC != '':
-            effect.CDSLocation = self.convertLocationHgvsC(hgvsC)
-        if effect.CDSLocation is None:
-            effect.CDSLocation = self.convertLocation(cdnaPos)
-        effect.cDNALocation = self.convertLocation(cdnaPos)
+        self.addLocations(effect, protPos, cdnaPos)
+        effect.id = self.getTranscriptEffectId(effect)
+        effect.analysisResults = []
+        return effect
+
+    def convertTranscriptEffectSnpEff(self, annStr, hgvsG):
+        """
+        Takes the ANN string of a SnpEff generated VCF, splits it
+        and returns a populated GA4GH transcript effect object.
+        :param annStr: String
+        :param hgvsG: String
+        :return: effect protocol.TranscriptEffect()
+        """
+        effect = self._createGaTranscriptEffect()
+        # SnpEff and VEP don't agree on this :)
+        (alt, effects, impact, geneName, geneId, featureType,
+            featureId, trBiotype, rank, hgvsC, hgvsP, cdnaPos,
+            cdsPos, protPos, distance, errsWarns) = annStr.split('|')
+        effect.alternateBases = alt
+        effect.effects = self.convertSeqOntology(effects)
+        effect.impact = impact
+        effect.featureId = featureId
+        effect.hgvsAnnotation = protocol.HGVSAnnotation()
+        effect.hgvsAnnotation.genomic = hgvsG
+        effect.hgvsAnnotation.transcript = hgvsC
+        effect.hgvsAnnotation.protein = hgvsP
+        self.addLocations(effect, protPos, cdnaPos)
         effect.id = self.getTranscriptEffectId(effect)
         effect.analysisResults = []
         return effect
 
     def convertSeqOntology(self, seqOntStr):
+        """
+        Splits a string of sequence ontology effects and creates
+        an ontology term record for each, which are built into
+        an array of return soTerms.
+        :param seqOntStr:
+        :return: [protocol.OntologyTerm]
+        """
         seqOntTerms = seqOntStr.split('&')
         soTerms = []
         for soName in seqOntTerms:
@@ -913,9 +992,12 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             # TODO We must fill the ontology ID based on the SO name
         return soTerms
 
-    def convertVariantAnnotation(self, record):
+    def convertVariantAnnotationSnpEff(self, record):
         """
-        Converts the specified record into a GA4GH Annotaiton object.
+        Accepts a HTSLib variant record and returns a GA4GH
+        annotation object with populated fields.
+        :param record: HTSLib record
+        :return: annotation protocol.VariantAnnotation
         """
         variant = self.convertVariant(record, None)
         annotation = self._createGaVariantAnnotation()
@@ -925,21 +1007,75 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             # TODO handle more date formats
             if r.key == "created":
                 annotation.created = datetime.datetime.strptime(
-                    r.value, "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+                    r.value, "%Y-%m-%d").isoformat() + "Z"
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         annStr = record.info.get('ANN')
         hgvsG = record.info.get('HGVS.g')
         transcriptEffects = []
+        i = 0
         if annStr is not None:
             for ann in annStr.split(','):
+                if hgvsG is not None:
+                    splithgvsG = hgvsG.split(',')
+                    # The HGVS.g field contains an element for each alternate
+                    # allele
+                    altshgvsG = splithgvsG[i % len(variant.alternateBases)]
+                else:
+                    altshgvsG = ""
                 transcriptEffects.append(
-                    self.convertTranscriptEffect(ann, hgvsG))
+                    self.convertTranscriptEffectSnpEff(ann, altshgvsG))
+                i += 1
+        annotation.transcriptEffects = transcriptEffects
+        annotation.id = self.getVariantAnnotationId(variant, annotation)
+        return annotation
+
+    def convertVariantAnnotationVEP(self, record):
+        """
+        Accepts a HTSLib variant record from a VEP generated
+        VCF and returns a GA4GH annotation object with populated fields.
+        :param record: HTSLib record
+        :return: annotation protocol.VariantAnnotation
+        """
+        variant = self.convertVariant(record, None)
+        annotation = self._createGaVariantAnnotation()
+        annotation.start = variant.start
+        annotation.end = variant.end
+        for r in self.getMetadata().records:
+            # TODO handle more date formats
+            if r.key == "created":
+                annotation.created = datetime.datetime.strptime(
+                    r.value, "%Y-%m-%d").isoformat() + "Z"
+        annotation.variantId = variant.id
+        # Convert annotations from INFO field into TranscriptEffect
+        annStr = record.info.get('ANN')
+        hgvsG = record.info.get('HGVS.g')
+        transcriptEffects = []
+        i = 0
+        if annStr is not None:
+            for ann in annStr.split(','):
+                if hgvsG is not None:
+                    splithgvsG = hgvsG.split(',')
+                    # The HGVS.g field contains an element for each alternate
+                    # allele
+                    altshgvsG = splithgvsG[i % len(variant.alternateBases)]
+                else:
+                    altshgvsG = ""
+                transcriptEffects.append(
+                    self.convertTranscriptEffectVEP(ann, altshgvsG))
+                i += 1
         annotation.transcriptEffects = transcriptEffects
         annotation.id = self.getVariantAnnotationId(variant, annotation)
         return annotation
 
     def getVariantAnnotationId(self, gaVariant, gaAnnotation):
+        """
+        Produces a stringified compoundId representing a variant
+        annotation.
+        :param gaVariant:   protocol.Variant
+        :param gaAnnotation: protocol.VariantAnnotation
+        :return:  compoundId String
+        """
         md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
         compoundId = datamodel.VariantAnnotationCompoundId(
             self.getCompoundId(), gaVariant.referenceName,
@@ -948,8 +1084,10 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
 
     def getVariantId(self, gaVariant):
         """
-        Returns an ID string suitable for the specified GA Variant Annotation
-        object in this variant set.
+        Produces a variant ID for a variant annotated within this
+        variant annotation set.
+        :param gaVariant: protocol.Variant
+        :return:  compoundId String
         """
         md5 = self.hashVariant(gaVariant)
         compoundId = datamodel.VariantCompoundId(
@@ -958,6 +1096,11 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         return str(compoundId)
 
     def getAnalysis(self):
+        """
+        Assembles metadata within the VCF header into a GA4GH
+        Analysis object.
+        :return: protocol.Analysis
+        """
         metadata = self.getMetadata()
         analysis = protocol.Analysis()
         formats = metadata.formats.items()
@@ -967,19 +1110,21 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
                 key = "{0}.{1}".format(prefix, value.name)
                 if key not in analysis.info:
                     analysis.info[key] = []
+                if value.description is not None:
                     analysis.info[key].append(value.description)
-        analysis.recordCreateTime = datetime.datetime.now().strftime(
-            "%Y-%m-%dT%H:%M:%S.%fZ")
-        analysis.recordUpdateTime = datetime.datetime.now().strftime(
-            "%Y-%m-%dT%H:%M:%S.%fZ")
+        analysis.created = self._creationTime
+        analysis.updated = self._updatedTime
         for r in metadata.records:
-            if r.key not in analysis.info:
-                analysis.info[r.key] = []
-            analysis.info[r.key].append(r.value)
+            # Don't add a key to info if there's nothing in the value
+            if r.value is not None:
+                if r.key not in analysis.info:
+                    analysis.info[r.key] = []
+                analysis.info[r.key].append(str(r.value))
+
             if r.key == "created":
                 # TODO handle more date formats
-                analysis.recordCreateTime = datetime.datetime.strptime(
-                    r.value, "%Y-%m-%d").strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+                analysis.created = datetime.datetime.strptime(
+                    r.value, "%Y-%m-%d").isoformat() + "Z"
             if r.key == "software":
                 analysis.software.append(r.value)
             if r.key == "name":

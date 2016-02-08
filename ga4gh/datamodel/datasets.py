@@ -216,7 +216,7 @@ class FileSystemDataset(AbstractDataset):
                     self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
             # Variant annotations sets
-                if variantSet.isAnnotated(relativePath, localId):
+                if variantSet.isAnnotated(relativePath):
                     variantAnnotationSet = variants.HtslibVariantAnnotationSet(
                             self, localId, relativePath, dataRepository,
                             variantSet)
