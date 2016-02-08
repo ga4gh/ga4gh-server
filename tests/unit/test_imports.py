@@ -153,7 +153,7 @@ class ImportGraphLayerChecker(object):
     moduleGroupNames = {
         'cli': ['ga4gh/cli.py'],
         'client': ['ga4gh/client.py'],
-        'frontend': ['ga4gh/frontend.py'],
+        'frontend': ['ga4gh/frontend.py', 'ga4gh/repo_manager.py'],
         'backend': ['ga4gh/backend.py', 'ga4gh/datarepo.py'],
         'exceptions': ['ga4gh/exceptions.py'],
         'datamodel': ['ga4gh/datamodel/reads.py',
