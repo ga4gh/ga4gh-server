@@ -102,7 +102,9 @@ class IntervalIterator(object):
         """
         self._searchAnchor = searchAnchor
         self._distanceFromAnchor = objectsToSkip
-        self._searchIterator = self._search(searchAnchor, self._request.end)
+        self._searchIterator = self._search(
+            searchAnchor,
+            self._request.end if self._request.end != 0 else None)
         obj = next(self._searchIterator)
         if searchAnchor == self._request.start:
             # This is the initial set of intervals, we just skip forward
