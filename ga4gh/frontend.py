@@ -540,9 +540,9 @@ def getReadGroup(id):
 @DisplayedRoute(
     '/callsets/<no(search):id>',
     pathDisplay='/callsets/<id>')
-def getCallset(id):
+def getCallSet(id):
     return handleFlaskGetRequest(
-        id, flask.request, app.backend.runGetCallset)
+        id, flask.request, app.backend.runGetCallSet)
 
 
 @app.route('/oauth2callback', methods=['GET'])
