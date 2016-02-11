@@ -15,10 +15,6 @@ import ga4gh.datamodel.rna_quantification as rna_quantification
 import tests.datadriven as datadriven
 import ga4gh.exceptions as exceptions
 
-# TODO: tests are a bit silly now as it is reading the flat file in the same
-# way as the module.  Will have more meaning once rna_quantification is
-# switched over to use the parsers
-
 
 def testRnaQuantification():
     testDataDir = "tests/data/datasets/dataset1/rnaQuant"

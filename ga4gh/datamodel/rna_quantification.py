@@ -8,17 +8,12 @@ from __future__ import unicode_literals
 
 import os
 import sqlite3
+import string
 
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
-
-"""
-TODO: Would be nice to just use the csv module to read inputs and have headers
-in files for clarity and to eliminate the whole record[N] absurdity.
-Additionally, characterization and read counts don't have access points.
-"""
 
 """
     The RNA Quantification data model:
@@ -31,6 +26,13 @@ Additionally, characterization and read counts don't have access points.
 
     To get all expressionLevels will have to search over all RNAQuants for all
     Datasets.
+
+    ----
+
+    sqlite file is going to sit directly under the dataset.  It will have
+    entries for all of the quants in the dataset.  Desired objects will be
+    generated on the fly by the queries and returned to the backend.  After
+    that will be treated the same as now w.r.t. toProtocolElement, etc.
 """
 
 
@@ -354,14 +356,68 @@ class RNASeqResult(AbstractRNAQuantification):
         return self._featureGroupIdMap[id_]
 
 
-class SqliteRNASeqResult(AbstractRNAQuantification):
+class SqliteRNASeqResult(datamodel.DatamodelObject):
     """
-    An RNA Quantification stored as a SQLite DB.
+    Defines an interface to a sqlite DB which stores all RNA quantifications
+    in the dataset.
     """
+    compoundIdClass = datamodel.RnaQuantificationCompoundId
+
     def __init__(self, parentContainer, localId,
                  rnaQuantSqlFile="ga4gh-rnaQuant.db"):
         super(SimulatedRNASeqResult, self).__init__(parentContainer, localId)
         self._dbConn = sqlite3.connect(rnaQuantSqlFile)
+        self._cursor = self._dbConn.cursor()
+
+    def getRnaQuantifications(self, id_=None):
+        """
+        Returns the list of RnaQuantifications in this DB.  Raises a
+        RnaQuantificationNotFoundException if id is specified and does not
+        exist.
+        """
+        selects = ["SELECT * FROM rnaQuantification"]
+        args = []
+        if id_ is not None:
+            selects.append("WHERE id=?")
+            args.append(id_)
+        selectStmt = string.join(selects, " ")
+        results = []
+        for entry in self._cursor.execute(selectStmt, tuple(args)):
+            results.append(RNASeqResult(self, entry))
+        if id_ is not None and len(results) == 0:
+            raise exceptions.RnaQuantificationNotFoundException(id_)
+        return results
+
+    def getExpressionLevels(self, featureGroupId=None, expressionId=None):
+        """
+        Returns the list of ExpressionLevels in this RNA Quantification.
+        """
+        selects = ["SELECT * FROM expression WHERE rnaQuantId=?"]
+        # TODO: need to get the rnaQuantId
+        rnaQuantificationId = "need to find me!"
+        args = [rnaQuantificationId]
+        if featureGroupId is not None:
+            selects.append("and featureGroupId=?")
+            args.append(featureGroupId)
+        if expressionId is not None:
+            selects.append("and expressionId=?")
+            args.append(expressionId)
+        selectStmt = string.join(selects, " ")
+        results = []
+        for entry in self._cursor.execute(selectStmt, tuple(args)):
+            results.append(ExpressionLevel(self, entry))
+        return results
+
+    def getExpressionLevel(self, id_, featureGroupId=None):
+        """
+        Returns a ExpressionLevel with the specified id, or raises a
+        ExpressionLevelNotFoundException if it does not exist.
+        """
+        results = self.getExpressionLevels(featureGroupId=featureGroupId,
+                                           expressionId=id_)
+        if len(results) == 0:
+            raise exceptions.FeatureGroupNotFoundException(id_)
+        return results
 
 
 class SimulatedRNASeqResult(AbstractRNAQuantification):
@@ -396,3 +452,60 @@ class SimulatedRNASeqResult(AbstractRNAQuantification):
         """
         fields = ["", "", "", "", ""]
         self.addRnaQuantMetadata(fields)
+
+
+class RNASqliteStore(object):
+    """
+    Defines a sqlite store for RNA data as well as methods for loading and
+    modifying the tables.
+    """
+    def __init__(self, rnaQuantDataPath, sqliteFileName=None):
+        if sqliteFileName is not None:
+            sqlFilePath = os.path.join(rnaQuantDataPath, sqliteFileName)
+            if sqliteFileName in os.listdir(rnaQuantDataPath):
+                self._dbConn = sqlite3.connect(sqlFilePath)
+                self._cursor = self._dbConn.cursor()
+            else:
+                self.createNewRepo(sqlFilePath)
+
+    def createNewRepo(self, sqlFilePath):
+        self._dbConn = sqlite3.connect(sqlFilePath)
+        self._cursor = self._dbConn.cursor()
+        self.createTables(self._cursor)
+        self._dbConn.commit()
+
+    def createTables(self, cursor):
+        # annotationIds is a comma separated list
+        cursor.execute('''CREATE TABLE rnaQuantification (
+                       id text,
+                       annotationIds text,
+                       description text,
+                       name text,
+                       readGroupId text)''')
+        cursor.execute('''CREATE TABLE expression (
+                       id text,
+                       name text,
+                       rnaQuantificationId text,
+                       annotationId text,
+                       expression real,
+                       featureGroupId text,
+                       isNormalized bool,
+                       rawReadCount real,
+                       score real,
+                       units text)''')
+
+    def addRNAQuantification(self, datafields):
+        """
+        Adds an RNAQuantification to the db.  Datafields is a tuple in the order:
+        id, annotationIds, description, name, readGroupId
+        """
+        self._cursor.execute('INSERT INTO rnaQuantification VALUES (?, ?, ?, ?, ?)', datafields)
+        self._dbConn.commit()
+
+    def addExpression(self, datafields):
+        """
+        Adds an Expression to the db.  Datafields is a tuple in the order:
+        id, name, rnaQuantificationId, annotationId, expression, featureGroupId, isNormalized, rawReadCount, score, units
+        """
+        self._cursor.execute('INSERT INTO expression VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', datafields)
+        self._dbConn.commit()
