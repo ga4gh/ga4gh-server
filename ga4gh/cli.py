@@ -36,6 +36,17 @@ AVRO_LONG_MAX = 2**31 - 1
 
 
 ##############################################################################
+# common
+##############################################################################
+
+
+def addSubparser(subparsers, subcommand, description):
+    parser = subparsers.add_parser(
+        subcommand, description=description, help=description)
+    return parser
+
+
+##############################################################################
 # Server
 ##############################################################################
 
@@ -680,10 +691,8 @@ def addHelpParser(subparsers):
 
 
 def addVariantsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "variants-search",
-        description="Search for variants",
-        help="Search for variants.")
+    parser = addSubparser(
+        subparsers, "variants-search", "Search for variants")
     parser.set_defaults(runner=SearchVariantsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -692,10 +701,8 @@ def addVariantsSearchParser(subparsers):
 
 
 def addVariantSetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "variantsets-search",
-        description="Search for variantSets",
-        help="Search for variantSets.")
+    parser = addSubparser(
+        subparsers, "variantsets-search", "Search for variantSets")
     parser.set_defaults(runner=SearchVariantSetsRunner)
     addOutputFormatArgument(parser)
     addUrlArgument(parser)
@@ -705,19 +712,15 @@ def addVariantSetsSearchParser(subparsers):
 
 
 def addVariantSetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "variantsets-get",
-        description="Get a variantSet",
-        help="Get a variantSet")
+    parser = addSubparser(
+        subparsers, "variantsets-get", "Get a variantSet")
     parser.set_defaults(runner=GetVariantSetRunner)
     addGetArguments(parser)
 
 
 def addReferenceSetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "referencesets-search",
-        description="Search for referenceSets",
-        help="Search for referenceSets")
+    parser = addSubparser(
+        subparsers, "referencesets-search", "Search for referenceSets")
     parser.set_defaults(runner=SearchReferenceSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -731,10 +734,8 @@ def addReferenceSetsSearchParser(subparsers):
 
 
 def addReferencesSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "references-search",
-        description="Search for references",
-        help="Search for references")
+    parser = addSubparser(
+        subparsers, "references-search", "Search for references")
     parser.set_defaults(runner=SearchReferencesRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -746,10 +747,8 @@ def addReferencesSearchParser(subparsers):
 
 
 def addReadGroupSetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "readgroupsets-search",
-        description="Search for readGroupSets",
-        help="Search for readGroupSets")
+    parser = addSubparser(
+        subparsers, "readgroupsets-search", "Search for readGroupSets")
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -760,10 +759,8 @@ def addReadGroupSetsSearchParser(subparsers):
 
 
 def addCallSetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "callsets-search",
-        description="Search for callSets",
-        help="Search for callSets")
+    parser = addSubparser(
+        subparsers, "callsets-search", "Search for callSets")
     parser.set_defaults(runner=SearchCallSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -774,10 +771,8 @@ def addCallSetsSearchParser(subparsers):
 
 
 def addReadsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "reads-search",
-        description="Search for reads",
-        help="Search for reads")
+    parser = addSubparser(
+        subparsers, "reads-search", "Search for reads")
     parser.set_defaults(runner=SearchReadsRunner)
     addOutputFormatArgument(parser)
     addReadsSearchParserArguments(parser)
@@ -785,19 +780,15 @@ def addReadsSearchParser(subparsers):
 
 
 def addDatasetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "datasets-get",
-        description="Get a dataset",
-        help="Get a dataset")
+    parser = addSubparser(
+        subparsers, "datasets-get", "Get a dataset")
     parser.set_defaults(runner=GetDatasetRunner)
     addGetArguments(parser)
 
 
 def addDatasetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "datasets-search",
-        description="Search for datasets",
-        help="Search for datasets")
+    parser = addSubparser(
+        subparsers, "datasets-search", "Search for datasets")
     parser.set_defaults(runner=SearchDatasetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
@@ -819,64 +810,50 @@ def addReadsSearchParserArguments(parser):
 
 
 def addReferenceSetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "referencesets-get",
-        description="Get a referenceset",
-        help="Get a referenceset")
+    parser = addSubparser(
+        subparsers, "referencesets-get", "Get a referenceset")
     parser.set_defaults(runner=GetReferenceSetRunner)
     addGetArguments(parser)
 
 
 def addReferencesGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "references-get",
-        description="Get a reference",
-        help="Get a reference")
+    parser = addSubparser(
+        subparsers, "references-get", "Get a reference")
     parser.set_defaults(runner=GetReferenceRunner)
     addGetArguments(parser)
 
 
 def addReadGroupSetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "readgroupsets-get",
-        description="Get a read group set",
-        help="Get a read group set")
+    parser = addSubparser(
+        subparsers, "readgroupsets-get", "Get a read group set")
     parser.set_defaults(runner=GetReadGroupSetRunner)
     addGetArguments(parser)
 
 
 def addReadGroupsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "readgroups-get",
-        description="Get a read group",
-        help="Get a read group")
+    parser = addSubparser(
+        subparsers, "readgroups-get", "Get a read group")
     parser.set_defaults(runner=GetReadGroupRunner)
     addGetArguments(parser)
 
 
 def addCallSetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "callsets-get",
-        description="Get a callSet",
-        help="Get a callSet")
+    parser = addSubparser(
+        subparsers, "callsets-get", "Get a callSet")
     parser.set_defaults(runner=GetCallSetRunner)
     addGetArguments(parser)
 
 
 def addVariantsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "variants-get",
-        description="Get a variant",
-        help="Get a variant")
+    parser = addSubparser(
+        subparsers, "variants-get", "Get a variant")
     parser.set_defaults(runner=GetVariantRunner)
     addGetArguments(parser)
 
 
 def addReferencesBasesListParser(subparsers):
-    parser = subparsers.add_parser(
-        "references-list-bases",
-        description="List bases of a reference",
-        help="List bases of a reference")
+    parser = addSubparser(
+        subparsers, "references-list-bases", "List bases of a reference")
     parser.add_argument(
         "--outputFormat", "-O", choices=['text', 'fasta'], default="text",
         help=(
@@ -1322,19 +1299,13 @@ def addReferenceSetMetadataArguments(subparser):
         default="TODO")
 
 
-def addSubparser(subparsers, subcommand, description):
-    parser = subparsers.add_parser(
-        subcommand, description=description, help=description)
-    return parser
-
-
 def getRepoParser():
     parser = argparse.ArgumentParser(
         description="GA4GH data repository management tool")
     subparsers = parser.add_subparsers(title='subcommands',)
 
     initParser = addSubparser(
-        subparsers, "init", description="Initialize a data repository")
+        subparsers, "init", "Initialize a data repository")
     initParser.set_defaults(runner=InitRunner)
     addRepoArgument(initParser)
 
