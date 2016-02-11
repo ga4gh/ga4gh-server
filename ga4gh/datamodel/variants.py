@@ -468,18 +468,15 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         raise exceptions.ObjectWithIdNotFoundException(compoundId)
 
     def getVariants(self, referenceName, startPosition, endPosition,
-                    callSetIds=None):
+                    callSetIds=[]):
         """
         Returns an iterator over the specified variants. The parameters
         correspond to the attributes of a GASearchVariantsRequest object.
         """
-        if callSetIds is None:
-            callSetIds = self._callSetIds
-        else:
-            for callSetId in callSetIds:
-                if callSetId not in self._callSetIds:
-                    raise exceptions.CallSetNotInVariantSetException(
-                        callSetId, self.getId())
+        for callSetId in callSetIds:
+            if callSetId not in self._callSetIds:
+                raise exceptions.CallSetNotInVariantSetException(
+                    callSetId, self.getId())
         if referenceName in self._chromFileMap:
             varFileName = self._chromFileMap[referenceName]
             referenceName, startPosition, endPosition = \
