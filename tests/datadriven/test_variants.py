@@ -363,25 +363,18 @@ class VariantSetTest(datadriven.DataDrivenTest):
             returnedCallSet = variantSet.getCallSet(call_set_id)
             self.assertEqual(call_set_id, returnedCallSet.getId())
         for reference_name in self._reference_names:
-            # passing None as the call_set_ids argument should be equivalent
-            # to passing all of the possible call_set_ids as an argument
-            noneRecords = list(variantSet.getVariants(
-                reference_name, start, end, None))
-            allRecords = list(variantSet.getVariants(
-                reference_name, start, end, call_set_ids))
-            self.assertEqual(len(noneRecords), len(allRecords))
-            for noneRecord, allRecord in zip(noneRecords, allRecords):
-                for noneCall, allCall in zip(
-                        noneRecord.calls, allRecord.calls):
-                    self.assertEqual(
-                        noneCall.call_set_name, allCall.call_set_name)
-
             # passing an empty list as the call_set_ids argument should
             # return no callsets for any variant
-            emptyRecords = variantSet.getVariants(
-                reference_name, start, end, [])
+            emptyRecords = list(variantSet.getVariants(
+                reference_name, start, end, []))
             for record in emptyRecords:
                 self.assertEqual(len(record.calls), 0)
+
+            allRecords = list(variantSet.getVariants(
+                reference_name, start, end, call_set_ids))
+            self.assertEqual(len(emptyRecords), len(allRecords))
+            for allRecord in allRecords:
+                self.assertGreater(len(allRecord.calls), 0)
 
             # passing some call_set_ids as the call_set_ids argument should
             # return only those calls
