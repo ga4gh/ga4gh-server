@@ -5,11 +5,11 @@ Configuration
 *************
 
 The GA4GH reference server has two basic elements to its configuration:
-the `Data hierarchy`_ and the `Configuration file`_.
+the `Data repository`_ and the `Configuration file`_.  The repository is most easily configured via the `Repository manager`_ command line tool.
 
---------------
-Data hierarchy
---------------
+---------------
+Data repository
+---------------
 
 Data is input to the GA4GH server as a directory hierarchy, in which
 the structure of data to be served is represented by the file system.
@@ -87,12 +87,6 @@ An example might look something like:
         "isDerived": false,
         "ncbiTaxonId": 9606
     }
-
-.. note:: This input format is highly prescriptive and inflexible. Expecting
-    users to calculate md5checksums, in particular, is unreasonable. A command
-    line utility to import references from a variety of sources is envisaged
-    to take the tedium out of this process and to ensure that the references
-    are correctly set up and indexed.
 
 
 ++++++++++
@@ -178,6 +172,153 @@ An example layout might look like::
                     sample2.bam
                     sample2.bam.bai
                     # More BAMS
+
+------------------
+Repository manager
+------------------
+
+The repository manager is a tool provided to abstract away the details of
+building a data repository behind a convenient command line interface.  It can
+be accessed via ``ga4gh_repo`` (or ``python repo_dev.py`` if developing).
+Following are descriptions of the commands that the repo manager exposes.
+
+All of the ``add-*`` commands take a ``--moveMode`` flag which specifies how
+to transfer the given file (or directory) into the data repository.  The
+options are ``move`` (moves the file from its original path to the new
+path), ``copy`` (copies the contents of the file into the data repository) and
+``link`` (creates a symlink in the data repository to the file).  The
+default is ``link``.
+
+Many of the ``add-*`` commands take additional flags to specify fields to be
+entered into the ``.json`` files that are created for the given file.
+Utilize the command line help for a particular command to get a list of
+these flags.
+
++++++++
+init
++++++++
+
+Initializes a data repository at the path provided.  All of the other
+commands require a data repository path as an argument, so this will likely be
+the first command you run.
+
+.. code-block:: bash
+
+    $ ga4gh_repo init path/to/datarepo
+
++++++++
+check
++++++++
+
+Performs some consistency checks on the given data repository to ensure it is
+well-formed.
+
+.. code-block:: bash
+
+    $ ga4gh_repo check path/to/datarepo
+
++++++++
+list
++++++++
+
+Lists the contents of the given data repository.
+
+.. code-block:: bash
+
+    $ ga4gh_repo list path/to/datarepo
+
++++++++
+destroy
++++++++
+
+Destroys the given data repository by deleting its directory tree.
+
+.. code-block:: bash
+
+    $ ga4gh_repo destroy path/to/datarepo
+
++++++++++++
+add-dataset
++++++++++++
+
+Creates a dataset in the given repository with a given name.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-dataset path/to/datarepo aDataset
+
++++++++++++++++
+remove-dataset
++++++++++++++++
+
+Destroys a dataset in the given repository with a given name.
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-dataset path/to/datarepo aDataset
+
+++++++++++++++++
+add-referenceset
+++++++++++++++++
+
+Adds a given reference set file to a given data repository.  The file must
+have the extension ``.fa.gz``.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-referenceset path/to/datarepo path/to/aReferenceSet.fa.gz
+
+++++++++++++++++++++
+remove-referenceset
+++++++++++++++++++++
+
+Removes a given reference set from a given data repository.
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-referenceset path/to/datarepo aReferenceSet
+
++++++++++++++++++
+add-readgroupset
++++++++++++++++++
+
+Adds a given read group set file to a given data repository and dataset.  The
+file must have the extension ``.bam``.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-readgroupset path/to/datarepo aDataset path/to/aReadGroupSet.bam
+
+++++++++++++++++++++
+remove-readgroupset
+++++++++++++++++++++
+
+Removes a read group set from a given data repository and dataset.
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-readgroupset path/to/datarepo aDataset aReadGroupSet
+
++++++++++++++++
+add-variantset
++++++++++++++++
+
+Adds a variant set directory to a given data repository and dataset.  The
+directory should contain file(s) with extension ``.vcf.gz``.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-variantset path/to/datarepo aDataset path/to/aVariantSet
+
++++++++++++++++++
+remove-variantset
++++++++++++++++++
+
+Removes a variant set from a given data repository and dataset.
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-variantset path/to/datarepo aDataset aVariantSet
 
 ------------------
 Configuration file
