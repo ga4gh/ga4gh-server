@@ -296,23 +296,19 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
 
 class SearchVariantAnnotationSetsRunner(AbstractSearchRunner):
     """
-    Runner class for the variantannotationsets/{id} method.
+    Runner class for the variantannotationsets/search method.
     """
     def __init__(self, args):
         super(SearchVariantAnnotationSetsRunner, self).__init__(args)
-        self._datasetId = args.datasetId
+        self._variantSetId = args.variantSetId
 
-    def _run(self, datasetId):
+    def _run(self, variantSetId):
         iterator = self._client.searchVariantAnnotationSets(
-            datasetId=datasetId)
+            variantSetId=variantSetId)
         self._output(iterator)
 
     def run(self):
-        if self._datasetId is None:
-            for dataset in self.getAllDatasets():
-                self._run(dataset.id)
-        else:
-            self._run(self._datasetId)
+        self._run(self._variantSetId)
 
 
 class SearchReadGroupSetsRunner(AbstractSearchRunner):
@@ -399,9 +395,10 @@ class AnnotationFormatterMixin(object):
             for effect in variantAnnotation.transcriptEffects:
                 print(effect.alternateBases, sep="|", end="|")
                 for so in effect.effects:
-                    print(so.name, sep="&", end="|")
-                print(effect.impact, effect.featureId, effect.HGVSc,
-                      effect.HGVSp, sep="|", end="\t")
+                    print(so.term, sep="&", end="|")
+                print(effect.impact, effect.featureId,
+                      effect.hgvsAnnotation.transcript,
+                      effect.hgvsAnnotation.protein, sep="|", end="\t")
             print()
 
 
@@ -440,7 +437,7 @@ class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
 class SearchVariantAnnotationsRunner(
         AnnotationFormatterMixin, AbstractSearchRunner):
     """
-    Runner class for the variantannotationsg/search method.
+    Runner class for the variantannotations/search method.
     """
     def __init__(self, args):
         super(SearchVariantAnnotationsRunner, self).__init__(args)
@@ -852,7 +849,7 @@ def addVariantAnnotationSetsSearchParser(subparsers):
     addOutputFormatArgument(parser)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addDatasetIdArgument(parser)
+    addVariantSetIdArgument(parser)
     return parser
 
 
