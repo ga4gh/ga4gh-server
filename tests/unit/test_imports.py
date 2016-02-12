@@ -35,7 +35,6 @@ class TestImports(unittest.TestCase):
         snakefoodScanner = SnakefoodScanner()
         cls.graph = snakefoodScanner.scan()
 
-    @unittest.skip("Has started failing mysteriously on importing ga4gh")
     def testNoCycles(self):
         checker = ImportGraphCycleChecker(self.graph)
         checker.checkNoCycles()
