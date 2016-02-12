@@ -203,6 +203,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "file":
         dataRepository = datarepo.FileSystemDataRepository(os.path.join(
             dataSource.netloc, dataSource.path))
+        dataRepository.checkConsistency()
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)
@@ -539,9 +540,9 @@ def getReadGroup(id):
 @DisplayedRoute(
     '/callsets/<no(search):id>',
     pathDisplay='/callsets/<id>')
-def getCallset(id):
+def getCallSet(id):
     return handleFlaskGetRequest(
-        id, flask.request, app.backend.runGetCallset)
+        id, flask.request, app.backend.runGetCallSet)
 
 
 @app.route('/oauth2callback', methods=['GET'])
