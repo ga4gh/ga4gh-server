@@ -481,7 +481,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
     def _generateAnalysisResult(self, effect, ann, randomNumberGenerator):
         # TODO make these sensible
         analysisResult = protocol.AnalysisResult()
-        analysisResult.analysisId = "analysisId"
+        analysisResult.analysisId = self.getAnalysis().id
         analysisResult.result = "result string"
         analysisResult.score = randomNumberGenerator.randint(0, 100)
         return analysisResult
@@ -971,7 +971,14 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         self.addLocations(effect, protPos, cdnaPos)
         effect.id = self.getTranscriptEffectId(effect)
         effect.analysisResults = []
+        effect.analysisResults.append(self.getAnalysisResult(effect, ann))
         return effect
+
+    def getAnalysisResult(self, effect, ann):
+        analysisResult = protocol.AnalysisResult()
+        analysis = self.getAnalysis()
+        analysisResult.analysisId = analysis.id
+        return analysisResult
 
     def convertSeqOntology(self, seqOntStr):
         """
