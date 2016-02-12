@@ -176,7 +176,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._runGetRequest.assert_called_once_with(
             "readgroups", protocol.ReadGroup, self.objectId)
 
-    def testGetCallsets(self):
+    def testGetCallSets(self):
         self.httpClient.getCallSet(self.objectId)
         self.httpClient._runGetRequest.assert_called_once_with(
             "callsets", protocol.CallSet, self.objectId)

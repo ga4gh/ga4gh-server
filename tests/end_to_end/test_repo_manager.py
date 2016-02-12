@@ -1,19 +1,18 @@
 """
 End to end test that invokes the repo manager
 """
-# TODO make this faster
-# eliminate repo_dev.py invocatations by calling the cli module
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import mock
 import os
-import shlex
 import shutil
-import subprocess
 import tempfile
 import unittest
 
+import ga4gh.cli as cli
+import ga4gh.exceptions as exceptions
 import tests.paths as paths
 
 
@@ -31,12 +30,8 @@ class RepoManagerEndToEndTest(unittest.TestCase):
             shutil.rmtree(self.tempdir)
 
     def _runCmd(self, cmd, *args):
-        argString = ' '.join(args)
-        command = "python repo_dev.py {} {} {}".format(
-            cmd, self.tempdir, argString)
-        splits = shlex.split(command)
-        with open(os.devnull, 'w') as devnull:
-            subprocess.check_call(splits, stdout=devnull, stderr=devnull)
+        command = ["--loud", cmd, self.tempdir] + list(args)
+        cli.repo_main(command)
 
     def testEndToEnd(self):
         self._runCmd("init")
@@ -47,9 +42,23 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         self._runCmd("check")
         self._runCmd("list")
         self._runCmd(
-            "remove-variantset", self.datasetName, paths.variantSetName)
+            "remove-variantset", self.datasetName, paths.variantSetName,
+            "-f")
         self._runCmd(
-            "remove-readgroupset", self.datasetName, paths.readGroupSetName)
-        self._runCmd("remove-dataset", self.datasetName)
-        self._runCmd("remove-referenceset", paths.referenceSetName)
-        self._runCmd("destroy")
+            "remove-readgroupset", self.datasetName,
+            paths.readGroupSetName, "-f")
+        self._runCmd(
+            "remove-dataset", self.datasetName, "-f")
+        self._runCmd(
+            "remove-referenceset", paths.referenceSetName, "-f")
+        self._runCmd("destroy", "-f")
+
+    def testForce(self):
+        self._runCmd("init")
+        with mock.patch('ga4gh.cli.getRawInput', lambda x: 'N'):
+            self._runCmd("destroy")
+        self._runCmd("list")
+        with mock.patch('ga4gh.cli.getRawInput', lambda x: 'y'):
+            self._runCmd("destroy")
+        with self.assertRaises(exceptions.RepoManagerException):
+            self._runCmd("list")

@@ -36,6 +36,17 @@ AVRO_LONG_MAX = 2**31 - 1
 
 
 ##############################################################################
+# common
+##############################################################################
+
+
+def addSubparser(subparsers, subcommand, description):
+    parser = subparsers.add_parser(
+        subcommand, description=description, help=description)
+    return parser
+
+
+##############################################################################
 # Server
 ##############################################################################
 
@@ -71,17 +82,18 @@ def getServerParser():
 
 def server_main(args=None):
     parser = getServerParser()
-    args = parser.parse_args(args)
-    if args.disable_urllib_warnings:
+    parsedArgs = parser.parse_args(args)
+    if parsedArgs.disable_urllib_warnings:
         requests.packages.urllib3.disable_warnings()
     frontend.configure(
-        args.config_file, args.config, args.port)
+        parsedArgs.config_file, parsedArgs.config, parsedArgs.port)
     sslContext = None
-    if args.tls or ("OIDC_PROVIDER" in frontend.app.config):
+    if parsedArgs.tls or ("OIDC_PROVIDER" in frontend.app.config):
         sslContext = "adhoc"
     frontend.app.run(
-        host=args.host, port=args.port,
-        use_reloader=not args.dont_use_reloader, ssl_context=sslContext)
+        host=parsedArgs.host, port=parsedArgs.port,
+        use_reloader=not parsedArgs.dont_use_reloader,
+        ssl_context=sslContext)
 
 
 ##############################################################################
@@ -601,13 +613,13 @@ class GetReadGroupRunner(AbstractGetRunner):
         self._method = self._client.getReadGroup
 
 
-class GetCallsetRunner(AbstractGetRunner):
+class GetCallSetRunner(AbstractGetRunner):
     """
     Runner class for the callsets/{id} method
     """
     def __init__(self, args):
-        super(GetCallsetRunner, self).__init__(args)
-        self._method = self._client.getCallset
+        super(GetCallSetRunner, self).__init__(args)
+        self._method = self._client.getCallSet
 
 
 class GetDatasetRunner(AbstractGetRunner):
@@ -626,6 +638,15 @@ class GetVariantRunner(VariantFormatterMixin, AbstractGetRunner):
     def __init__(self, args):
         super(GetVariantRunner, self).__init__(args)
         self._method = self._client.getVariant
+
+
+class GetVariantSetRunner(AbstractGetRunner):
+    """
+    Runner class for the variantsets/{id} method
+    """
+    def __init__(self, args):
+        super(GetVariantSetRunner, self).__init__(args)
+        self._method = self._client.getVariantSet
 
 
 def addDisableUrllibWarningsArgument(parser):
@@ -804,10 +825,8 @@ def addHelpParser(subparsers):
 
 
 def addVariantsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "variants-search",
-        description="Search for variants",
-        help="Search for variants.")
+    parser = addSubparser(
+        subparsers, "variants-search", "Search for variants")
     parser.set_defaults(runner=SearchVariantsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -816,10 +835,8 @@ def addVariantsSearchParser(subparsers):
 
 
 def addVariantSetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "variantsets-search",
-        description="Search for variantSets",
-        help="Search for variantSets.")
+    parser = addSubparser(
+        subparsers, "variantsets-search", "Search for variantSets")
     parser.set_defaults(runner=SearchVariantSetsRunner)
     addOutputFormatArgument(parser)
     addUrlArgument(parser)
@@ -853,11 +870,16 @@ def addVariantAnnotationSetsSearchParser(subparsers):
     return parser
 
 
+def addVariantSetsGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "variantsets-get", "Get a variantSet")
+    parser.set_defaults(runner=GetVariantSetRunner)
+    addGetArguments(parser)
+
+
 def addReferenceSetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "referencesets-search",
-        description="Search for referenceSets",
-        help="Search for referenceSets")
+    parser = addSubparser(
+        subparsers, "referencesets-search", "Search for referenceSets")
     parser.set_defaults(runner=SearchReferenceSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -871,10 +893,8 @@ def addReferenceSetsSearchParser(subparsers):
 
 
 def addReferencesSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "references-search",
-        description="Search for references",
-        help="Search for references")
+    parser = addSubparser(
+        subparsers, "references-search", "Search for references")
     parser.set_defaults(runner=SearchReferencesRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -886,10 +906,8 @@ def addReferencesSearchParser(subparsers):
 
 
 def addReadGroupSetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "readgroupsets-search",
-        description="Search for readGroupSets",
-        help="Search for readGroupSets")
+    parser = addSubparser(
+        subparsers, "readgroupsets-search", "Search for readGroupSets")
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -899,11 +917,9 @@ def addReadGroupSetsSearchParser(subparsers):
     return parser
 
 
-def addCallsetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "callsets-search",
-        description="Search for callSets",
-        help="Search for callSets")
+def addCallSetsSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "callsets-search", "Search for callSets")
     parser.set_defaults(runner=SearchCallSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -914,10 +930,8 @@ def addCallsetsSearchParser(subparsers):
 
 
 def addReadsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "reads-search",
-        description="Search for reads",
-        help="Search for reads")
+    parser = addSubparser(
+        subparsers, "reads-search", "Search for reads")
     parser.set_defaults(runner=SearchReadsRunner)
     addOutputFormatArgument(parser)
     addReadsSearchParserArguments(parser)
@@ -925,19 +939,15 @@ def addReadsSearchParser(subparsers):
 
 
 def addDatasetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "datasets-get",
-        description="Get a dataset",
-        help="Get a dataset")
+    parser = addSubparser(
+        subparsers, "datasets-get", "Get a dataset")
     parser.set_defaults(runner=GetDatasetRunner)
     addGetArguments(parser)
 
 
 def addDatasetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "datasets-search",
-        description="Search for datasets",
-        help="Search for datasets")
+    parser = addSubparser(
+        subparsers, "datasets-search", "Search for datasets")
     parser.set_defaults(runner=SearchDatasetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
@@ -959,64 +969,50 @@ def addReadsSearchParserArguments(parser):
 
 
 def addReferenceSetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "referencesets-get",
-        description="Get a referenceset",
-        help="Get a referenceset")
+    parser = addSubparser(
+        subparsers, "referencesets-get", "Get a referenceset")
     parser.set_defaults(runner=GetReferenceSetRunner)
     addGetArguments(parser)
 
 
 def addReferencesGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "references-get",
-        description="Get a reference",
-        help="Get a reference")
+    parser = addSubparser(
+        subparsers, "references-get", "Get a reference")
     parser.set_defaults(runner=GetReferenceRunner)
     addGetArguments(parser)
 
 
 def addReadGroupSetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "readgroupsets-get",
-        description="Get a read group set",
-        help="Get a read group set")
+    parser = addSubparser(
+        subparsers, "readgroupsets-get", "Get a read group set")
     parser.set_defaults(runner=GetReadGroupSetRunner)
     addGetArguments(parser)
 
 
 def addReadGroupsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "readgroups-get",
-        description="Get a read group",
-        help="Get a read group")
+    parser = addSubparser(
+        subparsers, "readgroups-get", "Get a read group")
     parser.set_defaults(runner=GetReadGroupRunner)
     addGetArguments(parser)
 
 
-def addCallsetsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "callsets-get",
-        description="Get a callset",
-        help="Get a callset")
-    parser.set_defaults(runner=GetCallsetRunner)
+def addCallSetsGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "callsets-get", "Get a callSet")
+    parser.set_defaults(runner=GetCallSetRunner)
     addGetArguments(parser)
 
 
 def addVariantsGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "variants-get",
-        description="Get a variant",
-        help="Get a variant")
+    parser = addSubparser(
+        subparsers, "variants-get", "Get a variant")
     parser.set_defaults(runner=GetVariantRunner)
     addGetArguments(parser)
 
 
 def addReferencesBasesListParser(subparsers):
-    parser = subparsers.add_parser(
-        "references-list-bases",
-        description="List bases of a reference",
-        help="List bases of a reference")
+    parser = addSubparser(
+        subparsers, "references-list-bases", "List bases of a reference")
     parser.add_argument(
         "--outputFormat", "-O", choices=['text', 'fasta'], default="text",
         help=(
@@ -1040,17 +1036,18 @@ def getClientParser():
     addVariantSetsSearchParser(subparsers)
     addVariantAnnotationSearchParser(subparsers)
     addVariantAnnotationSetsSearchParser(subparsers)
+    addVariantSetsGetParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
-    addCallsetsSearchParser(subparsers)
+    addCallSetsSearchParser(subparsers)
     addReadsSearchParser(subparsers)
     addDatasetsSearchParser(subparsers)
     addReferenceSetsGetParser(subparsers)
     addReferencesGetParser(subparsers)
     addReadGroupSetsGetParser(subparsers)
     addReadGroupsGetParser(subparsers)
-    addCallsetsGetParser(subparsers)
+    addCallSetsGetParser(subparsers)
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
@@ -1059,14 +1056,14 @@ def getClientParser():
 
 def client_main(args=None):
     parser = getClientParser()
-    args = parser.parse_args(args)
-    if "runner" not in args:
+    parsedArgs = parser.parse_args(args)
+    if "runner" not in parsedArgs:
         parser.print_help()
     else:
-        if args.disable_urllib_warnings:
+        if parsedArgs.disable_urllib_warnings:
             requests.packages.urllib3.disable_warnings()
         try:
-            runner = args.runner(args)
+            runner = parsedArgs.runner(parsedArgs)
             runner.run()
         except (exceptions.BaseClientException,
                 requests.exceptions.RequestException) as exception:
@@ -1264,12 +1261,32 @@ def configtest_main(parser=None):
 ##############################################################################
 
 
+def getRawInput(displayString):
+    userResponse = raw_input(displayString)
+    return userResponse
+
+
 class AbstractRepoCommandRunner(object):
 
     def __init__(self, args):
         self.args = args
         self.repoPath = args.repoPath
         self.repoManager = repo_manager.RepoManager(self.repoPath)
+        if 'force' in args:
+            self.force = args.force
+
+    def confirmRun(self, func, deleteString):
+        if self.force:
+            func()
+        else:
+            displayString = (
+                "Are you sure you want to delete data in {}? "
+                "[y|N] ".format(deleteString))
+            userResponse = getRawInput(displayString)
+            if userResponse.strip() == 'y':
+                func()
+            else:
+                print("Aborted")
 
 
 class AbstractRepoAddCommandRunner(AbstractRepoCommandRunner):
@@ -1326,7 +1343,8 @@ class DestroyRunner(AbstractRepoCommandRunner):
         super(DestroyRunner, self).__init__(args)
 
     def run(self):
-        self.repoManager.destroy()
+        def func(): self.repoManager.destroy()
+        self.confirmRun(func, 'the Data Repository')
 
 
 class InitRunner(AbstractRepoCommandRunner):
@@ -1353,7 +1371,8 @@ class RemoveDatasetRunner(AbstractRepoDatasetCommandRunner):
         super(RemoveDatasetRunner, self).__init__(args)
 
     def run(self):
-        self.repoManager.removeDataset(self.datasetName)
+        def func(): self.repoManager.removeDataset(self.datasetName)
+        self.confirmRun(func, 'dataset {}'.format(self.datasetName))
 
 
 class AddReferenceSetRunner(AbstractRepoAddMoveCommandRunner):
@@ -1376,7 +1395,10 @@ class RemoveReferenceSetRunner(AbstractRepoCommandRunner):
         self.referenceSetName = args.referenceSetName
 
     def run(self):
-        self.repoManager.removeReferenceSet(self.referenceSetName)
+        def func():
+            self.repoManager.removeReferenceSet(self.referenceSetName)
+        self.confirmRun(
+            func, 'reference set {}'.format(self.referenceSetName))
 
 
 class AddReadGroupSetRunner(AbstractRepoDatasetFilepathCommandRunner):
@@ -1396,8 +1418,11 @@ class RemoveReadGroupSetRunner(AbstractRepoDatasetCommandRunner):
         self.readGroupSetName = args.readGroupSetName
 
     def run(self):
-        self.repoManager.removeReadGroupSet(
-            self.datasetName, self.readGroupSetName)
+        def func():
+            self.repoManager.removeReadGroupSet(
+                self.datasetName, self.readGroupSetName)
+        self.confirmRun(
+            func, 'read group set {}'.format(self.readGroupSetName))
 
 
 class AddVariantSetRunner(AbstractRepoDatasetFilepathCommandRunner):
@@ -1417,13 +1442,21 @@ class RemoveVariantSetRunner(AbstractRepoDatasetCommandRunner):
         self.variantSetName = args.variantSetName
 
     def run(self):
-        self.repoManager.removeVariantSet(
-            self.datasetName, self.variantSetName)
+        def func():
+            self.repoManager.removeVariantSet(
+                self.datasetName, self.variantSetName)
+        self.confirmRun(func, 'variant set {}'.format(self.variantSetName))
 
 
 def addRepoArgument(subparser):
     subparser.add_argument(
         "repoPath", help="the file path of the data repository")
+
+
+def addForceArgument(subparser):
+    subparser.add_argument(
+        "-f", "--force", action='store_true',
+        default=False, help="do not prompt for confirmation")
 
 
 def addDatasetNameArgument(subparser):
@@ -1463,19 +1496,16 @@ def addReferenceSetMetadataArguments(subparser):
         default="TODO")
 
 
-def addSubparser(subparsers, subcommand, description):
-    parser = subparsers.add_parser(
-        subcommand, description=description, help=description)
-    return parser
-
-
 def getRepoParser():
     parser = argparse.ArgumentParser(
         description="GA4GH data repository management tool")
     subparsers = parser.add_subparsers(title='subcommands',)
+    parser.add_argument(
+        "--loud", default=False, action="store_true",
+        help="propagate exceptions from RepoManager")
 
     initParser = addSubparser(
-        subparsers, "init", description="Initialize a data repository")
+        subparsers, "init", "Initialize a data repository")
     initParser.set_defaults(runner=InitRunner)
     addRepoArgument(initParser)
 
@@ -1493,6 +1523,7 @@ def getRepoParser():
         subparsers, "destroy", "Destroy the repo")
     destroyParser.set_defaults(runner=DestroyRunner)
     addRepoArgument(destroyParser)
+    addForceArgument(destroyParser)
 
     addDatasetParser = addSubparser(
         subparsers, "add-dataset", "Add a dataset to the data repo")
@@ -1506,6 +1537,7 @@ def getRepoParser():
     removeDatasetParser.set_defaults(runner=RemoveDatasetRunner)
     addRepoArgument(removeDatasetParser)
     addDatasetNameArgument(removeDatasetParser)
+    addForceArgument(removeDatasetParser)
 
     addReferenceSetParser = addSubparser(
         subparsers, "add-referenceset",
@@ -1524,6 +1556,7 @@ def getRepoParser():
     removeReferenceSetParser.add_argument(
         "referenceSetName",
         help="the name of the reference set")
+    addForceArgument(removeReferenceSetParser)
 
     addReadGroupSetParser = addSubparser(
         subparsers, "add-readgroupset",
@@ -1541,6 +1574,7 @@ def getRepoParser():
     addRepoArgument(removeReadGroupSetParser)
     addDatasetNameArgument(removeReadGroupSetParser)
     addReadGroupSetNameArgument(removeReadGroupSetParser)
+    addForceArgument(removeReadGroupSetParser)
 
     addVariantSetParser = addSubparser(
         subparsers, "add-variantset", "Add a variant set to the data repo")
@@ -1557,18 +1591,21 @@ def getRepoParser():
     addRepoArgument(removeVariantSetParser)
     addDatasetNameArgument(removeVariantSetParser)
     addVariantSetNameArgument(removeVariantSetParser)
+    addForceArgument(removeVariantSetParser)
 
     return parser
 
 
-def repo_main():
+def repo_main(args=None):
     parser = getRepoParser()
-    args = parser.parse_args()
-    if "runner" not in args:
+    parsedArgs = parser.parse_args(args)
+    if "runner" not in parsedArgs:
         parser.print_help()
     else:
-        runner = args.runner(args)
+        runner = parsedArgs.runner(parsedArgs)
         try:
             runner.run()
         except exceptions.RepoManagerException as exception:
             print(exception.message)
+            if parsedArgs.loud:
+                raise
