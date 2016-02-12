@@ -203,6 +203,12 @@ class FileSystemDataRepository(AbstractDataRepository):
             self.checkConsistency()
 
     def checkConsistency(self):
+        """
+        Perform checks that ensure the consistency of the data.
+        Factored into a separate method from server init since the
+        data repo object can be created on a partially-complete
+        data set.
+        """
         for dataset in self.getDatasets():
             for readGroupSet in dataset.getReadGroupSets():
                 readGroupSet.checkConsistency(self)
