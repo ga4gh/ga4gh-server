@@ -18,10 +18,12 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import tests.datadriven as datadriven
 import tests.utils as utils
+import tests.paths as paths
 
 
 def testVariantSets():
-    testDataDir = "tests/data/datasets/dataset1/variants"
+    testDataDir = os.path.join(
+        paths.testDataDir, "datasets/dataset1/variants")
     for test in datadriven.makeTests(testDataDir, VariantSetTest):
         yield test
 
