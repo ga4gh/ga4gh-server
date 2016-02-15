@@ -188,8 +188,6 @@ class FileSystemDataRepository(AbstractDataRepository):
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)
-            if self.g2pDirName in sourceDir:
-                continue
             for setName in os.listdir(sourceDir):
                 relativePath = os.path.join(sourceDir, setName)
                 if os.path.isdir(relativePath):

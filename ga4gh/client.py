@@ -511,6 +511,7 @@ class LocalClient(AbstractClient):
             "variants": self._backend.runSearchVariants,
             "readgroupsets": self._backend.runSearchReadGroupSets,
             "reads": self._backend.runSearchReads,
+            "genotypephenotype": self._backend.runSearchGenotypePhenotype,
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):
