@@ -759,6 +759,20 @@ def addGenotypePhenotypeSearchParser(subparsers):
 
 
 def addVariantsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "genotypephenotype-search",
+        description="Search for genotype to phenotype associations",
+        help="Search for genotype to phenotype associations."
+    )
+    parser.set_defaults(runner=SearchGenotypePhenotypeRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addGenotypePhenotypeSearchOptions(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addVariantsSearchParser(subparsers):
     parser = addSubparser(
         subparsers, "variants-search", "Search for variants")
     parser.set_defaults(runner=SearchVariantsRunner)

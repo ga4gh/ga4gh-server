@@ -173,11 +173,13 @@ class FileSystemDataRepository(AbstractDataRepository):
     """
     referenceSetsDirName = "referenceSets"
     datasetsDirName = "datasets"
+    g2pDirName = "g2pDatasets"
 
     def __init__(self, dataDir, doConsistencyCheck=True):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = [self.referenceSetsDirName, self.datasetsDirName]
+        sourceDirNames = [self.referenceSetsDirName, self.datasetsDirName,
+                          self.g2pDirName]
         constructors = [
             references.HtslibReferenceSet, datasets.FileSystemDataset,
             genotype_phenotype.G2PDataset]
