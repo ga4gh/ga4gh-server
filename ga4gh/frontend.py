@@ -28,6 +28,7 @@ import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
+from ga4gh.metadataRoutes import metadataRoutes
 
 
 MIMETYPE = "application/json"
@@ -35,6 +36,9 @@ SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
 SECRET_KEY_LENGTH = 24
 
 app = flask.Flask(__name__)
+
+app.register_blueprint(metadataRoutes)
+
 assert not hasattr(app, 'urls')
 app.urls = []
 
@@ -63,7 +67,6 @@ class NoConverter(werkzeug.routing.BaseConverter):
 
 
 app.url_map.converters['no'] = NoConverter
-
 
 class ServerStatus(object):
     """
@@ -505,7 +508,6 @@ def searchVariants():
 def searchDatasets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchDatasets)
-
 
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
