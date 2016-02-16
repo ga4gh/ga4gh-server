@@ -28,6 +28,7 @@ class TestGestalt(server_test.ServerTest):
         self.simulatedReferenceId = "cmVmZXJlbmNlU2V0MDpzcnMw"
         self.client = client.ClientForTesting(self.server.getUrl())
         self.runVariantsRequest()
+        self.runGenotypePhenotypeRequest()
         self.assertLogsWritten()
         self.runReadsRequest()
         self.runReferencesRequest()
@@ -60,8 +61,9 @@ class TestGestalt(server_test.ServerTest):
             [], clientOutLines,
             "Client stdout log is empty")
 
-        # number of variants to expect
-        expectedNumClientOutLines = 2
+        # number of variants to expect, this changed with the g2p client
+        # client tests
+        expectedNumClientOutLines = 12
         self.assertEqual(len(clientOutLines), expectedNumClientOutLines)
 
         # client stderr should log at least one post
@@ -107,3 +109,21 @@ class TestGestalt(server_test.ServerTest):
         cmd = "variantsets-search"
         args = "--datasetId {}".format(self.simulatedDatasetId)
         self.runClientCmd(self.client, cmd, args)
+
+    def runGenotypePhenotypeRequest(self):
+        feature = ['KIT *wild']
+        evidence = 'imatinib'
+        phenotype = 'GIST'
+        cmd = "genotypephenotype-search --outputFormat 'json' \
+        --feature {}".format(feature)
+        self.runClientCmd(self.client, cmd)
+        cmd = "genotypephenotype-search --outputFormat 'json' \
+        --evidence {}".format(evidence)
+        self.runClientCmd(self.client, cmd)
+        cmd = "genotypephenotype-search --outputFormat 'json' \
+        --phenotype {}".format(phenotype)
+        self.runClientCmd(self.client, cmd)
+        cmd = "genotypephenotype-search --outputFormat 'json' \
+        --feature {0} --evidence {1} --phenotype {2}".format(
+            feature, evidence, phenotype)
+        self.runClientCmd(self.client, cmd)

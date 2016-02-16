@@ -47,7 +47,6 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
             'Content-type': 'application/json',
             'Origin': self.exampleUrl,
         }
-        print('r='+request.toJsonString())
         return self.app.post(
             path, headers=headers, data=request.toJsonString())
 
@@ -191,7 +190,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
             request.pageSize = 1
             request.feature = "KIT *wild"
             response = self.sendPostRequest(
-                         '/genotypephenotype/search', request)
+                '/genotypephenotype/search', request)
             self.assertEqual(200, response.status_code)
             response = protocol.SearchGenotypePhenotypeResponse().\
                 fromJsonString(response.data)
@@ -214,11 +213,11 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         self.assertTrue(hasattr(response.associations[0],
                                 'evidence'))
         sample_evidence = response.associations[0].toJsonDict()['evidence'][0]
-        self.assertIn('ontologySource', sample_evidence['evidenceType'])
-        self.assertIn('id', sample_evidence['evidenceType'])
-        self.assertIn('name', sample_evidence['evidenceType'])
-        self.assertEqual(sample_evidence['evidenceType']['id'], 'c703f7ab')
-        self.assertEqual(sample_evidence['evidenceType']['ontologySource'],
+        sample_evidence_type = sample_evidence['evidenceType']
+        self.assertIn('ontologySource', sample_evidence_type)
+        self.assertEqual(sample_evidence_type['ontologySource'],
                          'http://ohsu.edu/cgd/')
-        self.assertEqual(sample_evidence['evidenceType']['name'],
-                         'early trials')
+        self.assertIn('id', sample_evidence_type)
+        self.assertEqual(sample_evidence_type['id'], 'c703f7ab')
+        self.assertIn('name', sample_evidence_type)
+        self.assertEqual(sample_evidence_type['name'], 'early trials')

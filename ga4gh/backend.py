@@ -212,6 +212,12 @@ class Backend(object):
         """
         return self._dataRepository
 
+    def addG2PDataset(self, g2pDataset):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        self._g2pDataset = g2pDataset
+
     def setRequestValidation(self, requestValidation):
         """
         Set enabling request validation
@@ -288,6 +294,7 @@ class Backend(object):
         (object, nextPageToken) pairs, which allows this iteration to be picked
         up at any point.
         """
+
         currentIndex = 0
         if request.pageToken is not None:
             currentIndex, = _parsePageToken(request.pageToken, 1)
