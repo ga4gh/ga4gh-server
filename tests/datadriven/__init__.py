@@ -43,7 +43,7 @@ def makeTests(testDataDir, testClass, fnmatchGlob="*"):
     for localId in os.listdir(testDataDir):
         if (fnmatch.fnmatch(localId, fnmatchGlob) and
                 not fnmatch.fnmatch(localId, '*.json') and
-                not localId.startswith(".")):
+                not localId.startswith(".")):  # hidden files start with `.`
             path = os.path.join(testDataDir, localId)
             tester = testClass(localId, path)
             for name, _ in inspect.getmembers(testClass):
