@@ -68,6 +68,7 @@ class NoConverter(werkzeug.routing.BaseConverter):
 
 app.url_map.converters['no'] = NoConverter
 
+
 class ServerStatus(object):
     """
     Generates information about the status of the server for display
@@ -508,6 +509,7 @@ def searchVariants():
 def searchDatasets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchDatasets)
+
 
 @DisplayedRoute(
     '/variantsets/<no(search):id>',

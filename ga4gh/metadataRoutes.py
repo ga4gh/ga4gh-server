@@ -15,6 +15,7 @@ metadataRecordTypes = (
     "biosample"
 )
 
+
 class MetadataBackend():
     # TODO generalize for the rest of the API?
     columns = ("id", "name", "description")
@@ -25,7 +26,9 @@ class MetadataBackend():
         dbconn = self._dbconn
         dbcur = dbconn.cursor()
         # TODO generalize table creation based on
-        dbcur.execute("create table if not exists " + self.tableName + " (id text, name text, description text)")
+        dbcur.execute("create table if not exists " +
+                      self.tableName +
+                      " (id text, name text, description text)")
         dbcur.close()
 
     def hydrate(self, row):
@@ -52,10 +55,15 @@ class MetadataBackend():
         if 'name' not in obj:
             obj['name'] = ""
         # TODO generalize this line and clean inputs
-        sql = "INSERT INTO " + self.tableName + " VALUES('" + obj['id'] + "', '" + obj['name'] + "', '" + obj['description'] + "')"
+        sql = "INSERT INTO " + self.tableName + \
+              " VALUES('" + obj['id'] + \
+              "', '" + obj['name'] + \
+              "', '" + obj['description'] + "')"
         query = self._dbconn.execute(sql)
+        # TODO add message using cursor dereferencing
+        print(query)
         self._dbconn.commit()
-        return self.getById(obj['id']) # TODO add message using cursor dereferencing
+        return self.getById(obj['id'])
 
     def update(self, obj):
         # get the record we want to update
@@ -68,9 +76,14 @@ class MetadataBackend():
             if k not in obj:
                 obj[k] = old[k]
         # TODO generalize this line and clean inputs
-        sql = "UPDATE " + self.tableName + " SET name = '" + obj['name'] + "', description = '" + obj['description'] + "' WHERE id=='" + obj['id'] + "'"
+        sql = "UPDATE " + self.tableName + \
+              " SET name = '" + obj['name'] + \
+              "', description = '" + obj['description'] + \
+              "' WHERE id=='" + obj['id'] + "'"
         print(sql)
         query = self._dbconn.execute(sql)
+        print(query)
+        # TODO add message using cursor dereferencing
         self._dbconn.commit()
         # update SQL
         return self.getById(obj['id'])
@@ -89,14 +102,17 @@ def validateMetadataCreateRequest(metadataType, metadataCreateRequest):
         raise exceptions.BadRequestException
     return True
 
+
 def getMetadataSQL(metadataId):
     mb = MetadataBackend('metadata.db')
     record = mb.getById(metadataId)
     return record
 
+
 def insertMetadataSQL(metadataObject):
     mb = MetadataBackend('metadata.db')
     return mb.insert(metadataObject)
+
 
 def updateMetadataSQL(metadataObject):
     mb = MetadataBackend('metadata.db')
@@ -111,11 +127,12 @@ def getMetadata(metadataType, metadataId):
     # return string
     return flask.Response(json.dumps(obj), status=200, mimetype=MIMETYPE)
 
+
 def createMetadata(metadataType, metadataCreateRequest):
     response = {}
     # validate that metadataType and metadataObject.type don't disagree
-    validated = validateMetadataCreateRequest(metadataType, metadataCreateRequest)
-    
+    validated = validateMetadataCreateRequest(
+        metadataType, metadataCreateRequest)
     # add to internal representation
     if validated:
         # check to see if it exists first
@@ -127,8 +144,8 @@ def createMetadata(metadataType, metadataCreateRequest):
         response['message'] = "fail"
         # an exception that should never happen
     # return write response
-    
     return flask.Response(json.dumps(response), status=201, mimetype=MIMETYPE)
+
 
 def updateMetadata(metadataType, metadataId, metadataUpdateRequest):
     response = {}
@@ -145,40 +162,51 @@ def updateMetadata(metadataType, metadataId, metadataUpdateRequest):
     # TODO whats the updated http code?
     return flask.Response(json.dumps(response), status=201, mimetype=MIMETYPE)
 
+
 def deleteMetadata(metadataType, metadataId):
     response = {}
     # TODO
     return flask.Response(json.dumps(response), status=999)
 
+
 def handleCreateMetadataRequest(metadataType, request, handler):
     requestData = json.loads(request.data)
     return handler(metadataType, requestData)
 
+
 def handleGetMetadataRequest(metadataType, metadataId, handler):
     return handler(metadataType, metadataId)
+
 
 def handleUpdateMetadataRequest(metadataType, metadataId, request, handler):
     requestData = json.loads(request.data)
     return handler(metadataType, metadataId, requestData)
 
+
 def handleDeleteMetadataRequest(metadataType, metadataId, handler):
     return handler(metadataType, metadataId)
 
-@metadataRoutes.route('/metadata/<metadataType>', methods=['POST'])
+
+@metadataRoutes.route('/metadata/<metadataType>',
+                      methods=['POST'])
 def createMetadataRoute(metadataType):
     return handleCreateMetadataRequest(
         metadataType,
         flask.request,
         createMetadata)
-        
-@metadataRoutes.route('/metadata/<metadataType>/<metadataId>', methods=['GET'])
+
+
+@metadataRoutes.route('/metadata/<metadataType>/<metadataId>',
+                      methods=['GET'])
 def getMetadataRoute(metadataType, metadataId):
     return handleGetMetadataRequest(
         metadataType,
         metadataId,
         getMetadata)
 
-@metadataRoutes.route('/metadata/<metadataType>/<metadataId>', methods=['POST'])
+
+@metadataRoutes.route('/metadata/<metadataType>/<metadataId>',
+                      methods=['POST'])
 def updateMetadataRoute(metadataType, metadataId):
     return handleUpdateMetadataRequest(
         metadataType,
@@ -186,7 +214,9 @@ def updateMetadataRoute(metadataType, metadataId):
         flask.request,
         updateMetadata)
 
-@metadataRoutes.route('/metadata/<metadataType>/<metadataId>', methods=['POST'])
+
+@metadataRoutes.route('/metadata/<metadataType>/<metadataId>',
+                      methods=['DELETE'])
 def deleteMetadataRoute(metadataType, metadataId):
     return handleUpdateMetadataRequest(
         metadataType,
