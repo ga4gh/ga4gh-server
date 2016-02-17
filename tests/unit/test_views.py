@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import unittest
 import logging
+import json
 
 import ga4gh.datamodel as datamodel
 import ga4gh.frontend as frontend
@@ -390,3 +391,114 @@ class TestFrontend(unittest.TestCase):
         response = self.sendReadsSearch(readGroupIds=[self.readGroupId, "42"],
                                         referenceId=self.referenceId)
         self.assertEqual(501, response.status_code)
+
+    def testCreateMetadata(self):
+        # TODO generalize to other metadata types
+        path = "/metadata/biosample"
+        headers = {
+            'Content-type': 'application/json',
+            'Origin': path,
+        }
+        request = {"metadataType": "NotBiosample"}
+        response = self.app.post(path,
+                                 headers=headers,
+                                 data=json.dumps(request))
+        self.assertEqual(400, response.status_code,
+                         "Should be bad request when metadata "
+                         "type field disagrees with path, instead "
+                         "got " + str(response.status_code))
+        path = "/metadata/biosample"
+        request = {"metadataType": "biosample"}
+        response = self.app.post(path,
+                                 headers=headers,
+                                 data=json.dumps(request))
+        responseData = json.loads(response.data)
+        self.assertEqual(201, response.status_code,
+                         "Should be HTTP created status code but got " +
+                         str(response.status_code))
+
+        self.assertIn('biosample',
+                      responseData,
+                      "The write result should contain a key "
+                      "for the object stored.")
+        biosample = responseData['biosample']
+        self.assertIn('id', biosample, "A stored request is given an ID")
+        path = "/metadata/biosample/" + responseData['biosample']['id']
+        headers = {
+            'Origin': self.exampleUrl,
+        }
+        response = self.app.get(path, headers=headers)
+        responseData = json.loads(response.data)
+        self.assertIn('id', responseData)
+        self.assertEquals(biosample['id'], responseData['id'])
+
+    def getMetadataById(self, metadataType, metadataId):
+        path = "/metadata/" + metadataType + "/" + metadataId
+        headers = {
+            'Origin': self.exampleUrl,
+        }
+        response = self.app.get(path, headers=headers)
+        responseData = json.loads(response.data)
+        return responseData
+
+    def testGetMetadata(self):
+        # look up a bad ID
+        # path = "/metadata/biosample"
+        # TODO tests
+        # create a good ID
+        # get that ID
+        pass
+
+    def testDeleteMetadata(self):
+        # TODO
+        # add a metadata bit
+        # get that ID
+        # delete that ID
+        # get it again (not found)
+        pass
+
+    def testUpdateMetadata(self):
+        path = "/metadata/biosample"
+        headers = {
+            'Content-type': 'application/json',
+            'Origin': path,
+        }
+        # create a metadata bit
+        request = {"name": "test", "description": "test"}
+        response = self.app.post(path,
+                                 headers=headers,
+                                 data=json.dumps(request))
+        responseData = json.loads(response.data)['biosample']  # keyed value
+        self.assertEqual((request['name'],
+                          request['description']),
+                         (responseData['name'], responseData['description']),
+                         "Name and description should agree " +
+                         str(json.dumps(responseData)) + json.dumps(request))
+
+        # get that id
+        response = self.getMetadataById('biosample', responseData['id'])
+        print(response)
+        # check inner value
+        self.assertEqual(response['name'],
+                         request['name'],
+                         "Expect to receive what we just created")
+        # update inner value
+        path = "/metadata/biosample/" + responseData['id']
+        request = {"name": "test2", "description": "test3"}
+        response = self.app.post(path,
+                                 headers=headers,
+                                 data=json.dumps(request))
+        responseData = json.loads(response.data)
+        print(responseData)
+        self.assertEqual(request['name'], responseData['biosample']['name'])
+        # get that ID and check for change
+        pass
+
+    def testSearchMetadata(self):
+        # TODO
+        # add a metadata bit
+        # post search by name
+        # check that result is found
+        # post search by misnamed
+        # check that nothing is found
+        pass

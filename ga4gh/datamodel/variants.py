@@ -65,7 +65,7 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.updated = variantSet.getUpdatedTime()
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
-        gaCallSet.sampleId = self.getLocalId()
+        gaCallSet.bioSampleId = self.getLocalId()
         gaCallSet.variantSetIds = [variantSet.getId()]
         return gaCallSet
 
@@ -384,7 +384,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         call = protocol.Call()
         call.callSetId = callSet.getId()
         call.callSetName = callSet.getSampleName()
-        call.sampleId = callSet.getSampleName()
+        call.bioSampleId = callSet.getSampleName()
         # TODO:
         # NOTE: THE FOLLOWING TWO LINES IS NOT THE INTENDED IMPLEMENTATION,
         ###########################################

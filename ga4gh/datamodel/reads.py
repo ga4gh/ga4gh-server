@@ -313,7 +313,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.programs = []
         referenceSet = self._parentContainer.getReferenceSet()
         readGroup.referenceSetId = None
-        readGroup.sampleId = self.getSampleId()
+        readGroup.bioSampleId = self.getBioSampleId()
         if referenceSet is not None:
             readGroup.referenceSetId = referenceSet.getId()
         stats = protocol.ReadStats()
@@ -376,7 +376,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         """
         raise NotImplementedError()
 
-    def getSampleId(self):
+    def getBioSampleId(self):
         """
         Returns the sample id of the read group
         """
@@ -498,7 +498,7 @@ class SimulatedReadGroup(AbstractReadGroup):
     def getDescription(self):
         return None
 
-    def getSampleId(self):
+    def getBioSampleId(self):
         return 'sampleId'
 
     def getPredictedInsertSize(self):
@@ -531,7 +531,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         super(HtslibReadGroup, self).__init__(parentContainer, localId)
         self._parentSamFilePath = parentContainer.getSamFilePath()
         self._filterReads = not parentContainer.isUsingDefaultReadGroup()
-        self._sampleId = None
+        self._bioSampleId = None
         self._description = None
         self._predictedInsertSize = None
         self._instrumentModel = None
@@ -541,7 +541,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
         self._platformUnit = None
         self._runTime = None
         if readGroupHeader is not None:
-            self._sampleId = readGroupHeader.get('SM', None)
+            self._bioSampleId = readGroupHeader.get('SM', None)
             self._description = readGroupHeader.get('DS', None)
             if 'PI' in readGroupHeader:
                 self._predictedInsertSize = int(readGroupHeader['PI'])
@@ -663,8 +663,8 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     def getDescription(self):
         return self._description
 
-    def getSampleId(self):
-        return self._sampleId
+    def getBioSampleId(self):
+        return self._bioSampleId
 
     def getPredictedInsertSize(self):
         return self._predictedInsertSize

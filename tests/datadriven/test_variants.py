@@ -158,26 +158,26 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 pyvcfCallMap[call.sample] = call
             _verifyVariantCalls()
 
-    def _verifyGaVariantsSample(self, gaVariants, sampleIds):
+    def _verifyGaVariantsSample(self, gaVariants, biosampleIds):
         for variant in gaVariants:
-            self.assertEqual(len(variant.calls), len(sampleIds))
+            self.assertEqual(len(variant.calls), len(biosampleIds))
             for call in variant.calls:
-                self.assertIn(call.callSetName, sampleIds)
+                self.assertIn(call.callSetName, biosampleIds)
 
-    def _verifyVariantsCallSetIds(self, searchsampleIds):
+    def _verifyVariantsCallSetIds(self, searchBioSampleIds):
         """
-        leaving searchSampleIds will get all samples.
+        leaving searchBioSampleIds will get all samples.
         """
         gaCallSetVariants = []
         for referenceName in self._referenceNames:
             end = datamodel.PysamDatamodelMixin.vcfMax
             gaSearchIds = [
                 str(datamodel.CallSetCompoundId(
-                    self._gaObject.getCompoundId(), sampleId))
-                for sampleId in searchsampleIds]
+                    self._gaObject.getCompoundId(), bioSampleId))
+                for bioSampleId in searchBioSampleIds]
             gaVariants = list(self._gaObject.getVariants(
                 referenceName, 0, end, gaSearchIds))
-            self._verifyGaVariantsSample(gaVariants, searchsampleIds)
+            self._verifyGaVariantsSample(gaVariants, searchBioSampleIds)
             gaCallSetVariants += gaVariants
             localVariants = filter(
                 lambda v: v.CHROM == referenceName, self._variantRecords)
@@ -188,8 +188,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self._verifyVariantsCallSetIds(self.vcfSamples[:1])
 
     def testSearchCallSetIdsSystematic(self):
-        for sampleIds in utils.powerset(self.vcfSamples, maxSets=10):
-            self._verifyVariantsCallSetIds(list(sampleIds))
+        for bioSampleIds in utils.powerset(self.vcfSamples, maxSets=10):
+            self._verifyVariantsCallSetIds(list(bioSampleIds))
 
     def testVariantsValid(self):
         end = datamodel.PysamDatamodelMixin.vcfMax
