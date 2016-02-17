@@ -11,9 +11,9 @@ metadataRoutes = flask.Blueprint('metadataRoutes', __name__)
 
 MIMETYPE = "application/json"
 
-metadataRecordTypes = [
+metadataRecordTypes = (
     "biosample"
-]
+)
 
 class MetadataBackend():
     # TODO generalize for the rest of the API?
