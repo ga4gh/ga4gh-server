@@ -477,6 +477,7 @@ class TestFrontend(unittest.TestCase):
 
         # get that id
         response = self.getMetadataById('biosample', responseData['id'])
+        print(response)
         # check inner value
         self.assertEqual(response['name'],
                          request['name'],

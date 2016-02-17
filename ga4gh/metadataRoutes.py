@@ -1,9 +1,9 @@
 import flask
 import json
-import sqlite3
-import uuid
 
 import ga4gh.exceptions as exceptions
+import ga4gh.protocol as protocol
+import ga4gh.sqlbackend as sqlbackend
 
 metadataRoutes = flask.Blueprint('metadataRoutes', __name__)
 
@@ -14,82 +14,17 @@ MIMETYPE = "application/json"
 metadataRecordTypes = (
     "biosample"
 )
-
-
-class MetadataBackend():
-    # TODO generalize for the rest of the API?
-    columns = ("id", "name", "description")
-    tableName = "biosample"
-
-    def __init__(self, dbFile):
-        self._dbconn = sqlite3.connect(dbFile)
-        dbconn = self._dbconn
-        dbcur = dbconn.cursor()
-        # TODO generalize table creation based on
-        dbcur.execute("create table if not exists " +
-                      self.tableName +
-                      " (id text, name text, description text)")
-        dbcur.close()
-
-    def hydrate(self, row):
-        return dict(zip(self.columns, row))
-
-    def getById(self, id):
-        sql = "SELECT * FROM biosample where id=='" + id + "';"
-        query = self._dbconn.execute(sql)
-        results = query.fetchall()
-        if results:
-            return self.hydrate(results[0])
-        else:
-            return None
-
-    def delete(self, obj):
-        # TODO
-        pass
-
-    def insert(self, obj):
-        # generate ID
-        obj['id'] = str(uuid.uuid4())
-        if 'description' not in obj:
-            obj['description'] = ""
-        if 'name' not in obj:
-            obj['name'] = ""
-        # TODO generalize this line and clean inputs
-        sql = "INSERT INTO " + self.tableName + \
-              " VALUES('" + obj['id'] + \
-              "', '" + obj['name'] + \
-              "', '" + obj['description'] + "')"
-        query = self._dbconn.execute(sql)
-        # TODO add message using cursor dereferencing
-        print(query)
-        self._dbconn.commit()
-        return self.getById(obj['id'])
-
-    def update(self, obj):
-        # get the record we want to update
-        old = self.getById(obj['id'])
-        if not old:
-            # there should be an existing record to update
-            raise exceptions.BadRequestException
-        # overwrite dict values with new
-        for k in old.keys():
-            if k not in obj:
-                obj[k] = old[k]
-        # TODO generalize this line and clean inputs
-        sql = "UPDATE " + self.tableName + \
-              " SET name = '" + obj['name'] + \
-              "', description = '" + obj['description'] + \
-              "' WHERE id=='" + obj['id'] + "'"
-        print(sql)
-        query = self._dbconn.execute(sql)
-        print(query)
-        # TODO add message using cursor dereferencing
-        self._dbconn.commit()
-        # update SQL
-        return self.getById(obj['id'])
+a = protocol.BioSample()
 
 
 def validateMetadataCreateRequest(metadataType, metadataCreateRequest):
+    """
+    Performs validation of a create request given a metadata
+    type. Raises bad request exceptions as needed.
+    :param metadataType: string representing class
+    :param metadataCreateRequest: new object to be created
+    :return: boolean
+    """
     # TODO protocol based validation
     if 'id' in metadataCreateRequest:
         # requests cant have an ID
@@ -104,28 +39,26 @@ def validateMetadataCreateRequest(metadataType, metadataCreateRequest):
 
 
 def getMetadataSQL(metadataId):
-    mb = MetadataBackend('metadata.db')
+    mb = sqlbackend.SQLBackend(protocol.BioSample, 'metadata.db')
     record = mb.getById(metadataId)
     return record
 
 
 def insertMetadataSQL(metadataObject):
-    mb = MetadataBackend('metadata.db')
+    mb = sqlbackend.SQLBackend(protocol.BioSample, 'metadata.db')
     return mb.insert(metadataObject)
 
 
 def updateMetadataSQL(metadataObject):
-    mb = MetadataBackend('metadata.db')
+    mb = sqlbackend.SQLBackend(protocol.BioSample, 'metadata.db')
     return mb.update(metadataObject)
 
 
 def getMetadata(metadataType, metadataId):
     # get file by ID
     obj = getMetadataSQL(metadataId)
-    # parse into JSON
-    print(obj)
     # return string
-    return flask.Response(json.dumps(obj), status=200, mimetype=MIMETYPE)
+    return flask.Response(json.dumps(obj.toJsonDict()), status=200, mimetype=MIMETYPE)
 
 
 def createMetadata(metadataType, metadataCreateRequest):
@@ -137,7 +70,7 @@ def createMetadata(metadataType, metadataCreateRequest):
     if validated:
         # check to see if it exists first
         writeResponse = insertMetadataSQL(metadataCreateRequest)
-        response[metadataType] = writeResponse
+        response[metadataType] = writeResponse.toJsonDict()
         response['message'] = "success"
         # add to sql lite
     else:
@@ -155,7 +88,7 @@ def updateMetadata(metadataType, metadataId, metadataUpdateRequest):
 
     updateResponse = updateMetadataSQL(metadataUpdateRequest)
     if updateResponse:
-        response[metadataType] = updateResponse
+        response[metadataType] = updateResponse.toJsonDict()
         response['message'] = "success"
     else:
         response['message'] = "fail"
