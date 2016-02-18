@@ -155,6 +155,19 @@ class G2PDataset:
         query = query.replace("%LOCATION%", locationClause)
         return query
 
+    def toProtocolElement(self):
+        # TODO remove this... added to follow pattern of datadriven tests
+        fpa = protocol.FeaturePhenotypeAssociation()
+        fpa.features = []
+        fpa.id = "TEST"
+        fpa.evidence = []
+        fpa.phenotype = protocol.PhenotypeInstance()
+        fpa.phenotype.type = protocol.OntologyTerm()
+        fpa.phenotype.type.id = "fakeid"
+        fpa.phenotype.type.ontologySource = "fakesource"
+        fpa.environmentalContexts = []
+        return fpa
+
 
 class AnnotationFactory:
     """
