@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 
 import rdflib
 import urlparse
-import sets
 import os
 import types
 
@@ -73,10 +72,6 @@ class G2PDataset:
                 else:
                     self._rdfGraph.parse(source, format='xml')
 
-        # log queries that take more than N seconds
-        # import time
-        # self.RESPONSETIME_LOGGING_THRESHOLD = 2
-
     def queryLabels(
             self, location=None, drug=None, disease=None, pageSize=None,
             offset=0):
@@ -87,30 +82,25 @@ class G2PDataset:
         AND of [location,drug,disease].
         """
         query = self._formatQuery(location, drug, disease)
-
+        # TODO refactor to testable function
         query = query.replace("%PROPERTIES%", "".join(
             ["distinct ?s ?location ?location_label ",
              "?disease ?disease_label ?drug ?drug_label ",
              "?evidence ?evidence_label"]))
 
+        # TODO why is this commented out?
         # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
 
-        # now = time.time()
         results = self._rdfGraph.query(query)
         # Depending on the cardinality this query can return multiple rows
         # per annotations.  Here we reduce it to a list of unique annotations
         # URIs
-        uniqueAnnotations = sets.Set()
+        uniqueAnnotations = set()
         for row in results:
             uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
 
         annotations = AnnotationFactory(self._rdfGraph,
                                         uniqueAnnotations).annotations()
-
-        # responseTime = time.time()-now
-        # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-        #     print('queryLabels', responseTime)
-        #     print('len(annotations)', len(annotations))
 
         return annotations
 
@@ -120,6 +110,7 @@ class G2PDataset:
         """
         query = self._searchQuery
         if location is None and drug is None and disease is None:
+            # TODO is this really the exception we want to throw?
             raise exceptions.NotImplementedException(
                "At least one of [location, drug, disease] must be specified")
         filters = []
@@ -134,27 +125,28 @@ class G2PDataset:
         locationClause = ""
         if isinstance(location, dict):
             locations = []
-            for id in location['ids']:
+
+            for _id in location['ids']:
                     locations.append('?location = <{}> '.format
-                                     (id['database'] + id['identifier']))
+                                     (_id['database'] + _id['identifier']))
             locationClause = "({})".format(" || ".join(locations))
             filters.append(locationClause)
             locationClause = "?l  faldo:location ?location .\n"
 
         if isinstance(drug, dict):
             drugs = []
-            for id in drug['ids']:
+            for _id in drug['ids']:
                     drugs.append('?drug = <{}> '.format
-                                 (id['database'] + id['identifier']))
+                                 (_id['database'] + _id['identifier']))
             drugsClause = "({})".format(" || ".join(drugs))
 
             filters.append(drugsClause)
 
         if isinstance(disease, dict):
             diseases = []
-            for id in disease['ids']:
+            for _id in disease['ids']:
                     diseases.append('?disease = <{}> '.format
-                                    (id['database'] + id['identifier']))
+                                    (_id['database'] + _id['identifier']))
             diseasesClause = "({})".format(" || ".join(diseases))
             filters.append(diseasesClause)
 
@@ -218,14 +210,8 @@ class AnnotationFactory:
         }
         """ % subject
 
-        # now = time.time()
         results = self._rdfGraph.query(annotationQuery)
         rows = [row.asdict() for row in results]
-
-        # responseTime = time.time()-now
-        # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-        #     print('annotationQuery', responseTime)
-        #     print(annotationQuery)
 
         for row in rows:
             for k in row:
@@ -244,7 +230,7 @@ class AnnotationFactory:
         """
 
         locationRows = []
-        uniqueLocations = sets.Set()
+        uniqueLocations = set()
         for row in rows:
             if row['p'] == 'http://purl.org/oban/association_has_object':
                 uniqueLocations.add("<" + row['o'] + ">")
@@ -258,25 +244,32 @@ class AnnotationFactory:
                 for k in locationRow:
                     locationRow[k] = locationRow[k].toPython()
                 locationRow['s'] = location
-            # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-            #     print('locationQuery', responseTime)
-            #     print(locationQuery)
 
         annotation = self._flatten(rows)
         location = self._flatten(locationRows)
         annotation['location'] = location
         return annotation
 
-    def _flatten(self, dict):
+    def _flatten(self, dictList):
         """
-        Given a dict of dicts,
+        Given a list of dicts, with form
+        [
+            {
+             'p': predicate,
+             's': subject,
+             'o': object,
+             'label': label  # optional
+            }
+        ]
+
         flatten it to a single dict using predicate as keys
         For multiple occurrences of a predicate, create an array
         Each value in the dict is an object {val:'x', label:'y'}
         The value of 's' (subject) is copied to the 'id' property
         """
+        # TODO what if 's' is multiply valued?
         a = {}
-        for row in dict:
+        for row in dictList:
             obj = {'val': row['o']}
             if 'label' in row:
                 obj['label'] = row['label']
@@ -299,18 +292,17 @@ class AnnotationFactory:
         """
         given an annotation dict, return a protocol.FeaturePhenotypeAssociation
         """
-
         fpa = None
 
         # annotation keys
-        location = 'location'
+        locationKey = 'location'
         hasObject = 'http://purl.org/oban/association_has_object'
         has_approval_status = \
             'http://purl.obolibrary.org/obo/RO_has_approval_status'
         # location keys
         GENO_0000408 = 'http://purl.obolibrary.org/obo/GENO_0000408'
 
-        location = annotation['location']
+        location = annotation[locationKey]
         if GENO_0000408 in location:
             id_, ontologySource = self.namespaceSplit(
                                         location[GENO_0000408]['val'])
@@ -328,13 +320,6 @@ class AnnotationFactory:
         f.featureSetId = ''
         f.parentIds = []
         f.attributes = protocol.Attributes.fromJsonDict({"vals": {}})
-
-        # # debugger example how to validate and capture validation errors
-        # if not protocol.Feature.validate(f.toJsonDict()):
-        #     e = exceptions.RequestValidationFailureException(
-        #         f.toJsonDict(),protocol.Feature)
-        #     print(e.message)
-        #     from IPython.core.debugger import Pdb ;        Pdb().set_trace()
 
         id_, ontologySource = self.namespaceSplit(
                                        annotation[hasObject]['val'])
@@ -369,13 +354,13 @@ class AnnotationFactory:
                 if not protocol.Evidence.validate(evidence.toJsonDict()):
                     raise exceptions.RequestValidationFailureException(
                         evidence.toJsonDict(), protocol.Evidence)
-
         return fpa
 
     def namespaceSplit(self, url, separator='/'):
         """
         given a url return the id of the resource and the ontology source
         """
+        url = url.strip("<").strip(">")
         o = urlparse.urlparse(url)
         _id = o.path.split(separator)[-1]
         ontologySource = urlparse.urlunsplit([o[0],
