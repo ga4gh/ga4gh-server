@@ -212,6 +212,12 @@ class Backend(object):
         """
         return self._dataRepository
 
+    def addG2PDataset(self, g2pDataset):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        self._g2pDataset = g2pDataset
+
     def setRequestValidation(self, requestValidation):
         """
         Set enabling request validation
@@ -288,6 +294,7 @@ class Backend(object):
         (object, nextPageToken) pairs, which allows this iteration to be picked
         up at any point.
         """
+
         currentIndex = 0
         if request.pageToken is not None:
             currentIndex, = _parsePageToken(request.pageToken, 1)
@@ -680,3 +687,26 @@ class Backend(object):
             request, protocol.SearchDatasetsRequest,
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
+
+    def runSearchGenotypePhenotype(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypePhenotypeRequest,
+            protocol.SearchGenotypePhenotypeResponse,
+            self.genotypePhenotypeGenerator)
+
+    def genotypePhenotypeGenerator(self, request):
+        if (request.evidence is None and
+                request.phenotype is None and
+                request.feature is None):
+            msg = "Error:One of evidence,phenotype or feature must be non-null"
+            raise exceptions.BadRequestException(msg)
+        # determine offset for paging
+        if request.pageToken is not None:
+            offset, = _parsePageToken(request.pageToken, 1)
+        else:
+            offset = 0
+        annotationList = self.getDataRepository()._g2pDataset.queryLabels(
+            request.feature, request.evidence, request.phenotype,
+            request.pageSize, offset)
+
+        return self._objectListGenerator(request, annotationList)

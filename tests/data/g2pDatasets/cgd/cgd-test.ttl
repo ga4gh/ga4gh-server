@@ -1,0 +1,252 @@
+@prefix ns1: <http://purl.org/oban/> .
+@prefix ns2: <http://purl.obolibrary.org/obo/> .
+@prefix ns3: <http://purl.org/dc/elements/1.1/> .
+@prefix ns4: <http://biohackathon.org/resource/faldo#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix OBAN: <http://purl.org/oban/> .
+@prefix OBO: <http://purl.obolibrary.org/obo/> .
+@prefix DrugBank: <http://www.drugbank.ca/drugs/> .
+@prefix CGD: <http://ohsu.edu/cgd/> .
+@prefix faldo: <http://biohackathon.org/resource/faldo#> .
+
+<http://ohsu.edu/cgd/0531e5c5> a OBAN:association ;
+    OBO:RO_has_approval_status <http://ohsu.edu/cgd/489e03d2> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/1b6442aa> ;
+    OBAN:association_has_object_property OBO:RO_0002606 ;
+    OBAN:association_has_subject DrugBank:DB00619 .
+
+CGD:bed32b89 a OBAN:association ;
+    OBO:RO_has_approval_status CGD:dc7d284a ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/9a0c7b6e> ;
+    OBAN:association_has_object_property OBO:RO_0002606 ;
+    OBAN:association_has_subject DrugBank:DB01254 .
+
+CGD:c2ed4da0 a OBAN:association ;
+    OBO:RO_has_approval_status CGD:c703f7ab ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/37da8697> ;
+    OBAN:association_has_object_property OBO:RO_0002606 ;
+    OBAN:association_has_subject DrugBank:DB00398 .
+
+CGD:fae52a14 a OBAN:association ;
+    OBO:RO_has_approval_status <http://ohsu.edu/cgd/489e03d2> ;
+    OBAN:association_has_object CGD:bff18fe6 ;
+    OBAN:association_has_object_property OBO:RO_0002606 ;
+    OBAN:association_has_subject DrugBank:DB01268 .
+
+<http://ohsu.edu/cgd/489e03d2> a owl:Class ;
+    rdfs:label "late trials" .
+
+CGD:dc7d284a a owl:Class ;
+    rdfs:label "preclinical" .
+
+CGD:c703f7ab a owl:Class ;
+    rdfs:label "early trials" .
+
+<http://ohsu.edu/cgd/1b6442aa> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with biomarker KIT  wild type no mutation" ;
+    OBO:RO_has_biomarker <http://ohsu.edu/cgd/27d2169c> .
+
+<http://ohsu.edu/cgd/9a0c7b6e> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with biomarker KIT  wild type no mutation" ;
+    OBO:RO_has_biomarker CGD:d212cbf9 .
+
+<http://ohsu.edu/cgd/37da8697> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with biomarker KIT  wild type no mutation" ;
+    OBO:RO_has_biomarker <http://ohsu.edu/cgd/4841bf74> .
+
+CGD:bff18fe6 a OBO:OMIM_606764 ;
+    rdfs:label "GIST with biomarker KIT  wild type no mutation" ;
+    OBO:RO_has_biomarker <http://ohsu.edu/cgd/24228ad6> .
+
+<http://ohsu.edu/cgd/27d2169c> a OBO:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> .
+
+<http://ohsu.edu/cgd/24228ad6> a OBO:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87795e43> .
+
+<http://ohsu.edu/cgd/87752f6c> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with decreased sensitivity to therapy" ;
+    OBO:BFO_0000159 CGD:decreased_sensitivity .
+
+<http://ohsu.edu/cgd/5c895709> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with sensitivity to therapy" ;
+    OBO:BFO_0000159 CGD:sensitivity .
+
+<http://ohsu.edu/cgd/87795e43> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with response to therapy" ;
+    OBO:BFO_0000159 CGD:response .
+
+OBO:OMIM_606764 a owl:Class ;
+    rdfs:label "GIST" ;
+    rdfs:subClassOf OBO:DOID_4 .
+
+CGD:d212cbf9 a OBO:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/5c895709> .
+
+<http://ohsu.edu/cgd/4841bf74> a OBO:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/505c855a> .
+
+DrugBank:DB00619 a owl:Class ;
+    rdfs:label "imatinib" ;
+    OBO:RO_0002606 <http://ohsu.edu/cgd/0348822e>,
+        <http://ohsu.edu/cgd/0663d7aa>,
+        <http://ohsu.edu/cgd/10027e2b>,
+        <http://ohsu.edu/cgd/1141037f>,
+        <http://ohsu.edu/cgd/16ed1e21>,
+        <http://ohsu.edu/cgd/1b49fa54>,
+        <http://ohsu.edu/cgd/1b6442aa>,
+        <http://ohsu.edu/cgd/3660373b>,
+        <http://ohsu.edu/cgd/396e17ca>,
+        <http://ohsu.edu/cgd/4387ad11>,
+        <http://ohsu.edu/cgd/49773dd9>,
+        <http://ohsu.edu/cgd/4c9df69d>,
+        <http://ohsu.edu/cgd/593ba90d>,
+        <http://ohsu.edu/cgd/61a0ae6e>,
+        <http://ohsu.edu/cgd/6200b434>,
+        <http://ohsu.edu/cgd/622f5d87>,
+        <http://ohsu.edu/cgd/66956de7>,
+        <http://ohsu.edu/cgd/6f842dcb>,
+        <http://ohsu.edu/cgd/6fe97f66>,
+        <http://ohsu.edu/cgd/782a5adf>,
+        <http://ohsu.edu/cgd/80857771>,
+        <http://ohsu.edu/cgd/829ecfe4>,
+        <http://ohsu.edu/cgd/83589dc1>,
+        <http://ohsu.edu/cgd/8d3ef6b9>,
+        CGD:a05b065c,
+        CGD:a28d6b63,
+        CGD:a52d56bd,
+        CGD:ad7fe4a2,
+        CGD:b0523fef,
+        CGD:b40a93d7,
+        CGD:b8059d5f,
+        CGD:b82bb601,
+        CGD:bd5ec05d,
+        CGD:c3f8dbe4,
+        CGD:c585206a,
+        CGD:c5e74da6,
+        CGD:cd634e7c,
+        CGD:cfa27e95,
+        CGD:cfaf14e7,
+        CGD:d467afaa,
+        CGD:d634d636,
+        CGD:daa8ce89,
+        CGD:de0c523d,
+        CGD:e4e2d39b,
+        CGD:ebd2e0a0,
+        CGD:ed09a007,
+        CGD:f1c0bea0,
+        CGD:f52055a9,
+        CGD:f5c5ae17,
+        CGD:fe0f3b26 ;
+    rdfs:subClassOf OBO:CHEBI_23888 .
+
+DrugBank:DB01254 a owl:Class ;
+    rdfs:label "dasatinib" ;
+    OBO:RO_0002606 <http://ohsu.edu/cgd/0270d49e>,
+        <http://ohsu.edu/cgd/06d1537a>,
+        <http://ohsu.edu/cgd/07be695d>,
+        <http://ohsu.edu/cgd/204c5c4d>,
+        <http://ohsu.edu/cgd/211a6bfd>,
+        <http://ohsu.edu/cgd/24fc6515>,
+        <http://ohsu.edu/cgd/312a7c01>,
+        <http://ohsu.edu/cgd/316ba70b>,
+        <http://ohsu.edu/cgd/37ba4794>,
+        <http://ohsu.edu/cgd/39b33923>,
+        <http://ohsu.edu/cgd/4214ffb0>,
+        <http://ohsu.edu/cgd/53477124>,
+        <http://ohsu.edu/cgd/5730ad5d>,
+        <http://ohsu.edu/cgd/5d496096>,
+        <http://ohsu.edu/cgd/60d258f3>,
+        <http://ohsu.edu/cgd/6339e561>,
+        <http://ohsu.edu/cgd/79c33766>,
+        <http://ohsu.edu/cgd/7b37c3d3>,
+        <http://ohsu.edu/cgd/7f7b6467>,
+        <http://ohsu.edu/cgd/80412f7f>,
+        <http://ohsu.edu/cgd/83c53f39>,
+        <http://ohsu.edu/cgd/85722ca9>,
+        <http://ohsu.edu/cgd/88afcbf8>,
+        <http://ohsu.edu/cgd/90988c75>,
+        <http://ohsu.edu/cgd/9a0c7b6e>,
+        <http://ohsu.edu/cgd/9a3b8f86>,
+        <http://ohsu.edu/cgd/9ec35520>,
+        CGD:a1313702,
+        CGD:a60218cf,
+        CGD:b0148c82,
+        CGD:b0a03037,
+        CGD:b12958da,
+        CGD:b5bacf6d,
+        CGD:c602b6f4,
+        CGD:caf00fdf,
+        CGD:cc04d9d5,
+        CGD:d006d388,
+        CGD:df43c04f,
+        CGD:ef8944b8,
+        CGD:f84840a9 ;
+    rdfs:subClassOf OBO:CHEBI_23888 .
+
+DrugBank:DB00398 a owl:Class ;
+    rdfs:label "sorafenib" ;
+    OBO:RO_0002606 <http://ohsu.edu/cgd/1165021d>,
+        <http://ohsu.edu/cgd/37da8697>,
+        <http://ohsu.edu/cgd/47b7a3ba>,
+        <http://ohsu.edu/cgd/7aca8eca>,
+        <http://ohsu.edu/cgd/7b12ee2a>,
+        <http://ohsu.edu/cgd/87cabd66>,
+        <http://ohsu.edu/cgd/8b978c84>,
+        <http://ohsu.edu/cgd/8f795083>,
+        <http://ohsu.edu/cgd/90fadb4d>,
+        CGD:a7b840b5,
+        CGD:acaf1e33,
+        CGD:af2fb811,
+        CGD:b8293b8b,
+        CGD:bb66b1e9,
+        CGD:bf53fae5,
+        CGD:c56941f8,
+        CGD:d90f6f8c,
+        CGD:f21e69ef,
+        CGD:f4b538b0 ;
+    rdfs:subClassOf OBO:CHEBI_23888 .
+
+DrugBank:DB01268 a owl:Class ;
+    rdfs:label "sunitinib" ;
+    OBO:RO_0002606 <http://ohsu.edu/cgd/11ba3f14>,
+        <http://ohsu.edu/cgd/202aab8b>,
+        <http://ohsu.edu/cgd/330fdb9d>,
+        <http://ohsu.edu/cgd/392fb86a>,
+        <http://ohsu.edu/cgd/3f99c173>,
+        <http://ohsu.edu/cgd/4da27469>,
+        <http://ohsu.edu/cgd/54039374>,
+        <http://ohsu.edu/cgd/5c4e4aa5>,
+        <http://ohsu.edu/cgd/5ea8d37b>,
+        <http://ohsu.edu/cgd/65b688b1>,
+        <http://ohsu.edu/cgd/71fe9f0f>,
+        <http://ohsu.edu/cgd/7e7ac65b>,
+        <http://ohsu.edu/cgd/86415d40>,
+        <http://ohsu.edu/cgd/88e4c778>,
+        <http://ohsu.edu/cgd/983a1528>,
+        CGD:bff18fe6,
+        CGD:c9ce40f4,
+        CGD:d8f69729,
+        CGD:d9a4077f,
+        CGD:e901ee1e,
+        CGD:f7303413 ;
+    rdfs:subClassOf OBO:CHEBI_23888 .
+
+CGD:d8c2d551 a OBO:SO_0001059,
+        OBO:SO_0001583,
+        owl:NamedIndividual ;
+    rdfs:label "KIT V559I, H687Y, T670, V654A, A829P, D816, N822, Y823D missense mutation" ;
+    faldo:location <http://www.monarchinitiative.org/_654654UniProtKB:P10721#P10721-1Region> ;
+    OBO:GENO_0000408 <http://www.ncbi.nlm.nih.gov/gene/3815> ;
+    OBO:GENO_reference_amino_acid "V" ;
+    OBO:GENO_results_in_amino_acid_change "A" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/4c7ff2c7> ;
+    OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3496.1> .
