@@ -708,5 +708,4 @@ class Backend(object):
         annotationList = self.getDataRepository()._g2pDataset.queryLabels(
             request.feature, request.evidence, request.phenotype,
             request.pageSize, offset)
-
         return self._objectListGenerator(request, annotationList)

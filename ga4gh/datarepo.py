@@ -164,7 +164,8 @@ class SimulatedDataRepository(AbstractDataRepository):
             self.addDataset(dataset)
 
         # g2pDatasets
-        self._g2pDataset = genotype_phenotype.G2PDataset()
+        # TODO is this global per server instance or dataset?
+        self._g2pDataset = genotype_phenotype.SimulatedG2PDataset()
 
 
 class FileSystemDataRepository(AbstractDataRepository):

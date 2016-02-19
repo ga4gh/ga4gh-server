@@ -11,7 +11,7 @@ from protocol import SearchResponse
 
 import avro.schema
 
-version = '0.6.0a1-g2p'
+version = '0.6.0a1'
 
 
 class Attributes(ProtocolElement):
@@ -31,10 +31,11 @@ class Attributes(ProtocolElement):
 "", "type": "string", "name": "identifier"}, {"doc": "", "type":
 "string", "name": "version"}]}, {"doc": "", "type": "record", "name":
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
-"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}]}], "type": "array"}, "type": "map"}, "name": "vals"}], "doc":
-""}
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}]}], "type": "array"},
+"type": "map"}, "name": "vals"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -413,11 +414,12 @@ class EnvironmentalContext(ProtocolElement):
 "EnvironmentalContext", "fields": [{"default": null, "doc": "",
 "type": ["null", "string"], "name": "id"}, {"doc": "", "type": {"doc":
 "", "type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
-"type": "string", "name": "ontologySource"}, {"doc": "", "type":
-"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "environmentType"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "description"}],
-"doc": ""}
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "term"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "sourceName"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceVersion"}]},
+"name": "environmentType"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "description"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -480,11 +482,12 @@ class Evidence(ProtocolElement):
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "Evidence", "fields": [{"doc": "", "type": {"doc": "", "type":
 "record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "ontologySource"}, {"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "evidenceType"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "description"}],
-"doc": ""}
+"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "term"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "name":
+"evidenceType"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -534,10 +537,11 @@ class EvidenceQuery(ProtocolElement):
 "EvidenceQuery", "fields": [{"doc": "", "type": {"items":
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
-"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}], "doc": ""}, "type": "array"}, "name": "evidenceType"}],
-"doc": ""}
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}, "type":
+"array"}, "name": "evidenceType"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -573,7 +577,7 @@ class EvidenceQuery(ProtocolElement):
 
 class Experiment(ProtocolElement):
     """
-    An experimental preparation of a sample.
+    An experimental preparation of a Sample.
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
@@ -822,33 +826,38 @@ class Feature(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name": "Feature",
 "fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
-"type": {"items": "string", "type": "array"}, "name": "parentIds"},
-{"doc": "", "type": "string", "name": "featureSetId"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "referenceName"},
-{"default": null, "type": ["null", "long"], "name": "start"},
-{"default": null, "type": ["null", "long"], "name": "end"},
-{"default": null, "doc": "", "type": ["null", {"symbols":
-["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum", "name":
-"Strand"}], "name": "strand"}, {"doc": "", "type": {"doc": "", "type":
-"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "ontologySource"}, {"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "featureType"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Attributes", "fields":
-[{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
-"type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
-"type": "string", "name": "database"}, {"doc": "", "type": "string",
-"name": "identifier"}, {"doc": "", "type": "string", "name":
-"version"}]}, "OntologyTerm"], "type": "array"}, "type": "map"},
-"name": "vals"}]}, "name": "attributes"}], "doc": ""}
+"type": "string", "name": "parentId"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "childIds"},
+{"doc": "", "type": "string", "name": "featureSetId"}, {"doc": "",
+"type": "string", "name": "referenceName"}, {"default": 0, "doc": "",
+"type": "long", "name": "start"}, {"doc": "", "type": "long", "name":
+"end"}, {"doc": "", "type": {"symbols": ["NEG_STRAND", "POS_STRAND"],
+"doc": "", "type": "enum", "name": "Strand"}, "name": "strand"},
+{"doc": "", "type": {"doc": "", "type": "record", "name":
+"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}]}, "name":
+"featureType"}, {"doc": "", "type": {"doc": "", "type": "record",
+"name": "Attributes", "fields": [{"default": {}, "type": {"values":
+{"items": ["string", {"doc": "", "type": "record", "name":
+"ExternalIdentifier", "fields": [{"doc": "", "type": "string", "name":
+"database"}, {"doc": "", "type": "string", "name": "identifier"},
+{"doc": "", "type": "string", "name": "version"}]}, "OntologyTerm"],
+"type": "array"}, "type": "map"}, "name": "vals"}]}, "name":
+"attributes"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
         "attributes",
+        "end",
         "featureSetId",
         "featureType",
         "id",
-        "parentIds",
+        "parentId",
+        "referenceName",
+        "strand",
     ])
 
     @classmethod
@@ -869,8 +878,9 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceName"},
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'attributes', 'end', 'featureSetId', 'featureType', 'id',
-        'parentIds', 'referenceName', 'start', 'strand'
+        'attributes', 'childIds', 'end', 'featureSetId',
+        'featureType', 'id', 'parentId', 'referenceName', 'start',
+        'strand'
     ]
 
     def __init__(self, **kwargs):
@@ -886,8 +896,20 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceName"},
         added:     * Score - the GFF3 score column     * Phase - the
         GFF3 phase column for CDS features.
         """
+        self.childIds = kwargs.get(
+            'childIds', [])
+        """
+        Ordered array of Child Ids of this node.     Since not all
+        child nodes are ordered by genomic coordinates,     this can't
+        always be reconstructed from parentId's of the children alone.
+        """
         self.end = kwargs.get(
             'end', None)
+        """
+        The end position (exclusive), resulting in [start, end)
+        closed-open interval.     This is typically calculated by
+        start + referenceBases.length.
+        """
         self.featureSetId = kwargs.get(
             'featureSetId', None)
         """
@@ -904,23 +926,32 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceName"},
         """
         Id of this annotation node.
         """
-        self.parentIds = kwargs.get(
-            'parentIds', None)
+        self.parentId = kwargs.get(
+            'parentId', None)
         """
-        Ids of the parents of this annotation node.
+        Parent Id of this node. Set to empty string if node has no
+        parent.
         """
         self.referenceName = kwargs.get(
             'referenceName', None)
         """
-        Genomic location.          All three of referenceName, start,
-        and end must be specified as a     group.
+        The reference on which this feature occurs.     (e.g. chr20 or
+        X)
         """
         self.start = kwargs.get(
-            'start', None)
+            'start', 0)
+        """
+        The start position at which this feature occurs (0-based).
+        This corresponds to the first base of the string of reference
+        bases.     Genomic positions are non-negative integers less
+        than reference length.     Features spanning the join of
+        circular genomes are represented as     two features one on
+        each side of the join (position 0).
+        """
         self.strand = kwargs.get(
             'strand', None)
         """
-        Strand of the feature, or null if unstranded
+        The strand on which the feature is present.
         """
 
 
@@ -937,35 +968,37 @@ class FeaturePhenotypeAssociation(ProtocolElement):
 "FeaturePhenotypeAssociation", "fields": [{"type": "string", "name":
 "id"}, {"doc": "", "type": {"items": {"doc": "", "type": "record",
 "name": "Feature", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"doc": "", "type": {"items": "string", "type": "array"},
-"name": "parentIds"}, {"doc": "", "type": "string", "name":
-"featureSetId"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceName"}, {"default": null, "type":
-["null", "long"], "name": "start"}, {"default": null, "type": ["null",
-"long"], "name": "end"}, {"default": null, "doc": "", "type": ["null",
-{"symbols": ["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum",
-"name": "Strand"}], "name": "strand"}, {"doc": "", "type": {"doc": "",
-"type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
-"type": "string", "name": "ontologySource"}, {"doc": "", "type":
-"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "featureType"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Attributes", "fields":
-[{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
-"type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
-"type": "string", "name": "database"}, {"doc": "", "type": "string",
-"name": "identifier"}, {"doc": "", "type": "string", "name":
-"version"}]}, "OntologyTerm"], "type": "array"}, "type": "map"},
-"name": "vals"}]}, "name": "attributes"}]}, "type": "array"}, "name":
-"features"}, {"doc": "", "type": {"items": {"doc": "", "type":
-"record", "name": "Evidence", "fields": [{"doc": "", "type":
-"OntologyTerm", "name": "evidenceType"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "description"}]}, "type":
-"array"}, "name": "evidence"}, {"doc": "", "type": {"doc": "", "type":
-"record", "name": "PhenotypeInstance", "fields": [{"doc": "", "type":
-["null", "string"], "name": "id"}, {"doc": "", "type": "OntologyTerm",
-"name": "type"}, {"default": null, "doc": "", "type": ["null",
-{"items": "OntologyTerm", "type": "array"}], "name": "qualifier"},
-{"default": null, "doc": "", "type": ["null", "OntologyTerm"], "name":
+"id"}, {"doc": "", "type": "string", "name": "parentId"}, {"default":
+[], "doc": "", "type": {"items": "string", "type": "array"}, "name":
+"childIds"}, {"doc": "", "type": "string", "name": "featureSetId"},
+{"doc": "", "type": "string", "name": "referenceName"}, {"default": 0,
+"doc": "", "type": "long", "name": "start"}, {"doc": "", "type":
+"long", "name": "end"}, {"doc": "", "type": {"symbols": ["NEG_STRAND",
+"POS_STRAND"], "doc": "", "type": "enum", "name": "Strand"}, "name":
+"strand"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
+"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}]}, "name":
+"featureType"}, {"doc": "", "type": {"doc": "", "type": "record",
+"name": "Attributes", "fields": [{"default": {}, "type": {"values":
+{"items": ["string", {"doc": "", "type": "record", "name":
+"ExternalIdentifier", "fields": [{"doc": "", "type": "string", "name":
+"database"}, {"doc": "", "type": "string", "name": "identifier"},
+{"doc": "", "type": "string", "name": "version"}]}, "OntologyTerm"],
+"type": "array"}, "type": "map"}, "name": "vals"}]}, "name":
+"attributes"}]}, "type": "array"}, "name": "features"}, {"doc": "",
+"type": {"items": {"doc": "", "type": "record", "name": "Evidence",
+"fields": [{"doc": "", "type": "OntologyTerm", "name":
+"evidenceType"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}]}, "type": "array"}, "name":
+"evidence"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
+"PhenotypeInstance", "fields": [{"doc": "", "type": ["null",
+"string"], "name": "id"}, {"doc": "", "type": "OntologyTerm", "name":
+"type"}, {"default": null, "doc": "", "type": ["null", {"items":
+"OntologyTerm", "type": "array"}], "name": "qualifier"}, {"default":
+null, "doc": "", "type": ["null", "OntologyTerm"], "name":
 "ageOfOnset"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "description"}]}, "name": "phenotype"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name": "description"},
@@ -1066,51 +1099,33 @@ class FeatureSet(ProtocolElement):
 "datasetId"}, {"doc": "", "type": ["null", "string"], "name":
 "referenceSetId"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "name"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "sourceURI"}, {"doc": "", "type": {"doc":
-"", "type": "record", "name": "Attributes", "fields": [{"default": {},
-"type": {"values": {"items": ["string", {"doc": "", "type": "record",
-"name": "ExternalIdentifier", "fields": [{"doc": "", "type": "string",
-"name": "database"}, {"doc": "", "type": "string", "name":
-"identifier"}, {"doc": "", "type": "string", "name": "version"}]},
-{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
-[{"doc": "", "type": "string", "name": "ontologySource"}, {"doc": "",
-"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "name"}]}], "type": "array"}, "type":
-"map"}, "name": "vals"}]}, "name": "attributes"}]}
+["null", "string"], "name": "sourceURI"}, {"default": {}, "doc": "",
+"type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}]}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
-        "attributes",
         "id",
         "referenceSetId",
     ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'attributes': Attributes,
-        }
+        embeddedTypes = {}
         return fieldName in embeddedTypes
 
     @classmethod
     def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'attributes': Attributes,
-        }
+        embeddedTypes = {}
 
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'attributes', 'datasetId', 'id', 'name', 'referenceSetId',
+        'datasetId', 'id', 'info', 'name', 'referenceSetId',
         'sourceURI'
     ]
 
     def __init__(self, **kwargs):
-        self.attributes = kwargs.get(
-            'attributes', None)
-        """
-        Set of additional attributes
-        """
         self.datasetId = kwargs.get(
             'datasetId', None)
         """
@@ -1120,6 +1135,11 @@ class FeatureSet(ProtocolElement):
             'id', None)
         """
         The ID of this annotation set.
+        """
+        self.info = kwargs.get(
+            'info', {})
+        """
+        Remaining structured metadata key-value pairs.
         """
         self.name = kwargs.get(
             'name', None)
@@ -1195,25 +1215,26 @@ class GenomicFeatureQuery(ProtocolElement):
 "GenomicFeatureQuery", "fields": [{"type": {"items": {"namespace":
 "org.ga4gh.models", "type": "record", "name": "Feature", "fields":
 [{"doc": "", "type": "string", "name": "id"}, {"doc": "", "type":
-{"items": "string", "type": "array"}, "name": "parentIds"}, {"doc":
-"", "type": "string", "name": "featureSetId"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "referenceName"},
-{"default": null, "type": ["null", "long"], "name": "start"},
-{"default": null, "type": ["null", "long"], "name": "end"},
-{"default": null, "doc": "", "type": ["null", {"symbols":
-["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum", "name":
-"Strand"}], "name": "strand"}, {"doc": "", "type": {"doc": "", "type":
-"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "ontologySource"}, {"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "featureType"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Attributes", "fields":
-[{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
-"type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
-"type": "string", "name": "database"}, {"doc": "", "type": "string",
-"name": "identifier"}, {"doc": "", "type": "string", "name":
-"version"}]}, "OntologyTerm"], "type": "array"}, "type": "map"},
-"name": "vals"}]}, "name": "attributes"}], "doc": ""}, "type":
+"string", "name": "parentId"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "childIds"}, {"doc": "",
+"type": "string", "name": "featureSetId"}, {"doc": "", "type":
+"string", "name": "referenceName"}, {"default": 0, "doc": "", "type":
+"long", "name": "start"}, {"doc": "", "type": "long", "name": "end"},
+{"doc": "", "type": {"symbols": ["NEG_STRAND", "POS_STRAND"], "doc":
+"", "type": "enum", "name": "Strand"}, "name": "strand"}, {"doc": "",
+"type": {"doc": "", "type": "record", "name": "OntologyTerm",
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "term"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceName"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceVersion"}]}, "name": "featureType"}, {"doc":
+"", "type": {"doc": "", "type": "record", "name": "Attributes",
+"fields": [{"default": {}, "type": {"values": {"items": ["string",
+{"doc": "", "type": "record", "name": "ExternalIdentifier", "fields":
+[{"doc": "", "type": "string", "name": "database"}, {"doc": "",
+"type": "string", "name": "identifier"}, {"doc": "", "type": "string",
+"name": "version"}]}, "OntologyTerm"], "type": "array"}, "type":
+"map"}, "name": "vals"}]}, "name": "attributes"}], "doc": ""}, "type":
 "array"}, "name": "features"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
@@ -1436,14 +1457,14 @@ class OntologyTerm(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
-"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}], "doc": ""}
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
         "id",
-        "ontologySource",
     ])
 
     @classmethod
@@ -1458,26 +1479,38 @@ class OntologyTerm(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'id', 'name', 'ontologySource'
+        'id', 'sourceName', 'sourceVersion', 'term'
     ]
 
     def __init__(self, **kwargs):
         self.id = kwargs.get(
             'id', None)
         """
-        The ID defined by the external onotology source.     (e.g.
-        http://purl.obolibrary.org/obo/OBI_0001271)
+        Ontology source identifier - the identifier, a CURIE
+        (preferred) or   PURL for an ontology source e.g.
+        http://purl.obolibrary.org/obo/hp.obo   It differs from the
+        standard GA4GH schema's :ref:id <apidesign_object_ids>   in
+        that it is a URI pointing to an information resource outside
+        of the scope   of the schema or its resource implementation.
         """
-        self.name = kwargs.get(
-            'name', None)
+        self.sourceName = kwargs.get(
+            'sourceName', None)
         """
-        The name of the onotology term. (e.g. RNA-seq assay)
+        Ontology source name - the name of ontology from which the
+        term is obtained   e.g. 'Human Phenotype Ontology'
         """
-        self.ontologySource = kwargs.get(
-            'ontologySource', None)
+        self.sourceVersion = kwargs.get(
+            'sourceVersion', None)
         """
-        The source of the onotology term.     (e.g. Ontology for
-        Biomedical Investigation)
+        Ontology source version - the version of the ontology from
+        which the   OntologyTerm is obtained; e.g. 2.6.1.   There is
+        no standard for ontology versioning and some frequently
+        released ontologies may use a datestamp, or build number.
+        """
+        self.term = kwargs.get(
+            'term', None)
+        """
+        Ontology term - the representation the id is pointing to.
         """
 
 
@@ -1489,10 +1522,12 @@ class OntologyTermQuery(ProtocolElement):
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
 "OntologyTermQuery", "fields": [{"type": {"items": {"namespace":
 "org.ga4gh.models", "type": "record", "name": "OntologyTerm",
-"fields": [{"doc": "", "type": "string", "name": "ontologySource"},
-{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "name"}], "doc": ""}, "type":
-"array"}, "name": "terms"}], "doc": ""}
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "term"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceName"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceVersion"}], "doc": ""}, "type": "array"},
+"name": "terms"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1535,14 +1570,15 @@ class PhenotypeInstance(ProtocolElement):
 "PhenotypeInstance", "fields": [{"doc": "", "type": ["null",
 "string"], "name": "id"}, {"doc": "", "type": {"doc": "", "type":
 "record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "ontologySource"}, {"doc": "", "type": "string",
-"name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "type"}, {"default": null,
-"doc": "", "type": ["null", {"items": "OntologyTerm", "type":
-"array"}], "name": "qualifier"}, {"default": null, "doc": "", "type":
-["null", "OntologyTerm"], "name": "ageOfOnset"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "description"}], "doc":
-""}
+"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "term"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "name":
+"type"}, {"default": null, "doc": "", "type": ["null", {"items":
+"OntologyTerm", "type": "array"}], "name": "qualifier"}, {"default":
+null, "doc": "", "type": ["null", "OntologyTerm"], "name":
+"ageOfOnset"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1616,14 +1652,16 @@ class PhenotypeQuery(ProtocolElement):
 "fields": [{"doc": "", "type": ["null", "string"], "name": "id"},
 {"doc": "", "type": {"doc": "", "type": "record", "name":
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
-"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}]}, "name": "type"}, {"default": null, "doc": "", "type":
-["null", {"items": "OntologyTerm", "type": "array"}], "name":
-"qualifier"}, {"default": null, "doc": "", "type": ["null",
-"OntologyTerm"], "name": "ageOfOnset"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "description"}], "doc": ""},
-"type": "array"}, "name": "phenotypes"}], "doc": ""}
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}]}, "name": "type"},
+{"default": null, "doc": "", "type": ["null", {"items":
+"OntologyTerm", "type": "array"}], "name": "qualifier"}, {"default":
+null, "doc": "", "type": ["null", "OntologyTerm"], "name":
+"ageOfOnset"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}], "doc": ""}, "type": "array"},
+"name": "phenotypes"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -2777,42 +2815,42 @@ class SearchGenotypePhenotypeRequest(SearchRequest):
 "ids"}]}, {"doc": "", "type": "record", "name": "OntologyTermQuery",
 "fields": [{"type": {"items": {"namespace": "org.ga4gh.models",
 "type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
-"type": "string", "name": "ontologySource"}, {"doc": "", "type":
-"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}], "doc": ""}, "type": "array"}, "name":
-"terms"}]}, {"doc": "", "type": "record", "name":
-"GenomicFeatureQuery", "fields": [{"type": {"items": {"namespace":
-"org.ga4gh.models", "type": "record", "name": "Feature", "fields":
-[{"doc": "", "type": "string", "name": "id"}, {"doc": "", "type":
-{"items": "string", "type": "array"}, "name": "parentIds"}, {"doc":
-"", "type": "string", "name": "featureSetId"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "referenceName"},
-{"default": null, "type": ["null", "long"], "name": "start"},
-{"default": null, "type": ["null", "long"], "name": "end"},
-{"default": null, "doc": "", "type": ["null", {"symbols":
-["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum", "name":
-"Strand"}], "name": "strand"}, {"doc": "", "type": "OntologyTerm",
-"name": "featureType"}, {"doc": "", "type": {"doc": "", "type":
-"record", "name": "Attributes", "fields": [{"default": {}, "type":
-{"values": {"items": ["string", "ExternalIdentifier", "OntologyTerm"],
-"type": "array"}, "type": "map"}, "name": "vals"}]}, "name":
-"attributes"}], "doc": ""}, "type": "array"}, "name": "features"}]}],
-"name": "feature"}, {"default": null, "type": ["null", "string",
-"ExternalIdentifierQuery", "OntologyTermQuery", {"doc": "", "type":
-"record", "name": "PhenotypeQuery", "fields": [{"type": {"items":
-{"namespace": "org.ga4gh.models", "type": "record", "name":
-"PhenotypeInstance", "fields": [{"doc": "", "type": ["null",
-"string"], "name": "id"}, {"doc": "", "type": "OntologyTerm", "name":
-"type"}, {"default": null, "doc": "", "type": ["null", {"items":
-"OntologyTerm", "type": "array"}], "name": "qualifier"}, {"default":
-null, "doc": "", "type": ["null", "OntologyTerm"], "name":
-"ageOfOnset"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "description"}], "doc": ""}, "type": "array"},
-"name": "phenotypes"}]}], "name": "phenotype"}, {"default": null,
-"type": ["null", "string", "ExternalIdentifierQuery",
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "term"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "sourceName"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceVersion"}],
+"doc": ""}, "type": "array"}, "name": "terms"}]}, {"doc": "", "type":
+"record", "name": "GenomicFeatureQuery", "fields": [{"type": {"items":
+{"namespace": "org.ga4gh.models", "type": "record", "name": "Feature",
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
+"type": "string", "name": "parentId"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "childIds"},
+{"doc": "", "type": "string", "name": "featureSetId"}, {"doc": "",
+"type": "string", "name": "referenceName"}, {"default": 0, "doc": "",
+"type": "long", "name": "start"}, {"doc": "", "type": "long", "name":
+"end"}, {"doc": "", "type": {"symbols": ["NEG_STRAND", "POS_STRAND"],
+"doc": "", "type": "enum", "name": "Strand"}, "name": "strand"},
+{"doc": "", "type": "OntologyTerm", "name": "featureType"}, {"doc":
+"", "type": {"doc": "", "type": "record", "name": "Attributes",
+"fields": [{"default": {}, "type": {"values": {"items": ["string",
+"ExternalIdentifier", "OntologyTerm"], "type": "array"}, "type":
+"map"}, "name": "vals"}]}, "name": "attributes"}], "doc": ""}, "type":
+"array"}, "name": "features"}]}], "name": "feature"}, {"default":
+null, "type": ["null", "string", "ExternalIdentifierQuery",
 "OntologyTermQuery", {"doc": "", "type": "record", "name":
-"EvidenceQuery", "fields": [{"doc": "", "type": {"items":
-"org.ga4gh.models.OntologyTerm", "type": "array"}, "name":
+"PhenotypeQuery", "fields": [{"type": {"items": {"namespace":
+"org.ga4gh.models", "type": "record", "name": "PhenotypeInstance",
+"fields": [{"doc": "", "type": ["null", "string"], "name": "id"},
+{"doc": "", "type": "OntologyTerm", "name": "type"}, {"default": null,
+"doc": "", "type": ["null", {"items": "OntologyTerm", "type":
+"array"}], "name": "qualifier"}, {"default": null, "doc": "", "type":
+["null", "OntologyTerm"], "name": "ageOfOnset"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "description"}], "doc":
+""}, "type": "array"}, "name": "phenotypes"}]}], "name": "phenotype"},
+{"default": null, "type": ["null", "string",
+"ExternalIdentifierQuery", "OntologyTermQuery", {"doc": "", "type":
+"record", "name": "EvidenceQuery", "fields": [{"doc": "", "type":
+{"items": "org.ga4gh.models.OntologyTerm", "type": "array"}, "name":
 "evidenceType"}]}], "name": "evidence"}, {"default": null, "doc": "",
 "type": ["null", "int"], "name": "pageSize"}, {"default": null, "doc":
 "", "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
@@ -2870,19 +2908,21 @@ class SearchGenotypePhenotypeResponse(SearchResponse):
 "record", "name": "FeaturePhenotypeAssociation", "fields": [{"type":
 "string", "name": "id"}, {"doc": "", "type": {"items": {"doc": "",
 "type": "record", "name": "Feature", "fields": [{"doc": "", "type":
-"string", "name": "id"}, {"doc": "", "type": {"items": "string",
-"type": "array"}, "name": "parentIds"}, {"doc": "", "type": "string",
-"name": "featureSetId"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceName"}, {"default": null, "type":
-["null", "long"], "name": "start"}, {"default": null, "type": ["null",
-"long"], "name": "end"}, {"default": null, "doc": "", "type": ["null",
-{"symbols": ["NEG_STRAND", "POS_STRAND"], "doc": "", "type": "enum",
-"name": "Strand"}], "name": "strand"}, {"doc": "", "type": {"doc": "",
-"type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
-"type": "string", "name": "ontologySource"}, {"doc": "", "type":
-"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}]}, "name": "featureType"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Attributes", "fields":
+"string", "name": "id"}, {"doc": "", "type": "string", "name":
+"parentId"}, {"default": [], "doc": "", "type": {"items": "string",
+"type": "array"}, "name": "childIds"}, {"doc": "", "type": "string",
+"name": "featureSetId"}, {"doc": "", "type": "string", "name":
+"referenceName"}, {"default": 0, "doc": "", "type": "long", "name":
+"start"}, {"doc": "", "type": "long", "name": "end"}, {"doc": "",
+"type": {"symbols": ["NEG_STRAND", "POS_STRAND"], "doc": "", "type":
+"enum", "name": "Strand"}, "name": "strand"}, {"doc": "", "type":
+{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
+[{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "term"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceName"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceVersion"}]}, "name": "featureType"}, {"doc": "", "type":
+{"doc": "", "type": "record", "name": "Attributes", "fields":
 [{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
 "type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
 "type": "string", "name": "database"}, {"doc": "", "type": "string",
@@ -4152,146 +4192,31 @@ class VariantSetMetadata(ProtocolElement):
         The value field for simple metadata.
         """
 
-
-class Wiggle(ProtocolElement):
-    """
-    Continuous numerical annotation of a region.
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.models", "type": "record", "name": "Wiggle",
-"fields": [{"default": null, "doc": "", "type": ["null", "string"],
-"name": "referenceName"}, {"default": null, "type": ["null", "long"],
-"name": "start"}, {"default": null, "type": ["null", "long"], "name":
-"end"}, {"default": [], "doc": "", "type": {"items": "float", "type":
-"array"}, "name": "values"}], "doc": ""}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([])
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {}
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {}
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'end', 'referenceName', 'start', 'values'
-    ]
-
-    def __init__(self, **kwargs):
-        self.end = kwargs.get(
-            'end', None)
-        self.referenceName = kwargs.get(
-            'referenceName', None)
-        """
-        The oriented piece of sequence being annotated.     Note that
-        we are fusing parts of UCSC BedGraph and Wiggle syntax.
-        The segment is being fully annotated, but can be divided into
-        bins.     If you have gaps, you need to define a sequence of
-        such Wiggles.          All three of referenceName, start, and
-        end must be specified as a     group.
-        """
-        self.start = kwargs.get(
-            'start', None)
-        self.values = kwargs.get(
-            'values', [])
-        """
-        The values associated to this region.     If this list
-        contains _count_ elements, then the region is divided     as
-        cleanly as possible into _count_ bins of equal width.     We
-        thus define a numerical function:      value(position):
-        if position < start or position >= start + length:
-        return None       else:         return array[floor((position -
-        start)*count/length)]
-        """
-
-
-class WiggleSet(ProtocolElement):
-    """
-    No documentation
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.models", "type": "record", "name":
-"WiggleSet", "fields": [{"doc": "", "type": "string", "name": "id"},
-{"doc": "", "type": {"doc": "", "type": "record", "name":
-"Attributes", "fields": [{"default": {}, "type": {"values": {"items":
-["string", {"doc": "", "type": "record", "name": "ExternalIdentifier",
-"fields": [{"doc": "", "type": "string", "name": "database"}, {"doc":
-"", "type": "string", "name": "identifier"}, {"doc": "", "type":
-"string", "name": "version"}]}, {"doc": "", "type": "record", "name":
-"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
-"ontologySource"}, {"doc": "", "type": "string", "name": "id"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"name"}]}], "type": "array"}, "type": "map"}, "name": "vals"}]},
-"name": "attributes"}]}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([
-        "attributes",
-        "id",
-    ])
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'attributes': Attributes,
-        }
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'attributes': Attributes,
-        }
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'attributes', 'id'
-    ]
-
-    def __init__(self, **kwargs):
-        self.attributes = kwargs.get(
-            'attributes', None)
-        """
-        Set of additional attributes
-        """
-        self.id = kwargs.get(
-            'id', None)
-        """
-        Id of this annotation node.
-        """
-
 postMethods = \
     [('/callsets/search',
       SearchCallSetsRequest,
       SearchCallSetsResponse),
      ('/datasets/search',
       SearchDatasetsRequest,
-      SearchVariantsResponse),
+      SearchDatasetsResponse),
      ('/genotypephenotype/search',
       SearchGenotypePhenotypeRequest,
-      SearchReferencesResponse),
+      SearchGenotypePhenotypeResponse),
      ('/readgroupsets/search',
       SearchReadGroupSetsRequest,
-      SearchDatasetsResponse),
+      SearchReadGroupSetsResponse),
      ('/reads/search',
       SearchReadsRequest,
-      SearchReadGroupSetsResponse),
+      SearchReadsResponse),
      ('/references/search',
       SearchReferencesRequest,
-      SearchReferenceSetsResponse),
+      SearchReferencesResponse),
      ('/referencesets/search',
       SearchReferenceSetsRequest,
-      SearchReadsResponse),
+      SearchReferenceSetsResponse),
      ('/variants/search',
       SearchVariantsRequest,
-      SearchVariantSetsResponse),
+      SearchVariantsResponse),
      ('/variantsets/search',
       SearchVariantSetsRequest,
-      SearchGenotypePhenotypeResponse)]
+      SearchVariantSetsResponse)]

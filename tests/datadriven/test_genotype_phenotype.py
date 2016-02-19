@@ -15,7 +15,7 @@ import tests.paths as paths
 
 def testG2P():
     testDataDir = os.path.join(
-        paths.testDataDir, "g2pdatasets")
+        paths.testDataDir, "g2pDatasets")
     for test in datadriven.makeTests(testDataDir, G2PDatasetTest):
         yield test
 

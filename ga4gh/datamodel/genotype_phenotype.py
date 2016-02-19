@@ -43,10 +43,18 @@ class SimulatedG2PDataset(AbstractG2PDataset):
     def queryLabels(self, location=None, drug=None,
                     disease=None, pageSize=None, offset=0):
         fpa = self.toProtocolElement()
-        annotations = []
+        fpas = []
         if location or drug or disease:
-            annotations.append(fpa)
-        return annotations
+            fpas.append(fpa)
+        # TODO this seems like a hack
+
+        def toProtocolElement(self):
+            return self
+
+        for fpa in fpas:
+            fpa.toProtocolElement = \
+                types.MethodType(toProtocolElement, fpa)
+        return fpas
 
 
 class G2PDataset(AbstractG2PDataset):
@@ -359,9 +367,9 @@ class AnnotationFactory:
 
         f = protocol.Feature()
         f.featureType = protocol.OntologyTerm.fromJsonDict({
-            "name": name,
+            "term": name,
             "id": id_,
-            "ontologySource": ontologySource})
+            "sourceName": ontologySource})
         f.id = annotation['id']  # TODO connect with real feature Ids
         f.featureSetId = ''
         f.parentIds = []
@@ -379,9 +387,9 @@ class AnnotationFactory:
 
         phenotypeInstance = protocol.PhenotypeInstance()
         phenotypeInstance.type = protocol.OntologyTerm.fromJsonDict({
-            "name": annotation[hasObject]['label'],
+            "term": annotation[hasObject]['label'],
             "id": id_,
-            "ontologySource": ontologySource})
+            "sourceName": ontologySource})
         fpa.phenotype = phenotypeInstance
 
         #  ECO or OBI is recommended
@@ -390,12 +398,12 @@ class AnnotationFactory:
             evidence = protocol.Evidence()
             evidence.evidenceType = protocol.OntologyTerm()
             id_, ontology_source = self.namespaceSplit(approval_status['val'])
-            evidence.evidenceType.ontologySource = ontology_source
+            evidence.evidenceType.sourceName = ontology_source
             evidence.evidenceType.id = id_
 
-            evidence.evidenceType.name = ''
+            evidence.evidenceType.term = ''
             if 'label' in approval_status:
-                evidence.evidenceType.name = approval_status['label']
+                evidence.evidenceType.term = approval_status['label']
                 fpa.evidence.append(evidence)
                 if not protocol.Evidence.validate(evidence.toJsonDict()):
                     raise exceptions.RequestValidationFailureException(
