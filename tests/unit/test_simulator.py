@@ -12,6 +12,8 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.genotype_phenotype as g2p
+import ga4gh.protocol as protocol
 
 
 class TestSimulatedVariantSet(unittest.TestCase):
@@ -132,3 +134,18 @@ class TestSimulatedReadGroupSet(unittest.TestCase):
         for readGroup in simulatedReadGroupSet.getReadGroups():
             alignments = list(readGroup.getReadAlignments())
             self.assertGreater(len(alignments), 0)
+
+
+class TestSimulatedG2PDataset(unittest.TestCase):
+    def testCreation(self):
+        # TODO they should be related to a dataset like above
+        g2pds = g2p.SimulatedG2PDataset()
+        self.assertEqual(g2pds.queryLabels(),
+                         [],
+                         "Return nothing with no query")
+
+        fpas = g2pds.queryLabels("something")
+
+        for fpa in fpas:
+            self.assertEqual(fpa.__class__,
+                             protocol.FeaturePhenotypeAssociation)
