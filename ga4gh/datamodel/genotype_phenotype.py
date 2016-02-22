@@ -21,8 +21,8 @@ class G2PDataset:
     """
     An rdf object store.  The cancer genome database
     [Clinical Genomics Knowledge Base]
-    (http://nif-crawler.neuinfo.org/monarch/ttl/cgd.ttl)
-    published by the Monarch project was the source of Evidence.
+    (http://nif-crawler.neuinfo.org/monarch/ttl/cgd.ttl),
+    published by the Monarch project, was the source of Evidence.
     """
 
     def __init__(self, setName=None, relativePath=None, dataDir=None):

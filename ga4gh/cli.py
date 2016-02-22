@@ -1169,12 +1169,32 @@ def configtest_main(parser=None):
 ##############################################################################
 
 
+def getRawInput(displayString):
+    userResponse = raw_input(displayString)
+    return userResponse
+
+
 class AbstractRepoCommandRunner(object):
 
     def __init__(self, args):
         self.args = args
         self.repoPath = args.repoPath
         self.repoManager = repo_manager.RepoManager(self.repoPath)
+        if 'force' in args:
+            self.force = args.force
+
+    def confirmRun(self, func, deleteString):
+        if self.force:
+            func()
+        else:
+            displayString = (
+                "Are you sure you want to delete data in {}? "
+                "[y|N] ".format(deleteString))
+            userResponse = getRawInput(displayString)
+            if userResponse.strip() == 'y':
+                func()
+            else:
+                print("Aborted")
 
 
 class AbstractRepoAddCommandRunner(AbstractRepoCommandRunner):
@@ -1231,7 +1251,8 @@ class DestroyRunner(AbstractRepoCommandRunner):
         super(DestroyRunner, self).__init__(args)
 
     def run(self):
-        self.repoManager.destroy()
+        def func(): self.repoManager.destroy()
+        self.confirmRun(func, 'the Data Repository')
 
 
 class InitRunner(AbstractRepoCommandRunner):
@@ -1258,7 +1279,8 @@ class RemoveDatasetRunner(AbstractRepoDatasetCommandRunner):
         super(RemoveDatasetRunner, self).__init__(args)
 
     def run(self):
-        self.repoManager.removeDataset(self.datasetName)
+        def func(): self.repoManager.removeDataset(self.datasetName)
+        self.confirmRun(func, 'dataset {}'.format(self.datasetName))
 
 
 class AddReferenceSetRunner(AbstractRepoAddMoveCommandRunner):
@@ -1281,7 +1303,10 @@ class RemoveReferenceSetRunner(AbstractRepoCommandRunner):
         self.referenceSetName = args.referenceSetName
 
     def run(self):
-        self.repoManager.removeReferenceSet(self.referenceSetName)
+        def func():
+            self.repoManager.removeReferenceSet(self.referenceSetName)
+        self.confirmRun(
+            func, 'reference set {}'.format(self.referenceSetName))
 
 
 class AddReadGroupSetRunner(AbstractRepoDatasetFilepathCommandRunner):
@@ -1301,8 +1326,11 @@ class RemoveReadGroupSetRunner(AbstractRepoDatasetCommandRunner):
         self.readGroupSetName = args.readGroupSetName
 
     def run(self):
-        self.repoManager.removeReadGroupSet(
-            self.datasetName, self.readGroupSetName)
+        def func():
+            self.repoManager.removeReadGroupSet(
+                self.datasetName, self.readGroupSetName)
+        self.confirmRun(
+            func, 'read group set {}'.format(self.readGroupSetName))
 
 
 class AddVariantSetRunner(AbstractRepoDatasetFilepathCommandRunner):
@@ -1322,13 +1350,21 @@ class RemoveVariantSetRunner(AbstractRepoDatasetCommandRunner):
         self.variantSetName = args.variantSetName
 
     def run(self):
-        self.repoManager.removeVariantSet(
-            self.datasetName, self.variantSetName)
+        def func():
+            self.repoManager.removeVariantSet(
+                self.datasetName, self.variantSetName)
+        self.confirmRun(func, 'variant set {}'.format(self.variantSetName))
 
 
 def addRepoArgument(subparser):
     subparser.add_argument(
         "repoPath", help="the file path of the data repository")
+
+
+def addForceArgument(subparser):
+    subparser.add_argument(
+        "-f", "--force", action='store_true',
+        default=False, help="do not prompt for confirmation")
 
 
 def addDatasetNameArgument(subparser):
@@ -1372,6 +1408,9 @@ def getRepoParser():
     parser = argparse.ArgumentParser(
         description="GA4GH data repository management tool")
     subparsers = parser.add_subparsers(title='subcommands',)
+    parser.add_argument(
+        "--loud", default=False, action="store_true",
+        help="propagate exceptions from RepoManager")
 
     initParser = addSubparser(
         subparsers, "init", "Initialize a data repository")
@@ -1392,6 +1431,7 @@ def getRepoParser():
         subparsers, "destroy", "Destroy the repo")
     destroyParser.set_defaults(runner=DestroyRunner)
     addRepoArgument(destroyParser)
+    addForceArgument(destroyParser)
 
     addDatasetParser = addSubparser(
         subparsers, "add-dataset", "Add a dataset to the data repo")
@@ -1405,6 +1445,7 @@ def getRepoParser():
     removeDatasetParser.set_defaults(runner=RemoveDatasetRunner)
     addRepoArgument(removeDatasetParser)
     addDatasetNameArgument(removeDatasetParser)
+    addForceArgument(removeDatasetParser)
 
     addReferenceSetParser = addSubparser(
         subparsers, "add-referenceset",
@@ -1423,6 +1464,7 @@ def getRepoParser():
     removeReferenceSetParser.add_argument(
         "referenceSetName",
         help="the name of the reference set")
+    addForceArgument(removeReferenceSetParser)
 
     addReadGroupSetParser = addSubparser(
         subparsers, "add-readgroupset",
@@ -1440,6 +1482,7 @@ def getRepoParser():
     addRepoArgument(removeReadGroupSetParser)
     addDatasetNameArgument(removeReadGroupSetParser)
     addReadGroupSetNameArgument(removeReadGroupSetParser)
+    addForceArgument(removeReadGroupSetParser)
 
     addVariantSetParser = addSubparser(
         subparsers, "add-variantset", "Add a variant set to the data repo")
@@ -1456,6 +1499,7 @@ def getRepoParser():
     addRepoArgument(removeVariantSetParser)
     addDatasetNameArgument(removeVariantSetParser)
     addVariantSetNameArgument(removeVariantSetParser)
+    addForceArgument(removeVariantSetParser)
 
     return parser
 
@@ -1471,3 +1515,5 @@ def repo_main(args=None):
             runner.run()
         except exceptions.RepoManagerException as exception:
             print(exception.message)
+            if parsedArgs.loud:
+                raise
