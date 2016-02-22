@@ -13,7 +13,7 @@ import unittest
 
 import ga4gh.client as client
 import ga4gh.backend as backend
-import ga4gh.cli as cli
+import ga4gh.cli_client as cli_client
 import ga4gh.datarepo as datarepo
 import tests.utils as utils
 import tests.paths as paths
@@ -38,7 +38,7 @@ class TestClientOutput(unittest.TestCase):
         clientCommand = "{} {} {} -O {}".format(
             command, self._dataUrl, arguments, outputFormat)
         stdout, stderr = utils.captureOutput(
-            cli.client_main, clientCommand.split())
+            cli_client.client_main, clientCommand.split())
         self.assertEqual(len(stderr), 0)
         return stdout
 

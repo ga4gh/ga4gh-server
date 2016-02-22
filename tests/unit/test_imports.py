@@ -151,7 +151,10 @@ class ImportGraphLayerChecker(object):
 
     # each file/module is in one and only one moduleGroup
     moduleGroupNames = {
-        'cli': ['ga4gh/cli.py'],
+        'cli': ['ga4gh/cli_common.py', 'ga4gh/cli_client.py',
+                'ga4gh/cli_configtest.py', 'ga4gh/cli_ga2sam.py',
+                'ga4gh/cli_ga2vcf.py', 'ga4gh/cli_repomanager.py',
+                'ga4gh/cli_server.py'],
         'client': ['ga4gh/client.py'],
         'frontend': ['ga4gh/frontend.py', 'ga4gh/repo_manager.py'],
         'backend': ['ga4gh/backend.py', 'ga4gh/datarepo.py'],
