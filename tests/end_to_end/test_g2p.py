@@ -1,43 +1,26 @@
 """
-Unit tests for genotypephenotype objects. This is used for all tests
-that can be performed in isolation from input data.
+G2P testing on the test data
 """
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import unittest
-import logging
 
-import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
+import ga4gh.frontend as frontend
 
 
-class TestGenotypePhenotypeSearch(unittest.TestCase):
-    """
-    Tests both front end and backend
-    genotypephenotype/search POST requests.
-    """
-    exampleUrl = 'www.example.com'
-
+class TestG2P(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config = {
-            "DATA_SOURCE": "simulated://",
-            "SIMULATED_BACKEND_RANDOM_SEED": 1111,
-            "SIMULATED_BACKEND_NUM_CALLS": 1,
-            "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
-            "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
+            "DATA_SOURCE": "tests/data",
             # "DEBUG" : True
         }
         frontend.reset()
         frontend.configure(
-            baseConfig="TestConfig", extraConfig=config)
+            baseConfig="DevelopmentConfig", extraConfig=config)
         cls.app = frontend.app.test_client()
-        # silence usually unhelpful CORS log
-        logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
-        # example test values
-        cls.backend = frontend.app.backend
+
+    exampleUrl = 'www.example.com'
 
     def sendPostRequest(self, path, request):
         """
@@ -77,7 +60,6 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
         self.assertEqual(1, len(response.associations[0].features))
-        print(response.toJsonString())
 
         request.phenotype = "FOOBAR"
         response = self.sendPostRequest('/genotypephenotype/search', request)
@@ -113,6 +95,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         self.assertEqual(1, len(response.associations[0].features))
 
         request.evidence = protocol.ExternalIdentifierQuery()
+
         id = protocol.ExternalIdentifier()
         id.database = "http://www.drugbank.ca/drugs/"
         id.identifier = "DB00398"
@@ -138,6 +121,8 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         self.assertEqual(0, len(response.associations))
         self.testGenotypePhenotypeSearchFeaturePagingOne()
         self.testGenotypePhenotypeSearchFeaturePagingMore()
+        # TODO search with protocol.PhenotypeQuery
+        pass
 
     def testGenotypePhenotypeSearchFeaturePagingOne(self):
         """
@@ -214,10 +199,10 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
                                 'evidence'))
         sample_evidence = response.associations[0].toJsonDict()['evidence'][0]
         sample_evidence_type = sample_evidence['evidenceType']
-        self.assertIn('ontologySource', sample_evidence_type)
-        self.assertEqual(sample_evidence_type['ontologySource'],
+        self.assertIn('sourceName', sample_evidence_type)
+        self.assertEqual(sample_evidence_type['sourceName'],
                          'http://ohsu.edu/cgd/')
         self.assertIn('id', sample_evidence_type)
         self.assertEqual(sample_evidence_type['id'], 'c703f7ab')
-        self.assertIn('name', sample_evidence_type)
-        self.assertEqual(sample_evidence_type['name'], 'early trials')
+        self.assertIn('term', sample_evidence_type)
+        self.assertEqual(sample_evidence_type['term'], 'early trials')
