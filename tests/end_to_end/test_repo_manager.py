@@ -11,7 +11,7 @@ import shutil
 import tempfile
 import unittest
 
-import ga4gh.cli as cli
+import ga4gh.cli_repomanager as cli_repomanager
 import ga4gh.exceptions as exceptions
 import tests.paths as paths
 
@@ -31,7 +31,7 @@ class RepoManagerEndToEndTest(unittest.TestCase):
 
     def _runCmd(self, cmd, *args):
         command = ["--loud", cmd, self.tempdir] + list(args)
-        cli.repo_main(command)
+        cli_repomanager.repo_main(command)
 
     def testEndToEnd(self):
         self._runCmd("init")
@@ -55,10 +55,10 @@ class RepoManagerEndToEndTest(unittest.TestCase):
 
     def testForce(self):
         self._runCmd("init")
-        with mock.patch('ga4gh.cli.getRawInput', lambda x: 'N'):
+        with mock.patch('ga4gh.cli_common.getRawInput', lambda x: 'N'):
             self._runCmd("destroy")
         self._runCmd("list")
-        with mock.patch('ga4gh.cli.getRawInput', lambda x: 'y'):
+        with mock.patch('ga4gh.cli_common.getRawInput', lambda x: 'y'):
             self._runCmd("destroy")
         with self.assertRaises(exceptions.RepoManagerException):
             self._runCmd("list")
