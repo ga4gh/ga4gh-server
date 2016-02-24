@@ -25,11 +25,14 @@ def parseMalformedBamHeader(headerDict):
     of tabs as a seperator.
     """
     headerString = " ".join(
-        "{}:{}".format(k, v) for k, v in headerDict.items())
+        "{}:{}".format(k, v) for k, v in headerDict.items() if k != 'CL')
     ret = {}
     for item in headerString.split():
         key, value = item.split(":", 1)
-        ret[key] = value
+        # build up dict, casting everything back to original type
+        ret[key] = type(headerDict.get(key, ""))(value)
+    if 'CL' in headerDict:
+        ret['CL'] = headerDict['CL']
     return ret
 
 
