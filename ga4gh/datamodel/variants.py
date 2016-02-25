@@ -992,7 +992,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         for r in self.getMetadata().records:
             # TODO handle more date formats
             if r.key == "created":
-                annotation.created = datetime.datetime.strptime(
+                annotation.createDateTime = datetime.datetime.strptime(
                     r.value, "%Y-%m-%d").isoformat() + "Z"
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
@@ -1030,7 +1030,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         for r in self.getMetadata().records:
             # TODO handle more date formats
             if r.key == "created":
-                annotation.created = datetime.datetime.strptime(
+                annotation.createDateTime = datetime.datetime.strptime(
                     r.value, "%Y-%m-%d").isoformat() + "Z"
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
@@ -1109,7 +1109,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
 
             if r.key == "created":
                 # TODO handle more date formats
-                analysis.created = datetime.datetime.strptime(
+                analysis.createDateTime = datetime.datetime.strptime(
                     r.value, "%Y-%m-%d").isoformat() + "Z"
             if r.key == "software":
                 analysis.software.append(r.value)
