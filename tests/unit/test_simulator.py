@@ -150,8 +150,8 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
         for ann in annotations:
             for key in protocol.VariantAnnotation().requiredFields:
                 self.assertEquals(datetime.datetime.strptime(
-                    ann.created, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
-                        "%Y-%m-%dT%H:%M:%S.%fZ"), ann.created,
+                    ann.createDateTime, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                        "%Y-%m-%dT%H:%M:%S.%fZ"), ann.createDateTime,
                         "Expect time format to be in ISO8601")
                 self.assertTrue(hasattr(ann, key),
                                 "Failed to find required key: " + key)

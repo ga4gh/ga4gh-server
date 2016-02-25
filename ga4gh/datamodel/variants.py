@@ -355,8 +355,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
 
     def getAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.created = self._creationTime
-        analysis.updated = self._updatedTime
+        analysis.createDateTime = self._creationTime
+        analysis.updateDateTime = self._updatedTime
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -405,7 +405,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         ann.variantId = variant.id
         ann.start = variant.start
         ann.end = variant.end
-        ann.created = self._creationTime
+        ann.createDateTime = self._creationTime
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (0,5)
         ann.transcriptEffects = []
@@ -444,17 +444,6 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         effect.CDSLocation.start = ann.start
         effect.cDNALocation = self._createGaAlleleLocation()
         effect.cDNALocation.start = ann.start
-        return effect
-
-    def _addTranscriptEffectImpact(self, effect, randomNumberGenerator):
-        # TODO use a protocol based method of accessing this enum
-        impacts = [
-            "HIGH",
-            "LOW",
-            "MODERATE",
-            "MODIFIER"
-        ]
-        effect.impact = randomNumberGenerator.choice(impacts)
         return effect
 
     def _addTranscriptEffectId(self, effect):
@@ -499,7 +488,6 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         effect.analysisResults = []
         # TODO how to make these featureIds sensical?
         effect.featureId = "E4TB33F"
-        effect = self._addTranscriptEffectImpact(effect, randomNumberGenerator)
         effect = self._addTranscriptEffectLocations(effect, ann)
         effect = self._addTranscriptEffectOntologyTerm(
             effect, randomNumberGenerator)
@@ -936,7 +924,6 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
          hgncId, hgvsOffset) = annStr.split('|')
         effect.alternateBases = alt
         effect.effects = self.convertSeqOntology(effects)
-        effect.impact = impact
         effect.featureId = featureId
         effect.hgvsAnnotation = protocol.HGVSAnnotation()
         effect.hgvsAnnotation.genomic = hgvsG
@@ -962,7 +949,6 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             cdsPos, protPos, distance, errsWarns) = annStr.split('|')
         effect.alternateBases = alt
         effect.effects = self.convertSeqOntology(effects)
-        effect.impact = impact
         effect.featureId = featureId
         effect.hgvsAnnotation = protocol.HGVSAnnotation()
         effect.hgvsAnnotation.genomic = hgvsG
@@ -1112,8 +1098,8 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
                     analysis.info[key] = []
                 if value.description is not None:
                     analysis.info[key].append(value.description)
-        analysis.created = self._creationTime
-        analysis.updated = self._updatedTime
+        analysis.createDateTime = self._creationTime
+        analysis.updateDateTime = self._updatedTime
         for r in metadata.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:

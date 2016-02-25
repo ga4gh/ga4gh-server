@@ -149,7 +149,6 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
                     zip(pyvcfAnn, gaVariantAnnotation.transcriptEffects):
                 effectDict = self.splitAnnField(pyvcfEffect)
                 self.assertEqual(gaEffect.alternateBases, effectDict['alt'])
-                self.assertEqual(gaEffect.impact, effectDict['impact'])
                 self.assertEqual(gaEffect.featureId, effectDict['featureId'])
                 self.assertEqual(gaEffect.hgvsAnnotation.transcript,
                                  effectDict['hgvsC'])
