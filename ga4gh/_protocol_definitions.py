@@ -86,17 +86,17 @@ class Analysis(ProtocolElement):
 {"default": null, "type": ["null", "string"], "name": "name"},
 {"default": null, "type": ["null", "string"], "name": "description"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"created"}, {"doc": "", "type": "string", "name": "updated"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"type"}, {"default": [], "doc": "", "type": {"items": "string",
-"type": "array"}, "name": "software"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type":
-"map"}, "name": "info"}], "doc": ""}
+"createDateTime"}, {"doc": "", "type": "string", "name":
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "type"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "software"}, {"default":
+{}, "doc": "", "type": {"values": {"items": "string", "type":
+"array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
         "id",
-        "updated",
+        "updateDateTime",
     ])
 
     @classmethod
@@ -111,13 +111,13 @@ class Analysis(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'created', 'description', 'id', 'info', 'name', 'software',
-        'type', 'updated'
+        'createDateTime', 'description', 'id', 'info', 'name',
+        'software', 'type', 'updateDateTime'
     ]
 
     def __init__(self, **kwargs):
-        self.created = kwargs.get(
-            'created', None)
+        self.createDateTime = kwargs.get(
+            'createDateTime', None)
         """
         The time at which this record was created.    Format: :ref:ISO
         8601 <metadata_date_time>
@@ -147,8 +147,8 @@ class Analysis(ProtocolElement):
         """
         The type of analysis.
         """
-        self.updated = kwargs.get(
-            'updated', None)
+        self.updateDateTime = kwargs.get(
+            'updateDateTime', None)
         """
         The time at which this record was last updated.   Format:
         :ref:ISO 8601 <metadata_date_time>
@@ -557,29 +557,29 @@ class Experiment(ProtocolElement):
 {"default": null, "doc": "", "type": ["null", "string"], "name":
 "name"}, {"default": null, "doc": "", "type": ["null", "string"],
 "name": "description"}, {"doc": "", "type": "string", "name":
-"created"}, {"doc": "", "type": "string", "name": "updated"},
+"createDateTime"}, {"doc": "", "type": "string", "name":
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "runTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "molecule"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "strategy"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "selection"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"runTime"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "molecule"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "strategy"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "selection"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "library"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "libraryLayout"},
-{"doc": "", "type": ["null", "string"], "name": "instrumentModel"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"instrumentDataFile"}, {"doc": "", "type": ["null", "string"], "name":
-"sequencingCenter"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "platformUnit"}, {"default": {}, "doc": "", "type":
-{"values": {"items": "string", "type": "array"}, "type": "map"},
-"name": "info"}], "doc": ""}
+"library"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "libraryLayout"}, {"doc": "", "type": ["null", "string"],
+"name": "instrumentModel"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "instrumentDataFile"}, {"doc": "", "type":
+["null", "string"], "name": "sequencingCenter"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "platformUnit"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
-        "created",
+        "createDateTime",
         "id",
         "instrumentModel",
         "sequencingCenter",
-        "updated",
+        "updateDateTime",
     ])
 
     @classmethod
@@ -594,15 +594,16 @@ class Experiment(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'created', 'description', 'id', 'info', 'instrumentDataFile',
-        'instrumentModel', 'library', 'libraryLayout', 'molecule',
-        'name', 'platformUnit', 'runTime', 'selection',
-        'sequencingCenter', 'strategy', 'updated'
+        'createDateTime', 'description', 'id', 'info',
+        'instrumentDataFile', 'instrumentModel', 'library',
+        'libraryLayout', 'molecule', 'name', 'platformUnit',
+        'runTime', 'selection', 'sequencingCenter', 'strategy',
+        'updateDateTime'
     ]
 
     def __init__(self, **kwargs):
-        self.created = kwargs.get(
-            'created', None)
+        self.createDateTime = kwargs.get(
+            'createDateTime', None)
         """
         The time at which this record was created.    Format: :ref:ISO
         8601 <metadata_date_time>
@@ -686,8 +687,8 @@ class Experiment(ProtocolElement):
         The experiment technique or strategy applied to the sample.
         (e.g. whole genome sequencing, RNA-seq, RIP-seq)
         """
-        self.updated = kwargs.get(
-            'updated', None)
+        self.updateDateTime = kwargs.get(
+            'updateDateTime', None)
         """
         The time at which this record was last updated.   Format:
         :ref:ISO 8601 <metadata_date_time>
@@ -831,20 +832,6 @@ class HGVSAnnotation(ProtocolElement):
             'protein', None)
         self.transcript = kwargs.get(
             'transcript', None)
-
-
-class Impact(object):
-    """
-    Impact is a simple prioritization for the effect of an allele
-    which is used in the annotation record. IMPORTANT:  Prioritization
-    methods are a crude estimates and are not assumed to be  reliable:
-    a 'HIGH' Impact may actually not cause any disruption  in protein
-    function or expression.
-    """
-    HIGH = "HIGH"
-    MODERATE = "MODERATE"
-    LOW = "LOW"
-    MODIFIER = "MODIFIER"
 
 
 class LinearAlignment(ProtocolElement):
@@ -1438,42 +1425,42 @@ class ReadGroup(ProtocolElement):
 "type": "string", "name": "id"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "name"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "description"}, {"doc": "",
-"type": "string", "name": "created"}, {"doc": "", "type": "string",
-"name": "updated"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "runTime"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "molecule"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "strategy"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "selection"},
+"type": "string", "name": "createDateTime"}, {"doc": "", "type":
+"string", "name": "updateDateTime"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "runTime"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "molecule"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"library"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "libraryLayout"}, {"doc": "", "type": ["null", "string"],
-"name": "instrumentModel"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "instrumentDataFile"}, {"doc": "", "type":
-["null", "string"], "name": "sequencingCenter"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "platformUnit"},
+"strategy"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "selection"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "library"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "libraryLayout"}, {"doc": "", "type":
+["null", "string"], "name": "instrumentModel"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "instrumentDataFile"},
+{"doc": "", "type": ["null", "string"], "name": "sequencingCenter"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"platformUnit"}, {"default": {}, "doc": "", "type": {"values":
+{"items": "string", "type": "array"}, "type": "map"}, "name":
+"info"}]}], "name": "experiment"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "predictedInsertSize"}, {"default":
+null, "doc": "", "type": ["null", "long"], "name": "created"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"updated"}, {"default": null, "doc": "", "type": ["null", {"doc": "",
+"type": "record", "name": "ReadStats", "fields": [{"default": null,
+"doc": "", "type": ["null", "long"], "name": "alignedReadCount"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"unalignedReadCount"}, {"default": null, "doc": "", "type": ["null",
+"long"], "name": "baseCount"}]}], "name": "stats"}, {"default": [],
+"doc": "", "type": {"items": {"doc": "", "type": "record", "name":
+"Program", "fields": [{"default": null, "doc": "", "type": ["null",
+"string"], "name": "commandLine"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "id"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "name"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "prevProgramId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"version"}]}, "type": "array"}, "name": "programs"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "referenceSetId"},
 {"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}]}], "name":
-"experiment"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "predictedInsertSize"}, {"default": null, "doc": "", "type":
-["null", "long"], "name": "created"}, {"default": null, "doc": "",
-"type": ["null", "long"], "name": "updated"}, {"default": null, "doc":
-"", "type": ["null", {"doc": "", "type": "record", "name":
-"ReadStats", "fields": [{"default": null, "doc": "", "type": ["null",
-"long"], "name": "alignedReadCount"}, {"default": null, "doc": "",
-"type": ["null", "long"], "name": "unalignedReadCount"}, {"default":
-null, "doc": "", "type": ["null", "long"], "name": "baseCount"}]}],
-"name": "stats"}, {"default": [], "doc": "", "type": {"items": {"doc":
-"", "type": "record", "name": "Program", "fields": [{"default": null,
-"doc": "", "type": ["null", "string"], "name": "commandLine"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"id"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "name"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "prevProgramId"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "version"}]}, "type": "array"},
-"name": "programs"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceSetId"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type":
-"map"}, "name": "info"}], "doc": ""}
+"type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1610,38 +1597,39 @@ class ReadGroupSet(ProtocolElement):
 [{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
 "", "type": ["null", "string"], "name": "name"}, {"default": null,
 "doc": "", "type": ["null", "string"], "name": "description"}, {"doc":
-"", "type": "string", "name": "created"}, {"doc": "", "type":
-"string", "name": "updated"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "runTime"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "molecule"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "strategy"},
+"", "type": "string", "name": "createDateTime"}, {"doc": "", "type":
+"string", "name": "updateDateTime"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "runTime"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "molecule"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"selection"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "library"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "libraryLayout"}, {"doc": "", "type": ["null",
-"string"], "name": "instrumentModel"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "instrumentDataFile"}, {"doc": "",
-"type": ["null", "string"], "name": "sequencingCenter"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "platformUnit"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}]}], "name":
-"experiment"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "predictedInsertSize"}, {"default": null, "doc": "", "type":
-["null", "long"], "name": "created"}, {"default": null, "doc": "",
-"type": ["null", "long"], "name": "updated"}, {"default": null, "doc":
-"", "type": ["null", "ReadStats"], "name": "stats"}, {"default": [],
-"doc": "", "type": {"items": {"doc": "", "type": "record", "name":
-"Program", "fields": [{"default": null, "doc": "", "type": ["null",
-"string"], "name": "commandLine"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "id"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "name"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "prevProgramId"},
+"strategy"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "selection"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "library"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "libraryLayout"}, {"doc": "", "type":
+["null", "string"], "name": "instrumentModel"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "instrumentDataFile"},
+{"doc": "", "type": ["null", "string"], "name": "sequencingCenter"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"version"}]}, "type": "array"}, "name": "programs"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "referenceSetId"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}]}, "type": "array"},
-"name": "readGroups"}], "doc": ""}
+"platformUnit"}, {"default": {}, "doc": "", "type": {"values":
+{"items": "string", "type": "array"}, "type": "map"}, "name":
+"info"}]}], "name": "experiment"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "predictedInsertSize"}, {"default":
+null, "doc": "", "type": ["null", "long"], "name": "created"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"updated"}, {"default": null, "doc": "", "type": ["null",
+"ReadStats"], "name": "stats"}, {"default": [], "doc": "", "type":
+{"items": {"doc": "", "type": "record", "name": "Program", "fields":
+[{"default": null, "doc": "", "type": ["null", "string"], "name":
+"commandLine"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "prevProgramId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "version"}]},
+"type": "array"}, "name": "programs"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "referenceSetId"}, {"default": {},
+"doc": "", "type": {"values": {"items": "string", "type": "array"},
+"type": "map"}, "name": "info"}]}, "type": "array"}, "name":
+"readGroups"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -2276,38 +2264,39 @@ class SearchReadGroupSetsResponse(SearchResponse):
 [{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
 "", "type": ["null", "string"], "name": "name"}, {"default": null,
 "doc": "", "type": ["null", "string"], "name": "description"}, {"doc":
-"", "type": "string", "name": "created"}, {"doc": "", "type":
-"string", "name": "updated"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "runTime"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "molecule"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "strategy"},
+"", "type": "string", "name": "createDateTime"}, {"doc": "", "type":
+"string", "name": "updateDateTime"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "runTime"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "molecule"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"selection"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "library"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "libraryLayout"}, {"doc": "", "type": ["null",
-"string"], "name": "instrumentModel"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "instrumentDataFile"}, {"doc": "",
-"type": ["null", "string"], "name": "sequencingCenter"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "platformUnit"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}]}], "name":
-"experiment"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "predictedInsertSize"}, {"default": null, "doc": "", "type":
-["null", "long"], "name": "created"}, {"default": null, "doc": "",
-"type": ["null", "long"], "name": "updated"}, {"default": null, "doc":
-"", "type": ["null", "ReadStats"], "name": "stats"}, {"default": [],
-"doc": "", "type": {"items": {"doc": "", "type": "record", "name":
-"Program", "fields": [{"default": null, "doc": "", "type": ["null",
-"string"], "name": "commandLine"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "id"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "name"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "prevProgramId"},
+"strategy"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "selection"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "library"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "libraryLayout"}, {"doc": "", "type":
+["null", "string"], "name": "instrumentModel"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "instrumentDataFile"},
+{"doc": "", "type": ["null", "string"], "name": "sequencingCenter"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"version"}]}, "type": "array"}, "name": "programs"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "referenceSetId"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}]}, "type": "array"},
-"name": "readGroups"}], "doc": ""}, "type": "array"}, "name":
+"platformUnit"}, {"default": {}, "doc": "", "type": {"values":
+{"items": "string", "type": "array"}, "type": "map"}, "name":
+"info"}]}], "name": "experiment"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "predictedInsertSize"}, {"default":
+null, "doc": "", "type": ["null", "long"], "name": "created"},
+{"default": null, "doc": "", "type": ["null", "long"], "name":
+"updated"}, {"default": null, "doc": "", "type": ["null",
+"ReadStats"], "name": "stats"}, {"default": [], "doc": "", "type":
+{"items": {"doc": "", "type": "record", "name": "Program", "fields":
+[{"default": null, "doc": "", "type": ["null", "string"], "name":
+"commandLine"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "prevProgramId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "version"}]},
+"type": "array"}, "name": "programs"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "referenceSetId"}, {"default": {},
+"doc": "", "type": {"values": {"items": "string", "type": "array"},
+"type": "map"}, "name": "info"}]}, "type": "array"}, "name":
+"readGroups"}], "doc": ""}, "type": "array"}, "name":
 "readGroupSets"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "nextPageToken"}], "doc": ""}
 """
@@ -2857,15 +2846,15 @@ class SearchVariantAnnotationSetsResponse(SearchResponse):
 "name": "id"}, {"default": null, "type": ["null", "string"], "name":
 "name"}, {"default": null, "type": ["null", "string"], "name":
 "description"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "created"}, {"doc": "", "type": "string", "name":
-"updated"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "type"}, {"default": [], "doc": "", "type": {"items":
-"string", "type": "array"}, "name": "software"}, {"default": {},
-"doc": "", "type": {"values": {"items": "string", "type": "array"},
-"type": "map"}, "name": "info"}]}, "name": "analysis"}], "doc": ""},
-"type": "array"}, "name": "variantAnnotationSets"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "nextPageToken"}],
-"doc": ""}
+"string"], "name": "createDateTime"}, {"doc": "", "type": "string",
+"name": "updateDateTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "type"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "software"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}]}, "name":
+"analysis"}], "doc": ""}, "type": "array"}, "name":
+"variantAnnotationSets"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([])
@@ -3031,8 +3020,8 @@ class SearchVariantAnnotationsResponse(SearchResponse):
 "string", "name": "id"}, {"doc": "", "type": "string", "name":
 "variantId"}, {"doc": "", "type": "string", "name":
 "variantAnnotationSetId"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "created"}, {"default": [], "doc": "",
-"type": {"items": {"doc": "", "type": "record", "name":
+["null", "string"], "name": "createDateTime"}, {"default": [], "doc":
+"", "type": {"items": {"doc": "", "type": "record", "name":
 "TranscriptEffect", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name":
@@ -3042,9 +3031,7 @@ null, "doc": "", "type": ["null", "string"], "name":
 "string"], "name": "term"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "sourceName"}, {"default": null, "doc":
 "", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
-"array"}, "name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
-"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
-"Impact"}, "name": "impact"}, {"doc": "", "type": {"doc": "", "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"doc": "", "type":
 "record", "name": "HGVSAnnotation", "fields": [{"default": null,
 "type": ["null", "string"], "name": "genomic"}, {"default": null,
 "type": ["null", "string"], "name": "transcript"}, {"default": null,
@@ -3417,9 +3404,7 @@ null, "doc": "", "type": ["null", "string"], "name":
 "string"], "name": "term"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "sourceName"}, {"default": null, "doc":
 "", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
-"array"}, "name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
-"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
-"Impact"}, "name": "impact"}, {"doc": "", "type": {"doc": "", "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"doc": "", "type":
 "record", "name": "HGVSAnnotation", "fields": [{"default": null,
 "type": ["null", "string"], "name": "genomic"}, {"default": null,
 "type": ["null", "string"], "name": "transcript"}, {"default": null,
@@ -3447,7 +3432,6 @@ null, "doc": "", "type": ["null", "string"], "name":
         "featureId",
         "hgvsAnnotation",
         "id",
-        "impact",
     ])
 
     @classmethod
@@ -3478,7 +3462,7 @@ null, "doc": "", "type": ["null", "string"], "name":
     __slots__ = [
         'CDSLocation', 'alternateBases', 'analysisResults',
         'cDNALocation', 'effects', 'featureId', 'hgvsAnnotation',
-        'id', 'impact', 'proteinLocation'
+        'id', 'proteinLocation'
     ]
 
     def __init__(self, **kwargs):
@@ -3519,11 +3503,6 @@ null, "doc": "", "type": ["null", "string"], "name":
             'id', None)
         """
         The ID of the transcript effect record
-        """
-        self.impact = kwargs.get(
-            'impact', None)
-        """
-        Highest Impact from the predicted effects
         """
         self.proteinLocation = kwargs.get(
             'proteinLocation', None)
@@ -3686,24 +3665,22 @@ class VariantAnnotation(ProtocolElement):
 "VariantAnnotation", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"doc": "", "type": "string", "name": "variantId"}, {"doc": "",
 "type": "string", "name": "variantAnnotationSetId"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "created"}, {"default":
-[], "doc": "", "type": {"items": {"doc": "", "type": "record", "name":
-"TranscriptEffect", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name":
-"alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
-"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
-"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "term"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "sourceName"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
-"array"}, "name": "effects"}, {"doc": "", "type": {"symbols": ["HIGH",
-"MODERATE", "LOW", "MODIFIER"], "doc": "", "type": "enum", "name":
-"Impact"}, "name": "impact"}, {"doc": "", "type": {"doc": "", "type":
-"record", "name": "HGVSAnnotation", "fields": [{"default": null,
-"type": ["null", "string"], "name": "genomic"}, {"default": null,
-"type": ["null", "string"], "name": "transcript"}, {"default": null,
-"type": ["null", "string"], "name": "protein"}]}, "name":
+"doc": "", "type": ["null", "string"], "name": "createDateTime"},
+{"default": [], "doc": "", "type": {"items": {"doc": "", "type":
+"record", "name": "TranscriptEffect", "fields": [{"doc": "", "type":
+"string", "name": "id"}, {"doc": "", "type": "string", "name":
+"featureId"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "alternateBases"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "term"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "sourceName"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceVersion"}]},
+"type": "array"}, "name": "effects"}, {"doc": "", "type": {"doc": "",
+"type": "record", "name": "HGVSAnnotation", "fields": [{"default":
+null, "type": ["null", "string"], "name": "genomic"}, {"default":
+null, "type": ["null", "string"], "name": "transcript"}, {"default":
+null, "type": ["null", "string"], "name": "protein"}]}, "name":
 "hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
 {"doc": "", "type": "record", "name": "AlleleLocation", "fields":
 [{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
@@ -3745,13 +3722,13 @@ null, "doc": "", "type": ["null", "string"], "name":
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'created', 'id', 'info', 'transcriptEffects',
+        'createDateTime', 'id', 'info', 'transcriptEffects',
         'variantAnnotationSetId', 'variantId'
     ]
 
     def __init__(self, **kwargs):
-        self.created = kwargs.get(
-            'created', None)
+        self.createDateTime = kwargs.get(
+            'createDateTime', None)
         """
         The :ref:ISO 8601 <metadata_date_time> time at which this
         record was created.
@@ -3801,12 +3778,13 @@ class VariantAnnotationSet(ProtocolElement):
 {"default": null, "type": ["null", "string"], "name": "name"},
 {"default": null, "type": ["null", "string"], "name": "description"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"created"}, {"doc": "", "type": "string", "name": "updated"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"type"}, {"default": [], "doc": "", "type": {"items": "string",
-"type": "array"}, "name": "software"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type":
-"map"}, "name": "info"}]}, "name": "analysis"}], "doc": ""}
+"createDateTime"}, {"doc": "", "type": "string", "name":
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "type"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "software"}, {"default":
+{}, "doc": "", "type": {"values": {"items": "string", "type":
+"array"}, "type": "map"}, "name": "info"}]}, "name": "analysis"}],
+"doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
