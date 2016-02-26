@@ -39,7 +39,7 @@ class DevelopmentConfig(BaseConfig):
     Configuration used for development.
     """
     DATA_SOURCE = "ga4gh-example-data"
-    DEBUG = False
+    DEBUG = True
 
 
 class LocalOidConfig(DevelopmentConfig):

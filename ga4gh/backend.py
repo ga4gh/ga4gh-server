@@ -212,12 +212,6 @@ class Backend(object):
         """
         return self._dataRepository
 
-    def addG2PDataset(self, g2pDataset):
-        """
-        Adds the specified g2p association set to this backend.
-        """
-        self._g2pDataset = g2pDataset
-
     def setRequestValidation(self, requestValidation):
         """
         Set enabling request validation
@@ -695,6 +689,7 @@ class Backend(object):
             self.genotypePhenotypeGenerator)
 
     def genotypePhenotypeGenerator(self, request):
+        # TODO make paging work using SPARQL?
         if (request.evidence is None and
                 request.phenotype is None and
                 request.feature is None):
@@ -705,7 +700,10 @@ class Backend(object):
             offset, = _parsePageToken(request.pageToken, 1)
         else:
             offset = 0
-        annotationList = self.getDataRepository()._g2pDataset.queryLabels(
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(request.phenotypeAssociationSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.queryLabels(
             request.feature, request.evidence, request.phenotype,
             request.pageSize, offset)
         return self._objectListGenerator(request, annotationList)

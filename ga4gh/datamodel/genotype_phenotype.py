@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 
 import rdflib
 import urlparse
-import os
 import types
 
 import ga4gh.protocol as protocol
@@ -17,47 +16,28 @@ import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
 
 
-class AbstractG2PDataset(datamodel.DatamodelObject):
+class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
+    compoundIdClass = datamodel.PhenotypeAssociationSetCompoundId
 
-    def __init__(self, setName=None):
-        self._searchQuery = ""
+    def __init__(self, parentContainer, localId):
+        super(AbstractPhenotypeAssociationSet, self).__init__(parentContainer, localId)
 
     def toProtocolElement(self):
-        # TODO remove this... added to follow pattern of datadriven tests
-        fpa = protocol.FeaturePhenotypeAssociation()
-        fpa.features = []
-        fpa.id = "TEST"
-        fpa.evidence = []
-        fpa.phenotype = protocol.PhenotypeInstance()
-        fpa.phenotype.type = protocol.OntologyTerm()
-        fpa.phenotype.type.id = "fakeid"
-        fpa.phenotype.type.ontologySource = "fakesource"
-        fpa.environmentalContexts = []
-        return fpa
+        pas = protocol.PhenotypeAssociationSet()
+        pas.name = self.getLocalId()
+        pas.id = self.getId()
+        pas.datasetId = self.getParentContainer().getId()
+        pas.info = self.getInfo()
+
+    def getInfo(self):
+        return {}
+
+class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
+     def __init__(self, parentContainer, localId, randomSeed):
+        super(SimulatedPhenotypeAssociationSet, self).__init__(parentContainer, localId)
 
 
-class SimulatedG2PDataset(AbstractG2PDataset):
-    def __init__(self, setName=None, relativePath=None, dataDir=None):
-        pass
-
-    def queryLabels(self, location=None, drug=None,
-                    disease=None, pageSize=None, offset=0):
-        fpa = self.toProtocolElement()
-        fpas = []
-        if location or drug or disease:
-            fpas.append(fpa)
-        # TODO this seems like a hack
-
-        def toProtocolElement(self):
-            return self
-
-        for fpa in fpas:
-            fpa.toProtocolElement = \
-                types.MethodType(toProtocolElement, fpa)
-        return fpas
-
-
-class G2PDataset(AbstractG2PDataset):
+class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
     """
     An rdf object store.  The cancer genome database
     [Clinical Genomics Knowledge Base]
@@ -65,16 +45,16 @@ class G2PDataset(AbstractG2PDataset):
     published by the Monarch project, was the source of Evidence.
     """
 
-    def __init__(self, setName=None, relativePath=None, dataDir=None):
+    def __init__(self, parentContainer, localId, dataDir):
+        super(PhenotypeAssociationSet, self).__init__(parentContainer, localId)
+        print("Initializing pa set", localId, dataDir)
+        print(self.getId())
         """
         Initialize dataset, using the passed dict of sources
         [{source,format}] see rdflib.parse() for more
         If path is set, this backend will load itself
         """
-        self._sources = None
-        if setName is not None:
-            self._sources = [os.path.join(relativePath, f)
-                             for f in os.listdir(relativePath)]
+
         self._searchQuery = """
         PREFIX OBAN: <http://purl.org/oban/>
         PREFIX OBO: <http://purl.obolibrary.org/obo/>
@@ -98,20 +78,17 @@ class G2PDataset(AbstractG2PDataset):
         }
         ORDER BY ?s
             """
-
         # initialize graph
         self._rdfGraph = rdflib.ConjunctiveGraph()
 
-        # load with data
-        if self._sources is None:
-            self._rdfGraph.parse('tests/data/g2pDatasets/cgd/cgd-test.ttl',
-                                 format='n3')
+        self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
+
+
+    def _addDataFile(self, filename):
+        if filename.endswith('.ttl'):
+            self._rdfGraph.parse(filename, format='n3')
         else:
-            for source in self._sources:
-                if source.endswith('.ttl'):
-                    self._rdfGraph.parse(source, format='n3')
-                else:
-                    self._rdfGraph.parse(source, format='xml')
+            self._rdfGraph.parse(filename, format='xml')
 
     def _formatQuery(self, location=None, drug=None, disease=None):
         """
@@ -126,6 +103,7 @@ class G2PDataset(AbstractG2PDataset):
 
         if location and isinstance(location, basestring):
             filters.append('regex(?location_label, "{}")'.format(location))
+            #TODO check this regex (versus string match)
         if drug and isinstance(drug, basestring):
             filters.append('regex(?drug_label, "{}")'.format(drug))
         if disease and isinstance(disease, basestring):
@@ -174,7 +152,7 @@ class G2PDataset(AbstractG2PDataset):
         AND of [location,drug,disease].
         """
         query = self._formatQuery(location, drug, disease)
-        # TODO refactor to testable function
+        # TODO this is just static why not put in straight?
         query = query.replace("%PROPERTIES%", "".join(
             ["distinct ?s ?location ?location_label ",
              "?disease ?disease_label ?drug ?drug_label ",
@@ -187,6 +165,8 @@ class G2PDataset(AbstractG2PDataset):
         # Depending on the cardinality this query can return multiple rows
         # per annotations.  Here we reduce it to a list of unique annotations
         # URIs
+
+        # TODO whys it a set? we called distinct
         uniqueAnnotations = set()
         for row in results:
             uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
@@ -196,18 +176,6 @@ class G2PDataset(AbstractG2PDataset):
 
         return annotations
 
-    def toProtocolElement(self):
-        # TODO remove this... added to follow pattern of datadriven tests
-        fpa = protocol.FeaturePhenotypeAssociation()
-        fpa.features = []
-        fpa.id = "TEST"
-        fpa.evidence = []
-        fpa.phenotype = protocol.PhenotypeInstance()
-        fpa.phenotype.type = protocol.OntologyTerm()
-        fpa.phenotype.type.id = "fakeid"
-        fpa.phenotype.type.ontologySource = "fakesource"
-        fpa.environmentalContexts = []
-        return fpa
 
 
 class AnnotationFactory:
@@ -342,6 +310,14 @@ class AnnotationFactory:
             a['id'] = row['s']
         return a
 
+    def ontologyTerm(self, term="", _id="", sourceName="", sourceVersion=""):
+        term = protocol.OntologyTerm
+        term.term = term
+        term.id = _id
+        term.sourceName = sourceName
+        term.sourceVersion = sourceVersion
+        return term
+
     def _toGA4GH(self, annotation):
         """
         given an annotation dict, return a protocol.FeaturePhenotypeAssociation
@@ -366,10 +342,9 @@ class AnnotationFactory:
             name = location['id']
 
         f = protocol.Feature()
-        f.featureType = protocol.OntologyTerm.fromJsonDict({
-            "term": name,
-            "id": id_,
-            "sourceName": ontologySource})
+        # TODO ontology term backing should be switchable
+        # not hardcoded in the g2p turtle file?
+        f.featureType = self.ontologyTerm(name, id_, ontologySource)
         f.id = annotation['id']  # TODO connect with real feature Ids
         f.featureSetId = ''
         f.parentIds = []
@@ -379,7 +354,7 @@ class AnnotationFactory:
                                        annotation[hasObject]['val'])
 
         fpa = protocol.FeaturePhenotypeAssociation()
-        fpa.id = annotation['id']
+        fpa.id = annotation['id']  # TODO why is this the ID?
         fpa.features = [f]
         fpa.description = None
         fpa.evidence = []

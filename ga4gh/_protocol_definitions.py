@@ -11,7 +11,7 @@ from protocol import SearchResponse
 
 import avro.schema
 
-version = '0.6.0a1'
+version = '0.6.0a2'
 
 
 class Attributes(ProtocolElement):
@@ -966,39 +966,40 @@ class FeaturePhenotypeAssociation(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "FeaturePhenotypeAssociation", "fields": [{"type": "string", "name":
-"id"}, {"doc": "", "type": {"items": {"doc": "", "type": "record",
-"name": "Feature", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"doc": "", "type": "string", "name": "parentId"}, {"default":
-[], "doc": "", "type": {"items": "string", "type": "array"}, "name":
-"childIds"}, {"doc": "", "type": "string", "name": "featureSetId"},
-{"doc": "", "type": "string", "name": "referenceName"}, {"default": 0,
-"doc": "", "type": "long", "name": "start"}, {"doc": "", "type":
-"long", "name": "end"}, {"doc": "", "type": {"symbols": ["NEG_STRAND",
-"POS_STRAND"], "doc": "", "type": "enum", "name": "Strand"}, "name":
-"strand"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
-"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "term"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "sourceVersion"}]}, "name":
-"featureType"}, {"doc": "", "type": {"doc": "", "type": "record",
-"name": "Attributes", "fields": [{"default": {}, "type": {"values":
-{"items": ["string", {"doc": "", "type": "record", "name":
-"ExternalIdentifier", "fields": [{"doc": "", "type": "string", "name":
-"database"}, {"doc": "", "type": "string", "name": "identifier"},
-{"doc": "", "type": "string", "name": "version"}]}, "OntologyTerm"],
-"type": "array"}, "type": "map"}, "name": "vals"}]}, "name":
-"attributes"}]}, "type": "array"}, "name": "features"}, {"doc": "",
-"type": {"items": {"doc": "", "type": "record", "name": "Evidence",
-"fields": [{"doc": "", "type": "OntologyTerm", "name":
-"evidenceType"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "description"}]}, "type": "array"}, "name":
-"evidence"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
-"PhenotypeInstance", "fields": [{"doc": "", "type": ["null",
-"string"], "name": "id"}, {"doc": "", "type": "OntologyTerm", "name":
-"type"}, {"default": null, "doc": "", "type": ["null", {"items":
-"OntologyTerm", "type": "array"}], "name": "qualifier"}, {"default":
-null, "doc": "", "type": ["null", "OntologyTerm"], "name":
+"id"}, {"doc": "", "type": "string", "name":
+"phenotypeAssociationSetId"}, {"doc": "", "type": {"items": {"doc":
+"", "type": "record", "name": "Feature", "fields": [{"doc": "",
+"type": "string", "name": "id"}, {"doc": "", "type": "string", "name":
+"parentId"}, {"default": [], "doc": "", "type": {"items": "string",
+"type": "array"}, "name": "childIds"}, {"doc": "", "type": "string",
+"name": "featureSetId"}, {"doc": "", "type": "string", "name":
+"referenceName"}, {"default": 0, "doc": "", "type": "long", "name":
+"start"}, {"doc": "", "type": "long", "name": "end"}, {"doc": "",
+"type": {"symbols": ["NEG_STRAND", "POS_STRAND"], "doc": "", "type":
+"enum", "name": "Strand"}, "name": "strand"}, {"doc": "", "type":
+{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
+[{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "term"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceName"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceVersion"}]}, "name": "featureType"}, {"doc": "", "type":
+{"doc": "", "type": "record", "name": "Attributes", "fields":
+[{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
+"type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
+"type": "string", "name": "database"}, {"doc": "", "type": "string",
+"name": "identifier"}, {"doc": "", "type": "string", "name":
+"version"}]}, "OntologyTerm"], "type": "array"}, "type": "map"},
+"name": "vals"}]}, "name": "attributes"}]}, "type": "array"}, "name":
+"features"}, {"doc": "", "type": {"items": {"doc": "", "type":
+"record", "name": "Evidence", "fields": [{"doc": "", "type":
+"OntologyTerm", "name": "evidenceType"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "description"}]}, "type":
+"array"}, "name": "evidence"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "PhenotypeInstance", "fields": [{"doc": "", "type":
+["null", "string"], "name": "id"}, {"doc": "", "type": "OntologyTerm",
+"name": "type"}, {"default": null, "doc": "", "type": ["null",
+{"items": "OntologyTerm", "type": "array"}], "name": "qualifier"},
+{"default": null, "doc": "", "type": ["null", "OntologyTerm"], "name":
 "ageOfOnset"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "description"}]}, "name": "phenotype"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name": "description"},
@@ -1016,6 +1017,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"},
         "features",
         "id",
         "phenotype",
+        "phenotypeAssociationSetId",
     ])
 
     @classmethod
@@ -1041,7 +1043,7 @@ null, "doc": "", "type": ["null", "string"], "name": "description"},
 
     __slots__ = [
         'description', 'environmentalContexts', 'evidence',
-        'features', 'id', 'phenotype'
+        'features', 'id', 'phenotype', 'phenotypeAssociationSetId'
     ]
 
     def __init__(self, **kwargs):
@@ -1085,6 +1087,12 @@ null, "doc": "", "type": ["null", "string"], "name": "description"},
         delegate this to a separate record to allow us the flexibility
         to composition of phenotype associations with records that are
         not          variant sets - for example, diseases.
+        """
+        self.phenotypeAssociationSetId = kwargs.get(
+            'phenotypeAssociationSetId', None)
+        """
+        The ID of the PhenotypeAssociationSet this
+        FeaturePhenotypeAssociation   belongs to.
         """
 
 
@@ -1556,6 +1564,67 @@ null, "doc": "", "type": ["null", "string"], "name": "term"},
     def __init__(self, **kwargs):
         self.terms = kwargs.get(
             'terms', None)
+
+
+class PhenotypeAssociationSet(ProtocolElement):
+    """
+    A PhenotypeAssociationSet is a collection of phenotype association
+    results.  Such results are grouped by data source and possibly
+    release version or analysis  type.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"PhenotypeAssociationSet", "fields": [{"doc": "", "type": "string",
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"doc": "", "type": "string", "name":
+"datasetId"}, {"default": {}, "doc": "", "type": {"values": {"items":
+"string", "type": "array"}, "type": "map"}, "name": "info"}], "doc":
+""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "datasetId",
+        "id",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'datasetId', 'id', 'info', 'name'
+    ]
+
+    def __init__(self, **kwargs):
+        self.datasetId = kwargs.get(
+            'datasetId', None)
+        """
+        The ID of the dataset this phenotype association set belongs
+        to.
+        """
+        self.id = kwargs.get(
+            'id', None)
+        """
+        The phenotype association set ID.
+        """
+        self.info = kwargs.get(
+            'info', {})
+        """
+        Optional additional information for this phenotype association
+        set.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        The phenotype association set name.
+        """
 
 
 class PhenotypeInstance(ProtocolElement):
@@ -2805,8 +2874,9 @@ class SearchGenotypePhenotypeRequest(SearchRequest):
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
-"SearchGenotypePhenotypeRequest", "fields": [{"default": null, "type":
-["null", "string", {"doc": "", "type": "record", "name":
+"SearchGenotypePhenotypeRequest", "fields": [{"doc": "", "type":
+"string", "name": "phenotypeAssociationSetId"}, {"default": null,
+"type": ["null", "string", {"doc": "", "type": "record", "name":
 "ExternalIdentifierQuery", "fields": [{"type": {"items": {"namespace":
 "org.ga4gh.models", "type": "record", "name": "ExternalIdentifier",
 "fields": [{"doc": "", "type": "string", "name": "database"}, {"doc":
@@ -2856,7 +2926,9 @@ null, "type": ["null", "string", "ExternalIdentifierQuery",
 "", "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([])
+    requiredFields = set([
+        "phenotypeAssociationSetId",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -2870,7 +2942,8 @@ null, "type": ["null", "string", "ExternalIdentifierQuery",
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'evidence', 'feature', 'pageSize', 'pageToken', 'phenotype'
+        'evidence', 'feature', 'pageSize', 'pageToken', 'phenotype',
+        'phenotypeAssociationSetId'
     ]
 
     def __init__(self, **kwargs):
@@ -2894,6 +2967,11 @@ null, "type": ["null", "string", "ExternalIdentifierQuery",
         """
         self.phenotype = kwargs.get(
             'phenotype', None)
+        self.phenotypeAssociationSetId = kwargs.get(
+            'phenotypeAssociationSetId', None)
+        """
+        The PhenotypeAssociationSet to search.
+        """
 
 
 class SearchGenotypePhenotypeResponse(SearchResponse):
@@ -2906,9 +2984,10 @@ class SearchGenotypePhenotypeResponse(SearchResponse):
 "SearchGenotypePhenotypeResponse", "fields": [{"default": [], "doc":
 "", "type": {"items": {"namespace": "org.ga4gh.models", "type":
 "record", "name": "FeaturePhenotypeAssociation", "fields": [{"type":
-"string", "name": "id"}, {"doc": "", "type": {"items": {"doc": "",
-"type": "record", "name": "Feature", "fields": [{"doc": "", "type":
 "string", "name": "id"}, {"doc": "", "type": "string", "name":
+"phenotypeAssociationSetId"}, {"doc": "", "type": {"items": {"doc":
+"", "type": "record", "name": "Feature", "fields": [{"doc": "",
+"type": "string", "name": "id"}, {"doc": "", "type": "string", "name":
 "parentId"}, {"default": [], "doc": "", "type": {"items": "string",
 "type": "array"}, "name": "childIds"}, {"doc": "", "type": "string",
 "name": "featureSetId"}, {"doc": "", "type": "string", "name":
@@ -2987,6 +3066,117 @@ null, "doc": "", "type": ["null", "string"], "name": "description"},
         result sets.   Provide this value in a subsequent request to
         return the next page of   results. This field will be empty if
         there aren't any additional results.
+        """
+
+
+class SearchPhenotypeAssociationSetsRequest(SearchRequest):
+    """
+    This request maps to the body of POST
+    /phenotypeassociationsets/search as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchPhenotypeAssociationSetsRequest", "fields": [{"doc": "",
+"type": "string", "name": "datasetId"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "pageSize"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "datasetId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'datasetId', 'pageSize', 'pageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.datasetId = kwargs.get(
+            'datasetId', None)
+        """
+        The Dataset to search.
+        """
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
+
+
+class SearchPhenotypeAssociationSetsResponse(SearchResponse):
+    """
+    This is the response from POST /phenotypeassociationsets/search
+    expressed as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchPhenotypeAssociationSetsResponse", "fields": [{"default": [],
+"doc": "", "type": {"items": {"namespace": "org.ga4gh.models", "type":
+"record", "name": "PhenotypeAssociationSet", "fields": [{"doc": "",
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}, {"doc": "", "type": "string",
+"name": "datasetId"}, {"default": {}, "doc": "", "type": {"values":
+{"items": "string", "type": "array"}, "type": "map"}, "name":
+"info"}], "doc": ""}, "type": "array"}, "name":
+"phenotypeAssociationSets"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "phenotypeAssociationSets"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'phenotypeAssociationSets': PhenotypeAssociationSet,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'phenotypeAssociationSets': PhenotypeAssociationSet,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'nextPageToken', 'phenotypeAssociationSets'
+    ]
+
+    def __init__(self, **kwargs):
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
+        self.phenotypeAssociationSets = kwargs.get(
+            'phenotypeAssociationSets', [])
+        """
+        The list of matching phenotype association sets.
         """
 
 
@@ -4202,6 +4392,9 @@ postMethods = \
      ('/genotypephenotype/search',
       SearchGenotypePhenotypeRequest,
       SearchGenotypePhenotypeResponse),
+     ('/phenotypeassociationsets/search',
+      SearchPhenotypeAssociationSetsRequest,
+      SearchPhenotypeAssociationSetsResponse),
      ('/readgroupsets/search',
       SearchReadGroupSetsRequest,
       SearchReadGroupSetsResponse),

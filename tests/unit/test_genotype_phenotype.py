@@ -12,9 +12,9 @@ import ga4gh.datamodel.genotype_phenotype as g2p
 import ga4gh.exceptions as exceptions
 
 
-class TestG2PDataset(unittest.TestCase):
+class TestPhenotypeAssociationSet(unittest.TestCase):
     def setUp(self):
-        self.g2pDataset = g2p.G2PDataset()
+        self.phenotypeAssocationSet = g2p.PhenotypeAssociationSet()
 
     def testSearchQuery(self):
         # This is hardcoded during __init__
@@ -41,13 +41,13 @@ class TestG2PDataset(unittest.TestCase):
         }
         ORDER BY ?s
             """  # watch for trailing blank space
-        self.assertEqual(self.g2pDataset._searchQuery, query)
+        self.assertEqual(self.phenotypeAssocationSet._searchQuery, query)
 
     def testFormatQuery(self):
         #  "At least one of [location, drug, disease] must be specified"
         self.assertRaises(
             exceptions.NotImplementedException,
-            self.g2pDataset._formatQuery)
+            self.phenotypeAssocationSet._formatQuery)
         query = """
         PREFIX OBAN: <http://purl.org/oban/>
         PREFIX OBO: <http://purl.obolibrary.org/obo/>
@@ -72,7 +72,7 @@ class TestG2PDataset(unittest.TestCase):
         ORDER BY ?s
             """
         self.assertEqual(
-            self.g2pDataset._formatQuery(
+            self.phenotypeAssocationSet._formatQuery(
                 location="*************"), query)
         query = """
         PREFIX OBAN: <http://purl.org/oban/>
@@ -101,7 +101,7 @@ class TestG2PDataset(unittest.TestCase):
         ORDER BY ?s
             """
         self.assertEqual(
-            self.g2pDataset._formatQuery(
+            self.phenotypeAssocationSet._formatQuery(
                 location="*LOCATION*",
                 drug="***DRUG***",
                 disease="***DISEASE***"), query)

@@ -24,7 +24,6 @@ class AbstractDataRepository(object):
         self._referenceSetIdMap = {}
         self._referenceSetNameMap = {}
         self._referenceSetIds = []
-        self._g2pDataset = None
 
     def addDataset(self, dataset):
         """
@@ -44,11 +43,6 @@ class AbstractDataRepository(object):
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
 
-    def addG2PDataset(self, g2pDataset):
-        """
-        Adds the specified g2p association set to this backend.
-        """
-        self._g2pDataset = g2pDataset
 
     def getDatasets(self):
         """
@@ -138,7 +132,7 @@ class SimulatedDataRepository(AbstractDataRepository):
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReferenceSets=1, numReferencesPerReferenceSet=1,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=2):
+            numAlignments=2, numPhenotypeAssociationSets=1):
         super(SimulatedDataRepository, self).__init__()
 
         # References
@@ -160,12 +154,8 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numVariantSets=numVariantSets,
                 numReadGroupSets=numReadGroupSets,
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
-                numAlignments=numAlignments)
+                numAlignments=numAlignments, numPhenotypeAssociationSets=numPhenotypeAssociationSets)
             self.addDataset(dataset)
-
-        # g2pDatasets
-        # TODO is this global per server instance or dataset?
-        self._g2pDataset = genotype_phenotype.SimulatedG2PDataset()
 
 
 class FileSystemDataRepository(AbstractDataRepository):
@@ -174,18 +164,14 @@ class FileSystemDataRepository(AbstractDataRepository):
     """
     referenceSetsDirName = "referenceSets"
     datasetsDirName = "datasets"
-    g2pDirName = "g2pDatasets"
 
     def __init__(self, dataDir, doConsistencyCheck=True):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = [self.referenceSetsDirName, self.datasetsDirName,
-                          self.g2pDirName]
+        sourceDirNames = [self.referenceSetsDirName, self.datasetsDirName]
         constructors = [
-            references.HtslibReferenceSet, datasets.FileSystemDataset,
-            genotype_phenotype.G2PDataset]
-        objectAdders = [self.addReferenceSet, self.addDataset,
-                        self.addG2PDataset]
+            references.HtslibReferenceSet, datasets.FileSystemDataset]
+        objectAdders = [self.addReferenceSet, self.addDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)
