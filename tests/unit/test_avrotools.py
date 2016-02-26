@@ -21,20 +21,27 @@ class TestAvrotools(unittest.TestCase):
             avrotools.Validator(object).getInvalidFields({})
 
     def testLessFields(self):
-        # Throws an exception when there are fields missing from the jsonDict
+        # Returns a bogus field indicator
+        # when there are fields missing from the jsonDict
         for class_ in protocol.getProtocolClasses():
             validator = avrotools.Validator(class_)
-            with self.assertRaises(avrotools.AvrotoolsException):
-                validator.getInvalidFields({})
+            invalidFields = validator.getInvalidFields({})
+            for key, value in invalidFields.items():
+                self.assertEqual(
+                    value, avrotools.SchemaValidator.missingValue)
 
     def testMoreFields(self):
-        # Throws an exception when there are extra fields in the jsonDict
+        # Returns a bogus field indicator
+        # when there are extra fields in the jsonDict
+        key = 'extra'
         for class_ in protocol.getProtocolClasses():
             jsonDict = class_().toJsonDict()
-            jsonDict['extra'] = 'extra'
+            jsonDict[key] = None
             validator = avrotools.Validator(class_)
-            with self.assertRaises(avrotools.AvrotoolsException):
-                validator.getInvalidFields(jsonDict)
+            invalidFields = validator.getInvalidFields(jsonDict)
+            self.assertIn(key, invalidFields)
+            self.assertEqual(
+                invalidFields[key], avrotools.SchemaValidator.extraValue)
 
     def testGeneratedObjects(self):
         # Test that generated objects pass validation
