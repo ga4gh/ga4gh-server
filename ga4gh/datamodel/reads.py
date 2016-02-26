@@ -215,8 +215,9 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
                 readGroup = HtslibReadGroup(
                     self, readGroupHeader['ID'], readGroupHeader)
                 self.addReadGroup(readGroup)
+        self._referenceSetInit(dataRepository, False)
 
-    def checkConsistency(self, dataRepository):
+    def _referenceSetInit(self, dataRepository, shouldThrowExceptions):
         # Find the reference set name (if there is one) by looking at
         # the BAM headers.
         samFile = self.getFileHandle(self._samFilePath)
@@ -230,15 +231,23 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
             if referenceSetName is None:
                 referenceSetName = name
             elif referenceSetName != name:
-                raise exceptions.MultipleReferenceSetsInReadGroupSet(
-                    self._samFilePath, name, referenceSetName)
+                if shouldThrowExceptions:
+                    raise exceptions.MultipleReferenceSetsInReadGroupSet(
+                        self._samFilePath, name, referenceSetName)
         self._referenceSet = None
         if referenceSetName is not None:
-            self._referenceSet = dataRepository.getReferenceSetByName(
-                referenceSetName)
+            try:
+                self._referenceSet = dataRepository.getReferenceSetByName(
+                    referenceSetName)
+            except exceptions.ReferenceSetNameNotFoundException as exception:
+                if shouldThrowExceptions:
+                    raise exception
             # TODO verify that the references in the BAM file exist
             # in the reference set. Otherwise, we won't be able to
             # query for them.
+
+    def checkConsistency(self, dataRepository):
+        self._referenceSetInit(dataRepository, True)
 
     def _setHeaderFields(self, samFile):
         programs = []

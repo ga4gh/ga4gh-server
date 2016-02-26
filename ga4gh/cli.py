@@ -1327,9 +1327,10 @@ class CheckRunner(AbstractRepoCommandRunner):
 
     def __init__(self, args):
         super(CheckRunner, self).__init__(args)
+        self.doConsistencyCheck = not args.skipConsistencyCheck
 
     def run(self):
-        self.repoManager.check()
+        self.repoManager.check(self.doConsistencyCheck)
 
 
 class ListRunner(AbstractRepoCommandRunner):
@@ -1457,6 +1458,12 @@ def addRepoArgument(subparser):
         "repoPath", help="the file path of the data repository")
 
 
+def addSkipConsistencyCheckArgument(subparser):
+    subparser.add_argument(
+        "-s", "--skipConsistencyCheck", action='store_true', default=False,
+        help="skip the data repo consistency check")
+
+
 def addForceArgument(subparser):
     subparser.add_argument(
         "-f", "--force", action='store_true',
@@ -1517,6 +1524,7 @@ def getRepoParser():
         subparsers, "check", "Check to see if repo is well-formed")
     checkParser.set_defaults(runner=CheckRunner)
     addRepoArgument(checkParser)
+    addSkipConsistencyCheckArgument(checkParser)
 
     listParser = addSubparser(
         subparsers, "list", "List the contents of the repo")

@@ -50,6 +50,9 @@ class RepoManagerTest(AbstractRepoManagerTest):
             datasetName, paths.bamPath, self.moveMode)
         self.repoManager.addVariantSet(
             datasetName, paths.vcfDirPath, self.moveMode)
+        with self.assertRaises(exceptions.ReferenceSetNameNotFoundException):
+            # ReferenceSet named 'Default' does not exist
+            self.repoManager.check(doConsistencyCheck=True)
         self.repoManager.check()
         self.repoManager.list()
         self.repoManager.removeReadGroupSet(
