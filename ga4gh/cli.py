@@ -455,6 +455,19 @@ class SearchReadsRunner(AbstractSearchRunner):
             print(read.id)
 
 
+class SearchPhenotypeAssociationSetsRunner(AbstractSearchRunner):
+    """
+    Runner class for the datasets/search method
+    """
+    def __init__(self, args):
+        super(SearchPhenotypeAssociationSetsRunner, self).__init__(args)
+        self.datasetId = args.datasetId
+
+    def run(self):
+        iterator = self._client.searchPhenotypeAssociationSets(self.datasetId)
+        self._output(iterator)
+
+
 class SearchGenotypePhenotypeRunner(AbstractSearchRunner):
     """
     Runner class for the genotypephenotype/search method.
@@ -755,6 +768,9 @@ def addGenotypePhenotypeSearchParser(subparsers):
     addOutputFormatArgument(parser)
     addGenotypePhenotypeSearchOptions(parser)
     addPageSizeArgument(parser)
+    parser.add_argument(
+        "--phenotypeAssociationSetId", default=None,
+        help="The phenotype association set to search within")
     return parser
 
 
@@ -864,6 +880,18 @@ def addDatasetsSearchParser(subparsers):
     return parser
 
 
+def addPhenotypeAssociationSetsParser(subparsers):
+    parser = addSubparser(
+        subparsers, "phenotypeassociationsets-search",
+        "Search for phenotype association sets")
+    parser.set_defaults(runner=SearchPhenotypeAssociationSetsRunner)
+    addUrlArgument(parser)
+    addDatasetIdArgument(parser)
+    addPageSizeArgument(parser)
+    addOutputFormatArgument(parser)
+    return parser
+
+
 def addReadsSearchParserArguments(parser):
     addUrlArgument(parser)
     addPageSizeArgument(parser)
@@ -958,6 +986,7 @@ def getClientParser():
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
+    addPhenotypeAssociationSetsParser(subparsers)
     addGenotypePhenotypeSearchParser(subparsers)
     return parser
 

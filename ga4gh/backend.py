@@ -330,6 +330,16 @@ class Backend(object):
             request, self.getDataRepository().getNumDatasets(),
             self.getDataRepository().getDatasetByIndex)
 
+    def phenotypeAssociationSetsGenerator(self, request):
+        """
+        Returns a generator over the (phenotypeAssociationSet, nextPageToken)
+        pairs defined by the specified request
+        """
+        dataset = self.getDataRepository().getDataset(request.datasetId)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumPhenotypeAssociationSets(),
+            dataset.getPhenotypeAssociationSetByIndex)
+
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
@@ -688,6 +698,12 @@ class Backend(object):
             protocol.SearchGenotypePhenotypeResponse,
             self.genotypePhenotypeGenerator)
 
+    def runSearchPhenotypeAssociationSets(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypeAssociationSetsRequest,
+            protocol.SearchPhenotypeAssociationSetsResponse,
+            self.phenotypeAssociationSetsGenerator)
+
     def genotypePhenotypeGenerator(self, request):
         # TODO make paging work using SPARQL?
         if (request.evidence is None and
@@ -700,9 +716,11 @@ class Backend(object):
             offset, = _parsePageToken(request.pageToken, 1)
         else:
             offset = 0
-        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(request.phenotypeAssociationSetId)
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotypeAssociationSetId)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(compoundId.phenotypeAssociationSetId)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.queryLabels(
             request.feature, request.evidence, request.phenotype,
             request.pageSize, offset)

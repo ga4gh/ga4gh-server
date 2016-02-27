@@ -20,7 +20,8 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
     compoundIdClass = datamodel.PhenotypeAssociationSetCompoundId
 
     def __init__(self, parentContainer, localId):
-        super(AbstractPhenotypeAssociationSet, self).__init__(parentContainer, localId)
+        super(AbstractPhenotypeAssociationSet, self).__init__(
+            parentContainer, localId)
 
     def toProtocolElement(self):
         pas = protocol.PhenotypeAssociationSet()
@@ -28,13 +29,85 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
         pas.id = self.getId()
         pas.datasetId = self.getParentContainer().getId()
         pas.info = self.getInfo()
+        return pas
 
     def getInfo(self):
         return {}
 
+    def _generateFeature(self, featureId="", childIds=[], parentId="",
+                         featureSetId="", referenceName="", start=None,
+                         end=None, strand=None, _term="", _termId="",
+                         sourceName="", sourceVersion=""):
+
+        feature = protocol.Feature()
+        feature.id = featureId
+        feature.childIds = []
+        feature.parentId = parentId
+        feature.featureSetId = featureSetId
+        feature.referenceName = referenceName
+        feature.start = start
+        feature.end = end
+        feature.strand = strand
+        feature.featureType = self._generateOntologyTerm(_term,
+                                                         _termId,
+                                                         sourceName,
+                                                         sourceVersion)
+        return feature
+
+    def _generatePhenotypeInstance(self, _id="", _term="",
+                                   _termId="", sourceName="",
+                                   sourceVersion="", qualifierTerms=None,
+                                   onsetTerm=None, description=""):
+        phenotypeInstance = protocol.PhenotypeInstance()
+        phenotypeInstance.id = _id
+        phenotypeInstance.type = self._generateOntologyTerm(_term,
+                                                            _termId,
+                                                            sourceName,
+                                                            sourceVersion)
+        phenotypeInstance.qualifier = qualifierTerms
+        phenotypeInstance.ageOfOnset = onsetTerm
+        phenotypeInstance.description = description
+        return phenotypeInstance
+
+    def _generateOntologyTerm(self, _term="", _id="",
+                              sourceName="", sourceVersion=""):
+        term = protocol.OntologyTerm()
+        term.term = _term
+        term.id = _id
+        term.sourceName = sourceName
+        term.sourceVersion = sourceVersion
+        return term
+
+    def _generateEvidence(self, _term="", _id="",
+                          sourceName="", sourceVersion="", description=""):
+        evidence = protocol.Evidence()
+        evidence.evidenceType = self._generateOntologyTerm(_term,
+                                                           _id,
+                                                           sourceName,
+                                                           sourceVersion)
+        evidence.description = description
+        return evidence
+
+    def _generateFeaturePhenotypeAssociation(self, _id="",
+                                             phenotypeAssociationSetId="",
+                                             features=[], evidence=[],
+                                             phenotype=None, description="",
+                                             environmentalContexts=[]):
+        fpa = protocol.FeaturePhenotypeAssociation()
+        fpa.id = _id
+        fpa.phenotypeAssociationSetId = phenotypeAssociationSetId
+        fpa.features = features
+        fpa.evidence = evidence
+        fpa.phenotype = phenotype
+        fpa.description = description
+        fpa.environmentalContexts = environmentalContexts
+        return fpa
+
+
 class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
-     def __init__(self, parentContainer, localId, randomSeed):
-        super(SimulatedPhenotypeAssociationSet, self).__init__(parentContainer, localId)
+    def __init__(self, parentContainer, localId, randomSeed):
+        super(SimulatedPhenotypeAssociationSet, self).__init__(
+            parentContainer, localId)
 
 
 class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
@@ -47,8 +120,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
     def __init__(self, parentContainer, localId, dataDir):
         super(PhenotypeAssociationSet, self).__init__(parentContainer, localId)
-        print("Initializing pa set", localId, dataDir)
-        print(self.getId())
         """
         Initialize dataset, using the passed dict of sources
         [{source,format}] see rdflib.parse() for more
@@ -83,6 +154,13 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
 
+    def toProtocolElement(self):
+        pas = protocol.PhenotypeAssociationSet()
+        pas.name = self.getLocalId()
+        pas.id = self.getId()
+        pas.datasetId = self.getParentContainer().getId()
+        pas.info = self.getInfo()
+        return pas
 
     def _addDataFile(self, filename):
         if filename.endswith('.ttl'):
@@ -103,7 +181,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         if location and isinstance(location, basestring):
             filters.append('regex(?location_label, "{}")'.format(location))
-            #TODO check this regex (versus string match)
+            # TODO check this regex (versus string match)
         if drug and isinstance(drug, basestring):
             filters.append('regex(?drug_label, "{}")'.format(drug))
         if disease and isinstance(disease, basestring):
@@ -172,19 +250,21 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
 
         annotations = AnnotationFactory(self._rdfGraph,
-                                        uniqueAnnotations).annotations()
+                                        uniqueAnnotations,
+                                        self.getId()).annotations()
 
         return annotations
 
 
-
-class AnnotationFactory:
+# TODO refactor into single class
+class AnnotationFactory(AbstractPhenotypeAssociationSet):
     """
     Given a RDF query result set, return corresponding set of ProtocolElements
     """
 
-    def __init__(self, graph, uniqueAnnotations):
+    def __init__(self, graph, uniqueAnnotations, parentId):
         self._rdfGraph = graph
+        self._parentId = parentId
 
         # now fetch the details on the annotation
         self._annotations = []
@@ -310,19 +390,10 @@ class AnnotationFactory:
             a['id'] = row['s']
         return a
 
-    def ontologyTerm(self, term="", _id="", sourceName="", sourceVersion=""):
-        term = protocol.OntologyTerm
-        term.term = term
-        term.id = _id
-        term.sourceName = sourceName
-        term.sourceVersion = sourceVersion
-        return term
-
     def _toGA4GH(self, annotation):
         """
         given an annotation dict, return a protocol.FeaturePhenotypeAssociation
         """
-        fpa = None
 
         # annotation keys
         locationKey = 'location'
@@ -341,48 +412,62 @@ class AnnotationFactory:
             id_, ontologySource = self.namespaceSplit(location['id'])
             name = location['id']
 
-        f = protocol.Feature()
+        f = self._generateFeature(
+            featureId=annotation['id'],  # TODO connect with real feature Ids
+            childIds=[],
+            parentId="",
+            featureSetId="",
+            referenceName="",
+            start=None,
+            end=None,
+            strand=None,
+            _term=name,
+            _termId=id_,
+            sourceName=ontologySource,
+            sourceVersion="")
+
         # TODO ontology term backing should be switchable
         # not hardcoded in the g2p turtle file?
-        f.featureType = self.ontologyTerm(name, id_, ontologySource)
-        f.id = annotation['id']  # TODO connect with real feature Ids
-        f.featureSetId = ''
-        f.parentIds = []
-        f.attributes = protocol.Attributes.fromJsonDict({"vals": {}})
 
-        id_, ontologySource = self.namespaceSplit(
+        phenotypeId, phenotypeOntologySource = self.namespaceSplit(
                                        annotation[hasObject]['val'])
 
-        fpa = protocol.FeaturePhenotypeAssociation()
-        fpa.id = annotation['id']  # TODO why is this the ID?
-        fpa.features = [f]
-        fpa.description = None
-        fpa.evidence = []
-        fpa.environmentalContexts = []
-
-        phenotypeInstance = protocol.PhenotypeInstance()
-        phenotypeInstance.type = protocol.OntologyTerm.fromJsonDict({
-            "term": annotation[hasObject]['label'],
-            "id": id_,
-            "sourceName": ontologySource})
-        fpa.phenotype = phenotypeInstance
+        phenotypeInstance = self._generatePhenotypeInstance(
+            _id=phenotypeId,
+            _term=annotation[hasObject]['label'],
+            _termId="",
+            sourceName=phenotypeOntologySource,
+            sourceVersion="",
+            qualifierTerms=None,
+            onsetTerm=None,
+            description="")
 
         #  ECO or OBI is recommended
         if has_approval_status in annotation:
             approval_status = annotation[has_approval_status]
-            evidence = protocol.Evidence()
-            evidence.evidenceType = protocol.OntologyTerm()
-            id_, ontology_source = self.namespaceSplit(approval_status['val'])
-            evidence.evidenceType.sourceName = ontology_source
-            evidence.evidenceType.id = id_
-
+            id_, ontologySource = self.namespaceSplit(approval_status['val'])
+            evidence = self._generateEvidence(
+                description="",
+                _id=id_,
+                sourceName=ontologySource)
             evidence.evidenceType.term = ''
             if 'label' in approval_status:
                 evidence.evidenceType.term = approval_status['label']
-                fpa.evidence.append(evidence)
+                # TODO why are we throwing request validation here?
+                # is this a data quality error?
                 if not protocol.Evidence.validate(evidence.toJsonDict()):
                     raise exceptions.RequestValidationFailureException(
                         evidence.toJsonDict(), protocol.Evidence)
+
+        fpa = self._generateFeaturePhenotypeAssociation(
+            _id=annotation['id'],  # TODO why is this the ID?
+            phenotypeAssociationSetId=self._parentId,  # TODO remove postrefac
+            features=[f],  # TODO what about multiple features?
+            evidence=[evidence],
+            phenotype=phenotypeInstance,
+            description="",
+            environmentalContexts=[])
+
         return fpa
 
     def namespaceSplit(self, url, separator='/'):

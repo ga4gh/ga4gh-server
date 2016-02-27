@@ -91,8 +91,9 @@ class AbstractDataset(datamodel.DatamodelObject):
         Adds the specified g2p association set to this backend.
         """
         id_ = phenotypeAssociationSet.getId()
+        localId = phenotypeAssociationSet.getLocalId()
         self._phenotypeAssociationSetIdMap[id_] = phenotypeAssociationSet
-        self._phenotypeAssociationSetNameMap[phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
+        self._phenotypeAssociationSetNameMap[localId] = phenotypeAssociationSet
         self._phenotypeAssociationSetIds.append(id_)
 
     def getPhenotypeAssociationSet(self, id_):
@@ -101,11 +102,13 @@ class AbstractDataset(datamodel.DatamodelObject):
     def getPhenotypeAssociationSetByName(self, name):
         if name not in self._phenotypeAssociationSetNameMap:
             # TODO make a new exception
+            # TODO is this codeblock reachable?
             raise exceptions.DatasetNameNotFoundException(name)
         return self._phenotypeAssociationSetNameMap[name]
 
     def getPhenotypeAssociationSetByIndex(self, index):
-        return self._phenotypeAssociationSetIdMap[self._phenotypeAssociationSetIds[index]]
+        return self._phenotypeAssociationSetIdMap[
+            self._phenotypeAssociationSetIds[index]]
 
     def getNumPhenotypeAssociationSets(self):
         """
@@ -171,7 +174,8 @@ class SimulatedDataset(AbstractDataset):
         for i in range(numPhenotypeAssociationSets):
             localId = "simPas{}".format(i)
             seed = randomSeed + i
-            phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(self, localId, seed)
+            phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(
+                self, localId, seed)
             self.addPhenotypeAssociationSet(phenotypeAssociationSet)
         # Variants
         for i in range(numVariantSets):
@@ -203,7 +207,8 @@ class FileSystemDataset(AbstractDataset):
         self._dataDir = dataDir
         self._setMetadata()
 
-        phenotypeAssociationSetDir = os.path.join(dataDir, self.phenotypeAssociationSetsDirName)
+        phenotypeAssociationSetDir = \
+            os.path.join(dataDir, self.phenotypeAssociationSetsDirName)
         for localId in os.listdir(phenotypeAssociationSetDir):
             relativePath = os.path.join(phenotypeAssociationSetDir, localId)
             if os.path.isdir(relativePath):

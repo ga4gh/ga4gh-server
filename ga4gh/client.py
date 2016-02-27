@@ -389,13 +389,26 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "reads", protocol.SearchReadsResponse)
 
-    def searchGenotypePhenotype(self, feature=None, phenotype=None,
-                                evidence=None):
+    def searchPhenotypeAssociationSets(self, datasetId=None):
+        """
+        Returns an iterator over the GeneotypePhenotype associations from
+        the server
+        """
+        request = protocol.SearchPhenotypeAssociationSetsRequest()
+        request.datasetId = datasetId
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "phenotypeassociationsets",
+            protocol.SearchPhenotypeAssociationSetsResponse)
+
+    def searchGenotypePhenotype(self, phenotypeAssociationSetId=None,
+                                feature=None, phenotype=None, evidence=None):
         """
         Returns an iterator over the GeneotypePhenotype associations from
         the server
         """
         request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = phenotypeAssociationSetId
         request.feature = feature
         request.phenotype = phenotype
         request.evidence = evidence
@@ -512,6 +525,8 @@ class LocalClient(AbstractClient):
             "readgroupsets": self._backend.runSearchReadGroupSets,
             "reads": self._backend.runSearchReads,
             "genotypephenotype": self._backend.runSearchGenotypePhenotype,
+            "phenotypeassociationsets":
+                self._backend.runSearchPhenotypeAssociationSets
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):

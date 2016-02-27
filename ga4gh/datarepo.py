@@ -10,7 +10,6 @@ import os
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
-import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 
 
 class AbstractDataRepository(object):
@@ -42,7 +41,6 @@ class AbstractDataRepository(object):
         self._referenceSetIdMap[id_] = referenceSet
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
-
 
     def getDatasets(self):
         """
@@ -154,7 +152,8 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numVariantSets=numVariantSets,
                 numReadGroupSets=numReadGroupSets,
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
-                numAlignments=numAlignments, numPhenotypeAssociationSets=numPhenotypeAssociationSets)
+                numAlignments=numAlignments,
+                numPhenotypeAssociationSets=numPhenotypeAssociationSets)
             self.addDataset(dataset)
 
 
