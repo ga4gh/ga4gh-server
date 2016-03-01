@@ -160,10 +160,13 @@ class FileSystemDataRepository(AbstractDataRepository):
     """
     A data repository based on the file system
     """
-    def __init__(self, dataDir):
+    referenceSetsDirName = "referenceSets"
+    datasetsDirName = "datasets"
+
+    def __init__(self, dataDir, doConsistencyCheck=True):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = ["referenceSets", "datasets"]
+        sourceDirNames = [self.referenceSetsDirName, self.datasetsDirName]
         constructors = [
             references.HtslibReferenceSet, datasets.FileSystemDataset]
         objectAdders = [self.addReferenceSet, self.addDataset]
@@ -174,3 +177,16 @@ class FileSystemDataRepository(AbstractDataRepository):
                 relativePath = os.path.join(sourceDir, setName)
                 if os.path.isdir(relativePath):
                     objectAdder(constructor(setName, relativePath, self))
+        if doConsistencyCheck:
+            self.checkConsistency()
+
+    def checkConsistency(self):
+        """
+        Perform checks that ensure the consistency of the data.
+        Factored into a separate method from server init since the
+        data repo object can be created on a partially-complete
+        data set.
+        """
+        for dataset in self.getDatasets():
+            for readGroupSet in dataset.getReadGroupSets():
+                readGroupSet.checkConsistency(self)

@@ -82,4 +82,18 @@ class TestFrontendErrors(unittest.TestCase):
                 request = requestClass()
                 request.page_token = badType
                 self.assertRequestRaises(
-                    exceptions.RequestValidationFailureException, url, request)
+                    exceptions.RequestValidationFailureException,
+                    url, request)
+
+    def testInvalidFields(self):
+        for url, requestClass in self.endPointMap.items():
+            request = self._createInvalidInstance(requestClass)
+            self.assertRequestRaises(
+                exceptions.RequestValidationFailureException, url, request)
+
+    def testMissingFields(self):
+        for url, requestClass in self.endPointMap.items():
+            requestString = '{}'
+            self.assertRawRequestRaises(
+                exceptions.RequestValidationFailureException,
+                url, requestString)

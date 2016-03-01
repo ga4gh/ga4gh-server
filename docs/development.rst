@@ -449,6 +449,46 @@ determined that not using GitHub's UI merging features and judiciously
 re-submitting PRs for additional CI would be more effort than fixing a
 broken test in a mainline branch once in a while.
 
+GitHub has recently introduced `Protected Branches
+<https://help.github.com/articles/about-protected-branches/>`_, which fixes
+this issue by mandating a strict sequencing of commits as described above.  We
+have protected all of our trunk branches.  The downside of using protected
+branches is increased developer overhead for each branch: merging PR A
+targeting trunk branch T immediately makes PR B targeting T out of date and
+therefore unmergable without pulling in the most recent changes from T and
+re-running CI on B.  However, we think it is worth enabling this feature to
+prevent broken trunk branches.
+
+++++++++++++++++++++++++++++++
+Managing long-running branches
+++++++++++++++++++++++++++++++
+
+Normally, the development process concerns two branches: the feature branch
+that one is developing in and the trunk branch that one submits a pull
+request against (usually this is ``master``).  Sometimes, development of a
+major feature may require a branch that lives on for a long time before
+being incorporated into a trunk branch.  This branch we call a topic branch.
+
+For developers, the process of submitting code to a topic branch is almost
+identical to submitting code to a trunk branch.  The only difference is
+that the pull request is made against the topic branch instead of the trunk
+branch (this is specified in the GitHub pull request UI). 
+
+Topic branches do, however, require more management.  Each long-lived topic
+branch will be assigned a branch manager.  This person is responsible for
+keeping the branch reasonably up to date with changes that happen in the
+trunk branch off of which it is branched.  The list of long running
+branches and their corresponding branch managers can be found `here
+<https://github.com/ga4gh/server/wiki/Long-running-topic-branches-and-branch-managers>`_.
+
+It is up to the branch manager how frequently the topic branch pulls in
+changes from the trunk branch.  All topic branches are hosted on the
+ga4gh/server repository and are GitHub protected branches.  That is, there can
+be no force pushes to the branches, so they must be updated using ``git
+merge`` rather than ``git rebase``.  Updates to topic branches must be done via
+pull requests (rather than directly on the command line) so that the Travis CI
+runs and passes prior to merging.
+
 ***************
 Release process
 ***************
