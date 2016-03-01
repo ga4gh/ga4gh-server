@@ -83,3 +83,10 @@ class TestFrontendErrors(unittest.TestCase):
                 request.page_token = badType
                 self.assertRequestRaises(
                     exceptions.RequestValidationFailureException, url, request)
+
+    @unittest.skip("TODO: create invalid JSON to test validation")
+    def testInvalidFields(self):
+        for url, requestClass in self.endPointMap.items():
+            request = self._createInvalidInstance(requestClass)
+            self.assertRequestRaises(
+                exceptions.RequestValidationFailureException, url, request)
