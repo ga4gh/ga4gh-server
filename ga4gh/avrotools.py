@@ -324,17 +324,18 @@ class SchemaValidator(AvroTypeSwitch):
             return datum
         dic = {}
         datumKeys = set(datum.keys())
+        requiredFields = getattr(protocol, schema.name).requiredFields
         for field in schema.fields:
             key = field.name
-            value = datum.get(key)
-            result = self.handleSchema(field.type, value)
-            if result != self.sinkValue:
-                dic[key] = result
-            try:
+            if key in datum:
+                value = datum.get(key)
+                result = self.handleSchema(field.type, value)
+                if result != self.sinkValue:
+                    dic[key] = result
                 datumKeys.remove(key)
-            except KeyError:
-                # field that the schema defines as in the record is
-                # missing from the jsonDict
+            elif key in requiredFields:
+                # field that the schema defines as in the record
+                # and required is missing from the jsonDict
                 dic[key] = self.missingValue
         if len(datumKeys):
             # field(s) that the schema does not define is present
