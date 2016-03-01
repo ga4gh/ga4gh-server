@@ -300,12 +300,47 @@ class Backend(object):
                 nextPageToken = str(currentIndex)
             yield object_.toProtocolElement(), nextPageToken
 
+    def _protocolObjectGenerator(self, request, numObjects, getByIndexMethod):
+        """
+        Yields (object, nextPageToken) pairs according to the request
+        pageToken. The listed objects, unlike _topLevelObjectGenerator
+        have already been coerced to their protocol form.
+
+        :param request: The request containing an optional page token
+        :param numObjects: The length of the list to take from
+        :param getByIndexMethod: A function for accessing objects by index
+        :return: object, nextPageToken pair
+        """
+        currentIndex = 0
+        if request.pageToken is not None:
+            currentIndex, = _parsePageToken(request.pageToken, 1)
+        while currentIndex < numObjects:
+            object_ = getByIndexMethod(currentIndex)
+            currentIndex += 1
+            nextPageToken = None
+            if currentIndex < numObjects:
+                nextPageToken = str(currentIndex)
+            yield object_, nextPageToken
+
     def _objectListGenerator(self, request, objectList):
         """
         Returns a generator over the objects in the specified list using
         _topLevelObjectGenerator to generate page tokens.
         """
         return self._topLevelObjectGenerator(
+            request, len(objectList), lambda index: objectList[index])
+
+    def _protocolListGenerator(self, request, objectList):
+        """
+        Convenience function for working with a list of objects that
+        have already been coerced to their protocol equivalent. This
+        may be useful for objects that are not ordered by their
+        genomic position, but by their order in this list.
+        :param request: The request with pagetokens.
+        :param objectList: A list of ga4gh.protocol objects
+        :return: generator for objects in this list
+        """
+        return self._protocolObjectGenerator(
             request, len(objectList), lambda index: objectList[index])
 
     def _singleObjectGenerator(self, datamodelObject):
@@ -721,7 +756,7 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
-        annotationList = phenotypeAssociationSet.queryLabels(
+        annotationList = phenotypeAssociationSet.getAssociations(
             request.feature, request.evidence, request.phenotype,
             request.pageSize, offset)
-        return self._objectListGenerator(request, annotationList)
+        return self._protocolListGenerator(request, annotationList)

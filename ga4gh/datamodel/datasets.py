@@ -91,9 +91,9 @@ class AbstractDataset(datamodel.DatamodelObject):
         Adds the specified g2p association set to this backend.
         """
         id_ = phenotypeAssociationSet.getId()
-        localId = phenotypeAssociationSet.getLocalId()
         self._phenotypeAssociationSetIdMap[id_] = phenotypeAssociationSet
-        self._phenotypeAssociationSetNameMap[localId] = phenotypeAssociationSet
+        self._phenotypeAssociationSetNameMap[
+            phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
         self._phenotypeAssociationSetIds.append(id_)
 
     def getPhenotypeAssociationSet(self, id_):

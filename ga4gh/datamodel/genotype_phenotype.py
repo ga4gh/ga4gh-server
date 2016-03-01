@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 
 import rdflib
 import urlparse
-import types
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -34,80 +33,28 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
     def getInfo(self):
         return {}
 
-    def _generateFeature(self, featureId="", childIds=[], parentId="",
-                         featureSetId="", referenceName="", start=None,
-                         end=None, strand=None, _term="", _termId="",
-                         sourceName="", sourceVersion=""):
-
-        feature = protocol.Feature()
-        feature.id = featureId
-        feature.childIds = []
-        feature.parentId = parentId
-        feature.featureSetId = featureSetId
-        feature.referenceName = referenceName
-        feature.start = start
-        feature.end = end
-        feature.strand = strand
-        feature.featureType = self._generateOntologyTerm(_term,
-                                                         _termId,
-                                                         sourceName,
-                                                         sourceVersion)
-        return feature
-
-    def _generatePhenotypeInstance(self, _id="", _term="",
-                                   _termId="", sourceName="",
-                                   sourceVersion="", qualifierTerms=None,
-                                   onsetTerm=None, description=""):
-        phenotypeInstance = protocol.PhenotypeInstance()
-        phenotypeInstance.id = _id
-        phenotypeInstance.type = self._generateOntologyTerm(_term,
-                                                            _termId,
-                                                            sourceName,
-                                                            sourceVersion)
-        phenotypeInstance.qualifier = qualifierTerms
-        phenotypeInstance.ageOfOnset = onsetTerm
-        phenotypeInstance.description = description
-        return phenotypeInstance
-
-    def _generateOntologyTerm(self, _term="", _id="",
-                              sourceName="", sourceVersion=""):
-        term = protocol.OntologyTerm()
-        term.term = _term
-        term.id = _id
-        term.sourceName = sourceName
-        term.sourceVersion = sourceVersion
-        return term
-
-    def _generateEvidence(self, _term="", _id="",
-                          sourceName="", sourceVersion="", description=""):
-        evidence = protocol.Evidence()
-        evidence.evidenceType = self._generateOntologyTerm(_term,
-                                                           _id,
-                                                           sourceName,
-                                                           sourceVersion)
-        evidence.description = description
-        return evidence
-
-    def _generateFeaturePhenotypeAssociation(self, _id="",
-                                             phenotypeAssociationSetId="",
-                                             features=[], evidence=[],
-                                             phenotype=None, description="",
-                                             environmentalContexts=[]):
-        fpa = protocol.FeaturePhenotypeAssociation()
-        fpa.id = _id
-        fpa.phenotypeAssociationSetId = phenotypeAssociationSetId
-        fpa.features = features
-        fpa.evidence = evidence
-        fpa.phenotype = phenotype
-        fpa.description = description
-        fpa.environmentalContexts = environmentalContexts
-        return fpa
-
 
 class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
     def __init__(self, parentContainer, localId, randomSeed):
         super(SimulatedPhenotypeAssociationSet, self).__init__(
             parentContainer, localId)
+
+    def getAssociations(
+            self, location=None, drug=None, disease=None, pageSize=None,
+            offset=0):
+        if location or drug or disease:
+            fpa = protocol.FeaturePhenotypeAssociation()
+            fpa.id = "test"
+            fpa.features = []
+            fpa.evidence = []
+            fpa.environmentalContexts = []
+            fpa.phenotype = protocol.PhenotypeInstance()
+            fpa.phenotype.type = protocol.OntologyTerm()
+            fpa.phenotype.type.id = "test"
+            fpa.phenotypeAssociationSetId = self.getId()
+            return [fpa]
+        else:
+            return []
 
 
 class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
@@ -126,7 +73,52 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         If path is set, this backend will load itself
         """
 
-        self._searchQuery = """
+        # initialize graph
+        self._rdfGraph = rdflib.ConjunctiveGraph()
+        try:
+            self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
+        except AttributeError:
+            pass
+
+    def getAssociations(
+            self, location=None, drug=None, disease=None, pageSize=None,
+            offset=0):
+        """
+        This query is the main search mechanism.
+        It queries the graph for annotations that match the
+        AND of [location,drug,disease].
+        """
+        query = self._formatFilterQuery(location, drug, disease)
+
+        results = self._rdfGraph.query(query)
+        # Depending on the cardinality this query can return multiple rows
+        # per annotations.  Here we reduce it to a list of unique annotations
+        # URIs
+
+        # TODO whys it a set? we called distinct
+        # TODO paging using SPARQL?
+        uniqueAnnotations = set()
+        for row in results:
+            uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
+
+        annotations = []
+        for annotation in uniqueAnnotations:
+            annotations.append(
+                self._toGA4GH(self._detailQuery(annotation)))
+
+        return annotations
+
+    def _addDataFile(self, filename):
+        if filename.endswith('.ttl'):
+            self._rdfGraph.parse(filename, format='n3')
+        else:
+            self._rdfGraph.parse(filename, format='xml')
+
+    def _formatFilterQuery(self, location=None, drug=None, disease=None):
+        """
+        Generate a formatted sparql query with appropriate filters
+        """
+        query = """
         PREFIX OBAN: <http://purl.org/oban/>
         PREFIX OBO: <http://purl.obolibrary.org/obo/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -149,30 +141,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         }
         ORDER BY ?s
             """
-        # initialize graph
-        self._rdfGraph = rdflib.ConjunctiveGraph()
-
-        self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
-
-    def toProtocolElement(self):
-        pas = protocol.PhenotypeAssociationSet()
-        pas.name = self.getLocalId()
-        pas.id = self.getId()
-        pas.datasetId = self.getParentContainer().getId()
-        pas.info = self.getInfo()
-        return pas
-
-    def _addDataFile(self, filename):
-        if filename.endswith('.ttl'):
-            self._rdfGraph.parse(filename, format='n3')
-        else:
-            self._rdfGraph.parse(filename, format='xml')
-
-    def _formatQuery(self, location=None, drug=None, disease=None):
-        """
-        Generate a formatted sparql query with appropriate filters
-        """
-        query = self._searchQuery
         if location is None and drug is None and disease is None:
             # TODO is this really the exception we want to throw?
             raise exceptions.NotImplementedException(
@@ -191,45 +159,34 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         if isinstance(location, dict):
             locations = []
 
-            for _id in location['ids']:
+            for id_ in location['ids']:
                     locations.append('?location = <{}> '.format
-                                     (_id['database'] + _id['identifier']))
+                                     (id_['database'] + id_['identifier']))
             locationClause = "({})".format(" || ".join(locations))
             filters.append(locationClause)
             locationClause = "?l  faldo:location ?location .\n"
 
         if isinstance(drug, dict):
             drugs = []
-            for _id in drug['ids']:
+            for id_ in drug['ids']:
                     drugs.append('?drug = <{}> '.format
-                                 (_id['database'] + _id['identifier']))
+                                 (id_['database'] + id_['identifier']))
             drugsClause = "({})".format(" || ".join(drugs))
 
             filters.append(drugsClause)
 
         if isinstance(disease, dict):
             diseases = []
-            for _id in disease['ids']:
+            for id_ in disease['ids']:
                     diseases.append('?disease = <{}> '.format
-                                    (_id['database'] + _id['identifier']))
+                                    (id_['database'] + id_['identifier']))
             diseasesClause = "({})".format(" || ".join(diseases))
             filters.append(diseasesClause)
 
         filter = "FILTER ({})".format(' && '.join(filters))
         query = query.replace("%FILTER%", filter)
         query = query.replace("%LOCATION%", locationClause)
-        return query
 
-    def queryLabels(
-            self, location=None, drug=None, disease=None, pageSize=None,
-            offset=0):
-
-        """
-        This query is the main search mechanism.
-        It queries the graph for annotations that match the
-        AND of [location,drug,disease].
-        """
-        query = self._formatQuery(location, drug, disease)
         # TODO this is just static why not put in straight?
         query = query.replace("%PROPERTIES%", "".join(
             ["distinct ?s ?location ?location_label ",
@@ -238,57 +195,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         # TODO why is this commented out?
         # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
+        return query
 
-        results = self._rdfGraph.query(query)
-        # Depending on the cardinality this query can return multiple rows
-        # per annotations.  Here we reduce it to a list of unique annotations
-        # URIs
-
-        # TODO whys it a set? we called distinct
-        uniqueAnnotations = set()
-        for row in results:
-            uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
-
-        annotations = AnnotationFactory(self._rdfGraph,
-                                        uniqueAnnotations,
-                                        self.getId()).annotations()
-
-        return annotations
-
-
-# TODO refactor into single class
-class AnnotationFactory(AbstractPhenotypeAssociationSet):
-    """
-    Given a RDF query result set, return corresponding set of ProtocolElements
-    """
-
-    def __init__(self, graph, uniqueAnnotations, parentId):
-        self._rdfGraph = graph
-        self._parentId = parentId
-
-        # now fetch the details on the annotation
-        self._annotations = []
-        for annotation in uniqueAnnotations:
-            self._annotations.append(
-                self._toGA4GH(self._query(annotation)))
-
-        # add a callback to return ProtocolElement
-        # since we have already transformed it into ProtocolElement
-        # we just return self
-        def toProtocolElement(self):
-            return self
-
-        for annotation in self._annotations:
-            annotation.toProtocolElement = \
-                types.MethodType(toProtocolElement, annotation)
-
-    def annotations(self):
-        """
-        return annotations built in constructor
-        """
-        return self._annotations
-
-    def _query(self, subject=''):
+    def _detailQuery(self, subject=''):
         """
         This is the 'detail' query
 
@@ -394,7 +303,6 @@ class AnnotationFactory(AbstractPhenotypeAssociationSet):
         """
         given an annotation dict, return a protocol.FeaturePhenotypeAssociation
         """
-
         # annotation keys
         locationKey = 'location'
         hasObject = 'http://purl.org/oban/association_has_object'
@@ -403,6 +311,7 @@ class AnnotationFactory(AbstractPhenotypeAssociationSet):
         # location keys
         GENO_0000408 = 'http://purl.obolibrary.org/obo/GENO_0000408'
 
+        # Build feature element
         location = annotation[locationKey]
         if GENO_0000408 in location:
             id_, ontologySource = self.namespaceSplit(
@@ -412,44 +321,40 @@ class AnnotationFactory(AbstractPhenotypeAssociationSet):
             id_, ontologySource = self.namespaceSplit(location['id'])
             name = location['id']
 
-        f = self._generateFeature(
-            featureId=annotation['id'],  # TODO connect with real feature Ids
-            childIds=[],
-            parentId="",
-            featureSetId="",
-            referenceName="",
-            start=None,
-            end=None,
-            strand=None,
-            _term=name,
-            _termId=id_,
-            sourceName=ontologySource,
-            sourceVersion="")
+        featureTypeTerm = protocol.OntologyTerm().fromJsonDict({
+                "term": name,
+                "id": id_,
+                "sourceName": ontologySource})
+
+        feature = protocol.Feature().fromJsonDict({
+                "id": annotation['id'],
+                "featureType": featureTypeTerm.toJsonDict()})
 
         # TODO ontology term backing should be switchable
         # not hardcoded in the g2p turtle file?
 
+        # Build phenotype element
         phenotypeId, phenotypeOntologySource = self.namespaceSplit(
                                        annotation[hasObject]['val'])
 
-        phenotypeInstance = self._generatePhenotypeInstance(
-            _id=phenotypeId,
-            _term=annotation[hasObject]['label'],
-            _termId="",
-            sourceName=phenotypeOntologySource,
-            sourceVersion="",
-            qualifierTerms=None,
-            onsetTerm=None,
-            description="")
+        phenotypeOntologyTerm = protocol.OntologyTerm().fromJsonDict({
+            "term": annotation[hasObject]['label'],
+            "sourceName": phenotypeOntologySource})
 
+        phenotypeInstance = protocol.PhenotypeInstance().fromJsonDict({
+            "id": phenotypeId,
+            "type": phenotypeOntologyTerm.toJsonDict()})
+
+        # Build evidence element
         #  ECO or OBI is recommended
         if has_approval_status in annotation:
             approval_status = annotation[has_approval_status]
             id_, ontologySource = self.namespaceSplit(approval_status['val'])
-            evidence = self._generateEvidence(
-                description="",
-                _id=id_,
-                sourceName=ontologySource)
+            evidenceTypeOntologyTerm = protocol.OntologyTerm().fromJsonDict({
+                "sourceName": ontologySource,
+                "id": id_})
+            evidence = protocol.Evidence().fromJsonDict({
+                "evidenceType": evidenceTypeOntologyTerm.toJsonDict()})
             evidence.evidenceType.term = ''
             if 'label' in approval_status:
                 evidence.evidenceType.term = approval_status['label']
@@ -458,16 +363,15 @@ class AnnotationFactory(AbstractPhenotypeAssociationSet):
                 if not protocol.Evidence.validate(evidence.toJsonDict()):
                     raise exceptions.RequestValidationFailureException(
                         evidence.toJsonDict(), protocol.Evidence)
+        # TODO what about multiple features? sequence annotation
 
-        fpa = self._generateFeaturePhenotypeAssociation(
-            _id=annotation['id'],  # TODO why is this the ID?
-            phenotypeAssociationSetId=self._parentId,  # TODO remove postrefac
-            features=[f],  # TODO what about multiple features?
-            evidence=[evidence],
-            phenotype=phenotypeInstance,
-            description="",
-            environmentalContexts=[])
-
+        fpa = protocol.FeaturePhenotypeAssociation().fromJsonDict({
+            "id": annotation['id'],
+            "features": [feature.toJsonDict()],
+            "phenotypeAssociationSetId": self.getId(),
+            "evidence": [evidence.toJsonDict()],
+            "phenotype": phenotypeInstance.toJsonDict(),
+            "environmentalContexts": []})
         return fpa
 
     def namespaceSplit(self, url, separator='/'):
@@ -476,9 +380,9 @@ class AnnotationFactory(AbstractPhenotypeAssociationSet):
         """
         url = url.strip("<").strip(">")
         o = urlparse.urlparse(url)
-        _id = o.path.split(separator)[-1]
+        id_ = o.path.split(separator)[-1]
         ontologySource = urlparse.urlunsplit([o[0],
                                               o[1],
-                                              o[2].replace(_id, ''),
+                                              o[2].replace(id_, ''),
                                               o[4], ''])
-        return _id, ontologySource
+        return id_, ontologySource

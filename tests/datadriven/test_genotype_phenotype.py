@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import os
 
 import ga4gh.datamodel.genotype_phenotype as g2p
+import ga4gh.datamodel.datasets as datasets
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
@@ -15,25 +16,23 @@ import tests.paths as paths
 
 def testG2P():
     testDataDir = os.path.join(
-        paths.testDataDir, "g2pDatasets")
-    for test in datadriven.makeTests(testDataDir, G2PDatasetTest):
+        paths.testDataDir, "datasets/dataset1/phenotypes")
+    for test in datadriven.makeTests(testDataDir, PhenotypeAssociationSetTest):
         yield test
 
 
-class G2PDatasetTest(datadriven.DataDrivenTest):
+class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
     def __init__(self, localId, baseDir):
-        super(G2PDatasetTest, self).__init__(localId, baseDir)
+        self._dataset = datasets.AbstractDataset("ds")
+        super(PhenotypeAssociationSetTest, self).__init__(localId, baseDir)
         # TODO compare
         pass
 
     def getDataModelInstance(self, localId, dataPath):
-        print(localId, dataPath)
-        return g2p.G2PDataset(setName=localId, relativePath=dataPath)
+        return g2p.PhenotypeAssociationSet(self._dataset, localId, dataPath)
 
     def getProtocolClass(self):
-        # there is no G2P set protocol type so we return an
-        # empty annotation
-        return protocol.FeaturePhenotypeAssociation
+        return protocol.PhenotypeAssociationSet
 
     def testQuery(self):
         # TODO the output of G2Pdataset should be compared

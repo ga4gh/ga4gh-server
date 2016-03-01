@@ -136,15 +136,17 @@ class TestSimulatedReadGroupSet(unittest.TestCase):
             self.assertGreater(len(alignments), 0)
 
 
-class TestSimulatedG2PDataset(unittest.TestCase):
+class TestSimulatedPhenotypeAssociationSet(unittest.TestCase):
     def testCreation(self):
-        # TODO they should be related to a dataset like above
-        g2pds = g2p.SimulatedG2PDataset()
-        self.assertEqual(g2pds.queryLabels(),
-                         [],
-                         "Return nothing with no query")
+        dataset = datasets.AbstractDataset('dataset1')
+        randomSeed = 0
+        localId = "simulatedPASet"
+        phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(
+            dataset, localId, randomSeed)
+        self.assertEqual(phenotypeAssociationSet.getAssociations(
+            location=""), [], "Return nothing with no query")
 
-        fpas = g2pds.queryLabels("something")
+        fpas = phenotypeAssociationSet.getAssociations("something")
 
         for fpa in fpas:
             self.assertEqual(fpa.__class__,

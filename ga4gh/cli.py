@@ -486,9 +486,11 @@ class SearchGenotypePhenotypeRunner(AbstractSearchRunner):
         self._feature = checkJson(args.feature)
         self._phenotype = checkJson(args.phenotype)
         self._evidence = checkJson(args.evidence)
+        self._phenotypeAssociationSetId = args.phenotypeAssociationSetId
 
     def run(self):
         iterator = self._client.searchGenotypePhenotype(
+            phenotypeAssociationSetId=self._phenotypeAssociationSetId,
             feature=self._feature, phenotype=self._phenotype,
             evidence=self._evidence)
         self._output(iterator)
