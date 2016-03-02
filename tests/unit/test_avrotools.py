@@ -20,6 +20,30 @@ class TestAvrotools(unittest.TestCase):
         with self.assertRaises(avrotools.AvrotoolsException):
             avrotools.Validator(object).getInvalidFields({})
 
+    def testOptionalFields(self):
+        # test that omission of optional fields does not throw
+        # an exception, but omission of a required field returns
+        # a dict only mentioning that field
+        for class_ in protocol.getProtocolClasses():
+            validator = avrotools.Validator(class_)
+            creator = avrotools.Creator(class_)
+            generatedInstance = creator.getTypicalInstance()
+            jsonDict = generatedInstance.toJsonDict()
+            requiredFields = class_.requiredFields
+            for key in jsonDict.keys():
+                if key not in requiredFields:
+                    del jsonDict[key]
+            returnValue = validator.getInvalidFields(jsonDict)
+            self.assertEqual(returnValue, {})
+            if len(requiredFields) != 0:
+                requiredKey = list(requiredFields)[0]
+                del jsonDict[requiredKey]
+                returnValue = validator.getInvalidFields(jsonDict)
+                self.assertEqual(
+                    returnValue[requiredKey],
+                    avrotools.SchemaValidator.missingValue)
+                self.assertEqual(len(returnValue), 1)
+
     def testLessFields(self):
         # Returns a bogus field indicator
         # when there are fields missing from the jsonDict
