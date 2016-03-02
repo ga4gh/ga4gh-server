@@ -11,7 +11,7 @@ from protocol import SearchResponse
 
 import avro.schema
 
-version = '0.6.0a1'
+version = '0.6.0a2'
 
 
 class Call(ProtocolElement):
@@ -907,7 +907,7 @@ class ReadAlignment(ProtocolElement):
 "name": "id"}, {"doc": "", "type": "string", "name": "readGroupId"},
 {"doc": "", "type": "string", "name": "fragmentName"}, {"default":
 null, "doc": "", "type": ["null", "boolean"], "name":
-"properPlacement"}, {"default": null, "doc": "", "type": ["null",
+"improperPlacement"}, {"default": null, "doc": "", "type": ["null",
 "boolean"], "name": "duplicateFragment"}, {"default": null, "doc": "",
 "type": ["null", "int"], "name": "numberReads"}, {"default": null,
 "doc": "", "type": ["null", "int"], "name": "fragmentLength"},
@@ -967,10 +967,9 @@ null, "doc": "", "type": ["null", "boolean"], "name":
     __slots__ = [
         'alignedQuality', 'alignedSequence', 'alignment',
         'duplicateFragment', 'failedVendorQualityChecks',
-        'fragmentLength', 'fragmentName', 'id', 'info',
-        'nextMatePosition', 'numberReads', 'properPlacement',
-        'readGroupId', 'readNumber', 'secondaryAlignment',
-        'supplementaryAlignment'
+        'fragmentLength', 'fragmentName', 'id', 'improperPlacement',
+        'info', 'nextMatePosition', 'numberReads', 'readGroupId',
+        'readNumber', 'secondaryAlignment', 'supplementaryAlignment'
     ]
 
     def __init__(self, **kwargs):
@@ -1036,6 +1035,13 @@ null, "doc": "", "type": ["null", "boolean"], "name":
         use is to make caching and UI display easier for   genome
         browsers and other lightweight clients.
         """
+        self.improperPlacement = kwargs.get(
+            'improperPlacement', None)
+        """
+        The orientation and the distance between reads from the
+        fragment are   inconsistent with the sequencing protocol
+        (inverse of SAM flag 0x2)
+        """
         self.info = kwargs.get(
             'info', {})
         """
@@ -1053,13 +1059,6 @@ null, "doc": "", "type": ["null", "boolean"], "name":
         """
         The number of reads in the fragment (extension to SAM flag
         0x1)
-        """
-        self.properPlacement = kwargs.get(
-            'properPlacement', None)
-        """
-        The orientation and the distance between reads from the
-        fragment are   consistent with the sequencing protocol
-        (equivalent to SAM flag 0x2)
         """
         self.readGroupId = kwargs.get(
             'readGroupId', None)
@@ -2133,7 +2132,7 @@ class SearchReadsResponse(SearchResponse):
 "name": "id"}, {"doc": "", "type": "string", "name": "readGroupId"},
 {"doc": "", "type": "string", "name": "fragmentName"}, {"default":
 null, "doc": "", "type": ["null", "boolean"], "name":
-"properPlacement"}, {"default": null, "doc": "", "type": ["null",
+"improperPlacement"}, {"default": null, "doc": "", "type": ["null",
 "boolean"], "name": "duplicateFragment"}, {"default": null, "doc": "",
 "type": ["null", "int"], "name": "numberReads"}, {"default": null,
 "doc": "", "type": ["null", "int"], "name": "fragmentLength"},
@@ -3071,25 +3070,25 @@ class VariantSetMetadata(ProtocolElement):
 postMethods = \
     [('/callsets/search',
       SearchCallSetsRequest,
-      SearchCallSetsResponse),
+      SearchReadsResponse),
      ('/datasets/search',
       SearchDatasetsRequest,
-      SearchDatasetsResponse),
+      SearchReferenceSetsResponse),
      ('/readgroupsets/search',
       SearchReadGroupSetsRequest,
       SearchReadGroupSetsResponse),
      ('/reads/search',
       SearchReadsRequest,
-      SearchReadsResponse),
+      SearchVariantsResponse),
      ('/references/search',
       SearchReferencesRequest,
-      SearchReferencesResponse),
+      SearchVariantSetsResponse),
      ('/referencesets/search',
       SearchReferenceSetsRequest,
-      SearchReferenceSetsResponse),
+      SearchDatasetsResponse),
      ('/variants/search',
       SearchVariantsRequest,
-      SearchVariantsResponse),
+      SearchCallSetsResponse),
      ('/variantsets/search',
       SearchVariantSetsRequest,
-      SearchVariantSetsResponse)]
+      SearchReferencesResponse)]
