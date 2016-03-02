@@ -13,7 +13,7 @@ import sys
 import errno
 import optparse
 
-import ga4gh.datamodel.rna_quantification as rna_quantification
+import utils
 
 
 def makeDir(path):
@@ -37,14 +37,14 @@ def getScore(expressionId):
     return "{:0.2f}".format(rawScore)
 
 
-def writeExpression(analysisId, annotationId, quantfile, rnaDB):
+def writeExpression(analysisId, annotationId, rnaQuantId, quantfile, rnaDB):
     # kallisto header
     # target_id	length	eff_length	est_counts	tpm
     isNormalized = True
     units = "TPM"
     # strip header and print - log it instead?
     print(quantfile.readline())
-    for expression in quantfile.readlines():
+    for expression in quantfile:
         fields = expression.strip().split("\t")
         expressionLevel = fields[4]
         expressionId = fields[0]
@@ -54,7 +54,7 @@ def writeExpression(analysisId, annotationId, quantfile, rnaDB):
         rawCount = fields[3]
         score = 0.0
 
-        datafields = (expressionId, name, annotationId, expressionLevel,
+        datafields = (expressionId, name, rnaQuantId, annotationId, expressionLevel,
                       featureGroupId, isNormalized, rawCount,
                       str(score), units)
         rnaDB.addExpression(datafields)
@@ -68,10 +68,10 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId, readGroupId=
         rnaDB.addRNAQuantification(datafields)
 
 
-def writeExpressionTable(data, annotationId, rnaDB):
+def writeExpressionTable(data, annotationId, rnaQuantId, rnaDB):
     for analysisId, quantfile in data:
         print("processing {}".format(analysisId))
-        writeExpression(analysisId, annotationId, quantfile, rnaDB)
+        writeExpression(analysisId, annotationId, rnaQuantId, quantfile, rnaDB)
 
 
 # TODO: not implemented
@@ -90,8 +90,8 @@ def makeParser(usage):
 # TODO: this is going to be the test of the sqlite backend.  Use this to parse and populate a
 # dbfile and then see if it all connects properly
 def main(argv):
+    usage = "Usage: {0} <data-folder> <dbfile>".format(argv[0])
     if len(argv) < 3:
-        usage = "Usage: {0} <data-folder> <dbfile>".format(argv[0])
         print(usage)
         sys.exit(1)
     parser = makeParser(usage)
@@ -104,13 +104,16 @@ def main(argv):
     sqlFilename = argv[2]
     rnaFolder = "rnaQuant"
     outputFolder = os.path.join(dataFolder, rnaFolder)
-    rnaDB = rna_quantification.RNASqliteStore(outputFolder, sqlFilename)
+    rnaDB = utils.RNASqliteStore(outputFolder, sqlFilename)
     print("output folder:  {0}".format(outputFolder))
-    writeRnaseqTable(rnaDB, ["kallisto"], description, annotationId,
-                      readgroupId=options.readGroupId)
+    rnaQuantId = "kallisto"
+    # TODO: check to see if the rnaQuantId is in the db and exit if it is since this is a
+    # generator and not an updater
+    writeRnaseqTable(rnaDB, [rnaQuantId], description, annotationId,
+                      readGroupId=options.readGroupId)
     analysisId = "kallisto"
     quantFile = open("abundance.txt", "r")
-    writeExpressionTable([(analysisId, quantFile)], annotationId,
+    writeExpressionTable([(analysisId, quantFile)], rnaQuantId, annotationId,
                           rnaDB)
 
     # TODO: add raw bootstrap stages

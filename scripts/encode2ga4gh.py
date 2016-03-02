@@ -14,6 +14,7 @@ import errno
 import urllib2
 import optparse
 
+import utils
 
 class Color(object):
     """
@@ -53,7 +54,7 @@ def getFilesFromHost(data, host, outputType, request=False, subset=None):
     if subset:
         fileList = fileList[:subset]
     for f in fileList:
-        experiment = f.get('dataset').split('/')[-2]
+        experiment = f.get('dataset').get('accession')
         replicate = str(f.get('replicate').get('biological_replicate_number'))
         analysisId = "_".join((experiment, replicate))
         if not request:
@@ -64,7 +65,7 @@ def getFilesFromHost(data, host, outputType, request=False, subset=None):
             yield (analysisId, urllib2.urlopen(url))
 
 
-def getDataFromHost(url, headers, host, outputType, outputFolder,
+def getDataFromHost(rnaDB, url, headers, host, outputType, outputFolder,
                     description, annotationId, subset=None,
                     readGroupId=None):
     req = urllib2.Request(url, headers=headers)
@@ -80,14 +81,14 @@ def getDataFromHost(url, headers, host, outputType, outputFolder,
     else:
         jsonData = json.load(response)
         makeDir(outputFolder)
-        writeRnaseqTables(getFilesFromHost(jsonData, host, outputType,
+        writeRnaseqTables(rnaDB, getFilesFromHost(jsonData, host, outputType,
                           subset=subset), description, annotationId,
                           outputFolder, readGroupId=readGroupId)
-        writeGeneExpressionTables(getFilesFromHost(jsonData, host,
+        writeGeneExpressionTables(rnaDB, getFilesFromHost(jsonData, host,
                                   outputType, subset=subset, request=True),
                                   annotationId, outputFolder)
-        writeCountsTables(getFilesFromHost(jsonData, host, outputType,
-                          subset=subset, request=True), outputFolder)
+        # writeCountsTables(getFilesFromHost(jsonData, host, outputType,
+        #                   subset=subset, request=True), outputFolder)
 
 
 def makeDir(path):
@@ -111,14 +112,12 @@ def getScore(expressionId):
     return "{:0.2f}".format(rawScore)
 
 
-def writeRNAQuant(outfile, analysisId, description, annotationId,
+def writeRNAQuant(rnaDB, analysisId, description, annotationId,
                   readGroupId=None):
     if readGroupId is None:
         readGroupId = ""
-    outline = "\t".join([analysisId, annotationId, description, analysisId,
-                         readGroupId])
-    print(outline, file=outfile)
-
+    datafields = (analysisId, annotationId, description, analysisId, readGroupId)
+    rnaDB.addRNAQuantification(datafields)
 
 def getSamstats(file):
     content = {}
@@ -163,7 +162,7 @@ def writeDistribution(outfile, contents, analysisId, fraction):
     print(outline, file=outfile)
 
 
-def writeGeneExpression(analysisId, annotationId, quantfile, quantOutfile,
+def writeGeneExpression(rnaDB, analysisId, annotationId, quantfile,
                         tool='RSEM'):
     # RSEM gene expression table header:
     #   gene_id transcript_id(s)    length  effective_length    expected_count
@@ -177,25 +176,25 @@ def writeGeneExpression(analysisId, annotationId, quantfile, quantOutfile,
     for expression in quantfile.readlines():
         fields = expression.strip().split("\t")
         expressionLevel = fields[5]
+        # TODO: generate expressionID
         expressionId = fields[0]
+        name = fields[0]
         featureGroupId = fields[0]
         rawCount = fields[4]
         score = (float(fields[10]) + float(fields[11]))/2
-        outline = "\t".join([expressionId, annotationId, expressionLevel,
-                             featureGroupId, isNormalized, rawCount,
-                             str(score), units])
-        print(outline, file=quantOutfile)
+
+        datafields = (expressionId, name, analysisId, annotationId, expressionLevel,
+                      featureGroupId, isNormalized, rawCount,
+                      score, units)
+        rnaDB.addExpression(datafields)
 
 
-def writeRnaseqTables(analysisIds, description, annotationId, outputFolder,
+def writeRnaseqTables(rnaDB, analysisIds, description, annotationId, outputFolder,
                       readGroupId=None):
     log("Writing rnaseq tables")
     for analysisId in analysisIds:
-        makeDir(os.path.join(outputFolder, analysisId))
-        rnaSeqTable = os.path.join(outputFolder, analysisId, "rnaseq.table")
-        with open(rnaSeqTable, "w") as rnaQuantFile:
-            writeRNAQuant(rnaQuantFile, analysisId, description, annotationId,
-                          readGroupId=readGroupId)
+        writeRNAQuant(rnaDB, analysisId, description, annotationId,
+                      readGroupId=readGroupId)
 
 
 def writeCountsTables(data, outputFolder):
@@ -220,14 +219,11 @@ def writeDistTables(data):
                               distribution["mapped"])
 
 
-def writeGeneExpressionTables(data, annotationId, outputFolder):
+def writeGeneExpressionTables(rnaDB, data, annotationId, outputFolder):
     log("Writing gene expression tables")
     for analysisId, quantfile in data:
-        expTable = os.path.join(outputFolder, analysisId, "expression.table")
         print("processing {}".format(analysisId))
-        with open(expTable, "w") as quantOutfile:
-            writeGeneExpression(analysisId, annotationId, quantfile,
-                                quantOutfile)
+        writeGeneExpression(rnaDB, analysisId, annotationId, quantfile)
 
 
 def makeParser(usage):
@@ -251,7 +247,7 @@ def makeParser(usage):
 
 def main(argv):
 
-    usage = "Usage: {} <data-folder>".format(argv[0])
+    usage = "Usage: {} <data-folder> <db-file>".format(argv[0])
     if len(argv) < 2:
         print(Color.red(usage))
         sys.exit(1)
@@ -264,11 +260,13 @@ def main(argv):
     headers = {
         'Accept': 'application/json; charset=utf-8'
     }
-    if options.expressionType is "gene":
+    if options.expressionType == "gene":
         dataType = "gene quantifications"
     dataFolder = argv[1]
+    sqlFilename = argv[2]
     rnaFolder = "rnaQuant"
     outputFolder = os.path.join(dataFolder, rnaFolder)
+    rnaDB = utils.RNASqliteStore(outputFolder, sqlFilename)
     subset = options.subset
     log("Downloading GA4GH test dataset - RNA Quantification API")
     print("ENCODE dataset: {}".format(Color.blue(dataset)))
@@ -276,7 +274,7 @@ def main(argv):
     print("subset size:    {}".format(Color.blue(subset)))
     print("readGroupId  :  {}".format(Color.blue(options.readGroupId)))
     print("output folder:  {}".format(Color.blue(outputFolder)))
-    getDataFromHost(url, headers, host, dataType, outputFolder,
+    getDataFromHost(rnaDB, url, headers, host, dataType, outputFolder,
                     options.description, options.annotationId, subset,
                     options.readGroupId)
     log("DONE")

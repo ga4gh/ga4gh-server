@@ -7,12 +7,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import sqlite3
 import string
 
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
+import ga4gh.sqliteBackend as sqliteBackend
 
 
 """
@@ -356,57 +356,92 @@ class RNASeqResult(AbstractRNAQuantification):
         return self._featureGroupIdMap[id_]
 
 
-class SqliteRNASeqResult(datamodel.DatamodelObject):
+_rnaQuantColumns = [('id', 'TEXT'),
+                    ('annotationIds', 'TEXT'),
+                    ('description', 'TEXT'),
+                    ('name', 'TEXT'),
+                    ('readGroupId', 'TEXT')
+                   ]
+
+
+_expressionColumns = [('id', 'TEXT'),
+                      ('name', 'TEXT'),
+                      ('annotationId', 'TEXT'),
+                      ('expression', 'REAL'),
+                      ('featureGroupId', 'TEXT'),
+                      ('isNormalized', 'BOOLEAN'),
+                      ('rawReadCount', 'REAL'),
+                      ('score', 'REAL'),
+                      ('units', 'TEXT')
+                     ]
+
+
+class SqliteRNASeqResult(sqliteBackend.SqliteBackedDataSource):
     """
     Defines an interface to a sqlite DB which stores all RNA quantifications
     in the dataset.
     """
-    compoundIdClass = datamodel.RnaQuantificationCompoundId
+    def __init__(self, rnaQuantSqlFile="ga4gh-rnaQuant.db"):
+        super(SimulatedRNASeqResult, self).__init__(rnaQuantSqlFile)
+        self.rnaQuantColumnNames = [f[0] for f in _rnaQuantColumns]
+        self.rnaQuantColumnTypes = [f[1] for f in _rnaQuantColumns]
+        self.expressionColumnNames = [f[0] for f in _expressionColumns]
+        self.expressionColumnTypes = [f[1] for f in _expressionColumns]
 
-    def __init__(self, parentContainer, localId,
-                 rnaQuantSqlFile="ga4gh-rnaQuant.db"):
-        super(SimulatedRNASeqResult, self).__init__(parentContainer, localId)
-        self._dbConn = sqlite3.connect(rnaQuantSqlFile)
-        self._cursor = self._dbConn.cursor()
-
-    def getRnaQuantifications(self, id_=None):
+    def getRnaQuantifications(self, pageToken=0, pageSize=None, **query):
         """
         Returns the list of RnaQuantifications in this DB.  Raises a
         RnaQuantificationNotFoundException if id is specified and does not
         exist.
         """
-        selects = ["SELECT * FROM rnaQuantification"]
-        args = []
-        if id_ is not None:
-            selects.append("WHERE id=?")
-            args.append(id_)
-        selectStmt = string.join(selects, " ")
-        results = []
-        for entry in self._cursor.execute(selectStmt, tuple(args)):
-            results.append(RNASeqResult(self, entry))
-        if id_ is not None and len(results) == 0:
-            raise exceptions.RnaQuantificationNotFoundException(id_)
-        return results
+        sql = "SELECT * FROM rnaQuantification "
+        whereClauses = []
+        for col in query:
+            if col in self.featureColumnNames:
+                colIdx = self.featureColumnNames.index(col)
+                colType = self.featureColumnTypes[colIdx]
+                colVal = query[col]
+                # simple input sanity check
+                if "'" in colVal:
+                    throw(ga4gh.exceptions.BadRequestException)
+                whereClauses.append("{} = '{}'".format(col, colVal))
 
-    def getExpressionLevels(self, featureGroupId=None, expressionId=None):
+        if len(whereClauses) > 0:
+            sql += "WHERE {} ".format(" AND ".join(whereClauses))
+        sql += "ORDER BY start, id "
+        sql += sqliteBackend.limitsSql(pageToken, pageSize)
+        query = self._dbconn.execute(sql)
+        return sqliteBackend.sqliteRows2dicts(query.fetchall())
+
+    def getExpressionLevels(self, pageToken=0, pageSize=None, **query):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
-        selects = ["SELECT * FROM expression WHERE rnaQuantId=?"]
-        # TODO: need to get the rnaQuantId
-        rnaQuantificationId = "need to find me!"
-        args = [rnaQuantificationId]
-        if featureGroupId is not None:
-            selects.append("and featureGroupId=?")
-            args.append(featureGroupId)
-        if expressionId is not None:
-            selects.append("and expressionId=?")
-            args.append(expressionId)
-        selectStmt = string.join(selects, " ")
-        results = []
-        for entry in self._cursor.execute(selectStmt, tuple(args)):
-            results.append(ExpressionLevel(self, entry))
-        return results
+        sql = "SELECT * FROM expression "
+        whereClauses = []
+        for col in query:
+            if col in self.featureColumnNames:
+                colIdx = self.featureColumnNames.index(col)
+                colType = self.featureColumnTypes[colIdx]
+                colVal = query[col]
+                # simple input sanity check
+                if colType is "REAL":
+                    colVal = float(colVal)
+                     # expression query value is a minimum threshold
+                    if col is "expression":
+                        whereClauses.append("expression >= {}".format(colVal))
+                    else:
+                        whereClauses.append("{} = {}".format(col, colVal))
+                else:  # TEXT of some sort
+                    if "'" in colVal:
+                        throw(ga4gh.exceptions.BadRequestException)
+                    whereClauses.append("{} = '{}'".format(col, colVal))
+        if len(whereClauses) > 0:
+            sql += "WHERE {} ".format(" AND ".join(whereClauses))
+        sql += "ORDER BY start, id "
+        sql += sqliteBackend.limitsSql(pageToken, pageSize)
+        query = self._dbconn.execute(sql)
+        return sqliteBackend.sqliteRows2dicts(query.fetchall())
 
     def getExpressionLevel(self, id_, featureGroupId=None):
         """
@@ -489,7 +524,7 @@ class RNASqliteStore(object):
                        annotationId text,
                        expression real,
                        featureGroupId text,
-                       isNormalized bool,
+                       isNormalized boolean,
                        rawReadCount real,
                        score real,
                        units text)''')
