@@ -481,7 +481,7 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.info = {}
         alignment.nextMatePosition = None
         alignment.numberReads = None
-        alignment.properPlacement = False
+        alignment.improperPlacement = False
         alignment.readGroupId = self.getId()
         alignment.readNumber = None
         alignment.secondaryAlignment = False
@@ -644,7 +644,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
                 ret.readNumber = 0
         elif SamFlags.isFlagSet(read.flag, SamFlags.SECOND_IN_PAIR):
             ret.readNumber = 1
-        ret.properPlacement = SamFlags.isFlagSet(
+        ret.improperPlacement = not SamFlags.isFlagSet(
             read.flag, SamFlags.READ_PROPER_PAIR)
         ret.readGroupId = self.getId()
         ret.secondaryAlignment = SamFlags.isFlagSet(

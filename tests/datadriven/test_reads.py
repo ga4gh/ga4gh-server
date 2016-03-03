@@ -410,7 +410,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             # we shouldn't be setting readNumber to anything else
             self.assertTrue(False)
         self.assertFlag(
-            gaAlignment.properPlacement,
+            not gaAlignment.improperPlacement,
             pysamAlignment, reads.SamFlags.READ_PROPER_PAIR)
         self.assertEqual(
             gaAlignment.readGroupId,
