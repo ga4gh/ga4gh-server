@@ -220,6 +220,25 @@ class DatasetCompoundId(CompoundId):
     containerIds = [('datasetId', 0)]
 
 
+class PhenotypeAssociationSetCompoundId(CompoundId):
+    """
+    The compound id for a data set
+    """
+    fields = DatasetCompoundId.fields + ['phenotypeAssociationSet']
+    containerIds = DatasetCompoundId.containerIds + [
+        ('phenotypeAssociationSetId', 1)]
+
+
+class PhenotypeAssociationCompoundId(CompoundId):
+    """
+    The compound id for a data set
+    """
+    fields = PhenotypeAssociationSetCompoundId.fields + [
+        'phenotypeAssociation']
+    containerIds = PhenotypeAssociationSetCompoundId.containerIds + [
+        ('phenotypeAssociationId', 2)]
+
+
 class VariantSetCompoundId(DatasetCompoundId):
     """
     The compound id for a variant set
@@ -335,6 +354,21 @@ class DatamodelObject(object):
         """
         return self._parentContainer
 
+    def _scanDataFiles(self, dataDir, patterns):
+        """
+        Scans the specified directory for files with the specified globbing
+        pattern and calls self._addDataFile for each. Raises an
+        EmptyDirException if no data files are found.
+        """
+        numDataFiles = 0
+        for pattern in patterns:
+            scanPath = os.path.join(dataDir, pattern)
+            for filename in glob.glob(scanPath):
+                self._addDataFile(filename)
+                numDataFiles += 1
+        if numDataFiles == 0:
+            raise exceptions.EmptyDirException(dataDir, patterns)
+
 
 class PysamDatamodelMixin(object):
     """
@@ -433,21 +467,6 @@ class PysamDatamodelMixin(object):
         ctimeInMillis = int(os.path.getctime(directoryPath) * 1000)
         self._creationTime = ctimeInMillis
         self._updatedTime = ctimeInMillis
-
-    def _scanDataFiles(self, dataDir, patterns):
-        """
-        Scans the specified directory for files with the specified globbing
-        pattern and calls self._addDataFile for each. Raises an
-        EmptyDirException if no data files are found.
-        """
-        numDataFiles = 0
-        for pattern in patterns:
-            scanPath = os.path.join(dataDir, pattern)
-            for filename in glob.glob(scanPath):
-                self._addDataFile(filename)
-                numDataFiles += 1
-        if numDataFiles == 0:
-            raise exceptions.EmptyDirException(dataDir, patterns)
 
     def getFileHandle(self, dataFile):
         return fileHandleCache.getFileHandle(dataFile, self.openFile)

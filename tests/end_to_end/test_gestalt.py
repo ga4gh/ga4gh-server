@@ -26,6 +26,8 @@ class TestGestalt(server_test.ServerTest):
         self.simulatedReadGroupId = "c2ltdWxhdGVkRGF0YXNldDA6c2ltUmdzMDpyZzA="
         self.simulatedReferenceSetId = "cmVmZXJlbmNlU2V0MA=="
         self.simulatedReferenceId = "cmVmZXJlbmNlU2V0MDpzcnMw"
+        self.simulatedPhenotypeAssociationSetId = \
+            "c2ltdWxhdGVkRGF0YXNldDA6c2ltUGFzMA=="
         self.client = client.ClientForTesting(self.server.getUrl())
         self.runVariantsRequest()
         self.runGenotypePhenotypeRequest()
@@ -114,15 +116,20 @@ class TestGestalt(server_test.ServerTest):
         evidence = 'imatinib'
         phenotype = 'GIST'
         cmd = "genotypephenotype-search --outputFormat 'json' \
-        --feature {}".format(feature)
+        --feature {0} --phenotypeAssociationSetId {1}".format(
+            feature, self.simulatedPhenotypeAssociationSetId)
         self.runClientCmd(self.client, cmd)
         cmd = "genotypephenotype-search --outputFormat 'json' \
-        --evidence {}".format(evidence)
+        --evidence {0} --phenotypeAssociationSetId {1}".format(
+            evidence, self.simulatedPhenotypeAssociationSetId)
         self.runClientCmd(self.client, cmd)
         cmd = "genotypephenotype-search --outputFormat 'json' \
-        --phenotype {}".format(phenotype)
+        --phenotype {0} --phenotypeAssociationSetId {1}".format(
+            phenotype, self.simulatedPhenotypeAssociationSetId)
         self.runClientCmd(self.client, cmd)
         cmd = "genotypephenotype-search --outputFormat 'json' \
-        --feature {0} --evidence {1} --phenotype {2}".format(
-            feature, evidence, phenotype)
+        --feature {0} --evidence {1} --phenotype {2} \
+        --phenotypeAssociationSetId {3}".format(
+            feature, evidence, phenotype,
+            self.simulatedPhenotypeAssociationSetId)
         self.runClientCmd(self.client, cmd)

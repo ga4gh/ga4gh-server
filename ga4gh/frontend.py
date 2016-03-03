@@ -513,6 +513,12 @@ def searchGenotypePhenotype():
         flask.request, app.backend.runSearchGenotypePhenotype)
 
 
+@DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+def searchPhenotypeAssociationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypeAssociationSets)
+
+
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')

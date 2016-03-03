@@ -34,6 +34,10 @@ class BaseConfig(object):
     FILE_HANDLE_CACHE_MAX_SIZE = 50
 
 
+class SimulatedConfig(BaseConfig):
+    DATA_SOURCE = "simulated://"
+
+
 class DevelopmentConfig(BaseConfig):
     """
     Configuration used for development.

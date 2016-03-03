@@ -14,6 +14,7 @@ import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.genotype_phenotype as g2p
 
 
 class AbstractDataset(datamodel.DatamodelObject):
@@ -30,6 +31,9 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
         self._description = None
+        self._phenotypeAssociationSetIdMap = {}
+        self._phenotypeAssociationSetNameMap = {}
+        self._phenotypeAssociationSetIds = []
 
     def addVariantSet(self, variantSet):
         """
@@ -82,6 +86,36 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return self._variantSetIdMap[self._variantSetIds[index]]
 
+    def addPhenotypeAssociationSet(self, phenotypeAssociationSet):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        id_ = phenotypeAssociationSet.getId()
+        self._phenotypeAssociationSetIdMap[id_] = phenotypeAssociationSet
+        self._phenotypeAssociationSetNameMap[
+            phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
+        self._phenotypeAssociationSetIds.append(id_)
+
+    def getPhenotypeAssociationSet(self, id_):
+        return self._phenotypeAssociationSetIdMap[id_]
+
+    def getPhenotypeAssociationSetByName(self, name):
+        if name not in self._phenotypeAssociationSetNameMap:
+            # TODO make a new exception
+            # TODO is this codeblock reachable?
+            raise exceptions.DatasetNameNotFoundException(name)
+        return self._phenotypeAssociationSetNameMap[name]
+
+    def getPhenotypeAssociationSetByIndex(self, index):
+        return self._phenotypeAssociationSetIdMap[
+            self._phenotypeAssociationSetIds[index]]
+
+    def getNumPhenotypeAssociationSets(self):
+        """
+        Returns the number of reference sets in this data repository.
+        """
+        return len(self._phenotypeAssociationSetIds)
+
     def getNumReadGroupSets(self):
         """
         Returns the number of readgroup sets in this dataset.
@@ -133,9 +167,16 @@ class SimulatedDataset(AbstractDataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1):
+            numAlignments=1, numPhenotypeAssociationSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+
+        for i in range(numPhenotypeAssociationSets):
+            localId = "simPas{}".format(i)
+            seed = randomSeed + i
+            phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(
+                self, localId, seed)
+            self.addPhenotypeAssociationSet(phenotypeAssociationSet)
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)
@@ -159,11 +200,23 @@ class FileSystemDataset(AbstractDataset):
     """
     variantsDirName = "variants"
     readsDirName = "reads"
+    phenotypeAssociationSetsDirName = "phenotypes"
 
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
         self._dataDir = dataDir
         self._setMetadata()
+
+        phenotypeAssociationSetDir = \
+            os.path.join(dataDir, self.phenotypeAssociationSetsDirName)
+        for localId in os.listdir(phenotypeAssociationSetDir):
+            relativePath = os.path.join(phenotypeAssociationSetDir, localId)
+            if os.path.isdir(relativePath):
+                # TODO pass in datarepo because for connecting
+                # ontology sources
+                phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
+                    self, localId, relativePath)
+                self.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
         # Variants
         variantSetDir = os.path.join(dataDir, self.variantsDirName)

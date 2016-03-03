@@ -9,6 +9,9 @@ import ga4gh.frontend as frontend
 
 
 class TestG2P(unittest.TestCase):
+    exampleUrl = 'www.example.com'
+    phenotypeAssociationSetId = ""
+
     @classmethod
     def setUpClass(cls):
         config = {
@@ -20,7 +23,19 @@ class TestG2P(unittest.TestCase):
             baseConfig="DevelopmentConfig", extraConfig=config)
         cls.app = frontend.app.test_client()
 
-    exampleUrl = 'www.example.com'
+    def getPhenotypeAssociationSetId(self):
+        request = protocol.SearchDatasetsRequest()
+        response = self.sendPostRequest("datasets/search", request)
+        response = protocol.SearchDatasetsResponse().fromJsonString(
+             response.data)
+        datasetId = response.datasets[0].id
+        request = protocol.SearchPhenotypeAssociationSetsRequest()
+        request.datasetId = datasetId
+        response = self.sendPostRequest("phenotypeassociationsets/search",
+                                        request)
+        response = protocol.SearchPhenotypeAssociationSetsResponse(
+            ).fromJsonString(response.data)
+        return response.phenotypeAssociationSets[0].id
 
     def sendPostRequest(self, path, request):
         """
@@ -33,12 +48,27 @@ class TestG2P(unittest.TestCase):
         return self.app.post(
             path, headers=headers, data=request.toJsonString())
 
+    def testPhenotypeAssociationSetSearch(self):
+        request = protocol.SearchDatasetsRequest()
+        response = self.sendPostRequest("datasets/search", request)
+        response = protocol.SearchDatasetsResponse().fromJsonString(
+             response.data)
+        datasetId = response.datasets[0].id
+        request = protocol.SearchPhenotypeAssociationSetsRequest()
+        request.datasetId = datasetId
+        response = self.sendPostRequest("phenotypeassociationsets/search",
+                                        request)
+        response = protocol.SearchPhenotypeAssociationSetsResponse(
+            ).fromJsonString(response.data)
+        self.assertIsNotNone(response.phenotypeAssociationSets)
+
     def testGenotypePhenotypeSearchFeature(self):
         """
         Search for evidence on a genomic feature given feature name
         """
         # simple string regexp
         request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
 
         request.feature = "KIT *wild"
         response = self.sendPostRequest('/genotypephenotype/search', request)
@@ -70,6 +100,7 @@ class TestG2P(unittest.TestCase):
 
         # identifiers
         request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         request.feature = protocol.ExternalIdentifierQuery()
         id = protocol.ExternalIdentifier()
         id.database = "http://ohsu.edu/cgd/"
@@ -129,6 +160,7 @@ class TestG2P(unittest.TestCase):
         If page size is set to 1 only one association should be returned
         """
         request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         request.pageSize = 1
         request.feature = "KIT *wild"
         response = self.sendPostRequest('/genotypephenotype/search', request)
@@ -145,6 +177,7 @@ class TestG2P(unittest.TestCase):
         If page size is not set to more than one association should be returned
         """
         request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         request.feature = "KIT *wild"
         response = self.sendPostRequest('/genotypephenotype/search', request)
         self.assertEqual(200, response.status_code)
@@ -159,6 +192,7 @@ class TestG2P(unittest.TestCase):
         Loop through all pages
         """
         request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         request.pageSize = 1
         request.feature = "KIT *wild"
         response = self.sendPostRequest('/genotypephenotype/search', request)
@@ -171,6 +205,8 @@ class TestG2P(unittest.TestCase):
         for i in range(3):
             previous_id = response.associations[0].id
             request = protocol.SearchGenotypePhenotypeRequest()
+            request.phenotypeAssociationSetId =\
+                self.getPhenotypeAssociationSetId()
             request.pageToken = response.nextPageToken
             request.pageSize = 1
             request.feature = "KIT *wild"
@@ -185,11 +221,12 @@ class TestG2P(unittest.TestCase):
                 self.assertIsNotNone(response.nextPageToken)
         # from IPython.core.debugger import Pdb ;        Pdb().set_trace()
 
-    def testGenotypePheontypeSearchEnsureEvidenceLevel(self):
+    def testGenotypePhenotypeSearchEnsureEvidenceLevel(self):
         """
         Ensure evidence level is serialized in responses
         """
         request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         request.feature = "KIT *wild"
         response = self.sendPostRequest('/genotypephenotype/search', request)
         self.assertEqual(200, response.status_code)

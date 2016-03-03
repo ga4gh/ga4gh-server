@@ -9,55 +9,55 @@ from __future__ import unicode_literals
 
 import rdflib
 import urlparse
-import os
-import types
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
 
 
-class AbstractG2PDataset(datamodel.DatamodelObject):
+class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
+    compoundIdClass = datamodel.PhenotypeAssociationSetCompoundId
 
-    def __init__(self, setName=None):
-        self._searchQuery = ""
+    def __init__(self, parentContainer, localId):
+        super(AbstractPhenotypeAssociationSet, self).__init__(
+            parentContainer, localId)
 
     def toProtocolElement(self):
-        # TODO remove this... added to follow pattern of datadriven tests
-        fpa = protocol.FeaturePhenotypeAssociation()
-        fpa.features = []
-        fpa.id = "TEST"
-        fpa.evidence = []
-        fpa.phenotype = protocol.PhenotypeInstance()
-        fpa.phenotype.type = protocol.OntologyTerm()
-        fpa.phenotype.type.id = "fakeid"
-        fpa.phenotype.type.ontologySource = "fakesource"
-        fpa.environmentalContexts = []
-        return fpa
+        pas = protocol.PhenotypeAssociationSet()
+        pas.name = self.getLocalId()
+        pas.id = self.getId()
+        pas.datasetId = self.getParentContainer().getId()
+        pas.info = self.getInfo()
+        return pas
+
+    def getInfo(self):
+        return {}
 
 
-class SimulatedG2PDataset(AbstractG2PDataset):
-    def __init__(self, setName=None, relativePath=None, dataDir=None):
-        pass
+class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
+    def __init__(self, parentContainer, localId, randomSeed):
+        super(SimulatedPhenotypeAssociationSet, self).__init__(
+            parentContainer, localId)
 
-    def queryLabels(self, location=None, drug=None,
-                    disease=None, pageSize=None, offset=0):
-        fpa = self.toProtocolElement()
-        fpas = []
+    def getAssociations(
+            self, location=None, drug=None, disease=None, pageSize=None,
+            offset=0):
         if location or drug or disease:
-            fpas.append(fpa)
-        # TODO this seems like a hack
+            fpa = protocol.FeaturePhenotypeAssociation()
+            fpa.id = "test"
+            fpa.features = []
+            fpa.evidence = []
+            fpa.environmentalContexts = []
+            fpa.phenotype = protocol.PhenotypeInstance()
+            fpa.phenotype.type = protocol.OntologyTerm()
+            fpa.phenotype.type.id = "test"
+            fpa.phenotypeAssociationSetId = self.getId()
+            return [fpa]
+        else:
+            return []
 
-        def toProtocolElement(self):
-            return self
 
-        for fpa in fpas:
-            fpa.toProtocolElement = \
-                types.MethodType(toProtocolElement, fpa)
-        return fpas
-
-
-class G2PDataset(AbstractG2PDataset):
+class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
     """
     An rdf object store.  The cancer genome database
     [Clinical Genomics Knowledge Base]
@@ -65,17 +65,60 @@ class G2PDataset(AbstractG2PDataset):
     published by the Monarch project, was the source of Evidence.
     """
 
-    def __init__(self, setName=None, relativePath=None, dataDir=None):
+    def __init__(self, parentContainer, localId, dataDir):
+        super(PhenotypeAssociationSet, self).__init__(parentContainer, localId)
         """
         Initialize dataset, using the passed dict of sources
         [{source,format}] see rdflib.parse() for more
         If path is set, this backend will load itself
         """
-        self._sources = None
-        if setName is not None:
-            self._sources = [os.path.join(relativePath, f)
-                             for f in os.listdir(relativePath)]
-        self._searchQuery = """
+
+        # initialize graph
+        self._rdfGraph = rdflib.ConjunctiveGraph()
+        try:
+            self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
+        except AttributeError:
+            pass
+
+    def getAssociations(
+            self, location=None, drug=None, disease=None, pageSize=None,
+            offset=0):
+        """
+        This query is the main search mechanism.
+        It queries the graph for annotations that match the
+        AND of [location,drug,disease].
+        """
+        query = self._formatFilterQuery(location, drug, disease)
+
+        results = self._rdfGraph.query(query)
+        # Depending on the cardinality this query can return multiple rows
+        # per annotations.  Here we reduce it to a list of unique annotations
+        # URIs
+
+        # TODO whys it a set? we called distinct
+        # TODO paging using SPARQL?
+        uniqueAnnotations = set()
+        for row in results:
+            uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
+
+        annotations = []
+        for annotation in uniqueAnnotations:
+            annotations.append(
+                self._toGA4GH(self._detailQuery(annotation)))
+
+        return annotations
+
+    def _addDataFile(self, filename):
+        if filename.endswith('.ttl'):
+            self._rdfGraph.parse(filename, format='n3')
+        else:
+            self._rdfGraph.parse(filename, format='xml')
+
+    def _formatFilterQuery(self, location=None, drug=None, disease=None):
+        """
+        Generate a formatted sparql query with appropriate filters
+        """
+        query = """
         PREFIX OBAN: <http://purl.org/oban/>
         PREFIX OBO: <http://purl.obolibrary.org/obo/>
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -98,26 +141,6 @@ class G2PDataset(AbstractG2PDataset):
         }
         ORDER BY ?s
             """
-
-        # initialize graph
-        self._rdfGraph = rdflib.ConjunctiveGraph()
-
-        # load with data
-        if self._sources is None:
-            self._rdfGraph.parse('tests/data/g2pDatasets/cgd/cgd-test.ttl',
-                                 format='n3')
-        else:
-            for source in self._sources:
-                if source.endswith('.ttl'):
-                    self._rdfGraph.parse(source, format='n3')
-                else:
-                    self._rdfGraph.parse(source, format='xml')
-
-    def _formatQuery(self, location=None, drug=None, disease=None):
-        """
-        Generate a formatted sparql query with appropriate filters
-        """
-        query = self._searchQuery
         if location is None and drug is None and disease is None:
             # TODO is this really the exception we want to throw?
             raise exceptions.NotImplementedException(
@@ -126,6 +149,7 @@ class G2PDataset(AbstractG2PDataset):
 
         if location and isinstance(location, basestring):
             filters.append('regex(?location_label, "{}")'.format(location))
+            # TODO check this regex (versus string match)
         if drug and isinstance(drug, basestring):
             filters.append('regex(?drug_label, "{}")'.format(drug))
         if disease and isinstance(disease, basestring):
@@ -135,46 +159,35 @@ class G2PDataset(AbstractG2PDataset):
         if isinstance(location, dict):
             locations = []
 
-            for _id in location['ids']:
+            for id_ in location['ids']:
                     locations.append('?location = <{}> '.format
-                                     (_id['database'] + _id['identifier']))
+                                     (id_['database'] + id_['identifier']))
             locationClause = "({})".format(" || ".join(locations))
             filters.append(locationClause)
             locationClause = "?l  faldo:location ?location .\n"
 
         if isinstance(drug, dict):
             drugs = []
-            for _id in drug['ids']:
+            for id_ in drug['ids']:
                     drugs.append('?drug = <{}> '.format
-                                 (_id['database'] + _id['identifier']))
+                                 (id_['database'] + id_['identifier']))
             drugsClause = "({})".format(" || ".join(drugs))
 
             filters.append(drugsClause)
 
         if isinstance(disease, dict):
             diseases = []
-            for _id in disease['ids']:
+            for id_ in disease['ids']:
                     diseases.append('?disease = <{}> '.format
-                                    (_id['database'] + _id['identifier']))
+                                    (id_['database'] + id_['identifier']))
             diseasesClause = "({})".format(" || ".join(diseases))
             filters.append(diseasesClause)
 
         filter = "FILTER ({})".format(' && '.join(filters))
         query = query.replace("%FILTER%", filter)
         query = query.replace("%LOCATION%", locationClause)
-        return query
 
-    def queryLabels(
-            self, location=None, drug=None, disease=None, pageSize=None,
-            offset=0):
-
-        """
-        This query is the main search mechanism.
-        It queries the graph for annotations that match the
-        AND of [location,drug,disease].
-        """
-        query = self._formatQuery(location, drug, disease)
-        # TODO refactor to testable function
+        # TODO this is just static why not put in straight?
         query = query.replace("%PROPERTIES%", "".join(
             ["distinct ?s ?location ?location_label ",
              "?disease ?disease_label ?drug ?drug_label ",
@@ -182,65 +195,9 @@ class G2PDataset(AbstractG2PDataset):
 
         # TODO why is this commented out?
         # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
+        return query
 
-        results = self._rdfGraph.query(query)
-        # Depending on the cardinality this query can return multiple rows
-        # per annotations.  Here we reduce it to a list of unique annotations
-        # URIs
-        uniqueAnnotations = set()
-        for row in results:
-            uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
-
-        annotations = AnnotationFactory(self._rdfGraph,
-                                        uniqueAnnotations).annotations()
-
-        return annotations
-
-    def toProtocolElement(self):
-        # TODO remove this... added to follow pattern of datadriven tests
-        fpa = protocol.FeaturePhenotypeAssociation()
-        fpa.features = []
-        fpa.id = "TEST"
-        fpa.evidence = []
-        fpa.phenotype = protocol.PhenotypeInstance()
-        fpa.phenotype.type = protocol.OntologyTerm()
-        fpa.phenotype.type.id = "fakeid"
-        fpa.phenotype.type.ontologySource = "fakesource"
-        fpa.environmentalContexts = []
-        return fpa
-
-
-class AnnotationFactory:
-    """
-    Given a RDF query result set, return corresponding set of ProtocolElements
-    """
-
-    def __init__(self, graph, uniqueAnnotations):
-        self._rdfGraph = graph
-
-        # now fetch the details on the annotation
-        self._annotations = []
-        for annotation in uniqueAnnotations:
-            self._annotations.append(
-                self._toGA4GH(self._query(annotation)))
-
-        # add a callback to return ProtocolElement
-        # since we have already transformed it into ProtocolElement
-        # we just return self
-        def toProtocolElement(self):
-            return self
-
-        for annotation in self._annotations:
-            annotation.toProtocolElement = \
-                types.MethodType(toProtocolElement, annotation)
-
-    def annotations(self):
-        """
-        return annotations built in constructor
-        """
-        return self._annotations
-
-    def _query(self, subject=''):
+    def _detailQuery(self, subject=''):
         """
         This is the 'detail' query
 
@@ -346,8 +303,6 @@ class AnnotationFactory:
         """
         given an annotation dict, return a protocol.FeaturePhenotypeAssociation
         """
-        fpa = None
-
         # annotation keys
         locationKey = 'location'
         hasObject = 'http://purl.org/oban/association_has_object'
@@ -356,6 +311,7 @@ class AnnotationFactory:
         # location keys
         GENO_0000408 = 'http://purl.obolibrary.org/obo/GENO_0000408'
 
+        # Build feature element
         location = annotation[locationKey]
         if GENO_0000408 in location:
             id_, ontologySource = self.namespaceSplit(
@@ -365,49 +321,57 @@ class AnnotationFactory:
             id_, ontologySource = self.namespaceSplit(location['id'])
             name = location['id']
 
-        f = protocol.Feature()
-        f.featureType = protocol.OntologyTerm.fromJsonDict({
-            "term": name,
-            "id": id_,
-            "sourceName": ontologySource})
-        f.id = annotation['id']  # TODO connect with real feature Ids
-        f.featureSetId = ''
-        f.parentIds = []
-        f.attributes = protocol.Attributes.fromJsonDict({"vals": {}})
+        featureTypeTerm = protocol.OntologyTerm().fromJsonDict({
+                "term": name,
+                "id": id_,
+                "sourceName": ontologySource})
 
-        id_, ontologySource = self.namespaceSplit(
+        feature = protocol.Feature().fromJsonDict({
+                "id": annotation['id'],
+                "featureType": featureTypeTerm.toJsonDict()})
+
+        # TODO ontology term backing should be switchable
+        # not hardcoded in the g2p turtle file?
+
+        # Build phenotype element
+        phenotypeId, phenotypeOntologySource = self.namespaceSplit(
                                        annotation[hasObject]['val'])
 
-        fpa = protocol.FeaturePhenotypeAssociation()
-        fpa.id = annotation['id']
-        fpa.features = [f]
-        fpa.description = None
-        fpa.evidence = []
-        fpa.environmentalContexts = []
-
-        phenotypeInstance = protocol.PhenotypeInstance()
-        phenotypeInstance.type = protocol.OntologyTerm.fromJsonDict({
+        phenotypeOntologyTerm = protocol.OntologyTerm().fromJsonDict({
             "term": annotation[hasObject]['label'],
-            "id": id_,
-            "sourceName": ontologySource})
-        fpa.phenotype = phenotypeInstance
+            "sourceName": phenotypeOntologySource})
 
+        phenotypeInstance = protocol.PhenotypeInstance().fromJsonDict({
+            "id": phenotypeId,
+            "type": phenotypeOntologyTerm.toJsonDict()})
+
+        # Build evidence element
         #  ECO or OBI is recommended
         if has_approval_status in annotation:
             approval_status = annotation[has_approval_status]
-            evidence = protocol.Evidence()
-            evidence.evidenceType = protocol.OntologyTerm()
-            id_, ontology_source = self.namespaceSplit(approval_status['val'])
-            evidence.evidenceType.sourceName = ontology_source
-            evidence.evidenceType.id = id_
-
+            id_, ontologySource = self.namespaceSplit(approval_status['val'])
+            evidenceTypeOntologyTerm = protocol.OntologyTerm().fromJsonDict({
+                "sourceName": ontologySource,
+                "id": id_})
+            evidence = protocol.Evidence().fromJsonDict({
+                "evidenceType": evidenceTypeOntologyTerm.toJsonDict()})
             evidence.evidenceType.term = ''
             if 'label' in approval_status:
                 evidence.evidenceType.term = approval_status['label']
-                fpa.evidence.append(evidence)
+                # TODO why are we throwing request validation here?
+                # is this a data quality error?
                 if not protocol.Evidence.validate(evidence.toJsonDict()):
                     raise exceptions.RequestValidationFailureException(
                         evidence.toJsonDict(), protocol.Evidence)
+        # TODO what about multiple features? sequence annotation
+
+        fpa = protocol.FeaturePhenotypeAssociation().fromJsonDict({
+            "id": annotation['id'],
+            "features": [feature.toJsonDict()],
+            "phenotypeAssociationSetId": self.getId(),
+            "evidence": [evidence.toJsonDict()],
+            "phenotype": phenotypeInstance.toJsonDict(),
+            "environmentalContexts": []})
         return fpa
 
     def namespaceSplit(self, url, separator='/'):
@@ -416,9 +380,9 @@ class AnnotationFactory:
         """
         url = url.strip("<").strip(">")
         o = urlparse.urlparse(url)
-        _id = o.path.split(separator)[-1]
+        id_ = o.path.split(separator)[-1]
         ontologySource = urlparse.urlunsplit([o[0],
                                               o[1],
-                                              o[2].replace(_id, ''),
+                                              o[2].replace(id_, ''),
                                               o[4], ''])
-        return _id, ontologySource
+        return id_, ontologySource
