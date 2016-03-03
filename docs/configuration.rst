@@ -304,7 +304,7 @@ add-variantset
 +++++++++++++++
 
 Adds a variant set directory to a given data repository and dataset.  The
-directory should contain file(s) with extension ``.vcf.gz``.
+directory should contain file(s) with extension ``.vcf.gz``. If a variant set is annotated it will be added as both a variant set and a variant annotation set.
 
 .. code-block:: bash
 

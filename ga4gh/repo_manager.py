@@ -66,6 +66,7 @@ class RepoManager(object):
     Performs operations on a GA4GH data repository
     """
     datasetsDirName = datarepo.FileSystemDataRepository.datasetsDirName
+    ontologiesDirName = datarepo.FileSystemDataRepository.ontologiesDirName
     referenceSetsDirName = \
         datarepo.FileSystemDataRepository.referenceSetsDirName
     readsDirName = datasets.FileSystemDataset.readsDirName
@@ -82,7 +83,9 @@ class RepoManager(object):
     def __init__(self, repoPath):
         self._repoPath = repoPath
         self._topStructure = [
-            self.datasetsDirName, self.referenceSetsDirName]
+            self.datasetsDirName,
+            self.ontologiesDirName,
+            self.referenceSetsDirName]
         self._datasetStructure = [
             self.readsDirName, self.variantsDirName]
 

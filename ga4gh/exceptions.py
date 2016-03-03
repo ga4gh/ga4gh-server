@@ -189,6 +189,12 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class AnnotationSetNotFoundException(NotFoundException):
+    def __init__(self, variantAnnotationSetId):
+        self.message = "The requested VariantAnnotationSet '{}'" \
+            "was not found".format(variantAnnotationSetId)
+
+
 class CallSetNotFoundException(NotFoundException):
     def __init__(self, callSetId):
         self.message = "The requested CallSet '{}' was not found".format(

@@ -10,6 +10,7 @@ import os
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
+import ga4gh.datamodel.ontologies as ontologies
 
 
 class AbstractDataRepository(object):
@@ -23,6 +24,8 @@ class AbstractDataRepository(object):
         self._referenceSetIdMap = {}
         self._referenceSetNameMap = {}
         self._referenceSetIds = []
+        self._ontologyNameMap = {}
+        self._ontologyNames = []
 
     def addDataset(self, dataset):
         """
@@ -41,6 +44,14 @@ class AbstractDataRepository(object):
         self._referenceSetIdMap[id_] = referenceSet
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
+
+    def addOntology(self, ontology):
+        """
+        Add an ontology to this data repository.
+        """
+        for name in ontology.keys():
+            self._ontologyNameMap[name] = ontology.get(name)
+            self._ontologyNames.append(name)
 
     def getDatasets(self):
         """
@@ -88,6 +99,12 @@ class AbstractDataRepository(object):
         Returns the number of reference sets in this data repository.
         """
         return len(self._referenceSetIds)
+
+    def getOntology(self, name):
+        """
+        Returns ontologies
+        """
+        return self._ontologyNameMap[name]
 
     def getReferenceSet(self, id_):
         """
@@ -162,14 +179,19 @@ class FileSystemDataRepository(AbstractDataRepository):
     """
     referenceSetsDirName = "referenceSets"
     datasetsDirName = "datasets"
+    ontologiesDirName = "ontologies"
 
     def __init__(self, dataDir, doConsistencyCheck=True):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = [self.referenceSetsDirName, self.datasetsDirName]
+        sourceDirNames = [self.referenceSetsDirName,
+                          self.ontologiesDirName,
+                          self.datasetsDirName]
         constructors = [
-            references.HtslibReferenceSet, datasets.FileSystemDataset]
-        objectAdders = [self.addReferenceSet, self.addDataset]
+            references.HtslibReferenceSet, ontologies.FileSystemOntologies,
+            datasets.FileSystemDataset]
+        objectAdders = [self.addReferenceSet, self.addOntology,
+                        self.addDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)

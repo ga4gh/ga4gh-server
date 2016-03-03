@@ -237,7 +237,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             mini = localVariants[0].start
             # NOTE, the end of the last variant may not reflect the END
             maxi = max([v.end for v in localVariants])
-            seglen = int(maxi-mini) // 3
+            seglen = (maxi-mini) // 3
             seg1 = mini + seglen
             seg2 = seg1 + seglen
             self._assertEmptyVariant(referenceName, -1, mini)
@@ -259,13 +259,15 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self._verifyVariantsEqual([gaVariant], [pyvcfVariant])
         return True
 
-    def _pyvcfVariantIsInGaVarants(
+    def _pyvcfVariantIsInGaVariants(
             self, pyvcfVariant, intervalStart, intervalEnd):
         isIn = False
         gaVariants = list(self._gaObject.getVariants(
             pyvcfVariant.CHROM, intervalStart, intervalEnd, []))
         for gaVariant in gaVariants:
             if self._gaVariantEqualsPyvcfVariant(gaVariant, pyvcfVariant):
+                # FIXME theres an assertion that will cause this to
+                # fail if false
                 isIn = True
                 break
         return isIn
@@ -277,36 +279,36 @@ class VariantSetTest(datadriven.DataDrivenTest):
             # Cases of search interval does not overlap with variant
             # interval on the left
 
-            self.assertFalse(self._pyvcfVariantIsInGaVarants(
+            self.assertFalse(self._pyvcfVariantIsInGaVariants(
                 variant, variantStart-2, variantStart-1))
-            self.assertFalse(self._pyvcfVariantIsInGaVarants(
+            self.assertFalse(self._pyvcfVariantIsInGaVariants(
                 variant, variantStart-1, variantStart))
             # interval on the right
-            self.assertFalse(self._pyvcfVariantIsInGaVarants(
+            self.assertFalse(self._pyvcfVariantIsInGaVariants(
                 variant, variantEnd, variantEnd+1))
-            self.assertFalse(self._pyvcfVariantIsInGaVarants(
+            self.assertFalse(self._pyvcfVariantIsInGaVariants(
                 variant, variantEnd+1, variantEnd+2))
             # case of search interval is within variant
 
-            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+            self.assertTrue(self._pyvcfVariantIsInGaVariants(
                 variant, variantStart, variantEnd))
             if (variantEnd - variantStart) != 1:
-                self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                self.assertTrue(self._pyvcfVariantIsInGaVariants(
                     variant, variantStart, variantEnd-1))
-                self.assertTrue(self._pyvcfVariantIsInGaVarants(
+                self.assertTrue(self._pyvcfVariantIsInGaVariants(
                     variant, variantStart+1, variantEnd))
 
             # case of search interval contains variant
-            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+            self.assertTrue(self._pyvcfVariantIsInGaVariants(
                 variant, variantStart-1, variantEnd+1))
             # cases of search interval intersec with variant
-            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+            self.assertTrue(self._pyvcfVariantIsInGaVariants(
                 variant, variantStart-1, variantStart+1))
-            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+            self.assertTrue(self._pyvcfVariantIsInGaVariants(
                 variant, variantStart, variantStart+1))
-            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+            self.assertTrue(self._pyvcfVariantIsInGaVariants(
                 variant, variantEnd-1, variantEnd))
-            self.assertTrue(self._pyvcfVariantIsInGaVarants(
+            self.assertTrue(self._pyvcfVariantIsInGaVariants(
                 variant, variantEnd-1, variantEnd+1))
 
     def testVariantSetMetadata(self):
