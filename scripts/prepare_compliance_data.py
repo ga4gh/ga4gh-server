@@ -136,6 +136,11 @@ class ComplianceDataMunger(object):
                     # in place, creates a tabix index.
                     pysam.tabix_index(destFile, preset="vcf")
 
+        ontologiesDir = os.path.join(self.outputDirectory, "ontologies")
+        sequenceOntologyDir = os.path.join(ontologiesDir, "sequence_ontology")
+        os.makedirs(sequenceOntologyDir)
+        shutil.copy(os.path.join(self.inputDirectory, "sequence_ontology.txt"),
+                    os.path.join(sequenceOntologyDir, "sequence_ontology.txt"))
         print("done converting compliance data.", file=sys.stderr)
 
 

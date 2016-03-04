@@ -194,6 +194,111 @@ class VariantsIntervalIterator(IntervalIterator):
         return variant.end
 
 
+class VariantAnnotationsIntervalIterator(IntervalIterator):
+    """
+    An interval iterator for annotations
+    """
+
+    def __init__(self, request, parentContainer):
+        super(VariantAnnotationsIntervalIterator, self).__init__(
+            request, parentContainer)
+        # TODO do input validation somewhere more sensible
+        if self._request.effects is None:
+            self._effects = []
+        else:
+            self._effects = self._request.effects
+
+    def _search(self, start, end):
+        return self._parentContainer.getVariantAnnotations(
+            self._request.referenceName, start, end)
+
+    @classmethod
+    def _getStart(cls, annotation):
+        return annotation.start
+
+    @classmethod
+    def _getEnd(cls, annotation):
+        return annotation.end
+
+    def next(self):
+        while True:
+            ret = super(VariantAnnotationsIntervalIterator, self).next()
+            vann = ret[0]
+            if self.filterVariantAnnotation(vann):
+                return self._removeNonMatchingTranscriptEffects(vann), ret[1]
+        return None
+
+    def _removeNonMatchingTranscriptEffects(self, ann):
+        newTxE = []
+        if self._effects == []:
+            return ann
+        for txe in ann.transcriptEffects:
+            add = False
+            for effect in txe.effects:
+                if self._matchAnyEffects(effect):
+                    add = True
+            if add:
+                newTxE.append(txe)
+        ann.transcriptEffects = newTxE
+        return ann
+
+    def filterVariantAnnotation(self, vann):
+        # TODO reintroduce feature ID search
+        if len(self._effects) == 0:
+            return True
+        if not vann.transcriptEffects:
+            return False
+        for teff in vann.transcriptEffects:
+            if self.filterEffect(teff):
+                return True
+            else:
+                return False
+        return True
+
+    def _checkTermEquality(self, requestedEffect, effect):
+        return self._termPresent(requestedEffect) and (
+            effect.term == requestedEffect['term'])
+
+    def _checkIdEquality(self, requestedEffect, effect):
+        return self._idPresent(requestedEffect) and (
+            effect.id == requestedEffect['id'])
+
+    def _idPresent(self, requestedEffect):
+        return "id" in requestedEffect
+
+    def _termPresent(self, requestedEffect):
+        return "term" in requestedEffect
+
+    def _matchOntologyTerm(self, requestedEffect, effect):
+        if self._idPresent(requestedEffect):
+            if self._checkIdEquality(requestedEffect, effect):
+                if self._checkTermEquality(requestedEffect, effect):
+                    return True
+                elif not self._termPresent(requestedEffect):
+                    return True
+        elif self._termPresent(requestedEffect):
+            if self._checkTermEquality(requestedEffect, effect):
+                return True
+        return False
+
+    def _matchAnyEffects(self, effect):
+        for requestedEffect in self._effects:
+            return self._matchOntologyTerm(requestedEffect, effect)
+
+    def filterEffect(self, teff):
+        if len(self._effects) == 0:
+            return True
+        for effect in teff.effects:
+            return self._matchAnyEffects(effect)
+        return False
+
+    def filterFeatureId(self, teff):
+        if (len(self._featureIds) > 0 and
+                teff.featureId not in self._featureIds):
+            return False
+        return True
+
+
 class Backend(object):
     """
     Backend for handling the server requests.
@@ -397,6 +502,23 @@ class Backend(object):
             request, dataset.getNumVariantSets(),
             dataset.getVariantSetByIndex)
 
+    def variantAnnotationSetsGenerator(self, request):
+        """
+        Returns a generator over the (variantAnnotationSet, nextPageToken)
+        pairs defined by the specified request.
+        """
+        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        results = []
+        for annset in dataset.getVariantAnnotationSets():
+            try:
+                variantSetId = request.variantSetId
+            except ValueError:
+                variantSetId = ""
+            if str(annset._variantSetId) == str(variantSetId):
+                results.append(annset)
+        return self._objectListGenerator(request, results)
+
     def readsGenerator(self, request):
         """
         Returns a generator over the (read, nextPageToken) pairs defined
@@ -427,6 +549,20 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         intervalIterator = VariantsIntervalIterator(request, variantSet)
+        return intervalIterator
+
+    def variantAnnotationsGenerator(self, request):
+        """
+        Returns a generator over the (variantAnnotaitons, nextPageToken) pairs
+        defined by the specified request.
+        """
+        compoundId = datamodel.VariantAnnotationSetCompoundId.parse(
+            request.variantAnnotationSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        variantAnnotationSet = dataset.getVariantAnnotationSet(
+            request.variantAnnotationSetId)
+        intervalIterator = VariantAnnotationsIntervalIterator(
+            request, variantAnnotationSet)
         return intervalIterator
 
     def callSetsGenerator(self, request):
@@ -607,6 +743,15 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(id_)
         return self.runGetRequest(dataset)
 
+    def runGetVariantAnnotationSet(self, id_):
+        """
+        Runs a getVariantSet request for the specified ID.
+        """
+        compoundId = datamodel.VariantAnnotationSetCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        variantAnnotationSet = dataset.getVariantAnnotationSet(id_)
+        return self.runGetRequest(variantAnnotationSet)
+
     # Search requests.
 
     def runSearchReadGroupSets(self, request):
@@ -654,6 +799,15 @@ class Backend(object):
             protocol.SearchVariantSetsResponse,
             self.variantSetsGenerator)
 
+    def runSearchVariantAnnotationSets(self, request):
+        """
+        Runs the specified SearchVariantAnnotationSetsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchVariantAnnotationSetsRequest,
+            protocol.SearchVariantAnnotationSetsResponse,
+            self.variantAnnotationSetsGenerator)
+
     def runSearchVariants(self, request):
         """
         Runs the specified SearchVariantRequest.
@@ -662,6 +816,15 @@ class Backend(object):
             request, protocol.SearchVariantsRequest,
             protocol.SearchVariantsResponse,
             self.variantsGenerator)
+
+    def runSearchVariantAnnotations(self, request):
+        """
+        Runs the specified SearchVariantAnnotationsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchVariantAnnotationsRequest,
+            protocol.SearchVariantAnnotationsResponse,
+            self.variantAnnotationsGenerator)
 
     def runSearchCallSets(self, request):
         """

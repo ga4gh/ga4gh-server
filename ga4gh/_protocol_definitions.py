@@ -11,7 +11,200 @@ from protocol import SearchResponse
 
 import avro.schema
 
-version = '0.6.0a1'
+version = '0.6.0a3'
+
+
+class AlleleLocation(ProtocolElement):
+    """
+    An allele location record holds the location of an allele relative
+    to a non-genomic coordinate system such as a CDS or protein and
+    holds the reference and alternate sequence where appropriate
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"AlleleLocation", "fields": [{"doc": "", "type": "int", "name":
+"start"}, {"default": null, "doc": "", "type": ["null", "int"],
+"name": "end"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "referenceSequence"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "alternateSequence"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "start",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'alternateSequence', 'end', 'referenceSequence', 'start'
+    ]
+
+    def __init__(self, **kwargs):
+        self.alternateSequence = kwargs.get(
+            'alternateSequence', None)
+        """
+        Alternate sequence in feature (this should be the codon at CDS
+        level)
+        """
+        self.end = kwargs.get(
+            'end', None)
+        """
+        Relative end position of the allele in this coordinate system
+        """
+        self.referenceSequence = kwargs.get(
+            'referenceSequence', None)
+        """
+        Reference sequence in feature (this should be the codon at CDS
+        level)
+        """
+        self.start = kwargs.get(
+            'start', None)
+        """
+        Relative start position of the allele in this coordinate
+        system
+        """
+
+
+class Analysis(ProtocolElement):
+    """
+    An analysis contains an interpretation of one or several
+    experiments. (e.g. SNVs, copy number variations, methylation
+    status) together with information about the methodology used.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"Analysis", "fields": [{"doc": "", "type": "string", "name": "id"},
+{"default": null, "type": ["null", "string"], "name": "name"},
+{"default": null, "type": ["null", "string"], "name": "description"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"createDateTime"}, {"doc": "", "type": "string", "name":
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "type"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "software"}, {"default":
+{}, "doc": "", "type": {"values": {"items": "string", "type":
+"array"}, "type": "map"}, "name": "info"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "id",
+        "updateDateTime",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'createDateTime', 'description', 'id', 'info', 'name',
+        'software', 'type', 'updateDateTime'
+    ]
+
+    def __init__(self, **kwargs):
+        self.createDateTime = kwargs.get(
+            'createDateTime', None)
+        """
+        The time at which this record was created.    Format: :ref:ISO
+        8601 <metadata_date_time>
+        """
+        self.description = kwargs.get(
+            'description', None)
+        self.id = kwargs.get(
+            'id', None)
+        """
+        Formats of id | name | description | accessions are described
+        in the   documentation on general attributes and formats.
+        """
+        self.info = kwargs.get(
+            'info', {})
+        """
+        A map of additional analysis information.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        self.software = kwargs.get(
+            'software', [])
+        """
+        The software run to generate this analysis.
+        """
+        self.type = kwargs.get(
+            'type', None)
+        """
+        The type of analysis.
+        """
+        self.updateDateTime = kwargs.get(
+            'updateDateTime', None)
+        """
+        The time at which this record was last updated.   Format:
+        :ref:ISO 8601 <metadata_date_time>
+        """
+
+
+class AnalysisResult(ProtocolElement):
+    """
+    An AnalysisResult record holds the output of a prediction package
+    such as SIFT on a specific allele.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"AnalysisResult", "fields": [{"doc": "", "type": "string", "name":
+"analysisId"}, {"doc": "", "type": ["null", "string"], "name":
+"result"}, {"doc": "", "type": ["null", "int"], "name": "score"}],
+"doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "analysisId",
+        "result",
+        "score",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'analysisId', 'result', 'score'
+    ]
+
+    def __init__(self, **kwargs):
+        self.analysisId = kwargs.get(
+            'analysisId', None)
+        """
+        The ID of the analysis record for this result
+        """
+        self.result = kwargs.get(
+            'result', None)
+        """
+        The text-based result for this analysis
+        """
+        self.score = kwargs.get(
+            'score', None)
+        """
+        The numeric score for this analysis
+        """
 
 
 class Call(ProtocolElement):
@@ -364,8 +557,8 @@ class Experiment(ProtocolElement):
 {"default": null, "doc": "", "type": ["null", "string"], "name":
 "name"}, {"default": null, "doc": "", "type": ["null", "string"],
 "name": "description"}, {"doc": "", "type": "string", "name":
-"recordCreateTime"}, {"doc": "", "type": "string", "name":
-"recordUpdateTime"}, {"default": null, "doc": "", "type": ["null",
+"createDateTime"}, {"doc": "", "type": "string", "name":
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "runTime"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "molecule"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "strategy"}, {"default": null,
@@ -382,11 +575,11 @@ class Experiment(ProtocolElement):
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
+        "createDateTime",
         "id",
         "instrumentModel",
-        "recordCreateTime",
-        "recordUpdateTime",
         "sequencingCenter",
+        "updateDateTime",
     ])
 
     @classmethod
@@ -401,14 +594,20 @@ class Experiment(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'description', 'id', 'info', 'instrumentDataFile',
-        'instrumentModel', 'library', 'libraryLayout', 'molecule',
-        'name', 'platformUnit', 'recordCreateTime',
-        'recordUpdateTime', 'runTime', 'selection',
-        'sequencingCenter', 'strategy'
+        'createDateTime', 'description', 'id', 'info',
+        'instrumentDataFile', 'instrumentModel', 'library',
+        'libraryLayout', 'molecule', 'name', 'platformUnit',
+        'runTime', 'selection', 'sequencingCenter', 'strategy',
+        'updateDateTime'
     ]
 
     def __init__(self, **kwargs):
+        self.createDateTime = kwargs.get(
+            'createDateTime', None)
+        """
+        The time at which this record was created.    Format: :ref:ISO
+        8601 <metadata_date_time>
+        """
         self.description = kwargs.get(
             'description', None)
         """
@@ -464,24 +663,12 @@ class Experiment(ProtocolElement):
         The platform unit used as part of this experiment. This is a
         flowcell-barcode   or slide unique identifier.
         """
-        self.recordCreateTime = kwargs.get(
-            'recordCreateTime', None)
-        """
-        The time at which this record was created.    Format: ISO
-        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
-        """
-        self.recordUpdateTime = kwargs.get(
-            'recordUpdateTime', None)
-        """
-        The time at which this record was last updated.   Format: ISO
-        8601, YYYY-MM-DDTHH:MM:SS.SSS (e.g. 2015-02-10T00:03:42.123Z)
-        """
         self.runTime = kwargs.get(
             'runTime', None)
         """
         The time at which this experiment was performed.   Granularity
-        here is variable (e.g. date only).   Format: ISO 8601, YYYY-
-        MM-DDTHH:MM:SS (e.g. 2015-02-10T00:03:42)
+        here is variable (e.g. date only).   Format: :ref:ISO 8601
+        <metadata_date_time>
         """
         self.selection = kwargs.get(
             'selection', None)
@@ -499,6 +686,12 @@ class Experiment(ProtocolElement):
         """
         The experiment technique or strategy applied to the sample.
         (e.g. whole genome sequencing, RNA-seq, RIP-seq)
+        """
+        self.updateDateTime = kwargs.get(
+            'updateDateTime', None)
+        """
+        The time at which this record was last updated.   Format:
+        :ref:ISO 8601 <metadata_date_time>
         """
 
 
@@ -594,6 +787,51 @@ class GAException(ProtocolElement):
         """
         The error message
         """
+
+
+class HGVSAnnotation(ProtocolElement):
+    """
+    A HGVSAnnotation record holds Human Genome Variation Society
+    descriptions of the sequence change with respect to genomic,
+    transcript and protein sequences. See:
+    http://www.hgvs.org/mutnomen/recs.html. Descriptions should be
+    provided at genomic level. Descriptions at transcript level should
+    be provided when the allele lies within a transcript. Descriptions
+    at protein level should be provided when the allele lies within
+    the translated sequence or stop codon.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"HGVSAnnotation", "fields": [{"default": null, "type": ["null",
+"string"], "name": "genomic"}, {"default": null, "type": ["null",
+"string"], "name": "transcript"}, {"default": null, "type": ["null",
+"string"], "name": "protein"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'genomic', 'protein', 'transcript'
+    ]
+
+    def __init__(self, **kwargs):
+        self.genomic = kwargs.get(
+            'genomic', None)
+        self.protein = kwargs.get(
+            'protein', None)
+        self.transcript = kwargs.get(
+            'transcript', None)
 
 
 class LinearAlignment(ProtocolElement):
@@ -779,6 +1017,71 @@ class ListReferenceBasesResponse(ProtocolElement):
         """
 
 
+class OntologyTerm(ProtocolElement):
+    """
+    An ontology term describing an attribute. (e.g. the phenotype
+    attribute   'polydactyly' from HPO)
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "id",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'id', 'sourceName', 'sourceVersion', 'term'
+    ]
+
+    def __init__(self, **kwargs):
+        self.id = kwargs.get(
+            'id', None)
+        """
+        Ontology source identifier - the identifier, a CURIE
+        (preferred) or   PURL for an ontology source e.g.
+        http://purl.obolibrary.org/obo/hp.obo   It differs from the
+        standard GA4GH schema's :ref:id <apidesign_object_ids>   in
+        that it is a URI pointing to an information resource outside
+        of the scope   of the schema or its resource implementation.
+        """
+        self.sourceName = kwargs.get(
+            'sourceName', None)
+        """
+        Ontology source name - the name of ontology from which the
+        term is obtained   e.g. 'Human Phenotype Ontology'
+        """
+        self.sourceVersion = kwargs.get(
+            'sourceVersion', None)
+        """
+        Ontology source version - the version of the ontology from
+        which the   OntologyTerm is obtained; e.g. 2.6.1.   There is
+        no standard for ontology versioning and some frequently
+        released ontologies may use a datestamp, or build number.
+        """
+        self.term = kwargs.get(
+            'term', None)
+        """
+        Ontology term - the representation the id is pointing to.
+        """
+
+
 class Position(ProtocolElement):
     """
     A Position is an unoriented base in some Reference. A Position is
@@ -907,7 +1210,7 @@ class ReadAlignment(ProtocolElement):
 "name": "id"}, {"doc": "", "type": "string", "name": "readGroupId"},
 {"doc": "", "type": "string", "name": "fragmentName"}, {"default":
 null, "doc": "", "type": ["null", "boolean"], "name":
-"properPlacement"}, {"default": null, "doc": "", "type": ["null",
+"improperPlacement"}, {"default": null, "doc": "", "type": ["null",
 "boolean"], "name": "duplicateFragment"}, {"default": null, "doc": "",
 "type": ["null", "int"], "name": "numberReads"}, {"default": null,
 "doc": "", "type": ["null", "int"], "name": "fragmentLength"},
@@ -967,10 +1270,9 @@ null, "doc": "", "type": ["null", "boolean"], "name":
     __slots__ = [
         'alignedQuality', 'alignedSequence', 'alignment',
         'duplicateFragment', 'failedVendorQualityChecks',
-        'fragmentLength', 'fragmentName', 'id', 'info',
-        'nextMatePosition', 'numberReads', 'properPlacement',
-        'readGroupId', 'readNumber', 'secondaryAlignment',
-        'supplementaryAlignment'
+        'fragmentLength', 'fragmentName', 'id', 'improperPlacement',
+        'info', 'nextMatePosition', 'numberReads', 'readGroupId',
+        'readNumber', 'secondaryAlignment', 'supplementaryAlignment'
     ]
 
     def __init__(self, **kwargs):
@@ -1036,6 +1338,13 @@ null, "doc": "", "type": ["null", "boolean"], "name":
         use is to make caching and UI display easier for   genome
         browsers and other lightweight clients.
         """
+        self.improperPlacement = kwargs.get(
+            'improperPlacement', None)
+        """
+        The orientation and the distance between reads from the
+        fragment are   inconsistent with the sequencing protocol
+        (inverse of SAM flag 0x2)
+        """
         self.info = kwargs.get(
             'info', {})
         """
@@ -1053,13 +1362,6 @@ null, "doc": "", "type": ["null", "boolean"], "name":
         """
         The number of reads in the fragment (extension to SAM flag
         0x1)
-        """
-        self.properPlacement = kwargs.get(
-            'properPlacement', None)
-        """
-        The orientation and the distance between reads from the
-        fragment are   consistent with the sequencing protocol
-        (equivalent to SAM flag 0x2)
         """
         self.readGroupId = kwargs.get(
             'readGroupId', None)
@@ -1122,8 +1424,8 @@ class ReadGroup(ProtocolElement):
 "type": "string", "name": "id"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "name"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "description"}, {"doc": "",
-"type": "string", "name": "recordCreateTime"}, {"doc": "", "type":
-"string", "name": "recordUpdateTime"}, {"default": null, "doc": "",
+"type": "string", "name": "createDateTime"}, {"doc": "", "type":
+"string", "name": "updateDateTime"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "runTime"}, {"default": null,
 "doc": "", "type": ["null", "string"], "name": "molecule"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
@@ -1294,8 +1596,8 @@ class ReadGroupSet(ProtocolElement):
 [{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
 "", "type": ["null", "string"], "name": "name"}, {"default": null,
 "doc": "", "type": ["null", "string"], "name": "description"}, {"doc":
-"", "type": "string", "name": "recordCreateTime"}, {"doc": "", "type":
-"string", "name": "recordUpdateTime"}, {"default": null, "doc": "",
+"", "type": "string", "name": "createDateTime"}, {"doc": "", "type":
+"string", "name": "updateDateTime"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "runTime"}, {"default": null,
 "doc": "", "type": ["null", "string"], "name": "molecule"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
@@ -1961,8 +2263,8 @@ class SearchReadGroupSetsResponse(SearchResponse):
 [{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
 "", "type": ["null", "string"], "name": "name"}, {"default": null,
 "doc": "", "type": ["null", "string"], "name": "description"}, {"doc":
-"", "type": "string", "name": "recordCreateTime"}, {"doc": "", "type":
-"string", "name": "recordUpdateTime"}, {"default": null, "doc": "",
+"", "type": "string", "name": "createDateTime"}, {"doc": "", "type":
+"string", "name": "updateDateTime"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "runTime"}, {"default": null,
 "doc": "", "type": ["null", "string"], "name": "molecule"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
@@ -2133,7 +2435,7 @@ class SearchReadsResponse(SearchResponse):
 "name": "id"}, {"doc": "", "type": "string", "name": "readGroupId"},
 {"doc": "", "type": "string", "name": "fragmentName"}, {"default":
 null, "doc": "", "type": ["null", "boolean"], "name":
-"properPlacement"}, {"default": null, "doc": "", "type": ["null",
+"improperPlacement"}, {"default": null, "doc": "", "type": ["null",
 "boolean"], "name": "duplicateFragment"}, {"default": null, "doc": "",
 "type": ["null", "int"], "name": "numberReads"}, {"default": null,
 "doc": "", "type": ["null", "int"], "name": "fragmentLength"},
@@ -2472,6 +2774,326 @@ class SearchReferencesResponse(SearchResponse):
         """
 
 
+class SearchVariantAnnotationSetsRequest(SearchRequest):
+    """
+    This request maps to the body of POST
+    /variantannotationsets/search as JSON
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchVariantAnnotationSetsRequest", "fields": [{"doc": "", "type":
+"string", "name": "variantSetId"}, {"default": null, "doc": "",
+"type": ["null", "int"], "name": "pageSize"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "variantSetId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'pageSize', 'pageToken', 'variantSetId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
+        self.variantSetId = kwargs.get(
+            'variantSetId', None)
+        """
+        Required. The VariantSet to search.
+        """
+
+
+class SearchVariantAnnotationSetsResponse(SearchResponse):
+    """
+    This is the response from POST /variantannotationsets/search
+    expressed as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchVariantAnnotationSetsResponse", "fields": [{"default": [],
+"doc": "", "type": {"items": {"namespace": "org.ga4gh.models", "type":
+"record", "name": "VariantAnnotationSet", "fields": [{"doc": "",
+"type": "string", "name": "id"}, {"doc": "", "type": "string", "name":
+"variantSetId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "Analysis", "fields": [{"doc": "", "type": "string",
+"name": "id"}, {"default": null, "type": ["null", "string"], "name":
+"name"}, {"default": null, "type": ["null", "string"], "name":
+"description"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "createDateTime"}, {"doc": "", "type": "string",
+"name": "updateDateTime"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "type"}, {"default": [], "doc": "",
+"type": {"items": "string", "type": "array"}, "name": "software"},
+{"default": {}, "doc": "", "type": {"values": {"items": "string",
+"type": "array"}, "type": "map"}, "name": "info"}]}, "name":
+"analysis"}], "doc": ""}, "type": "array"}, "name":
+"variantAnnotationSets"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "variantAnnotationSets"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'variantAnnotationSets': VariantAnnotationSet,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'variantAnnotationSets': VariantAnnotationSet,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'nextPageToken', 'variantAnnotationSets'
+    ]
+
+    def __init__(self, **kwargs):
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
+        self.variantAnnotationSets = kwargs.get(
+            'variantAnnotationSets', [])
+        """
+        The list of matching variant annotation sets.
+        """
+
+
+class SearchVariantAnnotationsRequest(SearchRequest):
+    """
+    This request maps to the body of POST /variantannotations/search
+    as JSON
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchVariantAnnotationsRequest", "fields": [{"doc": "", "type":
+"string", "name": "variantAnnotationSetId"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceName"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "referenceId"},
+{"doc": "", "type": "long", "name": "start"}, {"doc": "", "type":
+"long", "name": "end"}, {"default": null, "doc": "", "type": ["null",
+{"items": {"namespace": "org.ga4gh.models", "type": "record", "name":
+"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}, "type":
+"array"}], "name": "effects"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "end",
+        "start",
+        "variantAnnotationSetId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'effects', 'end', 'pageSize', 'pageToken', 'referenceId',
+        'referenceName', 'start', 'variantAnnotationSetId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.effects = kwargs.get(
+            'effects', None)
+        """
+        This filter allows variant, transcript combinations to be
+        extracted by effect   type(s).   Only return variant
+        annotations including any of these effects and only return
+        transcript effects including any of these effects. Exact
+        matching across all   fields of the Sequence Ontology
+        OntologyTerm is required.   (A transcript effect may have
+        multiple SO effects which will all be reported.)   If null,
+        return all variant annotations.
+        """
+        self.end = kwargs.get(
+            'end', None)
+        """
+        Required if referenceName or referenceId supplied.   The end
+        of the window (0-based, exclusive) for which variants with
+        overlapping reference alleles should be returned.
+        """
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
+        self.referenceId = kwargs.get(
+            'referenceId', None)
+        """
+        Only return variants with reference alleles on the reference
+        with this   ID. One of this field or referenceName or features
+        is required.
+        """
+        self.referenceName = kwargs.get(
+            'referenceName', None)
+        """
+        Only return variants with reference alleles on the reference
+        with this   name. One of this field or referenceId or features
+        is required.   (case-sensitive, exact match)
+        """
+        self.start = kwargs.get(
+            'start', None)
+        """
+        Required if referenceName or referenceId supplied.   The
+        beginning of the window (0-based, inclusive) for which
+        variants with   overlapping reference alleles should be
+        returned.   Genomic positions are non-negative integers less
+        than reference length.   Requests spanning the join of
+        circular genomes are represented as   two requests one on each
+        side of the join (position 0).
+        """
+        self.variantAnnotationSetId = kwargs.get(
+            'variantAnnotationSetId', None)
+        """
+        Required. The ID of the variant annotation set to search over.
+        """
+
+
+class SearchVariantAnnotationsResponse(SearchResponse):
+    """
+    This is the response from POST /variantannotations/search
+    expressed as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchVariantAnnotationsResponse", "fields": [{"default": [], "doc":
+"", "type": {"items": {"namespace": "org.ga4gh.models", "type":
+"record", "name": "VariantAnnotation", "fields": [{"doc": "", "type":
+"string", "name": "id"}, {"doc": "", "type": "string", "name":
+"variantId"}, {"doc": "", "type": "string", "name":
+"variantAnnotationSetId"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "createDateTime"}, {"default": [], "doc":
+"", "type": {"items": {"doc": "", "type": "record", "name":
+"TranscriptEffect", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name":
+"alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
+"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
+"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "term"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "HGVSAnnotation", "fields": [{"default": null,
+"type": ["null", "string"], "name": "genomic"}, {"default": null,
+"type": ["null", "string"], "name": "transcript"}, {"default": null,
+"type": ["null", "string"], "name": "protein"}]}, "name":
+"hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "AlleleLocation", "fields":
+[{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "end"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceSequence"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"alternateSequence"}]}], "name": "cDNALocation"}, {"default": null,
+"type": ["null", "AlleleLocation"], "name": "CDSLocation"},
+{"default": null, "doc": "", "type": ["null", "AlleleLocation"],
+"name": "proteinLocation"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "AnalysisResult", "fields": [{"doc": "",
+"type": "string", "name": "analysisId"}, {"doc": "", "type": ["null",
+"string"], "name": "result"}, {"doc": "", "type": ["null", "int"],
+"name": "score"}]}, "type": "array"}, "name": "analysisResults"}]},
+"type": "array"}, "name": "transcriptEffects"}, {"default": {}, "doc":
+"", "type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}, "type": "array"}, "name":
+"variantAnnotations"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "variantAnnotations"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'variantAnnotations': VariantAnnotation,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'variantAnnotations': VariantAnnotation,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'nextPageToken', 'variantAnnotations'
+    ]
+
+    def __init__(self, **kwargs):
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
+        self.variantAnnotations = kwargs.get(
+            'variantAnnotations', [])
+        """
+        The list of matching variant annotations.
+        """
+
+
 class SearchVariantSetsRequest(SearchRequest):
     """
     This request maps to the body of POST /variantsets/search as JSON.
@@ -2765,6 +3387,129 @@ class Strand(object):
     POS_STRAND = "POS_STRAND"
 
 
+class TranscriptEffect(ProtocolElement):
+    """
+    A transcript effect record is a set of information describing the
+    effect of an allele on a transcript
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"TranscriptEffect", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": "string", "name": "featureId"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name":
+"alternateBases"}, {"doc": "", "type": {"items": {"doc": "", "type":
+"record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
+"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "term"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "HGVSAnnotation", "fields": [{"default": null,
+"type": ["null", "string"], "name": "genomic"}, {"default": null,
+"type": ["null", "string"], "name": "transcript"}, {"default": null,
+"type": ["null", "string"], "name": "protein"}]}, "name":
+"hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "AlleleLocation", "fields":
+[{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "end"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceSequence"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"alternateSequence"}]}], "name": "cDNALocation"}, {"default": null,
+"type": ["null", "AlleleLocation"], "name": "CDSLocation"},
+{"default": null, "doc": "", "type": ["null", "AlleleLocation"],
+"name": "proteinLocation"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "AnalysisResult", "fields": [{"doc": "",
+"type": "string", "name": "analysisId"}, {"doc": "", "type": ["null",
+"string"], "name": "result"}, {"doc": "", "type": ["null", "int"],
+"name": "score"}]}, "type": "array"}, "name": "analysisResults"}],
+"doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "analysisResults",
+        "effects",
+        "featureId",
+        "hgvsAnnotation",
+        "id",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'CDSLocation': AlleleLocation,
+            'analysisResults': AnalysisResult,
+            'cDNALocation': AlleleLocation,
+            'effects': OntologyTerm,
+            'hgvsAnnotation': HGVSAnnotation,
+            'proteinLocation': AlleleLocation,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'CDSLocation': AlleleLocation,
+            'analysisResults': AnalysisResult,
+            'cDNALocation': AlleleLocation,
+            'effects': OntologyTerm,
+            'hgvsAnnotation': HGVSAnnotation,
+            'proteinLocation': AlleleLocation,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'CDSLocation', 'alternateBases', 'analysisResults',
+        'cDNALocation', 'effects', 'featureId', 'hgvsAnnotation',
+        'id', 'proteinLocation'
+    ]
+
+    def __init__(self, **kwargs):
+        self.CDSLocation = kwargs.get(
+            'CDSLocation', None)
+        self.alternateBases = kwargs.get(
+            'alternateBases', None)
+        """
+        Alternate allele - a variant may have more than one alternate
+        allele,   each of which will have distinct annotation.
+        """
+        self.analysisResults = kwargs.get(
+            'analysisResults', None)
+        """
+        Output from prediction packages such as SIFT
+        """
+        self.cDNALocation = kwargs.get(
+            'cDNALocation', None)
+        """
+        Change relative to cDNA
+        """
+        self.effects = kwargs.get(
+            'effects', None)
+        """
+        Effect of variant on this feature
+        """
+        self.featureId = kwargs.get(
+            'featureId', None)
+        """
+        The id of the transcript feature the annotation is relative to
+        """
+        self.hgvsAnnotation = kwargs.get(
+            'hgvsAnnotation', None)
+        """
+        Human Genome Variation Society variant descriptions
+        """
+        self.id = kwargs.get(
+            'id', None)
+        """
+        The ID of the transcript effect record
+        """
+        self.proteinLocation = kwargs.get(
+            'proteinLocation', None)
+        """
+        Change relative to protein
+        """
+
+
 class Variant(ProtocolElement):
     """
     A Variant represents a change in DNA sequence relative to some
@@ -2906,6 +3651,187 @@ class Variant(ProtocolElement):
         The ID of the VariantSet this variant belongs to. This
         transitively defines   the ReferenceSet against which the
         Variant is to be interpreted.
+        """
+
+
+class VariantAnnotation(ProtocolElement):
+    """
+    A VariantAnnotation record represents the result of comparing a
+    variant to a set of reference data.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"VariantAnnotation", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": "string", "name": "variantId"}, {"doc": "",
+"type": "string", "name": "variantAnnotationSetId"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "createDateTime"},
+{"default": [], "doc": "", "type": {"items": {"doc": "", "type":
+"record", "name": "TranscriptEffect", "fields": [{"doc": "", "type":
+"string", "name": "id"}, {"doc": "", "type": "string", "name":
+"featureId"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "alternateBases"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "term"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "sourceName"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceVersion"}]},
+"type": "array"}, "name": "effects"}, {"doc": "", "type": {"doc": "",
+"type": "record", "name": "HGVSAnnotation", "fields": [{"default":
+null, "type": ["null", "string"], "name": "genomic"}, {"default":
+null, "type": ["null", "string"], "name": "transcript"}, {"default":
+null, "type": ["null", "string"], "name": "protein"}]}, "name":
+"hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "AlleleLocation", "fields":
+[{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "end"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceSequence"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"alternateSequence"}]}], "name": "cDNALocation"}, {"default": null,
+"type": ["null", "AlleleLocation"], "name": "CDSLocation"},
+{"default": null, "doc": "", "type": ["null", "AlleleLocation"],
+"name": "proteinLocation"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "AnalysisResult", "fields": [{"doc": "",
+"type": "string", "name": "analysisId"}, {"doc": "", "type": ["null",
+"string"], "name": "result"}, {"doc": "", "type": ["null", "int"],
+"name": "score"}]}, "type": "array"}, "name": "analysisResults"}]},
+"type": "array"}, "name": "transcriptEffects"}, {"default": {}, "doc":
+"", "type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "id",
+        "variantAnnotationSetId",
+        "variantId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'transcriptEffects': TranscriptEffect,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'transcriptEffects': TranscriptEffect,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'createDateTime', 'id', 'info', 'transcriptEffects',
+        'variantAnnotationSetId', 'variantId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.createDateTime = kwargs.get(
+            'createDateTime', None)
+        """
+        The :ref:ISO 8601 <metadata_date_time> time at which this
+        record was created.
+        """
+        self.id = kwargs.get(
+            'id', None)
+        """
+        The ID of this VariantAnnotation.
+        """
+        self.info = kwargs.get(
+            'info', {})
+        """
+        Additional annotation data in key-value pairs.
+        """
+        self.transcriptEffects = kwargs.get(
+            'transcriptEffects', [])
+        """
+        The transcript effect annotation for the alleles of this
+        variant. Each one   represents the effect of a single allele
+        on a single transcript.
+        """
+        self.variantAnnotationSetId = kwargs.get(
+            'variantAnnotationSetId', None)
+        """
+        The ID of the variant annotation set this record belongs to.
+        """
+        self.variantId = kwargs.get(
+            'variantId', None)
+        """
+        The variant ID.
+        """
+
+
+class VariantAnnotationSet(ProtocolElement):
+    """
+    A VariantAnnotationSet record groups VariantAnnotation records. It
+    is derived from a VariantSet and holds information describing the
+    software and reference data used in the annotation.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"VariantAnnotationSet", "fields": [{"doc": "", "type": "string",
+"name": "id"}, {"doc": "", "type": "string", "name": "variantSetId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
+"Analysis", "fields": [{"doc": "", "type": "string", "name": "id"},
+{"default": null, "type": ["null", "string"], "name": "name"},
+{"default": null, "type": ["null", "string"], "name": "description"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"createDateTime"}, {"doc": "", "type": "string", "name":
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "type"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "software"}, {"default":
+{}, "doc": "", "type": {"values": {"items": "string", "type":
+"array"}, "type": "map"}, "name": "info"}]}, "name": "analysis"}],
+"doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "analysis",
+        "id",
+        "variantSetId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'analysis': Analysis,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'analysis': Analysis,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'analysis', 'id', 'name', 'variantSetId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.analysis = kwargs.get(
+            'analysis', None)
+        """
+        Analysis details. It is essential to supply versions for all
+        software and   reference data used.
+        """
+        self.id = kwargs.get(
+            'id', None)
+        """
+        The ID of the variant annotation set record
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        The variant annotation set name.
+        """
+        self.variantSetId = kwargs.get(
+            'variantSetId', None)
+        """
+        The ID of the variant set to which this annotation set belongs
         """
 
 
@@ -3087,6 +4013,12 @@ postMethods = \
      ('/referencesets/search',
       SearchReferenceSetsRequest,
       SearchReferenceSetsResponse),
+     ('/variantannotations/search',
+      SearchVariantAnnotationsRequest,
+      SearchVariantAnnotationsResponse),
+     ('/variantannotationsets/search',
+      SearchVariantAnnotationSetsRequest,
+      SearchVariantAnnotationSetsResponse),
      ('/variants/search',
       SearchVariantsRequest,
       SearchVariantsResponse),
