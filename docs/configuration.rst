@@ -173,6 +173,11 @@ An example layout might look like::
                     sample2.bam.bai
                     # More BAMS
 
+.. note:: Any change to the data repository (using the repository manager or
+    otherwise) requires a restart of the server to be picked up by the
+    server.  The server does not detect changes in the data repository
+    while running.
+
 ------------------
 Repository manager
 ------------------
