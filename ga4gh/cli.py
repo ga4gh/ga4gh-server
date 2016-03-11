@@ -1422,6 +1422,26 @@ class AddDatasetRunner(AbstractRepoDatasetCommandRunner):
         self.repoManager.addDataset(self.datasetName)
 
 
+class AddOntologyMapRunner(AbstractRepoAddMoveCommandRunner):
+
+    def __init__(self, args):
+        super(AddOntologyMapRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.addOntologyMap(self.filePath, self.moveMode)
+
+
+class RemoveOntologyMapRunner(AbstractRepoCommandRunner):
+
+    def __init__(self, args):
+        super(RemoveOntologyMapRunner, self).__init__(args)
+        self.ontologyMapName = args.ontologyMapName
+
+    def run(self):
+        def func(): self.repoManager.removeOntologyMap(self.ontologyMapName)
+        self.confirmRun(func, 'ontology map {}'.format(self.ontologyMapName))
+
+
 class RemoveDatasetRunner(AbstractRepoDatasetCommandRunner):
 
     def __init__(self, args):
@@ -1525,6 +1545,12 @@ def addForceArgument(subparser):
 def addDatasetNameArgument(subparser):
     subparser.add_argument(
         "datasetName", help="the name of the dataset to create/modify")
+
+
+def addOntologyNameArgument(subparser):
+    subparser.add_argument(
+        "ontologyMapName",
+        help="the name of the ontology map to create/modify")
 
 
 def addReadGroupSetNameArgument(subparser):
@@ -1631,6 +1657,22 @@ def getRepoParser():
     addDatasetNameArgument(addReadGroupSetParser)
     addFilePathArgument(addReadGroupSetParser)
     addMoveModeArgument(addReadGroupSetParser)
+
+    addOntologyMapParser = addSubparser(
+        subparsers, "add-ontologymap",
+        "Add an ontology map to the repo")
+    addOntologyMapParser.set_defaults(runner=AddOntologyMapRunner)
+    addRepoArgument(addOntologyMapParser)
+    addFilePathArgument(addOntologyMapParser)
+    addMoveModeArgument(addOntologyMapParser)
+
+    removeOntologyMapParser = addSubparser(
+        subparsers, "remove-ontologymap",
+        "Remove an ontology map from the repo")
+    removeOntologyMapParser.set_defaults(runner=RemoveOntologyMapRunner)
+    addRepoArgument(removeOntologyMapParser)
+    addOntologyNameArgument(removeOntologyMapParser)
+    addForceArgument(removeOntologyMapParser)
 
     removeReadGroupSetParser = addSubparser(
         subparsers, "remove-readgroupset",

@@ -806,7 +806,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         self._variantSet = variantSet
         self._compoundId = datamodel.VariantAnnotationSetCompoundId(
             self.getCompoundId(), 'variantannotations')
-        self._sequenceOntology = backend.getOntology('sequence_ontology')
+        self._sequenceOntology = backend.getOntologyMap('sequence_ontology')
         self._creationTime = datetime.datetime.now().isoformat() + "Z"
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
         # Annotations are currently either from VEP or SNPEff. If they are

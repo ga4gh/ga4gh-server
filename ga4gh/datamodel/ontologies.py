@@ -27,10 +27,20 @@ class FileSystemOntology(object):
         self._idNameMap[name] = id_
 
     def getId(self, name):
+        try:
+            id_ = self._idNameMap[name]
+        except KeyError:
+            id_ = ""
+        return id_
+
         return self._idNameMap[name]
 
     def getName(self, id_):
-        return self._nameIdMap[id_]
+        try:
+            name = self._nameIdMap[id_]
+        except KeyError:
+            name = ""
+        return name
 
     def readOntology(self, filename):
         with open(filename) as f:
