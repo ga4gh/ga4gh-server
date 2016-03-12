@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import requests
 import posixpath
 import logging
+import json
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -208,6 +209,31 @@ class AbstractClient(object):
         return self._runGetRequest(
             "variantsets", protocol.VariantSet, variantSetId)
 
+    def getVariantAnnotationSet(self, variantAnnotationSetId):
+        """
+        Returns the VariantAnnotationSet with the specified ID from
+        the server.
+
+        :param str variantAnnotationSetId: The ID of the
+            VariantAnnotationSet of interest.
+        :return: The VariantAnnotationSet of interest.
+        :rtype: :class:`ga4gh.protocol.VariantAnnotationSet`
+        """
+        return self._runGetRequest(
+            "variantannotationsets", protocol.VariantAnnotationSet,
+            variantAnnotationSetId)
+
+    def getFeatureSet(self, featureSetId):
+        """
+        Returns the FeatureSet with the specified ID from the server.
+
+        :param str featureSetId: The ID of the FeatureSet of interest.
+        :return: The FeatureSet of interest.
+        :rtype: :class:`ga4gh.protocol.FeatureSet`
+        """
+        return self._runGetRequest(
+            "featuresets", protocol.FeatureSet, featureSetId)
+
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
             callSetIds=None):
@@ -245,6 +271,38 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "variants", protocol.SearchVariantsResponse)
 
+    def searchVariantAnnotations(
+            self, variantAnnotationSetId, referenceName=None, referenceId=None,
+            start=None, end=None, featureIds=[], effects=[]):
+        """
+        Returns an iterator over the Annotations fulfilling the specified
+        conditions from the specified AnnotationSet.
+
+        The JSON string for an effect term must be specified on the
+        command line : `--effects '{"term": "exon_variant"}'`.
+        """
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variantAnnotationSetId = variantAnnotationSetId
+        request.referenceName = referenceName
+        request.referenceId = referenceId
+        request.start = start
+        request.end = end
+        # request.feature_ids = featureIds
+        soTerms = []
+        for eff in effects:
+            try:
+                soTerms.append(json.loads(eff))
+            except ValueError:
+                print("The effect argument is malformed.")
+                print("e.g. command line : `--effects "
+                      "'{\"term\": \"exon_variant\"}'`")
+                exit()
+        request.effects = soTerms
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "variantannotations",
+            protocol.SearchVariantAnnotationsResponse)
+
     def searchDatasets(self):
         """
         Returns an iterator over the Datasets on the server.
@@ -272,6 +330,39 @@ class AbstractClient(object):
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "variantsets", protocol.SearchVariantSetsResponse)
+
+    def searchVariantAnnotationSets(self, variantSetId):
+        """
+        Returns an iterator over the AnnotationSets fulfilling the specified
+        conditions from the specified variant set.
+
+        :param str variantSetId: The ID of the
+            :class:`ga4gh.protocol.VariantSet` of interest.
+        :return: An iterator over the :class:`ga4gh.protocol.AnnotationSet`
+            objects defined by the query parameters.
+        """
+        request = protocol.SearchVariantAnnotationSetsRequest()
+        request.variantSetId = variantSetId
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "variantannotationsets",
+            protocol.SearchVariantAnnotationSetsResponse)
+
+    def searchFeatureSets(self, datasetId):
+        """
+        Returns an iterator over the FeatureSets fulfilling the specified
+        conditions from the specified Dataset.
+
+        :param str datasetId: The ID of the
+            :class:`ga4gh.protocol.Dataset` of interest.
+        :return: An iterator over the :class:`ga4gh.protocol.FeatureSet`
+            objects defined by the query parameters.
+        """
+        request = protocol.SearchFeatureSetsRequest()
+        request.datasetId = datasetId
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+                    request, "featuresets", protocol.SearchFeatureSetsResponse)
 
     def searchReferenceSets(
             self, accession=None, md5checksum=None, assemblyId=None):
@@ -483,9 +574,11 @@ class LocalClient(AbstractClient):
             "referencesets": self._backend.runGetReferenceSet,
             "references": self._backend.runGetReference,
             "variantsets": self._backend.runGetVariantSet,
+            "featuresets": self._backend.runGetFeatureSet,
             "variants": self._backend.runGetVariant,
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
+            "variantannotationsets": self._backend.runGetVariantAnnotationSet
         }
         self._searchMethodMap = {
             "callsets": self._backend.runSearchCallSets,
@@ -493,9 +586,12 @@ class LocalClient(AbstractClient):
             "referencesets": self._backend.runSearchReferenceSets,
             "references": self._backend.runSearchReferences,
             "variantsets": self._backend.runSearchVariantSets,
+            "featuresets": self._backend.runSearchFeatureSets,
             "variants": self._backend.runSearchVariants,
             "readgroupsets": self._backend.runSearchReadGroupSets,
             "reads": self._backend.runSearchReads,
+            "variantannotationsets":
+                self._backend.runSearchVariantAnnotationSets
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):

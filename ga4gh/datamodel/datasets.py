@@ -11,6 +11,7 @@ import os
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
+import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
@@ -26,9 +27,13 @@ class AbstractDataset(datamodel.DatamodelObject):
         super(AbstractDataset, self).__init__(None, localId)
         self._variantSetIds = []
         self._variantSetIdMap = {}
+        self._featureSetIds = []
+        self._featureSetIdMap = {}
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
+        self._variantAnnotationSetIds = []
+        self._variantAnnotationSetIdMap = {}
         self._description = None
 
     def addVariantSet(self, variantSet):
@@ -38,6 +43,22 @@ class AbstractDataset(datamodel.DatamodelObject):
         id_ = variantSet.getId()
         self._variantSetIdMap[id_] = variantSet
         self._variantSetIds.append(id_)
+
+    def addVariantAnnotationSet(self, variantAnnotationSet):
+        """
+        Adds the specified variantAnnotationSet to this dataset.
+        """
+        id_ = variantAnnotationSet.getId()
+        self._variantAnnotationSetIdMap[id_] = variantAnnotationSet
+        self._variantAnnotationSetIds.append(id_)
+
+    def addFeatureSet(self, featureSet):
+        """
+        Adds the specified variantSet to this dataset.
+        """
+        id_ = featureSet.getId()
+        self._featureSetIdMap[id_] = featureSet
+        self._featureSetIds.append(id_)
 
     def addReadGroupSet(self, readGroupSet):
         """
@@ -67,6 +88,27 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return len(self._variantSetIds)
 
+    def getVariantAnnotationSets(self):
+        """
+        Returns the list of VariantAnnotationSets in this dataset
+        """
+        return [self._variantAnnotationSetIdMap[id_] for id_ in
+                self._variantAnnotationSetIds]
+
+    def getVariantAnnotationSet(self, id_):
+        """
+        Returns the AnnotationSet in this dataset with the specified 'id'
+        """
+        if id_ not in self._variantAnnotationSetIdMap:
+            raise exceptions.AnnotationSetNotFoundException(id_)
+        return self._variantAnnotationSetIdMap[id_]
+
+    def getNumVariantAnnotationSets(self):
+        """
+        Returns the number of variant annotation sets in this dataset.
+        """
+        return len(self._variantAnnotationSetIds)
+
     def getVariantSet(self, id_):
         """
         Returns the VariantSet with the specified name, or raises a
@@ -81,6 +123,41 @@ class AbstractDataset(datamodel.DatamodelObject):
         Returns the variant set at the specified index in this dataset.
         """
         return self._variantSetIdMap[self._variantSetIds[index]]
+
+    def getVariantAnnotationSetByIndex(self, index):
+        """
+        Returns the variant annotation set at the specified index in this
+        dataset.
+        """
+        return self._variantAnnotationSetIdMap[
+            self._variantAnnotationSetIds[index]]
+
+    def getFeatureSets(self):
+        """
+        Returns the list of FeatureSets in this dataset
+        """
+        return [self._featureSetIdMap[id_] for id_ in self._featureSetIds]
+
+    def getNumFeatureSets(self):
+        """
+        Returns the number of feature sets in this dataset.
+        """
+        return len(self._featureSetIds)
+
+    def getFeatureSet(self, id_):
+        """
+        Returns the FeatureSet with the specified name, or raises a
+        FeatureSetNotFoundException otherwise.
+        """
+        if id_ not in self._featureSetIdMap:
+            raise exceptions.FeatureSetNotFoundException(id_)
+        return self._featureSetIdMap[id_]
+
+    def getFeatureSetByIndex(self, index):
+        """
+        Returns the feature set at the specified index in this dataset.
+        """
+        return self._featureSetIdMap[self._featureSetIds[index]]
 
     def getNumReadGroupSets(self):
         """
@@ -133,7 +210,7 @@ class SimulatedDataset(AbstractDataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1):
+            numAlignments=1, numFeatureSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
         # Variants
@@ -143,6 +220,9 @@ class SimulatedDataset(AbstractDataset):
             variantSet = variants.SimulatedVariantSet(
                 self, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
+            variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
+                self, "simVas{}".format(i), variantSet)
+            self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
             localId = 'simRgs{}'.format(i)
@@ -151,6 +231,13 @@ class SimulatedDataset(AbstractDataset):
                 self, localId, referenceSet, seed,
                 numReadGroupsPerReadGroupSet, numAlignments)
             self.addReadGroupSet(readGroupSet)
+        # Features
+        for i in range(numFeatureSets):
+            localId = "simFs{}".format(i)
+            seed = randomSeed + i
+            featureSet = sequenceAnnotations.SimulatedFeatureSet(
+                self, localId, seed)
+            self.addFeatureSet(featureSet)
 
 
 class FileSystemDataset(AbstractDataset):
@@ -159,6 +246,7 @@ class FileSystemDataset(AbstractDataset):
     """
     variantsDirName = "variants"
     readsDirName = "reads"
+    featuresDirName = "sequenceAnnotations"
 
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
@@ -173,6 +261,13 @@ class FileSystemDataset(AbstractDataset):
                 variantSet = variants.HtslibVariantSet(
                     self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
+            # Variant annotations sets
+                if variantSet.isAnnotated(relativePath):
+                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+                            self, localId, relativePath, dataRepository,
+                            variantSet)
+                    self.addVariantAnnotationSet(variantAnnotationSet)
+
         # Reads
         readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):
@@ -182,6 +277,15 @@ class FileSystemDataset(AbstractDataset):
                 readGroupSet = reads.HtslibReadGroupSet(
                     self, localId, bamPath, dataRepository)
                 self.addReadGroupSet(readGroupSet)
+        # Sequence Annotations
+        featureSetDir = os.path.join(dataDir, self.featuresDirName)
+        for filename in os.listdir(featureSetDir):
+            if fnmatch.fnmatch(filename, '*.db'):
+                localId, _ = os.path.splitext(filename)
+                fullPath = os.path.join(featureSetDir, filename)
+                featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+                    self, localId, fullPath, dataRepository)
+                self.addFeatureSet(featureSet)
 
     def _setMetadata(self):
         metadataFileName = '{}.json'.format(self._dataDir)

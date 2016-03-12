@@ -189,6 +189,12 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class AnnotationSetNotFoundException(NotFoundException):
+    def __init__(self, variantAnnotationSetId):
+        self.message = "The requested VariantAnnotationSet '{}'" \
+            "was not found".format(variantAnnotationSetId)
+
+
 class CallSetNotFoundException(NotFoundException):
     def __init__(self, callSetId):
         self.message = "The requested CallSet '{}' was not found".format(
@@ -330,6 +336,18 @@ class DatasetNameNotFoundException(NotFoundException):
     """
     def __init__(self, name):
         self.message = "Dataset with name '{0}' not found".format(name)
+
+
+class FeatureGroupNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "FeatureGroup with name '{0}' not found".format(name))
+
+
+class SequenceAnnotationNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "SequenceAnnotation with name '{0}' not found".format(name))
 
 
 class DataException(BaseServerException):

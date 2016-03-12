@@ -79,6 +79,23 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "variantsets", protocol.SearchVariantSetsResponse)
 
+    def testSearchVariantAnnotationSets(self):
+        request = protocol.SearchVariantAnnotationSetsRequest()
+        request.variantSetId = self.variantSetId
+        request.pageSize = self.pageSize
+        self.httpClient.searchVariantAnnotationSets(self.variantSetId)
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "variantannotationsets",
+            protocol.SearchVariantAnnotationSetsResponse)
+
+    def testSearchFeatureSets(self):
+        request = protocol.SearchFeatureSetsRequest()
+        request.datasetId = self.datasetId
+        request.pageSize = self.pageSize
+        self.httpClient.searchFeatureSets(self.datasetId)
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "featuresets", protocol.SearchFeatureSetsResponse)
+
     def testSearchReferenceSets(self):
         request = protocol.SearchReferenceSetsRequest()
         request.pageSize = self.pageSize
@@ -140,6 +157,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.getReferenceSet(self.objectId)
         self.httpClient._runGetRequest.assert_called_once_with(
             "referencesets", protocol.ReferenceSet, self.objectId)
+
+    def testGetVariantAnnotationSet(self):
+        self.httpClient.getVariantAnnotationSet(self.objectId)
+        self.httpClient._runGetRequest.assert_called_once_with(
+            "variantannotationsets", protocol.VariantAnnotationSet,
+            self.objectId)
 
     def testGetVariantSet(self):
         self.httpClient.getVariantSet(self.objectId)

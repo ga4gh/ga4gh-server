@@ -39,6 +39,7 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         self._runCmd("add-dataset", self.datasetName)
         self._runCmd("add-readgroupset", self.datasetName, paths.bamPath)
         self._runCmd("add-variantset", self.datasetName, paths.vcfDirPath)
+        self._runCmd("add-featureset", self.datasetName, paths.featuresPath)
         self._runCmd("check")
         self._runCmd("list")
         self._runCmd(
@@ -47,6 +48,9 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         self._runCmd(
             "remove-readgroupset", self.datasetName,
             paths.readGroupSetName, "-f")
+        self._runCmd(
+            "remove-featureset", self.datasetName, paths.featureSetName,
+            "-f")
         self._runCmd(
             "remove-dataset", self.datasetName, "-f")
         self._runCmd(

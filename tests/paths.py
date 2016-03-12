@@ -32,3 +32,10 @@ bamPath2 = os.path.join(
     testDataDir,
     'datasets/dataset1/reads/'
     'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample.bam')
+
+# sequence annotations
+featureSetName = 'gencodeV21Set1'
+featuresPath = os.path.join(
+    testDataDir, 'datasets/dataset1/sequenceAnnotations/gencodeV21Set1.db')
+featuresPath2 = os.path.join(
+    testDataDir, 'datasets/dataset1/sequenceAnnotations/specialCasesTest.db')

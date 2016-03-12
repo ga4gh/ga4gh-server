@@ -231,6 +231,15 @@ class VariantSetCompoundId(DatasetCompoundId):
     containerIds = DatasetCompoundId.containerIds + [('variantSetId', 1)]
 
 
+class VariantAnnotationSetCompoundId(VariantSetCompoundId):
+    """
+    The compound id for a variant annotation set
+    """
+    fields = VariantSetCompoundId.fields + ['variantAnnotationSet']
+    containerIds = VariantSetCompoundId.containerIds + [
+        ('variantAnnotationSetId', 2)]
+
+
 class VariantSetMetadataCompoundId(VariantSetCompoundId):
     """
     The compound id for a variant set
@@ -247,11 +256,41 @@ class VariantCompoundId(VariantSetCompoundId):
     fields = VariantSetCompoundId.fields + ['referenceName', 'start', 'md5']
 
 
+class VariantAnnotationCompoundId(VariantAnnotationSetCompoundId):
+    """
+    The compound id for a variant annotaiton
+    """
+    fields = VariantAnnotationSetCompoundId.fields + [
+        'referenceName', 'start', 'md5']
+
+
+class VariantAnnotationSetAnalysisCompoundId(VariantAnnotationSetCompoundId):
+    """
+    The compound id for a variant annotaiton set's Analysis
+    """
+    fields = VariantAnnotationSetCompoundId.fields + ['analysis']
+
+
 class CallSetCompoundId(VariantSetCompoundId):
     """
     The compound id for a callset
     """
     fields = VariantSetCompoundId.fields + ['name']
+
+
+class FeatureSetCompoundId(DatasetCompoundId):
+    """
+    The compound id for a feature set
+    """
+    fields = DatasetCompoundId.fields + ['featureSet']
+    containerIds = DatasetCompoundId.containerIds + [('featureSetId', 1)]
+
+
+class FeatureCompoundId(FeatureSetCompoundId):
+    """
+    The compound id class for a feature
+    """
+    fields = FeatureSetCompoundId.fields + ['featureId']
 
 
 class ReadGroupSetCompoundId(DatasetCompoundId):

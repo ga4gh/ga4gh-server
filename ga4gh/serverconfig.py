@@ -40,6 +40,8 @@ class DevelopmentConfig(BaseConfig):
     """
     DATA_SOURCE = "ga4gh-example-data"
     DEBUG = True
+    REQUEST_VALIDATION = False
+    RESPONSE_VALIDATION = False
 
 
 class LocalOidConfig(DevelopmentConfig):

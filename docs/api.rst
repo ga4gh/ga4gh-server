@@ -57,6 +57,19 @@ Variants
 .. autoclass:: ga4gh.protocol.Variant
     :members:
 
+++++++++++++++++++++++++
+Variant Annotation
+++++++++++++++++++++++++
+
+.. autoclass:: ga4gh.protocol.VariantAnnotationSet
+    :members:
+
+.. autoclass:: ga4gh.protocol.VariantAnnotation
+    :members:
+
+.. autoclass:: ga4gh.protocol.TranscriptEffect
+    :members:
+
 +++++
 Reads
 +++++
