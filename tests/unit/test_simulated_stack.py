@@ -428,6 +428,19 @@ class TestSimulatedStack(unittest.TestCase):
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
 
+    def testGetVariantAnnotationSet(self):
+        path = "/variantannotationsets"
+        for dataset in self.dataRepo.getDatasets():
+            for variantAnnotationSet in dataset.getVariantAnnotationSets():
+                responseObject = self.sendGetObject(
+                    path, variantAnnotationSet.getId(),
+                    protocol.VariantAnnotationSet)
+                self.assertEqual(variantAnnotationSet.getId(),
+                                 responseObject.id,
+                                 "The requested ID should match the returned")
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
+
     def testGetVariant(self):
         # get a variant from the search method
         referenceName = '1'
@@ -539,6 +552,134 @@ class TestSimulatedStack(unittest.TestCase):
 
         # TODO: Add more useful test scenarios, including some covering
         # pagination behavior.
+
+    def testVariantAnnotationSetsSearch(self):
+        dataset = self.dataRepo.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        variantAnnotationSet = dataset.getVariantAnnotationSets()[0]
+        self.assertIsNotNone(variantAnnotationSet)
+
+        request = protocol.SearchVariantAnnotationSetsRequest()
+
+        request.variantSetId = "b4d=="
+        path = '/variantannotationsets/search'
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationSetsResponse. \
+            fromJsonString(response.data)
+        self.assertTrue(responseData.validate(responseData.toJsonDict()))
+        self.assertIsNone(responseData.nextPageToken)
+        self.assertEqual([], responseData.variantAnnotationSets,
+                         "There should no results for a bad ID")
+
+        request.variantSetId = variantSet.getId()
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationSetsResponse. \
+            fromJsonString(response.data)
+        self.assertTrue(protocol.SearchVariantAnnotationSetsResponse.validate(
+            responseData.toJsonDict()))
+        self.assertGreater(len(responseData.variantAnnotationSets), 0,
+                           "Expect some results for a known good ID")
+
+    def testVariantAnnotationsSearch(self):
+        dataset = self.dataRepo.getDatasets()[0]
+        variantAnnotationSet = dataset.getVariantAnnotationSets()[0]
+        self.assertIsNotNone(variantAnnotationSet)
+
+        request = protocol.SearchVariantAnnotationsRequest()
+
+        path = '/variantannotations/search'
+        request.start = 0
+        request.end = 1000000
+        request.pageSize = 1
+        request.referenceName = "1"
+        request.effects = None
+        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationSetsResponse. \
+            fromJsonString(response.data)
+        self.assertIsNotNone(responseData.nextPageToken,
+                             "Expected more than one page of results")
+
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.start = 0
+        request.end = 10
+        request.referenceName = "1"
+        request.effects = [{"id": "ThisIsNotAnEffect"}]
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationsResponse. \
+            fromJsonString(response.data)
+        self.assertEquals(len(responseData.variantAnnotations), 0,
+                          "There should be no results for a nonsense effect")
+
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.start = 0
+        request.end = 10
+        request.referenceName = "1"
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationsResponse. \
+            fromJsonString(response.data)
+        self.assertGreater(len(responseData.variantAnnotations), 0)
+        for ann in responseData.variantAnnotations:
+            self.assertGreater(len(ann.transcriptEffects), 0,
+                               ("When no effects are requested ensure "
+                                "some transcript effects are still present"))
+
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.start = 0
+        request.end = 5
+        request.referenceName = "1"
+        request.effects = [{"id": "SO:0001627"}, {"id": "B4DID"}]
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationsResponse. \
+            fromJsonString(response.data)
+        self.assertGreater(len(responseData.variantAnnotations), 0,
+                           "There should be some results for a known effect")
+        for ann in responseData.variantAnnotations:
+            effectPresent = False
+            for effect in ann.transcriptEffects:
+                for ontologyTerm in effect.effects:
+                    if ontologyTerm.id in map(
+                            lambda e: e['id'], request.effects):
+                        effectPresent = True
+            self.assertEquals(True, effectPresent,
+                              "The ontology term should appear at least once")
+
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.start = 0
+        request.end = 5
+        request.referenceName = "1"
+        request.effects = [{"id": "SO:0001627", "term": "TermDoesNotMatchID"}]
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationsResponse. \
+            fromJsonString(response.data)
+        self.assertEquals(len(responseData.variantAnnotations), 0,
+                          ("There should be no results when "
+                           "term and ID don't match"))
+
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.start = 0
+        request.end = 5
+        request.referenceName = "1"
+        request.effects = [{"id": "SO:0001627"}]
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationsResponse. \
+            fromJsonString(response.data)
+        self.assertGreater(len(responseData.variantAnnotations), 0,
+                           "There should be some results for a good effect ID")
+        for ann in responseData.variantAnnotations:
+            effectPresent = False
+            for effect in ann.transcriptEffects:
+                for ontologyTerm in effect.effects:
+                    if ontologyTerm.id in map(
+                            lambda e: e['id'], request.effects):
+                        effectPresent = True
+            self.assertEquals(True, effectPresent,
+                              "The ontology term should appear at least once")
 
     def testListReferenceBases(self):
         for referenceSet in self.dataRepo.getReferenceSets():

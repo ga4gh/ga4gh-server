@@ -20,10 +20,11 @@ import ga4gh.datamodel.references as references
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import tests.datadriven as datadriven
+import tests.paths as paths
 
 
 def testReferenceSets():
-    testDataDir = "tests/data/referenceSets"
+    testDataDir = os.path.join(paths.testDataDir, "referenceSets")
     for test in datadriven.makeTests(testDataDir, ReferenceSetTest):
         yield test
 

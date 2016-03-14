@@ -30,6 +30,8 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
+        self._variantAnnotationSetIds = []
+        self._variantAnnotationSetIdMap = {}
         self._description = None
         self._rnaQuantificationIds = []
         self._rnaQuantificationIdMap = {}
@@ -41,6 +43,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         id_ = variantSet.getId()
         self._variantSetIdMap[id_] = variantSet
         self._variantSetIds.append(id_)
+
+    def addVariantAnnotationSet(self, variantAnnotationSet):
+        """
+        Adds the specified variantAnnotationSet to this dataset.
+        """
+        id_ = variantAnnotationSet.getId()
+        self._variantAnnotationSetIdMap[id_] = variantAnnotationSet
+        self._variantAnnotationSetIds.append(id_)
 
     def addReadGroupSet(self, readGroupSet):
         """
@@ -78,6 +88,27 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return len(self._variantSetIds)
 
+    def getVariantAnnotationSets(self):
+        """
+        Returns the list of VariantAnnotationSets in this dataset
+        """
+        return [self._variantAnnotationSetIdMap[id_] for id_ in
+                self._variantAnnotationSetIds]
+
+    def getVariantAnnotationSet(self, id_):
+        """
+        Returns the AnnotationSet in this dataset with the specified 'id'
+        """
+        if id_ not in self._variantAnnotationSetIdMap:
+            raise exceptions.AnnotationSetNotFoundException(id_)
+        return self._variantAnnotationSetIdMap[id_]
+
+    def getNumVariantAnnotationSets(self):
+        """
+        Returns the number of variant annotation sets in this dataset.
+        """
+        return len(self._variantAnnotationSetIds)
+
     def getVariantSet(self, id_):
         """
         Returns the VariantSet with the specified name, or raises a
@@ -92,6 +123,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         Returns the variant set at the specified index in this dataset.
         """
         return self._variantSetIdMap[self._variantSetIds[index]]
+
+    def getVariantAnnotationSetByIndex(self, index):
+        """
+        Returns the variant annotation set at the specified index in this
+        dataset.
+        """
+        return self._variantAnnotationSetIdMap[
+            self._variantAnnotationSetIds[index]]
 
     def getNumReadGroupSets(self):
         """
@@ -182,6 +221,9 @@ class SimulatedDataset(AbstractDataset):
             variantSet = variants.SimulatedVariantSet(
                 self, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
+            variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
+                self, "simVas{}".format(i), variantSet)
+            self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
             localId = 'simRgs{}'.format(i)
@@ -202,21 +244,31 @@ class FileSystemDataset(AbstractDataset):
     """
     A dataset based on the file system
     """
+    variantsDirName = "variants"
+    readsDirName = "reads"
+
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
         self._dataDir = dataDir
         self._setMetadata()
 
         # Variants
-        variantSetDir = os.path.join(dataDir, "variants")
+        variantSetDir = os.path.join(dataDir, self.variantsDirName)
         for localId in os.listdir(variantSetDir):
             relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
                 variantSet = variants.HtslibVariantSet(
                     self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
+            # Variant annotations sets
+                if variantSet.isAnnotated(relativePath):
+                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+                            self, localId, relativePath, dataRepository,
+                            variantSet)
+                    self.addVariantAnnotationSet(variantAnnotationSet)
+
         # Reads
-        readGroupSetDir = os.path.join(dataDir, "reads")
+        readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):
             if fnmatch.fnmatch(filename, '*.bam'):
                 localId, _ = os.path.splitext(filename)

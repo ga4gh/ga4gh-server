@@ -145,6 +145,13 @@ class ServerStatus(object):
         """
         return app.backend.getDataRepository().getReferenceSets()
 
+    def getVariantAnnotationSets(self, datasetId):
+        """
+        Returns the list of ReferenceSets for this server.
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getVariantAnnotationSets()
+
 
 def reset():
     """
@@ -203,6 +210,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "file":
         dataRepository = datarepo.FileSystemDataRepository(os.path.join(
             dataSource.netloc, dataSource.path))
+        dataRepository.checkConsistency()
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)
@@ -500,6 +508,18 @@ def searchVariants():
         flask.request, app.backend.runSearchVariants)
 
 
+@DisplayedRoute('/variantannotationsets/search', postMethod=True)
+def searchVariantAnnotationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchVariantAnnotationSets)
+
+
+@DisplayedRoute('/variantannotations/search', postMethod=True)
+def searchVariantAnnotations():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchVariantAnnotations)
+
+
 @DisplayedRoute('/datasets/search', postMethod=True)
 def searchDatasets():
     return handleFlaskPostRequest(
@@ -557,9 +577,9 @@ def getReadGroup(id):
 @DisplayedRoute(
     '/callsets/<no(search):id>',
     pathDisplay='/callsets/<id>')
-def getCallset(id):
+def getCallSet(id):
     return handleFlaskGetRequest(
-        id, flask.request, app.backend.runGetCallset)
+        id, flask.request, app.backend.runGetCallSet)
 
 
 @DisplayedRoute(
@@ -636,6 +656,14 @@ def oidcCallback():
 def getDataset(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetDataset)
+
+
+@DisplayedRoute(
+    '/variantannotationsets/<no(search):id>',
+    pathDisplay='/variantannotationsets/<id>')
+def getVariantAnnotationSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetVariantAnnotationSet)
 
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html

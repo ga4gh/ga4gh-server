@@ -189,6 +189,12 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class AnnotationSetNotFoundException(NotFoundException):
+    def __init__(self, variantAnnotationSetId):
+        self.message = "The requested VariantAnnotationSet '{}'" \
+            "was not found".format(variantAnnotationSetId)
+
+
 class CallSetNotFoundException(NotFoundException):
     def __init__(self, callSetId):
         self.message = "The requested CallSet '{}' was not found".format(
@@ -567,4 +573,17 @@ class EmptyResponseException(BaseClientException):
 class RequestNonSuccessException(BaseClientException):
     """
     The client received a 4xx or 5xx error code from the server
+    """
+
+
+#####################################################################
+#
+# Repo manager exceptions
+#
+#####################################################################
+
+
+class RepoManagerException(Exception):
+    """
+    Signals something went wrong inside the repo manager
     """

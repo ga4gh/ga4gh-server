@@ -7,6 +7,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import datetime
 import json
 import unittest
 
@@ -15,17 +16,22 @@ import ga4gh.backend as backend
 import ga4gh.cli as cli
 import ga4gh.datarepo as datarepo
 import tests.utils as utils
+import tests.paths as paths
+
+import freezegun
 
 
+@freezegun.freeze_time(datetime.datetime.now())
 class TestClientOutput(unittest.TestCase):
     """
     Base class for client output tests
     """
     def setUp(self):
-        self._dataDir = "tests/data"
+        self._maxDiff = None
+        self._dataDir = paths.testDataDir
         self._dataUrl = "file://{}".format(self._dataDir)
-        self._backend = backend.Backend(
-            datarepo.FileSystemDataRepository(self._dataDir))
+        dataRepository = datarepo.FileSystemDataRepository(self._dataDir)
+        self._backend = backend.Backend(dataRepository)
         self._client = client.LocalClient(self._backend)
 
     def captureCliOutput(self, command, arguments, outputFormat):
@@ -90,28 +96,132 @@ class TestClientJson(TestClientOutput):
         cliOutput = self.captureJsonOutput(cliCommand, cliArguments)
         clientOutput = [gaObject.toJsonDict() for gaObject in clientIterator]
         self.assertEqual(clientOutput, cliOutput)
+        return len(clientOutput)
 
-    def testSearchAllDatasets(self):
-        iterator = self._client.searchDatasets()
-        self.verifyParsedOutputsEqual(iterator, "datasets-search")
-
-    def testSearchAllReferenceSets(self):
-        iterator = self._client.searchReferenceSets()
-        self.verifyParsedOutputsEqual(iterator, "referencesets-search")
-
-    def testSearchAllReferences(self):
-        for referenceSet in self._client.searchReferenceSets():
-            iterator = self._client.searchReferences(
-                referenceSetId=referenceSet.id)
-            args = "--referenceSetId={}".format(referenceSet.id)
-            self.verifyParsedOutputsEqual(iterator, "references-search", args)
+    def testGetCallSet(self):
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                for callSet in self._client.searchCallSets(variantSet.id):
+                    self.verifyParsedOutputsEqual(
+                        [callSet], "callsets-get", callSet.id)
 
     def testGetDataset(self):
         for dataset in self._client.searchDatasets():
             self.verifyParsedOutputsEqual(
                 [dataset], "datasets-get", dataset.id)
 
-    def testSearchAllReadGroups(self):
-        # TODO: add more rigorous testing here
-        cliOutput = self.captureJsonOutput("reads-search")
-        self.assertGreater(len(cliOutput), 0)
+    def testGetReadGroup(self):
+        for dataset in self._client.searchDatasets():
+            for readGroupSet in self._client.searchReadGroupSets(dataset.id):
+                for readGroup in readGroupSet.readGroups:
+                    self.verifyParsedOutputsEqual(
+                        [readGroup], "readgroups-get", readGroup.id)
+
+    def testGetReadGroupSet(self):
+        for dataset in self._client.searchDatasets():
+            for readGroupSet in self._client.searchReadGroupSets(dataset.id):
+                self.verifyParsedOutputsEqual(
+                    [readGroupSet], "readgroupsets-get", readGroupSet.id)
+
+    def testGetReference(self):
+        for referenceSet in self._client.searchReferenceSets():
+            for reference in self._client.searchReferences(referenceSet.id):
+                self.verifyParsedOutputsEqual(
+                    [reference], "references-get", reference.id)
+
+    def testGetReferenceSet(self):
+        for referenceSet in self._client.searchReferenceSets():
+            self.verifyParsedOutputsEqual(
+                [referenceSet], "referencesets-get", referenceSet.id)
+
+    def testGetVariant(self):
+        test_executed = 0
+        start = 0
+        end = 1000
+        referenceName = "1"
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                variants = self._client.searchVariants(
+                    variantSet.id, start=start, end=end,
+                    referenceName=referenceName)
+                for variant in variants:
+                    test_executed += self.verifyParsedOutputsEqual(
+                        [variant], "variants-get", variant.id)
+        self.assertGreater(test_executed, 0)
+
+    def testGetVariantSet(self):
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                self.verifyParsedOutputsEqual(
+                    [variantSet], "variantsets-get", variantSet.id)
+
+    def testSearchCallSets(self):
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                iterator = self._client.searchCallSets(variantSet.id)
+                args = "--variantSetId {}".format(variantSet.id)
+                self.verifyParsedOutputsEqual(
+                    iterator, "callsets-search", args)
+
+    def testSearchDatasets(self):
+        iterator = self._client.searchDatasets()
+        self.verifyParsedOutputsEqual(iterator, "datasets-search")
+
+    def testSearchReadGroupSets(self):
+        for dataset in self._client.searchDatasets():
+            iterator = self._client.searchReadGroupSets(dataset.id)
+            self.verifyParsedOutputsEqual(
+                iterator, "readgroupsets-search",
+                "--datasetId {}".format(dataset.id))
+
+    def testSearchReads(self):
+        test_executed = 0
+        start = 0
+        end = 1000
+        for dataset in self._client.searchDatasets():
+            for readGroupSet in self._client.searchReadGroupSets(dataset.id):
+                for readGroup in readGroupSet.readGroups:
+                    reference = self._client.searchReferences(
+                        referenceSetId=readGroup.referenceSetId).next()
+                    referenceId = reference.id
+                    iterator = self._client.searchReads(
+                        [readGroup.id], referenceId=referenceId,
+                        start=start, end=end)
+                    args = "--start {} --end {} --readGroupIds {}\
+                    --referenceId {}".format(
+                        start, end, readGroup.id, referenceId)
+                    test_executed += self.verifyParsedOutputsEqual(
+                        iterator, "reads-search", args)
+        self.assertGreater(test_executed, 0)
+
+    def testSearchReferenceSets(self):
+        iterator = self._client.searchReferenceSets()
+        self.verifyParsedOutputsEqual(iterator, "referencesets-search")
+
+    def testSearchReferences(self):
+        for referenceSet in self._client.searchReferenceSets():
+            iterator = self._client.searchReferences(
+                referenceSetId=referenceSet.id)
+            args = "--referenceSetId={}".format(referenceSet.id)
+            self.verifyParsedOutputsEqual(iterator, "references-search", args)
+
+    def testSearchVariantSets(self):
+        for dataset in self._client.searchDatasets():
+            iterator = self._client.searchVariantSets(dataset.id)
+            self.verifyParsedOutputsEqual(iterator, "variantsets-search")
+
+    def testSearchVariants(self):
+        test_executed = 0
+        start = 0
+        end = 1000
+        referenceName = "1"
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                iterator = self._client.searchVariants(
+                    variantSet.id, start=start, end=end,
+                    referenceName=referenceName, callSetIds=[])
+                args = "--variantSetId {} --start {} --end {} -r {}".format(
+                    variantSet.id, start, end, referenceName)
+                test_executed += self.verifyParsedOutputsEqual(
+                    iterator, "variants-search", args)
+        self.assertGreater(test_executed, 0)
