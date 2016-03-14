@@ -11,53 +11,7 @@ from protocol import SearchResponse
 
 import avro.schema
 
-version = '0.6-rna-e55c901'
-
-
-class Attributes(ProtocolElement):
-    """
-    Type defining a collection of attributes associated with various
-    protocol   records.  Each attribute is a name that maps to an
-    array of one or more   values.  Values can be strings, external
-    identifiers, or ontology terms.   Values should be split into the
-    array elements instead of using a separator   syntax that needs to
-    parsed.
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.models", "type": "record", "name":
-"Attributes", "fields": [{"default": {}, "type": {"values": {"items":
-["string", {"doc": "", "type": "record", "name": "ExternalIdentifier",
-"fields": [{"doc": "", "type": "string", "name": "database"}, {"doc":
-"", "type": "string", "name": "identifier"}, {"doc": "", "type":
-"string", "name": "version"}]}, {"doc": "", "type": "record", "name":
-"OntologyTerm", "fields": [{"default": null, "doc": "", "type":
-["null", "string"], "name": "ontologySourceName"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "ontologySourceID"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"ontologySourceVersion"}]}], "type": "array"}, "type": "map"}, "name":
-"vals"}], "doc": ""}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([])
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {}
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {}
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'vals'
-    ]
-
-    def __init__(self, **kwargs):
-        self.vals = kwargs.get(
-            'vals', {})
+version = '0.6-rna-ff93e11'
 
 
 class Call(ProtocolElement):
@@ -632,17 +586,18 @@ class ExpressionLevel(ProtocolElement):
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "ExpressionLevel", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"doc": "", "type": "string", "name": "featureGroupId"},
-{"doc": "", "type": "string", "name": "annotationId"}, {"doc": "",
-"type": "float", "name": "rawReadCount"}, {"default": null, "doc": "",
-"type": ["null", "float"], "name": "expression"}, {"default": null,
-"doc": "", "type": ["null", "boolean"], "name": "isNormalized"},
-{"default": null, "doc": "", "type": ["null", {"symbols": ["FPKM",
-"TPM"], "doc": "", "type": "enum", "name": "ExpressionUnits"}],
-"name": "units"}, {"default": null, "doc": "", "type": ["null",
-"float"], "name": "score"}, {"default": [], "doc": "", "type":
-{"items": "float", "type": "array"}, "name": "confInterval"}], "doc":
-""}
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"doc": "", "type": "string", "name":
+"featureGroupId"}, {"doc": "", "type": "string", "name":
+"annotationId"}, {"doc": "", "type": "float", "name": "rawReadCount"},
+{"default": null, "doc": "", "type": ["null", "float"], "name":
+"expression"}, {"default": null, "doc": "", "type": ["null",
+"boolean"], "name": "isNormalized"}, {"default": null, "doc": "",
+"type": ["null", {"symbols": ["FPKM", "TPM"], "doc": "", "type":
+"enum", "name": "ExpressionUnits"}], "name": "units"}, {"default":
+null, "doc": "", "type": ["null", "float"], "name": "score"},
+{"default": [], "doc": "", "type": {"items": "float", "type":
+"array"}, "name": "confInterval"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -665,8 +620,8 @@ class ExpressionLevel(ProtocolElement):
 
     __slots__ = [
         'annotationId', 'confInterval', 'expression',
-        'featureGroupId', 'id', 'isNormalized', 'rawReadCount',
-        'score', 'units'
+        'featureGroupId', 'id', 'isNormalized', 'name',
+        'rawReadCount', 'score', 'units'
     ]
 
     def __init__(self, **kwargs):
@@ -700,6 +655,11 @@ class ExpressionLevel(ProtocolElement):
             'isNormalized', None)
         """
         True if the expression value is a normalized value.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        Name
         """
         self.rawReadCount = kwargs.get(
             'rawReadCount', None)
@@ -787,124 +747,6 @@ class ExternalIdentifier(ProtocolElement):
         """
 
 
-class Feature(ProtocolElement):
-    """
-    Node in the annotation graph that annotates a contiguous region of
-    a   sequence.
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.models", "type": "record", "name": "Feature",
-"fields": [{"doc": "", "type": "string", "name": "id"}, {"doc": "",
-"type": {"items": "string", "type": "array"}, "name": "parentIds"},
-{"doc": "", "type": "string", "name": "featureSetId"}, {"doc": "",
-"type": "string", "name": "referenceName"}, {"default": 0, "doc": "",
-"type": "long", "name": "start"}, {"doc": "", "type": "long", "name":
-"end"}, {"doc": "", "type": {"doc": "", "type": "record", "name":
-"OntologyTerm", "fields": [{"default": null, "doc": "", "type":
-["null", "string"], "name": "ontologySourceName"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "ontologySourceID"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"ontologySourceVersion"}]}, "name": "featureType"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Attributes", "fields":
-[{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
-"type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
-"type": "string", "name": "database"}, {"doc": "", "type": "string",
-"name": "identifier"}, {"doc": "", "type": "string", "name":
-"version"}]}, "OntologyTerm"], "type": "array"}, "type": "map"},
-"name": "vals"}]}, "name": "attributes"}], "doc": ""}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([
-        "attributes",
-        "end",
-        "featureSetId",
-        "featureType",
-        "id",
-        "parentIds",
-        "referenceName",
-    ])
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'attributes': Attributes,
-            'featureType': OntologyTerm,
-        }
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'attributes': Attributes,
-            'featureType': OntologyTerm,
-        }
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'attributes', 'end', 'featureSetId', 'featureType', 'id',
-        'parentIds', 'referenceName', 'start'
-    ]
-
-    def __init__(self, **kwargs):
-        self.attributes = kwargs.get(
-            'attributes', None)
-        """
-        Name/value attributes of the annotation.  Attribute names
-        follow the GFF3     naming convention of reserved names
-        starting with an upper cases     character, and user-define
-        names start with lower-case.  Most GFF3     pre-defined
-        attributes apply, the exceptions are ID and Parent, which are
-        defined as fields. Additional, the following attributes are
-        added:     * Score - the GFF3 score column     * Phase - the
-        GFF3 phase column for CDS features.
-        """
-        self.end = kwargs.get(
-            'end', None)
-        """
-        The end position (exclusive), resulting in [start, end)
-        closed-open interval.     This is typically calculated by
-        start + referenceBases.length.
-        """
-        self.featureSetId = kwargs.get(
-            'featureSetId', None)
-        """
-        Identifier for the containing feature set.
-        """
-        self.featureType = kwargs.get(
-            'featureType', None)
-        """
-        Feature that is annotated by this region.  Normally, this will
-        be a term in     the Sequence Ontology.
-        """
-        self.id = kwargs.get(
-            'id', None)
-        """
-        Id of this annotation node.
-        """
-        self.parentIds = kwargs.get(
-            'parentIds', None)
-        """
-        Ids of the parents of this annotation node.
-        """
-        self.referenceName = kwargs.get(
-            'referenceName', None)
-        """
-        The reference on which this feature occurs.     (e.g. chr20 or
-        X)
-        """
-        self.start = kwargs.get(
-            'start', 0)
-        """
-        The start position at which this feature occurs (0-based).
-        This corresponds to the first base of the string of reference
-        bases.     Genomic positions are non-negative integers less
-        than reference length.     Features spanning the join of
-        circular genomes are represented as     two features one on
-        each side of the join (position 0).
-        """
-
-
 class FeatureGroup(ProtocolElement):
     """
     Identifying information for annotated features.
@@ -980,93 +822,6 @@ class FeatureGroup(ProtocolElement):
         """
         The time at which this feature group was last updated in
         milliseconds   from the epoch.
-        """
-
-
-class FeatureSet(ProtocolElement):
-    """
-    No documentation
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.models", "type": "record", "name":
-"FeatureSet", "fields": [{"doc": "", "type": "string", "name": "id"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"datasetId"}, {"doc": "", "type": ["null", "string"], "name":
-"referenceSetId"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "name"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "sourceURI"}, {"doc": "", "type": {"doc":
-"", "type": "record", "name": "Attributes", "fields": [{"default": {},
-"type": {"values": {"items": ["string", {"doc": "", "type": "record",
-"name": "ExternalIdentifier", "fields": [{"doc": "", "type": "string",
-"name": "database"}, {"doc": "", "type": "string", "name":
-"identifier"}, {"doc": "", "type": "string", "name": "version"}]},
-{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
-[{"default": null, "doc": "", "type": ["null", "string"], "name":
-"ontologySourceName"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "ontologySourceID"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "ontologySourceVersion"}]}],
-"type": "array"}, "type": "map"}, "name": "vals"}]}, "name":
-"attributes"}]}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([
-        "attributes",
-        "id",
-        "referenceSetId",
-    ])
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'attributes': Attributes,
-        }
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'attributes': Attributes,
-        }
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'attributes', 'datasetId', 'id', 'name', 'referenceSetId',
-        'sourceURI'
-    ]
-
-    def __init__(self, **kwargs):
-        self.attributes = kwargs.get(
-            'attributes', None)
-        """
-        Set of additional attributes
-        """
-        self.datasetId = kwargs.get(
-            'datasetId', None)
-        """
-        The ID of the dataset this annotation set belongs to.
-        """
-        self.id = kwargs.get(
-            'id', None)
-        """
-        The ID of this annotation set.
-        """
-        self.name = kwargs.get(
-            'name', None)
-        """
-        The display name for this annotation set.
-        """
-        self.referenceSetId = kwargs.get(
-            'referenceSetId', None)
-        """
-        The ID of the reference set which defines the coordinate-space
-        for this     set of annotations.
-        """
-        self.sourceURI = kwargs.get(
-            'sourceURI', None)
-        """
-        The source URI describing the file from which this annotation
-        set was     generated, if any.
         """
 
 
@@ -2673,7 +2428,8 @@ class SearchExpressionLevelResponse(SearchResponse):
 "SearchExpressionLevelResponse", "fields": [{"default": [], "doc": "",
 "type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
 "name": "ExpressionLevel", "fields": [{"doc": "", "type": "string",
-"name": "id"}, {"doc": "", "type": "string", "name":
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"doc": "", "type": "string", "name":
 "featureGroupId"}, {"doc": "", "type": "string", "name":
 "annotationId"}, {"doc": "", "type": "float", "name": "rawReadCount"},
 {"default": null, "doc": "", "type": ["null", "float"], "name":
@@ -2846,193 +2602,6 @@ class SearchFeatureGroupResponse(SearchResponse):
         result sets.   To get the next page of results, set this
         parameter to the value of   'nextPageToken' from the previous
         response.
-        """
-
-
-class SearchFeaturesRequest(SearchRequest):
-    """
-    This request maps to the body of POST /features/search as JSON.
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.methods", "type": "record", "name":
-"SearchFeaturesRequest", "fields": [{"doc": "", "type": ["null",
-"string"], "name": "featureSetId"}, {"doc": "", "type": ["null",
-"string"], "name": "parentId"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "referenceName"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "referenceId"}, {"doc": "",
-"type": "long", "name": "start"}, {"doc": "", "type": "long", "name":
-"end"}, {"default": [], "doc": "", "type": {"items": {"namespace":
-"org.ga4gh.models", "type": "record", "name": "OntologyTerm",
-"fields": [{"default": null, "doc": "", "type": ["null", "string"],
-"name": "ontologySourceName"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "ontologySourceID"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name":
-"ontologySourceVersion"}], "doc": ""}, "type": "array"}, "name":
-"features"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "pageToken"}], "doc": ""}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([
-        "end",
-        "featureSetId",
-        "parentId",
-        "start",
-    ])
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'features': OntologyTerm,
-        }
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'features': OntologyTerm,
-        }
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'end', 'featureSetId', 'features', 'pageSize', 'pageToken',
-        'parentId', 'referenceId', 'referenceName', 'start'
-    ]
-
-    def __init__(self, **kwargs):
-        self.end = kwargs.get(
-            'end', None)
-        """
-        Required. The end of the window (0-based, exclusive) for which
-        overlapping     features should be returned.
-        """
-        self.featureSetId = kwargs.get(
-            'featureSetId', None)
-        """
-        The annotation set to search within. Either featureSetId or
-        parentId must be non-empty.
-        """
-        self.features = kwargs.get(
-            'features', [])
-        """
-        If specified, this query matches only annotations which match
-        one of the     provided feature types.
-        """
-        self.pageSize = kwargs.get(
-            'pageSize', None)
-        """
-        Specifies the maximum number of results to return in a single
-        page.     If unspecified, a system default will be used.
-        """
-        self.pageToken = kwargs.get(
-            'pageToken', None)
-        """
-        The continuation token, which is used to page through large
-        result sets.     To get the next page of results, set this
-        parameter to the value of     nextPageToken from the previous
-        response.
-        """
-        self.parentId = kwargs.get(
-            'parentId', None)
-        """
-        Restricts the search to direct children of the given parent
-        feature     ID. Either featureSetId or parentId must be non-
-        empty.
-        """
-        self.referenceId = kwargs.get(
-            'referenceId', None)
-        """
-        Only return feature on the reference with this ID. One of this
-        field or     referenceName is required.
-        """
-        self.referenceName = kwargs.get(
-            'referenceName', None)
-        """
-        Only return features with on the reference with this name.
-        One of this     field or referenceId is required.  (case-
-        sensitive, exact match)
-        """
-        self.start = kwargs.get(
-            'start', None)
-        """
-        Required. The beginning of the window (0-based, inclusive) for
-        which     overlapping features should be returned.  Genomic
-        positions are     non-negative integers less than reference
-        length.  Requests spanning the     join of circular genomes
-        are represented as two requests one on each side     of the
-        join (position 0).
-        """
-
-
-class SearchFeaturesResponse(SearchResponse):
-    """
-    This is the response from POST /features/search expressed as JSON.
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.methods", "type": "record", "name":
-"SearchFeaturesResponse", "fields": [{"default": [], "doc": "",
-"type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
-"name": "Feature", "fields": [{"doc": "", "type": "string", "name":
-"id"}, {"doc": "", "type": {"items": "string", "type": "array"},
-"name": "parentIds"}, {"doc": "", "type": "string", "name":
-"featureSetId"}, {"doc": "", "type": "string", "name":
-"referenceName"}, {"default": 0, "doc": "", "type": "long", "name":
-"start"}, {"doc": "", "type": "long", "name": "end"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "OntologyTerm",
-"fields": [{"default": null, "doc": "", "type": ["null", "string"],
-"name": "ontologySourceName"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "ontologySourceID"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name":
-"ontologySourceVersion"}]}, "name": "featureType"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "Attributes", "fields":
-[{"default": {}, "type": {"values": {"items": ["string", {"doc": "",
-"type": "record", "name": "ExternalIdentifier", "fields": [{"doc": "",
-"type": "string", "name": "database"}, {"doc": "", "type": "string",
-"name": "identifier"}, {"doc": "", "type": "string", "name":
-"version"}]}, "OntologyTerm"], "type": "array"}, "type": "map"},
-"name": "vals"}]}, "name": "attributes"}], "doc": ""}, "type":
-"array"}, "name": "features"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "nextPageToken"}], "doc": ""}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([])
-    _valueListName = "features"
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'features': Feature,
-        }
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {
-            'features': Feature,
-        }
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'features', 'nextPageToken'
-    ]
-
-    def __init__(self, **kwargs):
-        self.features = kwargs.get(
-            'features', [])
-        """
-        The list of matching annotations, sorted by start position.
-        Annotations which     share a start position are returned in a
-        deterministic order.
-        """
-        self.nextPageToken = kwargs.get(
-            'nextPageToken', None)
-        """
-        The continuation token, which is used to page through large
-        result sets.     Provide this value in a subsequent request to
-        return the next page of     results. This field will be empty
-        if there aren't any additional results.
         """
 
 
@@ -4371,9 +3940,6 @@ postMethods = \
      ('/featuregroup/search',
       SearchFeatureGroupRequest,
       SearchFeatureGroupResponse),
-     ('/features/search',
-      SearchFeaturesRequest,
-      SearchFeaturesResponse),
      ('/readgroupsets/search',
       SearchReadGroupSetsRequest,
       SearchReadGroupSetsResponse),

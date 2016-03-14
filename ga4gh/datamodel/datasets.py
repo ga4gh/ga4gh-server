@@ -15,7 +15,6 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.rna_quantification as rnaQuantification
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 
 
 class AbstractDataset(datamodel.DatamodelObject):
@@ -34,8 +33,6 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._description = None
         self._rnaQuantificationIds = []
         self._rnaQuantificationIdMap = {}
-        self._sequenceAnnotationIds = []
-        self._sequenceAnnotationIdMap = {}
 
     def addVariantSet(self, variantSet):
         """
@@ -61,14 +58,6 @@ class AbstractDataset(datamodel.DatamodelObject):
         id_ = rnaQuant.getId()
         self._rnaQuantificationIdMap[id_] = rnaQuant
         self._rnaQuantificationIds.append(id_)
-
-    def addSequenceAnnotation(self, annotation):
-        """
-        Adds the specified sequenceAnnotation to this dataset.
-        """
-        id_ = annotation.getId()
-        self._sequenceAnnotationIdMap[id_] = annotation
-        self._sequenceAnnotationIds.append(id_)
 
     def toProtocolElement(self):
         dataset = protocol.Dataset()
@@ -174,28 +163,6 @@ class AbstractDataset(datamodel.DatamodelObject):
             raise exceptions.RnaQuantificationNotFoundException(id_)
         return self._rnaQuantificationIdMap[id_]
 
-    def getSequenceAnnotationIdMap(self):
-        """
-        Returns a map of the dataset's sequence annotation ids to sequence
-        annotations
-        """
-        return self._sequenceAnnotationIdMap
-
-    def getSequenceAnnotations(self):
-        """
-        Returns the list of sequence annotations in this dataset
-        """
-        return self._sequenceAnnotationIds
-
-    def getSequenceAnnotation(self, id_):
-        """
-        Returns the SequenceAnnotation with the specified name, or raises a
-        SequenceAnnotationNotFoundException otherwise.
-        """
-        if id_ not in self._sequenceAnnotationIdMap:
-            raise exceptions.SequenceAnnotationNotFoundException(id_)
-        return self._sequenceAnnotationIdMap[id_]
-
 
 class SimulatedDataset(AbstractDataset):
     """
@@ -265,13 +232,6 @@ class FileSystemDataset(AbstractDataset):
                 rnaQuant = rnaQuantification.RNASeqResult(
                     self, localId, relativePath)
                 self.addRnaQuantification(rnaQuant)
-        # Sequence Annotations
-        seqAnnotationDir = os.path.join(dataDir, "sequenceAnnotations")
-        for gffFile in os.listdir(seqAnnotationDir):
-            relativePath = os.path.join(seqAnnotationDir, gffFile)
-            annotation = sequenceAnnotations.SequenceAnnotation(self, gffFile,
-                                                                relativePath)
-            self.addSequenceAnnotation(annotation)
 
     def _setMetadata(self):
         metadataFileName = '{}.json'.format(self._dataDir)

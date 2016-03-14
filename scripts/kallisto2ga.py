@@ -24,22 +24,14 @@ def makeDir(path):
             raise
 
 
-# TODO: placeholder values need to be calculated then removed
-def getCount(expressionId):
-    rawCount = 0
-    return "{}".format(rawCount)
-
-
-# TODO: placeholder values need to be calculated then removed
-def getScore(expressionId):
-    rawScore = 0.0
-
-    return "{:0.2f}".format(rawScore)
-
-
 def writeExpression(analysisId, annotationId, rnaQuantId, quantfile, rnaDB):
-    # kallisto header
-    # target_id	length	eff_length	est_counts	tpm
+    """
+        Reads the kallisto quantification results file and adds entries to the specified
+        database.
+
+        kallisto header:
+        target_id	length	eff_length	est_counts	tpm
+    """
     isNormalized = True
     units = "TPM"
     # strip header and print - log it instead?
@@ -74,11 +66,6 @@ def writeExpressionTable(data, annotationId, rnaQuantId, rnaDB):
         writeExpression(analysisId, annotationId, rnaQuantId, quantfile, rnaDB)
 
 
-# TODO: not implemented
-def writeRawBootstrap(data, annotationId, outputFolder, bootstrapId=None):
-    pass
-
-
 def makeParser(usage):
     parser = optparse.OptionParser(usage=usage)
     parser.add_option("--readgroup", dest="readGroupId")
@@ -110,13 +97,10 @@ def main(argv):
     # TODO: check to see if the rnaQuantId is in the db and exit if it is since this is a
     # generator and not an updater
     writeRnaseqTable(rnaDB, [rnaQuantId], description, annotationId,
-                      readGroupId=options.readGroupId)
+                     readGroupId=options.readGroupId)
     analysisId = "kallisto"
     quantFile = open("abundance.txt", "r")
-    writeExpressionTable([(analysisId, quantFile)], rnaQuantId, annotationId,
-                          rnaDB)
-
-    # TODO: add raw bootstrap stages
+    writeExpressionTable([(analysisId, quantFile)], rnaQuantId, annotationId, rnaDB)
 
     print("DONE")
 

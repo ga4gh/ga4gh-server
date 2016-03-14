@@ -441,28 +441,6 @@ class SearchReadsRunner(AbstractSearchRunner):
             print(read.id)
 
 
-class SearchFeaturesRunner(AbstractSearchRunner):
-    """
-    Runner class for the features/search method
-    """
-    def __init__(self, args):
-        super(SearchFeaturesRunner, self).__init__(args)
-        self._featureSetIds = args.featureSetIds
-        self._parentIds = args.parentIds
-        self._features = args.features
-        self._referenceName = args.referenceName
-        self._referenceId = args.referenceId
-        self._start = args.start
-        self._end = args.end
-
-    def run(self):
-        iterator = self._client.searchFeatures(
-            featureSetIds=self._featureSetIds, parentIds=self._parentIds,
-            features=self._features, referenceName=self._referenceName,
-            referenceId=self._referenceId, start=self._start, end=self._end)
-        self._output(iterator)
-
-
 class SearchRnaQuantificationRunner(AbstractSearchRunner):
     """
     Runner class for the rnaquantification/search method
@@ -620,15 +598,6 @@ class GetDatasetRunner(AbstractGetRunner):
     def __init__(self, args):
         super(GetDatasetRunner, self).__init__(args)
         self._method = self._client.getDataset
-
-
-class GetFeatureRunner(AbstractGetRunner):
-    """
-    Runner class for the feature/{id} method
-    """
-    def __init__(self, args):
-        super(GetFeatureRunner, self).__init__(args)
-        self._method = self._client.getFeature
 
 
 class GetVariantRunner(VariantFormatterMixin, AbstractGetRunner):
@@ -1002,15 +971,6 @@ def addFeaturesSearchParser(subparsers):
     addOutputFormatArgument(parser)
     addUrlArgument(parser)
     return parser
-
-
-def addFeaturesGetParser(subparsers):
-    parser = subparsers.add_parser(
-        "features-get",
-        description="Get a feature",
-        help="Get a feature")
-    parser.set_defaults(runner=GetFeatureRunner)
-    addGetArguments(parser)
 
 
 def addRnaQuantificationSearchParser(subparsers):

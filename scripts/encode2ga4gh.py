@@ -49,14 +49,17 @@ def log(message):
 
 
 def getFilesFromHost(data, host, outputType, request=False, subset=None):
+    """
+        analysisId is the ENCODE accession number for the quantification
+        result file.  There may be multiple quantifications on a single ENCODE
+        project or experiment page.
+    """
     fileList = [f for f in data.get('files') if
                 (f.get('output_type') == outputType)]
     if subset:
         fileList = fileList[:subset]
     for f in fileList:
-        experiment = f.get('dataset').get('accession')
-        replicate = str(f.get('replicate').get('biological_replicate_number'))
-        analysisId = "_".join((experiment, replicate))
+        analysisId = f.get('accession')
         if not request:
             yield analysisId
         else:
@@ -80,6 +83,7 @@ def getDataFromHost(rnaDB, url, headers, host, outputType, outputFolder,
             print('Error code: {}'.format(e.code))
     else:
         jsonData = json.load(response)
+        # TODO: if data already exists don't write anything - this is a loader not an updater
         makeDir(outputFolder)
         writeRnaseqTables(rnaDB, getFilesFromHost(jsonData, host, outputType,
                           subset=subset), description, annotationId,
@@ -87,6 +91,7 @@ def getDataFromHost(rnaDB, url, headers, host, outputType, outputFolder,
         writeGeneExpressionTables(rnaDB, getFilesFromHost(jsonData, host,
                                   outputType, subset=subset, request=True),
                                   annotationId, outputFolder)
+        # TODO: figure out what to do about counts
         # writeCountsTables(getFilesFromHost(jsonData, host, outputType,
         #                   subset=subset, request=True), outputFolder)
 
@@ -274,6 +279,7 @@ def main(argv):
     print("subset size:    {}".format(Color.blue(subset)))
     print("readGroupId  :  {}".format(Color.blue(options.readGroupId)))
     print("output folder:  {}".format(Color.blue(outputFolder)))
+    # TODO: annotation name can be found at DCC...
     getDataFromHost(rnaDB, url, headers, host, dataType, outputFolder,
                     options.description, options.annotationId, subset,
                     options.readGroupId)

@@ -684,17 +684,6 @@ class Backend(object):
         rnaQuantification = dataset.getRnaQuantification(id_)
         return self.runGetRequest(rnaQuantification)
 
-    def runGetFeature(self, id_):
-        """
-        Runs a getFeature request for the specified ID.
-        """
-        compoundId = datamodel.FeatureCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
-        sequenceAnnotation = dataset.getSequenceAnnotation(
-            compoundId.sequenceAnnotationId)
-        feature = sequenceAnnotation.getFeature(id_)
-        return self.runGetRequest(feature)
-
     # Search requests.
 
     def runSearchReadGroupSets(self, request):
@@ -768,15 +757,6 @@ class Backend(object):
             request, protocol.SearchDatasetsRequest,
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
-
-    def runSearchFeatures(self, request):
-        """
-        Returns a SearchFeaturesResponse for the specified
-        SearchFeaturesRequest object.
-        """
-        # TODO: here we are for implementation of sequence annotation search
-        # features
-        raise exceptions.NotImplementedException("Implement me!")
 
     def runSearchRnaQuantification(self, request):
         """

@@ -524,12 +524,6 @@ def searchFeatureGroup():
         flask.request, app.backend.runSearchFeatureGroup)
 
 
-@DisplayedRoute('/features/search', postMethod=True)
-def searchFeatures():
-    return handleFlaskGetRequest(
-        flask.request, app.backend.runSearchFeatures)
-
-
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
@@ -574,14 +568,6 @@ def getCallset(id):
 def getRnaQuantification(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetRnaQuantification)
-
-
-@DisplayedRoute(
-    '/features/<no(search):id>',
-    pathDisplay='/features/<id>')
-def getFeature(id):
-    return handleFlaskGetRequest(
-        id, flask.request, app.backend.runGetFeature)
 
 
 @app.route('/oauth2callback', methods=['GET'])

@@ -376,13 +376,13 @@ _expressionColumns = [('id', 'TEXT'),
                      ]
 
 
-class SqliteRNASeqResult(sqliteBackend.SqliteBackedDataSource):
+class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
     """
     Defines an interface to a sqlite DB which stores all RNA quantifications
     in the dataset.
     """
     def __init__(self, rnaQuantSqlFile="ga4gh-rnaQuant.db"):
-        super(SimulatedRNASeqResult, self).__init__(rnaQuantSqlFile)
+        super(SqliteRNABackend, self).__init__(rnaQuantSqlFile)
         self.rnaQuantColumnNames = [f[0] for f in _rnaQuantColumns]
         self.rnaQuantColumnTypes = [f[1] for f in _rnaQuantColumns]
         self.expressionColumnNames = [f[0] for f in _expressionColumns]
@@ -487,60 +487,3 @@ class SimulatedRNASeqResult(AbstractRNAQuantification):
         """
         fields = ["", "", "", "", ""]
         self.addRnaQuantMetadata(fields)
-
-
-class RNASqliteStore(object):
-    """
-    Defines a sqlite store for RNA data as well as methods for loading and
-    modifying the tables.
-    """
-    def __init__(self, rnaQuantDataPath, sqliteFileName=None):
-        if sqliteFileName is not None:
-            sqlFilePath = os.path.join(rnaQuantDataPath, sqliteFileName)
-            if sqliteFileName in os.listdir(rnaQuantDataPath):
-                self._dbConn = sqlite3.connect(sqlFilePath)
-                self._cursor = self._dbConn.cursor()
-            else:
-                self.createNewRepo(sqlFilePath)
-
-    def createNewRepo(self, sqlFilePath):
-        self._dbConn = sqlite3.connect(sqlFilePath)
-        self._cursor = self._dbConn.cursor()
-        self.createTables(self._cursor)
-        self._dbConn.commit()
-
-    def createTables(self, cursor):
-        # annotationIds is a comma separated list
-        cursor.execute('''CREATE TABLE rnaQuantification (
-                       id text,
-                       annotationIds text,
-                       description text,
-                       name text,
-                       readGroupId text)''')
-        cursor.execute('''CREATE TABLE expression (
-                       id text,
-                       name text,
-                       rnaQuantificationId text,
-                       annotationId text,
-                       expression real,
-                       featureGroupId text,
-                       isNormalized boolean,
-                       rawReadCount real,
-                       score real,
-                       units text)''')
-
-    def addRNAQuantification(self, datafields):
-        """
-        Adds an RNAQuantification to the db.  Datafields is a tuple in the order:
-        id, annotationIds, description, name, readGroupId
-        """
-        self._cursor.execute('INSERT INTO rnaQuantification VALUES (?, ?, ?, ?, ?)', datafields)
-        self._dbConn.commit()
-
-    def addExpression(self, datafields):
-        """
-        Adds an Expression to the db.  Datafields is a tuple in the order:
-        id, name, rnaQuantificationId, annotationId, expression, featureGroupId, isNormalized, rawReadCount, score, units
-        """
-        self._cursor.execute('INSERT INTO expression VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', datafields)
-        self._dbConn.commit()

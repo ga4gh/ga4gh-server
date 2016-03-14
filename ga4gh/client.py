@@ -208,15 +208,6 @@ class AbstractClient(object):
         return self._runGetRequest(
             "variantsets", protocol.VariantSet, variantSetId)
 
-    def getFeature(self, featureId):
-        """
-        Returns a Feature with the specified ID from the server.
-        :param str featureId: The ID of the Feature of interest.
-        :return: The Feature of interest.
-        :rtype: :class:`ga4gh.protocol.Feature`
-        """
-        return self._runGetRequest("features", protocol.Feature, featureId)
-
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
             callSetIds=None):
@@ -397,35 +388,6 @@ class AbstractClient(object):
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "reads", protocol.SearchReadsResponse)
-
-    def searchFeatures(self, featureSetId=None, parentId=None,
-                       referenceName=None, referenceId=None, start=None,
-                       end=None):
-        """
-        Returns an iterator over the Features from the server
-
-        :param str featureSetId: The ID of the
-            :class:`ga4gh.protocol.FeatureSet` of interest
-        :param str parentId: The ID of the parent
-            :class:`ga4gh.protocol.Feature` of the
-            :class:`ga4gh.protocol.Feature` of interest
-        :param str referenceName: The name of the
-            :class:`ga4gh.protocol.Reference` of interest.
-        :param str referenceId: The ID of the
-            :class:`ga4gh.protocol.Reference` of interest.
-        :param int start: The start position of this query.
-        :param int stop: The end position of this query.
-        """
-        request = protocol.SearchFeaturesRequest()
-        request.featureSetId = featureSetId
-        request.parentId = parentId
-        request.referenceName = referenceName
-        request.referenceId = referenceId
-        request.start = start
-        request.end = end
-        request.pageSize = self._pageSize
-        return self._runSearchRequest(
-            request, "features", protocol.SearchFeaturesResponse)
 
     def searchRnaQuantification(self, rnaQuantificationId):
         """
