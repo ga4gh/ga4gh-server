@@ -115,7 +115,8 @@ class IntervalIterator(object):
             # Now, we skip over objectsToSkip objects such that
             # start == searchAnchor
             for _ in range(objectsToSkip):
-                assert self._getStart(obj) == searchAnchor
+                if self._getStart(obj) != searchAnchor:
+                    raise exceptions.BadPageTokenException
                 obj = next(self._searchIterator)
         self._currentObject = obj
         self._nextObject = next(self._searchIterator, None)
