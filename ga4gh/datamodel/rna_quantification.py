@@ -357,20 +357,20 @@ class RNASeqResult(AbstractRNAQuantification):
 
 
 _rnaQuantColumns = [('id', 'TEXT'),
-                    ('annotationIds', 'TEXT'),
+                    ('annotation_ids', 'TEXT'),
                     ('description', 'TEXT'),
                     ('name', 'TEXT'),
-                    ('readGroupId', 'TEXT')
+                    ('read_group_id', 'TEXT')
                    ]
 
 
 _expressionColumns = [('id', 'TEXT'),
                       ('name', 'TEXT'),
-                      ('annotationId', 'TEXT'),
+                      ('annotation_id', 'TEXT'),
                       ('expression', 'REAL'),
-                      ('featureGroupId', 'TEXT'),
-                      ('isNormalized', 'BOOLEAN'),
-                      ('rawReadCount', 'REAL'),
+                      ('feature_group_id', 'TEXT'),
+                      ('is_normalized', 'BOOLEAN'),
+                      ('raw_read_count', 'REAL'),
                       ('score', 'REAL'),
                       ('units', 'TEXT')
                      ]
@@ -388,71 +388,68 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         self.expressionColumnNames = [f[0] for f in _expressionColumns]
         self.expressionColumnTypes = [f[1] for f in _expressionColumns]
 
-    def getRnaQuantifications(self, pageToken=0, pageSize=None, **query):
+    def searchRnaQuantificationsInDb(self, pageToken=0, pageSize=None,
+                                     rnaQuantificationId=None):
         """
-        Returns the list of RnaQuantifications in this DB.  Raises a
-        RnaQuantificationNotFoundException if id is specified and does not
-        exist.
+        :param pageToken: int representing first record to return
+        :param pageSize: int representing number of records to return
+        :param rnaQuantificationId: string restrict search by id
+        :return an array of dictionaries, representing the returned data.
         """
-        sql = "SELECT * FROM rnaQuantification "
-        whereClauses = []
-        for col in query:
-            if col in self.featureColumnNames:
-                colIdx = self.featureColumnNames.index(col)
-                colType = self.featureColumnTypes[colIdx]
-                colVal = query[col]
-                # simple input sanity check
-                if "'" in colVal:
-                    throw(ga4gh.exceptions.BadRequestException)
-                whereClauses.append("{} = '{}'".format(col, colVal))
-
-        if len(whereClauses) > 0:
-            sql += "WHERE {} ".format(" AND ".join(whereClauses))
-        sql += "ORDER BY start, id "
+        sql = ("SELECT * FROM RNAQUANTIFICATION")
+        sql_args = ()
+        if rnaQuantificationId is not None:
+            sql += " WHERE id = ? "
+            sql_args += (rnaQuantificationId,)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
-        query = self._dbconn.execute(sql)
+        query = self._dbconn.execute(sql, sql_args)
         return sqliteBackend.sqliteRows2dicts(query.fetchall())
 
-    def getExpressionLevels(self, pageToken=0, pageSize=None, **query):
+    def getRnaQuantificationById(self, rnaQuantificationId):
         """
-        Returns the list of ExpressionLevels in this RNA Quantification.
+        :param rnaQuantificationId: the RNA Quantification ID
+        :return: dictionary representing an RnaQuantification object,
+            or None if no match is found.
         """
-        sql = "SELECT * FROM expression "
-        whereClauses = []
-        for col in query:
-            if col in self.featureColumnNames:
-                colIdx = self.featureColumnNames.index(col)
-                colType = self.featureColumnTypes[colIdx]
-                colVal = query[col]
-                # simple input sanity check
-                if colType is "REAL":
-                    colVal = float(colVal)
-                     # expression query value is a minimum threshold
-                    if col is "expression":
-                        whereClauses.append("expression >= {}".format(colVal))
-                    else:
-                        whereClauses.append("{} = {}".format(col, colVal))
-                else:  # TEXT of some sort
-                    if "'" in colVal:
-                        throw(ga4gh.exceptions.BadRequestException)
-                    whereClauses.append("{} = '{}'".format(col, colVal))
-        if len(whereClauses) > 0:
-            sql += "WHERE {} ".format(" AND ".join(whereClauses))
-        sql += "ORDER BY start, id "
+        sql = ("SELECT * FROM RNAQUANTIFICATION WHERE id = ?")
+        query = self._dbconn.execute(sql, (rnaQuantificationId,))
+        return sqliteBackend.sqliteRow2Dict(query.fetchone())
+
+    def searchExpressionLevelsInDb(self, rnaQuantID, pageToken=0,
+                                   pageSize=None, expressionId=None,
+                                   featureGroupId=None, threshold=0.0):
+        """
+        :param rnaQuantId: string restrict search by quantification id
+        :param pageToken: int representing first record to return
+        :param pageSize: int representing number of records to return
+        :param expressionId: string restrict search by expression id
+        :param featureGroupId: string restrict search by feature group id
+        :param threshold: float minimum expression values to return
+        :return an array of dictionaries, representing the returned data.
+        """
+        sql = ("SELECT * FROM EXPRESSION WHERE "
+               "rna_quantification_id = ? "
+               "AND expression >= ? ")
+        sql_args = (rnaQuantId, threshold)
+        if expressionId is not None:
+            sql += "AND id = ? "
+            sql_args += (expressionId,)
+        if featureGroupId is not None:
+            sql += "AND feature_group_id = ? "
+            sql_args += (expressionId,)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
-        query = self._dbconn.execute(sql)
+        query = self._dbconn.execute(sql, sql_args)
         return sqliteBackend.sqliteRows2dicts(query.fetchall())
 
-    def getExpressionLevel(self, id_, featureGroupId=None):
+    def getExpressionLevelById(self, expressionId):
         """
-        Returns a ExpressionLevel with the specified id, or raises a
-        ExpressionLevelNotFoundException if it does not exist.
+        :param expressionId: the ExpressionLevel ID
+        :return: dictionary representing an ExpressionLevel object,
+            or None if no match is found.
         """
-        results = self.getExpressionLevels(featureGroupId=featureGroupId,
-                                           expressionId=id_)
-        if len(results) == 0:
-            raise exceptions.FeatureGroupNotFoundException(id_)
-        return results
+        sql = ("SELECT * FROM expression WHERE id = ?")
+        query = self._dbconn.execute(sql, (expressionId,))
+        return sqliteBackend.sqliteRow2Dict(query.fetchone())
 
 
 class SimulatedRNASeqResult(AbstractRNAQuantification):

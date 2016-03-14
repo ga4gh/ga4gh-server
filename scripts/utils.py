@@ -264,36 +264,36 @@ class RNASqliteStore(object):
 
     def createTables(self, cursor):
         # annotationIds is a comma separated list
-        cursor.execute('''CREATE TABLE rnaQuantification (
+        cursor.execute('''CREATE TABLE RNAQUANTIFICATION (
                        id text,
-                       annotationIds text,
+                       annotation_ids text,
                        description text,
                        name text,
-                       readGroupId text)''')
-        cursor.execute('''CREATE TABLE expression (
+                       read_group_id text)''')
+        cursor.execute('''CREATE TABLE EXPRESSION (
                        id text,
                        name text,
-                       rnaQuantificationId text,
-                       annotationId text,
+                       rna_quantification_id text,
+                       annotation_id text,
                        expression real,
-                       featureGroupId text,
-                       isNormalized boolean,
-                       rawReadCount real,
+                       feature_group_id text,
+                       is_normalized boolean,
+                       raw_read_count real,
                        score real,
                        units text)''')
 
     def addRNAQuantification(self, datafields):
         """
         Adds an RNAQuantification to the db.  Datafields is a tuple in the order:
-        id, annotationIds, description, name, readGroupId
+        id, annotation_ids, description, name, read_group_id
         """
-        self._cursor.execute('INSERT INTO rnaQuantification VALUES (?, ?, ?, ?, ?)', datafields)
+        self._cursor.execute('INSERT INTO RNAQUANTIFICATION VALUES (?, ?, ?, ?, ?)', datafields)
         self._dbConn.commit()
 
     def addExpression(self, datafields):
         """
         Adds an Expression to the db.  Datafields is a tuple in the order:
-        id, name, rnaQuantificationId, annotationId, expression, featureGroupId, isNormalized, rawReadCount, score, units
+        id, name, rna_quantification_id, annotation_id, expression, feature_group_id, is_normalized, raw_read_count, score, units
         """
-        self._cursor.execute('INSERT INTO expression VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', datafields)
+        self._cursor.execute('INSERT INTO EXPRESSION VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', datafields)
         self._dbConn.commit()
