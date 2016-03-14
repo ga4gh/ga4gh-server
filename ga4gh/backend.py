@@ -228,32 +228,34 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
                 return self._removeNonMatchingTranscriptEffects(vann), ret[1]
         return None
 
-    def _removeNonMatchingTranscriptEffects(self, ann):
-        newTxE = []
-        if self._effects == []:
-            return ann
-        for txe in ann.transcriptEffects:
-            add = False
-            for effect in txe.effects:
-                if self._matchAnyEffects(effect):
-                    add = True
-            if add:
-                newTxE.append(txe)
-        ann.transcriptEffects = newTxE
-        return ann
-
     def filterVariantAnnotation(self, vann):
+        """
+        Returns true when an annotation should be included.
+        :param vann:
+        :return:
+        """
         # TODO reintroduce feature ID search
-        if len(self._effects) == 0:
-            return True
-        if not vann.transcriptEffects:
+        ret = False
+        if len(self._effects) != 0 and not vann.transcriptEffects:
             return False
+        elif len(self._effects) == 0:
+            return True
         for teff in vann.transcriptEffects:
             if self.filterEffect(teff):
-                return True
-            else:
-                return False
-        return True
+                ret = True
+        return ret
+
+    def filterEffect(self, teff):
+        """
+        Returns true when any of the transcript effects
+        are present in the request.
+        :param teff:
+        :return:
+        """
+        ret = False
+        for effect in teff.effects:
+            ret = self._matchAnyEffects(effect) or ret
+        return ret
 
     def _checkTermEquality(self, requestedEffect, effect):
         return self._termPresent(requestedEffect) and (
@@ -274,6 +276,7 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
             if self._checkIdEquality(requestedEffect, effect):
                 if self._checkTermEquality(requestedEffect, effect):
                     return True
+                # In case the ID and terms don't match
                 elif not self._termPresent(requestedEffect):
                     return True
         elif self._termPresent(requestedEffect):
@@ -282,21 +285,30 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         return False
 
     def _matchAnyEffects(self, effect):
+        ret = False
         for requestedEffect in self._effects:
-            return self._matchOntologyTerm(requestedEffect, effect)
-
-    def filterEffect(self, teff):
-        if len(self._effects) == 0:
-            return True
-        for effect in teff.effects:
-            return self._matchAnyEffects(effect)
-        return False
+            ret = self._matchOntologyTerm(requestedEffect, effect) or ret
+        return ret
 
     def filterFeatureId(self, teff):
         if (len(self._featureIds) > 0 and
                 teff.featureId not in self._featureIds):
             return False
         return True
+
+    def _removeNonMatchingTranscriptEffects(self, ann):
+        newTxE = []
+        if self._effects == []:
+            return ann
+        for txe in ann.transcriptEffects:
+            add = False
+            for effect in txe.effects:
+                if self._matchAnyEffects(effect):
+                    add = True
+            if add:
+                newTxE.append(txe)
+        ann.transcriptEffects = newTxE
+        return ann
 
 
 class Backend(object):
