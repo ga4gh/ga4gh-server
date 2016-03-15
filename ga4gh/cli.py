@@ -686,6 +686,11 @@ def addVariantSetIdArgument(parser):
         help="The variant set id to search over")
 
 
+def addVariantSetIdMandatoryArgument(parser):
+    parser.add_argument(
+        "variantSetId", help="The variant set id to search over")
+
+
 def addAnnotationSetIdArgument(parser):
     parser.add_argument(
         "--variantAnnotationSetId", "-V", default=None,
@@ -865,7 +870,7 @@ def addVariantAnnotationSetsSearchParser(subparsers):
     addOutputFormatArgument(parser)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addVariantSetIdArgument(parser)
+    addVariantSetIdMandatoryArgument(parser)
     return parser
 
 
