@@ -234,6 +234,13 @@ class AbstractClient(object):
         return self._runGetRequest(
             "featuresets", protocol.FeatureSet, featureSetId)
 
+    def getFeature(self, compoundId):
+        """
+        :param str compoundId: The compound ID of the requested feature
+        :return: The requested ga4gh.protocol.Feature object.
+        """
+        return self._runGetRequest("features", protocol.Feature, compoundId)
+
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
             callSetIds=None):
@@ -302,6 +309,36 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "variantannotations",
             protocol.SearchVariantAnnotationsResponse)
+
+    def searchFeatures(
+            self, featureSetId=None, parentId=None, referenceName=None,
+            start=0, end=None, ontologyTerms=[]
+                       ):
+        """
+        Returns the result of running a searchFeatures method
+        on a request with the passed-in parameters.
+        :param featureSetId: string ID of the feature Set being searched
+        :param parentId: string ID (optional) of the parent feature
+        :param referenceName: string name of the reference to search
+            (ex: "chr1")
+        :param start: int search start position on reference
+        :param end: int end position on reference
+        :param ontologyTerms: array of terms to limit search by (ex: "gene")
+        :return: an iterator over Features as returned in the
+            SearchFeaturesResponse object.
+        """
+        request = protocol.SearchFeaturesRequest()
+        request.featureSetId = featureSetId
+        request.parentId = parentId
+        request.referenceName = referenceName
+        request.start = start
+        request.end = end
+        request.ontologyTerms = ontologyTerms
+        request.pageSize = self._pageSize
+        print(request)
+        return self._runSearchRequest(
+            request, "features",
+            protocol.SearchFeaturesResponse)
 
     def searchDatasets(self):
         """
@@ -576,6 +613,7 @@ class LocalClient(AbstractClient):
             "variantsets": self._backend.runGetVariantSet,
             "featuresets": self._backend.runGetFeatureSet,
             "variants": self._backend.runGetVariant,
+            "features": self._backend.runGetFeature,
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
             "variantannotationsets": self._backend.runGetVariantAnnotationSet
@@ -588,6 +626,7 @@ class LocalClient(AbstractClient):
             "variantsets": self._backend.runSearchVariantSets,
             "featuresets": self._backend.runSearchFeatureSets,
             "variants": self._backend.runSearchVariants,
+            "features": self._backend.runSearchFeatures,
             "readgroupsets": self._backend.runSearchReadGroupSets,
             "reads": self._backend.runSearchReads,
             "variantannotationsets":

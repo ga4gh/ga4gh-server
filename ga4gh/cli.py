@@ -442,6 +442,21 @@ class AnnotationFormatterMixin(object):
             print()
 
 
+class FeatureFormatterMixin(object):
+    """
+    Mix-in class to format Feature (Sequence Annotation) objects
+    """
+    def _textOutput(self, gaObjects):
+        for feature in gaObjects:
+            print(
+                feature.id, feature.parentId, feature.featureSetId,
+                feature.referenceName, feature.start, feature.end,
+                feature.strand, sep="\t", end="\t")
+            # TODO: handle attributes
+            # TODO: handle featureType (OntologyTerm)
+            print()
+
+
 class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
     """
     Runner class for the variants/search method.
@@ -521,6 +536,38 @@ class SearchVariantAnnotationsRunner(
                 self._run(annotationSet.id)
         else:
             self._run(self._variantAnnotationSetId)
+
+
+class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
+    """
+    Runner class for the features/search method.
+    """
+    def __init__(self, args):
+        super(SearchFeaturesRunner, self).__init__(args)
+        self._referenceName = args.referenceName
+        self._featureSetId = args.featureSetId
+        self._parentId = args.parentId
+        self._start = args.start
+        self._end = args.end
+        if args.ontologyTerms == "":
+            self._ontologyTerms = None
+        else:
+            self._ontologyTerms = args.ontologyTerms.split(",")
+
+    def _run(self, featureSetId):
+        iterator = self._client.searchFeatures(
+            start=self._start, end=self._end,
+            referenceName=self._referenceName,
+            featureSetId=featureSetId, parentId=self._parentId,
+            ontologyTerms=self._ontologyTerms)
+        self._output(iterator)
+
+    def run(self):
+        if self._featureSetId is None and self._parentId is None:
+            for featureSet in self.getAllFeatureSets():
+                self._run(featureSet)
+        else:
+            self._run(self._featureSetId)
 
 
 class SearchReadsRunner(AbstractSearchRunner):
@@ -677,6 +724,24 @@ class GetVariantSetRunner(AbstractGetRunner):
         self._method = self._client.getVariantSet
 
 
+class GetFeatureRunner(FeatureFormatterMixin, AbstractGetRunner):
+    """
+    Runner class for the features/{id} method
+    """
+    def __init__(self, args):
+        super(GetFeatureRunner, self).__init__(args)
+        self._method = self._client.getFeature
+
+
+class GetFeatureSetRunner(AbstractGetRunner):
+    """
+    Runner class for the featuresets/{id} method
+    """
+    def __init__(self, args):
+        super(GetFeatureSetRunner, self).__init__(args)
+        self._method = self._client.getFeatureSet
+
+
 def addDisableUrllibWarningsArgument(parser):
     parser.add_argument(
         "--disable-urllib-warnings", default=False, action="store_true",
@@ -709,6 +774,18 @@ def addAnnotationsSearchOptions(parser):
     addPageSizeArgument(parser)
 
 
+def addFeaturesSearchOptions(parser):
+    """
+    Adds common options to a features search command line parser.
+    """
+    addFeatureSetIdArgument(parser)
+    addReferenceNameArgument(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+    addParentFeatureIdArgument(parser)
+    addOntologyTermsArgument(parser)
+
+
 def addVariantSetIdArgument(parser):
     parser.add_argument(
         "--variantSetId", "-V", default=None,
@@ -723,7 +800,7 @@ def addAnnotationSetIdArgument(parser):
 
 def addFeatureSetIdArgument(parser):
     parser.add_argument(
-        "--featureSetId", "-V", default=None,
+        "--featureSetId", "-F", default=None,
         help="The feature set id to search over")
 
 
@@ -762,6 +839,20 @@ def addEffectsArgument(parser):
         help="""Return annotations having any of these effects.
             Pass in IDs as a comma separated list (no spaces).
             """)
+
+
+def addOntologyTermsArgument(parser):
+    parser.add_argument(
+        "--ontologyTerms", "-n", default="",
+        help="""Return features matching any of these ontology terms.
+            Pass in terms as a comma separated list (no spaces).
+            """)
+
+
+def addParentFeatureIdArgument(parser):
+    parser.add_argument(
+        "--parentId", "-p", default=None,
+        help="Filter features by supplied parent ID")
 
 
 def addStartArgument(parser):
@@ -911,10 +1002,37 @@ def addVariantSetsGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addFeaturesGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "features-get", "Get a feature by ID")
+    parser.set_defaults(runner=GetFeatureRunner)
+    addGetArguments(parser)
+
+
+def addFeatureSetsGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "featuresets-get", "Get a featureSet by ID")
+    parser.set_defaults(runner=GetFeatureSetRunner)
+    addGetArguments(parser)
+
+
+def addFeaturesSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "features-search",
+        description="Search for sequence annotation features",
+        help="Search for sequence annotation features.")
+    parser.set_defaults(runner=SearchFeaturesRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addPageSizeArgument(parser)
+    addFeaturesSearchOptions(parser)
+    return parser
+
+
 def addFeatureSetsSearchParser(subparsers):
     parser = subparsers.add_parser(
         "featuresets-search",
-        description="Search for featureSets",
+        description="Search for sequence annotation feature sets",
         help="Search for featureSets.")
     parser.set_defaults(runner=SearchFeatureSetsRunner)
     addOutputFormatArgument(parser)
@@ -1084,6 +1202,9 @@ def getClientParser():
     addVariantAnnotationSearchParser(subparsers)
     addVariantAnnotationSetsSearchParser(subparsers)
     addVariantSetsGetParser(subparsers)
+    addFeaturesSearchParser(subparsers)
+    addFeaturesGetParser(subparsers)
+    addFeatureSetsGetParser(subparsers)
     addFeatureSetsSearchParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)
