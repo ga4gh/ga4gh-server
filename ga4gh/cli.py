@@ -1099,35 +1099,6 @@ def addReferencesBasesListParser(subparsers):
     addEndArgument(parser, defaultValue=None)
 
 
-def addFeaturesSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "features-search",
-        description="Search for features",
-        help="Search for features")
-    parser.set_defaults(runner=SearchFeaturesRunner)
-    parser.add_argument(
-        "--featureSetIds", default=None,
-        help="The featureSetIds to search over")
-    parser.add_argument(
-        "--parentIds", default=None,
-        help="The parentIds to search over")
-    parser.add_argument(
-        "--referenceId", default=None,
-        help="The referenceIds to search over")
-    parser.add_argument(
-        "--referenceName", default=None,
-        help="The referenceNames to search over")
-    parser.add_argument(
-        "--start", default=None,
-        help="Start of the range to search over")
-    parser.add_argument(
-        "--end", default=None,
-        help="End of the range to search over")
-    addOutputFormatArgument(parser)
-    addUrlArgument(parser)
-    return parser
-
-
 def addRnaQuantificationSearchParser(subparsers):
     parser = subparsers.add_parser(
         "rnaquantification-search",

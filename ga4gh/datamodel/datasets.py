@@ -246,6 +246,7 @@ class FileSystemDataset(AbstractDataset):
     """
     variantsDirName = "variants"
     readsDirName = "reads"
+    rnaDirName = "rnaQuant"
 
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
@@ -277,12 +278,15 @@ class FileSystemDataset(AbstractDataset):
                     self, localId, bamPath, dataRepository)
                 self.addReadGroupSet(readGroupSet)
         # Rna Quantification
-        rnaQuantDir = os.path.join(dataDir, "rnaQuant")
-        for localId in os.listdir(rnaQuantDir):
-            relativePath = os.path.join(rnaQuantDir, localId)
-            if os.path.isdir(relativePath):
+        # TODO: this is assuming that each rnaQuant is a separate sqlite3 file
+        #       maybe that is the way to do it
+        rnaQuantDir = os.path.join(dataDir, self.rnaDirName)
+        for filename in os.listdir(rnaQuantDir):
+            if fnmatch.fnmatch(filename, '*.db'):
+                localId, _ = os.path.splitext(filename)
+                fullPath = os.path.join(rnaQuantDir, filename)
                 rnaQuant = rnaQuantification.RNASeqResult(
-                    self, localId, relativePath)
+                    self, localId, fullPath, dataRepository)
                 self.addRnaQuantification(rnaQuant)
 
     def _setMetadata(self):

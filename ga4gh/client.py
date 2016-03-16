@@ -223,6 +223,18 @@ class AbstractClient(object):
             "variantannotationsets", protocol.VariantAnnotationSet,
             variantAnnotationSetId)
 
+    def getRnaQuantification(self, rnaQuantificationId):
+        """
+        Returns the RnaQuantification with the specified ID from the server.
+        :param str rnaQuantificationId: The ID of the RnaQuantification of
+            interest.
+        :return: The RnaQuantification of interest.
+        :rtype: :class:`ga4gh.protocol.RnaQuantification`
+        """
+        return self._runGetRequest(
+            "rnaquantification",protocol.RnaQuantification,
+            rnaQuantificationId)
+
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
             callSetIds=None):
@@ -604,7 +616,8 @@ class LocalClient(AbstractClient):
             "variants": self._backend.runGetVariant,
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
-            "variantannotationsets": self._backend.runGetVariantAnnotationSet
+            "variantannotationsets": self._backend.runGetVariantAnnotationSet,
+            "rnaquantification": self._backend.runGetRnaQuantification
         }
         self._searchMethodMap = {
             "callsets": self._backend.runSearchCallSets,

@@ -625,14 +625,13 @@ class Backend(object):
         if expressionLevelId is not None:
             try:
                 return self._singleObjectGenerator(
-                    rnaQuant.getExpressionLevel(expressionLevelId,
-                                                featureGroupId=featureGroupId)
+                    rnaQuant.getExpressionLevel(expressionLevelId)
                     )
             except exceptions.ExpressionLevelNotFoundException:
                 return self._noObjectGenerator()
         return self._objectListGenerator(
             request,
-            rnaQuant.getExpressionLevels(featureGroupId=featureGroupId))
+            rnaQuant.getExpressionLevels(request))
 
     def featureGroupGenerator(self, request):
         """
