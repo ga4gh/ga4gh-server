@@ -595,13 +595,13 @@ class Backend(object):
 
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         featureSet = dataset.getFeatureSet(compoundId.featureSetId)
-        return featureSet.featureObjectGenerator(request.referenceName,
-                                                 request.start,
-                                                 request.end,
-                                                 request.pageToken,
-                                                 request.pageSize,
-                                                 request.ontologyTerms,
-                                                 parentId)
+        return featureSet.getFeatures(request.referenceName,
+                                      request.start,
+                                      request.end,
+                                      request.pageToken,
+                                      request.pageSize,
+                                      request.ontologyTerms,
+                                      parentId)
 
     def callSetsGenerator(self, request):
         """

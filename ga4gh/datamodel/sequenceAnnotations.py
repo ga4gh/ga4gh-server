@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
+import random
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
@@ -201,6 +202,61 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             parentContainer, localId, None)
         self._randomSeed = randomSeed
 
+    def _getRandomOntologyTerm(self, randomNumberGenerator):
+        ontologyTuples = [("gene", "SO:0000704"),
+                          ("exon", "SO:0000147")]
+        term = protocol.OntologyTerm()
+        ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
+        term.term, term.id = ontologyTuple[0], ontologyTuple[1]
+        term.sourceName = "sequenceOntology"
+        term.sourceVersion = "0"
+        return term
+
+    def _generateSimulatedFeature(self, randomNumberGenerator):
+        feature = protocol.Feature()
+        # ID and parentId are not generated here.
+        feature.featureSetId = self.getId()
+        feature.start = randomNumberGenerator.randint(0, 10000)
+        feature.end = feature.start + randomNumberGenerator.randint(1, 1000)
+        feature.featureType = self._getRandomOntologyTerm(
+            randomNumberGenerator)
+        references = ["chr1", "chr2", "chrX"]
+        feature.referenceName = randomNumberGenerator.choice(references)
+        strands = ["+", "-"]
+        feature.strand = randomNumberGenerator.choice(strands)
+        feature.attributes = {"gene_name": ["Frances", ],
+                              "gene_type": ["mRNA", ],
+                              "gene_status": ["UNKNOWN", ]}
+        return feature
+
+    def getFeature(self, compoundId):
+        randomNumberGenerator = random.Random()
+        randomNumberGenerator.seed(self._randomSeed)
+        feature = self._generateSimulatedFeature(randomNumberGenerator)
+        feature.id = compoundId
+        feature.parentId = None  # FIXME
+        return feature
+
+    def getFeatures(self, referenceName, start, end,
+                    pageToken, pageSize,
+                    ontologyTerms=[], parentId=None):
+        randomNumberGenerator = random.Random()
+        randomNumberGenerator.seed(self._randomSeed)
+        numFeatures = 10
+        if pageToken is not None:
+            nextPageToken = int(pageToken)
+        else:
+            nextPageToken = 0
+        for featureId in ["feature{}".format(x) for x in xrange(numFeatures)]:
+            gaFeature = self._generateSimulatedFeature(randomNumberGenerator)
+            gaFeature.id = featureId
+            gaFeature.parentId = None  # FIXME
+            if nextPageToken < numFeatures - 1:
+                nextPageToken += 1
+            else:
+                nextPageToken = None
+            yield gaFeature, nextPageToken
+
 
 class Gff3DbFeatureSet(AbstractFeatureSet):
     """
@@ -243,7 +299,6 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         gaFeature.referenceName = feature['reference_name']
         gaFeature.start = int(feature['start'])
         gaFeature.end = int(feature['end'])
-        print(feature['child_ids'])  # DEBUG
         gaFeature.childIds = map(
                 self.getCompoundIdForFeatureId,
                 json.loads(feature['child_ids']))
@@ -253,9 +308,9 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
             feature['attributes'])
         return gaFeature
 
-    def featureObjectGenerator(self, referenceName, start, end,
-                               pageToken, pageSize,
-                               ontologyTerms=[], parentId=None):
+    def getFeatures(self, referenceName, start, end,
+                    pageToken, pageSize,
+                    ontologyTerms=[], parentId=None):
         """
         method passed to runSearchRequest to fulfill the request
         :param str referenceName: name of reference (ex: "chr1")
@@ -265,7 +320,9 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         :param pageSize: none or castable to int
         :param ontologyTerms: array of str
         :param parentId: none or featureID of parent
-        :return: yields a protocol.Feature at a time
+        :return: yields a protocol.Feature at a time, together with
+            the corresponding nextPageToken (which is null for the last
+            feature served out).
         """
         # parse out the various query parameters from the request.
         start = int(start)
@@ -287,7 +344,6 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
 
         # pagination logic: None if last feature was returned,
         # else 1 + row number being returned (starting at row 0).
-        pageToken = pageToken
         if pageToken is not None:
             nextPageToken = int(pageToken)
         else:
