@@ -257,10 +257,6 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
             ret = self._matchAnyEffects(effect) or ret
         return ret
 
-    def _checkTermEquality(self, requestedEffect, effect):
-        return self._termPresent(requestedEffect) and (
-            effect.term == requestedEffect['term'])
-
     def _checkIdEquality(self, requestedEffect, effect):
         return self._idPresent(requestedEffect) and (
             effect.id == requestedEffect['id'])
@@ -268,20 +264,10 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
     def _idPresent(self, requestedEffect):
         return "id" in requestedEffect
 
-    def _termPresent(self, requestedEffect):
-        return "term" in requestedEffect
-
     def _matchOntologyTerm(self, requestedEffect, effect):
-        if self._idPresent(requestedEffect):
-            if self._checkIdEquality(requestedEffect, effect):
-                if self._checkTermEquality(requestedEffect, effect):
-                    return True
-                # In case the ID and terms don't match
-                elif not self._termPresent(requestedEffect):
-                    return True
-        elif self._termPresent(requestedEffect):
-            if self._checkTermEquality(requestedEffect, effect):
-                return True
+        if self._idPresent(requestedEffect) and \
+                self._checkIdEquality(requestedEffect, effect):
+            return True
         return False
 
     def _matchAnyEffects(self, effect):

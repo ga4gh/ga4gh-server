@@ -683,19 +683,6 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 5
         request.referenceName = "1"
-        request.effects = [{"id": "SO:0001627", "term": "TermDoesNotMatchID"}]
-        response = self.sendJsonPostRequest(path, request.toJsonString())
-        responseData = protocol.SearchVariantAnnotationsResponse. \
-            fromJsonString(response.data)
-        self.assertEquals(len(responseData.variantAnnotations), 0,
-                          ("There should be no results when "
-                           "term and ID don't match"))
-
-        request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSet.getId()
-        request.start = 0
-        request.end = 5
-        request.referenceName = "1"
         request.effects = [{"id": "SO:0001627"}]
         response = self.sendJsonPostRequest(path, request.toJsonString())
         responseData = protocol.SearchVariantAnnotationsResponse. \
