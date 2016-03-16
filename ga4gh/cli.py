@@ -477,19 +477,19 @@ class SearchVariantAnnotationsRunner(
             effects=self._effects)
         self._output(iterator)
 
-    def getAllAnnotaionSets(self):
+    def getAllAnnotationSets(self):
         """
         Returns all variant annotation sets on the server.
         """
         for dataset in self.getAllDatasets():
             iterator = self._client.searchVariantAnnotationSets(
                 datasetId=dataset.id)
-            for variantSet in iterator:
-                yield variantSet
+            for variantAnnotationSet in iterator:
+                yield variantAnnotationSet
 
     def run(self):
         if self._variantAnnotationSetId is None:
-            for annotationSet in self.getAllAnnotaionSets():
+            for annotationSet in self.getAllAnnotationSets():
                 self._run(annotationSet.id)
         else:
             self._run(self._variantAnnotationSetId)
@@ -671,7 +671,7 @@ def addAnnotationsSearchOptions(parser):
     """
     Adds common options to a annotation searches command line parser.
     """
-    addVariantAnnotationSetIdMandatoryArgument(parser)
+    addAnnotationSetIdArgument(parser)
     addReferenceNameArgument(parser)
     addReferenceIdArgument(parser)
     addStartArgument(parser)
@@ -690,12 +690,6 @@ def addVariantSetIdArgument(parser):
 def addVariantSetIdMandatoryArgument(parser):
     parser.add_argument(
         "variantSetId", help="The variant set id to search over")
-
-
-def addVariantAnnotationSetIdMandatoryArgument(parser):
-    parser.add_argument(
-        "variantAnnotationSetId",
-        help="The variant annotation set id to search over")
 
 
 def addAnnotationSetIdArgument(parser):
@@ -877,7 +871,7 @@ def addVariantAnnotationSetsSearchParser(subparsers):
     addOutputFormatArgument(parser)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    addVariantSetIdArgument(parser)
+    addVariantSetIdMandatoryArgument(parser)
     return parser
 
 
@@ -1334,9 +1328,10 @@ class CheckRunner(AbstractRepoCommandRunner):
 
     def __init__(self, args):
         super(CheckRunner, self).__init__(args)
+        self.doConsistencyCheck = not args.skipConsistencyCheck
 
     def run(self):
-        self.repoManager.check()
+        self.repoManager.check(self.doConsistencyCheck)
 
 
 class ListRunner(AbstractRepoCommandRunner):
@@ -1464,6 +1459,12 @@ def addRepoArgument(subparser):
         "repoPath", help="the file path of the data repository")
 
 
+def addSkipConsistencyCheckArgument(subparser):
+    subparser.add_argument(
+        "-s", "--skipConsistencyCheck", action='store_true', default=False,
+        help="skip the data repo consistency check")
+
+
 def addForceArgument(subparser):
     subparser.add_argument(
         "-f", "--force", action='store_true',
@@ -1524,6 +1525,7 @@ def getRepoParser():
         subparsers, "check", "Check to see if repo is well-formed")
     checkParser.set_defaults(runner=CheckRunner)
     addRepoArgument(checkParser)
+    addSkipConsistencyCheckArgument(checkParser)
 
     listParser = addSubparser(
         subparsers, "list", "List the contents of the repo")

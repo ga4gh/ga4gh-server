@@ -450,7 +450,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         effect.id = str(self.getTranscriptEffectId(effect))
         return effect
 
-    def _getRandomOntologyTerm(self, effect, randomNumberGenerator):
+    def _getRandomOntologyTerm(self, randomNumberGenerator):
         # TODO more mock options from simulated seqOnt?
         ontologyTuples = [("intron_variant", "SO:0001627"),
                           ("exon_variant", "SO:0001791")]
@@ -463,8 +463,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
 
     def _addTranscriptEffectOntologyTerm(self, effect, randomNumberGenerator):
         effect.effects.append(
-            self._getRandomOntologyTerm(
-                effect, randomNumberGenerator))
+            self._getRandomOntologyTerm(randomNumberGenerator))
         return effect
 
     def _generateAnalysisResult(self, effect, ann, randomNumberGenerator):
@@ -535,21 +534,52 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         self._setAccessTimes(dataDir)
         self._chromFileMap = {}
         self._metadata = None
-        self._scanDataFiles(dataDir, ['*.bcf', '*.vcf.gz'])
+        self._patterns = ['*.bcf', '*.vcf.gz']
+        self._scanDataFiles(self._dataDir, self._patterns)
 
     def _updateMetadata(self, variantFile):
         """
         Updates the metadata for his variant set based on the specified
-        variant file, and ensures that it is consistent with already
-        existing metadata.
+        variant file
         """
         metadata = self._getMetadataFromVcf(variantFile)
         if self._metadata is None:
             self._metadata = metadata
-        else:
-            if self._metadata != metadata:
-                raise exceptions.InconsistentMetaDataException(
+
+    def _checkMetadata(self, variantFile):
+        """
+        Checks that metadata is consistent
+        """
+        metadata = self._getMetadataFromVcf(variantFile)
+        if self._metadata is not None and self._metadata != metadata:
+            raise exceptions.InconsistentMetaDataException(
+                variantFile.filename)
+
+    def _checkCallSetIds(self, variantFile):
+        """
+        Checks callSetIds for consistency
+        """
+        if len(self._callSetIdMap) > 0:
+            callSetIds = set([
+                self.getCallSetId(sample)
+                for sample in variantFile.header.samples])
+            if callSetIds != set(self._callSetIdMap.keys()):
+                raise exceptions.InconsistentCallSetIdException(
                     variantFile.filename)
+
+    def checkConsistency(self):
+        """
+        Perform consistency check on the variant set
+        """
+        filenames = self._getDataFilenames(self._dataDir, self._patterns)
+        for filename in filenames:
+            varFile = self.openFile(filename)
+            for chrom in varFile.index:
+                chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
+                if not isEmptyIter(varFile.fetch(chrom)):
+                    self._checkMetadata(varFile)
+                    self._checkCallSetIds(varFile)
+            varFile.close()
 
     def getNumVariants(self):
         """
@@ -562,18 +592,9 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         Updates the call set IDs based on the specified variant file.
         """
-        # If this is the first file, we add in the samples. If not, we check
-        # for consistency.
         if len(self._callSetIdMap) == 0:
             for sample in variantFile.header.samples:
                 self.addCallSet(sample)
-        else:
-            callSetIds = set([
-                self.getCallSetId(sample)
-                for sample in variantFile.header.samples])
-            if callSetIds != set(self._callSetIdMap.keys()):
-                raise exceptions.InconsistentCallSetIdException(
-                    variantFile.filename)
 
     def openFile(self, filename):
         return pysam.VariantFile(filename)
