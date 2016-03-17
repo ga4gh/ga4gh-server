@@ -450,7 +450,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         effect.id = str(self.getTranscriptEffectId(effect))
         return effect
 
-    def _getRandomOntologyTerm(self, effect, randomNumberGenerator):
+    def _getRandomOntologyTerm(self, randomNumberGenerator):
         # TODO more mock options from simulated seqOnt?
         ontologyTuples = [("intron_variant", "SO:0001627"),
                           ("exon_variant", "SO:0001791")]
@@ -463,8 +463,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
 
     def _addTranscriptEffectOntologyTerm(self, effect, randomNumberGenerator):
         effect.effects.append(
-            self._getRandomOntologyTerm(
-                effect, randomNumberGenerator))
+            self._getRandomOntologyTerm(randomNumberGenerator))
         return effect
 
     def _generateAnalysisResult(self, effect, ann, randomNumberGenerator):

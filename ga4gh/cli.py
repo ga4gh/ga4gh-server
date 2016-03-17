@@ -23,6 +23,7 @@ import ga4gh.configtest as configtest
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
 import ga4gh.repo_manager as repo_manager
+import ga4gh.protocol as protocol
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -403,11 +404,12 @@ class AnnotationFormatterMixin(object):
             print(
                 variantAnnotation.id, variantAnnotation.variantId,
                 variantAnnotation.variantAnnotationSetId,
-                variantAnnotation.created, sep="\t", end="\t")
+                variantAnnotation.createDateTime, sep="\t", end="\t")
             for effect in variantAnnotation.transcriptEffects:
                 print(effect.alternateBases, sep="|", end="|")
                 for so in effect.effects:
                     print(so.term, sep="&", end="|")
+                    print(so.id, sep="&", end="|")
                 print(effect.hgvsAnnotation.transcript,
                       effect.hgvsAnnotation.protein, sep="|", end="\t")
             print()
@@ -458,37 +460,36 @@ class SearchVariantAnnotationsRunner(
         self._start = args.start
         self._end = args.end
 
-        if args.featureIds == []:
-            self._featureIds = []
-        else:
-            self._featureIds = args.featureIds.split(",")
-
-        if args.effects == []:
+        if args.effects == "":
             self._effects = []
         else:
-            self._effects = args.effects.split(",")
+            self._effects = []
+            for eff in args.effects.split(","):
+                term = protocol.OntologyTerm()
+                term.id = eff
+                self._effects.append(term)
 
     def _run(self, variantAnnotationSetId):
         iterator = self._client.searchVariantAnnotations(
             variantAnnotationSetId=variantAnnotationSetId,
             referenceName=self._referenceName, referenceId=self._referenceId,
             start=self._start, end=self._end,
-            featureIds=self._featureIds, effects=self._effects)
+            effects=self._effects)
         self._output(iterator)
 
-    def getAllAnnotaionSets(self):
+    def getAllAnnotationSets(self):
         """
         Returns all variant annotation sets on the server.
         """
         for dataset in self.getAllDatasets():
             iterator = self._client.searchVariantAnnotationSets(
                 datasetId=dataset.id)
-            for variantSet in iterator:
-                yield variantSet
+            for variantAnnotationSet in iterator:
+                yield variantAnnotationSet
 
     def run(self):
         if self._variantAnnotationSetId is None:
-            for annotationSet in self.getAllAnnotaionSets():
+            for annotationSet in self.getAllAnnotationSets():
                 self._run(annotationSet.id)
         else:
             self._run(self._variantAnnotationSetId)
@@ -728,7 +729,7 @@ def addFeatureIdsArgument(parser):
 
 def addEffectsArgument(parser):
     parser.add_argument(
-        "--effects", "-effs", default=[],
+        "--effects", "-effs", default="",
         help="""Return annotations having any of these effects.
             Pass in IDs as a comma separated list (no spaces).
             """)
