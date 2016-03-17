@@ -759,7 +759,6 @@ class TestSimulatedStack(unittest.TestCase):
         path = '/features/search'
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeaturesResponse)
-        print(responseData)
         self.assertIsNone(responseData.nextPageToken)
         self.assertEqual([], responseData.features)
 

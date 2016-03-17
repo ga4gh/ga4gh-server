@@ -750,7 +750,7 @@ class Backend(object):
         compoundId = datamodel.FeatureCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         featureSet = dataset.getFeatureSet(compoundId.featureSetId)
-        gaFeature = featureSet.getFeature(str(compoundId))
+        gaFeature = featureSet.getFeature(compoundId)
         jsonString = gaFeature.toJsonString()
         return jsonString
 

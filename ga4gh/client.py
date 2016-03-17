@@ -335,7 +335,6 @@ class AbstractClient(object):
         request.end = end
         request.ontologyTerms = ontologyTerms
         request.pageSize = self._pageSize
-        print(request)
         return self._runSearchRequest(
             request, "features",
             protocol.SearchFeaturesResponse)
@@ -399,7 +398,7 @@ class AbstractClient(object):
         request.datasetId = datasetId
         request.pageSize = self._pageSize
         return self._runSearchRequest(
-                    request, "featuresets", protocol.SearchFeatureSetsResponse)
+            request, "featuresets", protocol.SearchFeatureSetsResponse)
 
     def searchReferenceSets(
             self, accession=None, md5checksum=None, assemblyId=None):

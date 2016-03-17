@@ -550,7 +550,7 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
         self._start = args.start
         self._end = args.end
         if args.ontologyTerms == "":
-            self._ontologyTerms = None
+            self._ontologyTerms = []
         else:
             self._ontologyTerms = args.ontologyTerms.split(",")
 

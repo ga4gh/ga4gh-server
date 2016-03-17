@@ -26,6 +26,6 @@ class TestAbstractFeatureSet(unittest.TestCase):
         self._featureSet = features.AbstractFeatureSet(
             self._dataset, self._featureSetName)
 
-    def testGetFeatureIdFailsWithBadInput(self):
-        self.assertRaises(AttributeError,
-                          self._featureSet.getCompoundIdForFeatureId, None)
+    def testGetFeatureIdFailsWithNullInput(self):
+        self.assertEqual("",
+                         self._featureSet.getCompoundIdForFeatureId(None))

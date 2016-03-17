@@ -12,6 +12,7 @@ import random
 import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
 import ga4gh.sqliteBackend as sqliteBackend
+import ga4gh.exceptions as exceptions
 
 # Note to self: There's the Feature ID as understood in a GFF3 file,
 # the Feature ID that is its server-assigned compoundId, and the
@@ -77,11 +78,13 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         Same parameters as searchFeaturesInDb,
         except without the pagetoken/size.
         """
+        # TODO: Refactor out common bits of this and the below search query.
         sql = ("SELECT COUNT(*) FROM FEATURE WHERE "
                "reference_name = ? "
                "AND end > ? "  # compare this to query start
                "AND start < ? "  # and this to query end
                )
+        # TODO: Optimize by refactoring out string concatenation
         sql_args = (referenceName, start, end)
         if parentId is not None:
             sql += "AND parent_id = ? "
@@ -106,11 +109,13 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         :param parentId: string restrict search by id of parent node.
         :return an array of dictionaries, representing the returned data.
         """
+        # TODO: Refactor out common bits of this and the above count query.
         sql = ("SELECT * FROM FEATURE WHERE "
                "reference_name = ? "
                "AND end > ? "  # compare this to query start
                "AND start < ? "  # and this to query end
                )
+        # TODO: Optimize by refactoring out string concatenation
         sql_args = (referenceName, start, end)
         if parentId is not None:
             sql += "AND parent_id = ? "
@@ -132,7 +137,10 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         """
         sql = ("SELECT * FROM FEATURE WHERE id = ?")
         query = self._dbconn.execute(sql, (featureId,))
-        return sqliteBackend.sqliteRow2Dict(query.fetchone())
+        ret = query.fetchone()
+        if ret is None:
+            return None
+        return sqliteBackend.sqliteRow2Dict(ret)
 
 
 # Problem: FeatureIds from GFF3 often contain colons,
@@ -189,14 +197,20 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         """
         :param featureId: string feature ID as reported in GFF3
         :return: string representing ID for the specified GA4GH protocol
-            Feature object in this FeatureSet.
+            Feature object in this FeatureSet. If None is passed in,
+            an empty string is passed out, as required by the protocol.
         """
+        if featureId is None:
+            return ""
         compoundId = datamodel.FeatureCompoundId(
             self.getCompoundId(), _decolonize(featureId))
         return str(compoundId)
 
 
 class SimulatedFeatureSet(AbstractFeatureSet):
+    """
+    Simulated data backend for FeatureSet, used for internal testing.
+    """
     def __init__(self, parentContainer, localId, randomSeed=1):
         super(SimulatedFeatureSet, self).__init__(
             parentContainer, localId, None)
@@ -231,16 +245,39 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         return feature
 
     def getFeature(self, compoundId):
+        """
+        Fetches a simulated feature by ID.
+        :param compoundId: any non-null string
+        :return: A simulated feature with id set to the same value as the
+            passed-in compoundId.
+        ":raises: exceptions.ObjectWithIdNotFoundException if None is passed
+            in for the compoundId.
+        """
+        if compoundId is None:
+            raise exceptions.ObjectWithIdNotFoundException(compoundId)
         randomNumberGenerator = random.Random()
         randomNumberGenerator.seed(self._randomSeed)
         feature = self._generateSimulatedFeature(randomNumberGenerator)
-        feature.id = compoundId
-        feature.parentId = ""  # FIXME
+        feature.id = str(compoundId)
+        feature.parentId = ""  # TODO: Test with nonempty parentIDs?
         return feature
 
     def getFeatures(self, referenceName, start, end,
                     pageToken, pageSize,
                     ontologyTerms=[], parentId=None):
+        """
+        Returns a set number of simulated features.
+        :param referenceName: name of reference to "search" on
+        :param start: start coordinate of query
+        :param end: end coordinate of query
+        :param pageToken: None or int
+        :param pageSize: None or int
+        :param ontologyTerms: optional list of ontology terms to limit query
+        :param parentId: optional parentId to limit query.
+        :return: Yields feature, nextPageToken pairs.
+            nextPageToken is None if last feature was yielded.
+
+        """
         randomNumberGenerator = random.Random()
         randomNumberGenerator.seed(self._randomSeed)
         numFeatures = 10
@@ -257,7 +294,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
                      (gaFeature.featureType in ontologyTerms or
                       len(ontologyTerms) == 0))
             if match:
-                gaFeature.parentId = ""  # FIXME
+                gaFeature.parentId = ""  # TODO: Test with nonempty parentIDs?
                 if nextPageToken < numFeatures - 1:
                     nextPageToken += 1
                 else:
@@ -281,6 +318,13 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         self._db = Gff3DbBackend(self._dbFilePath)
 
     def getFeature(self, compoundId):
+        """
+        Returns a protocol.Feature object corresponding to a compoundId
+        :param compoundId: a datamodel.FeatureCompoundId object
+        :return: a Feature object.
+        :raises: exceptions.ObjectWithIdNotFoundException if invalid
+            compoundId is provided.
+        """
         featureId = _recolonize(compoundId.featureId)
         with self._db as dataSource:
             featureReturned = dataSource.getFeatureById(featureId)
@@ -289,7 +333,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
             gaFeature = self._gaFeatureForFeatureDbRecord(featureReturned)
             return gaFeature
         else:
-            return None
+            raise exceptions.ObjectWithIdNotFoundException(compoundId)
 
     def _gaFeatureForFeatureDbRecord(self, feature):
         """
