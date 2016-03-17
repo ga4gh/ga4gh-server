@@ -593,6 +593,9 @@ class Backend(object):
                         != compoundId.featureSetId:
                     raise exceptions.ParentIncompatibleWithFeatureSet()
 
+        if compoundId is None:
+            raise exceptions.FeatureSetNotSpecifiedException()
+
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         featureSet = dataset.getFeatureSet(compoundId.featureSetId)
         return featureSet.getFeatures(request.referenceName,
@@ -747,7 +750,7 @@ class Backend(object):
         compoundId = datamodel.FeatureCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         featureSet = dataset.getFeatureSet(compoundId.featureSetId)
-        gaFeature = featureSet.getFeature(compoundId)
+        gaFeature = featureSet.getFeature(str(compoundId))
         jsonString = gaFeature.toJsonString()
         return jsonString
 

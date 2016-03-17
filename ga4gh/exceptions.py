@@ -339,15 +339,22 @@ class DatasetNameNotFoundException(NotFoundException):
 
 
 class FeatureSetNotFoundException(NotFoundException):
-    def __init__(self, name):
+    def __init__(self, featureSetId):
         self.message = (
-            "FeatureSet with name '{0}' not found".format(name))
+            "FeatureSet with id '{0}' not found".format(featureSetId))
 
 
 class ParentIncompatibleWithFeatureSet(BadRequestException):
     def __init__(self):
         self.message = (
             "Parent feature incompatible with requested Feature Set."
+        )
+
+
+class FeatureSetNotSpecifiedException(BadRequestException):
+    def __init__(self):
+        self.message = (
+            "One of featureSetId or parentId must be supplied."
         )
 
 

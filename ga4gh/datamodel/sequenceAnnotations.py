@@ -216,17 +216,18 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         feature = protocol.Feature()
         # ID and parentId are not generated here.
         feature.featureSetId = self.getId()
-        feature.start = randomNumberGenerator.randint(0, 10000)
-        feature.end = feature.start + randomNumberGenerator.randint(1, 1000)
+        feature.start = randomNumberGenerator.randint(1000, 2000)
+        feature.end = feature.start + randomNumberGenerator.randint(1, 100)
         feature.featureType = self._getRandomOntologyTerm(
             randomNumberGenerator)
         references = ["chr1", "chr2", "chrX"]
         feature.referenceName = randomNumberGenerator.choice(references)
-        strands = ["+", "-"]
+        strands = [protocol.Strand.POS_STRAND, protocol.Strand.NEG_STRAND]
         feature.strand = randomNumberGenerator.choice(strands)
-        feature.attributes = {"gene_name": ["Frances", ],
-                              "gene_type": ["mRNA", ],
-                              "gene_status": ["UNKNOWN", ]}
+        feature.attributes = protocol.Attributes()
+        feature.attributes.vals = {"gene_name": ["Frances", ],
+                                   "gene_type": ["mRNA", ],
+                                   "gene_status": ["UNKNOWN", ]}
         return feature
 
     def getFeature(self, compoundId):
@@ -234,7 +235,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         randomNumberGenerator.seed(self._randomSeed)
         feature = self._generateSimulatedFeature(randomNumberGenerator)
         feature.id = compoundId
-        feature.parentId = None  # FIXME
+        feature.parentId = ""  # FIXME
         return feature
 
     def getFeatures(self, referenceName, start, end,
@@ -249,13 +250,20 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             nextPageToken = 0
         for featureId in ["feature{}".format(x) for x in xrange(numFeatures)]:
             gaFeature = self._generateSimulatedFeature(randomNumberGenerator)
-            gaFeature.id = featureId
-            gaFeature.parentId = None  # FIXME
-            if nextPageToken < numFeatures - 1:
-                nextPageToken += 1
-            else:
-                nextPageToken = None
-            yield gaFeature, nextPageToken
+            gaFeature.id = self.getCompoundIdForFeatureId(featureId)
+            match = (gaFeature.start < end and
+                     gaFeature.end > start and
+                     gaFeature.referenceName == referenceName and
+                     (gaFeature.featureType in ontologyTerms or
+                      len(ontologyTerms) == 0))
+            if match:
+                gaFeature.parentId = ""  # FIXME
+                if nextPageToken < numFeatures - 1:
+                    nextPageToken += 1
+                else:
+                    nextPageToken = None
+                yield gaFeature, \
+                    (str(nextPageToken) if nextPageToken is not None else None)
 
 
 class Gff3DbFeatureSet(AbstractFeatureSet):
@@ -294,18 +302,23 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
             gaFeature.parentId = self.getCompoundIdForFeatureId(
                     feature['parent_id'])
         else:
-            gaFeature.parentId = None
+            gaFeature.parentId = ""
         gaFeature.featureSetId = self.getId()
         gaFeature.referenceName = feature['reference_name']
         gaFeature.start = int(feature['start'])
         gaFeature.end = int(feature['end'])
+        if feature.get('strand', '') == '-':
+            gaFeature.strand = protocol.Strand.NEG_STRAND
+        else:
+            # default to positive strand
+            gaFeature.strand = protocol.Strand.POS_STRAND
         gaFeature.childIds = map(
                 self.getCompoundIdForFeatureId,
                 json.loads(feature['child_ids']))
         gaFeature.featureType = \
             self._sequenceOntology.getGaTermByName(feature['ontology_term'])
-        gaFeature.attributes = json.loads(
-            feature['attributes'])
+        gaFeature.attributes = protocol.Attributes()
+        gaFeature.attributes.vals = json.loads(feature['attributes'])
         return gaFeature
 
     def getFeatures(self, referenceName, start, end,
@@ -354,4 +367,5 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
                 nextPageToken += 1
             else:
                 nextPageToken = None
-            yield gaFeature, nextPageToken
+            yield gaFeature, \
+                (str(nextPageToken) if nextPageToken is not None else None)
