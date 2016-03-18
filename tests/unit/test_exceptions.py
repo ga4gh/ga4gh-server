@@ -17,6 +17,11 @@ class TestExceptionHandler(unittest.TestCase):
     """
     Test that caught exceptions are handled correctly
     """
+    @classmethod
+    def setUpClass(cls):
+        frontend.reset()
+        frontend.configure(baseConfig="TestConfig")
+
     class UnknownException(Exception):
         pass
 
