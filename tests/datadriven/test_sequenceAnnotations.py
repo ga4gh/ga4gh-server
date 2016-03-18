@@ -25,10 +25,10 @@ _discontinuousTestData = {
     "sampleStart": 805985,
     "sampleEnd": 806230,
     "sampleStrand": protocol.Strand.POS_STRAND,
-    "sampleSiblings": 15,
+    "sampleSiblings": 11,
     "region": [0, 2**32],
-    "ontologyRestriction": "gene",
-    "featuresWithOntology": 0
+    "ontologyRestriction": ["gene", ],
+    "featuresWithOntology": 3
 }
 
 _gencodeV21Set1TestData = {
@@ -44,8 +44,8 @@ _gencodeV21Set1TestData = {
     "sampleStrand": protocol.Strand.POS_STRAND,
     "sampleSiblings": 5,
     "region": [0, 2**32],
-    "ontologyRestriction": "gene",
-    "featuresWithOntology": 0
+    "ontologyRestriction": ["gene", ],
+    "featuresWithOntology": 58
 }
 
 _sacCerTestTestData = {
@@ -57,10 +57,10 @@ _sacCerTestTestData = {
     "sampleStart": 337,
     "sampleEnd": 801,
     "sampleStrand": protocol.Strand.NEG_STRAND,
-    "sampleSiblings": 0,
+    "sampleSiblings": 20,
     "region": [0, 2**32],
-    "ontologyRestriction": "gene",
-    "featuresWithOntology": 0
+    "ontologyRestriction": ["gene", ],
+    "featuresWithOntology": 11
 }
 
 _specialCasesTestTestData = {
@@ -73,9 +73,9 @@ _specialCasesTestTestData = {
     "sampleStart": 22229583,
     "sampleEnd": 22229699,
     "sampleStrand": protocol.Strand.NEG_STRAND,
-    "sampleSiblings": 0,
+    "sampleSiblings": 2,
     "region": [0, 2**32],
-    "ontologyRestriction": "gene",
+    "ontologyRestriction": ["gene", ],
     "featuresWithOntology": 0
 }
 
@@ -159,7 +159,29 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         self.assertIsNone(nextPageTokens[-1])
 
     def testFetchFeaturesRestrictedByOntology(self):
-        pass
+        features = []
+        for (feature, _) in self._gaObject.getFeatures(
+                self._testData["referenceName"],
+                self._testData["region"][0],
+                self._testData["region"][1],
+                None, 1000,
+                ontologyTerms=self._testData["ontologyRestriction"]):
+            features.append(feature)
+        self.assertEqual(len(features),
+                         self._testData["featuresWithOntology"])
 
     def testFetchFeaturesRestrictedByParent(self):
-        pass
+        parentId = ""
+        if self._testData["sampleParentId"] != "":
+            parentId = datamodel.FeatureCompoundId.parse(
+                self._testData["sampleParentId"]).featureId
+        features = []
+        for (feature, _) in self._gaObject.getFeatures(
+                self._testData["referenceName"],
+                self._testData["region"][0],
+                self._testData["region"][1],
+                None, 1000,
+                parentId=parentId):
+            features.append(feature)
+        self.assertEqual(len(features),
+                         self._testData["sampleSiblings"])
