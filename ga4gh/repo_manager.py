@@ -534,7 +534,7 @@ class RepoManager(object):
         self._check()
         self._repoEmit("Listing")
         dataRepo = datarepo.FileSystemDataRepository(
-            self._repoPath, doConsistencyCheck=False)
+            self._repoPath)
         self._emit(self.referenceSetsDirName)
         for referenceSet in dataRepo.getReferenceSets():
             self._emitIndent(referenceSet.getLocalId())
