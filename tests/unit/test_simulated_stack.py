@@ -895,6 +895,92 @@ class TestSimulatedStack(unittest.TestCase):
         # Currently always returns a singleton
         self.assertGreater(len(responseData.biosamples), 0)
 
+    def testBioSamplesSearch(self):
+        path = 'biosamples/search'
+        dataset = self.dataRepo.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        callSet = variantSet.getCallSets()[0]
+        bioSampleId = callSet.toProtocolElement().bioSampleId
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "BAD NAME"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertEqual(
+            len(responseData.biosamples), 0,
+            "A bad name should return none")
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "simCallSet_0"
+        request.datasetId = dataset.getId()
+        request.bioSampleId = bioSampleId
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        # Currently always returns a singleton
+        self.assertGreater(
+            len(responseData.biosamples), 0,
+            "A good name should return some")
+
+        request = protocol.SearchBioSamplesRequest()
+        request.individualId = "BAD ID"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertEqual(
+            len(responseData.biosamples), 0,
+            "A bad individual ID should return none")
+
+        request = protocol.SearchIndividualsRequest()
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchIndividualsResponse)
+        self.assertGreater(
+            len(responseData.individuals), 0,
+            "Some individuals should be returned")
+
+        individualId = responseData.individuals[0].id
+
+        request = protocol.SearchBioSamplesRequest()
+        request.individualId = individualId
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertGreater(
+            len(responseData.biosamples), 0,
+            "A good individual ID should return some")
+
+    def testSearchIndividuals(self):
+        path = 'individuals/search'
+        dataset = self.dataRepo.getDatasets()[0]
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "BAD NAME"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertGreater(
+            len(responseData.biosamples), 0,
+            "A bad individual name should return none")
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "simCallSet_0"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertGreater(
+            len(responseData.biosamples), 0,
+            "A good individual name should return some")
+
+    def testGetIndividual(self):
+        path = "/individuals"
+        for dataset in self.dataRepo.getDatasets():
+            for bioSampleId in dataset._bioSampleIdMap:
+                bioSample = dataset._bioSampleIdMap[bioSampleId]
+                responseObject = self.sendGetObject(
+                    path,
+                    bioSample.individualId,
+                    protocol.Individual)
+                self.assertEqual(responseObject.id, bioSample.individualId)
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
+
     def testGetBioSample(self):
         path = "/biosamples"
         for dataset in self.dataRepo.getDatasets():

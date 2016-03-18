@@ -19,9 +19,41 @@ import ga4gh.avrotools as avrotools
 import tests.paths as paths
 
 
+class TestIndividuals(unittest.TestCase):
+    """
+    Tests the JSON Individuals class
+    """
+    def testToProtocolElement(self):
+        self.dataset = datasets.AbstractDataset('dataset1')
+        for localId in os.listdir(paths.testIndividualsDataDir):
+            jsonFilename = os.path.join(paths.individualsDir, localId)
+            jsonDict = {}
+            try:
+                with open(jsonFilename) as data:
+                    jsonDict = json.load(data)
+            except (ValueError, IOError):
+                # Poorly formed JSON throws expected exception
+                self.assertRaises(
+                    exceptions.FileOpenFailedException,
+                    biodata.JsonIndividual, self.dataset, localId, jsonFilename)
+            if jsonDict != {}:
+                jsonDict['id'] = str(
+                    datamodel.IndividualCompoundId(
+                        self.dataset._compoundId, localId))
+                validator = avrotools.Validator(protocol.Individual)
+                if validator.getInvalidFields(jsonDict) != {}:
+                    self.assertRaises(
+                        exceptions.FileOpenFailedException,
+                        biodata.JsonIndividual,
+                        self.dataset,
+                        localId, jsonFilename)
+                else:
+                    self.assertTrue(protocol.BioSample.validate(jsonDict))
+
+
 class TestBioSamples(unittest.TestCase):
     """
-    Tests the datasets class
+    Tests the JSON BioSamples class
     """
     def testToProtocolElement(self):
         self.dataset = datasets.AbstractDataset('dataset1')

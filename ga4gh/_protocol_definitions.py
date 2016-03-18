@@ -229,14 +229,14 @@ class BioSample(ProtocolElement):
 {"doc": "", "type": "record", "name": "OntologyTerm", "fields":
 [{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
 "", "type": ["null", "string"], "name": "term"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "value"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name": "sourceName"},
+"doc": "", "type": ["null", "string"], "name": "sourceName"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
 "sourceVersion"}]}], "name": "disease"}, {"doc": "", "type": "string",
 "name": "createDateTime"}, {"doc": "", "type": "string", "name":
-"updateDateTime"}, {"default": {}, "doc": "", "type": {"values":
-{"items": "string", "type": "array"}, "type": "map"}, "name":
-"info"}], "doc": ""}
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "individualId"}, {"default": {}, "doc": "", "type":
+{"values": {"items": "string", "type": "array"}, "type": "map"},
+"name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -261,8 +261,8 @@ null, "doc": "", "type": ["null", "string"], "name": "sourceName"},
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'createDateTime', 'description', 'disease', 'id', 'info',
-        'name', 'updateDateTime'
+        'createDateTime', 'description', 'disease', 'id',
+        'individualId', 'info', 'name', 'updateDateTime'
     ]
 
     def __init__(self, **kwargs):
@@ -289,6 +289,11 @@ null, "doc": "", "type": ["null", "string"], "name": "sourceName"},
         """
         The BioSample :ref:id <apidesign_object_ids>. This is unique
         in the    context of the server instance.
+        """
+        self.individualId = kwargs.get(
+            'individualId', None)
+        """
+        The individual this biosample was derived from.
         """
         self.info = kwargs.get(
             'info', {})
@@ -932,6 +937,114 @@ class HGVSAnnotation(ProtocolElement):
             'transcript', None)
 
 
+class Individual(ProtocolElement):
+    """
+    An individual (or subject) typically corresponds to an individual
+    human or other organism.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"Individual", "fields": [{"doc": "", "type": "string", "name": "id"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"doc": "", "type": "string", "name":
+"createDateTime"}, {"doc": "", "type": "string", "name":
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
+[{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "term"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceName"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceVersion"}]}], "name": "species"}, {"default": null, "doc": "",
+"type": ["null", "OntologyTerm"], "name": "sex"}, {"default": {},
+"doc": "", "type": {"values": {"items": "string", "type": "array"},
+"type": "map"}, "name": "info"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "createDateTime",
+        "id",
+        "updateDateTime",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'sex': OntologyTerm,
+            'species': OntologyTerm,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'sex': OntologyTerm,
+            'species': OntologyTerm,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'createDateTime', 'description', 'id', 'info', 'name', 'sex',
+        'species', 'updateDateTime'
+    ]
+
+    def __init__(self, **kwargs):
+        self.createDateTime = kwargs.get(
+            'createDateTime', None)
+        """
+        The :ref:ISO 8601<metadata_date_time> time at which this
+        Individual record     was created.
+        """
+        self.description = kwargs.get(
+            'description', None)
+        """
+        The Individual's description. This attribute contains human
+        readable text.     The "description" attributes should not
+        contain any structured data.
+        """
+        self.id = kwargs.get(
+            'id', None)
+        """
+        The Individual's :ref:id <apidesign_object_ids>. This is
+        unique in the     context of the server instance.
+        """
+        self.info = kwargs.get(
+            'info', {})
+        """
+        A map of additional information.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        The Individual's :ref:name <apidesign_object_names>. This is a
+        label or     symbolic identifier for the individual.
+        """
+        self.sex = kwargs.get(
+            'sex', None)
+        """
+        The genetic sex of this individual.     Use null when unknown
+        or not applicable.     Recommended: PATO
+        http://purl.obolibrary.org/obo/PATO_0020001; PATO_0020002
+        """
+        self.species = kwargs.get(
+            'species', None)
+        """
+        For a representation of an NCBI Taxon ID as an OntologyTerm,
+        see     NCBITaxon Ontology
+        http://www.obofoundry.org/wiki/index.php/NCBITaxon:Main_Page
+        For example, 'Homo sapiens' has the ID 9606. The NCBITaxon
+        ontology ID for     this is NCBITaxon:9606, which has the URI
+        http://purl.obolibrary.org/obo/NCBITaxon_9606
+        """
+        self.updateDateTime = kwargs.get(
+            'updateDateTime', None)
+        """
+        The :ref:ISO 8601<metadata_date_time> time at which this
+        Individual record     was updated.
+        """
+
+
 class LinearAlignment(ProtocolElement):
     """
     A linear alignment describes the alignment of a read to a
@@ -1118,16 +1231,15 @@ class ListReferenceBasesResponse(ProtocolElement):
 class OntologyTerm(ProtocolElement):
     """
     An ontology term describing an attribute. (e.g. the phenotype
-    attribute 'polydactyly' from HPO)
+    attribute   'polydactyly' from HPO)
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.models", "type": "record", "name":
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"default": null, "doc": "", "type": ["null", "string"],
 "name": "term"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "value"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "sourceName"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "sourceVersion"}], "doc": ""}
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -1146,20 +1258,19 @@ class OntologyTerm(ProtocolElement):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'id', 'sourceName', 'sourceVersion', 'term', 'value'
+        'id', 'sourceName', 'sourceVersion', 'term'
     ]
 
     def __init__(self, **kwargs):
         self.id = kwargs.get(
             'id', None)
         """
-        :ref:Ontology<metadata_ontologies> source identifier -   the
-        identifier, a CURIE (preferred) or PURL for an ontology
-        source.   Example: http://purl.obolibrary.org/obo/hp.obo   It
-        differs from the standard GA4GH schema's :ref:id
-        <apidesign_object_ids>   in that it is a URI pointing to an
-        information resource outside of the scope   of the schema or
-        its resource implementation.
+        Ontology source identifier - the identifier, a CURIE
+        (preferred) or   PURL for an ontology source e.g.
+        http://purl.obolibrary.org/obo/hp.obo   It differs from the
+        standard GA4GH schema's :ref:id <apidesign_object_ids>   in
+        that it is a URI pointing to an information resource outside
+        of the scope   of the schema or its resource implementation.
         """
         self.sourceName = kwargs.get(
             'sourceName', None)
@@ -1179,13 +1290,6 @@ class OntologyTerm(ProtocolElement):
             'term', None)
         """
         Ontology term - the representation the id is pointing to.
-        """
-        self.value = kwargs.get(
-            'value', None)
-        """
-        Ontology value - In the case of using e.g. UnitOntology, the
-        id/term represent   a unit of measurement and this would be
-        the measured value.
         """
 
 
@@ -2060,11 +2164,13 @@ class SearchBioSamplesRequest(SearchRequest):
     """
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
-"SearchBioSamplesRequest", "fields": [{"type": "string", "name":
-"datasetId"}, {"default": null, "type": ["null", "string"], "name":
-"name"}, {"default": null, "type": ["null", "int"], "name":
-"pageSize"}, {"default": null, "type": ["null", "string"], "name":
-"pageToken"}], "doc": ""}
+"SearchBioSamplesRequest", "fields": [{"doc": "", "type": "string",
+"name": "datasetId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "individualId"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "pageSize"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "pageToken"}], "doc":
+""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -2083,18 +2189,41 @@ class SearchBioSamplesRequest(SearchRequest):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'datasetId', 'name', 'pageSize', 'pageToken'
+        'datasetId', 'individualId', 'name', 'pageSize', 'pageToken'
     ]
 
     def __init__(self, **kwargs):
         self.datasetId = kwargs.get(
             'datasetId', None)
+        """
+        The dataset to search within.
+        """
+        self.individualId = kwargs.get(
+            'individualId', None)
+        """
+        Returns BioSamples for the provided individual ID.
+        """
         self.name = kwargs.get(
             'name', None)
+        """
+        Returns BioSamples with the given :ref:name
+        <apidesign_object_names>   found by case-sensitive string
+        matching.
+        """
         self.pageSize = kwargs.get(
             'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
         self.pageToken = kwargs.get(
             'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
 
 
 class SearchBioSamplesResponse(SearchResponse):
@@ -2114,14 +2243,14 @@ class SearchBioSamplesResponse(SearchResponse):
 "fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
 null, "doc": "", "type": ["null", "string"], "name": "term"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
-"value"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "sourceName"}, {"default": null, "doc": "", "type": ["null",
+"sourceName"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "sourceVersion"}]}], "name": "disease"}, {"doc":
 "", "type": "string", "name": "createDateTime"}, {"doc": "", "type":
-"string", "name": "updateDateTime"}, {"default": {}, "doc": "",
-"type": {"values": {"items": "string", "type": "array"}, "type":
-"map"}, "name": "info"}], "doc": ""}, "type": "array"}, "name":
-"biosamples"}, {"default": null, "doc": "", "type": ["null",
+"string", "name": "updateDateTime"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "individualId"}, {"default": {},
+"doc": "", "type": {"values": {"items": "string", "type": "array"},
+"type": "map"}, "name": "info"}], "doc": ""}, "type": "array"},
+"name": "biosamples"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "nextPageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
@@ -2378,6 +2507,133 @@ class SearchDatasetsResponse(SearchResponse):
             'datasets', [])
         """
         The list of datasets.
+        """
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   Provide this value in a subsequent request to
+        return the next page of   results. This field will be empty if
+        there aren't any additional results.
+        """
+
+
+class SearchIndividualsRequest(SearchRequest):
+    """
+    This request maps to the body of POST /biosamples/search as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchIndividualsRequest", "fields": [{"doc": "", "type": "string",
+"name": "datasetId"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "datasetId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'datasetId', 'name', 'pageSize', 'pageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.datasetId = kwargs.get(
+            'datasetId', None)
+        """
+        The dataset to search within.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        Returns Individuals with the given :ref:name
+        <apidesign_object_names>   found by case-sensitive string
+        matching.
+        """
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   nextPageToken from the previous
+        response.
+        """
+
+
+class SearchIndividualsResponse(SearchResponse):
+    """
+    This is the response from POST /individuals/search expressed as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchIndividualsResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
+"name": "Individual", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}, {"doc": "", "type": "string",
+"name": "createDateTime"}, {"doc": "", "type": "string", "name":
+"updateDateTime"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "OntologyTerm", "fields":
+[{"doc": "", "type": "string", "name": "id"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "term"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceName"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceVersion"}]}], "name": "species"}, {"default": null, "doc": "",
+"type": ["null", "OntologyTerm"], "name": "sex"}, {"default": {},
+"doc": "", "type": {"values": {"items": "string", "type": "array"},
+"type": "map"}, "name": "info"}], "doc": ""}, "type": "array"},
+"name": "individuals"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "individuals"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'individuals': Individual,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'individuals': Individual,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'individuals', 'nextPageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.individuals = kwargs.get(
+            'individuals', [])
+        """
+        The list of individuals.
         """
         self.nextPageToken = kwargs.get(
             'nextPageToken', None)
@@ -3140,12 +3396,11 @@ null, "doc": "", "type": ["null", "string"], "name": "referenceId"},
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
 "id"}, {"default": null, "doc": "", "type": ["null", "string"],
 "name": "term"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "value"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "sourceName"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "sourceVersion"}], "doc": ""},
-"type": "array"}], "name": "effects"}, {"default": null, "doc": "",
-"type": ["null", "int"], "name": "pageSize"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}, "type":
+"array"}], "name": "effects"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -3258,14 +3513,13 @@ null, "doc": "", "type": ["null", "string"], "name":
 "record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
 "string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "term"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "value"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "sourceName"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "sourceVersion"}]},
-"type": "array"}, "name": "effects"}, {"doc": "", "type": {"doc": "",
-"type": "record", "name": "HGVSAnnotation", "fields": [{"default":
-null, "type": ["null", "string"], "name": "genomic"}, {"default":
-null, "type": ["null", "string"], "name": "transcript"}, {"default":
-null, "type": ["null", "string"], "name": "protein"}]}, "name":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "HGVSAnnotation", "fields": [{"default": null,
+"type": ["null", "string"], "name": "genomic"}, {"default": null,
+"type": ["null", "string"], "name": "transcript"}, {"default": null,
+"type": ["null", "string"], "name": "protein"}]}, "name":
 "hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
 {"doc": "", "type": "record", "name": "AlleleLocation", "fields":
 [{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
@@ -3632,14 +3886,13 @@ null, "doc": "", "type": ["null", "string"], "name":
 "record", "name": "OntologyTerm", "fields": [{"doc": "", "type":
 "string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
 "string"], "name": "term"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "value"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "sourceName"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "sourceVersion"}]},
-"type": "array"}, "name": "effects"}, {"doc": "", "type": {"doc": "",
-"type": "record", "name": "HGVSAnnotation", "fields": [{"default":
-null, "type": ["null", "string"], "name": "genomic"}, {"default":
-null, "type": ["null", "string"], "name": "transcript"}, {"default":
-null, "type": ["null", "string"], "name": "protein"}]}, "name":
+["null", "string"], "name": "sourceName"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "sourceVersion"}]}, "type":
+"array"}, "name": "effects"}, {"doc": "", "type": {"doc": "", "type":
+"record", "name": "HGVSAnnotation", "fields": [{"default": null,
+"type": ["null", "string"], "name": "genomic"}, {"default": null,
+"type": ["null", "string"], "name": "transcript"}, {"default": null,
+"type": ["null", "string"], "name": "protein"}]}, "name":
 "hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
 {"doc": "", "type": "record", "name": "AlleleLocation", "fields":
 [{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
@@ -3905,31 +4158,30 @@ class VariantAnnotation(ProtocolElement):
 "type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
 "type": "string", "name": "id"}, {"default": null, "doc": "", "type":
 ["null", "string"], "name": "term"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "value"}, {"default": null, "doc":
-"", "type": ["null", "string"], "name": "sourceName"}, {"default":
-null, "doc": "", "type": ["null", "string"], "name":
-"sourceVersion"}]}, "type": "array"}, "name": "effects"}, {"doc": "",
-"type": {"doc": "", "type": "record", "name": "HGVSAnnotation",
-"fields": [{"default": null, "type": ["null", "string"], "name":
-"genomic"}, {"default": null, "type": ["null", "string"], "name":
-"transcript"}, {"default": null, "type": ["null", "string"], "name":
-"protein"}]}, "name": "hgvsAnnotation"}, {"default": null, "doc": "",
-"type": ["null", {"doc": "", "type": "record", "name":
-"AlleleLocation", "fields": [{"doc": "", "type": "int", "name":
-"start"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "end"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "referenceSequence"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "alternateSequence"}]}], "name":
-"cDNALocation"}, {"default": null, "type": ["null", "AlleleLocation"],
-"name": "CDSLocation"}, {"default": null, "doc": "", "type": ["null",
-"AlleleLocation"], "name": "proteinLocation"}, {"doc": "", "type":
-{"items": {"doc": "", "type": "record", "name": "AnalysisResult",
-"fields": [{"doc": "", "type": "string", "name": "analysisId"},
-{"doc": "", "type": ["null", "string"], "name": "result"}, {"doc": "",
-"type": ["null", "int"], "name": "score"}]}, "type": "array"}, "name":
-"analysisResults"}]}, "type": "array"}, "name": "transcriptEffects"},
-{"default": {}, "doc": "", "type": {"values": {"items": "string",
-"type": "array"}, "type": "map"}, "name": "info"}], "doc": ""}
+"type": ["null", "string"], "name": "sourceName"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceVersion"}]},
+"type": "array"}, "name": "effects"}, {"doc": "", "type": {"doc": "",
+"type": "record", "name": "HGVSAnnotation", "fields": [{"default":
+null, "type": ["null", "string"], "name": "genomic"}, {"default":
+null, "type": ["null", "string"], "name": "transcript"}, {"default":
+null, "type": ["null", "string"], "name": "protein"}]}, "name":
+"hgvsAnnotation"}, {"default": null, "doc": "", "type": ["null",
+{"doc": "", "type": "record", "name": "AlleleLocation", "fields":
+[{"doc": "", "type": "int", "name": "start"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "end"}, {"default": null, "doc":
+"", "type": ["null", "string"], "name": "referenceSequence"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"alternateSequence"}]}], "name": "cDNALocation"}, {"default": null,
+"type": ["null", "AlleleLocation"], "name": "CDSLocation"},
+{"default": null, "doc": "", "type": ["null", "AlleleLocation"],
+"name": "proteinLocation"}, {"doc": "", "type": {"items": {"doc": "",
+"type": "record", "name": "AnalysisResult", "fields": [{"doc": "",
+"type": "string", "name": "analysisId"}, {"doc": "", "type": ["null",
+"string"], "name": "result"}, {"doc": "", "type": ["null", "int"],
+"name": "score"}]}, "type": "array"}, "name": "analysisResults"}]},
+"type": "array"}, "name": "transcriptEffects"}, {"default": {}, "doc":
+"", "type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -4237,6 +4489,9 @@ postMethods = \
      ('/datasets/search',
       SearchDatasetsRequest,
       SearchDatasetsResponse),
+     ('/individuals/search',
+      SearchIndividualsRequest,
+      SearchIndividualsResponse),
      ('/readgroupsets/search',
       SearchReadGroupSetsRequest,
       SearchReadGroupSetsResponse),
