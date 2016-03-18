@@ -452,8 +452,13 @@ class FeatureFormatterMixin(object):
                 feature.id, feature.parentId, feature.featureSetId,
                 feature.referenceName, feature.start, feature.end,
                 feature.strand, sep="\t", end="\t")
-            # TODO: handle attributes
-            # TODO: handle featureType (OntologyTerm)
+            print(
+                "FeatureType:", feature.featureType.id,
+                feature.featureType.term, end="\t")
+            for attrkey in feature.attributes.vals.keys():
+                print(
+                    attrkey, feature.attributes.vals[attrkey],
+                    sep=":", end="; ")
             print()
 
 

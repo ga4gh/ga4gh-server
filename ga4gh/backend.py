@@ -587,10 +587,11 @@ class Backend(object):
             else:
                 # check that the dataset and featureSet of the parent
                 # compound ID is the same as that of the featureSetId
-                if compoundParentId.datasetId \
-                        != compoundId.datasetId \
-                        or compoundParentId.featureSetId \
-                        != compoundId.featureSetId:
+                mismatchCheck = (compoundParentId.datasetId !=
+                                 compoundId.datasetId or
+                                 compoundParentId.featureSetId !=
+                                 compoundId.featureSetId)
+                if mismatchCheck:
                     raise exceptions.ParentIncompatibleWithFeatureSet()
 
         if compoundId is None:
