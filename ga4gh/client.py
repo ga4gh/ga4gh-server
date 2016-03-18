@@ -481,7 +481,7 @@ class AbstractClient(object):
 
     def searchExpressionLevel(self, expressionLevelId=None,
                               featureGroupId=None, rnaQuantificationId=None,
-                              threshold=None):
+                              threshold=0.0):
         """
         Returns an iterator over the ExpressionLevel objects from the server
 

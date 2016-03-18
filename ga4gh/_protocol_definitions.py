@@ -386,83 +386,6 @@ null, "doc": "", "type": ["null", "string"], "name": "name"}, {"doc":
         """
 
 
-class Characterization(ProtocolElement):
-    """
-    Read characterization data.
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.models", "type": "record", "name":
-"Characterization", "fields": [{"doc": "", "type": "string", "name":
-"analysisId"}, {"doc": "", "type": "float", "name": "complexity"},
-{"doc": "", "type": "float", "name": "fractionMapped"}, {"doc": "",
-"type": "float", "name": "intronicFraction"}, {"doc": "", "type":
-"float", "name": "exonicFraction"}, {"doc": "", "type": "float",
-"name": "intergenicFraction"}], "doc": ""}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([
-        "analysisId",
-        "complexity",
-        "exonicFraction",
-        "fractionMapped",
-        "intergenicFraction",
-        "intronicFraction",
-    ])
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {}
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {}
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'analysisId', 'complexity', 'exonicFraction',
-        'fractionMapped', 'intergenicFraction', 'intronicFraction'
-    ]
-
-    def __init__(self, **kwargs):
-        self.analysisId = kwargs.get(
-            'analysisId', None)
-        """
-        The associated RnaQuantification.
-        """
-        self.complexity = kwargs.get(
-            'complexity', None)
-        """
-        Distinct uniquely mapped reads as a fraction of total uniquely
-        mapped reads.
-        """
-        self.exonicFraction = kwargs.get(
-            'exonicFraction', None)
-        """
-        Fraction of total reads which were mapped to exons.  Values
-        range from 0.0 to 1.0.
-        """
-        self.fractionMapped = kwargs.get(
-            'fractionMapped', None)
-        """
-        Fraction of total reads which were mapped.  Values range from
-        0.0 to 1.0.
-        """
-        self.intergenicFraction = kwargs.get(
-            'intergenicFraction', None)
-        """
-        Fraction of total reads which were mapped to intergenic
-        regions.  Values range from 0.0 to 1.0.
-        """
-        self.intronicFraction = kwargs.get(
-            'intronicFraction', None)
-        """
-        Fraction of total reads which were mapped to introns.  Values
-        range from 0.0 to 1.0.
-        """
-
-
 class CigarOperation(object):
     """
     An enum for the different types of CIGAR alignment operations that
@@ -1679,82 +1602,6 @@ null, "doc": "", "type": ["null", "boolean"], "name":
         """
 
 
-class ReadCounts(ProtocolElement):
-    """
-    Details of the read counts.
-    """
-    _schemaSource = """
-{"namespace": "org.ga4gh.models", "type": "record", "name":
-"ReadCounts", "fields": [{"doc": "", "type": "string", "name":
-"analysisId"}, {"doc": "", "type": "int", "name": "totalReadCount"},
-{"doc": "", "type": "int", "name": "uniqueCount"}, {"doc": "", "type":
-"int", "name": "multiCount"}, {"doc": "", "type": "int", "name":
-"uniqueSpliceCount"}, {"doc": "", "type": "int", "name":
-"multiSpliceCount"}], "doc": ""}
-"""
-    schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([
-        "analysisId",
-        "multiCount",
-        "multiSpliceCount",
-        "totalReadCount",
-        "uniqueCount",
-        "uniqueSpliceCount",
-    ])
-
-    @classmethod
-    def isEmbeddedType(cls, fieldName):
-        embeddedTypes = {}
-        return fieldName in embeddedTypes
-
-    @classmethod
-    def getEmbeddedType(cls, fieldName):
-        embeddedTypes = {}
-
-        return embeddedTypes[fieldName]
-
-    __slots__ = [
-        'analysisId', 'multiCount', 'multiSpliceCount',
-        'totalReadCount', 'uniqueCount', 'uniqueSpliceCount'
-    ]
-
-    def __init__(self, **kwargs):
-        self.analysisId = kwargs.get(
-            'analysisId', None)
-        """
-        The associated RnaQuantification.
-        """
-        self.multiCount = kwargs.get(
-            'multiCount', None)
-        """
-        Total number of reads that map to multiple positions in the
-        reference.
-        """
-        self.multiSpliceCount = kwargs.get(
-            'multiSpliceCount', None)
-        """
-        Total number of reads that map to multiple splice positions in
-        the reference.
-        """
-        self.totalReadCount = kwargs.get(
-            'totalReadCount', None)
-        """
-        Total number of mapped reads.
-        """
-        self.uniqueCount = kwargs.get(
-            'uniqueCount', None)
-        """
-        Total number of reads that are uniquely mapped to a position
-        in the reference.
-        """
-        self.uniqueSpliceCount = kwargs.get(
-            'uniqueSpliceCount', None)
-        """
-        Total number of reads that are uniquely mapped to a splice
-        position in the reference.
-        """
-
-
 class ReadGroup(ProtocolElement):
     """
     A ReadGroup is a set of reads derived from one physical sequencing
@@ -2657,7 +2504,7 @@ class SearchExpressionLevelRequest(SearchRequest):
         The rnaQuantification to restrict search to.
         """
         self.threshold = kwargs.get(
-            'threshold', None)
+            'threshold', 0.0)
         """
         If present returns ExpressionLevel records with expressions
         exceeding   this value.

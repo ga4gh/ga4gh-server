@@ -577,12 +577,14 @@ class SearchExpressionLevelRunner(AbstractSearchRunner):
         self._expressionLevelId = args.expressionLevelId
         self._featureGroupId = args.featureGroupId
         self._rnaQuantificationId = args.rnaQuantificationId
+        self.threshold = args.threshold
 
     def run(self):
         iterator = self._client.searchExpressionLevel(
             expressionLevelId=self._expressionLevelId,
             featureGroupId=self._featureGroupId,
-            rnaQuantificationId=self._rnaQuantificationId)
+            rnaQuantificationId=self._rnaQuantificationId,
+            threshold=self.threshold)
         self._output(iterator)
 
     def _textOutput(self, expressionObjs):
@@ -1132,7 +1134,7 @@ def addExpressionLevelSearchParser(subparsers):
         "--featureGroupId", default=None,
         help="The feature group Id to search over")
     parser.add_argument(
-        "--threshold", default=None, type=float,
+        "--threshold", default=0.0, type=float,
         help="The minimum value for expression results to report.")
     addOutputFormatArgument(parser)
     return parser
@@ -1181,8 +1183,6 @@ def getClientParser():
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
-    addFeaturesSearchParser(subparsers)
-    addFeaturesGetParser(subparsers)
     addRnaQuantificationSearchParser(subparsers)
     addExpressionLevelSearchParser(subparsers)
     addFeatureGroupSearchParser(subparsers)

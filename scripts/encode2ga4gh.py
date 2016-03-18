@@ -91,9 +91,6 @@ def getDataFromHost(rnaDB, url, headers, host, outputType, outputFolder,
         writeGeneExpressionTables(rnaDB, getFilesFromHost(jsonData, host,
                                   outputType, subset=subset, request=True),
                                   annotationId, outputFolder)
-        # TODO: figure out what to do about counts
-        # writeCountsTables(getFilesFromHost(jsonData, host, outputType,
-        #                   subset=subset, request=True), outputFolder)
 
 
 def makeDir(path):
@@ -123,48 +120,6 @@ def writeRNAQuant(rnaDB, analysisId, description, annotationId,
         readGroupId = ""
     datafields = (analysisId, annotationId, description, analysisId, readGroupId)
     rnaDB.addRNAQuantification(datafields)
-
-def getSamstats(file):
-    content = {}
-    for line in file.readlines():
-        if '|' not in line:
-            continue
-        key, value = [item.strip() for item in line.split('|')]
-        if key == "Number of input reads":
-            content["readcount"] = value
-        elif key == 'Uniquely mapped reads number':
-            content["unique"] = value
-        elif key in ['Number of reads mapped to multiple loci',
-                     'Number of reads mapped to too many loci']:
-            content["multi"] = content.get('multi', 0) + int(value)
-        # TODO: STAR does not report unique and multi split-maps, only total
-        elif key == 'Number of splices: Total':
-            content["msplice"] = content["usplice"] = value
-
-    return content
-
-
-def writeSamstats(outfile, contents, analysisId):
-    outline = "\t".join([analysisId, str(contents["multi"]),
-                         contents["msplice"], contents["readcount"],
-                         contents["unique"], contents["usplice"]])
-    print(outline, file=outfile)
-
-
-def getDistribution(file):
-    content = {}
-    for line in file.readlines():
-        split = line.split('\t')
-        if split[3] == 'total':
-            continue
-        content[split[2]] = content.get(split[2], 0) + int(split[3])
-    return content
-
-
-def writeDistribution(outfile, contents, analysisId, fraction):
-    outline = "\t".join([analysisId, str(contents["exon"]), fraction,
-                         str(contents["intergenic"]), str(contents["intron"])])
-    print(outline, file=outfile)
 
 
 def writeGeneExpression(rnaDB, analysisId, annotationId, quantfile,
@@ -200,28 +155,6 @@ def writeRnaseqTables(rnaDB, analysisIds, description, annotationId, outputFolde
     for analysisId in analysisIds:
         writeRNAQuant(rnaDB, analysisId, description, annotationId,
                       readGroupId=readGroupId)
-
-
-def writeCountsTables(data, outputFolder):
-    log("Writing counts tables")
-    for analysisId, samstatsfile in data:
-        countsTable = os.path.join(outputFolder, analysisId, "counts.table")
-        samstats = getSamstats(samstatsfile)
-        if samstats != {}:
-            print(samstats.keys())
-            # write mapping stats table
-            with open(countsTable, "w") as samOutfile:
-                writeSamstats(samOutfile, samstats, analysisId)
-
-
-def writeDistTables(data):
-    log("Writing distribution tables")
-    for analysisId, distfile in data:
-        distTable = os.path.join(analysisId, "dist.table")
-        distribution = getDistribution(distfile)
-        with open(distTable, "w") as distOutfile:
-            writeDistribution(distOutfile, distribution, analysisId,
-                              distribution["mapped"])
 
 
 def writeGeneExpressionTables(rnaDB, data, annotationId, outputFolder):

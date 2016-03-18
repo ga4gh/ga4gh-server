@@ -336,24 +336,6 @@ class FeatureGroupCompoundId(RnaQuantificationCompoundId):
     containerIds = RnaQuantificationCompoundId.containerIds + container
 
 
-class CharacterizationCompoundId(RnaQuantificationCompoundId):
-    """
-    The compound id for a characterization
-    """
-    fields = RnaQuantificationCompoundId.fields + ['characterization']
-    container = [('characterizationId', 2)]
-    containerIds = RnaQuantificationCompoundId.containerIds + container
-
-
-class ReadCountsCompoundId(RnaQuantificationCompoundId):
-    """
-    The compound id for a readCounts
-    """
-    fields = RnaQuantificationCompoundId.fields + ['readCounts']
-    container = [('readCountsId', 2)]
-    containerIds = RnaQuantificationCompoundId.containerIds + container
-
-
 class DatamodelObject(object):
     """
     Superclass of all datamodel types. A datamodel object is a concrete

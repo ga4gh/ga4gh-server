@@ -278,13 +278,15 @@ class FileSystemDataset(AbstractDataset):
                     self, localId, bamPath, dataRepository)
                 self.addReadGroupSet(readGroupSet)
         # Rna Quantification
-        # TODO: this is assuming that each rnaQuant is a separate sqlite3 file
-        #       maybe that is the way to do it
         rnaQuantDir = os.path.join(dataDir, self.rnaDirName)
         for filename in os.listdir(rnaQuantDir):
             if fnmatch.fnmatch(filename, '*.db'):
                 localId, _ = os.path.splitext(filename)
                 fullPath = os.path.join(rnaQuantDir, filename)
+                with rnaQuantification.SqliteRNABackend(fullPath) as dataSource:
+                    rnaQuantsInDB = dataSource.searchRnaQuantificationsInDb()
+            for rnaQuantData in rnaQuantsInDB:
+                localId = rnaQuantData["name"]
                 rnaQuant = rnaQuantification.RNASeqResult(
                     self, localId, fullPath, dataRepository)
                 self.addRnaQuantification(rnaQuant)

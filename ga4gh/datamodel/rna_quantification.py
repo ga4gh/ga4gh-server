@@ -14,7 +14,7 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.sqliteBackend as sqliteBackend
 
-
+# TODO: update
 """
     The RNA Quantification data model:
     Top level is the RNAQuantification which will sit right under the dataset
@@ -74,62 +74,6 @@ class ExpressionLevel(datamodel.DatamodelObject):
         return protocolElement
 
 
-class Characterization(datamodel.DatamodelObject):
-    """
-    Class representing a single Characterization in the GA4GH data model.
-    """
-    compoundIdClass = datamodel.CharacterizationCompoundId
-
-    def __init__(self, parentContainer, record):
-        # TODO this is still using the human readableId as the _id value
-        # (localID)
-        super(Characterization, self).__init__(parentContainer, record[0])
-        self._analysisId = record[0]
-        self._complexity = float(record[1])
-        self._exonicFraction = float(record[2])
-        self._fractionMapped = float(record[3])
-        self._intergenicFraction = float(record[4])
-        self._intronicFraction = float(record[5])
-
-    def toProtocolElement(self):
-        protocolElement = protocol.Characterization
-        protocolElement.analysisId = self._analysisId
-        protocolElement.complexity = self._complexity
-        protocolElement.exonicFraction = self._exonicFraction
-        protocolElement.fractionMapped = self._fractionMapped
-        protocolElement.intergenicFraction = self._intergenicFraction
-        protocolElement.intronicFraction = self._intronicFraction
-        return protocolElement
-
-
-class ReadCounts(datamodel.DatamodelObject):
-    """
-    Class representing a single ReadCounts in the GA4GH data model.
-    """
-    compoundIdClass = datamodel.ReadCountsCompoundId
-
-    def __init__(self, parentContainer, record):
-        # TODO this is still using the human readableId as the _id value
-        # (localID)
-        super(ReadCounts, self).__init__(parentContainer, record[0])
-        self._analysisId = record[0]
-        self._multiCount = int(record[1])
-        self._multiSpliceCount = int(record[2])
-        self._totalReadCount = int(record[3])
-        self._uniqueCount = int(record[4])
-        self._uniqueSpliceCount = int(record[5])
-
-    def toProtocolElement(self):
-        protocolElement = protocol.ReadCounts
-        protocolElement.analysisId = self._analysisId
-        protocolElement.multiCount = self._multiCount
-        protocolElement.multiSpliceCount = self._multiSpliceCount
-        protocolElement.totalReadCount = self._totalReadCount
-        protocolElement.uniqueCount = self._uniqueCount
-        protocolElement.uniqueSpliceCount = self._uniqueSpliceCount
-        return protocolElement
-
-
 class FeatureGroup(datamodel.DatamodelObject):
     """
     Class representing a single FeatureGroup in the GA4GH model.
@@ -161,16 +105,11 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(AbstractRNAQuantification, self).__init__(parentContainer,
                                                         localId)
-        # self._rnaQuantificationId = localId
+        self._annotationIds = []
+        self._description = ""
         self._name = localId
-        self._expressionLevelIdMap = {}
-        self._expressionLevelIds = []
-        self._featureGroupNames = []
-        self._featureGroupIdMap = {}
-        self._featureGroupIds = []
-        self._characterization = None
-        self._readCounts = None
-
+        self._readGroupId = ""
+        
     def toProtocolElement(self):
         """
         Converts this rnaQuant into its GA4GH protocol equivalent.
@@ -178,39 +117,10 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         protocolElement = protocol.RnaQuantification()
         protocolElement.annotationIds = self._annotationIds
         protocolElement.description = self._description
-        protocolElement.id = self._id
+        protocolElement.id = self.getId()
         protocolElement.name = self._name
         protocolElement.readGroupId = self._readGroupId
         return protocolElement
-
-    def addRnaQuantMetadata(self, fields):
-        """
-        input list elements are:
-        Id, annotations, description, name, readGroupId
-        where annotation is a comma separated list
-        """
-        self._id = fields[0]
-        self._annotationIds = fields[1].split(',')
-        self._description = fields[2]
-        self._name = fields[3]
-        self._readGroupId = fields[4]
-
-    def addFeatureGroup(self, localId):
-        """
-        Adds a FeatureGroup for the specified name.
-        """
-        if localId not in self._featureGroupNames:
-            featureGroup = FeatureGroup(self, localId, self.getId())
-            featureGroupId = featureGroup.getId()
-            self._featureGroupIdMap[featureGroupId] = featureGroup
-            self._featureGroupIds.append(featureGroupId)
-            self._featureGroupNames.append(localId)
-
-    def getCharacterization(self):
-        return self._characterization
-
-    def getReadCounts(self):
-        return self._readCounts
 
 
 class RNASeqResult(AbstractRNAQuantification):
@@ -220,41 +130,51 @@ class RNASeqResult(AbstractRNAQuantification):
 
     def __init__(self, parentContainer, localId, rnaQuantDataPath, dataRepository):
         super(RNASeqResult, self).__init__(parentContainer, localId)
-        self._rnaQuantDataPath = rnaQuantDataPath
-        self.parseRnaQuantMetadataFile()
-        self.addCharacterization()
-        self.addReadCounts()
-        self._dbFilePath = filePath  # the full file path of the db file
+        self._dbFilePath = rnaQuantDataPath  # the full file path of the db file
         self._dataRepository = dataRepository
         self._db = SqliteRNABackend(self._dbFilePath)
+        self.getRnaQuantMetadata()
 
     # TODO: maybe this should stay a flat file at top level of subdirs for each quant
-    def parseRnaQuantMetadataFile(self):
+    def getRnaQuantMetadata(self):
         """
         input is tab file with no header.  Columns are:
         Id, annotations, description, name, readGroupId
         where annotation is a comma separated list
         """
-        rnaQuantificationFile = os.path.join(self._rnaQuantDataPath,
-                                             "rnaseq.table")
-        with open(rnaQuantificationFile, "r") as rnaQuantificationData:
-            quantData = rnaQuantificationData.readline()
-            fields = quantData.strip().split("\t")
-        self.addRnaQuantMetadata(fields)
+        # TODO: fix the compound ID thing on DB generation
+        # rnaQuantId = self.getId()
+        rnaQuantId = self.getLocalId()
+        with self._db as dataSource:
+            rnaQuantReturned = dataSource.getRnaQuantificationById(
+                rnaQuantId)
+        if rnaQuantReturned is not None:
+            self.addRnaQuantMetadata(rnaQuantReturned)
+        else:
+            raise exceptions.RnaQuantificationNotFoundException(rnaQuantId)
 
-    def getExpressionLevels(self, request):
+    def addRnaQuantMetadata(self, fields):
+        """
+        data elements are:
+        Id, annotations, description, name, readGroupId
+        where annotations is a comma separated list
+        """
+        self._id = self.getId()
+        self._annotationIds = fields["annotation_ids"].split(',')
+        self._description = fields["description"]
+        self._name = fields["name"]
+        self._readGroupId = fields["read_group_id"]
+
+    def getExpressionLevels(self, rnaQuantID, pageToken=0, pageSize=None,
+                            expressionId=None, featureGroupId=None,
+                            threshold=0.0):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
-        rnaQuantID = request.rnaQuantificationId
-        expressionId = request.expressionId
-        featureGroupId = request.featureGroupId
-        threshold = request.threshold
-
         with self._db as dataSource:
             expressionsReturned = dataSource.searchExpressionLevelsInDb(
-                rnaQuantID, pageToken=request.pageToken,
-                pageSize=request.pageSize, expressionId=expressionId,
+                rnaQuantID, pageToken=pageToken,
+                pageSize=pageSize, expressionId=expressionId,
                 featureGroupId=featureGroupId, threshold=threshold)
         return [ExpressionLevel(self, expressionEntry) for
             expressionEntry in expressionsReturned]
@@ -262,62 +182,26 @@ class RNASeqResult(AbstractRNAQuantification):
     def getExpressionLevel(self, compoundId):
         expressionId = compoundId.expressionLevelId
         with self._db as dataSource:
-            expressionReturned = dataSource.getExpressionLevelById(expressionId)
+            expressionReturned = dataSource.getExpressionLevelById(
+                expressionId)
 
         if expressionReturned is not None:
             return ExpressionLevel(self, expressionReturned)
         else:
             raise exceptions.ExpressionLevelNotFoundException(compoundId)
 
-    # TODO: update
-    def addCharacterization(self):
-        """
-        input is tab file with no header.  Columns are:
-        analysisId, complexity, exonicFraction, fractionMapped,
-        intergenicFraction, intronicFraction
-        """
-        characterizationFile = os.path.join(self._rnaQuantDataPath,
-                                            "dist.table")
-        try:
-            with open(characterizationFile, "r") as characterizationData:
-                quantCharacterization = characterizationData.readline()
-                fields = quantCharacterization.split("\t")
-        except IOError:
-            self._characterization = None
-            return
-        self._characterization = Characterization(self, fields)
-
-    # TODO: update
-    def addReadCounts(self):
-        """
-        input is tab file with no header.  Columns are:
-        analysisId, multiCount, multiSpliceCount, totalReadCount, uniqueCount,
-        uniqueSpliceCount
-        """
-        readCountFile = os.path.join(self._rnaQuantDataPath, "counts.table")
-        try:
-            with open(readCountFile, "r") as readCountData:
-                countData = readCountData.readline()
-                fields = countData.split("\t")
-        except IOError:
-            self._readCounts = None
-            return
-        self._readCounts = ReadCounts(self, fields)
-
-    def getFeatureGroups(self, request):
+    def getFeatureGroups(self, rnaQuantID, pageToken=0, pageSize=None,
+                         featureGroupId=None):
         """
         Returns the list of FeatureGroups in this RNA Quantification.
 
         for now the feature group data is autogenerated by examining the
         relevant expression data file
         """
-        rnaQuantID = request.rnaQuantificationId
-        featureGroupId = request.featureGroupId
-
         with self._db as dataSource:
             expressionsReturned = dataSource.searchFeatureGroupsInDb(
-                rnaQuantID, pageToken=request.pageToken,
-                pageSize=request.pageSize, featureGroupId=featureGroupId)
+                rnaQuantID, pageToken=pageToken,
+                pageSize=pageSize, featureGroupId=featureGroupId)
         return [FeatureGroup(self, expressionEntry) for
             expressionEntry in expressionsReturned]
 
@@ -395,7 +279,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         query = self._dbconn.execute(sql, (rnaQuantificationId,))
         return sqliteBackend.sqliteRow2Dict(query.fetchone())
 
-    def searchExpressionLevelsInDb(self, rnaQuantID, pageToken=0,
+    def searchExpressionLevelsInDb(self, rnaQuantId, pageToken=0,
                                    pageSize=None, expressionId=None,
                                    featureGroupId=None, threshold=0.0):
         """

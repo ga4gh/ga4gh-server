@@ -593,14 +593,14 @@ class Backend(object):
         """
         if request.rnaQuantificationId is None:
             allRnaQuants = []
-            for dataset in self.getDatasets():
+            for dataset in self.getDataRepository().getDatasets():
                 for rnaQuant in dataset.getRnaQuantifications():
                     allRnaQuants.append(rnaQuant)
             return self._objectListGenerator(request, allRnaQuants)
         else:
             compoundId = datamodel.RnaQuantificationCompoundId.parse(
                 request.rnaQuantificationId)
-            dataset = self.getDataset(compoundId.datasetId)
+            dataset = self.getDataRepository().getDataset(compoundId.datasetId)
             try:
                 rnaQuant = dataset.getRnaQuantification(
                     compoundId.rnaQuantificationId)
@@ -618,7 +618,7 @@ class Backend(object):
         rnaQuantificationId = request.rnaQuantificationId
         compoundId = datamodel.RnaQuantificationCompoundId.parse(
             request.rnaQuantificationId)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
         expressionLevelId = request.expressionLevelId
         featureGroupId = request.featureGroupId
@@ -629,9 +629,14 @@ class Backend(object):
                     )
             except exceptions.ExpressionLevelNotFoundException:
                 return self._noObjectGenerator()
+        # TODO: handle compoundID in db generaation
+        rnaQuantificationId = rnaQuant.getLocalId()
         return self._objectListGenerator(
             request,
-            rnaQuant.getExpressionLevels(request))
+            rnaQuant.getExpressionLevels(
+                rnaQuantificationId, pageToken=request.pageToken,
+                pageSize=request.pageSize, expressionId=expressionLevelId,
+                featureGroupId=featureGroupId, threshold=request.threshold))
 
     def featureGroupGenerator(self, request):
         """
@@ -643,13 +648,15 @@ class Backend(object):
         rnaQuantificationId = request.rnaQuantificationId
         compoundId = datamodel.RnaQuantificationCompoundId.parse(
             rnaQuantificationId)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
         featureGroupId = request.featureGroupId
         if featureGroupId is not None:
             return self._singleObjectGenerator(
                 rnaQuant.getFeatureGroup(featureGroupId))
-        return self._objectListGenerator(request, rnaQuant.getFeatureGroups())
+        return self._objectListGenerator(request, rnaQuant.getFeatureGroups(
+            rnaQuant, pageToken=request.pageToken, pageSize=request.pageSize,
+            featureGroupId=featureGroupId))
 
     ###########################################################
     #
