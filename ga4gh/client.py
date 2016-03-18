@@ -298,7 +298,7 @@ class AbstractClient(object):
 
     def searchFeatures(
             self, featureSetId=None, parentId=None, referenceName=None,
-            start=0, end=None, ontologyTerms=[]
+            start=0, end=None, featureTypes=[]
                        ):
         """
         Returns the result of running a searchFeatures method
@@ -309,7 +309,7 @@ class AbstractClient(object):
             (ex: "chr1")
         :param start: int search start position on reference
         :param end: int end position on reference
-        :param ontologyTerms: array of terms to limit search by (ex: "gene")
+        :param featureTypes: array of terms to limit search by (ex: "gene")
         :return: an iterator over Features as returned in the
             SearchFeaturesResponse object.
         """
@@ -319,7 +319,7 @@ class AbstractClient(object):
         request.referenceName = referenceName
         request.start = start
         request.end = end
-        request.ontologyTerms = ontologyTerms
+        request.featureTypes = featureTypes
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "features",

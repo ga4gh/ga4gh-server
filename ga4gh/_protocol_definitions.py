@@ -2546,10 +2546,10 @@ class SearchFeaturesRequest(SearchRequest):
 "string"], "name": "parentId"}, {"doc": "", "type": "string", "name":
 "referenceName"}, {"doc": "", "type": "long", "name": "start"},
 {"doc": "", "type": "long", "name": "end"}, {"default": [], "doc": "",
-"type": {"items": "string", "type": "array"}, "name":
-"ontologyTerms"}, {"default": null, "doc": "", "type": ["null",
-"int"], "name": "pageSize"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "pageToken"}], "doc": ""}
+"type": {"items": "string", "type": "array"}, "name": "featureTypes"},
+{"default": null, "doc": "", "type": ["null", "int"], "name":
+"pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -2572,7 +2572,7 @@ class SearchFeaturesRequest(SearchRequest):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'end', 'featureSetId', 'ontologyTerms', 'pageSize',
+        'end', 'featureSetId', 'featureTypes', 'pageSize',
         'pageToken', 'parentId', 'referenceName', 'start'
     ]
 
@@ -2589,11 +2589,11 @@ class SearchFeaturesRequest(SearchRequest):
         The annotation set to search within. Either featureSetId or
         parentId must be non-empty.
         """
-        self.ontologyTerms = kwargs.get(
-            'ontologyTerms', [])
+        self.featureTypes = kwargs.get(
+            'featureTypes', [])
         """
-        If specified, this query matches only annotations which match
-        one of the     provided ontology terms.
+        If specified, this query matches only annotations whose
+        featureType     matches one of the provided ontology terms.
         """
         self.pageSize = kwargs.get(
             'pageSize', None)

@@ -562,7 +562,7 @@ class Backend(object):
         if request.featureSetId is not None:
             compoundId = datamodel.FeatureSetCompoundId.parse(
                 request.featureSetId)
-        if request.parentId is not None:
+        if request.parentId is not None and request.parentId != "":
             compoundParentId = datamodel.FeatureCompoundId.parse(
                 request.parentId)
             parentId = compoundParentId.featureId
@@ -591,7 +591,7 @@ class Backend(object):
                                       request.end,
                                       request.pageToken,
                                       request.pageSize,
-                                      request.ontologyTerms,
+                                      request.featureTypes,
                                       parentId)
 
     def callSetsGenerator(self, request):

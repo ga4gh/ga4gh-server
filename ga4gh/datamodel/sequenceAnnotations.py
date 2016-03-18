@@ -73,7 +73,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
 
     def countFeaturesSearchInDb(self,
                                 referenceName=None, start=0, end=0,
-                                parentId=None, ontologyTerms=[]):
+                                parentId=None, featureTypes=[]):
         """
         Same parameters as searchFeaturesInDb,
         except without the pagetoken/size.
@@ -89,17 +89,17 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         if parentId is not None:
             sql += "AND parent_id = ? "
             sql_args += (parentId,)
-        if ontologyTerms is not None and len(ontologyTerms) > 0:
+        if featureTypes is not None and len(featureTypes) > 0:
             sql += "AND ontology_term IN ("
-            sql += ", ".join(["?", ] * len(ontologyTerms))
+            sql += ", ".join(["?", ] * len(featureTypes))
             sql += ") "
-            sql_args += tuple(ontologyTerms)
+            sql_args += tuple(featureTypes)
         query = self._dbconn.execute(sql, sql_args)
         return (query.fetchone())[0]
 
     def searchFeaturesInDb(self, pageToken=0, pageSize=None,
                            referenceName=None, start=0, end=0,
-                           parentId=None, ontologyTerms=[]):
+                           parentId=None, featureTypes=[]):
         """
         :param pageToken: int representing first record to return
         :param pageSize: int representing number of records to return
@@ -120,11 +120,11 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         if parentId is not None:
             sql += "AND parent_id = ? "
             sql_args += (parentId,)
-        if ontologyTerms is not None and len(ontologyTerms) > 0:
+        if featureTypes is not None and len(featureTypes) > 0:
             sql += "AND ontology_term IN ("
-            sql += ", ".join(["?", ] * len(ontologyTerms))
+            sql += ", ".join(["?", ] * len(featureTypes))
             sql += ") "
-            sql_args += tuple(ontologyTerms)
+            sql_args += tuple(featureTypes)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
         query = self._dbconn.execute(sql, sql_args)
         return sqliteBackend.sqliteRows2dicts(query.fetchall())
@@ -264,7 +264,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
 
     def getFeatures(self, referenceName, start, end,
                     pageToken, pageSize,
-                    ontologyTerms=[], parentId=None):
+                    featureTypes=[], parentId=None):
         """
         Returns a set number of simulated features.
         :param referenceName: name of reference to "search" on
@@ -291,8 +291,8 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             match = (gaFeature.start < end and
                      gaFeature.end > start and
                      gaFeature.referenceName == referenceName and
-                     (gaFeature.featureType in ontologyTerms or
-                      len(ontologyTerms) == 0))
+                     (gaFeature.featureType in featureTypes or
+                      len(featureTypes) == 0))
             if match:
                 gaFeature.parentId = ""  # TODO: Test with nonempty parentIDs?
                 if nextPageToken < numFeatures - 1:
@@ -367,7 +367,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
 
     def getFeatures(self, referenceName, start, end,
                     pageToken, pageSize,
-                    ontologyTerms=[], parentId=None):
+                    featureTypes=[], parentId=None):
         """
         method passed to runSearchRequest to fulfill the request
         :param str referenceName: name of reference (ex: "chr1")
@@ -375,7 +375,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         :param end: castable to int, end position on reference
         :param pageToken: none or castable to int
         :param pageSize: none or castable to int
-        :param ontologyTerms: array of str
+        :param featureTypes: array of str
         :param parentId: none or featureID of parent
         :return: yields a protocol.Feature at a time, together with
             the corresponding nextPageToken (which is null for the last
@@ -392,12 +392,12 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
             featuresCount = dataSource.countFeaturesSearchInDb(
                 referenceName=referenceName,
                 start=start, end=end,
-                parentId=parentId, ontologyTerms=ontologyTerms)
+                parentId=parentId, featureTypes=featureTypes)
             featuresReturned = dataSource.searchFeaturesInDb(
                 pageToken, pageSize,
                 referenceName=referenceName,
                 start=start, end=end,
-                parentId=parentId, ontologyTerms=ontologyTerms)
+                parentId=parentId, featureTypes=featureTypes)
 
         # pagination logic: None if last feature was returned,
         # else 1 + row number being returned (starting at row 0).

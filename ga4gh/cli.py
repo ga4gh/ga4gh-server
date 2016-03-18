@@ -555,17 +555,17 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
         self._parentId = args.parentId
         self._start = args.start
         self._end = args.end
-        if args.ontologyTerms == "":
-            self._ontologyTerms = []
+        if args.featureTypes == "":
+            self._featureTypes = []
         else:
-            self._ontologyTerms = args.ontologyTerms.split(",")
+            self._featureTypes = args.featureTypes.split(",")
 
     def _run(self, featureSetId):
         iterator = self._client.searchFeatures(
             start=self._start, end=self._end,
             referenceName=self._referenceName,
             featureSetId=featureSetId, parentId=self._parentId,
-            ontologyTerms=self._ontologyTerms)
+            featureTypes=self._featureTypes)
         self._output(iterator)
 
     def run(self):
@@ -789,7 +789,7 @@ def addFeaturesSearchOptions(parser):
     addStartArgument(parser)
     addEndArgument(parser)
     addParentFeatureIdArgument(parser)
-    addOntologyTermsArgument(parser)
+    addFeatureTypesArgument(parser)
 
 
 def addVariantSetIdArgument(parser):
@@ -852,10 +852,11 @@ def addEffectsArgument(parser):
             """)
 
 
-def addOntologyTermsArgument(parser):
+def addFeatureTypesArgument(parser):
     parser.add_argument(
-        "--ontologyTerms", "-n", default="",
-        help="""Return features matching any of these ontology terms.
+        "--featureTypes", "-n", default="",
+        help="""Return features matching any of the supplied
+            feature types (ontology terms).
             Pass in terms as a comma separated list (no spaces).
             """)
 

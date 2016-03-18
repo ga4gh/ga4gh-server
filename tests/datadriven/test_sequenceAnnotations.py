@@ -165,7 +165,7 @@ class FeatureSetTests(datadriven.DataDrivenTest):
                 self._testData["region"][0],
                 self._testData["region"][1],
                 None, 1000,
-                ontologyTerms=self._testData["ontologyRestriction"]):
+                featureTypes=self._testData["ontologyRestriction"]):
             features.append(feature)
         self.assertEqual(len(features),
                          self._testData["featuresWithOntology"])
