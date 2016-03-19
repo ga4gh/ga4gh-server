@@ -144,9 +144,9 @@ class SimulatedDataRepository(AbstractDataRepository):
     """
     def __init__(
             self, randomSeed=0, numDatasets=2,
-            numVariantSets=1, numCalls=1, variantDensity=0.5,
+            numVariantSets=1, numCalls=2, variantDensity=0.5,
             numReferenceSets=1, numReferencesPerReferenceSet=1,
-            numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
+            numReadGroupSets=1, numReadGroupsPerReadGroupSet=2,
             numAlignments=2):
         super(SimulatedDataRepository, self).__init__()
 

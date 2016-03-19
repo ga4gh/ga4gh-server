@@ -17,6 +17,7 @@ import pysam
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.biodata as biodata
 
 
 def getReferenceChecksum(fastaFile):
@@ -71,6 +72,8 @@ class RepoManager(object):
         datarepo.FileSystemDataRepository.referenceSetsDirName
     readsDirName = datasets.FileSystemDataset.readsDirName
     variantsDirName = datasets.FileSystemDataset.variantsDirName
+    bioDataDirName = datasets.FileSystemDataset.bioDataDirName
+    bioSamplesDirName = datasets.FileSystemDataset.bioSamplesDirName
     fastaExtension = '.fa.gz'
     fastaIndexExtensionFai = '.fa.gz.fai'
     fastaIndexExtensionGzi = '.fa.gz.gzi'
@@ -87,7 +90,10 @@ class RepoManager(object):
             self.ontologiesDirName,
             self.referenceSetsDirName]
         self._datasetStructure = [
-            self.readsDirName, self.variantsDirName]
+            self.readsDirName,
+            self.variantsDirName,
+            self.bioDataDirName,
+            self.bioSamplesDirName]
 
     def _assertFileExists(
             self, filePath, text='File', inRepo=False, emitName=None):
@@ -148,6 +154,14 @@ class RepoManager(object):
             self._repoPath, self.referenceSetsDirName, referenceSetName)
         return referenceSetPath
 
+    def _getBioSamplesPath(self, datasetName):
+        bioSamplesPath = os.path.join(
+            self._repoPath,
+            self.datasetsDirName,
+            datasetName,
+            self.bioSamplesDirName)
+        return bioSamplesPath
+
     def _getReferenceSetJsonPath(self, referenceSetName):
         jsonPath = os.path.join(
             self._repoPath, self.referenceSetsDirName,
@@ -202,6 +216,9 @@ class RepoManager(object):
 
     def _checkFile(self, filePath, fileExt):
         self._assertFileExists(filePath)
+        self._checkFilenameWithExtension(filePath, fileExt)
+
+    def _checkFilenameWithExtension(self, filePath, fileExt):
         if not filePath.endswith(fileExt):
             raise exceptions.RepoManagerException(
                 "File '{}' does not have a '{}' extension".format(
@@ -385,6 +402,44 @@ class RepoManager(object):
         self._removePath(jsonPath)
         self._repoEmit("ReferenceSet '{}' removed".format(
             referenceSetName))
+
+    def addBioSample(self, datasetName, filePath, moveMode):
+        """
+        Add a BioSample
+        """
+        self._check()
+        self._checkDataset(datasetName)
+        fileName = os.path.basename(filePath)
+        destPath = os.path.join(
+            self._repoPath, self.datasetsDirName, datasetName,
+            self.bioSamplesDirName)
+        fullDest = os.path.join(destPath, fileName)
+        self._checkFile(filePath, self.jsonExtension)
+        dataset = datasets.AbstractDataset('temp_ds')
+        try:
+            biodata.JsonBioSample(dataset, "name", filePath)
+        except exceptions.FileOpenFailedException:
+            message = "BioSample JSON is malformed"
+            raise exceptions.RepoManagerException(message)
+        if not os.path.exists(destPath):
+            os.makedirs(destPath)
+        self._assertPathEmpty(fullDest)
+        self._moveFile(filePath, fullDest, moveMode)
+
+        # finish
+        self._repoEmit("BioSample '{}' added to dataset '{}'".format(
+            fileName, datasetName))
+
+    def removeBioSample(self, datasetName, bioSampleName):
+        self._check()
+        self._checkDataset(datasetName)
+        bioSamplesPath = self._getBioSamplesPath(datasetName)
+        filePath = os.path.join(bioSamplesPath, bioSampleName + ".json")
+        self._assertDirectory(bioSamplesPath)
+        self._assertFileExists(filePath, inRepo=True)
+        self._removePath(filePath)
+        self._repoEmit("BioSample '{}' removed".format(
+            filePath))
 
     def addReadGroupSet(self, datasetName, filePath, moveMode):
         """

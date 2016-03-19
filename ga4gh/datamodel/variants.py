@@ -68,9 +68,16 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.updated = variantSet.getUpdatedTime()
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
-        gaCallSet.sampleId = self.getLocalId()
+        gaCallSet.bioSampleId = self.getBioSampleId()
         gaCallSet.variantSetIds = [variantSet.getId()]
         return gaCallSet
+
+    def getBioSampleId(self):
+        datasetId = self.getParentContainer(
+            ).getParentContainer().getCompoundId()
+        compoundId = datamodel.BioSampleCompoundId(
+            datasetId, self.getLocalId())
+        return str(compoundId)
 
     def getSampleName(self):
         """

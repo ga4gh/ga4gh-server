@@ -293,7 +293,7 @@ class TestSimulatedStack(unittest.TestCase):
                 for badId in self.getBadIds():
                     request = protocol.SearchCallSetsRequest()
                     request.variantSetId = variantSet.getId()
-                    request.name = badId
+                    request.name = "A BAD NAME"
                     self.verifySearchResultsEmpty(
                         request, path, protocol.SearchCallSetsResponse)
         # Check for searches within missing variantSets.
@@ -817,3 +817,180 @@ class TestSimulatedStack(unittest.TestCase):
         request.readGroupIds = [readGroup.getId(), "42"]
         request.referenceId = reference.getId()
         self.verifySearchMethodNotSupported(request, path)
+
+    def testBioSamplesFromReadGroupSets(self):
+        path = 'readgroupsets/search'
+        dataset = self.dataRepo.getDatasets()[0]
+        # get all the read group sets
+        request = protocol.SearchReadGroupSetsRequest()
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchReadGroupSetsResponse)
+        # go through each read group
+        bioSamplesRgs = []
+        for rgs in responseData.readGroupSets:
+            for rg in rgs.readGroups:
+                # request biosample record
+                if rg.bioSampleId:
+                    bioSample = self.sendGetObject(
+                        'biosamples',
+                        rg.bioSampleId,
+                        protocol.BioSample())
+                    bioSamplesRgs.append((bioSample.id, rgs.id))
+                    self.assertNotEqual(
+                        None, bioSample,
+                        "A BioSample should exist for reach read")
+        # search reads by biosample
+        for bsId, rgsId in bioSamplesRgs:
+            request = protocol.SearchReadGroupSetsRequest()
+            request.datasetId = dataset.getId()
+            request.bioSampleId = bsId
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchReadGroupSetsResponse)
+            for rgs in responseData.readGroupSets:
+                for rg in rgs.readGroups:
+                    self.assertEqual(
+                        rg.bioSampleId, bsId,
+                        "Only read groups matching the BioSample ID")
+
+    def testBioSamplesFromCallSets(self):
+        path = 'callsets/search'
+        dataset = self.dataRepo.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        callSet = variantSet.getCallSets()[0]
+        request = protocol.SearchCallSetsRequest()
+        request.variantSetId = variantSet.getId()
+        request.bioSampleId = "A BAD ID"
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchCallSetsResponse)
+        self.assertEqual(len(responseData.callSets), 0)
+
+        request = protocol.SearchCallSetsRequest()
+        request.variantSetId = variantSet.getId()
+        request.bioSampleId = callSet.toProtocolElement().bioSampleId
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchCallSetsResponse)
+        self.assertGreater(len(responseData.callSets), 0)
+        for cs in responseData.callSets:
+            self.assertEqual(cs.bioSampleId, request.bioSampleId)
+
+    def testBioSamplesSearch(self):
+        path = 'biosamples/search'
+        dataset = self.dataRepo.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        callSet = variantSet.getCallSets()[0]
+        bioSampleId = callSet.toProtocolElement().bioSampleId
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "BAD NAME"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertEqual(len(responseData.biosamples), 0)
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "simCallSet_0"
+        request.datasetId = dataset.getId()
+        request.bioSampleId = bioSampleId
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        # Currently always returns a singleton
+        self.assertGreater(len(responseData.biosamples), 0)
+
+    def testBioSamplesSearch(self):
+        path = 'biosamples/search'
+        dataset = self.dataRepo.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        callSet = variantSet.getCallSets()[0]
+        bioSampleId = callSet.toProtocolElement().bioSampleId
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "BAD NAME"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertEqual(
+            len(responseData.biosamples), 0,
+            "A bad name should return none")
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "simCallSet_0"
+        request.datasetId = dataset.getId()
+        request.bioSampleId = bioSampleId
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        # Currently always returns a singleton
+        self.assertGreater(
+            len(responseData.biosamples), 0,
+            "A good name should return some")
+
+        request = protocol.SearchBioSamplesRequest()
+        request.individualId = "BAD ID"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertEqual(
+            len(responseData.biosamples), 0,
+            "A bad individual ID should return none")
+
+        request = protocol.SearchIndividualsRequest()
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchIndividualsResponse)
+        self.assertGreater(
+            len(responseData.individuals), 0,
+            "Some individuals should be returned")
+
+        individualId = responseData.individuals[0].id
+
+        request = protocol.SearchBioSamplesRequest()
+        request.individualId = individualId
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertGreater(
+            len(responseData.biosamples), 0,
+            "A good individual ID should return some")
+
+    def testSearchIndividuals(self):
+        path = 'individuals/search'
+        dataset = self.dataRepo.getDatasets()[0]
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "BAD NAME"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertGreater(
+            len(responseData.biosamples), 0,
+            "A bad individual name should return none")
+        request = protocol.SearchBioSamplesRequest()
+        request.name = "simCallSet_0"
+        request.datasetId = dataset.getId()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchBioSamplesResponse)
+        self.assertGreater(
+            len(responseData.biosamples), 0,
+            "A good individual name should return some")
+
+    def testGetIndividual(self):
+        path = "/individuals"
+        for dataset in self.dataRepo.getDatasets():
+            for bioSampleId in dataset._bioSampleIdMap:
+                bioSample = dataset._bioSampleIdMap[bioSampleId]
+                responseObject = self.sendGetObject(
+                    path,
+                    bioSample.individualId,
+                    protocol.Individual)
+                self.assertEqual(responseObject.id, bioSample.individualId)
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
+
+    def testGetBioSample(self):
+        path = "/biosamples"
+        for dataset in self.dataRepo.getDatasets():
+            for variantSet in dataset.getVariantSets():
+                for callSet in variantSet.getCallSets():
+                    bioSampleId = callSet.toProtocolElement().bioSampleId
+                    responseObject = self.sendGetObject(
+                        path,
+                        bioSampleId,
+                        protocol.BioSample)
+                    self.assertEqual(responseObject.id, bioSampleId)
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)

@@ -11,6 +11,8 @@ import os
 testDir = 'tests'
 testDataDir = os.path.join(testDir, 'data')
 
+
+
 # references
 referenceSetName = 'chr17'
 faPath = os.path.join(testDataDir, 'referenceSets/Default/chr17.fa.gz')
@@ -23,6 +25,19 @@ vcfDirPath = os.path.join(
     testDataDir, 'datasets/dataset1/variants/1kgPhase1')
 vcfDirPath2 = os.path.join(
     testDataDir, 'datasets/dataset1/variants/1kgPhase3')
+
+
+biodataDir = os.path.join(
+    testDataDir, 'datasets/dataset1/biodata')
+individualsDir = os.path.join(biodataDir, 'individuals')
+individualPath = os.path.join(individualsDir, 'HG00096.json')
+bioSamplesDir = os.path.join(biodataDir, 'biosamples')
+bioSamplePath = os.path.join(bioSamplesDir, 'HG00096.json')
+
+testIndividualsDataDir = os.path.join(testDir, 'faultydata/biodata/individuals')
+testBioSamplesDataDir = os.path.join(testDir, 'faultydata/biodata/biosamples')
+malformedBioSamplePath = os.path.join(testBioSamplesDataDir, 'malformed.json')
+bioSampleName = "HG00096"
 
 # reads
 readGroupSetName = 'chr17.1-250'

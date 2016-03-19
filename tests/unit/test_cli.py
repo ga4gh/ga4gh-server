@@ -179,6 +179,18 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEquals(args.runner, cli.SearchReadsRunner)
 
+    def testBioSamplesSearchArguments(self):
+        cliInput = (
+            "biosamples-search --pageSize 2 --name BIOSAMPLENAME "
+            "--datasetId DATASETID "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 2)
+        self.assertEqual(args.name, "BIOSAMPLENAME")
+        self.assertEqual(args.datasetId, "DATASETID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchBioSamplesRunner)
+
     def testDatasetsSearchArguments(self):
         cliInput = "datasets-search BASEURL"
         args = self.parser.parse_args(cliInput.split())
@@ -195,6 +207,10 @@ class TestClientArguments(unittest.TestCase):
     def testReferenceSetGetArguments(self):
         self.verifyGetArguments(
             "referencesets-get", cli.GetReferenceSetRunner)
+
+    def testBioSamplesGetArguments(self):
+        self.verifyGetArguments(
+            "biosamples-get", cli.GetBioSamplesRunner)
 
     def testReferenceGetArguments(self):
         self.verifyGetArguments(
@@ -374,6 +390,27 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.variantSetName, variantSetName)
         self.assertEquals(args.runner, cli.RemoveVariantSetRunner)
         self.assertEquals(args.force, False)
+
+    def testRemoveBioSample(self):
+        bioSampleName = "bioSampleName"
+        cliInput = "remove-biosample {} {} {}".format(
+            self.repoPath, self.datasetName, bioSampleName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.bioSampleName, bioSampleName)
+        self.assertEquals(args.runner, cli.RemoveBioSampleRunner)
+        self.assertEquals(args.force, False)
+
+    def testAddBioSample(self):
+        cliInput = "add-biosample {} {} {} --moveMode=move".format(
+            self.repoPath, self.datasetName, self.filePath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.filePath, self.filePath)
+        self.assertEquals(args.moveMode, "move")
+        self.assertEquals(args.runner, cli.AddBioSampleRunner)
 
 
 class TestOutputFormats(unittest.TestCase):

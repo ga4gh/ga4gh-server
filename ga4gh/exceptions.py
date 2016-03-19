@@ -189,6 +189,12 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class BioSampleNotFoundException(NotFoundException):
+    def __init__(self, bioSampleId):
+        self.message = "The requested BioSample '{}' was not found".format(
+            bioSampleId)
+
+
 class AnnotationSetNotFoundException(NotFoundException):
     def __init__(self, variantAnnotationSetId):
         self.message = "The requested VariantAnnotationSet '{}'" \
@@ -235,7 +241,7 @@ class UnsupportedMediaTypeException(RuntimeException):
 
 class RangeErrorException(RuntimeException):
     """
-    The superclass of all exceptions for which a query range error occured.
+    The superclass of all exceptions for which a query range error occurred.
     This raises a HTTP Error 416 "Requested Range not satisfiable".
     """
     httpStatus = 416

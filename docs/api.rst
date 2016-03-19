@@ -86,6 +86,14 @@ Reads
 .. autoclass:: ga4gh.protocol.Position
     :members:
 
+
++++++++
+BioData
++++++++
+
+.. autoclass:: ga4gh.protocol.BioSample
+    :members:
+
 ----------
 Client API
 ----------
@@ -96,7 +104,8 @@ Client API
     :members: getReferenceSet, getReference,
         getDataset, getVariantSet, getVariant,
         getReadGroupSet, getReadGroup,
+        getBioSample,
         searchDatasets, searchReferenceSets, searchReferences,
         searchVariantSets, searchVariants, searchReadGroupSets,
-        searchReads
+        searchReads, searchBioSamples
 

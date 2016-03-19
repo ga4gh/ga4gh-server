@@ -182,3 +182,30 @@ class RepoManagerInidividualCommandTest(AbstractRepoManagerTest):
         with self.assertRaises(exceptions.RepoManagerException):
             self.repoManager.removeVariantSet(
                 'dataset1', paths.variantSetName)
+
+    def testAddBioSample(self):
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.addBioSample(
+                'dataset1', paths.bioSamplePath, 'link')
+        self.repoManager.addDataset('dataset1')
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.addBioSample(
+                'dataset1', paths.malformedBioSamplePath, 'link')
+        self.repoManager.addDataset('dataset2')
+        self.repoManager.addBioSample(
+            'dataset1', paths.bioSamplePath, 'link')
+        self.repoManager.addBioSample(
+            'dataset2', paths.bioSamplePath, 'link')
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.addBioSample(
+                'dataset1', paths.bioSamplePath, 'link')
+
+    def testRemoveBioSample(self):
+        self.repoManager.addDataset('dataset1')
+        self.repoManager.addBioSample(
+            'dataset1', paths.bioSamplePath, 'link')
+        self.repoManager.removeBioSample(
+            'dataset1', paths.bioSampleName)
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.removeBioSample(
+                'dataset1', paths.bioSampleName)

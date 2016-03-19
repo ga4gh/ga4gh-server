@@ -98,6 +98,15 @@ class AbstractClient(object):
         """
         raise NotImplemented()
 
+    def getBioSample(self, bioSampleId):
+        """
+        Perform a get request for the given BioSample.
+        :param bioSampleId:
+        :return: protocol.BioSample
+        """
+        return self._runGetRequest(
+            "biosamples", protocol.BioSample, bioSampleId)
+
     def getPageSize(self):
         """
         Returns the suggested maximum size of pages of results returned by
@@ -371,30 +380,51 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "references", protocol.SearchReferencesResponse)
 
-    def searchCallSets(self, variantSetId, name=None):
+    def searchCallSets(self, variantSetId, name=None, bioSampleId=None):
         """
         Returns an iterator over the CallSets fulfilling the specified
         conditions from the specified VariantSet.
 
         :param str name: Only CallSets matching the specified name will
             be returned.
+        :param str bioSampleId: Returns only callsets with the given
+            Id.
         :return: An iterator over the :class:`ga4gh.protocol.CallSet`
             objects defined by the query parameters.
         """
         request = protocol.SearchCallSetsRequest()
         request.variantSetId = variantSetId
         request.name = name
+        request.bioSampleId = bioSampleId
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "callsets", protocol.SearchCallSetsResponse)
 
-    def searchReadGroupSets(self, datasetId, name=None):
+    def searchBioSamples(self, datasetId, name=None):
+        """
+        Returns an iterator over the BioSamples optionally matching
+        a name for the given datasetId.
+
+        :param str name: Only BioSamples given this name are returned
+        :return: An iterator over the :class:`ga4gh.protocol.BioSample`
+            objects defined by the query parameters.
+        :rtype: iter
+        """
+        request = protocol.SearchBioSamplesRequest()
+        request.datasetId = datasetId
+        request.name = name
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "biosamples", protocol.SearchBioSamplesResponse)
+
+    def searchReadGroupSets(self, datasetId, name=None, bioSampleId=None):
         """
         Returns an iterator over the ReadGroupSets fulfilling the specified
         conditions from the specified Dataset.
 
         :param str name: Only ReadGroupSets matching the specified name
             will be returned.
+        :param str bioSampleId: Filters readgroups according to the ID
         :return: An iterator over the :class:`ga4gh.protocol.ReadGroupSet`
             objects defined by the query parameters.
         :rtype: iter
@@ -403,6 +433,7 @@ class AbstractClient(object):
         request.datasetId = datasetId
         request.name = name
         request.pageSize = self._pageSize
+        request.bioSampleId = bioSampleId
         return self._runSearchRequest(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
