@@ -1,5 +1,10 @@
-Flask==0.10.1
+# These requirements are read directly into setup.py, so specify them
+# in the order that they should be in in setup.py
+
+# Flask must come after all other requirements that have "flask" as a
+# prefix due to a setuptools bug.
 Flask-Cors==2.0.1
+Flask==0.10.1
 avro==1.7.7
 coverage==3.7.1
 flake8==2.3.0  # Set due to conflict with pep8 in version 2.4.0
