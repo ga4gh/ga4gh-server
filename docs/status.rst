@@ -19,6 +19,19 @@ For more detail on individual development issues, please see the project's
 Release Notes
 +++++++++++++
 
+*****
+0.2.1
+*****
+
+Bug release to fix broken upstream packages.
+
+*****
+0.2.0
+*****
+
+No changes from 0.2.0a1
+
+
 *******
 0.2.0a1
 *******
