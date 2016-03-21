@@ -18,7 +18,7 @@ class TestSequenceAnnotations(unittest.TestCase):
     def setUpClass(cls):
         config = {
             "DATA_SOURCE": "tests/data",
-            "DEBUG" : False
+            "DEBUG": False
         }
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
         frontend.reset()
