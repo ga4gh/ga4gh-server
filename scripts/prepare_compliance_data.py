@@ -15,6 +15,7 @@ import sys
 import glob
 import pysam
 import utils
+import generate_gff3_db
 
 
 class ComplianceDataMunger(object):
@@ -33,39 +34,53 @@ class ComplianceDataMunger(object):
 
         # datasets
         self.datasetsDirectory = os.path.join(self.outputDirectory, "datasets")
-        self.readFiles = map(
-            os.path.basename, glob.glob(
-                os.path.join(self.inputDirectory, "*.sam")))
-        self.variantFiles = map(
-            os.path.basename, glob.glob(
-                os.path.join(self.inputDirectory, "*.vcf")))
 
-        self.datasets = [d for d in set([p.split('_')[0] for p in
-                                         self.readFiles + self.variantFiles])]
+        readFiles = map(os.path.basename, glob.glob(
+            os.path.join(self.inputDirectory, "*.sam")))
+        variantFiles = map(os.path.basename, glob.glob(
+            os.path.join(self.inputDirectory, "*.vcf")))
+        sequenceAnnotationFiles = map(os.path.basename, glob.glob(
+            os.path.join(self.inputDirectory, "*.gff3")))
+
+        self.datasets = [d for d in set(
+            [p.split('_')[0] for p in (readFiles +
+                                       variantFiles +
+                                       sequenceAnnotationFiles)])]
+        self.datasetDirs = [os.path.join(
+            self.outputDirectory, ds) for ds in self.datasets]
+
+        # Create maps of arrays of files based on dataset.
         self.datasetReads = dict()
         self.datasetVariants = dict()
-        for ds in self.datasets:
-            self.datasetReads[ds] = [r for r in
-                                     self.readFiles if r.startswith(ds)]
+        self.datasetSequenceAnnotations = dict()
 
-        # Variants themselves are split into groups,
-        # based on second part of the _ split:
         for ds in self.datasets:
+            self.datasetReads[ds] = [r for r in readFiles if r.startswith(ds)]
+            self.datasetSequenceAnnotations[ds] = [sa for sa in (
+                sequenceAnnotationFiles) if sa.startswith(ds)]
+
+            # Variants themselves are split into groups,
+            # based on second part of the _ split:
             self.datasetVariants[ds] = dict()
             # only those variants inside this dataset
-            dsvlist = [v for v in self.variantFiles if v.startswith(ds)]
+            dsvlist = [v for v in variantFiles if v.startswith(ds)]
             # create nested dictionary based on group belonging
             for dsv in dsvlist:
                 dsvGroup = dsv.split('_')[1]
                 self.datasetVariants[ds][dsvGroup] = \
                     self.datasetVariants[ds].get(dsvGroup, []) + [dsv]
 
-        self.datasetDirs = [os.path.join(self.outputDirectory, ds)
-                            for ds in self.datasets]
-
     def run(self):
         if not os.path.exists(self.outputDirectory):
             os.makedirs(self.outputDirectory)
+
+        # Export sequence ontologies
+        print("Exporting ontologies...", file=sys.stderr)
+        ontologiesDir = os.path.join(self.outputDirectory, "ontologies")
+        sequenceOntologyDir = os.path.join(ontologiesDir, "sequence_ontology")
+        os.makedirs(sequenceOntologyDir)
+        shutil.copy(os.path.join(self.inputDirectory, "sequence_ontology.txt"),
+                    os.path.join(sequenceOntologyDir, "sequence_ontology.txt"))
 
         # Clean out, make and re-populate references directory
         # For now, assume a single, statically-named referenceSet
@@ -109,8 +124,8 @@ class ComplianceDataMunger(object):
                     readFile.split('_')[1].split('.')[0]) + ".bam"
                 readSrc = pysam.AlignmentFile(
                     os.path.join(self.inputDirectory, readFile), "r")
-                readDest = pysam.AlignmentFile(destFile, "wb",
-                                               header=readSrc.header)
+                readDest = pysam.AlignmentFile(
+                    destFile, "wb", header=readSrc.header)
                 destFilePath = readDest.filename
 
                 for readData in readSrc:
@@ -136,11 +151,18 @@ class ComplianceDataMunger(object):
                     # in place, creates a tabix index.
                     pysam.tabix_index(destFile, preset="vcf")
 
-        ontologiesDir = os.path.join(self.outputDirectory, "ontologies")
-        sequenceOntologyDir = os.path.join(ontologiesDir, "sequence_ontology")
-        os.makedirs(sequenceOntologyDir)
-        shutil.copy(os.path.join(self.inputDirectory, "sequence_ontology.txt"),
-                    os.path.join(sequenceOntologyDir, "sequence_ontology.txt"))
+            # Sequence Annotations
+            print("Converting sequence annotations...", file=sys.stderr)
+            dsSeqAnndir = os.path.join(dsdir, "sequenceAnnotations")
+            os.makedirs(dsSeqAnndir)
+            for seqAnnFile in self.datasetSequenceAnnotations[ds]:
+                seqAnnDest = os.path.join(
+                    dsSeqAnndir,
+                    seqAnnFile.split('_')[1].split('.')[0]) + ".db"
+                seqAnnSrc = os.path.join(self.inputDirectory, seqAnnFile)
+                dbgen = generate_gff3_db.Gff32Db(seqAnnSrc, seqAnnDest)
+                dbgen.run()
+
         print("done converting compliance data.", file=sys.stderr)
 
 

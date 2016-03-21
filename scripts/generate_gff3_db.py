@@ -52,10 +52,14 @@ class Gff32Db(object):
     by iterating through the resulting parsed dictionary object
     (gff3Data.byFeatureId).
     """
-    def __init__(self, args):
-        self.gff3File = args.inputFile
-        self.dbFile = args.outputFile
-        if os.path.exists(args.outputFile):
+    def __init__(self, inputFile, outputFile):
+        """
+        :param inputFile: source GFF3 filename (can be a full path)
+        :param outputFile: destination sqlite filename (ditto)
+        """
+        self.gff3File = inputFile
+        self.dbFile = outputFile
+        if os.path.exists(outputFile):
             print("DB output file already exists, please remove or rename.",
                   file=sys.stderr)
             exit()
@@ -115,7 +119,7 @@ def main():
         default='.')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     args = parser.parse_args()
-    g2d = Gff32Db(args)
+    g2d = Gff32Db(args.inputFile, args.outputFile)
     g2d.run()
 
 
