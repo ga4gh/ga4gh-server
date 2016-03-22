@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
+import operator
 import unittest
 import unittest.loader
 import unittest.suite
@@ -41,9 +42,49 @@ AVRO_LONG_MAX = 2**31 - 1
 ##############################################################################
 
 
+class SortedHelpFormatter(argparse.HelpFormatter):
+    """
+    An argparse HelpFormatter that sorts the flags and subcommands
+    in alphabetical order
+    """
+    def add_arguments(self, actions):
+        """
+        Sort the flags alphabetically
+        """
+        actions = sorted(
+            actions, key=operator.attrgetter('option_strings'))
+        super(SortedHelpFormatter, self).add_arguments(actions)
+
+    def _iter_indented_subactions(self, action):
+        """
+        Sort the subcommands alphabetically
+        """
+        try:
+            get_subactions = action._get_subactions
+        except AttributeError:
+            pass
+        else:
+            self._indent()
+            if isinstance(action, argparse._SubParsersAction):
+                for subaction in sorted(
+                        get_subactions(), key=lambda x: x.dest):
+                    yield subaction
+            else:
+                for subaction in get_subactions():
+                    yield subaction
+            self._dedent()
+
+
 def addSubparser(subparsers, subcommand, description):
     parser = subparsers.add_parser(
         subcommand, description=description, help=description)
+    return parser
+
+
+def createArgumentParser(description):
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=SortedHelpFormatter)
     return parser
 
 
@@ -75,8 +116,7 @@ def addServerOptions(parser):
 
 
 def getServerParser():
-    parser = argparse.ArgumentParser(
-        description="GA4GH reference server")
+    parser = createArgumentParser("GA4GH reference server")
     addServerOptions(parser)
     return parser
 
@@ -1032,8 +1072,7 @@ def addReferencesBasesListParser(subparsers):
 
 
 def getClientParser():
-    parser = argparse.ArgumentParser(
-        description="GA4GH reference client")
+    parser = createArgumentParser("GA4GH reference client")
     addClientGlobalOptions(parser)
     subparsers = parser.add_subparsers(title='subcommands',)
     addHelpParser(subparsers)
@@ -1111,10 +1150,9 @@ def addOutputFileArgument(parser):
 
 
 def getGa2VcfParser():
-    parser = argparse.ArgumentParser(
-        description=(
-            "GA4GH VCF conversion tool. Converts variant information "
-            "stored in a GA4GH repository into VCF format."))
+    parser = createArgumentParser((
+        "GA4GH VCF conversion tool. Converts variant information "
+        "stored in a GA4GH repository into VCF format."))
     addClientGlobalOptions(parser)
     addOutputFileArgument(parser)
     addUrlArgument(parser)
@@ -1169,8 +1207,7 @@ class Ga2SamRunner(SearchReadsRunner):
 
 
 def getGa2SamParser():
-    parser = argparse.ArgumentParser(
-        description="GA4GH SAM conversion tool")
+    parser = createArgumentParser("GA4GH SAM conversion tool")
     addClientGlobalOptions(parser)
     addUrlArgument(parser)
     parser.add_argument(
@@ -1224,8 +1261,8 @@ class SimplerResult(unittest.TestResult):
 
 def configtest_main(parser=None):
     if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH server configuration validator")
+        parser = createArgumentParser(
+            "GA4GH server configuration validator")
     parser.add_argument(
         "--config", "-c", default='DevelopmentConfig', type=str,
         help="The configuration to use")
@@ -1509,8 +1546,8 @@ def addReferenceSetMetadataArguments(subparser):
 
 
 def getRepoParser():
-    parser = argparse.ArgumentParser(
-        description="GA4GH data repository management tool")
+    parser = createArgumentParser(
+        "GA4GH data repository management tool")
     subparsers = parser.add_subparsers(title='subcommands',)
     parser.add_argument(
         "--loud", default=False, action="store_true",
