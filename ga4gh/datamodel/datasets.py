@@ -14,6 +14,7 @@ import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.rna_quantification as rnaQuantification
 
 
 class AbstractDataset(datamodel.DatamodelObject):
@@ -32,6 +33,8 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._variantAnnotationSetIds = []
         self._variantAnnotationSetIdMap = {}
         self._description = None
+        self._rnaQuantificationIds = []
+        self._rnaQuantificationIdMap = {}
 
     def addVariantSet(self, variantSet):
         """
@@ -57,6 +60,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIdMap[id_] = readGroupSet
         self._readGroupSetNameMap[readGroupSet.getLocalId()] = readGroupSet
         self._readGroupSetIds.append(id_)
+
+    def addRnaQuantification(self, rnaQuant):
+        """
+        Adds the specified rnaQuantification to this dataset.
+        """
+        id_ = rnaQuant.getId()
+        self._rnaQuantificationIdMap[id_] = rnaQuant
+        self._rnaQuantificationIds.append(id_)
 
     def toProtocolElement(self):
         dataset = protocol.Dataset()
@@ -163,6 +174,34 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return self._description
 
+    def getRnaQuantificationIds(self):
+        """
+        Return a list of ids of rna quants that this dataset has
+        """
+        return self._rnaQuantificationIds
+
+    def getRnaQuantificationIdMap(self):
+        """
+        Return a map of the dataset's rna quant ids to rna quants
+        """
+        return self._rnaQuantificationIdMap
+
+    def getRnaQuantifications(self):
+        """
+        Returns the list of RnaQuantifications in this dataset
+        """
+        return [self._rnaQuantificationIdMap[id_] for
+                id_ in self._rnaQuantificationIds]
+
+    def getRnaQuantification(self, id_):
+        """
+        Returns the RnaQuantification with the specified name, or raises
+        a RnaQuantificationNotFoundException otherwise.
+        """
+        if id_ not in self._rnaQuantificationIdMap:
+            raise exceptions.RnaQuantificationNotFoundException(id_)
+        return self._rnaQuantificationIdMap[id_]
+
 
 class SimulatedDataset(AbstractDataset):
     """
@@ -172,7 +211,7 @@ class SimulatedDataset(AbstractDataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1):
+            numAlignments=1, numRnaQuants=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
         # Variants
@@ -193,6 +232,12 @@ class SimulatedDataset(AbstractDataset):
                 self, localId, referenceSet, seed,
                 numReadGroupsPerReadGroupSet, numAlignments)
             self.addReadGroupSet(readGroupSet)
+        # RnaQuantifications
+        for i in range(numRnaQuants):
+            localId = 'simRq{}'.format(i)
+            rnaQuant = rnaQuantification.SimulatedRNASeqResult(
+                self, localId)
+            self.addRnaQuantification(rnaQuant)
 
 
 class FileSystemDataset(AbstractDataset):
@@ -201,6 +246,7 @@ class FileSystemDataset(AbstractDataset):
     """
     variantsDirName = "variants"
     readsDirName = "reads"
+    rnaDirName = "rnaQuant"
 
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
@@ -231,6 +277,19 @@ class FileSystemDataset(AbstractDataset):
                 readGroupSet = reads.HtslibReadGroupSet(
                     self, localId, bamPath, dataRepository)
                 self.addReadGroupSet(readGroupSet)
+        # Rna Quantification
+        rnaQuantDir = os.path.join(dataDir, self.rnaDirName)
+        for filename in os.listdir(rnaQuantDir):
+            if fnmatch.fnmatch(filename, '*.db'):
+                localId, _ = os.path.splitext(filename)
+                rnaPath = os.path.join(rnaQuantDir, filename)
+                with rnaQuantification.SqliteRNABackend(rnaPath) as dataSource:
+                    rnaQuantsInDB = dataSource.searchRnaQuantificationsInDb()
+                for rnaQuantData in rnaQuantsInDB:
+                    localId = rnaQuantData["name"]
+                    rnaQuant = rnaQuantification.RNASeqResult(
+                        self, localId, rnaPath, dataRepository)
+                    self.addRnaQuantification(rnaQuant)
 
     def _setMetadata(self):
         metadataFileName = '{}.json'.format(self._dataDir)

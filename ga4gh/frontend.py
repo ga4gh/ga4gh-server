@@ -526,6 +526,24 @@ def searchDatasets():
         flask.request, app.backend.runSearchDatasets)
 
 
+@DisplayedRoute('/rnaquantification/search', postMethod=True)
+def searchRNAQuantification():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchRnaQuantification)
+
+
+@DisplayedRoute('/expressionlevel/search', postMethod=True)
+def searchExpressionLevel():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchExpressionLevel)
+
+
+@DisplayedRoute('/featuregroup/search', postMethod=True)
+def searchFeatureGroup():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatureGroup)
+
+
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
@@ -562,6 +580,14 @@ def getReadGroup(id):
 def getCallSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetCallSet)
+
+
+@DisplayedRoute(
+    '/rnaquantification/<no(search):id>',
+    pathDisplay='/rnaquantification/<id>')
+def getRnaQuantification(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetRnaQuantification)
 
 
 @app.route('/oauth2callback', methods=['GET'])

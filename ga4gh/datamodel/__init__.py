@@ -309,6 +309,33 @@ class ReadAlignmentCompoundId(ReadGroupCompoundId):
     fields = ReadGroupCompoundId.fields + ['readAlignment']
 
 
+class RnaQuantificationCompoundId(DatasetCompoundId):
+    """
+    The compound id for a rna quantification
+    """
+    fields = DatasetCompoundId.fields + ['rnaQuantification']
+    container = [('rnaQuantificationId', 1)]
+    containerIds = DatasetCompoundId.containerIds + container
+
+
+class ExpressionLevelCompoundId(RnaQuantificationCompoundId):
+    """
+    The compound id for a expression level
+    """
+    fields = RnaQuantificationCompoundId.fields + ['expressionLevel']
+    container = [('expressionLevelId', 2)]
+    containerIds = RnaQuantificationCompoundId.containerIds + container
+
+
+class FeatureGroupCompoundId(RnaQuantificationCompoundId):
+    """
+    The compound id for a feature group
+    """
+    fields = RnaQuantificationCompoundId.fields + ['featureGroup']
+    container = [('featureGroupId', 2)]
+    containerIds = RnaQuantificationCompoundId.containerIds + container
+
+
 class DatamodelObject(object):
     """
     Superclass of all datamodel types. A datamodel object is a concrete
