@@ -212,7 +212,7 @@ class TestClientArguments(unittest.TestCase):
 
     def testCallSetGetArguments(self):
         self.verifyGetArguments(
-            "callsets-get", cli.GetCallsetRunner)
+            "callsets-get", cli.GetCallSetRunner)
 
     def testDatasetsGetArguments(self):
         self.verifyGetArguments(
@@ -233,6 +233,119 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.end, 2)
         self.assertEquals(args.outputFormat, "fasta")
         self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
+
+
+class TestRepoManagerCli(unittest.TestCase):
+
+    def setUp(self):
+        self.parser = cli.getRepoParser()
+        self.repoPath = 'a/repo/path'
+        self.datasetName = "datasetName"
+        self.filePath = 'a/file/path'
+
+    def testInit(self):
+        cliInput = "init {}".format(self.repoPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.runner, cli.InitRunner)
+
+    def testCheck(self):
+        cliInput = "check {}".format(self.repoPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.runner, cli.CheckRunner)
+
+    def testList(self):
+        cliInput = "list {}".format(self.repoPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.runner, cli.ListRunner)
+
+    def testDestroy(self):
+        cliInput = "destroy {} --force".format(self.repoPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.runner, cli.DestroyRunner)
+        self.assertEquals(args.force, True)
+
+    def testAddDataset(self):
+        cliInput = "add-dataset {} {}".format(
+            self.repoPath, self.datasetName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.runner, cli.AddDatasetRunner)
+
+    def testRemoveDataset(self):
+        cliInput = "remove-dataset {} {} -f".format(
+            self.repoPath, self.datasetName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.runner, cli.RemoveDatasetRunner)
+        self.assertEquals(args.force, True)
+
+    def testAddReferenceSet(self):
+        description = "description"
+        cliInput = "add-referenceset {} {} --description={}".format(
+            self.repoPath, self.filePath, description)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.filePath, self.filePath)
+        self.assertEquals(args.description, description)
+        self.assertEquals(args.runner, cli.AddReferenceSetRunner)
+
+    def testRemoveReferenceSet(self):
+        referenceSetName = "referenceSetName"
+        cliInput = "remove-referenceset {} {} -f".format(
+            self.repoPath, referenceSetName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.referenceSetName, referenceSetName)
+        self.assertEquals(args.runner, cli.RemoveReferenceSetRunner)
+        self.assertEquals(args.force, True)
+
+    def testAddReadGroupSet(self):
+        cliInput = "add-readgroupset {} {} {} --moveMode=copy".format(
+            self.repoPath, self.datasetName, self.filePath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.filePath, self.filePath)
+        self.assertEquals(args.moveMode, "copy")
+        self.assertEquals(args.runner, cli.AddReadGroupSetRunner)
+
+    def testRemoveReadGroupSet(self):
+        readGroupSetName = "readGroupSetName"
+        cliInput = "remove-readgroupset {} {} {} -f".format(
+            self.repoPath, self.datasetName, readGroupSetName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.readGroupSetName, readGroupSetName)
+        self.assertEquals(args.runner, cli.RemoveReadGroupSetRunner)
+        self.assertEquals(args.force, True)
+
+    def testAddVariantSet(self):
+        cliInput = "add-variantset {} {} {} --moveMode=move".format(
+            self.repoPath, self.datasetName, self.filePath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.filePath, self.filePath)
+        self.assertEquals(args.moveMode, "move")
+        self.assertEquals(args.runner, cli.AddVariantSetRunner)
+
+    def testRemoveVariantSet(self):
+        variantSetName = "variantSetName"
+        cliInput = "remove-variantset {} {} {}".format(
+            self.repoPath, self.datasetName, variantSetName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.variantSetName, variantSetName)
+        self.assertEquals(args.runner, cli.RemoveVariantSetRunner)
+        self.assertEquals(args.force, False)
 
 
 class TestOutputFormats(unittest.TestCase):

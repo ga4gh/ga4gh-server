@@ -157,13 +157,16 @@ class FileSystemDataset(AbstractDataset):
     """
     A dataset based on the file system
     """
+    variantsDirName = "variants"
+    readsDirName = "reads"
+
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
         self._dataDir = dataDir
         self._setMetadata()
 
         # Variants
-        variantSetDir = os.path.join(dataDir, "variants")
+        variantSetDir = os.path.join(dataDir, self.variantsDirName)
         for localId in os.listdir(variantSetDir):
             relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
@@ -171,7 +174,7 @@ class FileSystemDataset(AbstractDataset):
                     self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
         # Reads
-        readGroupSetDir = os.path.join(dataDir, "reads")
+        readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):
             if fnmatch.fnmatch(filename, '*.bam'):
                 localId, _ = os.path.splitext(filename)

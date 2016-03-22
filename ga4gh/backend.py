@@ -527,7 +527,7 @@ class Backend(object):
 
     # Get requests.
 
-    def runGetCallset(self, id_):
+    def runGetCallSet(self, id_):
         """
         Returns a callset with the given id
         """

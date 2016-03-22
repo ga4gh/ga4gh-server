@@ -570,3 +570,16 @@ class RequestNonSuccessException(BaseClientException):
     """
     The client received a 4xx or 5xx error code from the server
     """
+
+
+#####################################################################
+#
+# Repo manager exceptions
+#
+#####################################################################
+
+
+class RepoManagerException(Exception):
+    """
+    Signals something went wrong inside the repo manager
+    """

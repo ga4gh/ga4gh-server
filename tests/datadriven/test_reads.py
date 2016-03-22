@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import collections
+import os
 
 import ga4gh.backend as backend
 import ga4gh.datamodel as datamodel
@@ -16,12 +17,13 @@ import ga4gh.protocol as protocol
 import ga4gh.datarepo as datarepo
 import tests.datadriven as datadriven
 import tests.utils as utils
+import tests.paths as paths
 
 import pysam
 
 
 def testReads():
-    testDataDir = "tests/data/datasets/dataset1/reads"
+    testDataDir = os.path.join(paths.testDataDir, "datasets/dataset1/reads")
     for test in datadriven.makeTests(
             testDataDir, ReadGroupSetTest, '*.bam'):
         yield test

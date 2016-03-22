@@ -160,7 +160,7 @@ class TestFrontend(unittest.TestCase):
         response = self.sendGetRequest(path)
         return response
 
-    def sendGetCallset(self, id_=None):
+    def sendGetCallSet(self, id_=None):
         if id_ is None:
             id_ = self.callSetId
         path = "/callsets/{}".format(id_)
@@ -264,7 +264,7 @@ class TestFrontend(unittest.TestCase):
         self.verifySearchRouting('/referencesets/search', True)
         self.verifySearchRouting('/references/search', True)
 
-    def testRouteCallsets(self):
+    def testRouteCallSets(self):
         path = '/callsets/search'
         self.assertEqual(415, self.app.post(path).status_code)
         self.assertEqual(200, self.app.options(path).status_code)
@@ -341,8 +341,8 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(
             responseData.id, self.readGroupId)
 
-    def testGetCallset(self):
-        response = self.sendGetCallset()
+    def testGetCallSet(self):
+        response = self.sendGetCallSet()
         self.assertEqual(200, response.status_code)
         responseData = protocol.fromJson(response.data, protocol.CallSet)
         self.assertEqual(
