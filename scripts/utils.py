@@ -284,16 +284,20 @@ class RNASqliteStore(object):
 
     def addRNAQuantification(self, datafields):
         """
-        Adds an RNAQuantification to the db.  Datafields is a tuple in the order:
+        Adds an RNAQuantification to the db.  Datafields is a tuple in the
+        order:
         id, annotation_ids, description, name, read_group_id
         """
-        self._cursor.execute('INSERT INTO RNAQUANTIFICATION VALUES (?, ?, ?, ?, ?)', datafields)
+        self._cursor.execute('INSERT INTO RNAQUANTIFICATION VALUES '
+                             '(?, ?, ?, ?, ?)', datafields)
         self._dbConn.commit()
 
     def addExpression(self, datafields):
         """
         Adds an Expression to the db.  Datafields is a tuple in the order:
-        id, name, rna_quantification_id, annotation_id, expression, feature_group_id, is_normalized, raw_read_count, score, units
+        id, name, rna_quantification_id, annotation_id, expression,
+        feature_group_id, is_normalized, raw_read_count, score, units
         """
-        self._cursor.execute('INSERT INTO EXPRESSION VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', datafields)
+        self._cursor.execute('INSERT INTO EXPRESSION VALUES '
+                             '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', datafields)
         self._dbConn.commit()

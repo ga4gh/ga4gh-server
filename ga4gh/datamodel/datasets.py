@@ -282,14 +282,14 @@ class FileSystemDataset(AbstractDataset):
         for filename in os.listdir(rnaQuantDir):
             if fnmatch.fnmatch(filename, '*.db'):
                 localId, _ = os.path.splitext(filename)
-                fullPath = os.path.join(rnaQuantDir, filename)
-                with rnaQuantification.SqliteRNABackend(fullPath) as dataSource:
+                rnaPath = os.path.join(rnaQuantDir, filename)
+                with rnaQuantification.SqliteRNABackend(rnaPath) as dataSource:
                     rnaQuantsInDB = dataSource.searchRnaQuantificationsInDb()
-            for rnaQuantData in rnaQuantsInDB:
-                localId = rnaQuantData["name"]
-                rnaQuant = rnaQuantification.RNASeqResult(
-                    self, localId, fullPath, dataRepository)
-                self.addRnaQuantification(rnaQuant)
+                for rnaQuantData in rnaQuantsInDB:
+                    localId = rnaQuantData["name"]
+                    rnaQuant = rnaQuantification.RNASeqResult(
+                        self, localId, rnaPath, dataRepository)
+                    self.addRnaQuantification(rnaQuant)
 
     def _setMetadata(self):
         metadataFileName = '{}.json'.format(self._dataDir)

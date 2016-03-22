@@ -6,9 +6,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
-import string
-
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -83,7 +80,8 @@ class FeatureGroup(datamodel.DatamodelObject):
     # TODO: this is just a first pass stub to get working
     # - need to formalize input data
     def __init__(self, parentContainer, record):
-        super(FeatureGroup, self).__init__(parentContainer, record["feature_group_id"])
+        super(FeatureGroup, self).__init__(parentContainer,
+                                           record["feature_group_id"])
         self._id = record["feature_group_id"]
         self._analysisId = record["rna_quantification_id"]
         self.name = record["feature_group_id"]
@@ -109,7 +107,7 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         self._description = ""
         self._name = localId
         self._readGroupId = ""
-        
+
     def toProtocolElement(self):
         """
         Converts this rnaQuant into its GA4GH protocol equivalent.
@@ -122,28 +120,37 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         protocolElement.readGroupId = self._readGroupId
         return protocolElement
 
+    def addRnaQuantMetadata(self, fields):
+        """
+        data elements are:
+        Id, annotations, description, name, readGroupId
+        where annotations is a comma separated list
+        """
+        self._annotationIds = fields["annotation_ids"].split(',')
+        self._description = fields["description"]
+        self._name = fields["name"]
+        self._readGroupId = fields["read_group_id"]
+
 
 class RNASeqResult(AbstractRNAQuantification):
     """
     Class representing a single RnaQuantification in the GA4GH data model.
     """
 
-    def __init__(self, parentContainer, localId, rnaQuantDataPath, dataRepository):
+    def __init__(self, parentContainer, localId, rnaQuantDataPath,
+                 dataRepository):
         super(RNASeqResult, self).__init__(parentContainer, localId)
-        self._dbFilePath = rnaQuantDataPath  # the full file path of the db file
+        self._dbFilePath = rnaQuantDataPath  # the full path of the db file
         self._dataRepository = dataRepository
         self._db = SqliteRNABackend(self._dbFilePath)
         self.getRnaQuantMetadata()
 
-    # TODO: maybe this should stay a flat file at top level of subdirs for each quant
     def getRnaQuantMetadata(self):
         """
         input is tab file with no header.  Columns are:
         Id, annotations, description, name, readGroupId
         where annotation is a comma separated list
         """
-        # TODO: fix the compound ID thing on DB generation
-        # rnaQuantId = self.getId()
         rnaQuantId = self.getLocalId()
         with self._db as dataSource:
             rnaQuantReturned = dataSource.getRnaQuantificationById(
@@ -152,18 +159,6 @@ class RNASeqResult(AbstractRNAQuantification):
             self.addRnaQuantMetadata(rnaQuantReturned)
         else:
             raise exceptions.RnaQuantificationNotFoundException(rnaQuantId)
-
-    def addRnaQuantMetadata(self, fields):
-        """
-        data elements are:
-        Id, annotations, description, name, readGroupId
-        where annotations is a comma separated list
-        """
-        self._id = self.getId()
-        self._annotationIds = fields["annotation_ids"].split(',')
-        self._description = fields["description"]
-        self._name = fields["name"]
-        self._readGroupId = fields["read_group_id"]
 
     def getExpressionLevels(self, rnaQuantID, pageToken=0, pageSize=None,
                             expressionId=None, featureGroupId=None,
@@ -177,7 +172,7 @@ class RNASeqResult(AbstractRNAQuantification):
                 pageSize=pageSize, expressionId=expressionId,
                 featureGroupId=featureGroupId, threshold=threshold)
         return [ExpressionLevel(self, expressionEntry) for
-            expressionEntry in expressionsReturned]
+                expressionEntry in expressionsReturned]
 
     def getExpressionLevel(self, compoundId):
         expressionId = compoundId.expressionLevelId
@@ -203,7 +198,7 @@ class RNASeqResult(AbstractRNAQuantification):
                 rnaQuantID, pageToken=pageToken,
                 pageSize=pageSize, featureGroupId=featureGroupId)
         return [FeatureGroup(self, expressionEntry) for
-            expressionEntry in expressionsReturned]
+                expressionEntry in expressionsReturned]
 
     def getFeatureGroup(self, compoundId):
         """
@@ -224,8 +219,7 @@ _rnaQuantColumns = [('id', 'TEXT'),
                     ('annotation_ids', 'TEXT'),
                     ('description', 'TEXT'),
                     ('name', 'TEXT'),
-                    ('read_group_id', 'TEXT')
-                   ]
+                    ('read_group_id', 'TEXT')]
 
 
 _expressionColumns = [('id', 'TEXT'),
@@ -236,8 +230,7 @@ _expressionColumns = [('id', 'TEXT'),
                       ('is_normalized', 'BOOLEAN'),
                       ('raw_read_count', 'REAL'),
                       ('score', 'REAL'),
-                      ('units', 'TEXT')
-                     ]
+                      ('units', 'TEXT')]
 
 
 class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
@@ -315,7 +308,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         query = self._dbconn.execute(sql, (expressionId,))
         return sqliteBackend.sqliteRow2Dict(query.fetchone())
 
-    def searchFeatureGroupsInDb(self, rnaQuantID, pageToken=0,
+    def searchFeatureGroupsInDb(self, rnaQuantId, pageToken=0,
                                 pageSize=None, featureGroupId=None):
         """
         :param rnaQuantId: string restrict search by quantification id
@@ -351,30 +344,18 @@ class SimulatedRNASeqResult(AbstractRNAQuantification):
     An RNA Quantification that doesn't derive from a data store.
     Used mostly for testing.
     """
+    # TODO: this needs to be updated/rewritten
     def __init__(self, parentContainer, localId, rnaQuantDataPath=""):
         super(SimulatedRNASeqResult, self).__init__(parentContainer, localId)
         self._rnaQuantDataPath = rnaQuantDataPath
         self.generateRnaQuantMetadata()
-        self.generateCharacterization()
-        self.generateReadCounts()
-
-    def generateCharacterization(self):
-        """
-            Currently just returns default values.
-        """
-        fields = ["", 0, 0, 0, 0, 0]
-        self._characterization = Characterization(self, fields)
-
-    def generateReadCounts(self):
-        """
-            Currently just returns default values.
-        """
-        fields = ["", 0, 0, 0, 0, 0]
-        self._readCounts = ReadCounts(self, fields)
 
     def generateRnaQuantMetadata(self):
         """
             Currently just sets to default values.
         """
-        fields = ["", "", "", "", ""]
+        fields = {"annotation_ids": "",
+                  "description": "",
+                  "name": "",
+                  "read_group_id": ""}
         self.addRnaQuantMetadata(fields)

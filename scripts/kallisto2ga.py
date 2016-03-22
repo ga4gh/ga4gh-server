@@ -26,8 +26,8 @@ def makeDir(path):
 
 def writeExpression(analysisId, annotationId, rnaQuantId, quantfile, rnaDB):
     """
-        Reads the kallisto quantification results file and adds entries to the specified
-        database.
+        Reads the kallisto quantification results file and adds entries to the
+        specified database.
 
         kallisto header:
         target_id	length	eff_length	est_counts	tpm
@@ -46,17 +46,19 @@ def writeExpression(analysisId, annotationId, rnaQuantId, quantfile, rnaDB):
         rawCount = fields[3]
         score = 0.0
 
-        datafields = (expressionId, name, rnaQuantId, annotationId, expressionLevel,
-                      featureGroupId, isNormalized, rawCount,
+        datafields = (expressionId, name, rnaQuantId, annotationId,
+                      expressionLevel, featureGroupId, isNormalized, rawCount,
                       str(score), units)
         rnaDB.addExpression(datafields)
 
 
-def writeRnaseqTable(rnaDB, analysisIds, description, annotationId, readGroupId=None):
+def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
+                     readGroupId=None):
     if readGroupId is None:
         readGroupId = ""
     for analysisId in analysisIds:
-        datafields = (analysisId, annotationId, description, analysisId, readGroupId)
+        datafields = (analysisId, annotationId, description, analysisId,
+                      readGroupId)
         rnaDB.addRNAQuantification(datafields)
 
 
@@ -74,8 +76,8 @@ def makeParser(usage):
     return parser
 
 
-# TODO: this is going to be the test of the sqlite backend.  Use this to parse and populate a
-# dbfile and then see if it all connects properly
+# TODO: this is going to be the test of the sqlite backend.  Use this to parse
+# and populate a dbfile and then see if it all connects properly
 def main(argv):
     usage = "Usage: {0} <data-folder> <dbfile>".format(argv[0])
     if len(argv) < 3:
@@ -94,13 +96,14 @@ def main(argv):
     rnaDB = utils.RNASqliteStore(outputFolder, sqlFilename)
     print("output folder:  {0}".format(outputFolder))
     rnaQuantId = "kallisto"
-    # TODO: check to see if the rnaQuantId is in the db and exit if it is since this is a
-    # generator and not an updater
+    # TODO: check to see if the rnaQuantId is in the db and exit if it is since
+    # this is a generator and not an updater
     writeRnaseqTable(rnaDB, [rnaQuantId], description, annotationId,
                      readGroupId=options.readGroupId)
     analysisId = "kallisto"
     quantFile = open("abundance.txt", "r")
-    writeExpressionTable([(analysisId, quantFile)], rnaQuantId, annotationId, rnaDB)
+    writeExpressionTable([(analysisId, quantFile)], rnaQuantId, annotationId,
+                         rnaDB)
 
     print("DONE")
 

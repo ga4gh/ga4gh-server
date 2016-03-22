@@ -232,7 +232,7 @@ class AbstractClient(object):
         :rtype: :class:`ga4gh.protocol.RnaQuantification`
         """
         return self._runGetRequest(
-            "rnaquantification",protocol.RnaQuantification,
+            "rnaquantification", protocol.RnaQuantification,
             rnaQuantificationId)
 
     def searchVariants(

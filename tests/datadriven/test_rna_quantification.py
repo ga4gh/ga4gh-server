@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import os
 import random
+import sqlite3
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -18,7 +19,8 @@ import ga4gh.exceptions as exceptions
 
 def testRnaQuantification():
     testDataDir = "tests/data/datasets/dataset1/rnaQuant"
-    for test in datadriven.makeTests(testDataDir, RnaQuantificationTest):
+    for test in datadriven.makeTests(testDataDir, RnaQuantificationTest,
+                                     '*.db'):
         yield test
 
 
@@ -35,53 +37,23 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         Id, annotations, description, name, readGroupId
         where annotation is a comma separated list
         """
-        def __init__(self, rnaQuantFileName):
-            rnaQuantificationData = open(rnaQuantFileName, "r")
-            quantData = rnaQuantificationData.readline()
-            fields = quantData.strip().split('\t')
-            self.id = fields[0]
-            self.annotationIds = fields[1].split(',')
-            self.description = fields[2]
-            self.name = fields[3]
-            self.readGroupId = fields[4]
-
-    class CharacterizationInfo(object):
-        """
-        Container class for characterization information related to a
-        quantification.
-        test data is tab file with no header.  Columns are:
-        analysisId, complexity, exonicFraction, fractionMapped,
-        intergenicFraction, intronicFraction
-        """
-        def __init__(self, characterizationFileName):
-            characterizationData = open(characterizationFileName, "r")
-            characterization = characterizationData.readline()
-            fields = characterization.strip().split('\t')
-            self.analysisId = fields[0]
-            self.complexity = float(fields[1])
-            self.exonicFraction = float(fields[2])
-            self.fractionMapped = float(fields[3])
-            self.intergenicFraction = float(fields[4])
-            self.intronicFraction = float(fields[5])
-
-    class ReadCountInfo(object):
-        """
-        Container class for characterization information related to a
-        quantification.
-        test data is tab file with no header.  Columns are:
-        analysisId, multiCount, multiSpliceCount, totalReadCount, uniqueCount,
-        uniqueSpliceCount
-        """
-        def __init__(self, readCountFileName):
-            countData = open(readCountFileName, "r")
-            counts = countData.readline()
-            fields = counts.strip().split('\t')
-            self.analysisId = fields[0]
-            self.multiCount = int(fields[1])
-            self.multiSpliceCount = int(fields[2])
-            self.totalReadCount = int(fields[3])
-            self.uniqueCount = int(fields[4])
-            self.uniqueSpliceCount = int(fields[5])
+        def __init__(self, dbConn):
+            self._dbConn = dbConn
+            sql = ("SELECT id FROM RNAQUANTIFICATION")
+            query = self._dbconn.execute(sql)
+            self.id = query.fetchone()
+            sql = ("SELECT annotation_ids FROM RNAQUANTIFICATION")
+            query = self._dbconn.execute(sql)
+            self.annotationIds = query.fetchone().split(',')
+            sql = ("SELECT description FROM RNAQUANTIFICATION")
+            query = self._dbconn.execute(sql)
+            self.description = query.fetchone()
+            sql = ("SELECT name FROM RNAQUANTIFICATION")
+            query = self._dbconn.execute(sql)
+            self.name = query.fetchone()
+            sql = ("SELECT read_group_id FROM RNAQUANTIFICATION")
+            query = self._dbconn.execute(sql)
+            self.readGroupId = query.fetchone()
 
     class ExpressionLevelInfo(object):
         """
@@ -110,18 +82,14 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self._dataset = datasets.AbstractDataset("ds")
         super(RnaQuantificationTest, self).__init__(rnaQuantificationId,
                                                     baseDir)
-        self._rnaQuantFileName = os.path.join(baseDir, "rnaseq.table")
-        self._rnaQuantInfo = self.RnaQuantInfo(self._rnaQuantFileName)
-        self._characterizationFileName = os.path.join(baseDir, "dist.table")
-        self._characterizationInfo = self.CharacterizationInfo(
-            self._characterizationFileName)
-        self._readCountFileName = os.path.join(baseDir, "counts.table")
-        self._readCountInfo = self.ReadCountInfo(self._readCountFileName)
-        self._expressionFileName = os.path.join(baseDir, "expression.table")
-        self._expressionLevelInfo = self.ExpressionLevelInfo(
-            self._expressionFileName)
-        self._featureGroupInfo = self._getFeatureGroupInfo(
-            self._expressionLevelInfo, self._gaObject.getId())
+        self._dbFile = os.path.join(baseDir, "ENCFF305LZB.db")
+        self._dbconn = sqlite3.connect(self._dbFile)
+        self._rnaQuantInfo = self.RnaQuantInfo(self._dbconn)
+
+        # self._expressionLevelInfo = self.ExpressionLevelInfo(
+        #     self._expressionFileName)
+        # self._featureGroupInfo = self._getFeatureGroupInfo(
+        #     self._expressionLevelInfo, self._gaObject.getId())
 
     def _getFeatureGroupInfo(self, expressionInfo, rnaQuantId):
         featureGroupInfo = {}
@@ -133,13 +101,12 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
 
     def getDataModelInstance(self, localId, dataPath):
         return rna_quantification.RNASeqResult(self._dataset, localId,
-                                               dataPath)
+                                               dataPath, None)
 
     def getProtocolClass(self):
         return protocol.RnaQuantification
 
     def testValidateObjects(self):
-        # test that validation works on reference sets and references
         rnaQuantification = self._gaObject
         rnaQuantificationPe = rnaQuantification.toProtocolElement()
         self.assertValid(
@@ -151,44 +118,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(gaRnaQuant.description, rnaQuant.description)
         self.assertEqual(gaRnaQuant.name, rnaQuant.name)
         self.assertEqual(gaRnaQuant.readGroupId, rnaQuant.readGroupId)
-
-    def testGetCharacterization(self):
-        rnaQuantification = self._gaObject
-        gaChar = rnaQuantification.getCharacterization()
-        self.assertCharacterizationEqual(gaChar.toProtocolElement(),
-                                         self._characterizationInfo)
-
-    def assertCharacterizationEqual(self, gaCharacterization,
-                                    characterization):
-        self.assertEqual(gaCharacterization.analysisId,
-                         characterization.analysisId)
-        self.assertEqual(gaCharacterization.complexity,
-                         characterization.complexity)
-        self.assertEqual(gaCharacterization.exonicFraction,
-                         characterization.exonicFraction)
-        self.assertEqual(gaCharacterization.fractionMapped,
-                         characterization.fractionMapped)
-        self.assertEqual(gaCharacterization.intergenicFraction,
-                         characterization.intergenicFraction)
-        self.assertEqual(gaCharacterization.intronicFraction,
-                         characterization.intronicFraction)
-
-    def testGetReadCounts(self):
-        rnaQuantification = self._gaObject
-        gaReadCounts = rnaQuantification.getReadCounts()
-        self.assertReadCountsEqual(gaReadCounts.toProtocolElement(),
-                                   self._readCountInfo)
-
-    def assertReadCountsEqual(self, gaReadCounts, readCounts):
-        self.assertEqual(gaReadCounts.analysisId, readCounts.analysisId)
-        self.assertEqual(gaReadCounts.multiCount, readCounts.multiCount)
-        self.assertEqual(gaReadCounts.multiSpliceCount,
-                         readCounts.multiSpliceCount)
-        self.assertEqual(gaReadCounts.totalReadCount,
-                         readCounts.totalReadCount)
-        self.assertEqual(gaReadCounts.uniqueCount, readCounts.uniqueCount)
-        self.assertEqual(gaReadCounts.uniqueSpliceCount,
-                         readCounts.uniqueSpliceCount)
 
     def testGetExpressionLevel(self):
         rnaQuantification = self._gaObject
