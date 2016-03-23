@@ -19,9 +19,18 @@ import generate_gff3_db
 
 
 class ComplianceDataMunger(object):
-    def __init__(self, args):
-        self.inputDirectory = args.inputDirectory
-        self.outputDirectory = args.outputDirectory
+    def __init__(self, inputDirectory, outputDirectory):
+        """
+        Converts human readable dataset from compliance repository,
+        and translates it into a reference-server readable filesystem
+        with binary files.
+        :param inputDirectory: location of
+            the human readable compliance dataset
+        :param outputDirectory: location of
+            the file hierarchy suitable for deploying on the reference server
+        """
+        self.inputDirectory = inputDirectory
+        self.outputDirectory = outputDirectory
 
         # get all the reference files (they'll be the ones with .fa extension)
         self.referenceFiles = map(
@@ -180,7 +189,7 @@ def main():
         default='.')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     args = parser.parse_args()
-    cdm = ComplianceDataMunger(args)
+    cdm = ComplianceDataMunger(args.inputDirectory, args.outputDirectory)
     cdm.run()
 
 if __name__ == "__main__":
