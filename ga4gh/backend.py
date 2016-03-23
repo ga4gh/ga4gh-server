@@ -115,7 +115,8 @@ class IntervalIterator(object):
             # Now, we skip over objectsToSkip objects such that
             # start == searchAnchor
             for _ in range(objectsToSkip):
-                assert self._getStart(obj) == searchAnchor
+                if self._getStart(obj) != searchAnchor:
+                    raise exceptions.BadPageTokenException
                 obj = next(self._searchIterator)
         self._currentObject = obj
         self._nextObject = next(self._searchIterator, None)
@@ -228,6 +229,48 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
                 return self._removeNonMatchingTranscriptEffects(vann), ret[1]
         return None
 
+    def filterVariantAnnotation(self, vann):
+        """
+        Returns true when an annotation should be included.
+        """
+        # TODO reintroduce feature ID search
+        ret = False
+        if len(self._effects) != 0 and not vann.transcriptEffects:
+            return False
+        elif len(self._effects) == 0:
+            return True
+        for teff in vann.transcriptEffects:
+            if self.filterEffect(teff):
+                ret = True
+        return ret
+
+    def filterEffect(self, teff):
+        """
+        Returns true when any of the transcript effects
+        are present in the request.
+        """
+        ret = False
+        for effect in teff.effects:
+            ret = self._matchAnyEffects(effect) or ret
+        return ret
+
+    def _checkIdEquality(self, requestedEffect, effect):
+        """
+        Tests whether a requested effect and an effect
+        present in an annotation are equal.
+        """
+        return self._idPresent(requestedEffect) and (
+            effect.id == requestedEffect['id'])
+
+    def _idPresent(self, requestedEffect):
+        return "id" in requestedEffect
+
+    def _matchAnyEffects(self, effect):
+        ret = False
+        for requestedEffect in self._effects:
+            ret = self._checkIdEquality(requestedEffect, effect) or ret
+        return ret
+
     def _removeNonMatchingTranscriptEffects(self, ann):
         newTxE = []
         if self._effects == []:
@@ -241,62 +284,6 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
                 newTxE.append(txe)
         ann.transcriptEffects = newTxE
         return ann
-
-    def filterVariantAnnotation(self, vann):
-        # TODO reintroduce feature ID search
-        if len(self._effects) == 0:
-            return True
-        if not vann.transcriptEffects:
-            return False
-        for teff in vann.transcriptEffects:
-            if self.filterEffect(teff):
-                return True
-            else:
-                return False
-        return True
-
-    def _checkTermEquality(self, requestedEffect, effect):
-        return self._termPresent(requestedEffect) and (
-            effect.term == requestedEffect['term'])
-
-    def _checkIdEquality(self, requestedEffect, effect):
-        return self._idPresent(requestedEffect) and (
-            effect.id == requestedEffect['id'])
-
-    def _idPresent(self, requestedEffect):
-        return "id" in requestedEffect
-
-    def _termPresent(self, requestedEffect):
-        return "term" in requestedEffect
-
-    def _matchOntologyTerm(self, requestedEffect, effect):
-        if self._idPresent(requestedEffect):
-            if self._checkIdEquality(requestedEffect, effect):
-                if self._checkTermEquality(requestedEffect, effect):
-                    return True
-                elif not self._termPresent(requestedEffect):
-                    return True
-        elif self._termPresent(requestedEffect):
-            if self._checkTermEquality(requestedEffect, effect):
-                return True
-        return False
-
-    def _matchAnyEffects(self, effect):
-        for requestedEffect in self._effects:
-            return self._matchOntologyTerm(requestedEffect, effect)
-
-    def filterEffect(self, teff):
-        if len(self._effects) == 0:
-            return True
-        for effect in teff.effects:
-            return self._matchAnyEffects(effect)
-        return False
-
-    def filterFeatureId(self, teff):
-        if (len(self._featureIds) > 0 and
-                teff.featureId not in self._featureIds):
-            return False
-        return True
 
 
 class Backend(object):
