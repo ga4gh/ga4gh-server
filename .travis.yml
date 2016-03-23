@@ -9,15 +9,23 @@ cache:
 
 install:
   - pip install pip --upgrade 
-  - pip install -r requirements.txt
   - python setup.py sdist
   - pip install dist/ga4gh*.tar.gz
+# every installable in setup.py's entry_points should be tested here
+  - ga4gh_client --version
+  - ga4gh_configtest --version
+  - ga4gh_server --version
+  - ga2vcf --version
+  - ga2sam --version
+  - ga4gh_repo --version
 
 before_script:
   # the following two lines are to prevent travis from
   # verbosely complaining about a security problem; see issue 54
   - mkdir $HOME/.python-eggs
   - chmod og-w $HOME/.python-eggs
+  - pip install -r dev-requirements.txt
+
 
 # run_tests.py runs everything under the script: tag so only put commands
 # under it that we want to run (and want to be able to run) as local tests
