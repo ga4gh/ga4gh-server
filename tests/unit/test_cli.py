@@ -232,6 +232,36 @@ class TestClientArguments(unittest.TestCase):
         self.assertEquals(args.outputFormat, "fasta")
         self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
 
+    def testVariantAnnotationsSearch(self):
+        cliInput = (
+            "variantannotations-search "
+            "--variantAnnotationSetId VARIANTANNOTATIONSETID "
+            "--referenceName REFERENCENAME --start 1 "
+            "--end 2 --featureIds FEATUREIDS --effects EFFECTS "
+            "--pageSize 3 BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(
+            args.variantAnnotationSetId, "VARIANTANNOTATIONSETID")
+        self.assertEqual(args.referenceName, "REFERENCENAME")
+        self.assertEqual(args.start, 1)
+        self.assertEqual(args.end, 2)
+        self.assertEqual(args.featureIds, "FEATUREIDS")
+        self.assertEqual(args.effects, "EFFECTS")
+        self.assertEqual(args.pageSize, 3)
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchVariantAnnotationsRunner)
+
+    def testVariationAnnotationSetsSearch(self):
+        cliInput = (
+            "variantannotationsets-search "
+            "--pageSize 3 BASEURL VARIANTSETID")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 3)
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.variantSetId, "VARIANTSETID")
+        self.assertEquals(
+            args.runner, cli.SearchVariantAnnotationSetsRunner)
+
 
 class TestRepoManagerCli(unittest.TestCase):
 

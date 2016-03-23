@@ -274,11 +274,14 @@ class RepoManager(object):
         self._removePath(self._repoPath)
         self._repoEmit("Destroyed")
 
-    def check(self):
+    def check(self, doConsistencyCheck=False):
         """
         Check the repository for well-formedness
         """
         self._check()
+        if doConsistencyCheck:
+            dataRepo = datarepo.FileSystemDataRepository(self._repoPath)
+            dataRepo.checkConsistency()
         self._repoEmit("Well-formed".format(self._repoPath))
 
     def addDataset(self, datasetName):
@@ -492,8 +495,7 @@ class RepoManager(object):
         self._check()
         self._repoEmit("Listing")
 
-        dataRepo = datarepo.FileSystemDataRepository(
-            self._repoPath, doConsistencyCheck=False)
+        dataRepo = datarepo.FileSystemDataRepository(self._repoPath)
         self._emit(self.referenceSetsDirName)
         for referenceSet in dataRepo.getReferenceSets():
             self._emitIndent(referenceSet.getLocalId())

@@ -597,8 +597,9 @@ class TestSimulatedStack(unittest.TestCase):
         response = self.sendJsonPostRequest(path, request.toJsonString())
         responseData = protocol.SearchVariantAnnotationSetsResponse. \
             fromJsonString(response.data)
-        self.assertIsNotNone(responseData.nextPageToken,
-                             "Expected more than one page of results")
+        self.assertIsNotNone(
+            responseData.nextPageToken,
+            "Expected more than one page of results")
 
         request = protocol.SearchVariantAnnotationsRequest()
         request.variantAnnotationSetId = variantAnnotationSet.getId()
@@ -609,8 +610,9 @@ class TestSimulatedStack(unittest.TestCase):
         response = self.sendJsonPostRequest(path, request.toJsonString())
         responseData = protocol.SearchVariantAnnotationsResponse. \
             fromJsonString(response.data)
-        self.assertEquals(len(responseData.variantAnnotations), 0,
-                          "There should be no results for a nonsense effect")
+        self.assertEquals(
+            len(responseData.variantAnnotations), 0,
+            "There should be no results for a nonsense effect")
 
         request = protocol.SearchVariantAnnotationsRequest()
         request.variantAnnotationSetId = variantAnnotationSet.getId()
@@ -622,9 +624,10 @@ class TestSimulatedStack(unittest.TestCase):
             fromJsonString(response.data)
         self.assertGreater(len(responseData.variantAnnotations), 0)
         for ann in responseData.variantAnnotations:
-            self.assertGreater(len(ann.transcriptEffects), 0,
-                               ("When no effects are requested ensure "
-                                "some transcript effects are still present"))
+            self.assertGreater(
+                len(ann.transcriptEffects), 0,
+                ("When no effects are requested ensure "
+                    "some transcript effects are still present"))
 
         request = protocol.SearchVariantAnnotationsRequest()
         request.variantAnnotationSetId = variantAnnotationSet.getId()
@@ -635,8 +638,10 @@ class TestSimulatedStack(unittest.TestCase):
         response = self.sendJsonPostRequest(path, request.toJsonString())
         responseData = protocol.SearchVariantAnnotationsResponse. \
             fromJsonString(response.data)
-        self.assertGreater(len(responseData.variantAnnotations), 0,
-                           "There should be some results for a known effect")
+        responseLength = len(responseData.variantAnnotations)
+        self.assertGreater(
+            responseLength, 0,
+            "There should be some results for a known effect")
         for ann in responseData.variantAnnotations:
             effectPresent = False
             for effect in ann.transcriptEffects:
@@ -644,21 +649,34 @@ class TestSimulatedStack(unittest.TestCase):
                     if ontologyTerm.id in map(
                             lambda e: e['id'], request.effects):
                         effectPresent = True
-            self.assertEquals(True, effectPresent,
-                              "The ontology term should appear at least once")
+            self.assertEquals(
+                True, effectPresent,
+                "The ontology term should appear at least once")
 
         request = protocol.SearchVariantAnnotationsRequest()
         request.variantAnnotationSetId = variantAnnotationSet.getId()
         request.start = 0
         request.end = 5
         request.referenceName = "1"
-        request.effects = [{"id": "SO:0001627", "term": "TermDoesNotMatchID"}]
+        request.effects = [{"id": "B4DID"}, {"id": "SO:0001627"}]
         response = self.sendJsonPostRequest(path, request.toJsonString())
         responseData = protocol.SearchVariantAnnotationsResponse. \
             fromJsonString(response.data)
-        self.assertEquals(len(responseData.variantAnnotations), 0,
-                          ("There should be no results when "
-                           "term and ID don't match"))
+        self.assertEqual(
+            len(responseData.variantAnnotations),
+            responseLength,
+            "Order shall not affect results")
+        for ann in responseData.variantAnnotations:
+            effectPresent = False
+            for effect in ann.transcriptEffects:
+                for ontologyTerm in effect.effects:
+                    if ontologyTerm.id in map(
+                            lambda e: e['id'], request.effects):
+                        effectPresent = True
+            self.assertEquals(
+                True,
+                effectPresent,
+                "The ontology term should appear at least once")
 
         request = protocol.SearchVariantAnnotationsRequest()
         request.variantAnnotationSetId = variantAnnotationSet.getId()
@@ -680,6 +698,17 @@ class TestSimulatedStack(unittest.TestCase):
                         effectPresent = True
             self.assertEquals(True, effectPresent,
                               "The ontology term should appear at least once")
+
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.start = 0
+        request.end = 10
+        request.referenceName = "1"
+        request.effects = [{"id": "SO:0001627"}, {"id": "SO:0001791"}]
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        responseData = protocol.SearchVariantAnnotationsResponse. \
+            fromJsonString(response.data)
+        self.assertGreater(len(responseData.variantAnnotations), 0)
 
     def testListReferenceBases(self):
         for referenceSet in self.dataRepo.getReferenceSets():

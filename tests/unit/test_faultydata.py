@@ -47,8 +47,10 @@ class TestInconsistentMetaData(FaultyVariantDataTest):
     def testInstantiation(self):
         for localId in self.localIds:
             path = self.getFullPath(localId)
+            variantSet = variants.HtslibVariantSet(
+                self.dataset, localId, path, None)
             with self.assertRaises(exceptions.InconsistentMetaDataException):
-                variants.HtslibVariantSet(self.dataset, localId, path, None)
+                variantSet.checkConsistency()
 
 
 class TestInconsistentCallSetId(FaultyVariantDataTest):
@@ -57,8 +59,10 @@ class TestInconsistentCallSetId(FaultyVariantDataTest):
     def testInstantiation(self):
         for localId in self.localIds:
             path = self.getFullPath(localId)
+            variantSet = variants.HtslibVariantSet(
+                self.dataset, localId, path, None)
             with self.assertRaises(exceptions.InconsistentCallSetIdException):
-                variants.HtslibVariantSet(self.dataset, localId, path, None)
+                variantSet.checkConsistency()
 
 
 class TestOverlappingVcfVariants(FaultyVariantDataTest):

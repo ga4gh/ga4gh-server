@@ -468,13 +468,23 @@ class PysamDatamodelMixin(object):
         EmptyDirException if no data files are found.
         """
         numDataFiles = 0
+        filenames = self._getDataFilenames(dataDir, patterns)
+        for filename in filenames:
+            self._addDataFile(filename)
+            numDataFiles += 1
+        if numDataFiles == 0:
+            raise exceptions.EmptyDirException(dataDir, patterns)
+
+    def _getDataFilenames(self, dataDir, patterns):
+        """
+        Return a list of filenames in dataDir that match one of patterns
+        """
+        filenames = []
         for pattern in patterns:
             scanPath = os.path.join(dataDir, pattern)
             for filename in glob.glob(scanPath):
-                self._addDataFile(filename)
-                numDataFiles += 1
-        if numDataFiles == 0:
-            raise exceptions.EmptyDirException(dataDir, patterns)
+                filenames.append(filename)
+        return filenames
 
     def getFileHandle(self, dataFile):
         return fileHandleCache.getFileHandle(dataFile, self.openFile)
