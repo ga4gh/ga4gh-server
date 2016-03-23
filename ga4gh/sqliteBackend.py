@@ -13,8 +13,9 @@ import sqlite3
 
 def sqliteRows2dicts(sqliteRows):
     """
-    unpacks sqlite rows as returned by fetchall
+    Unpacks sqlite rows as returned by fetchall
     into an array of simple dicts.
+
     :param sqliteRows: array of rows returned from fetchall DB call
     :return:  array of dicts, keyed by the column names.
     """
@@ -23,7 +24,9 @@ def sqliteRows2dicts(sqliteRows):
 
 def sqliteRow2Dict(sqliteRow):
     """
-    As above, but for a single row
+    Unpacks a single sqlite row as returned by fetchone
+    into a simple dict.
+
     :param sqliteRow: single row returned from fetchone DB call
     :return: dictionary corresponding to this row
     """
@@ -33,9 +36,11 @@ def sqliteRow2Dict(sqliteRow):
 def limitsSql(pageToken=0, pageSize=None):
     """
     Takes parsed pagination data, spits out equivalent SQL 'limit' statement.
-    :param pageToken: starting row position, int or string containing an int
+
+    :param pageToken: starting row position,
+        can be an int or string containing an int
     :param pageSize: number of records requested for this transaciton,
-    int or string containing an int
+        can be an int or string containing an int
     :return: SQL 'limit' statement string to append to query.
     """
     if pageToken is None:
@@ -51,7 +56,8 @@ def limitsSql(pageToken=0, pageSize=None):
 def _whereClauseSql(**whereClauses):
     """
     Takes parsed search query parameters,
-        produces equivalent SQL 'where' clause.
+    produces equivalent SQL 'where' clause.
+
     :param whereClauses: key-value pairs of column names to limit by,
         and values to limit them to.
     :return: corresponding SQLite 'where' clause string ready to paste

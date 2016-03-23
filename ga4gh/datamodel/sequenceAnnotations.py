@@ -20,38 +20,38 @@ import ga4gh.exceptions as exceptions
 # I need to be careful about which one is which.
 
 """
-    For this implementation, `featureSetId` is required, while `parentId`
-    is optional, and filters the features within the requested `featureSetId`
-    by their parent.
+For this implementation, `featureSetId` is required, while `parentId`
+is optional, and filters the features within the requested `featureSetId`
+by their parent.
 
-    Only return features on the reference with this name. Genomic positions
-    are non-negative integers less than reference length.
-    Requests spanning the join of circular genomes are represented as two
-    requests one on each side of the join (position 0) end is also required
-    If specified, this query matches only annotations which match one of the
-    provided feature types.
-    For now do not use the features array in search
+Only return features on the reference with this name. Genomic positions
+are non-negative integers less than reference length.
+Requests spanning the join of circular genomes are represented as two
+requests one on each side of the join (position 0) end is also required
+If specified, this query matches only annotations which match one of the
+provided feature types.
+For now do not use the features array in search
 
-    GFF3 data is represented by rows in a single table, named FEATURE.
-    The columns of the FEATURE table correspond to the columns of a GFF3,
-    with three additional columns prepended representing the ID
-    of this feature, the ID of its parent (if any), and a whitespace
-    separated array of its child IDs.
+GFF3 data is represented by rows in a single table, named FEATURE.
+The columns of the FEATURE table correspond to the columns of a GFF3,
+with three additional columns prepended representing the ID
+of this feature, the ID of its parent (if any), and a whitespace
+separated array of its child IDs.
 
-    _featureColumns pairs represent the ordered (column_name, column_type).
+_featureColumns pairs represent the ordered (column_name, column_type).
 """
-_featureColumns = [('id', 'TEXT'),
-                   ('parent_id', 'TEXT'),
-                   ('child_ids', 'TEXT'),
-                   ('reference_name', 'TEXT'),
-                   ('source', 'TEXT'),
-                   ('ontology_term', 'TEXT'),
-                   ('start', 'INT'),
-                   ('end', 'INT'),
-                   ('score', 'REAL'),
-                   ('strand', 'TEXT'),  # limited to one of '+'/'-' or none.
-                   ('attributes', 'TEXT')  # JSON encoding of attributes dict
-                   ]
+_featureColumns = [
+    ('id', 'TEXT'),
+    ('parent_id', 'TEXT'),
+    ('child_ids', 'TEXT'),
+    ('reference_name', 'TEXT'),
+    ('source', 'TEXT'),
+    ('ontology_term', 'TEXT'),
+    ('start', 'INT'),
+    ('end', 'INT'),
+    ('score', 'REAL'),
+    ('strand', 'TEXT'),  # limited to one of '+'/'-' or none.
+    ('attributes', 'TEXT')]  # JSON encoding of attributes dict
 
 
 class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
@@ -71,9 +71,9 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         self.featureColumnNames = [f[0] for f in _featureColumns]
         self.featureColumnTypes = [f[1] for f in _featureColumns]
 
-    def countFeaturesSearchInDb(self,
-                                referenceName=None, start=0, end=0,
-                                parentId=None, featureTypes=[]):
+    def countFeaturesSearchInDb(
+            self, referenceName=None, start=0, end=0,
+            parentId=None, featureTypes=[]):
         """
         Same parameters as searchFeaturesInDb,
         except without the pagetoken/size.
@@ -97,10 +97,13 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         query = self._dbconn.execute(sql, sql_args)
         return (query.fetchone())[0]
 
-    def searchFeaturesInDb(self, pageToken=0, pageSize=None,
-                           referenceName=None, start=0, end=0,
-                           parentId=None, featureTypes=[]):
+    def searchFeaturesInDb(
+            self, pageToken=0, pageSize=None,
+            referenceName=None, start=0, end=0,
+            parentId=None, featureTypes=[]):
         """
+        Perform a full features query in database.
+
         :param pageToken: int representing first record to return
         :param pageSize: int representing number of records to return
         :param referenceName: string representing reference name, ex 'chr1'
@@ -110,11 +113,11 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         :return an array of dictionaries, representing the returned data.
         """
         # TODO: Refactor out common bits of this and the above count query.
-        sql = ("SELECT * FROM FEATURE WHERE "
-               "reference_name = ? "
-               "AND end > ? "  # compare this to query start
-               "AND start < ? "  # and this to query end
-               )
+        sql = (
+            "SELECT * FROM FEATURE WHERE "
+            "reference_name = ? "
+            "AND end > ? "  # compare this to query start
+            "AND start < ? ")  # and this to query end
         # TODO: Optimize by refactoring out string concatenation
         sql_args = (referenceName, start, end)
         if parentId is not None:
@@ -131,6 +134,8 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
 
     def getFeatureById(self, featureId):
         """
+        Fetch feature by featureID.
+
         :param featureId: the FeatureID as found in GFF3 records
         :return: dictionary representing a feature object,
             or None if no match is found.
@@ -195,12 +200,16 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
 
     def getCompoundIdForFeatureId(self, featureId):
         """
+        Returns server-style compound ID for a GFF3 style feature ID.
+
         :param featureId: string feature ID as reported in GFF3
         :return: string representing ID for the specified GA4GH protocol
             Feature object in this FeatureSet. If None is passed in,
             an empty string is passed out, as required by the protocol.
         """
         if featureId is None:
+            # This can happen if no feature ID is present in the database,
+            # as can be the case with (absent) parent IDs.
             return ""
         compoundId = datamodel.FeatureCompoundId(
             self.getCompoundId(), _decolonize(featureId))
@@ -217,8 +226,9 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         self._randomSeed = randomSeed
 
     def _getRandomOntologyTerm(self, randomNumberGenerator):
-        ontologyTuples = [("gene", "SO:0000704"),
-                          ("exon", "SO:0000147")]
+        ontologyTuples = [
+            ("gene", "SO:0000704"),
+            ("exon", "SO:0000147")]
         term = protocol.OntologyTerm()
         ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
         term.term, term.id = ontologyTuple[0], ontologyTuple[1]
@@ -228,7 +238,6 @@ class SimulatedFeatureSet(AbstractFeatureSet):
 
     def _generateSimulatedFeature(self, randomNumberGenerator):
         feature = protocol.Feature()
-        # ID and parentId are not generated here.
         feature.featureSetId = self.getId()
         feature.start = randomNumberGenerator.randint(1000, 2000)
         feature.end = feature.start + randomNumberGenerator.randint(1, 100)
@@ -239,14 +248,16 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         strands = [protocol.Strand.POS_STRAND, protocol.Strand.NEG_STRAND]
         feature.strand = randomNumberGenerator.choice(strands)
         feature.attributes = protocol.Attributes()
-        feature.attributes.vals = {"gene_name": ["Frances", ],
-                                   "gene_type": ["mRNA", ],
-                                   "gene_status": ["UNKNOWN", ]}
+        feature.attributes.vals = {
+            "gene_name": ["Frances", ],
+            "gene_type": ["mRNA", ],
+            "gene_status": ["UNKNOWN", ]}
         return feature
 
     def getFeature(self, compoundId):
         """
         Fetches a simulated feature by ID.
+
         :param compoundId: any non-null string
         :return: A simulated feature with id set to the same value as the
             passed-in compoundId.
@@ -262,11 +273,13 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         feature.parentId = ""  # TODO: Test with nonempty parentIDs?
         return feature
 
-    def getFeatures(self, referenceName, start, end,
-                    pageToken, pageSize,
-                    featureTypes=[], parentId=None):
+    def getFeatures(
+            self, referenceName, start, end,
+            pageToken, pageSize,
+            featureTypes=[], parentId=None):
         """
         Returns a set number of simulated features.
+
         :param referenceName: name of reference to "search" on
         :param start: start coordinate of query
         :param end: end coordinate of query
@@ -276,11 +289,10 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         :param parentId: optional parentId to limit query.
         :return: Yields feature, nextPageToken pairs.
             nextPageToken is None if last feature was yielded.
-
         """
         randomNumberGenerator = random.Random()
         randomNumberGenerator.seed(self._randomSeed)
-        numFeatures = 10
+        numFeatures = 10  # TODO: make this a parameter
         if pageToken is not None:
             nextPageToken = int(pageToken)
         else:
@@ -288,19 +300,22 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         for featureId in ["feature{}".format(x) for x in xrange(numFeatures)]:
             gaFeature = self._generateSimulatedFeature(randomNumberGenerator)
             gaFeature.id = self.getCompoundIdForFeatureId(featureId)
-            match = (gaFeature.start < end and
-                     gaFeature.end > start and
-                     gaFeature.referenceName == referenceName and
-                     (gaFeature.featureType in featureTypes or
-                      len(featureTypes) == 0))
+            match = (
+                gaFeature.start < end and
+                gaFeature.end > start and
+                gaFeature.referenceName == referenceName and
+                (
+                    gaFeature.featureType in featureTypes or
+                    len(featureTypes) == 0))
             if match:
                 gaFeature.parentId = ""  # TODO: Test with nonempty parentIDs?
                 if nextPageToken < numFeatures - 1:
                     nextPageToken += 1
                 else:
                     nextPageToken = None
-                yield gaFeature, \
-                    (str(nextPageToken) if nextPageToken is not None else None)
+                yield gaFeature, (
+                    str(nextPageToken)
+                    if nextPageToken is not None else None)
 
 
 class Gff3DbFeatureSet(AbstractFeatureSet):
@@ -329,11 +344,11 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         with self._db as dataSource:
             featureReturned = dataSource.getFeatureById(featureId)
 
-        if featureReturned is not None:
+        if featureReturned is None:
+            raise exceptions.ObjectWithIdNotFoundException(compoundId)
+        else:
             gaFeature = self._gaFeatureForFeatureDbRecord(featureReturned)
             return gaFeature
-        else:
-            raise exceptions.ObjectWithIdNotFoundException(compoundId)
 
     def _gaFeatureForFeatureDbRecord(self, feature):
         """
@@ -411,5 +426,6 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
                 nextPageToken += 1
             else:
                 nextPageToken = None
-            yield gaFeature, \
-                (str(nextPageToken) if nextPageToken is not None else None)
+            yield gaFeature, (
+                str(nextPageToken)
+                if nextPageToken is not None else None)

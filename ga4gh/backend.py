@@ -554,8 +554,8 @@ class Backend(object):
 
     def featuresGenerator(self, request):
         """
-        :param request: JSON string - the original web request
-        :return: an iterator over the result set/nextPageToken pairs
+        Returns a generator over the (features, nextPageToken) pairs
+        defined by the (JSON string) request.
         """
         compoundId = None
         parentId = None
@@ -574,33 +574,32 @@ class Backend(object):
             else:
                 # check that the dataset and featureSet of the parent
                 # compound ID is the same as that of the featureSetId
-                mismatchCheck = (compoundParentId.datasetId !=
-                                 compoundId.datasetId or
-                                 compoundParentId.featureSetId !=
-                                 compoundId.featureSetId)
+                mismatchCheck = (
+                    compoundParentId.datasetId != compoundId.datasetId or
+                    compoundParentId.featureSetId != compoundId.featureSetId)
                 if mismatchCheck:
                     raise exceptions.ParentIncompatibleWithFeatureSet()
 
         if compoundId is None:
             raise exceptions.FeatureSetNotSpecifiedException()
 
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(
+            compoundId.datasetId)
         featureSet = dataset.getFeatureSet(compoundId.featureSetId)
-        return featureSet.getFeatures(request.referenceName,
-                                      request.start,
-                                      request.end,
-                                      request.pageToken,
-                                      request.pageSize,
-                                      request.featureTypes,
-                                      parentId)
+        return featureSet.getFeatures(
+            request.referenceName, request.start, request.end,
+            request.pageToken, request.pageSize,
+            request.featureTypes, parentId)
 
     def callSetsGenerator(self, request):
         """
         Returns a generator over the (callSet, nextPageToken) pairs defined
         by the specified request.
         """
-        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        compoundId = datamodel.VariantSetCompoundId.parse(
+            request.variantSetId)
+        dataset = self.getDataRepository().getDataset(
+            compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         if request.name is None:
             return self._topLevelObjectGenerator(
@@ -732,8 +731,8 @@ class Backend(object):
 
     def runGetFeature(self, id_):
         """
-        :param id_: the compoundID of the feature being requested
-        :return: JSON string of the corresponding feature object.
+        Returns JSON string of the feature object corresponding to
+        the feature compoundID passed in.
         """
         compoundId = datamodel.FeatureCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)

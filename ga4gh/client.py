@@ -235,6 +235,8 @@ class AbstractClient(object):
 
     def getFeature(self, compoundId):
         """
+        Returns the feature with the specified ID from the server.
+
         :param str compoundId: The compound ID of the requested feature
         :return: The requested ga4gh.protocol.Feature object.
         """
@@ -298,17 +300,17 @@ class AbstractClient(object):
 
     def searchFeatures(
             self, featureSetId=None, parentId=None, referenceName=None,
-            start=0, end=None, featureTypes=[]
-                       ):
+            start=0, end=None, featureTypes=[]):
         """
         Returns the result of running a searchFeatures method
         on a request with the passed-in parameters.
-        :param featureSetId: string ID of the feature Set being searched
-        :param parentId: string ID (optional) of the parent feature
-        :param referenceName: string name of the reference to search
+
+        :param str featureSetId: ID of the feature Set being searched
+        :param str parentId: ID (optional) of the parent feature
+        :param str referenceName: name of the reference to search
             (ex: "chr1")
-        :param start: int search start position on reference
-        :param end: int end position on reference
+        :param int start: search start position on reference
+        :param int end: end position on reference
         :param featureTypes: array of terms to limit search by (ex: "gene")
         :return: an iterator over Features as returned in the
             SearchFeaturesResponse object.
