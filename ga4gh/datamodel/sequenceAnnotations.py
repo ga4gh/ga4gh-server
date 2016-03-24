@@ -297,7 +297,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             nextPageToken = int(pageToken)
         else:
             nextPageToken = 0
-        for featureId in ["feature{}".format(x) for x in xrange(numFeatures)]:
+        for featureId in ["feature{}".format(x) for x in range(numFeatures)]:
             gaFeature = self._generateSimulatedFeature(randomNumberGenerator)
             gaFeature.id = self.getCompoundIdForFeatureId(featureId)
             match = (
