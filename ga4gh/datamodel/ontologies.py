@@ -24,16 +24,34 @@ class FileSystemOntology(object):
         self._idNameMap = dict()
 
     def add(self, id_, name):
+        """
+        Adds an ontology term (id, name pair)
+
+        :param id_: ontology term ID (ex "SO:0000704")
+        :param name: corresponding ontology term name (ex "gene")
+        """
         self._nameIdMap[id_] = name
         self._idNameMap[name] = id_
 
     def getId(self, name):
+        """
+        Returns ontology term ID for a given name.
+        """
         return self._idNameMap[name]
 
     def getName(self, id_):
+        """
+        Returns ontology term name for a given ID.
+        """
         return self._nameIdMap[id_]
 
     def getGaTermByName(self, name):
+        """
+        Returns a GA4GH OntologyTerm object by name.
+
+        :param name: name of the ontology term, ex. "gene".
+        :return: GA4GH OntologyTerm object.
+        """
         term = protocol.OntologyTerm()
         term.term = name
         term.id = self.getId(name)
@@ -44,6 +62,13 @@ class FileSystemOntology(object):
         return term
 
     def getGaTermById(self, id_):
+        """
+        Returns a GA4GH OntologyTerm object by its ontology ID.
+
+        :param name: name of the ontology term, ex. "SO:0000704"
+            is the ID for "gene" in the Sequence ontology.
+        :return: GA4GH OntologyTerm object.
+        """
         term = protocol.OntologyTerm()
         term.term = self.getName(id_)
         term.id = id_
@@ -53,6 +78,12 @@ class FileSystemOntology(object):
         return term
 
     def readOntology(self, filename):
+        """
+        Extracts ontology maps (ID's to names and vice versa)
+        from a file.
+
+        :param filename: the name of the file with ID, name pairs.
+        """
         self._sourceName = filename
         with open(filename) as f:
             for line in f:
