@@ -132,7 +132,7 @@ def writeGeneExpression(rnaDB, analysisId, annotationId, quantfile,
     #   TPM FPKM    pme_expected_count  pme_TPM pme_FPKM    TPM_ci_lower_bound
     #   TPM_ci_upper_bound  FPKM_ci_lower_bound FPKM_ci_upper_bound
     # TODO: placeholder values need to be calculated then removed
-    isNormalized = "True"
+    isNormalized = True
     units = "TPM"
     # log expression file header
     log(quantfile.readline())

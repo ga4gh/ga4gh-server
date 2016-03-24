@@ -292,6 +292,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.runner, cli.SearchFeatureGroupRunner)
 
+
 class TestRepoManagerCli(unittest.TestCase):
 
     def setUp(self):
