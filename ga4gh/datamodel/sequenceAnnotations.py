@@ -276,7 +276,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
     def getFeatures(
             self, referenceName, start, end,
             pageToken, pageSize,
-            featureTypes=[], parentId=None):
+            featureTypes=[], parentId=None, numFeatures=10):
         """
         Returns a set number of simulated features.
 
@@ -287,12 +287,13 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         :param pageSize: None or int
         :param ontologyTerms: optional list of ontology terms to limit query
         :param parentId: optional parentId to limit query.
+        :param numFeatures: number of features to generate in the return.
+            10 is a reasonable (if arbitrary) default.
         :return: Yields feature, nextPageToken pairs.
             nextPageToken is None if last feature was yielded.
         """
         randomNumberGenerator = random.Random()
         randomNumberGenerator.seed(self._randomSeed)
-        numFeatures = 10  # TODO: make this a parameter
         if pageToken is not None:
             nextPageToken = int(pageToken)
         else:
