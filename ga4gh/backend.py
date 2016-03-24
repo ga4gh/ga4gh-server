@@ -513,18 +513,40 @@ class Backend(object):
         """
         if request.referenceId is None:
             raise exceptions.UnmappedReadsNotSupported()
-        if len(request.readGroupIds) != 1:
-            raise exceptions.NotImplementedException(
-                "Exactly one read group id must be specified")
+        if len(request.readGroupIds) < 1:
+            raise exceptions.BadRequestException(
+                "At least one readGroupId must be specified")
+        elif len(request.readGroupIds) == 1:
+            return self._readsGeneratorSingle(request)
+        else:
+            return self._readsGeneratorMultiple(request)
+
+    def _readsGeneratorSingle(self, request):
         compoundId = datamodel.ReadGroupCompoundId.parse(
             request.readGroupIds[0])
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
         readGroup = readGroupSet.getReadGroup(compoundId.readGroupId)
-        # Find the reference.
         referenceSet = readGroupSet.getReferenceSet()
         reference = referenceSet.getReference(request.referenceId)
-        intervalIterator = ReadsIntervalIterator(request, readGroup, reference)
+        intervalIterator = ReadsIntervalIterator(
+            request, readGroup, reference)
+        return intervalIterator
+
+    def _readsGeneratorMultiple(self, request):
+        compoundId = datamodel.ReadGroupCompoundId.parse(
+            request.readGroupIds[0])
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
+        readGroupIds = readGroupSet.getReadGroupIds()
+        if set(readGroupIds) != set(request.readGroupIds):
+            raise exceptions.BadRequestException(
+                "If multiple readGroupIds are specified, "
+                "they must be all of the readGroupIds in a ReadGroup")
+        referenceSet = readGroupSet.getReferenceSet()
+        reference = referenceSet.getReference(request.referenceId)
+        intervalIterator = ReadsIntervalIterator(
+            request, readGroupSet, reference)
         return intervalIterator
 
     def variantsGenerator(self, request):

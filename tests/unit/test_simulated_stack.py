@@ -51,6 +51,14 @@ class TestSimulatedStack(unittest.TestCase):
     def setUp(self):
         self.backend = frontend.app.backend
         self.dataRepo = self.backend.getDataRepository()
+        self.dataset = self.dataRepo.getDatasets()[0]
+        self.readGroupSet = self.dataset.getReadGroupSets()[0]
+        self.readGroup = self.readGroupSet.getReadGroups()[0]
+        self.reference = \
+            self.readGroupSet.getReferenceSet().getReferences()[0]
+        self.variantSet = self.dataset.getVariantSets()[0]
+        self.variantAnnotationSet = \
+            self.dataset.getVariantAnnotationSets()[0]
         self.backend.setMaxResponseLength(10000)
 
     def getBadIds(self):
@@ -459,10 +467,8 @@ class TestSimulatedStack(unittest.TestCase):
         # get a variant from the search method
         referenceName = '1'
         start = 0
-        dataset = self.dataRepo.getDatasets()[0]
-        variantSet = dataset.getVariantSets()[0]
         request = protocol.SearchVariantsRequest()
-        request.variantSetId = variantSet.getId()
+        request.variantSetId = self.variantSet.getId()
         request.referenceName = referenceName
         request.start = start
         request.end = 2**16
@@ -532,15 +538,13 @@ class TestSimulatedStack(unittest.TestCase):
             self.verifyGetMethodFails(path, badId)
 
     def testVariantsSearch(self):
-        dataset = self.dataRepo.getDatasets()[0]
-        variantSet = dataset.getVariantSets()[0]
         referenceName = '1'
 
         request = protocol.SearchVariantsRequest()
         request.referenceName = referenceName
         request.start = 0
         request.end = 0
-        request.variantSetId = variantSet.getId()
+        request.variantSetId = self.variantSet.getId()
 
         # Request windows is too small, no results
         path = '/variants/search'
@@ -561,17 +565,14 @@ class TestSimulatedStack(unittest.TestCase):
         for variant in responseData.variants:
             self.assertGreaterEqual(variant.start, 0)
             self.assertLessEqual(variant.end, 2 ** 16)
-            self.assertEqual(variant.variantSetId, variantSet.getId())
+            self.assertEqual(variant.variantSetId, self.variantSet.getId())
             self.assertEqual(variant.referenceName, referenceName)
 
         # TODO: Add more useful test scenarios, including some covering
         # pagination behavior.
 
     def testVariantAnnotationSetsSearch(self):
-        dataset = self.dataRepo.getDatasets()[0]
-        variantSet = dataset.getVariantSets()[0]
-        variantAnnotationSet = dataset.getVariantAnnotationSets()[0]
-        self.assertIsNotNone(variantAnnotationSet)
+        self.assertIsNotNone(self.variantAnnotationSet)
 
         request = protocol.SearchVariantAnnotationSetsRequest()
 
@@ -585,7 +586,7 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual([], responseData.variantAnnotationSets,
                          "There should no results for a bad ID")
 
-        request.variantSetId = variantSet.getId()
+        request.variantSetId = self.variantSet.getId()
         response = self.sendJsonPostRequest(path, request.toJsonString())
         responseData = protocol.SearchVariantAnnotationSetsResponse. \
             fromJsonString(response.data)
@@ -595,9 +596,7 @@ class TestSimulatedStack(unittest.TestCase):
                            "Expect some results for a known good ID")
 
     def testVariantAnnotationsSearch(self):
-        dataset = self.dataRepo.getDatasets()[0]
-        variantAnnotationSet = dataset.getVariantAnnotationSets()[0]
-        self.assertIsNotNone(variantAnnotationSet)
+        self.assertIsNotNone(self.variantAnnotationSet)
 
         request = protocol.SearchVariantAnnotationsRequest()
 
@@ -607,7 +606,7 @@ class TestSimulatedStack(unittest.TestCase):
         request.pageSize = 1
         request.referenceName = "1"
         request.effects = None
-        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         response = self.sendJsonPostRequest(path, request.toJsonString())
         responseData = protocol.SearchVariantAnnotationSetsResponse. \
             fromJsonString(response.data)
@@ -616,7 +615,7 @@ class TestSimulatedStack(unittest.TestCase):
             "Expected more than one page of results")
 
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         request.start = 0
         request.end = 10
         request.referenceName = "1"
@@ -629,7 +628,7 @@ class TestSimulatedStack(unittest.TestCase):
             "There should be no results for a nonsense effect")
 
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         request.start = 0
         request.end = 10
         request.referenceName = "1"
@@ -644,7 +643,7 @@ class TestSimulatedStack(unittest.TestCase):
                     "some transcript effects are still present"))
 
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         request.start = 0
         request.end = 5
         request.referenceName = "1"
@@ -668,7 +667,7 @@ class TestSimulatedStack(unittest.TestCase):
                 "The ontology term should appear at least once")
 
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         request.start = 0
         request.end = 5
         request.referenceName = "1"
@@ -693,7 +692,7 @@ class TestSimulatedStack(unittest.TestCase):
                 "The ontology term should appear at least once")
 
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         request.start = 0
         request.end = 5
         request.referenceName = "1"
@@ -714,7 +713,7 @@ class TestSimulatedStack(unittest.TestCase):
                               "The ontology term should appear at least once")
 
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSet.getId()
+        request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         request.start = 0
         request.end = 10
         request.referenceName = "1"
@@ -838,9 +837,8 @@ class TestSimulatedStack(unittest.TestCase):
             path = '/references/{}/bases'.format(reference.getId())
             response = self.app.get(path)
             self.assertEqual(response.status_code, 404)
-        reference = referenceSet.getReferences()[0]
-        path = '/references/{}/bases'.format(reference.getId())
-        length = reference.getLength()
+        path = '/references/{}/bases'.format(self.reference.getId())
+        length = self.reference.getLength()
         badRanges = [(-1, 0), (-1, -1), (length, 0), (0, length + 1)]
         for start, end in badRanges:
             args = protocol.ListReferenceBasesRequest()
@@ -849,11 +847,9 @@ class TestSimulatedStack(unittest.TestCase):
             self.assertEqual(response.status_code, 416)
 
     def testListReferenceBasesPaging(self):
-        referenceSet = self.dataRepo.getReferenceSets()[0]
-        reference = referenceSet.getReferences()[0]
-        id_ = reference.getId()
-        length = reference.getLength()
-        completeSequence = reference.getBases(0, length)
+        id_ = self.reference.getId()
+        length = self.reference.getLength()
+        completeSequence = self.reference.getBases(0, length)
         for start, end in [(0, length), (5, 10), (length // 2, length)]:
             sequence = completeSequence[start: end]
             for pageSize in [1, 2, length - 1]:
@@ -900,18 +896,39 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testUnsupportedReadOperations(self):
         path = '/reads/search'
-        dataset = self.dataRepo.getDatasets()[0]
-        readGroupSet = dataset.getReadGroupSets()[0]
-        readGroup = readGroupSet.getReadGroups()[0]
-        reference = readGroupSet.getReferenceSet().getReferences()[0]
 
         # unmapped Reads
         request = protocol.SearchReadsRequest()
-        request.readGroupIds = [readGroup.getId()]
+        request.readGroupIds = [self.readGroup.getId()]
         request.referenceId = None
         self.verifySearchMethodNotSupported(request, path)
 
-        # multiple ReadGroupSets
-        request.readGroupIds = [readGroup.getId(), "42"]
-        request.referenceId = reference.getId()
-        self.verifySearchMethodNotSupported(request, path)
+        # multiple ReadGroupSets set mismatch
+        request.readGroupIds = [self.readGroup.getId(), "42"]
+        request.referenceId = self.reference.getId()
+        response = self.sendJsonPostRequest(path, request.toJsonString())
+        self.assertEqual(400, response.status_code)
+
+    def testReadsMultipleReadGroupSets(self):
+        path = '/reads/search'
+        readGroupIds = [
+            readGroup.getId() for readGroup in
+            self.readGroupSet.getReadGroups()]
+        referenceId = self.reference.getId()
+
+        request = protocol.SearchReadsRequest()
+        request.readGroupIds = readGroupIds
+        request.referenceId = referenceId
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchReadsResponse)
+
+        readGroupAlignments = []
+        for readGroup in self.readGroupSet.getReadGroups():
+            readGroupAlignments.extend(list(
+                readGroup.getReadAlignments(referenceId, None, None)))
+
+        alignments = responseData.alignments
+        self.assertEqual(len(alignments), len(readGroupAlignments))
+        for alignment, rgAlignment in zip(alignments, readGroupAlignments):
+            self.assertEqual(alignment.id, rgAlignment.id)
+            self.assertEqual(alignment.readGroupId, rgAlignment.readGroupId)
