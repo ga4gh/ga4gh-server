@@ -27,15 +27,12 @@ class TestGff3ParserOnTypicalFile(unittest.TestCase):
     def testSomeFeatureIsWellFormed(self):
         featId = self.gff3Data.byFeatureId.keys()[0]
         feat = self.gff3Data.byFeatureId[featId][0]
-        self.assertEqual(feat.gff3Set, self.gff3Data,
-                         "feature gff3 set mismatch")
         self.assertEqual(featId, feat.featureId, "featureId mismatch")
         self.assertIsNotNone(feat.seqname, "sequence name is not populated")
         self.assertGreaterEqual(feat.end, feat.start, "end less than start")
         self.assertIn(feat.strand, u"+-", "strand is neither + nor -")
         self.assertIsNotNone(feat.source, "source is unspecified")
         self.assertIsNotNone(feat.type, "feature type is unspecified")
-        self.assertGreater(feat.lineNumber, 0, "line number invalid")
         self.assertIsInstance(feat.parents, set, "parents not a set")
         self.assertIsInstance(feat.children, set, "children not a set")
 
