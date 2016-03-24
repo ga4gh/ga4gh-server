@@ -1,0 +1,32 @@
+# This file lists the requirements needed to develop on ga4gh/server.
+
+# Include the requirements.txt file
+-r requirements.txt
+
+### This section is for dependencies of the libraries ###
+# these libraries are the set listed by pipdeptree -f -w
+# that are dependencies of libraries listed in the next section
+# and are not already listed in requirements.txt
+
+python-dateutil==2.5.1
+PyYAML==3.11
+
+### This section is for the actual libraries ###
+# we import these libraries somewhere in the codebase but
+# do not import them in any code that can be reached via 
+# an executable that we ship
+
+PyVCF==0.6.7
+coverage==3.7.1
+flake8==2.3.0  # Set due to conflict with pep8 in version 2.4.0
+freezegun==0.3.6
+guppy==0.1.10
+mock==1.0.0
+nose==1.3.7
+pep8==1.6.2
+snakefood==1.4
+Sphinx==1.3.1
+# Requirements for OIDC provider
+pyaml==15.03.1
+cherrypy==3.2.4
+yubico-client==1.9.1
