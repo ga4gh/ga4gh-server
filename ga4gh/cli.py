@@ -16,6 +16,7 @@ import unittest.suite
 
 import requests
 
+import ga4gh
 import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.converters as converters
@@ -112,6 +113,7 @@ def addServerOptions(parser):
     parser.add_argument(
         "--dont-use-reloader", default=False, action="store_true",
         help="Don't use the flask reloader")
+    addVersionArgument(parser)
     addDisableUrllibWarningsArgument(parser)
 
 
@@ -695,6 +697,16 @@ def addDisableUrllibWarningsArgument(parser):
         help="Disable urllib3 warnings")
 
 
+def addVersionArgument(parser):
+    # TODO argparse strips newlines from version output
+    versionString = (
+        "GA4GH Server Version {}\n"
+        "(Protocol Version {})".format(
+            ga4gh.__version__, protocol.version))
+    parser.add_argument(
+        "--version", version=versionString, action="version")
+
+
 def addVariantSearchOptions(parser):
     """
     Adds common options to a variant searches command line parser.
@@ -860,6 +872,7 @@ def addClientGlobalOptions(parser):
         "--key", "-k", default='invalid',
         help="Auth Key. Found on server index page.")
     addDisableUrllibWarningsArgument(parser)
+    addVersionArgument(parser)
 
 
 def addHelpParser(subparsers):
@@ -1269,6 +1282,8 @@ def configtest_main(parser=None):
     parser.add_argument(
         "--config-file", "-f", type=str, default=None,
         help="The configuration file to use")
+    addVersionArgument(parser)
+
     args = parser.parse_args()
     configStr = 'ga4gh.serverconfig:{0}'.format(args.config)
 
@@ -1552,6 +1567,7 @@ def getRepoParser():
     parser.add_argument(
         "--loud", default=False, action="store_true",
         help="propagate exceptions from RepoManager")
+    addVersionArgument(parser)
 
     initParser = addSubparser(
         subparsers, "init", "Initialize a data repository")
