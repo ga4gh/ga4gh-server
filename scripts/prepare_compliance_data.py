@@ -20,6 +20,7 @@ import zipfile
 
 class ComplianceDataMunger(object):
     def __init__(self, args):
+        self.tempdir = None
         self.inputDirectory = args.inputDirectory
         self.outputDirectory = args.outputDirectory
         # If no input directory is specified download from GitHub
@@ -158,7 +159,7 @@ class ComplianceDataMunger(object):
                     os.path.join(sequenceOntologyDir, "sequence_ontology.txt"))
 
     def cleanup(self):
-        if self.tempdir:
+        if self.tempdir is not None:
             shutil.rmtree(self.tempdir)
         utils.log("Done converting compliance data.")
 
