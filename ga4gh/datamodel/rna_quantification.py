@@ -79,8 +79,6 @@ class FeatureGroup(datamodel.DatamodelObject):
     """
     compoundIdClass = datamodel.FeatureGroupCompoundId
 
-    # TODO: this is just a first pass stub to get working
-    # - need to formalize input data
     def __init__(self, parentContainer, record):
         super(FeatureGroup, self).__init__(parentContainer,
                                            record["feature_group_id"])

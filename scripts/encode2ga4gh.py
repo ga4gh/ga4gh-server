@@ -14,7 +14,7 @@ import errno
 import urllib2
 import optparse
 
-import utils
+import rnaseq2ga
 
 
 class Color(object):
@@ -139,7 +139,6 @@ def writeGeneExpression(rnaDB, analysisId, annotationId, quantfile,
     for expression in quantfile.readlines():
         fields = expression.strip().split("\t")
         expressionLevel = fields[5]
-        # TODO: generate expressionID
         expressionId = fields[0]
         name = fields[0]
         featureGroupId = fields[0]
@@ -186,6 +185,7 @@ def makeParser(usage):
     return parser
 
 
+# TODO: rewrite to use the generic loaders
 def main(argv):
 
     usage = "Usage: {} <data-folder> <db-file>".format(argv[0])
@@ -207,7 +207,7 @@ def main(argv):
     sqlFilename = argv[2]
     rnaFolder = "rnaQuant"
     outputFolder = os.path.join(dataFolder, rnaFolder)
-    rnaDB = utils.RNASqliteStore(outputFolder, sqlFilename)
+    rnaDB = rnaseq2ga.RNASqliteStore(outputFolder, sqlFilename)
     subset = options.subset
     log("Downloading GA4GH test dataset - RNA Quantification API")
     print("ENCODE dataset: {}".format(Color.blue(dataset)))

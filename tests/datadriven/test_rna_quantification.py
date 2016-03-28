@@ -5,9 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-# import os
-import random
-# import sqlite3
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -63,19 +60,9 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
     """
     def __init__(self, rnaQuantificationLocalId, baseDir):
         self._dataset = datasets.AbstractDataset("ds")
-        # self._datarepo = datarepo.FileSystemDataRepository("tests/data")
-        # self._backend = backend.Backend(self._datarepo)
         rnaQuantificationId = rnaQuantificationLocalId[:-3]  # remove '.db'
         super(RnaQuantificationTest, self).__init__(rnaQuantificationId,
                                                     baseDir)
-        # self._dbFile = os.path.join(baseDir, "ENCFF305LZB.db")
-        # self._dbconn = sqlite3.connect(self._dbFile)
-        # self._rnaQuantInfo = self.RnaQuantInfo(self._dbconn)
-
-        # self._expressionLevelInfo = self.ExpressionLevelInfo(
-        #     self._expressionFileName)
-        # self._featureGroupInfo = self._getFeatureGroupInfo(
-        #     self._expressionLevelInfo, self._gaObject.getId())
 
     def getDataModelInstance(self, localId, dataPath):
         return rna_quantification.RNASeqResult(self._dataset, localId,
@@ -141,7 +128,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(gaExpression.units, testData["units"])
 
     def testGetFeatureGroupById(self):
-        # TODO: fix me
         rnaQuantification = self._gaObject
         groupId = _expressionTestData["feature_compound_id"]
         gaFeatureGroup = rnaQuantification.getFeatureGroup(groupId)
@@ -155,12 +141,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         featureGroupId = datamodel.FeatureGroupCompoundId.obfuscate(badId)
         with self.assertRaises(exceptions.FeatureGroupNotFoundException):
             rnaQuantification.getFeatureGroup(featureGroupId)
-
-    def getRandomFeatureGroupId(self):
-        idList = self._expressionLevelInfo.expressionLevel.keys()
-        expressionId = random.choice(idList)
-        expression = self._expressionLevelInfo.expressionLevel[expressionId]
-        return expression["featureGroupId"]
 
     def assertFeatureGroupEqual(self, gaFeatureGroupObj, testData):
         gaFeatureGroup = gaFeatureGroupObj.toProtocolElement()
