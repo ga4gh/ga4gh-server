@@ -152,6 +152,12 @@ class ServerStatus(object):
         return app.backend.getDataRepository().getDataset(
             datasetId).getVariantAnnotationSets()
 
+    def getRnaQuantifications(self, datasetId):
+        """
+        Returns the list of RnaQuantifications for this server.
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getRnaQuantifications()
 
 def reset():
     """

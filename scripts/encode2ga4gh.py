@@ -84,13 +84,12 @@ def getDataFromHost(rnaDB, url, headers, host, outputType, outputFolder,
             print('Error code: {}'.format(e.code))
     else:
         jsonData = json.load(response)
-        # TODO: if data already exists don't write anything - this is a loader
-        # not an updater
         makeDir(outputFolder)
         writeRnaseqTables(rnaDB, getFilesFromHost(jsonData, host, outputType,
                           subset=subset), description, annotationId,
                           outputFolder, readGroupId=readGroupId)
-        writeGeneExpressionTables(rnaDB, getFilesFromHost(jsonData, host,
+        writer = rnaseq2ga.RsemWriter(annotationId, rnaDB)
+        writeGeneExpressionTables(writer, getFilesFromHost(jsonData, host,
                                   outputType, subset=subset, request=True),
                                   annotationId, outputFolder)
 
@@ -103,19 +102,6 @@ def makeDir(path):
             raise
 
 
-# TODO: placeholder values need to be calculated then removed
-def getCount(expressionId):
-    rawCount = 0
-    return "{:d}".format(rawCount)
-
-
-# TODO: placeholder values need to be calculated then removed
-def getScore(expressionId):
-    rawScore = 0.0
-
-    return "{:0.2f}".format(rawScore)
-
-
 def writeRNAQuant(rnaDB, analysisId, description, annotationId,
                   readGroupId=None):
     if readGroupId is None:
@@ -123,32 +109,6 @@ def writeRNAQuant(rnaDB, analysisId, description, annotationId,
     datafields = (analysisId, annotationId, description, analysisId,
                   readGroupId)
     rnaDB.addRNAQuantification(datafields)
-
-
-def writeGeneExpression(rnaDB, analysisId, annotationId, quantfile,
-                        tool='RSEM'):
-    # RSEM gene expression table header:
-    #   gene_id transcript_id(s)    length  effective_length    expected_count
-    #   TPM FPKM    pme_expected_count  pme_TPM pme_FPKM    TPM_ci_lower_bound
-    #   TPM_ci_upper_bound  FPKM_ci_lower_bound FPKM_ci_upper_bound
-    # TODO: placeholder values need to be calculated then removed
-    isNormalized = True
-    units = "TPM"
-    # log expression file header
-    log(quantfile.readline())
-    for expression in quantfile.readlines():
-        fields = expression.strip().split("\t")
-        expressionLevel = fields[5]
-        expressionId = fields[0]
-        name = fields[0]
-        featureGroupId = fields[0]
-        rawCount = fields[4]
-        score = (float(fields[10]) + float(fields[11]))/2
-
-        datafields = (expressionId, name, analysisId, annotationId,
-                      expressionLevel, featureGroupId, isNormalized, rawCount,
-                      score, units)
-        rnaDB.addExpression(datafields)
 
 
 def writeRnaseqTables(rnaDB, analysisIds, description, annotationId,
@@ -159,11 +119,11 @@ def writeRnaseqTables(rnaDB, analysisIds, description, annotationId,
                       readGroupId=readGroupId)
 
 
-def writeGeneExpressionTables(rnaDB, data, annotationId, outputFolder):
+def writeGeneExpressionTables(writer, data, annotationId, outputFolder):
     log("Writing gene expression tables")
     for analysisId, quantfile in data:
         print("processing {}".format(analysisId))
-        writeGeneExpression(rnaDB, analysisId, annotationId, quantfile)
+        writer.writeExpression(analysisId, quantfile)
 
 
 def makeParser(usage):
@@ -185,7 +145,6 @@ def makeParser(usage):
     return parser
 
 
-# TODO: rewrite to use the generic loaders
 def main(argv):
 
     usage = "Usage: {} <data-folder> <db-file>".format(argv[0])

@@ -818,7 +818,7 @@ class Backend(object):
         Runs a getRnaQuantification request for the specified ID.
         """
         compoundId = datamodel.RnaQuantificationCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         rnaQuantification = dataset.getRnaQuantification(id_)
         return self.runGetRequest(rnaQuantification)
 

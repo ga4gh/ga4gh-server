@@ -155,13 +155,16 @@ class RsemWriter(AbstractWriter):
     TPM FPKM    pme_expected_count  pme_TPM pme_FPKM    TPM_ci_lower_bound
     TPM_ci_upper_bound  FPKM_ci_lower_bound FPKM_ci_upper_bound
     """
-    def __init__(self, annotationId, rnaDB):
+    def __init__(self, annotationId, rnaDB, featureType="gene"):
         super(RsemWriter, self).__init__(annotationId, rnaDB)
         self._isNormalized = True
         self._units = "TPM"
         self._expressionLevelCol = 5
-        self._idCol = 0
-        self._nameCol = 0
+        if featureType is "transcript":
+            self._idCol = 1
+        else:
+            self._idCol = 0
+        self._nameCol = self._idCol
         self._featureCol = 0
         self._countCol = 4
         self._confColLow = 10
