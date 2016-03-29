@@ -237,7 +237,7 @@ class TestClientArguments(unittest.TestCase):
             "variantannotations-search "
             "--variantAnnotationSetId VARIANTANNOTATIONSETID "
             "--referenceName REFERENCENAME --start 1 "
-            "--end 2 --featureIds FEATUREIDS --effects EFFECTS "
+            "--end 2 --effects EFFECTS "
             "--pageSize 3 BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(
@@ -245,7 +245,6 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.referenceName, "REFERENCENAME")
         self.assertEqual(args.start, 1)
         self.assertEqual(args.end, 2)
-        self.assertEqual(args.featureIds, "FEATUREIDS")
         self.assertEqual(args.effects, "EFFECTS")
         self.assertEqual(args.pageSize, 3)
         self.assertEqual(args.baseUrl, "BASEURL")
