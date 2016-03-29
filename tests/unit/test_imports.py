@@ -160,6 +160,7 @@ class ImportGraphLayerChecker(object):
                       'ga4gh/datamodel/references.py',
                       'ga4gh/datamodel/variants.py',
                       'ga4gh/datamodel/datasets.py',
+                      'ga4gh/datamodel/biodata.py',
                       'ga4gh/datamodel/ontologies.py'],
         'libraries': ['ga4gh/converters.py',
                       'ga4gh/configtest.py'],

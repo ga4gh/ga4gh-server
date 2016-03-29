@@ -325,7 +325,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.programs = []
         referenceSet = self._parentContainer.getReferenceSet()
         readGroup.referenceSetId = None
-        readGroup.sampleId = self.getSampleId()
+        readGroup.bioSampleId = self.getBioSampleId()
         if referenceSet is not None:
             readGroup.referenceSetId = referenceSet.getId()
         stats = protocol.ReadStats()
@@ -388,7 +388,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         """
         raise NotImplementedError()
 
-    def getSampleId(self):
+    def getBioSampleId(self):
         """
         Returns the sample id of the read group
         """
@@ -510,8 +510,12 @@ class SimulatedReadGroup(AbstractReadGroup):
     def getDescription(self):
         return None
 
-    def getSampleId(self):
-        return 'sampleId'
+    def getBioSampleId(self):
+        datasetId = self.getParentContainer(
+            ).getParentContainer().getCompoundId()
+        compoundId = datamodel.BioSampleCompoundId(
+            datasetId, self.getLocalId())
+        return str(compoundId)
 
     def getPredictedInsertSize(self):
         return 0
@@ -675,8 +679,11 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
     def getDescription(self):
         return self._description
 
-    def getSampleId(self):
-        return self._sampleId
+    def getBioSampleId(self):
+        datasetId = self.getParentContainer(
+            ).getParentContainer().getCompoundId()
+        compoundId = datamodel.BioSampleCompoundId(datasetId, self._sampleId)
+        return str(compoundId)
 
     def getPredictedInsertSize(self):
         return self._predictedInsertSize

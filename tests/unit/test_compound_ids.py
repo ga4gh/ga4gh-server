@@ -351,3 +351,19 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.variantSet, "b")
         self.assertEqual(cid.key, "c")
         self.verifyParseFailure(idStr, datamodel.VariantSetMetadataCompoundId)
+
+    def testBioSampleCompoundIdParse(self):
+        idStr = "a:b"
+        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        cid = datamodel.BioSampleCompoundId.parse(obfuscated)
+        self.assertEqual(cid.dataset, "a")
+        self.assertEqual(cid.bioSample, "b")
+        self.verifyParseFailure(idStr, datamodel.BioSampleCompoundId)
+
+    def testIndividualCompoundIdParse(self):
+        idStr = "a:b"
+        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        cid = datamodel.IndividualCompoundId.parse(obfuscated)
+        self.assertEqual(cid.dataset, "a")
+        self.assertEqual(cid.individual, "b")
+        self.verifyParseFailure(idStr, datamodel.IndividualCompoundId)

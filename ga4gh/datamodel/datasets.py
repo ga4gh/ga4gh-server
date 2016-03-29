@@ -12,6 +12,7 @@ import os
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.biodata as biodata
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
@@ -31,7 +32,25 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetNameMap = {}
         self._variantAnnotationSetIds = []
         self._variantAnnotationSetIdMap = {}
+        self._bioSampleIds = []
+        self._bioSampleIdMap = {}
+        self._bioSampleNameMap = {}
+        self._individualIds = []
+        self._individualIdMap = {}
+        self._individualNameMap = {}
         self._description = None
+
+    def addBioSample(self, bioSample):
+        id_ = bioSample.getId()
+        self._bioSampleIdMap[id_] = bioSample
+        self._bioSampleIds.append(id_)
+        self._bioSampleNameMap[bioSample.getName()] = bioSample
+
+    def addIndividual(self, individual):
+        id_ = individual.getId()
+        self._individualIdMap[id_] = individual
+        self._individualIds.append(id_)
+        self._individualNameMap[individual.getName()] = individual
 
     def addVariantSet(self, variantSet):
         """
@@ -107,6 +126,48 @@ class AbstractDataset(datamodel.DatamodelObject):
             raise exceptions.VariantSetNotFoundException(id_)
         return self._variantSetIdMap[id_]
 
+    def getBioSample(self, id_):
+        """
+        Returns the BioSample with the specified ID, or raises a
+        BioSampleNotFoundException otherwise.
+        """
+        if id_ not in self._bioSampleIdMap:
+            raise exceptions.BioSampleNotFoundException(id_)
+        return self._bioSampleIdMap[id_]
+
+    def getBioSamples(self):
+        """
+        Returns all BioSamples in this dataset
+        """
+        return [self._bioSampleIdMap[id_] for id_ in self._bioSampleIds]
+
+    def getIndividual(self, id_):
+        """
+        Returns the Individual with the specified ID, or raises a
+        IndividualNotFoundException otherwise.
+        """
+        if id_ not in self._individualIdMap:
+            raise exceptions.IndividualNotFoundException(id_)
+        return self._individualIdMap[id_]
+
+    def getIndividuals(self):
+        """
+        Returns all Individuals in this dataset
+        """
+        return [self._individualIdMap[id_] for id_ in self._individualIds]
+
+    def getBioSampleByIndex(self, index):
+        """
+        Returns the BioSample set at the specified index in this dataset.
+        """
+        return self._bioSampleIdMap[self._bioSampleIds[index]]
+
+    def getIndividualByIndex(self, index):
+        """
+        Returns the Individual set at the specified index in this dataset.
+        """
+        return self._individualIdMap[self._individualIds[index]]
+
     def getVariantSetByIndex(self, index):
         """
         Returns the variant set at the specified index in this dataset.
@@ -126,6 +187,18 @@ class AbstractDataset(datamodel.DatamodelObject):
         Returns the number of readgroup sets in this dataset.
         """
         return len(self._readGroupSetIds)
+
+    def getNumBioSamples(self):
+        """
+        Returns the number of biosamples in this dataset.
+        """
+        return len(self._bioSampleIds)
+
+    def getNumIndividuals(self):
+        """
+        Returns the number of individuals in this dataset.
+        """
+        return len(self._individualIds)
 
     def getReadGroupSets(self):
         """
@@ -181,6 +254,18 @@ class SimulatedDataset(AbstractDataset):
             seed = randomSeed + i
             variantSet = variants.SimulatedVariantSet(
                 self, localId, seed, numCalls, variantDensity)
+            callSets = variantSet.getCallSets()
+            # Add biosamples
+            for callSet in callSets:
+                bioSample = datamodel.biodata.AbstractBioSample(
+                    self, callSet.getLocalId(), callSet.getLocalId())
+                bioSample2 = datamodel.biodata.AbstractBioSample(
+                    self, callSet.getLocalId() + "2", callSet.getLocalId())
+                individual = datamodel.biodata.AbstractIndividual(
+                    self, callSet.getLocalId())
+                self.addIndividual(individual)
+                self.addBioSample(bioSample)
+                self.addBioSample(bioSample2)
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
                 self, "simVas{}".format(i), variantSet)
@@ -192,6 +277,13 @@ class SimulatedDataset(AbstractDataset):
             readGroupSet = reads.SimulatedReadGroupSet(
                 self, localId, referenceSet, seed,
                 numReadGroupsPerReadGroupSet, numAlignments)
+            for rg in readGroupSet.getReadGroups():
+                bioSample = datamodel.biodata.AbstractBioSample(
+                    self, rg.getLocalId(), rg.getLocalId())
+                individual = datamodel.biodata.AbstractIndividual(
+                    self, rg.getLocalId())
+                self.addIndividual(individual)
+                self.addBioSample(bioSample)
             self.addReadGroupSet(readGroupSet)
 
 
@@ -201,6 +293,9 @@ class FileSystemDataset(AbstractDataset):
     """
     variantsDirName = "variants"
     readsDirName = "reads"
+    biodataDirName = "biodata"
+    bioSamplesDirName = biodataDirName + "/biosamples"
+    individualsDirName = biodataDirName + "/individuals"
 
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
@@ -231,6 +326,27 @@ class FileSystemDataset(AbstractDataset):
                 readGroupSet = reads.HtslibReadGroupSet(
                     self, localId, bamPath, dataRepository)
                 self.addReadGroupSet(readGroupSet)
+
+        # Biodata
+        bioSamplesDir = os.path.join(dataDir, self.bioSamplesDirName)
+        if os.path.exists(bioSamplesDir):
+            for filename in os.listdir(bioSamplesDir):
+                if fnmatch.fnmatch(filename, '*.json'):
+                    filepath = os.path.join(bioSamplesDir, filename)
+                    localId, _ = os.path.splitext(filename)
+                    bioSample = biodata.JsonBioSample(
+                        self, localId, filepath)
+                    self.addBioSample(bioSample)
+
+        individualsDir = os.path.join(dataDir, self.individualsDirName)
+        if os.path.exists(individualsDir):
+            for filename in os.listdir(individualsDir):
+                if fnmatch.fnmatch(filename, '*.json'):
+                    filepath = os.path.join(individualsDir, filename)
+                    localId, _ = os.path.splitext(filename)
+                    individual = biodata.JsonIndividual(
+                        self, localId, filepath)
+                    self.addIndividual(individual)
 
     def _setMetadata(self):
         metadataFileName = '{}.json'.format(self._dataDir)

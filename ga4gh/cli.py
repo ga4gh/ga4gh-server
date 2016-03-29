@@ -374,10 +374,13 @@ class SearchReadGroupSetsRunner(AbstractSearchRunner):
         super(SearchReadGroupSetsRunner, self).__init__(args)
         self._datasetId = args.datasetId
         self._name = args.name
+        self._bioSampleId = args.bioSampleId
 
     def _run(self, datasetId):
         iterator = self._client.searchReadGroupSets(
-            datasetId=datasetId, name=self._name)
+            datasetId=datasetId,
+            name=self._name,
+            bioSampleId=self._bioSampleId)
         self._output(iterator)
 
     def run(self):
@@ -396,10 +399,13 @@ class SearchCallSetsRunner(AbstractSearchRunner):
         super(SearchCallSetsRunner, self).__init__(args)
         self._variantSetId = args.variantSetId
         self._name = args.name
+        self._bioSampleId = args.bioSampleId
 
     def _run(self, variantSetId):
         iterator = self._client.searchCallSets(
-            variantSetId=variantSetId, name=self._name)
+            variantSetId=variantSetId,
+            name=self._name,
+            bioSampleId=self._bioSampleId)
         self._output(iterator)
 
     def run(self):
@@ -455,6 +461,48 @@ class AnnotationFormatterMixin(object):
                 print(effect.hgvsAnnotation.transcript,
                       effect.hgvsAnnotation.protein, sep="|", end="\t")
             print()
+
+
+class SearchBioSamplesRunner(AbstractSearchRunner):
+    def __init__(self, args):
+        super(SearchBioSamplesRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+        self._name = args.name
+        self._individualId = args.individualId
+
+    def _run(self, datasetId):
+        iterator = self._client.searchBioSamples(
+            datasetId=datasetId,
+            name=self._name,
+            individualId=self._individualId)
+        self._output(iterator)
+
+    def run(self):
+        if self._datasetId is None:
+            for dataset in self.getAllDatasets():
+                self._run(dataset.id)
+        else:
+            self._run(self._datasetId)
+
+
+class SearchIndividualsRunner(AbstractSearchRunner):
+    def __init__(self, args):
+        super(SearchIndividualsRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+        self._name = args.name
+
+    def _run(self, datasetId):
+        iterator = self._client.searchIndividuals(
+            datasetId=datasetId,
+            name=self._name)
+        self._output(iterator)
+
+    def run(self):
+        if self._datasetId is None:
+            for dataset in self.getAllDatasets():
+                self._run(dataset.id)
+        else:
+            self._run(self._datasetId)
 
 
 class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
@@ -691,6 +739,24 @@ class GetVariantSetRunner(AbstractGetRunner):
         self._method = self._client.getVariantSet
 
 
+class GetBioSamplesRunner(AbstractGetRunner):
+    """
+    Runner class for the biosamples/{id} method
+    """
+    def __init__(self, args):
+        super(GetBioSamplesRunner, self).__init__(args)
+        self._method = self._client.getBioSample
+
+
+class GetIndividualsRunner(AbstractGetRunner):
+    """
+    Runner class for the individuals/{id} method
+    """
+    def __init__(self, args):
+        super(GetIndividualsRunner, self).__init__(args)
+        self._method = self._client.getIndividual
+
+
 def addDisableUrllibWarningsArgument(parser):
     parser.add_argument(
         "--disable-urllib-warnings", default=False, action="store_true",
@@ -863,6 +929,24 @@ def addNameArgument(parser):
         help="The name to search over")
 
 
+def addBioSampleIdArgument(subparser):
+    subparser.add_argument(
+        "--bioSampleId", default=None,
+        help="the id of a BioSample")
+
+
+def addIndividualIdArgument(subparser):
+    subparser.add_argument(
+        "--individualId", default=None,
+        help="the id of an Individual")
+
+
+def addOptionalIndividualNameArgument(subparser):
+    subparser.add_argument(
+        "--individualName", default=None,
+        help="the name of an Individual")
+
+
 def addClientGlobalOptions(parser):
     parser.add_argument(
         '--verbose', '-v', action='count', default=0,
@@ -967,6 +1051,7 @@ def addReadGroupSetsSearchParser(subparsers):
         subparsers, "readgroupsets-search", "Search for readGroupSets")
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
+    addBioSampleIdArgument(parser)
     addOutputFormatArgument(parser)
     addPageSizeArgument(parser)
     addDatasetIdArgument(parser)
@@ -982,6 +1067,7 @@ def addCallSetsSearchParser(subparsers):
     addOutputFormatArgument(parser)
     addPageSizeArgument(parser)
     addNameArgument(parser)
+    addBioSampleIdArgument(parser)
     addVariantSetIdArgument(parser)
     return parser
 
@@ -992,6 +1078,53 @@ def addReadsSearchParser(subparsers):
     parser.set_defaults(runner=SearchReadsRunner)
     addOutputFormatArgument(parser)
     addReadsSearchParserArguments(parser)
+    return parser
+
+
+def addBioSampleSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "biosamples-search", "Search for BioSamples")
+    parser.set_defaults(runner=SearchBioSamplesRunner)
+    addUrlArgument(parser)
+    addDatasetIdArgument(parser)
+    addOutputFormatArgument(parser)
+    addNameArgument(parser)
+    addIndividualIdArgument(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addBioSampleGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "biosamples-get", "Get a BioSample")
+    parser.set_defaults(runner=GetBioSamplesRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addIdArgument(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addIndividualSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "individuals-search", "Search for BioSamples")
+    parser.set_defaults(runner=SearchIndividualsRunner)
+    addUrlArgument(parser)
+    addDatasetIdArgument(parser)
+    addOutputFormatArgument(parser)
+    addNameArgument(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addIndividualGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "individuals-get", "Get an individual")
+    parser.set_defaults(runner=GetIndividualsRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addIdArgument(parser)
+    addPageSizeArgument(parser)
     return parser
 
 
@@ -1107,6 +1240,10 @@ def getClientParser():
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
+    addBioSampleSearchParser(subparsers)
+    addBioSampleGetParser(subparsers)
+    addIndividualSearchParser(subparsers)
+    addIndividualGetParser(subparsers)
     return parser
 
 
@@ -1505,6 +1642,59 @@ class RemoveVariantSetRunner(AbstractRepoDatasetCommandRunner):
         self.confirmRun(func, 'variant set {}'.format(self.variantSetName))
 
 
+class AddBioSampleRunner(AbstractRepoCommandRunner):
+
+    def __init__(self, args):
+        super(AddBioSampleRunner, self).__init__(args)
+        self.individualName = args.individualName
+        self.filePath = args.filePath
+        self.datasetName = args.datasetName
+
+    def run(self):
+        self.repoManager.addBioSample(
+            self.datasetName,
+            self.filePath,
+            self.individualName)
+
+
+class RemoveBioSampleRunner(AbstractRepoDatasetCommandRunner):
+
+    def __init__(self, args):
+        super(RemoveBioSampleRunner, self).__init__(args)
+        self.bioSampleName = args.bioSampleName
+
+    def run(self):
+        def func():
+            self.repoManager.removeBioSample(
+                self.datasetName, self.bioSampleName)
+        self.confirmRun(
+            func, 'BioSample {}'.format(self.bioSampleName))
+
+
+class AddIndividualRunner(AbstractRepoDatasetFilepathCommandRunner):
+
+    def __init__(self, args):
+        super(AddIndividualRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.addIndividual(
+            self.datasetName, self.filePath, self.moveMode)
+
+
+class RemoveIndividualRunner(AbstractRepoDatasetCommandRunner):
+
+    def __init__(self, args):
+        super(RemoveIndividualRunner, self).__init__(args)
+        self.individualName = args.individualName
+
+    def run(self):
+        def func():
+            self.repoManager.removeIndividual(
+                self.datasetName, self.individualName)
+        self.confirmRun(
+            func, 'Individual {}'.format(self.individualName))
+
+
 def addRepoArgument(subparser):
     subparser.add_argument(
         "repoPath", help="the file path of the data repository")
@@ -1525,6 +1715,18 @@ def addForceArgument(subparser):
 def addDatasetNameArgument(subparser):
     subparser.add_argument(
         "datasetName", help="the name of the dataset to create/modify")
+
+
+def addBioSampleNameArgument(subparser):
+    subparser.add_argument(
+        "bioSampleName",
+        help="the name of the BioSample")
+
+
+def addIndividualNameArgument(subparser):
+    subparser.add_argument(
+        "individualName",
+        help="the name of the Individual")
 
 
 def addReadGroupSetNameArgument(subparser):
@@ -1658,6 +1860,41 @@ def getRepoParser():
     addVariantSetNameArgument(removeVariantSetParser)
     addForceArgument(removeVariantSetParser)
 
+    removeBioSampleParser = addSubparser(
+        subparsers, "remove-biosample",
+        "Remove a biosample from the repo")
+    removeBioSampleParser.set_defaults(runner=RemoveBioSampleRunner)
+    addRepoArgument(removeBioSampleParser)
+    addDatasetNameArgument(removeBioSampleParser)
+    addBioSampleNameArgument(removeBioSampleParser)
+    addForceArgument(removeBioSampleParser)
+
+    addBioSampleParser = addSubparser(
+        subparsers, "add-biosample",
+        "Add a biosample to the repo")
+    addBioSampleParser.set_defaults(runner=AddBioSampleRunner)
+    addRepoArgument(addBioSampleParser)
+    addDatasetNameArgument(addBioSampleParser)
+    addFilePathArgument(addBioSampleParser)
+    addOptionalIndividualNameArgument(addBioSampleParser)
+
+    removeIndividualParser = addSubparser(
+        subparsers, "remove-individual",
+        "Remove an individual from the repo")
+    removeIndividualParser.set_defaults(runner=RemoveIndividualRunner)
+    addRepoArgument(removeIndividualParser)
+    addDatasetNameArgument(removeIndividualParser)
+    addIndividualNameArgument(removeIndividualParser)
+    addForceArgument(removeIndividualParser)
+
+    addIndividualParser = addSubparser(
+        subparsers, "add-individual",
+        "Add a biosample to the repo")
+    addIndividualParser.set_defaults(runner=AddIndividualRunner)
+    addRepoArgument(addIndividualParser)
+    addDatasetNameArgument(addIndividualParser)
+    addFilePathArgument(addIndividualParser)
+    addMoveModeArgument(addIndividualParser)
     return parser
 
 

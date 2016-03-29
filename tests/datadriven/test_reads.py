@@ -154,9 +154,10 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
         for readGroup in readGroupSet.getReadGroups():
             readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
             gaReadGroup = readGroup.toProtocolElement()
-            self.assertEqual(
-                readGroupInfo.sampleId,
-                gaReadGroup.sampleId)
+            datasetId = self._dataset._compoundId
+            bioSampleId = datamodel.BioSampleCompoundId(
+                datasetId, readGroupInfo.sampleId)
+            self.assertEqual(str(bioSampleId), readGroup.getBioSampleId())
             self.assertEqual(
                 readGroupInfo.predictedInsertSize,
                 gaReadGroup.predictedInsertSize)

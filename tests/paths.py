@@ -24,6 +24,26 @@ vcfDirPath = os.path.join(
 vcfDirPath2 = os.path.join(
     testDataDir, 'datasets/dataset1/variants/1kgPhase3')
 
+
+biodataDir = os.path.join(
+    testDataDir, 'datasets/dataset1/biodata')
+individualsDir = os.path.join(biodataDir, 'individuals')
+individualPath = os.path.join(individualsDir, 'HG00096.json')
+individualName = "HG00096"
+
+bioSamplesDir = os.path.join(biodataDir, 'biosamples')
+bioSamplePath = os.path.join(bioSamplesDir, 'HG00096.json')
+
+testIndividualsDataDir = os.path.join(
+    testDir, 'faultydata/biodata/individuals')
+malformedIndividualPath = os.path.join(
+    testIndividualsDataDir, 'malformed.json')
+testBioSamplesDataDir = os.path.join(
+    testDir, 'faultydata/biodata/biosamples')
+malformedBioSamplePath = os.path.join(
+    testBioSamplesDataDir, 'malformed.json')
+bioSampleName = "HG00096"
+
 # reads
 readGroupSetName = 'chr17.1-250'
 bamPath = os.path.join(
