@@ -8,17 +8,20 @@ from __future__ import unicode_literals
 import fnmatch
 import os
 
+import ga4gh.exceptions as exceptions
+
 
 class FileSystemOntology(object):
     """
     The base class of storing an ontology
     At this moment an "Ontology" is just a map between names and IDs (e.g.
     in Sequence Ontology we would have "SO:0001583 <-> missense_variant")
-    This is a tempotrary solution adn must be replaced by more comprehensive
+    This is a tempotrary solution and must be replaced by more comprehensive
     ontology object.
     """
 
-    def __init__(self):
+    def __init__(self, dataDir):
+        self._localId = os.path.basename(dataDir)
         self._nameIdMap = dict()
         self._idNameMap = dict()
 
@@ -26,20 +29,27 @@ class FileSystemOntology(object):
         self._nameIdMap[id_] = name
         self._idNameMap[name] = id_
 
+    def getLocalId(self):
+        return self._localId
+
     def getId(self, name):
         try:
             id_ = self._idNameMap[name]
         except KeyError:
-            id_ = ""
+            raise exceptions.OntologyMapIdException
         return id_
 
-        return self._idNameMap[name]
+    def hasId(self, id_):
+        return id_ in self._nameIdMap
+
+    def hasName(self, name):
+        return name in self._idNameIdMap
 
     def getName(self, id_):
         try:
             name = self._nameIdMap[id_]
         except KeyError:
-            name = ""
+            raise exceptions.OntologyMapNameException
         return name
 
     def readOntology(self, filename):
@@ -58,7 +68,11 @@ class FileSystemOntologies(object):
 
     def __init__(self, localId, dataDir, backend):
         self._ontologyNameMap = dict()
+        self._localId = localId
         self.readOntologies(dataDir)
+
+    def getLocalId(self):
+        return self._localId
 
     def add(self, ontologyName, ontology):
         self._ontologyNameMap[ontologyName] = ontology
@@ -79,6 +93,6 @@ class FileSystemOntologies(object):
             if fnmatch.fnmatch(filename, '*.txt'):
                 ontologyName, _ = os.path.splitext(filename)
                 path = os.path.join(dataDir, filename)
-                ontology = FileSystemOntology()
+                ontology = FileSystemOntology(dataDir)
                 ontology.readOntology(path)
                 self.add(ontologyName, ontology)

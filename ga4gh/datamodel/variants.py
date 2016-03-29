@@ -1008,7 +1008,10 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             so = self._createGaOntologyTermSo()
             so.term = soName
             if self._sequenceOntology is not None:
-                so.id = self._sequenceOntology.getId(soName)
+                try:
+                    so.id = self._sequenceOntology.getId(soName)
+                except exceptions.OntologyMapIdException:
+                    so.id = ""
             soTerms.append(so)
             # TODO We must fill the ontology ID based on the SO name
         return soTerms

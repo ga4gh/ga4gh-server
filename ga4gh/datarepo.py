@@ -106,6 +106,12 @@ class AbstractDataRepository(object):
         """
         return self._ontologyNameMap[name]
 
+    def getOntologyMaps(self):
+        """
+        Returns all ontology maps in the repo
+        """
+        return [self._ontologyNameMap[name] for name in self._ontologyNames]
+
     def getReferenceSet(self, id_):
         """
         Retuns the ReferenceSet with the specified ID, or raises a

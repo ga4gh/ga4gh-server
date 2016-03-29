@@ -539,6 +539,9 @@ class RepoManager(object):
             self._emitIndent(referenceSet.getLocalId())
             for reference in referenceSet.getReferences():
                 self._emitIndent(reference.getLocalId(), 2)
+        self._emit(self.ontologiesDirName)
+        for ontologyMap in dataRepo.getOntologyMaps():
+            self._emitIndent(ontologyMap.getLocalId(), 1)
         self._emit(self.datasetsDirName)
         for dataset in dataRepo.getDatasets():
             self._emitIndent(dataset.getLocalId())

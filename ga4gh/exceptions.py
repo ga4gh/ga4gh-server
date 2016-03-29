@@ -345,6 +345,14 @@ class DataException(BaseServerException):
     message = "Faulty data found or data file is missing."
 
 
+class OntologyMapIdException(BaseServerException):
+    message = "No terms were found to match the provided ID"
+
+
+class OntologyMapNameException(BaseServerException):
+    message = "No IDs were found to match the provided name"
+
+
 class FileOpenFailedException(DataException):
 
     def __init__(self, filename):
