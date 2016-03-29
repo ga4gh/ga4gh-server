@@ -809,6 +809,20 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         self._sequenceOntology = backend.getOntology('sequence_ontology')
         self._creationTime = datetime.datetime.now().isoformat() + "Z"
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
+        # Annotations are currently either from VEP or SNPEff. If they are
+        # not from VEP we assume they are from SNPEff.
+        # TODO Detect this more rigorously at import time and throw an
+        # exception if we don't see the formats we're expecting.
+        self._isVep = "VEP" in self.toProtocolElement().analysis.info
+        # Parse the annotation creation time out of the VCF header.
+        # TODO Check this at import time, and raise an exception if the
+        # time is not in the expected format.
+        self._annotationCreatedDateTime = self._creationTime
+        for r in self.getMetadata().records:
+            # TODO handle more date formats
+            if r.key == "created":
+                self._annotationCreatedDateTime = datetime.datetime.strptime(
+                    r.value, "%Y-%m-%d").isoformat() + "Z"
 
     def getVariantAnnotations(self, referenceName, startPosition, endPosition):
         """
@@ -826,12 +840,12 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
                     referenceName, startPosition, endPosition)
             cursor = self.getFileHandle(varFileName).fetch(
                 referenceName, startPosition, endPosition)
-            if "VEP" in self.toProtocolElement().analysis.info:
-                for record in cursor:
-                    yield self.convertVariantAnnotationVEP(record)
-            else:
-                for record in cursor:
-                    yield self.convertVariantAnnotationSnpEff(record)
+            transcriptConverter = self.convertTranscriptEffectSnpEff
+            if self._isVep:
+                transcriptConverter = self.convertTranscriptEffectVEP
+            for record in cursor:
+                yield self.convertVariantAnnotation(
+                    record, transcriptConverter)
 
     def convertLocation(self, pos):
         """
@@ -999,78 +1013,30 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             # TODO We must fill the ontology ID based on the SO name
         return soTerms
 
-    def convertVariantAnnotationSnpEff(self, record):
+    def convertVariantAnnotation(self, record, transcriptConverter):
         """
-        Accepts a HTSLib variant record and returns a GA4GH
-        annotation object with populated fields.
-        :param record: HTSLib record
-        :return: annotation protocol.VariantAnnotation
-        """
-        variant = self.convertVariant(record, None)
-        annotation = self._createGaVariantAnnotation()
-        annotation.start = variant.start
-        annotation.end = variant.end
-        for r in self.getMetadata().records:
-            # TODO handle more date formats
-            if r.key == "created":
-                annotation.createDateTime = datetime.datetime.strptime(
-                    r.value, "%Y-%m-%d").isoformat() + "Z"
-        annotation.variantId = variant.id
-        # Convert annotations from INFO field into TranscriptEffect
-        annStr = record.info.get('ANN')
-        hgvsG = record.info.get('HGVS.g')
-        transcriptEffects = []
-        i = 0
-        if annStr is not None:
-            for ann in annStr.split(','):
-                if hgvsG is not None:
-                    splithgvsG = hgvsG.split(',')
-                    # The HGVS.g field contains an element for each alternate
-                    # allele
-                    altshgvsG = splithgvsG[i % len(variant.alternateBases)]
-                else:
-                    altshgvsG = ""
-                transcriptEffects.append(
-                    self.convertTranscriptEffectSnpEff(ann, altshgvsG))
-                i += 1
-        annotation.transcriptEffects = transcriptEffects
-        annotation.id = self.getVariantAnnotationId(variant, annotation)
-        return annotation
-
-    def convertVariantAnnotationVEP(self, record):
-        """
-        Accepts a HTSLib variant record from a VEP generated
-        VCF and returns a GA4GH annotation object with populated fields.
-        :param record: HTSLib record
-        :return: annotation protocol.VariantAnnotation
+        Converts the specfied pysam variant record into a GA4GH variant
+        annotation object using the specified function to convert the
+        transcripts.
         """
         variant = self.convertVariant(record, None)
         annotation = self._createGaVariantAnnotation()
         annotation.start = variant.start
         annotation.end = variant.end
-        for r in self.getMetadata().records:
-            # TODO handle more date formats
-            if r.key == "created":
-                annotation.createDateTime = datetime.datetime.strptime(
-                    r.value, "%Y-%m-%d").isoformat() + "Z"
+        annotation.createdDateTime = self._annotationCreatedDateTime
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
-        annStr = record.info.get('ANN')
-        hgvsG = record.info.get('HGVS.g')
+        annotations = record.info.get('ANN'.encode())
+        hgvsG = record.info.get('HGVS.g'.encode())
         transcriptEffects = []
-        i = 0
-        if annStr is not None:
-            for ann in annStr.split(','):
+        if annotations is not None:
+            for index, ann in enumerate(annotations):
+                altshgvsG = ""
                 if hgvsG is not None:
-                    splithgvsG = hgvsG.split(',')
                     # The HGVS.g field contains an element for each alternate
                     # allele
-                    altshgvsG = splithgvsG[i % len(variant.alternateBases)]
-                else:
-                    altshgvsG = ""
-                transcriptEffects.append(
-                    self.convertTranscriptEffectVEP(ann, altshgvsG))
-                i += 1
+                    altshgvsG = hgvsG[index % len(variant.alternateBases)]
+                transcriptEffects.append(transcriptConverter(ann, altshgvsG))
         annotation.transcriptEffects = transcriptEffects
         annotation.id = self.getVariantAnnotationId(variant, annotation)
         return annotation
