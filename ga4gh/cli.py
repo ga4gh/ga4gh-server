@@ -906,7 +906,7 @@ def addEffectsArgument(parser):
 
 def addFeatureTypesArgument(parser):
     parser.add_argument(
-        "--featureTypes", "-n", default="",
+        "--featureTypes", "-t", default="",
         help="""Return features matching any of the supplied
             feature types (ontology terms).
             Pass in terms as a comma separated list (no spaces).

@@ -122,14 +122,24 @@ class Feature(object):
                           self._attributeStrs()])
 
     @property
-    def featureId(self):
+    def featureName(self):
         """
-        ID attribute or None if records doesn't have an ID
+        ID attribute from GFF3 or None if record doesn't have it.
+        Called "Name" rather than "Id" within GA4GH, as there is
+        no guarantee of either uniqueness or existence.
         """
         featId = self.attributes.get("ID")
         if featId is not None:
             featId = featId[0]
         return featId
+
+    @property
+    def uniqueId(self):
+        """
+        Integer ID for this feature, guaranteed unique within a GFF3Set
+        being parsed, suitable for use as a DB primary key.
+        """
+        return id(self)
 
 
 class Gff3Set(object):
@@ -141,35 +151,35 @@ class Gff3Set(object):
         self.roots = set()     # root nodes (those with out parents)
         # index of features by id. GFF3 allows disjoint features with
         # the same id.  None is used to store features without ids
-        self.byFeatureId = collections.defaultdict(list)
+        self.byFeatureName = collections.defaultdict(list)
 
     def add(self, feature):
         """
-        Add a feature record by featureID (which may be None)
+        Add a feature record by featureName (which may be None)
 
         :param feature: Feature object being added.
         """
-        self.byFeatureId[feature.featureId].append(feature)
+        self.byFeatureName[feature.featureName].append(feature)
 
     def _linkFeature(self, feature):
         """
         Link a feature with its parents.
         """
-        parentIds = feature.attributes.get("Parent")
-        if parentIds is None:
+        parentNames = feature.attributes.get("Parent")
+        if parentNames is None:
             self.roots.add(feature)
         else:
-            for parentId in parentIds:
-                self._linkToParent(feature, parentId)
+            for parentName in parentNames:
+                self._linkToParent(feature, parentName)
 
-    def _linkToParent(self, feature, parentId):
+    def _linkToParent(self, feature, parentName):
         """
         Link a feature with its children
         """
-        parentParts = self.byFeatureId.get(parentId)
+        parentParts = self.byFeatureName.get(parentName)
         if parentParts is None:
             raise GFF3Exception(
-                "Parent feature does not exist: {}".format(parentId),
+                "Parent feature does not exist: {}".format(parentName),
                 self.fileName)
         # parent maybe disjoint
         for parentPart in parentParts:
@@ -181,7 +191,7 @@ class Gff3Set(object):
         finish loading the set, constructing the tree
         """
         # features maybe disjoint
-        for featureParts in self.byFeatureId.itervalues():
+        for featureParts in self.byFeatureName.itervalues():
             for feature in featureParts:
                 self._linkFeature(feature)
 

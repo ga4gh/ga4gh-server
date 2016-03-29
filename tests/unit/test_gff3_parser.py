@@ -1,5 +1,5 @@
 """
-Data-driven tests for rna quantification.
+GFF3 parser unit tests.
 """
 from __future__ import division
 from __future__ import print_function
@@ -25,9 +25,9 @@ class TestGff3ParserOnTypicalFile(unittest.TestCase):
         self.assertNotEqual(len(self.gff3Data.roots), 0, "No root features")
 
     def testSomeFeatureIsWellFormed(self):
-        featId = self.gff3Data.byFeatureId.keys()[0]
-        feat = self.gff3Data.byFeatureId[featId][0]
-        self.assertEqual(featId, feat.featureId, "featureId mismatch")
+        featId = self.gff3Data.byFeatureName.keys()[0]
+        feat = self.gff3Data.byFeatureName[featId][0]
+        self.assertEqual(featId, feat.featureName, "featureName mismatch")
         self.assertIsNotNone(feat.seqname, "sequence name is not populated")
         self.assertGreaterEqual(feat.end, feat.start, "end less than start")
         self.assertIn(feat.strand, u"+-", "strand is neither + nor -")
@@ -38,27 +38,32 @@ class TestGff3ParserOnTypicalFile(unittest.TestCase):
 
     def testRootFeaturesHaveNoParents(self):
         for root in self.gff3Data.roots:
-            self.assertEqual(len(root.parents), 0, "root feature has a parent")
+            self.assertEqual(
+                len(root.parents), 0, "root feature has a parent")
 
     def testAllFeaturesContainAllRootFeatures(self):
         for root in self.gff3Data.roots:
-            feat = self.gff3Data.byFeatureId[root.featureId]
-            self.assertGreaterEqual(len(feat), 1,
-                                    "root feature not in list of all features")
+            feat = self.gff3Data.byFeatureName[root.featureName]
+            self.assertGreaterEqual(
+                len(feat), 1,
+                "root feature not in list of all features")
 
-    def testInvalidFeatureIdKeyQueryFails(self):
-        badFeatureId = "987654"
-        badFeat = self.gff3Data.byFeatureId[badFeatureId]
-        self.assertEqual(len(badFeat), 0,
-                         "invalid feature ID returned valid object")
+    def testInvalidFeatureNameKeyQueryFails(self):
+        badFeatureName = "987654"
+        badFeat = self.gff3Data.byFeatureName[badFeatureName]
+        self.assertEqual(
+            len(badFeat), 0,
+            "invalid feature ID returned valid object")
 
     def testAllChildrenFeaturesArePresentInSet(self):
-        for featList in self.gff3Data.byFeatureId.values():
+        for featList in self.gff3Data.byFeatureName.values():
             for feat in featList:
                 for child in feat.children:
-                    childLookup = self.gff3Data.byFeatureId[child.featureId]
-                    self.assertGreaterEqual(len(childLookup), 1,
-                                            "child feature not in set")
+                    childLookup = self.gff3Data.byFeatureName[
+                        child.featureName]
+                    self.assertGreaterEqual(
+                        len(childLookup), 1,
+                        "child feature not in set")
 
 
 class TestGff3ParserOnDiscontinuousFeatureFile(TestGff3ParserOnTypicalFile):
@@ -72,9 +77,10 @@ class TestGff3ParserOnDiscontinuousFeatureFile(TestGff3ParserOnTypicalFile):
         self.gff3Data = self.gff3Parser.parse()
 
     def testDiscontinuousFeature(self):
-        feat = self.gff3Data.byFeatureId['apidb|cds_MAL13P1.103-1']
-        self.assertEqual(len(feat), 10,
-                         "not all parts of discontinuous feature parsed")
+        feat = self.gff3Data.byFeatureName['apidb|cds_MAL13P1.103-1']
+        self.assertEqual(
+            len(feat), 10,
+            "not all parts of discontinuous feature parsed")
 
 
 class TestGff3ParserOnSacCerFile(TestGff3ParserOnTypicalFile):

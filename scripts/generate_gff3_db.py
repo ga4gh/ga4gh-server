@@ -25,20 +25,23 @@ import ga4gh.gff3Parser as gff3
 # with three additional columns prepended representing the ID of this feature,
 # the ID of its parent (if any), and a whitespace separated array
 # of its child IDs.
+
 _dbTableSQL = (
-                "CREATE TABLE FEATURE( "
-                "id TEXT PRIMARY KEY NOT NULL, "
-                "parent_id TEXT, "
-                "child_ids TEXT, "
-                "reference_name TEXT, "
-                "source TEXT, "
-                "ontology_term TEXT, "
-                "start INT, "
-                "end INT, "
-                "score REAL, "
-                "strand TEXT, "
-                "attributes TEXT);"
-                )
+    "CREATE TABLE FEATURE( "
+    "id INTEGER PRIMARY KEY NOT NULL, "
+    "parent_id INTEGER, "
+    "child_ids TEXT, "
+    "reference_name TEXT, "
+    "source TEXT, "
+    "type TEXT, "
+    "start INT, "
+    "end INT, "
+    "score REAL, "
+    "strand TEXT, "
+    "name TEXT,"
+    "gene_name TEXT,"
+    "transcript_name TEXT,"
+    "attributes TEXT);")
 
 
 def _db_serialize(pyData):
@@ -50,7 +53,7 @@ class Gff32Db(object):
     Represents a unit of work for this script: Parse a GFF3 file
     using an external GFF3 parser, and create a corresponding SQLite DB file
     by iterating through the resulting parsed dictionary object
-    (gff3Data.byFeatureId).
+    (gff3Data.byfeatureName).
     """
     def __init__(self, inputFile, outputFile):
         """
@@ -72,34 +75,38 @@ class Gff32Db(object):
         dbconn = sqlite3.connect(self.dbFile)
         dbcur = dbconn.cursor()
         dbcur.execute(_dbTableSQL)  # create table
-        for featureId in gff3Data.byFeatureId.keys():
-            feature = gff3Data.byFeatureId[featureId][0]
-            rowInsertSQL = "INSERT INTO FEATURE VALUES("
-            rowInsertSQL += "'{}', ".format(featureId)
+        dbcur.execute("PRAGMA journal_mode=WAL")
+        dbconn.commit()
 
-            # FIXME: Ignores any parent IDs besides the first one.
-            parentIds = [parent.featureId for parent in feature.parents]
-            if len(parentIds) == 0:
-                rowInsertSQL += "'',"
-            else:
-                rowInsertSQL += "'{}', ".format(parentIds[0])
-
-            # FIXME: No current way to get childIDs in correct order.
-            childIds = [child.featureId for child in feature.children]
-            rowInsertSQL += "'{}', ".format(_db_serialize(childIds))
-
-            rowInsertSQL += "'{}', ".format(feature.seqname)
-            rowInsertSQL += "'{}', ".format(feature.source)
-            rowInsertSQL += "'{}', ".format(feature.type)
-            rowInsertSQL += "'{}', ".format(feature.start)
-            rowInsertSQL += "'{}', ".format(feature.end)
-            rowInsertSQL += "'{}', ".format(feature.score)
-            rowInsertSQL += "'{}', ".format(feature.strand)
-            rowInsertSQL += "'{}');".format(_db_serialize(feature.attributes))
-
-            # print(rowInsertSQL)  #DEBUG
-            dbcur.execute(rowInsertSQL)
-            dbconn.commit()
+        for i, featureName in enumerate(gff3Data.byFeatureName.keys()):
+            for feature in gff3Data.byFeatureName[featureName]:
+                # Ignores any parent IDs besides the first one.
+                parentIds = [parent.uniqueId for parent in feature.parents]
+                parentId = parentIds[0] if len(parentIds) > 0 else ''
+                # FIXME: No current code to ensure childIDs in correct order.
+                childIds = [child.uniqueId for child in feature.children]
+                values = (
+                    feature.uniqueId,
+                    parentId,
+                    _db_serialize(childIds),  # FIXME childIds
+                    feature.seqname,
+                    feature.source,
+                    feature.type,
+                    feature.start,
+                    feature.end,
+                    feature.score,
+                    feature.strand,
+                    feature.featureName,
+                    feature.attributes.get("gene_name", [None])[0],
+                    feature.attributes.get("transcript_name", [None])[0],
+                    _db_serialize(feature.attributes))
+                dbcur.execute((
+                    "INSERT INTO FEATURE ("
+                    "id, parent_id, child_ids, reference_name, "
+                    "source, type, start, end, score, strand, "
+                    "name, gene_name, transcript_name, attributes) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"), values)
+                dbconn.commit()
         dbcur.close()
         dbconn.close()
         print("Done.", file=sys.stderr)

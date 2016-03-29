@@ -14,31 +14,29 @@ import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 import ga4gh.exceptions as exceptions
 
+_datasetName = "ds"
+
 _discontinuousTestData = {
-    "featureSetId": "ZHM6ZGlzY29udGludW91cw",
+    "featureSetName": "discontinuous",
     "referenceName": "apidb|Pf3D7_13",
-    "totalFeatures": 21,
-    "sampleFeatureId": ("ZHM6ZGlzY29udGludW91czphcGlk"
-                        "YnxleG9uX01BTDEzUDEuMTAzLTEw"),
-    "sampleParentId": ("ZHM6ZGlzY29udGludW91czphcGlk"
-                       "YnxybmFfTUFMMTNQMS4xMDMtMQ"),
-    "sampleStart": 805985,
-    "sampleEnd": 806230,
+    "totalFeatures": 30,
+    "sampleFeatureId": 4409955920,
+    "sampleParentId": 4409956112,
+    "sampleStart": 820942,
+    "sampleEnd": 821379,
     "sampleStrand": protocol.Strand.POS_STRAND,
-    "sampleSiblings": 11,
+    "sampleSiblings": 2,
     "region": [0, 2**32],
     "ontologyRestriction": ["gene", ],
     "featuresWithOntology": 3
 }
 
 _gencodeV21Set1TestData = {
-    "featureSetId": "ZHM6Z2VuY29kZVYyMVNldDE",
+    "featureSetName": "gencodeV21Set1",
     "referenceName": "chr1",
-    "totalFeatures": 542,
-    "sampleFeatureId": ("ZHM6Z2VuY29kZVYyMVNldDE6ZXhvb"
-                        "jtFTlNUMDAwMDA1OTA4NDguMzs1"),
-    "sampleParentId": ("ZHM6Z2VuY29kZVYyMVNldDE6RU5TVD"
-                       "AwMDAwNTkwODQ4LjM"),
+    "totalFeatures": 543,
+    "sampleFeatureId": 4397111632,
+    "sampleParentId": 4397111312,
     "sampleStart": 804776,
     "sampleEnd": 804832,
     "sampleStrand": protocol.Strand.POS_STRAND,
@@ -49,11 +47,11 @@ _gencodeV21Set1TestData = {
 }
 
 _sacCerTestTestData = {
-    "featureSetId": "ZHM6c2FjQ2VyVGVzdA",
+    "featureSetName": "sacCerTest",
     "referenceName": "chrI",
-    "totalFeatures": 21,
-    "sampleFeatureId": ("ZHM6c2FjQ2VyVGVzdDpURUwwMUwtWEM"),
-    "sampleParentId": (""),
+    "totalFeatures": 33,
+    "sampleFeatureId": 4324354512,
+    "sampleParentId": None,
     "sampleStart": 337,
     "sampleEnd": 801,
     "sampleStrand": protocol.Strand.NEG_STRAND,
@@ -64,12 +62,11 @@ _sacCerTestTestData = {
 }
 
 _specialCasesTestTestData = {
-    "featureSetId": "ZHM6c3BlY2lhbENhc2VzVGVzdA",
+    "featureSetName": "specialCasesTest",
     "referenceName": "2L",
-    "totalFeatures": 3,
-    "sampleFeatureId": ("ZHM6c3BlY2lhbENhc2VzVGVzdDo7MTU3Nzg3N"
-                        "19ibGFzdHhfbWFza2VkX2FhX1NQVFIuZG1lbA"),
-    "sampleParentId": (""),
+    "totalFeatures": 4,
+    "sampleFeatureId": 4554844304,
+    "sampleParentId": None,
     "sampleStart": 22229583,
     "sampleEnd": 22229699,
     "sampleStrand": protocol.Strand.NEG_STRAND,
@@ -79,12 +76,17 @@ _specialCasesTestTestData = {
     "featuresWithOntology": 0
 }
 
-_testDataForFeatureSetId = {
+_testDataForFeatureSetName = {
     "discontinuous": _discontinuousTestData,
     "gencodeV21Set1": _gencodeV21Set1TestData,
     "sacCerTest": _sacCerTestTestData,
     "specialCasesTest": _specialCasesTestTestData
 }
+
+
+def _getFeatureCompoundId(dataSetName, featureSetName, featureId):
+    return datamodel.CompoundId.obfuscate(":".join(
+        [dataSetName, featureSetName, str(featureId)]))
 
 
 def testFeatureSets():
@@ -98,19 +100,18 @@ class FeatureSetTests(datadriven.DataDrivenTest):
     Re-parses source GFF3 files, compares the results with the contents
     of corresponding sequenceAnnotations.Feature objects.
     """
-    def __init__(self, featureSetLocalId, dataPath):
+    def __init__(self, featureSetLocalName, dataPath):
         """
         :param localId: Name of the GFF3 resource corresponding to a pair
         of files, .db and .gff3
         :param dataPath: string representing full path to the .db file
         :return:
         """
-        self._dataset = datasets.AbstractDataset("ds")
+        self._dataset = datasets.AbstractDataset(_datasetName)
         self._datarepo = datarepo.FileSystemDataRepository("tests/data")
-        self._backend = backend.Backend(self._datarepo)
-        featureSetLocalId = featureSetLocalId[:-3]  # remove '.db'
-        self._testData = _testDataForFeatureSetId[featureSetLocalId]
-        super(FeatureSetTests, self).__init__(featureSetLocalId, dataPath)
+        featureSetLocalName = featureSetLocalName[:-3]  # remove '.db'
+        self._testData = _testDataForFeatureSetName[featureSetLocalName]
+        super(FeatureSetTests, self).__init__(featureSetLocalName, dataPath)
 
     def getProtocolClass(self):
         return protocol.FeatureSet
@@ -120,24 +121,36 @@ class FeatureSetTests(datadriven.DataDrivenTest):
             self._dataset, localId, dataPath, self._datarepo)
 
     def testGetFeatureById(self):
-        idString = self._testData["sampleFeatureId"]
+        idString = _getFeatureCompoundId(
+            _datasetName,
+            self._testData["featureSetName"],
+            self._testData["sampleFeatureId"])
         compoundId = datamodel.FeatureCompoundId.parse(idString)
         feature = self._gaObject.getFeature(compoundId)
         self.assertIsNotNone(feature)
         self.assertEqual(feature.id, idString)
-        self.assertEqual(feature.parentId,
-                         self._testData["sampleParentId"])
-        self.assertEqual(feature.referenceName,
-                         self._testData["referenceName"])
-        self.assertEqual(feature.start,
-                         self._testData["sampleStart"])
-        self.assertEqual(feature.end,
-                         self._testData["sampleEnd"])
-        self.assertEqual(feature.strand,
-                         self._testData["sampleStrand"])
+        if self._testData["sampleParentId"] is not None:
+            self.assertEqual(
+                datamodel.FeatureCompoundId.parse(
+                    feature.parentId).featureId,
+                str(self._testData["sampleParentId"]))
+        else:
+            self.assertEqual(feature.parentId, '')
+        self.assertEqual(
+            feature.referenceName,
+            self._testData["referenceName"])
+        self.assertEqual(
+            feature.start,
+            self._testData["sampleStart"])
+        self.assertEqual(
+            feature.end,
+            self._testData["sampleEnd"])
+        self.assertEqual(
+            feature.strand,
+            self._testData["sampleStrand"])
 
     def testGetFeatureFailsWithBadId(self):
-        idString = self._testData["sampleFeatureId"] + "W00t"
+        idString = str(self._testData["sampleFeatureId"]) + "W00t"
         try:
             compoundId = datamodel.FeatureCompoundId.parse(idString)
             self._gaObject.getFeature(compoundId)
@@ -172,9 +185,13 @@ class FeatureSetTests(datadriven.DataDrivenTest):
 
     def testFetchFeaturesRestrictedByParent(self):
         parentId = ""
-        if self._testData["sampleParentId"] != "":
+        if self._testData["sampleParentId"] is not None:
+            parentIdString = _getFeatureCompoundId(
+                _datasetName,
+                self._testData["featureSetName"],
+                self._testData["sampleParentId"])
             parentId = datamodel.FeatureCompoundId.parse(
-                self._testData["sampleParentId"]).featureId
+                parentIdString).featureId
         features = []
         for (feature, _) in self._gaObject.getFeatures(
                 self._testData["referenceName"],

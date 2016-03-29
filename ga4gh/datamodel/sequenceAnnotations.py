@@ -41,16 +41,19 @@ separated array of its child IDs.
 _featureColumns pairs represent the ordered (column_name, column_type).
 """
 _featureColumns = [
-    ('id', 'TEXT'),
+    ('id', 'TEXT'),  # a synthetic principal key generated on ETL
     ('parent_id', 'TEXT'),
     ('child_ids', 'TEXT'),
     ('reference_name', 'TEXT'),
     ('source', 'TEXT'),
-    ('ontology_term', 'TEXT'),
+    ('type', 'TEXT'),  # corresponds to featureType, an ontology term
     ('start', 'INT'),
     ('end', 'INT'),
     ('score', 'REAL'),
-    ('strand', 'TEXT'),  # limited to one of '+'/'-' or none.
+    ('strand', 'TEXT'),  # limited to one of '+'/'-' or none
+    ('name', 'TEXT'),  # the "ID" as found in GFF3, or '' if none
+    ('gene_name', 'TEXT'),  # as found in GFF3 attributes
+    ('transcript_name', 'TEXT'),  # as found in GFF3 attributes
     ('attributes', 'TEXT')]  # JSON encoding of attributes dict
 
 
@@ -73,7 +76,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
 
     def countFeaturesSearchInDb(
             self, referenceName=None, start=0, end=0,
-            parentId=None, featureTypes=[]):
+            parentId=None, featureTypes=None):
         """
         Same parameters as searchFeaturesInDb,
         except without the pagetoken/size.
@@ -90,7 +93,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
             sql += "AND parent_id = ? "
             sql_args += (parentId,)
         if featureTypes is not None and len(featureTypes) > 0:
-            sql += "AND ontology_term IN ("
+            sql += "AND type IN ("
             sql += ", ".join(["?", ] * len(featureTypes))
             sql += ") "
             sql_args += tuple(featureTypes)
@@ -100,7 +103,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
     def searchFeaturesInDb(
             self, pageToken=0, pageSize=None,
             referenceName=None, start=0, end=0,
-            parentId=None, featureTypes=[]):
+            parentId=None, featureTypes=None):
         """
         Perform a full features query in database.
 
@@ -124,7 +127,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
             sql += "AND parent_id = ? "
             sql_args += (parentId,)
         if featureTypes is not None and len(featureTypes) > 0:
-            sql += "AND ontology_term IN ("
+            sql += "AND type IN ("
             sql += ", ".join(["?", ] * len(featureTypes))
             sql += ") "
             sql_args += tuple(featureTypes)
@@ -140,34 +143,12 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         :return: dictionary representing a feature object,
             or None if no match is found.
         """
-        sql = ("SELECT * FROM FEATURE WHERE id = ?")
+        sql = "SELECT * FROM FEATURE WHERE id = ?"
         query = self._dbconn.execute(sql, (featureId,))
         ret = query.fetchone()
         if ret is None:
             return None
         return sqliteBackend.sqliteRow2Dict(ret)
-
-
-# Problem: FeatureIds from GFF3 often contain colons,
-# and the CompoundId mechanism reserves colons for its special separator
-# character. Thus the following pair of functions that mangles and
-# de-mangles featureId's to allow them to work in compoundIds.
-def _decolonize(featureId):
-    """
-    Replaces colons in input with CompoundId-safe character
-    :param featureId: string potentially with colons in it
-    :return: same string with colons replaced with safe character
-    """
-    return featureId.replace(':', ';')
-
-
-def _recolonize(mangled_featureId):
-    """
-    Replaces CompoundId-safe character in input with colons
-    :param featureId: string potentially with replacement character
-    :return: same string with colons in place.
-    """
-    return mangled_featureId.replace(';', ':')
 
 
 class AbstractFeatureSet(datamodel.DatamodelObject):
@@ -212,7 +193,7 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
             # as can be the case with (absent) parent IDs.
             return ""
         compoundId = datamodel.FeatureCompoundId(
-            self.getCompoundId(), _decolonize(featureId))
+            self.getCompoundId(), str(featureId))
         return str(compoundId)
 
 
@@ -225,11 +206,11 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             parentContainer, localId, None)
         self._randomSeed = randomSeed
 
-    def _getRandomOntologyTerm(self, randomNumberGenerator):
+    def _getRandomfeatureType(self, randomNumberGenerator):
         ontologyTuples = [
             ("gene", "SO:0000704"),
             ("exon", "SO:0000147")]
-        term = protocol.OntologyTerm()
+        term = protocol.featureType()
         ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
         term.term, term.id = ontologyTuple[0], ontologyTuple[1]
         term.sourceName = "sequenceOntology"
@@ -241,7 +222,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         feature.featureSetId = self.getId()
         feature.start = randomNumberGenerator.randint(1000, 2000)
         feature.end = feature.start + randomNumberGenerator.randint(1, 100)
-        feature.featureType = self._getRandomOntologyTerm(
+        feature.featureType = self._getRandomfeatureType(
             randomNumberGenerator)
         references = ["chr1", "chr2", "chrX"]
         feature.referenceName = randomNumberGenerator.choice(references)
@@ -285,7 +266,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         :param end: end coordinate of query
         :param pageToken: None or int
         :param pageSize: None or int
-        :param ontologyTerms: optional list of ontology terms to limit query
+        :param featureTypes: optional list of ontology terms to limit query
         :param parentId: optional parentId to limit query.
         :param numFeatures: number of features to generate in the return.
             10 is a reasonable (if arbitrary) default.
@@ -304,12 +285,11 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             match = (
                 gaFeature.start < end and
                 gaFeature.end > start and
-                gaFeature.referenceName == referenceName and
-                (
-                    gaFeature.featureType in featureTypes or
-                    len(featureTypes) == 0))
+                gaFeature.referenceName == referenceName and (
+                    featureTypes is None or len(featureTypes) == 0 or
+                    gaFeature.featureType in featureTypes))
             if match:
-                gaFeature.parentId = ""  # TODO: Test with nonempty parentIDs?
+                gaFeature.parentId = ""  # TODO: Test nonempty parentIDs?
                 if nextPageToken < numFeatures - 1:
                     nextPageToken += 1
                 else:
@@ -341,7 +321,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         :raises: exceptions.ObjectWithIdNotFoundException if invalid
             compoundId is provided.
         """
-        featureId = _recolonize(compoundId.featureId)
+        featureId = long(compoundId.featureId)
         with self._db as dataSource:
             featureReturned = dataSource.getFeatureById(featureId)
 
@@ -376,14 +356,14 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
                 self.getCompoundIdForFeatureId,
                 json.loads(feature['child_ids']))
         gaFeature.featureType = \
-            self._sequenceOntology.getGaTermByName(feature['ontology_term'])
+            self._sequenceOntology.getGaTermByName(feature['type'])
         gaFeature.attributes = protocol.Attributes()
         gaFeature.attributes.vals = json.loads(feature['attributes'])
         return gaFeature
 
     def getFeatures(self, referenceName, start, end,
                     pageToken, pageSize,
-                    featureTypes=[], parentId=None):
+                    featureTypes=None, parentId=None):
         """
         method passed to runSearchRequest to fulfill the request
         :param str referenceName: name of reference (ex: "chr1")

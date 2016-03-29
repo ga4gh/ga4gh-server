@@ -659,8 +659,8 @@ class TestSimulatedStack(unittest.TestCase):
         for ann in responseData.variantAnnotations:
             effectPresent = False
             for effect in ann.transcriptEffects:
-                for ontologyTerm in effect.effects:
-                    if ontologyTerm.id in map(
+                for featureType in effect.effects:
+                    if featureType.id in map(
                             lambda e: e['id'], request.effects):
                         effectPresent = True
             self.assertEquals(
@@ -683,8 +683,8 @@ class TestSimulatedStack(unittest.TestCase):
         for ann in responseData.variantAnnotations:
             effectPresent = False
             for effect in ann.transcriptEffects:
-                for ontologyTerm in effect.effects:
-                    if ontologyTerm.id in map(
+                for featureType in effect.effects:
+                    if featureType.id in map(
                             lambda e: e['id'], request.effects):
                         effectPresent = True
             self.assertEquals(
@@ -706,8 +706,8 @@ class TestSimulatedStack(unittest.TestCase):
         for ann in responseData.variantAnnotations:
             effectPresent = False
             for effect in ann.transcriptEffects:
-                for ontologyTerm in effect.effects:
-                    if ontologyTerm.id in map(
+                for featureType in effect.effects:
+                    if featureType.id in map(
                             lambda e: e['id'], request.effects):
                         effectPresent = True
             self.assertEquals(True, effectPresent,
@@ -760,7 +760,7 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 2**16
         request.parentId = None
-        request.ontologyTerms = []
+        request.featureTypes = []
         path = '/features/search'
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeaturesResponse)
