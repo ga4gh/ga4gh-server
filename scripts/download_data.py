@@ -23,10 +23,11 @@ from __future__ import unicode_literals
 
 import argparse
 import gzip
-import json
 import hashlib
+import json
 import os
 import requests
+import shutil
 import tempfile
 import urllib2
 
@@ -190,6 +191,7 @@ class AbstractFileDownloader(object):
         self.maxVariants = args.num_variants
         self.maxReads = args.num_reads
         self.samples = args.samples.split(',')
+        self.tempDir = tempfile.mkdtemp(prefix="ga4gh-download")
         self.numChromosomes = args.num_chromosomes
         self.chromosomes = [str(j + 1) for j in range(self.numChromosomes)]
         self.dirName = args.dir_name
@@ -327,6 +329,13 @@ class AbstractFileDownloader(object):
         header['SQ'] = newSequences
         return header
 
+    def _downloadIndex(self, indexUrl, localIndexFile):
+        utils.log("Downloading index from {} to {}".format(
+            indexUrl, localIndexFile))
+        response = urllib2.urlopen(indexUrl)
+        with open(localIndexFile, "w") as destFile:
+            destFile.write(response.read())
+
     def _downloadBam(self, sample):
         samplePath = '{}/alignment/'.format(sample)
         study = self.studyMap[sample]
@@ -336,8 +345,11 @@ class AbstractFileDownloader(object):
         destFileName = "{}.bam".format(sample)
         baseUrl = self.getBamBaseUrl()
         sampleUrl = os.path.join(baseUrl, samplePath, sourceFileName)
-        utils.log("Downloading index for '{}'".format(sampleUrl))
-        remoteFile = pysam.AlignmentFile(sampleUrl)
+        indexUrl = sampleUrl + ".bai"
+        localIndexFile = os.path.join(self.tempDir, sourceFileName + ".bai")
+        self._downloadIndex(indexUrl, localIndexFile)
+        remoteFile = pysam.AlignmentFile(
+            sampleUrl, filepath_index=localIndexFile)
         header = self.createBamHeader(remoteFile.header)
         utils.log("Writing '{}'".format(destFileName))
         localFile = pysam.AlignmentFile(
@@ -360,8 +372,6 @@ class AbstractFileDownloader(object):
             utils.log("{} records written".format(index))
         remoteFile.close()
         localFile.close()
-        baiFileName = sourceFileName + '.bai'
-        os.remove(baiFileName)
         utils.log("Indexing '{}'".format(destFileName))
         pysam.index(destFileName.encode('utf-8'))
 
@@ -432,12 +442,16 @@ class AbstractFileDownloader(object):
                 createCheckpointFile(chromosome)
         escapeDir(3)
 
-    def cleanup(self):
+    def removeCheckpoints(self):
         utils.log('Removing checkpoint files')
         for root, dirs, files in os.walk(self.dirName):
             for currentFile in files:
                 if currentFile.endswith('.checkpoint'):
                     os.remove(os.path.join(root, currentFile))
+
+    def cleanup(self):
+        utils.log('Removing temporary files')
+        shutil.rmtree(self.tempDir)
 
 
 class NcbiFileDownloader(AbstractFileDownloader):
@@ -500,11 +514,14 @@ def parseArgs():
 @utils.Timed()
 def main(args):
     downloaderClass = sources[args.source]
-    downloader = downloaderClass(args)
-    downloader.downloadVcfs()
-    downloader.downloadBams()
-    downloader.downloadFastas()
-    downloader.cleanup()
+    try:
+        downloader = downloaderClass(args)
+        downloader.downloadVcfs()
+        downloader.downloadBams()
+        downloader.downloadFastas()
+        downloader.removeCheckpoints()
+    finally:
+        downloader.cleanup()
 
 
 if __name__ == '__main__':
