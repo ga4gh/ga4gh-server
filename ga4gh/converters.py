@@ -241,8 +241,7 @@ class SamLine(object):
         tags = []
         for tag, value in read.info.items():
             val = cls._parseTagValue(tag, value)
-            tagTuple = (tag, val)
-            tags.append(tagTuple)
+            tags.append((tag.encode(cls._encoding), val))
         retval = tuple(tags)
         return retval
 

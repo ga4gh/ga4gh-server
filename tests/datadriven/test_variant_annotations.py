@@ -40,10 +40,12 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
             self._dataset, "vs", self._dataPath, None)
         self._variantRecords = []
         self._referenceNames = set()
-        # Only read in VCF files with a JSON sidecar saying they're annotated.
-        for vcfFile in glob.glob(os.path.join(self._dataPath, "*.vcf.gz")):
-            if self._isAnnotated():
+        checked = False
+        if self._isAnnotated():
+            for vcfFile in glob.glob(os.path.join(self._dataPath, "*.vcf.gz")):
+                checked = True
                 self._readVcf(vcfFile)
+        self.assertTrue(checked)
 
     def _isAnnotated(self):
         """
