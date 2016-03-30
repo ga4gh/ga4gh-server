@@ -5,7 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh.backend as backend
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
