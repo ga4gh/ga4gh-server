@@ -183,15 +183,10 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         """
         Returns server-style compound ID for a GFF3 style feature ID.
 
-        :param featureId: string feature ID as reported in GFF3
+        :param featureId: id of feature in database
         :return: string representing ID for the specified GA4GH protocol
-            Feature object in this FeatureSet. If None is passed in,
-            an empty string is passed out, as required by the protocol.
+            Feature object in this FeatureSet.
         """
-        if featureId is None:
-            # This can happen if no feature ID is present in the database,
-            # as can be the case with (absent) parent IDs.
-            return ""
         compoundId = datamodel.FeatureCompoundId(
             self.getCompoundId(), str(featureId))
         return str(compoundId)
@@ -202,15 +197,15 @@ class SimulatedFeatureSet(AbstractFeatureSet):
     Simulated data backend for FeatureSet, used for internal testing.
     """
     def __init__(self, parentContainer, localId, randomSeed=1):
+        self._randomSeed = randomSeed
         super(SimulatedFeatureSet, self).__init__(
             parentContainer, localId, None)
-        self._randomSeed = randomSeed
 
     def _getRandomfeatureType(self, randomNumberGenerator):
         ontologyTuples = [
             ("gene", "SO:0000704"),
             ("exon", "SO:0000147")]
-        term = protocol.featureType()
+        term = protocol.OntologyTerm()
         ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
         term.term, term.id = ontologyTuple[0], ontologyTuple[1]
         term.sourceName = "sequenceOntology"
@@ -279,7 +274,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             nextPageToken = int(pageToken)
         else:
             nextPageToken = 0
-        for featureId in ["feature{}".format(x) for x in range(numFeatures)]:
+        for featureId in range(numFeatures):
             gaFeature = self._generateSimulatedFeature(randomNumberGenerator)
             gaFeature.id = self.getCompoundIdForFeatureId(featureId)
             match = (

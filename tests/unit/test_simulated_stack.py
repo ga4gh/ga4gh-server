@@ -785,6 +785,7 @@ class TestSimulatedStack(unittest.TestCase):
         # Request window is outside of simulated dataset bounds, no results
         request.start = 0
         request.end = 1
+        request.parentId = ''
         path = '/features/search'
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeaturesResponse)
