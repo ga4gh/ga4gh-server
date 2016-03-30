@@ -278,6 +278,21 @@ class CallSetCompoundId(VariantSetCompoundId):
     fields = VariantSetCompoundId.fields + ['name']
 
 
+class FeatureSetCompoundId(DatasetCompoundId):
+    """
+    The compound id for a feature set
+    """
+    fields = DatasetCompoundId.fields + ['featureSet']
+    containerIds = DatasetCompoundId.containerIds + [('featureSetId', 1)]
+
+
+class FeatureCompoundId(FeatureSetCompoundId):
+    """
+    The compound id class for a feature
+    """
+    fields = FeatureSetCompoundId.fields + ['featureId']
+
+
 class ReadGroupSetCompoundId(DatasetCompoundId):
     """
     The compound id for a read group set

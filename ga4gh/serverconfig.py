@@ -49,6 +49,16 @@ class LocalOidConfig(DevelopmentConfig):
     OIDC_PROVIDER = "https://localhost:8443"
 
 
+class SimulatedConfig(BaseConfig):
+    """
+    A configuration that uses simulated backing for testing.
+    """
+    DATA_SOURCE = "simulated://"
+    DEBUG = True
+    REQUEST_VALIDATION = True
+    RESPONSE_VALIDATION = True
+
+
 class ProductionConfig(BaseConfig):
     """
     Configuration that is a good basis for production deployments.
