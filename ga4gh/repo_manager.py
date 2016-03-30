@@ -37,9 +37,18 @@ def filenameWithoutExtension(filepath, extension):
     (os.path.splitext(filename)[0] messes up
     on filenames with more than one period)
     """
-    filename = os.path.basename(filepath)
+    filename = basename(filepath)
     index = filename.index(extension)
     return filename[:index]
+
+
+def basename(path):
+    """
+    Return the final component of a pathname, after normalizing
+    the path (os.path.basename returns a empty string when given
+    a path with a trailing slash)
+    """
+    return os.path.basename(os.path.normpath(path))
 
 
 def runCommandSplits(splits, silent=False):
@@ -319,7 +328,7 @@ class RepoManager(object):
             self._repoPath, self.referenceSetsDirName, fileName)
         self._assertPathEmpty(destPath, inRepo=True)
         os.mkdir(destPath)
-        fileDestPath = os.path.join(destPath, os.path.basename(filePath))
+        fileDestPath = os.path.join(destPath, basename(filePath))
         self._moveFile(filePath, fileDestPath, moveMode)
 
         # move the index files if they exist, otherwise do indexing
@@ -333,11 +342,11 @@ class RepoManager(object):
         if os.path.exists(indexPathFai) and os.path.exists(indexPathGzi):
             self._moveFile(
                 indexPathFai,
-                os.path.join(destPath, os.path.basename(indexPathFai)),
+                os.path.join(destPath, basename(indexPathFai)),
                 moveMode)
             self._moveFile(
                 indexPathGzi,
-                os.path.join(destPath, os.path.basename(indexPathGzi)),
+                os.path.join(destPath, basename(indexPathGzi)),
                 moveMode)
         else:
             runCommand("samtools faidx {}".format(fileDestPath))
@@ -394,7 +403,7 @@ class RepoManager(object):
         self._check()
         self._checkDataset(datasetName)
         self._checkFile(filePath, self.bamExtension)
-        fileName = os.path.basename(filePath)
+        fileName = basename(filePath)
         readGroupSetName = filenameWithoutExtension(
             fileName, self.bamExtension)
         destPath = os.path.join(
@@ -412,7 +421,7 @@ class RepoManager(object):
             dstDir = os.path.split(destPath)[0]
             self._moveFile(
                 indexPath,
-                os.path.join(dstDir, os.path.basename(indexPath)),
+                os.path.join(dstDir, basename(indexPath)),
                 moveMode)
         else:
             pysam.index(destPath.encode('utf-8'))
@@ -447,7 +456,7 @@ class RepoManager(object):
         self._check()
         self._checkDataset(datasetName)
         self._checkFolder(filePath, self.vcfExtension)
-        dirName = os.path.basename(filePath)
+        dirName = basename(filePath)
         destPath = os.path.join(
             self._repoPath, self.datasetsDirName, datasetName,
             self.variantsDirName, dirName)
