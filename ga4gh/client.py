@@ -293,6 +293,10 @@ class AbstractClient(object):
         request.start = start
         request.end = end
         request.effects = effects
+        for effect in request.effects:
+            if 'id' not in effect:
+                raise exceptions.BadRequestException(
+                    "Each ontology term should have an id set")
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "variantannotations",

@@ -572,9 +572,9 @@ class SearchVariantAnnotationsRunner(
         """
         Returns all variant annotation sets on the server.
         """
-        for dataset in self.getAllDatasets():
+        for variantSet in self.getAllVariantSets():
             iterator = self._client.searchVariantAnnotationSets(
-                datasetId=dataset.id)
+                variantSetId=variantSet.id)
             for variantAnnotationSet in iterator:
                 yield variantAnnotationSet
 
@@ -827,7 +827,6 @@ def addAnnotationsSearchOptions(parser):
     addReferenceIdArgument(parser)
     addStartArgument(parser)
     addEndArgument(parser)
-    addFeatureIdsArgument(parser)
     addEffectsArgument(parser)
     addPageSizeArgument(parser)
 
@@ -858,7 +857,7 @@ def addVariantSetIdMandatoryArgument(parser):
 def addAnnotationSetIdArgument(parser):
     parser.add_argument(
         "--variantAnnotationSetId", "-V", default=None,
-        help="The annotation set id to search over")
+        help="The variant annotation set id to search over")
 
 
 def addFeatureSetIdArgument(parser):
@@ -1038,8 +1037,8 @@ def addVariantSetsSearchParser(subparsers):
 def addVariantAnnotationSearchParser(subparsers):
     parser = subparsers.add_parser(
         "variantannotations-search",
-        description="Search for variant annotaions",
-        help="Search for variantAnnotaions.")
+        description="Search for variant annotations",
+        help="Search for variant annotations.")
     parser.set_defaults(runner=SearchVariantAnnotationsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
