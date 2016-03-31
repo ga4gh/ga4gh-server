@@ -302,11 +302,13 @@ class ExperimentCompoundId(ReadGroupCompoundId):
     containerIds = ReadGroupCompoundId.containerIds + [('experimentId', 3)]
 
 
-class ReadAlignmentCompoundId(ReadGroupCompoundId):
+class ReadAlignmentCompoundId(ReadGroupSetCompoundId):
     """
     The compound id for a read alignment
     """
-    fields = ReadGroupCompoundId.fields + ['readAlignment']
+    fields = ReadGroupSetCompoundId.fields + ['readAlignment']
+    containerIds = ReadGroupSetCompoundId.containerIds + \
+        [('readAlignmentId', 2)]
 
 
 class DatamodelObject(object):
