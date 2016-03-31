@@ -14,6 +14,7 @@ import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.datarepo as datarepo
 import tests.utils as utils
+import ga4gh.exceptions as exceptions
 
 
 class TestSearchMethodsCallRunRequest(unittest.TestCase):
@@ -108,6 +109,14 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "variantannotations",
             protocol.SearchVariantAnnotationsResponse)
+        with self.assertRaises(exceptions.BadRequestException):
+            self.httpClient.searchVariantAnnotations(
+                self.variantAnnotationSetId,
+                referenceName=self.referenceName,
+                start=self.start,
+                end=self.end,
+                effects=[{"term": "just a term"}, {"id": "an id"}],
+                referenceId=self.referenceId)
 
     def testSearchFeatureSets(self):
         request = protocol.SearchFeatureSetsRequest()
