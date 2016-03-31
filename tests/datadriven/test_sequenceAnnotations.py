@@ -84,8 +84,10 @@ _testDataForFeatureSetName = {
 
 
 def _getFeatureCompoundId(dataSetName, featureSetName, featureId):
-    return datamodel.CompoundId.obfuscate(":".join(
-        [dataSetName, featureSetName, str(featureId)]))
+    splits = [dataSetName, featureSetName, str(featureId)]
+    joined = datamodel.CompoundId.join(splits)
+    obfuscated = datamodel.CompoundId.obfuscate(joined)
+    return obfuscated
 
 
 def testFeatureSets():
