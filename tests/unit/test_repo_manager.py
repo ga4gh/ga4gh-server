@@ -190,6 +190,9 @@ class RepoManagerInidividualCommandTest(AbstractRepoManagerTest):
             self.repoManager.addOntologyMap(paths.bamPath, 'link')
         self.repoManager.addOntologyMap(
             paths.ontologyPath, 'link')
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.addOntologyMap(
+                paths.ontologyPath, 'link')
 
     def testRemoveOntologyMap(self):
         with self.assertRaises(exceptions.RepoManagerException):
@@ -199,3 +202,6 @@ class RepoManagerInidividualCommandTest(AbstractRepoManagerTest):
             paths.ontologyPath, 'link')
         self.repoManager.removeOntologyMap(
             paths.ontologyName)
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.removeOntologyMap(
+                paths.ontologyName)

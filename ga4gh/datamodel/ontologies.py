@@ -8,8 +8,6 @@ from __future__ import unicode_literals
 import fnmatch
 import os
 
-import ga4gh.exceptions as exceptions
-
 
 class FileSystemOntology(object):
     """
@@ -32,12 +30,8 @@ class FileSystemOntology(object):
     def getLocalId(self):
         return self._localId
 
-    def getId(self, name):
-        try:
-            id_ = self._idNameMap[name]
-        except KeyError:
-            raise exceptions.OntologyMapIdException
-        return id_
+    def getId(self, name, default=""):
+        return self._idNameMap.get(name, default)
 
     def hasId(self, id_):
         return id_ in self._nameIdMap
@@ -45,12 +39,8 @@ class FileSystemOntology(object):
     def hasName(self, name):
         return name in self._idNameIdMap
 
-    def getName(self, id_):
-        try:
-            name = self._nameIdMap[id_]
-        except KeyError:
-            raise exceptions.OntologyMapNameException
-        return name
+    def getName(self, id_, default=""):
+        return self._nameIdMap.get(id_, default)
 
     def readOntology(self, filename):
         with open(filename) as f:

@@ -1008,12 +1008,8 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             so = self._createGaOntologyTermSo()
             so.term = soName
             if self._sequenceOntology is not None:
-                try:
-                    so.id = self._sequenceOntology.getId(soName)
-                except exceptions.OntologyMapIdException:
-                    so.id = ""
+                so.id = self._sequenceOntology.getId(soName, "")
             soTerms.append(so)
-            # TODO We must fill the ontology ID based on the SO name
         return soTerms
 
     def convertVariantAnnotation(self, record, transcriptConverter):
