@@ -38,7 +38,9 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         self._runCmd("add-referenceset", paths.faPath)
         self._runCmd("add-dataset", self.datasetName)
         self._runCmd("add-readgroupset", self.datasetName, paths.bamPath)
-        self._runCmd("add-variantset", self.datasetName, paths.vcfDirPath)
+        self._runCmd(
+            "add-variantset", self.datasetName,
+            paths.vcfDirPath + '/')  # ensure we can handle trailing slashes
         self._runCmd("check", "--skipConsistencyCheck")
         self._runCmd("list")
         self._runCmd(
