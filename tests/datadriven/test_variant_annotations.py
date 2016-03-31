@@ -54,7 +54,8 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         pyvcfreader = vcf.Reader(
             filename=glob.glob(
                 os.path.join(self._dataPath, "*.vcf.gz"))[0])
-        return 'ANN' in [x for x in pyvcfreader.infos]
+        items = [x for x in pyvcfreader.infos]
+        return ('ANN' in items) or ('CSQ' in items)
 
     def _readVcf(self, vcfFileName):
         """

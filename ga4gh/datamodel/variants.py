@@ -787,9 +787,11 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         return ret
 
     def isAnnotated(self, path):
+        # assumes that all files in the directory look like the first
         pysamreader = self.openFile(
             glob.glob(os.path.join(path, "*.vcf.gz"))[0])
-        return 'ANN' in [x[0] for x in pysamreader.header.info.items()]
+        items = [x[0] for x in pysamreader.header.info.items()]
+        return ('ANN' in items) or ('CSQ' in items)
 
 
 class HtslibVariantAnnotationSet(HtslibVariantSet):
