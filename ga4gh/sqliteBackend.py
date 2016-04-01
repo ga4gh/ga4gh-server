@@ -7,7 +7,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import logging
 import sqlite3
 
 
@@ -100,12 +99,7 @@ class SqliteBackedDataSource(object):
         """
         :param dbFile: string holding the full path to the database file.
         """
-        logging.basicConfig()
-        self._logger = logging.getLogger(__name__)
-        # NOTE: Set logging level to something reasonable
-        # for semi-production
         self._dbFile = dbFile
-        self._logger.setLevel(logging.DEBUG)
 
     def __enter__(self):
         self._dbconn = sqlite3.connect(self._dbFile)
