@@ -337,6 +337,7 @@ class AbstractFileDownloader(object):
             destFile.write(response.read())
 
     def _downloadBam(self, sample):
+        metadata = {}
         samplePath = '{}/alignment/'.format(sample)
         study = self.studyMap[sample]
         sourceFileName = (
@@ -374,16 +375,31 @@ class AbstractFileDownloader(object):
         localFile.close()
         utils.log("Indexing '{}'".format(destFileName))
         pysam.index(destFileName.encode('utf-8'))
+        # TODO we probably want this to be relative to dataDir so that these
+        # paths are portable. This is awkward with current method of cd'ing
+        # within the directories, so I just put in the absolute path.
+        dataUrl = os.path.abspath(destFileName)
+        metadata = {
+            "name": sample,
+            "dataUrl": dataUrl,
+            "indexUrl": dataUrl + ".bai"
+        }
+        return metadata
 
     def downloadBams(self):
         dirList = [self.dirName, "datasets", self.datasetName, 'reads']
         mkdirAndChdirList(dirList)
+        metadataList = []
         for sample in self.samples:
             if isCheckpointFileExtant(sample):
                 logCheckpoint(sample)
+                # TODO read metadata from checkpoint file?
             else:
-                self._downloadBam(sample)
+                metadata = self._downloadBam(sample)
+                metadataList.append(metadata)
                 createCheckpointFile(sample)
+        with open("metadata.json", "w") as metadataFile:
+            json.dump(metadataList, metadataFile, indent=4)
         escapeDir(4)
 
     def _downloadFasta(self, chromosome):

@@ -200,9 +200,11 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
     Class representing a logical collection ReadGroups.
     """
     def __init__(
-            self, parentContainer, localId, samFilePath, dataRepository):
+            self, parentContainer, localId, samFilePath, indexPath,
+            dataRepository):
         super(HtslibReadGroupSet, self).__init__(parentContainer, localId)
         self._samFilePath = samFilePath
+        self._indexPath = indexPath
         samFile = self.getFileHandle(self._samFilePath)
         self._setHeaderFields(samFile)
         if 'RG' not in samFile.header or len(samFile.header['RG']) == 0:
@@ -264,7 +266,8 @@ class HtslibReadGroupSet(datamodel.PysamDatamodelMixin, AbstractReadGroupSet):
         self._programs = programs
 
     def openFile(self, dataFile):
-        return pysam.AlignmentFile(dataFile)
+        print("opening", dataFile, self._indexPath)
+        return pysam.AlignmentFile(dataFile, filepath_index=self._indexPath)
 
     def getSamFilePath(self):
         """
