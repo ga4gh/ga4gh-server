@@ -198,8 +198,8 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.rnaQuantificationId = self.rnaQuantificationId
         request.featureGroupId = self.featureGroupId
         request.pageSize = self.pageSize
-        self.httpClient.searchFeatureGroup(self.rnaQuantificationId,
-                                           self.featureGroupId)
+        self.httpClient.searchFeatureGroup(
+            self.rnaQuantificationId, self.featureGroupId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "featuregroup",
             protocol.SearchFeatureGroupResponse)

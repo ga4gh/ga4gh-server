@@ -47,8 +47,8 @@ _featureGroupTestData = {
 
 def testRnaQuantification():
     testDataDir = "tests/data/datasets/dataset1/rnaQuant"
-    for test in datadriven.makeTests(testDataDir, RnaQuantificationTest,
-                                     '*.db'):
+    for test in datadriven.makeTests(
+            testDataDir, RnaQuantificationTest, '*.db'):
         yield test
 
 
@@ -61,12 +61,12 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
     def __init__(self, rnaQuantificationLocalId, baseDir):
         self._dataset = datasets.AbstractDataset("ds")
         rnaQuantificationId = rnaQuantificationLocalId[:-3]  # remove '.db'
-        super(RnaQuantificationTest, self).__init__(rnaQuantificationId,
-                                                    baseDir)
+        super(RnaQuantificationTest, self).__init__(
+            rnaQuantificationId, baseDir)
 
     def getDataModelInstance(self, localId, dataPath):
-        return rna_quantification.RNASeqResult(self._dataset, localId,
-                                               dataPath, None)
+        return rna_quantification.RNASeqResult(
+            self._dataset, localId, dataPath, None)
 
     def getProtocolClass(self):
         return protocol.RnaQuantification
@@ -88,13 +88,13 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
     def testRnaQuantificationObject(self):
         gaRnaQuant = self._gaObject.toProtocolElement()
         self.assertEqual(gaRnaQuant.id, _rnaQuantTestData["id"])
-        self.assertEqual(gaRnaQuant.annotationIds,
-                         _rnaQuantTestData["annotation_ids"])
-        self.assertEqual(gaRnaQuant.description,
-                         _rnaQuantTestData["description"])
+        self.assertEqual(
+            gaRnaQuant.annotationIds, _rnaQuantTestData["annotation_ids"])
+        self.assertEqual(
+            gaRnaQuant.description, _rnaQuantTestData["description"])
         self.assertEqual(gaRnaQuant.name, _rnaQuantTestData["name"])
-        self.assertEqual(gaRnaQuant.readGroupId,
-                         _rnaQuantTestData["read_group_id"])
+        self.assertEqual(
+            gaRnaQuant.readGroupId, _rnaQuantTestData["read_group_id"])
 
     def testGetExpressionLevelById(self):
         rnaQuantification = self._gaObject
@@ -114,16 +114,16 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
     def assertExpressionEqual(self, gaExpressionObj, testData):
         gaExpression = gaExpressionObj.toProtocolElement()
         self.assertEqual(gaExpression.id, testData["id"])
-        self.assertEqual(gaExpression.annotationId,
-                         testData["annotation_id"])
-        self.assertEqual(gaExpression.expression,
-                         testData["expression"])
-        self.assertEqual(gaExpression.featureGroupId,
-                         testData["feature_group_id"])
-        self.assertEqual(gaExpression.isNormalized,
-                         testData["is_normalized"])
-        self.assertEqual(gaExpression.rawReadCount,
-                         testData["raw_read_count"])
+        self.assertEqual(
+            gaExpression.annotationId, testData["annotation_id"])
+        self.assertEqual(
+            gaExpression.expression, testData["expression"])
+        self.assertEqual(
+            gaExpression.featureGroupId, testData["feature_group_id"])
+        self.assertEqual(
+            gaExpression.isNormalized, testData["is_normalized"])
+        self.assertEqual(
+            gaExpression.rawReadCount, testData["raw_read_count"])
         self.assertEqual(gaExpression.score, testData["score"])
         self.assertEqual(gaExpression.units, testData["units"])
 

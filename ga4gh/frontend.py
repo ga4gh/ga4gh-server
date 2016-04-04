@@ -159,6 +159,7 @@ class ServerStatus(object):
         return app.backend.getDataRepository().getDataset(
             datasetId).getRnaQuantifications()
 
+
 def reset():
     """
     Resets the flask app; used in testing

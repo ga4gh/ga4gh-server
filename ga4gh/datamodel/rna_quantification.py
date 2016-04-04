@@ -80,8 +80,8 @@ class FeatureGroup(datamodel.DatamodelObject):
     compoundIdClass = datamodel.FeatureGroupCompoundId
 
     def __init__(self, parentContainer, record):
-        super(FeatureGroup, self).__init__(parentContainer,
-                                           record["feature_group_id"])
+        super(FeatureGroup, self).__init__(
+            parentContainer, record["feature_group_id"])
         self._id = self.getId()
         self._analysisId = record["rna_quantification_id"]
         self._name = record["feature_group_id"]
@@ -101,8 +101,8 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
     compoundIdClass = datamodel.RnaQuantificationCompoundId
 
     def __init__(self, parentContainer, localId):
-        super(AbstractRNAQuantification, self).__init__(parentContainer,
-                                                        localId)
+        super(AbstractRNAQuantification, self).__init__(
+            parentContainer, localId)
         self._annotationIds = []
         self._description = ""
         self._name = localId
@@ -155,14 +155,11 @@ class RNASeqResult(AbstractRNAQuantification):
         with self._db as dataSource:
             rnaQuantReturned = dataSource.getRnaQuantificationById(
                 rnaQuantId)
-        if rnaQuantReturned is not None:
-            self.addRnaQuantMetadata(rnaQuantReturned)
-        else:
-            raise exceptions.RnaQuantificationNotFoundException(rnaQuantId)
+        self.addRnaQuantMetadata(rnaQuantReturned)
 
-    def getExpressionLevels(self, rnaQuantID, pageToken=0, pageSize=None,
-                            expressionId=None, featureGroupId=None,
-                            threshold=0.0):
+    def getExpressionLevels(
+            self, rnaQuantID, pageToken=0, pageSize=None, expressionId=None,
+            featureGroupId=None, threshold=0.0):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
@@ -175,6 +172,9 @@ class RNASeqResult(AbstractRNAQuantification):
                 rnaQuantID, pageToken=pageToken,
                 pageSize=pageSize, expressionId=expressionId,
                 featureGroupId=featureGroupId, threshold=threshold)
+        # TOOD: try to use a generator - something like below
+        # for expressionEntry in expressionsReturned:
+        #    yield ExpressionLevel(self, expressionEntry)
         return [ExpressionLevel(self, expressionEntry) for
                 expressionEntry in expressionsReturned]
 
@@ -185,13 +185,10 @@ class RNASeqResult(AbstractRNAQuantification):
             expressionReturned = dataSource.getExpressionLevelById(
                 localExpressionId)
 
-        if expressionReturned is not None:
-            return ExpressionLevel(self, expressionReturned)
-        else:
-            raise exceptions.ExpressionLevelNotFoundException(compoundId)
+        return ExpressionLevel(self, expressionReturned)
 
-    def getFeatureGroups(self, rnaQuantID, pageToken=0, pageSize=None,
-                         featureGroupId=None):
+    def getFeatureGroups(
+            self, rnaQuantID, pageToken=0, pageSize=None, featureGroupId=None):
         """
         Returns the list of FeatureGroups in this RNA Quantification.
 
@@ -220,28 +217,27 @@ class RNASeqResult(AbstractRNAQuantification):
             featureGroupReturned = dataSource.getFeatureGroupById(
                 localFeatureGroupId)
 
-        if featureGroupReturned is not None:
-            return FeatureGroup(self, featureGroupReturned)
-        else:
-            raise exceptions.FeatureGroupNotFoundException(compoundId)
+        return FeatureGroup(self, featureGroupReturned)
 
 
-_rnaQuantColumns = [('id', 'TEXT'),
-                    ('annotation_ids', 'TEXT'),
-                    ('description', 'TEXT'),
-                    ('name', 'TEXT'),
-                    ('read_group_id', 'TEXT')]
+_rnaQuantColumns = [
+    ('id', 'TEXT'),
+    ('annotation_ids', 'TEXT'),
+    ('description', 'TEXT'),
+    ('name', 'TEXT'),
+    ('read_group_id', 'TEXT')]
 
 
-_expressionColumns = [('id', 'TEXT'),
-                      ('name', 'TEXT'),
-                      ('annotation_id', 'TEXT'),
-                      ('expression', 'REAL'),
-                      ('feature_group_id', 'TEXT'),
-                      ('is_normalized', 'BOOLEAN'),
-                      ('raw_read_count', 'REAL'),
-                      ('score', 'REAL'),
-                      ('units', 'TEXT')]
+_expressionColumns = [
+    ('id', 'TEXT'),
+    ('name', 'TEXT'),
+    ('annotation_id', 'TEXT'),
+    ('expression', 'REAL'),
+    ('feature_group_id', 'TEXT'),
+    ('is_normalized', 'BOOLEAN'),
+    ('raw_read_count', 'REAL'),
+    ('score', 'REAL'),
+    ('units', 'TEXT')]
 
 
 class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
@@ -256,8 +252,8 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         self.expressionColumnNames = [f[0] for f in _expressionColumns]
         self.expressionColumnTypes = [f[1] for f in _expressionColumns]
 
-    def searchRnaQuantificationsInDb(self, pageToken=0, pageSize=None,
-                                     rnaQuantificationId=None):
+    def searchRnaQuantificationsInDb(
+            self, pageToken=0, pageSize=None, rnaQuantificationId=None):
         """
         :param pageToken: int representing first record to return
         :param pageSize: int representing number of records to return
@@ -274,7 +270,8 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         try:
             return sqliteBackend.sqliteRows2dicts(query.fetchall())
         except AttributeError:
-            return None
+            raise exceptions.RnaQuantificationNotFoundException(
+                rnaQuantificationId)
 
     def getRnaQuantificationById(self, rnaQuantificationId):
         """
@@ -287,11 +284,12 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         try:
             return sqliteBackend.sqliteRow2Dict(query.fetchone())
         except AttributeError:
-            return None
+            raise exceptions.RnaQuantificationNotFoundException(
+                rnaQuantificationId)
 
-    def searchExpressionLevelsInDb(self, rnaQuantId, pageToken=0,
-                                   pageSize=None, expressionId=None,
-                                   featureGroupId=None, threshold=0.0):
+    def searchExpressionLevelsInDb(
+            self, rnaQuantId, pageToken=0, pageSize=None, expressionId=None,
+            featureGroupId=None, threshold=0.0):
         """
         :param rnaQuantId: string restrict search by quantification id
         :param pageToken: int representing first record to return
@@ -316,7 +314,8 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         try:
             return sqliteBackend.sqliteRows2dicts(query.fetchall())
         except AttributeError:
-            return None
+            raise exceptions.ExpressionLevelNotFoundException(
+                expressionId)
 
     def getExpressionLevelById(self, expressionId):
         """
@@ -329,10 +328,11 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         try:
             return sqliteBackend.sqliteRow2Dict(query.fetchone())
         except AttributeError:
-            return None
+            raise exceptions.ExpressionLevelNotFoundException(
+                expressionId)
 
-    def searchFeatureGroupsInDb(self, rnaQuantId, pageToken=0,
-                                pageSize=None, featureGroupId=None):
+    def searchFeatureGroupsInDb(
+            self, rnaQuantId, pageToken=0, pageSize=None, featureGroupId=None):
         """
         :param rnaQuantId: string restrict search by quantification id
         :param pageToken: int representing first record to return
@@ -351,7 +351,8 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         try:
             return sqliteBackend.sqliteRows2dicts(query.fetchall())
         except AttributeError:
-            return None
+            raise exceptions.FeatureGroupNotFoundException(
+                featureGroupId)
 
     def getFeatureGroupById(self, featureGroupId):
         """
@@ -365,7 +366,8 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         try:
             return sqliteBackend.sqliteRow2Dict(query.fetchone())
         except AttributeError:
-            return None
+            raise exceptions.FeatureGroupNotFoundException(
+                featureGroupId)
 
 
 class SimulatedRNASeqResult(AbstractRNAQuantification):

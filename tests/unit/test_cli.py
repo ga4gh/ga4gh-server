@@ -263,8 +263,8 @@ class TestClientArguments(unittest.TestCase):
             args.runner, cli.SearchVariantAnnotationSetsRunner)
 
     def testRnaQuantificationSearchArguments(self):
-        cliInput = ("rnaquantification-search --rnaQuantificationId ID "
-                    "BASEURL")
+        cliInput = (
+            "rnaquantification-search --rnaQuantificationId ID BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.rnaQuantificationId, "ID")
         self.assertEqual(args.baseUrl, "BASEURL")
@@ -284,8 +284,9 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.runner, cli.SearchExpressionLevelRunner)
 
     def testFeatureGroupSearchArguments(self):
-        cliInput = ("featuregroup-search --featureGroupId ID "
-                    "--rnaQuantificationId rID BASEURL")
+        cliInput = (
+            "featuregroup-search --featureGroupId ID --rnaQuantificationId "
+            "rID BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.featureGroupId, "ID")
         self.assertEqual(args.rnaQuantificationId, "rID")
