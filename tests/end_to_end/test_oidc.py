@@ -16,6 +16,9 @@ import client
 import server
 import server_test
 
+import ga4gh.datamodel as datamodel
+import tests.paths as paths
+
 
 def getClientKey(server_url, username, password):
     """
@@ -53,7 +56,9 @@ class TestOidc(server_test.ServerTestClass):
     """
     @classmethod
     def otherSetup(cls):
-        cls.simulatedVariantSetId = "c2ltdWxhdGVkRGF0YXNldDA6c2ltVnMw"
+        cls.simulatedVariantSetId = \
+            datamodel.VariantSetCompoundId.obfuscate(
+                paths.simulatedVariantSetId)
         requests.packages.urllib3.disable_warnings()
         cls.opServer = server.OidcOpServerForTesting()
         cls.opServer.start()

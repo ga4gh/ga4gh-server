@@ -37,3 +37,12 @@ bamPath2 = os.path.join(
     testDataDir,
     'datasets/dataset1/reads/'
     'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample.bam')
+
+# simulated object ids
+simulatedDatasetId = "simulatedDataset0"
+simulatedVariantSetId = "simulatedDataset0:vs:simVs0"
+simulatedReadGroupId = "simulatedDataset0:rgs:simRgs0:rg0"
+simulatedReferenceSetId = "referenceSet0"
+simulatedReferenceId = "referenceSet0:srs0"
+simulatedVariantAnnotationSetId = (
+    "simulatedDataset0:simVas0:variantannotations")
