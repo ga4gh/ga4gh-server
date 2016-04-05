@@ -88,7 +88,7 @@ class Gff32Db(object):
                 values = (
                     feature.uniqueId,
                     parentId,
-                    _db_serialize(childIds),  # FIXME childIds
+                    _db_serialize(childIds),
                     feature.seqname,
                     feature.source,
                     feature.type,
@@ -107,6 +107,10 @@ class Gff32Db(object):
                     "name, gene_name, transcript_name, attributes) "
                     "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"), values)
                 dbconn.commit()
+        dbcur.execute(("create INDEX idx1 "
+            "on feature(start, end, reference_name)"))
+        dbcur.execute("PRAGMA INDEX_LIST('feature')")
+
         dbcur.close()
         dbconn.close()
         print("Done.", file=sys.stderr)
