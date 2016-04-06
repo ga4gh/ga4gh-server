@@ -806,7 +806,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         self._variantSet = variantSet
         self._compoundId = datamodel.VariantAnnotationSetCompoundId(
             self.getCompoundId(), 'variantannotations')
-        self._sequenceOntology = backend.getOntology('sequence_ontology')
+        self._sequenceOntology = backend.getOntologyMap('sequence_ontology')
         self._creationTime = datetime.datetime.now().isoformat() + "Z"
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
         # Annotations are currently either from VEP or SNPEff. If they are
@@ -1008,9 +1008,8 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             so = self._createGaOntologyTermSo()
             so.term = soName
             if self._sequenceOntology is not None:
-                so.id = self._sequenceOntology.getId(soName)
+                so.id = self._sequenceOntology.getId(soName, "")
             soTerms.append(so)
-            # TODO We must fill the ontology ID based on the SO name
         return soTerms
 
     def convertVariantAnnotation(self, record, transcriptConverter):

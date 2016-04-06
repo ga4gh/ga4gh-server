@@ -152,7 +152,7 @@ class ComplianceDataMunger(object):
                     # in place, creates a tabix index.
                     pysam.tabix_index(destFile, preset="vcf")
 
-        ontologiesDir = os.path.join(self.outputDirectory, "ontologies")
+        ontologiesDir = os.path.join(self.outputDirectory, "ontologymaps")
         sequenceOntologyDir = os.path.join(ontologiesDir, "sequence_ontology")
         os.makedirs(sequenceOntologyDir)
         shutil.copy(os.path.join(self.inputDirectory, "sequence_ontology.txt"),

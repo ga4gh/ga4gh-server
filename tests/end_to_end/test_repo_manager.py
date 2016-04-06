@@ -35,6 +35,7 @@ class RepoManagerEndToEndTest(unittest.TestCase):
 
     def testEndToEnd(self):
         self._runCmd("init")
+        self._runCmd("add-ontologymap", paths.ontologyPath)
         self._runCmd("add-referenceset", paths.faPath)
         self._runCmd("add-dataset", self.datasetName)
         self._runCmd("add-readgroupset", self.datasetName, paths.bamPath)
@@ -53,6 +54,8 @@ class RepoManagerEndToEndTest(unittest.TestCase):
             "remove-dataset", self.datasetName, "-f")
         self._runCmd(
             "remove-referenceset", paths.referenceSetName, "-f")
+        self._runCmd(
+            "remove-ontologymap", paths.ontologyName, "-f")
         self._runCmd("destroy", "-f")
 
     def testForce(self):
