@@ -25,6 +25,34 @@ class TestCompoundIds(unittest.TestCase):
     """
     Test the compound ids
     """
+    separator = datamodel.CompoundId.separator
+
+    def testSplit(self):
+        fakeSeparator = "\\" + self.separator
+        idString = "{}a{}b{}c{}d{}e{}".format(
+            fakeSeparator, self.separator, fakeSeparator,
+            self.separator * 3, fakeSeparator, self.separator * 5)
+        splits = datamodel.CompoundId.split(idString)
+        self.assertEqual(len(splits), 4)
+        self.assertEqual(splits[0], fakeSeparator + "a")
+        self.assertEqual(splits[1], "b" + fakeSeparator + "c")
+        self.assertEqual(splits[2], "d" + fakeSeparator + "e")
+        self.assertEqual(splits[3], "")
+
+        # test separator not at end
+        anotherIdString = "abcde"
+        splits = datamodel.CompoundId.split(anotherIdString)
+        self.assertEqual(splits, [anotherIdString])
+
+    def testEncodeDecode(self):
+        idString = "\\one" + self.separator + "two\\"
+        encodedIdString = datamodel.CompoundId.encode(idString)
+        self.assertEqual(
+            encodedIdString,
+            "\\\\one\\" + self.separator + "two\\\\")
+        decodedIdString = datamodel.CompoundId.decode(encodedIdString)
+        self.assertEqual(idString, decodedIdString)
+
     def testURLUnsafe(self):
         hasSlashes = "???"  # base64 encodes to 'Pz8/'
         needsPadding = "padme"  # base64 encodes to 'cGFkbWU='
@@ -96,6 +124,24 @@ class TestCompoundIds(unittest.TestCase):
         compoundIdStr = str(compoundId)
         self.assertEqual(compoundIdStr, obfuscated)
         self.assertEqual(compoundId.__class__, ExampleCompoundId)
+
+    def testEncoded(self):
+        # the localIds passed in are getting encoded upon instantiation
+        compoundId = ExampleCompoundId(None, ";", "b", "\\")
+        compoundIdStr = str(compoundId)
+        deobfuscated = ExampleCompoundId.deobfuscate(compoundIdStr)
+        deobfuscatedIdStr = '\\;;b;\\\\'
+        self.assertEqual(deobfuscated, deobfuscatedIdStr)
+        decoded = ExampleCompoundId.decode(deobfuscated)
+        decodedIdStr = ';;b;\\'
+        self.assertEqual(decoded, decodedIdStr)
+
+        # check that instantiating via parse is
+        # decoding and encoding correctly
+        obfuscated = ExampleCompoundId.obfuscate(deobfuscatedIdStr)
+        parsedCompoundId = ExampleCompoundId.parse(obfuscated)
+        parsedCompoundIdStr = str(parsedCompoundId)
+        self.assertEqual(compoundIdStr, parsedCompoundIdStr)
 
     def getDataset(self):
         return datasets.AbstractDataset("dataset")

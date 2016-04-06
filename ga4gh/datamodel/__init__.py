@@ -135,7 +135,8 @@ class CompoundId(object):
                 setattr(self, field, getattr(parentCompoundId, field))
                 index += 1
         for field, localId in zip(self.fields[index:], localIds):
-            setattr(self, field, str(localId))
+            encodedLocalId = self.encode(str(localId))
+            setattr(self, field, encodedLocalId)
         if len(localIds) != len(self.fields) - index:
             raise ValueError(
                 "Incorrect number of fields provided to instantiate ID")
@@ -149,6 +150,57 @@ class CompoundId(object):
         values = [getattr(self, f) for f in self.fields]
         compoundIdStr = self.separator.join(values)
         return self.obfuscate(compoundIdStr)
+
+    @classmethod
+    def split(cls, idString):
+        """
+        Splits a idString into fragments.  We can't use the regular str
+        split method because it could split on characters in the idString
+        that happen to be identical to the separator.
+        """
+        splits = []
+        startIndex = 0
+        i = 0
+        length = len(idString)
+        while i < length:
+            char = idString[i]
+            if char == "\\":
+                # the next character is escaped, so there's no possibility
+                # it could be a valid separator
+                i += 2
+                continue
+            elif char == cls.separator:
+                if i != 0:
+                    # create a split if we're not at the start of the string
+                    split = idString[startIndex:i]
+                    if len(split) > 0:
+                        splits.append(split)
+                startIndex = i + 1
+            i += 1
+        split = idString[startIndex:]
+        splits.append(split)
+        return splits
+
+    @classmethod
+    def encode(cls, idString):
+        """
+        Encodes an idString by escaping any characters that may be identical
+        to the compound id separator.
+        """
+        backslashesEncoded = idString.replace("\\", "\\\\")
+        separatorEncoded = backslashesEncoded.replace(
+            cls.separator, "\\" + cls.separator)
+        return separatorEncoded
+
+    @classmethod
+    def decode(cls, idString):
+        """
+        Decodes an idString that has been encoded with the encode method.
+        """
+        separatorDecoded = idString.replace(
+            "\\" + cls.separator, cls.separator)
+        backslashesDecoded = separatorDecoded.replace("\\\\", "\\")
+        return backslashesDecoded
 
     @classmethod
     def parse(cls, compoundIdStr):
@@ -171,7 +223,8 @@ class CompoundId(object):
             # this as an ID not found error.
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
         try:
-            splits = deobfuscated.split(cls.separator)
+            encodedSplits = cls.split(deobfuscated)
+            splits = [cls.decode(split) for split in encodedSplits]
         except UnicodeDecodeError:
             # Sometimes base64 decoding succeeds but we're left with
             # unicode gibberish. This is also and IdNotFound.
