@@ -120,6 +120,21 @@ class CompoundId(object):
     further up the tree. This list is a set of tuples giving the
     name and length of a given prefix forming an identifier.
     """
+    prefix = 'X'
+    """
+    A unique prefix for each type of CompoundId.  Used to ensure
+    any two IDs for different types are not identical.
+    """
+    prefixSeparator = '_'
+    """
+    A delimiter between the prefix and the rest of the ID
+    """
+    obfuscators = []
+    """
+    An array that defines the obfuscators to be used for each id in
+    containerIds.  A None value indicates that the class' own
+    obfuscator should be used for that containerId array index.
+    """
 
     def __init__(self, parentCompoundId, *localIds):
         """
@@ -139,10 +154,13 @@ class CompoundId(object):
         if len(localIds) != len(self.fields) - index:
             raise ValueError(
                 "Incorrect number of fields provided to instantiate ID")
-        for idFieldName, prefix in self.containerIds:
+        for i, (idFieldName, prefix) in enumerate(self.containerIds):
             values = [getattr(self, f) for f in self.fields[:prefix + 1]]
             containerId = self.separator.join(values)
-            obfuscated = self.obfuscate(containerId)
+            obfuscator = self.obfuscators[i]
+            if obfuscator is None:
+                obfuscator = self
+            obfuscated = obfuscator.obfuscate(containerId)
             setattr(self, idFieldName, obfuscated)
 
     def __str__(self):
@@ -165,7 +183,7 @@ class CompoundId(object):
             raise exceptions.BadIdentifierException(compoundIdStr)
         try:
             deobfuscated = cls.deobfuscate(compoundIdStr)
-        except TypeError:
+        except (TypeError, ValueError):
             # When a string that cannot be converted to base64 is passed
             # as an argument, b64decode raises a TypeError. We must treat
             # this as an ID not found error.
@@ -187,6 +205,7 @@ class CompoundId(object):
         fashion. This is not intended for security purposes, but rather to
         dissuade users from depending on our internal ID structures.
         """
+        idStr = cls.prefix + cls.prefixSeparator + idStr
         return base64.urlsafe_b64encode(str(idStr)).replace(b'=', b'')
 
     @classmethod
@@ -196,8 +215,10 @@ class CompoundId(object):
         If an identifier arrives without correct base64 padding this
         function will append it to the end.
         """
-        return base64.urlsafe_b64decode(str((
+        decoded = base64.urlsafe_b64decode(str((
             data + b'A=='[(len(data) - 1) % 4:])))
+        index = decoded.index(cls.prefixSeparator)
+        return decoded[index + 1:]
 
 
 class ReferenceSetCompoundId(CompoundId):
@@ -206,6 +227,8 @@ class ReferenceSetCompoundId(CompoundId):
     """
     fields = ['referenceSet']
     containerIds = [('referenceSetId', 0)]
+    obfuscators = [None]
+    prefix = 'RS'
 
 
 class ReferenceCompoundId(ReferenceSetCompoundId):
@@ -213,6 +236,8 @@ class ReferenceCompoundId(ReferenceSetCompoundId):
     The compound id for a reference
     """
     fields = ReferenceSetCompoundId.fields + ['reference']
+    obfuscators = [ReferenceSetCompoundId]
+    prefix = 'R'
 
 
 class DatasetCompoundId(CompoundId):
@@ -221,6 +246,8 @@ class DatasetCompoundId(CompoundId):
     """
     fields = ['dataset']
     containerIds = [('datasetId', 0)]
+    obfuscators = [None]
+    prefix = 'D'
 
 
 class VariantSetCompoundId(DatasetCompoundId):
@@ -229,6 +256,8 @@ class VariantSetCompoundId(DatasetCompoundId):
     """
     fields = DatasetCompoundId.fields + ['variantSet']
     containerIds = DatasetCompoundId.containerIds + [('variantSetId', 1)]
+    obfuscators = [DatasetCompoundId, None]
+    prefix = 'VS'
 
 
 class VariantAnnotationSetCompoundId(VariantSetCompoundId):
@@ -238,6 +267,8 @@ class VariantAnnotationSetCompoundId(VariantSetCompoundId):
     fields = VariantSetCompoundId.fields + ['variantAnnotationSet']
     containerIds = VariantSetCompoundId.containerIds + [
         ('variantAnnotationSetId', 2)]
+    obfuscators = [DatasetCompoundId, VariantSetCompoundId, None]
+    prefix = 'VAS'
 
 
 class VariantSetMetadataCompoundId(VariantSetCompoundId):
@@ -247,6 +278,8 @@ class VariantSetMetadataCompoundId(VariantSetCompoundId):
     fields = VariantSetCompoundId.fields + ['key']
     containerIds = VariantSetCompoundId.containerIds + [
         ('variantSetMetadataId', 1)]
+    obfuscators = [DatasetCompoundId, VariantSetCompoundId, None]
+    prefix = 'VSM'
 
 
 class VariantCompoundId(VariantSetCompoundId):
@@ -254,6 +287,8 @@ class VariantCompoundId(VariantSetCompoundId):
     The compound id for a variant
     """
     fields = VariantSetCompoundId.fields + ['referenceName', 'start', 'md5']
+    obfuscators = [DatasetCompoundId, VariantSetCompoundId]
+    prefix = 'V'
 
 
 class VariantAnnotationCompoundId(VariantAnnotationSetCompoundId):
@@ -262,13 +297,22 @@ class VariantAnnotationCompoundId(VariantAnnotationSetCompoundId):
     """
     fields = VariantAnnotationSetCompoundId.fields + [
         'referenceName', 'start', 'md5']
+    obfuscators = [
+        DatasetCompoundId, VariantSetCompoundId,
+        VariantAnnotationSetCompoundId]
+    prefix = 'VA'
 
 
-class VariantAnnotationSetAnalysisCompoundId(VariantAnnotationSetCompoundId):
+class VariantAnnotationSetAnalysisCompoundId(
+        VariantAnnotationSetCompoundId):
     """
     The compound id for a variant annotaiton set's Analysis
     """
     fields = VariantAnnotationSetCompoundId.fields + ['analysis']
+    obfuscators = [
+        DatasetCompoundId, VariantSetCompoundId,
+        VariantAnnotationSetCompoundId]
+    prefix = 'VASA'
 
 
 class CallSetCompoundId(VariantSetCompoundId):
@@ -276,6 +320,8 @@ class CallSetCompoundId(VariantSetCompoundId):
     The compound id for a callset
     """
     fields = VariantSetCompoundId.fields + ['name']
+    obfuscators = [DatasetCompoundId, VariantSetCompoundId]
+    prefix = 'CS'
 
 
 class ReadGroupSetCompoundId(DatasetCompoundId):
@@ -284,6 +330,8 @@ class ReadGroupSetCompoundId(DatasetCompoundId):
     """
     fields = DatasetCompoundId.fields + ['readGroupSet']
     containerIds = DatasetCompoundId.containerIds + [('readGroupSetId', 1)]
+    obfuscators = [DatasetCompoundId, None]
+    prefix = 'RGS'
 
 
 class ReadGroupCompoundId(ReadGroupSetCompoundId):
@@ -292,6 +340,8 @@ class ReadGroupCompoundId(ReadGroupSetCompoundId):
     """
     fields = ReadGroupSetCompoundId.fields + ['readGroup']
     containerIds = ReadGroupSetCompoundId.containerIds + [('readGroupId', 2)]
+    obfuscators = [DatasetCompoundId, ReadGroupSetCompoundId, None]
+    prefix = 'RG'
 
 
 class ExperimentCompoundId(ReadGroupCompoundId):
@@ -300,6 +350,10 @@ class ExperimentCompoundId(ReadGroupCompoundId):
     """
     fields = ReadGroupCompoundId.fields + ['experiment']
     containerIds = ReadGroupCompoundId.containerIds + [('experimentId', 3)]
+    obfuscators = [
+        DatasetCompoundId, ReadGroupSetCompoundId,
+        ReadGroupCompoundId, None]
+    prefix = 'E'
 
 
 class ReadAlignmentCompoundId(ReadGroupCompoundId):
@@ -307,6 +361,9 @@ class ReadAlignmentCompoundId(ReadGroupCompoundId):
     The compound id for a read alignment
     """
     fields = ReadGroupCompoundId.fields + ['readAlignment']
+    obfuscators = [
+        DatasetCompoundId, ReadGroupSetCompoundId, ReadGroupCompoundId]
+    prefix = 'RA'
 
 
 class DatamodelObject(object):

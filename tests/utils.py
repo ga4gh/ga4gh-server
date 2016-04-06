@@ -18,6 +18,15 @@ import time
 packageName = 'ga4gh'
 
 
+def getAllSubclasses(clazz):
+    # assumes new-style classes, no funky inheritence graphs
+    subclasses = clazz.__subclasses__()
+    allSubclasses = subclasses[:]
+    for subclass in subclasses:
+        allSubclasses.extend(getAllSubclasses(subclass))
+    return allSubclasses
+
+
 def captureOutput(func, *args, **kwargs):
     """
     Runs the specified function and arguments, and returns the

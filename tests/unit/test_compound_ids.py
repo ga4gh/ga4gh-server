@@ -13,18 +13,28 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
+import tests.utils as utils
 
 
 class ExampleCompoundId(datamodel.CompoundId):
     separator = ';'
     fields = ['foo', 'bar', 'baz']
     containerIds = [('foobar', 1), ('foobarbaz', 2)]
+    obfuscators = [None, None]
+    prefix = 'EXAMPLE'
+    prefixSeparator = '$'
 
 
 class TestCompoundIds(unittest.TestCase):
     """
     Test the compound ids
     """
+    def testUniquePrefixes(self):
+        classes = utils.getAllSubclasses(datamodel.CompoundId)
+        self.assertGreater(len(classes), 0)
+        prefixes = set([clazz.prefix for clazz in classes])
+        self.assertEqual(len(classes), len(prefixes))
+
     def testURLUnsafe(self):
         hasSlashes = "???"  # base64 encodes to 'Pz8/'
         needsPadding = "padme"  # base64 encodes to 'cGFkbWU='
@@ -48,9 +58,11 @@ class TestCompoundIds(unittest.TestCase):
             obfuscated = datamodel.CompoundId.obfuscate(badId)
             self.assertEqual(
                 badId, datamodel.CompoundId.deobfuscate(obfuscated))
-            with self.assertRaises(exceptions.ObjectWithIdNotFoundException):
+            with self.assertRaises(
+                    exceptions.ObjectWithIdNotFoundException):
                 ExampleCompoundId.parse(badId)
-            with self.assertRaises(exceptions.ObjectWithIdNotFoundException):
+            with self.assertRaises(
+                    exceptions.ObjectWithIdNotFoundException):
                 ExampleCompoundId.parse(obfuscated)
         for badType in [0, None, []]:
             with self.assertRaises(exceptions.BadIdentifierException):
@@ -80,22 +92,38 @@ class TestCompoundIds(unittest.TestCase):
             obfuscated)
 
     def testAttrs(self):
-        obfuscated = datamodel.CompoundId.obfuscate('a;b;c')
+        obfuscated = ExampleCompoundId.obfuscate('a;b;c')
         compoundId = ExampleCompoundId.parse(obfuscated)
         self.assertEqual(compoundId.foo, 'a')
         self.assertEqual(compoundId.bar, 'b')
         self.assertEqual(compoundId.baz, 'c')
-        obfuscated = datamodel.CompoundId.obfuscate("a;b")
+        obfuscated = ExampleCompoundId.obfuscate("a;b")
         self.assertEqual(compoundId.foobar, obfuscated)
-        obfuscated = datamodel.CompoundId.obfuscate("a;b;c")
+        obfuscated = ExampleCompoundId.obfuscate("a;b;c")
         self.assertEqual(compoundId.foobarbaz, obfuscated)
 
     def testInstantiate(self):
         compoundId = ExampleCompoundId(None, "a", "5", "c")
-        obfuscated = datamodel.CompoundId.obfuscate("a;5;c")
+        obfuscated = ExampleCompoundId.obfuscate("a;5;c")
         compoundIdStr = str(compoundId)
         self.assertEqual(compoundIdStr, obfuscated)
         self.assertEqual(compoundId.__class__, ExampleCompoundId)
+
+    def testPrefixes(self):
+        # we want to ensure unique ids; therefore, two different types
+        # with the same input id string should not have the same id
+        sameId = "a;5;c"
+        exampleId = ExampleCompoundId.obfuscate(sameId)
+        compoundId = datamodel.CompoundId.obfuscate(sameId)
+        self.assertNotEqual(exampleId, compoundId)
+        exampleIdStr = ExampleCompoundId.deobfuscate(exampleId)
+        compoundIdStr = datamodel.CompoundId.deobfuscate(compoundId)
+        self.assertEqual(sameId, exampleIdStr)
+        self.assertEqual(sameId, compoundIdStr)
+        # trying to deobfuscate with wrong class can throw error
+        # (if prefixSeparators are different)
+        with self.assertRaises(ValueError):
+            ExampleCompoundId.deobfuscate(compoundId)
 
     def getDataset(self):
         return datasets.AbstractDataset("dataset")
@@ -129,9 +157,11 @@ class TestCompoundIds(unittest.TestCase):
     def testVariantSet(self):
         dataset = self.getDataset()
         localId = "variantSet"
-        cid = datamodel.VariantSetCompoundId(dataset.getCompoundId(), localId)
+        cid = datamodel.VariantSetCompoundId(
+            dataset.getCompoundId(), localId)
         self.assertRaises(
-            ValueError, datamodel.VariantCompoundId, dataset.getCompoundId())
+            ValueError, datamodel.VariantCompoundId,
+            dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
         self.assertEqual(cid.variantSet, localId)
         self.assertEqual(cid.datasetId, dataset.getId())
@@ -350,4 +380,5 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.dataset, "a")
         self.assertEqual(cid.variantSet, "b")
         self.assertEqual(cid.key, "c")
-        self.verifyParseFailure(idStr, datamodel.VariantSetMetadataCompoundId)
+        self.verifyParseFailure(
+            idStr, datamodel.VariantSetMetadataCompoundId)

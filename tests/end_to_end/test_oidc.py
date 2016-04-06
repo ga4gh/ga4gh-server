@@ -12,6 +12,9 @@ from urlparse import urlparse
 
 import lxml.html as html
 
+import ga4gh.datamodel as datamodel
+import tests.paths as paths
+
 import client
 import server
 import server_test
@@ -53,7 +56,9 @@ class TestOidc(server_test.ServerTestClass):
     """
     @classmethod
     def otherSetup(cls):
-        cls.simulatedVariantSetId = "c2ltdWxhdGVkRGF0YXNldDA6c2ltVnMw"
+        cls.simulatedVariantSetId = \
+            datamodel.VariantSetCompoundId.obfuscate(
+                paths.simulatedVariantSetId)
         requests.packages.urllib3.disable_warnings()
         cls.opServer = server.OidcOpServerForTesting()
         cls.opServer.start()
