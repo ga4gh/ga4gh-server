@@ -131,6 +131,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
             sql += ", ".join(["?", ] * len(featureTypes))
             sql += ") "
             sql_args += tuple(featureTypes)
+        sql += "ORDER BY reference_name, start, end ASC "
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
         query = self._dbconn.execute(sql, sql_args)
         return sqliteBackend.sqliteRows2dicts(query.fetchall())
