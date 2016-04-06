@@ -306,7 +306,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
     def __init__(self, parentContainer, localId, filePath, dataRepository):
         super(Gff3DbFeatureSet, self).__init__(
             parentContainer, localId, None)
-        self._sequenceOntology = dataRepository.getOntology(
+        self._sequenceOntology = dataRepository.getOntologyMap(
             'sequence_ontology')
         self._dbFilePath = filePath
         self._dataRepository = dataRepository
