@@ -107,7 +107,8 @@ class Gff32Db(object):
                     "name, gene_name, transcript_name, attributes) "
                     "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"), values)
                 dbconn.commit()
-        dbcur.execute(("create INDEX idx1 "
+        dbcur.execute((
+            "create INDEX idx1 "
             "on feature(start, end, reference_name)"))
         dbcur.execute("PRAGMA INDEX_LIST('feature')")
 
