@@ -90,6 +90,7 @@ class RepoManager(object):
     bamExtension = '.bam'
     bamIndexExtension = '.bam.bai'
     dbExtension = '.db'
+    ontologyExtension = '.txt'
 
     def __init__(self, repoPath):
         self._repoPath = repoPath
@@ -158,6 +159,11 @@ class RepoManager(object):
         referenceSetPath = os.path.join(
             self._repoPath, self.referenceSetsDirName, referenceSetName)
         return referenceSetPath
+
+    def _getOntologyMapPath(self, ontologyMapName):
+        ontologyMapPath = os.path.join(
+            self._repoPath, self.ontologiesDirName, ontologyMapName)
+        return ontologyMapPath
 
     def _getReferenceSetJsonPath(self, referenceSetName):
         jsonPath = os.path.join(
@@ -536,6 +542,29 @@ class RepoManager(object):
         self._repoEmit("FeatureSet '{}/{}' removed".format(
             datasetName, featureSetName))
 
+    def addOntologyMap(self, filePath, moveMode):
+        self._check()
+        self._checkFile(filePath, self.ontologyExtension)
+        fileName = os.path.basename(filePath)
+        destPath = self._getOntologyMapPath(
+            filenameWithoutExtension(fileName, self.ontologyExtension))
+        self._assertPathEmpty(destPath, inRepo=True)
+        os.mkdir(destPath)
+        self._moveFile(filePath, os.path.join(destPath, fileName), moveMode)
+        self._repoEmit("Ontology map '{}' added to repository".format(
+            fileName))
+
+    def removeOntologyMap(self, ontologyName):
+        self._check()
+        ontologyPath = os.path.join(
+            self._repoPath,
+            self.ontologiesDirName,
+            ontologyName)
+        self._assertFileExists(ontologyPath, inRepo=True)
+        self._removePath(ontologyPath)
+        self._repoEmit("Ontology '{}' removed".format(
+            ontologyName))
+
     def list(self):
         """
         List the contents of the repo
@@ -549,6 +578,9 @@ class RepoManager(object):
             self._emitIndent(referenceSet.getLocalId())
             for reference in referenceSet.getReferences():
                 self._emitIndent(reference.getLocalId(), 2)
+        self._emit(self.ontologiesDirName)
+        for ontologyMap in dataRepo.getOntologyMaps():
+            self._emitIndent(ontologyMap.getLocalId(), 1)
         self._emit(self.datasetsDirName)
         for dataset in dataRepo.getDatasets():
             self._emitIndent(dataset.getLocalId())

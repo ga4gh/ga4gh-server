@@ -24,6 +24,11 @@ vcfDirPath = os.path.join(
 vcfDirPath2 = os.path.join(
     testDataDir, 'datasets/dataset1/variants/1kgPhase3')
 
+
+ontologyName = "sequence_ontology"
+ontologyPath = os.path.join(
+    testDataDir, 'ontologymaps/sequence_ontology/sequence_ontology.txt')
+
 # reads
 readGroupSetName = 'chr17.1-250'
 bamPath = os.path.join(

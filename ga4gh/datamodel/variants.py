@@ -20,6 +20,14 @@ import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
 
 
+def isUnspecified(str):
+    """
+    Checks whether a string is None or an
+    empty string. Returns a boolean.
+    """
+    return str == "" or str is None
+
+
 def convertVCFPhaseset(vcfPhaseset):
     """
     Parses the VCF phaseset string
@@ -787,9 +795,19 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         return ret
 
     def isAnnotated(self, path):
+        # assumes that all files in the directory look like the first
+        return self.hasAnnField(path) or self.hasConsequenceField(path)
+
+    def hasAnnField(self, path):
+        return 'ANN' in self._getHeaderItems(path)
+
+    def hasConsequenceField(self, path):
+        return 'CSQ' in self._getHeaderItems(path)
+
+    def _getHeaderItems(self, path):
         pysamreader = self.openFile(
             glob.glob(os.path.join(path, "*.vcf.gz"))[0])
-        return 'ANN' in [x[0] for x in pysamreader.header.info.items()]
+        return [x[0] for x in pysamreader.header.info.items()]
 
 
 class HtslibVariantAnnotationSet(HtslibVariantSet):
@@ -806,7 +824,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         self._variantSet = variantSet
         self._compoundId = datamodel.VariantAnnotationSetCompoundId(
             self.getCompoundId(), 'variantannotations')
-        self._sequenceOntology = backend.getOntology('sequence_ontology')
+        self._sequenceOntology = backend.getOntologyMap('sequence_ontology')
         self._creationTime = datetime.datetime.now().isoformat() + "Z"
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
         # Annotations are currently either from VEP or SNPEff. If they are
@@ -814,6 +832,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         # TODO Detect this more rigorously at import time and throw an
         # exception if we don't see the formats we're expecting.
         self._isVep = "VEP" in self.toProtocolElement().analysis.info
+        self._isCsq = self.hasConsequenceField(dataDir)
         # Parse the annotation creation time out of the VCF header.
         # TODO Check this at import time, and raise an exception if the
         # time is not in the expected format.
@@ -841,8 +860,10 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             cursor = self.getFileHandle(varFileName).fetch(
                 referenceName, startPosition, endPosition)
             transcriptConverter = self.convertTranscriptEffectSnpEff
-            if self._isVep:
+            if self._isVep and not self._isCsq:
                 transcriptConverter = self.convertTranscriptEffectVEP
+            elif self._isCsq:
+                transcriptConverter = self.convertTranscriptEffectCSQ
             for record in cursor:
                 yield self.convertVariantAnnotation(
                     record, transcriptConverter)
@@ -854,7 +875,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         :param pos:
         :return: protocol.AlleleLocation
         """
-        if pos == '':
+        if isUnspecified(pos):
             return None
         coordLen = pos.split('/')
         if len(coordLen) > 1:
@@ -870,7 +891,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         :param hgvsc:
         :return:
         """
-        if hgvsc == '':
+        if isUnspecified(hgvsc):
             return None
         match = re.match(".*c.(\d+)(\D+)>(\D+)", hgvsc)
         if match:
@@ -890,7 +911,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         :param hgvsp:
         :return: protocol.AlleleLocation
         """
-        if hgvsp == '':
+        if isUnspecified(hgvsp):
             return None
         match = re.match(".*p.(\D+)(\d+)(\D+)", hgvsp, flags=re.UNICODE)
         if match is not None:
@@ -903,7 +924,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
 
     def addCDSLocation(self, effect, cdnaPos):
         hgvsC = effect.hgvsAnnotation.transcript
-        if hgvsC != '':
+        if not isUnspecified(hgvsC):
             effect.CDSLocation = self.convertLocationHgvsC(hgvsC)
         if effect.CDSLocation is None:
             effect.CDSLocation = self.convertLocation(cdnaPos)
@@ -914,7 +935,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
 
     def addProteinLocation(self, effect, protPos):
         hgvsP = effect.hgvsAnnotation.protein
-        if hgvsP != '':
+        if not isUnspecified(hgvsP):
             effect.proteinLocation = self.convertLocationHgvsP(hgvsP)
         if effect.proteinLocation is None:
             effect.proteinLocation = self.convertLocation(protPos)
@@ -941,6 +962,48 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         self.addCDSLocation(effect, cdnaPos)
         self.addCDNALocation(effect, cdnaPos)
         self.addProteinLocation(effect, protPos)
+        return effect
+
+    def convertTranscriptEffectCSQ(self, annStr, hgvsG):
+        """
+        Takes the consequence string of an annotated VCF using a
+        CSQ field as opposed to ANN and returns an array of
+        transcript effects.
+        :param annStr: String
+        :param hgvsG: String
+        :return: [protocol.TranscriptEffect]
+        """
+        # Allele|Gene|Feature|Feature_type|Consequence|cDNA_position|
+        # CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|
+        # DISTANCE|STRAND|SIFT|PolyPhen|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE
+
+        (alt, gene, featureId, featureType, effects, cdnaPos,
+         cdsPos, protPos, aminos, codons, existingVar, distance,
+         strand, sift, polyPhen, motifName, motifPos,
+         highInfPos, motifScoreChange) = annStr.split('|')
+        terms = effects.split("&")
+        transcriptEffects = []
+        for term in terms:
+            transcriptEffects.append(
+                self._createCsqTranscriptEffect(
+                    alt, term, protPos,
+                    cdnaPos, featureId))
+        return transcriptEffects
+
+    def _createCsqTranscriptEffect(
+            self, alt, term, protPos, cdnaPos, featureId):
+        effect = self._createGaTranscriptEffect()
+        effect.alternateBases = alt
+        effect.effects = self.convertSeqOntology(term)
+        effect.featureId = featureId
+        effect.hgvsAnnotation = protocol.HGVSAnnotation()
+        # These are not present in the data
+        effect.hgvsAnnotation.genomic = None
+        effect.hgvsAnnotation.transcript = None
+        effect.hgvsAnnotation.protein = None
+        self.addLocations(effect, protPos, cdnaPos)
+        effect.id = self.getTranscriptEffectId(effect)
+        effect.analysisResults = []
         return effect
 
     def convertTranscriptEffectVEP(self, annStr, hgvsG):
@@ -1008,9 +1071,8 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             so = self._createGaOntologyTermSo()
             so.term = soName
             if self._sequenceOntology is not None:
-                so.id = self._sequenceOntology.getId(soName)
+                so.id = self._sequenceOntology.getId(soName, "")
             soTerms.append(so)
-            # TODO We must fill the ontology ID based on the SO name
         return soTerms
 
     def convertVariantAnnotation(self, record, transcriptConverter):
@@ -1023,23 +1085,37 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         annotation = self._createGaVariantAnnotation()
         annotation.start = variant.start
         annotation.end = variant.end
-        annotation.createdDateTime = self._annotationCreatedDateTime
+        annotation.createDateTime = self._annotationCreatedDateTime
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
-        annotations = record.info.get('ANN'.encode())
+        transcriptEffects = []
         hgvsG = record.info.get('HGVS.g'.encode())
+        if transcriptConverter != self.convertTranscriptEffectCSQ:
+            annotations = record.info.get('ANN'.encode())
+            transcriptEffects = self._convertAnnotations(
+                annotations, variant, hgvsG, transcriptConverter)
+        else:
+            annotations = record.info.get('CSQ'.encode())
+            transcriptEffects = self.convertTranscriptEffectCSQ(
+                annotations[0], hgvsG)
+
+        annotation.transcriptEffects = transcriptEffects
+        annotation.id = self.getVariantAnnotationId(variant, annotation)
+        return annotation
+
+    def _convertAnnotations(
+            self, annotations, variant, hgvsG, transcriptConverter):
         transcriptEffects = []
         if annotations is not None:
             for index, ann in enumerate(annotations):
                 altshgvsG = ""
                 if hgvsG is not None:
-                    # The HGVS.g field contains an element for each alternate
-                    # allele
+                    # The HGVS.g field contains an element for
+                    # each alternate allele
                     altshgvsG = hgvsG[index % len(variant.alternateBases)]
-                transcriptEffects.append(transcriptConverter(ann, altshgvsG))
-        annotation.transcriptEffects = transcriptEffects
-        annotation.id = self.getVariantAnnotationId(variant, annotation)
-        return annotation
+                transcriptEffects.append(
+                    transcriptConverter(ann, altshgvsG))
+        return transcriptEffects
 
     def getVariantAnnotationId(self, gaVariant, gaAnnotation):
         """
