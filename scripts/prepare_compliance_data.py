@@ -8,19 +8,35 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import shutil
 import argparse
 import os
-import sys
+import shutil
 import glob
 import pysam
 import utils
+import tempfile
+import zipfile
 
 
 class ComplianceDataMunger(object):
     def __init__(self, args):
+        self.tempdir = None
         self.inputDirectory = args.inputDirectory
         self.outputDirectory = args.outputDirectory
+        # If no input directory is specified download from GitHub
+        if args.inputDirectory is None:
+            utils.log("Downloading test data...")
+            self.tempdir = tempfile.mkdtemp()
+            assert(os.path.exists(self.tempdir))
+            url = "https://github.com/ga4gh/compliance/archive/master.zip"
+            filePath = os.path.join(self.tempdir, 'compliance-master.zip')
+            downloader = utils.HttpFileDownloader(url, filePath)
+            downloader.download()
+            utils.log("Extracting test data...")
+            with zipfile.ZipFile(filePath, "r") as z:
+                z.extractall(self.tempdir)
+            self.inputDirectory = os.path.join(
+                self.tempdir, 'compliance-master', 'test-data')
 
         # get all the reference files (they'll be the ones with .fa extension)
         self.referenceFiles = map(
@@ -69,7 +85,7 @@ class ComplianceDataMunger(object):
 
         # Clean out, make and re-populate references directory
         # For now, assume a single, statically-named referenceSet
-        print("Converting references...", file=sys.stderr)
+        utils.log("Converting references...")
         shutil.rmtree(self.refsetsDirectory, ignore_errors=True)
         os.makedirs(self.refsetsDirectory)
         shutil.copy(
@@ -100,7 +116,7 @@ class ComplianceDataMunger(object):
             os.makedirs(dsdir)
 
             # Reads
-            print("Converting reads...", file=sys.stderr)
+            utils.log("Converting reads...")
             dsReadsdir = os.path.join(dsdir, "reads")
             os.makedirs(dsReadsdir)
             for readFile in self.datasetReads[ds]:
@@ -120,7 +136,7 @@ class ComplianceDataMunger(object):
                 pysam.index(destFilePath)
 
             # Variants
-            print("Converting variants...", file=sys.stderr)
+            utils.log("Converting variants...")
             dsVariantsdir = os.path.join(dsdir, "variants")
             os.makedirs(dsVariantsdir)
             for vgroup in self.datasetVariants[ds].keys():
@@ -136,12 +152,16 @@ class ComplianceDataMunger(object):
                     # in place, creates a tabix index.
                     pysam.tabix_index(destFile, preset="vcf")
 
-        ontologiesDir = os.path.join(self.outputDirectory, "ontologies")
+        ontologiesDir = os.path.join(self.outputDirectory, "ontologymaps")
         sequenceOntologyDir = os.path.join(ontologiesDir, "sequence_ontology")
         os.makedirs(sequenceOntologyDir)
         shutil.copy(os.path.join(self.inputDirectory, "sequence_ontology.txt"),
                     os.path.join(sequenceOntologyDir, "sequence_ontology.txt"))
-        print("done converting compliance data.", file=sys.stderr)
+
+    def cleanup(self):
+        if self.tempdir is not None:
+            shutil.rmtree(self.tempdir)
+        utils.log("Done converting compliance data.")
 
 
 @utils.Timed()
@@ -154,12 +174,17 @@ def main():
         help="The directory to output the server-ready data bundle to.")
     parser.add_argument(
         "--inputDirectory", "-i",
-        help="Path to local directory containing compliance dataset.",
-        default='.')
+        help="Path to local directory containing compliance dataset. "
+        "If no directory is provided this script will attempt to "
+        "download the compliance test-data from github",
+        default=None)
     parser.add_argument('--verbose', '-v', action='count', default=0)
     args = parser.parse_args()
-    cdm = ComplianceDataMunger(args)
-    cdm.run()
+    try:
+        cdm = ComplianceDataMunger(args)
+        cdm.run()
+    finally:
+        cdm.cleanup()
 
 if __name__ == "__main__":
     main()

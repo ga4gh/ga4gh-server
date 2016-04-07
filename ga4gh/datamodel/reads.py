@@ -167,6 +167,15 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         """
         raise NotImplementedError()
 
+    def getReadAlignmentId(self, gaAlignment):
+        """
+        Returns a string ID suitable for use in the specified GA
+        ReadAlignment object in this ReadGroupSet.
+        """
+        compoundId = datamodel.ReadAlignmentCompoundId(
+            self.getCompoundId(), gaAlignment.fragmentName)
+        return str(compoundId)
+
 
 class SimulatedReadGroupSet(AbstractReadGroupSet):
     """
@@ -355,15 +364,6 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.experiment = experiment
         return readGroup
 
-    def getReadAlignmentId(self, gaAlignment):
-        """
-        Returns a string ID suitable for use in the specified GA
-        ReadAlignment object in this ReadGroup.
-        """
-        compoundId = datamodel.ReadAlignmentCompoundId(
-            self.getCompoundId(), gaAlignment.fragmentName)
-        return str(compoundId)
-
     def getNumAlignedReads(self):
         """
         Return the number of aligned reads in the read group
@@ -486,7 +486,8 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.duplicateFragment = False
         alignment.failedVendorQualityChecks = False
 
-        alignment.fragmentName = "simulated{}".format(i)
+        alignment.fragmentName = "{}$simulated{}".format(
+            self.getLocalId(), i)
         alignment.info = {}
         alignment.nextMatePosition = None
         alignment.numberReads = None
@@ -495,7 +496,7 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.readNumber = None
         alignment.secondaryAlignment = False
         alignment.supplementaryAlignment = False
-        alignment.id = self.getReadAlignmentId(alignment)
+        alignment.id = self._parentContainer.getReadAlignmentId(alignment)
         return alignment
 
     def getNumAlignedReads(self):
@@ -660,7 +661,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
             read.flag, SamFlags.SECONDARY_ALIGNMENT)
         ret.supplementaryAlignment = SamFlags.isFlagSet(
             read.flag, SamFlags.SUPPLEMENTARY_ALIGNMENT)
-        ret.id = self.getReadAlignmentId(ret)
+        ret.id = self._parentContainer.getReadAlignmentId(ret)
         return ret
 
     def getNumAlignedReads(self):
