@@ -25,8 +25,8 @@ RUN /bin/bash -c "source ga4gh-server-env/bin/activate"
 RUN pip install --pre ga4gh
 
 # Install relevant sample data
-RUN wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar && \
-    tar -xvf ga4gh-example-data.tar
+RUN wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v3.2.tar && \
+    tar -xvf ga4gh-example-data-v3.2.tar
 
 # Write application.wsgi
 RUN echo "from ga4gh.frontend import app as application\nimport ga4gh.frontend as frontend\nfrontend.configure(\"/srv/ga4gh/config.py\")" > application.wsgi
