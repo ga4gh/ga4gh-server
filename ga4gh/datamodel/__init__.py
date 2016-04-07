@@ -322,18 +322,14 @@ class ExpressionLevelCompoundId(RnaQuantificationCompoundId):
     """
     The compound id for a expression level
     """
-    fields = RnaQuantificationCompoundId.fields + ['expressionLevel']
-    container = [('expressionLevelId', 2)]
-    containerIds = RnaQuantificationCompoundId.containerIds + container
+    fields = RnaQuantificationCompoundId.fields + ['expressionLevelId']
 
 
 class FeatureGroupCompoundId(RnaQuantificationCompoundId):
     """
     The compound id for a feature group
     """
-    fields = RnaQuantificationCompoundId.fields + ['featureGroup']
-    container = [('featureGroupId', 2)]
-    containerIds = RnaQuantificationCompoundId.containerIds + container
+    fields = RnaQuantificationCompoundId.fields + ['featureGroupId']
 
 
 class DatamodelObject(object):

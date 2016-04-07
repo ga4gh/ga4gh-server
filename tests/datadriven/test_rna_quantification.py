@@ -14,8 +14,10 @@ import tests.datadriven as datadriven
 import ga4gh.exceptions as exceptions
 
 
+_datasetName = "ds"
+
+
 _rnaQuantTestData = {
-    "id": "ZHM6RU5DRkYzMDVMWkI",
     "annotation_ids": ["Gencodev16"],
     "description": "RNAseq data from ENCODE evaluation",
     "name": "ENCFF305LZB",
@@ -24,8 +26,7 @@ _rnaQuantTestData = {
 
 
 _expressionTestData = {
-    "id": "ZHM6RU5DRkYzMDVMWkI6RU5TRzAwMDAwMDc2OTg0LjEz",
-    "feature_compound_id": "ZHM6RU5DRkYzMDVMWkI6RU5TRzAwMDAwMDc2OTg0LjEz",
+    "bad_id": "MWtnLXAzLXN1YnNldDpybmFfZXhhbXBsZV8yOm1tOV9leGFtcGxlXzI=",
     "name": "ENSG00000076984.13",
     "annotation_id": "Gencodev16",
     "expression": 24.52,
@@ -39,10 +40,19 @@ _expressionTestData = {
 
 
 _featureGroupTestData = {
-    "id": "ZHM6RU5DRkYzMDVMWkI6RU5TRzAwMDAwMDc2OTg0LjEz",
     "analysisId": "ENCFF305LZB",
     "name": "ENSG00000076984.13"
 }
+
+
+def _getRnaQuantCompoundId(dataSetName, rnaQuant):
+    return datamodel.CompoundId.obfuscate(":".join(
+        [dataSetName, rnaQuant]))
+
+
+def _getExpressionCompoundId(dataSetName, rnaQuant, expressionId):
+    return datamodel.CompoundId.obfuscate(":".join(
+        [dataSetName, rnaQuant, expressionId]))
 
 
 def testRnaQuantification():
@@ -71,14 +81,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
     def getProtocolClass(self):
         return protocol.RnaQuantification
 
-    def _getFeatureGroupInfo(self, expressionInfo, rnaQuantId):
-        featureGroupInfo = {}
-        for expressionId in expressionInfo.expressionLevel.keys():
-            id = expressionInfo.expressionLevel[expressionId]["featureGroupId"]
-            featureGroupInfo[id] = {"analysisId": rnaQuantId, "name": id}
-
-        return featureGroupInfo
-
     def testValidateObjects(self):
         rnaQuantification = self._gaObject
         rnaQuantificationPe = rnaQuantification.toProtocolElement()
@@ -87,7 +89,11 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
 
     def testRnaQuantificationObject(self):
         gaRnaQuant = self._gaObject.toProtocolElement()
-        self.assertEqual(gaRnaQuant.id, _rnaQuantTestData["id"])
+        idString = _getRnaQuantCompoundId(
+            _datasetName,
+            _rnaQuantTestData["name"])
+        compoundId = datamodel.RnaQuantificationCompoundId.parse(idString)
+        self.assertEqual(gaRnaQuant.id, str(compoundId))
         self.assertEqual(
             gaRnaQuant.annotationIds, _rnaQuantTestData["annotation_ids"])
         self.assertEqual(
@@ -98,22 +104,29 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
 
     def testGetExpressionLevelById(self):
         rnaQuantification = self._gaObject
-        expressionId = _expressionTestData["id"]
-        gaExpression = rnaQuantification.getExpressionLevel(expressionId)
+        idString = _getExpressionCompoundId(
+            _datasetName,
+            _rnaQuantTestData["name"],
+            _expressionTestData["name"])
+        compoundId = datamodel.ExpressionLevelCompoundId.parse(idString)
+        gaExpression = rnaQuantification.getExpressionLevel(compoundId)
         self.assertExpressionEqual(gaExpression, _expressionTestData)
 
     def testGetExpressionLevelByBadIdFails(self):
         rnaQuantification = self._gaObject
-        rawId = datamodel.ExpressionLevelCompoundId.deobfuscate(
-            _expressionTestData["id"])
-        badId = rawId + "not_in_database"
-        expressionId = datamodel.ExpressionLevelCompoundId.obfuscate(badId)
+        badId = datamodel.ExpressionLevelCompoundId(
+            rnaQuantification.getCompoundId(), "bad_id")
         with self.assertRaises(exceptions.ExpressionLevelNotFoundException):
-            rnaQuantification.getExpressionLevel(expressionId)
+            rnaQuantification.getExpressionLevel(badId)
 
     def assertExpressionEqual(self, gaExpressionObj, testData):
         gaExpression = gaExpressionObj.toProtocolElement()
-        self.assertEqual(gaExpression.id, testData["id"])
+        idString = _getExpressionCompoundId(
+            _datasetName,
+            _rnaQuantTestData["name"],
+            _expressionTestData["name"])
+        compoundId = datamodel.ExpressionLevelCompoundId.parse(idString)
+        self.assertEqual(gaExpression.id, str(compoundId))
         self.assertEqual(
             gaExpression.annotationId, testData["annotation_id"])
         self.assertEqual(
@@ -129,21 +142,33 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
 
     def testGetFeatureGroupById(self):
         rnaQuantification = self._gaObject
-        groupId = _expressionTestData["feature_compound_id"]
-        gaFeatureGroup = rnaQuantification.getFeatureGroup(groupId)
-        self.assertFeatureGroupEqual(gaFeatureGroup, _featureGroupTestData)
+        idString = _getExpressionCompoundId(
+            _datasetName,
+            _rnaQuantTestData["name"],
+            _featureGroupTestData["name"])
+        compoundId = datamodel.FeatureGroupCompoundId.parse(idString)
+        gaFeatureGroup = rnaQuantification.getFeatureGroup(
+            compoundId)
+        self.assertFeatureGroupEqual(
+            gaFeatureGroup, _featureGroupTestData)
 
     def testGetFeatureGroupByBadIdFails(self):
         rnaQuantification = self._gaObject
-        rawId = datamodel.FeatureGroupCompoundId.deobfuscate(
-            _expressionTestData["feature_compound_id"])
-        badId = rawId + "not_in_database"
-        featureGroupId = datamodel.FeatureGroupCompoundId.obfuscate(badId)
-        with self.assertRaises(exceptions.FeatureGroupNotFoundException):
-            rnaQuantification.getFeatureGroup(featureGroupId)
+        badId = datamodel.FeatureGroupCompoundId.parse(
+            _expressionTestData["bad_id"])
+        with self.assertRaises(
+                exceptions.FeatureGroupNotFoundException):
+            rnaQuantification.getFeatureGroup(badId)
 
-    def assertFeatureGroupEqual(self, gaFeatureGroupObj, testData):
+    def assertFeatureGroupEqual(
+            self, gaFeatureGroupObj, testData):
         gaFeatureGroup = gaFeatureGroupObj.toProtocolElement()
-        self.assertEqual(gaFeatureGroup.id, testData["id"])
-        self.assertEqual(gaFeatureGroup.analysisId, testData["analysisId"])
+        idString = _getExpressionCompoundId(
+            _datasetName,
+            _rnaQuantTestData["name"],
+            _featureGroupTestData["name"])
+        compoundId = datamodel.FeatureGroupCompoundId.parse(idString)
+        self.assertEqual(gaFeatureGroup.id, str(compoundId))
+        self.assertEqual(
+            gaFeatureGroup.analysisId, testData["analysisId"])
         self.assertEqual(gaFeatureGroup.name, testData["name"])

@@ -608,22 +608,27 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
         expressionLevelId = request.expressionLevelId
-        featureGroupId = request.featureGroupId
         if expressionLevelId is not None:
+            expressionCompoundId = datamodel.ExpressionLevelCompoundId.parse(
+                request.expressionLevelId)
             try:
                 return self._singleObjectGenerator(
-                    rnaQuant.getExpressionLevel(expressionLevelId)
+                    rnaQuant.getExpressionLevel(expressionCompoundId)
                     )
             except exceptions.ExpressionLevelNotFoundException:
                 return self._noObjectGenerator()
-        # TODO: handle compoundID in db generaation
         rnaQuantificationId = rnaQuant.getLocalId()
+        featureGroupId = request.featureGroupId
+        if featureGroupId is not None:
+            featureGroupId = datamodel.FeatureGroupCompoundId.parse(
+                request.featureGroupId)
         return self._objectListGenerator(
             request,
             rnaQuant.getExpressionLevels(
                 rnaQuantificationId, pageToken=request.pageToken,
                 pageSize=request.pageSize, expressionId=expressionLevelId,
-                featureGroupId=featureGroupId, threshold=request.threshold))
+                featureGroupId=featureGroupId,
+                threshold=request.threshold))
 
     def featureGroupGenerator(self, request):
         """
@@ -639,11 +644,15 @@ class Backend(object):
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
         featureGroupId = request.featureGroupId
         if featureGroupId is not None:
+            featureGroupCompoundId = datamodel.FeatureGroupCompoundId.parse(
+                request.featureGroupId)
             return self._singleObjectGenerator(
-                rnaQuant.getFeatureGroup(featureGroupId))
-        return self._objectListGenerator(request, rnaQuant.getFeatureGroups(
-            rnaQuant, pageToken=request.pageToken, pageSize=request.pageSize,
-            featureGroupId=featureGroupId))
+                rnaQuant.getFeatureGroup(featureGroupCompoundId))
+        return self._objectListGenerator(
+            request, rnaQuant.getFeatureGroups(
+                rnaQuant, pageToken=request.pageToken,
+                pageSize=request.pageSize,
+                featureGroupId=featureGroupId))
 
     ###########################################################
     #
