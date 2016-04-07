@@ -5,7 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import fnmatch
 import json
 import os
 
@@ -223,14 +222,15 @@ class FileSystemDataset(AbstractDataset):
                     self.addVariantAnnotationSet(variantAnnotationSet)
 
         # Reads
-        readGroupSetDir = os.path.join(dataDir, self.readsDirName)
-        for filename in os.listdir(readGroupSetDir):
-            if fnmatch.fnmatch(filename, '*.bam'):
-                localId, _ = os.path.splitext(filename)
-                bamPath = os.path.join(readGroupSetDir, filename)
-                readGroupSet = reads.HtslibReadGroupSet(
-                    self, localId, bamPath, dataRepository)
-                self.addReadGroupSet(readGroupSet)
+        metadataFileName = os.path.join(
+            dataDir, self.readsDirName, "metadata.json")
+        with open(metadataFileName) as metadataFile:
+            metadataList = json.load(metadataFile)
+        for metadata in metadataList:
+            readGroupSet = reads.HtslibReadGroupSet(
+                self, metadata["name"], metadata["dataUrl"],
+                metadata["indexUrl"], dataRepository)
+            self.addReadGroupSet(readGroupSet)
 
     def _setMetadata(self):
         metadataFileName = '{}.json'.format(self._dataDir)
