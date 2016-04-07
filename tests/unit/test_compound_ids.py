@@ -283,26 +283,23 @@ class TestCompoundIds(unittest.TestCase):
         dataset = readGroupSet.getParentContainer()
         localId = "alignment"
         cid = datamodel.ReadAlignmentCompoundId(
-            readGroup.getCompoundId(), localId)
+            readGroupSet.getCompoundId(), localId)
         self.assertRaises(
             ValueError, datamodel.ReadAlignmentCompoundId,
             dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
         self.assertEqual(cid.readGroupSet, readGroupSet.getLocalId())
-        self.assertEqual(cid.readGroup, readGroup.getLocalId())
         self.assertEqual(cid.readAlignment, localId)
         self.assertEqual(cid.datasetId, dataset.getId())
         self.assertEqual(cid.readGroupSetId, readGroupSet.getId())
-        self.assertEqual(cid.readGroupId, readGroup.getId())
 
     def testReadAlignmentParse(self):
-        idStr = "a:b:c:d"
+        idStr = "a:b:c"
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.ReadAlignmentCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
         self.assertEqual(cid.readGroupSet, "b")
-        self.assertEqual(cid.readGroup, "c")
-        self.assertEqual(cid.readAlignment, "d")
+        self.assertEqual(cid.readAlignment, "c")
         self.verifyParseFailure(idStr, datamodel.ReadAlignmentCompoundId)
 
     def testExperiment(self):

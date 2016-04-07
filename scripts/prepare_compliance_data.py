@@ -103,7 +103,7 @@ class ComplianceDataMunger(object):
 
         # Export sequence ontologies
         print("Exporting ontologies...", file=sys.stderr)
-        ontologiesDir = os.path.join(self.outputDirectory, "ontologies")
+        ontologiesDir = os.path.join(self.outputDirectory, "ontologymaps")
         sequenceOntologyDir = os.path.join(ontologiesDir, "sequence_ontology")
         os.makedirs(sequenceOntologyDir)
         shutil.copy(os.path.join(self.inputDirectory, "sequence_ontology.txt"),

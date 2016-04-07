@@ -45,12 +45,12 @@ class AbstractDataRepository(object):
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
 
-    def addOntology(self, ontology):
+    def addOntologyMap(self, ontologyMap):
         """
-        Add an ontology to this data repository.
+        Add an ontology map to this data repository.
         """
-        for name in ontology.keys():
-            self._ontologyNameMap[name] = ontology.get(name)
+        for name in ontologyMap.keys():
+            self._ontologyNameMap[name] = ontologyMap.get(name)
             self._ontologyNames.append(name)
 
     def getDatasets(self):
@@ -100,11 +100,17 @@ class AbstractDataRepository(object):
         """
         return len(self._referenceSetIds)
 
-    def getOntology(self, name):
+    def getOntologyMap(self, name):
         """
-        Returns ontologies
+        Returns an ontology map by name
         """
         return self._ontologyNameMap.get(name, None)
+
+    def getOntologyMaps(self):
+        """
+        Returns all ontology maps in the repo
+        """
+        return [self._ontologyNameMap[name] for name in self._ontologyNames]
 
     def getReferenceSet(self, id_):
         """
@@ -179,7 +185,7 @@ class FileSystemDataRepository(AbstractDataRepository):
     """
     referenceSetsDirName = "referenceSets"
     datasetsDirName = "datasets"
-    ontologiesDirName = "ontologies"
+    ontologiesDirName = "ontologymaps"
 
     def __init__(self, dataDir):
         super(FileSystemDataRepository, self).__init__()
@@ -190,7 +196,7 @@ class FileSystemDataRepository(AbstractDataRepository):
         constructors = [
             references.HtslibReferenceSet, ontologies.FileSystemOntologies,
             datasets.FileSystemDataset]
-        objectAdders = [self.addReferenceSet, self.addOntology,
+        objectAdders = [self.addReferenceSet, self.addOntologyMap,
                         self.addDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
