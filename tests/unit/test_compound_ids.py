@@ -68,6 +68,12 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(parsedCompoundId.foobar, compoundId.foobar)
         self.assertEqual(parsedCompoundId.foobarbaz, compoundId.foobarbaz)
 
+    def testGetInvalidIdString(self):
+        invalid = ExampleCompoundId.getInvalidIdString()
+        self.assertEqual(
+            len(datamodel.CompoundId.split(invalid)),
+            len(ExampleCompoundId.fields))
+
     def testURLUnsafe(self):
         hasSlashes = "???"  # base64 encodes to 'Pz8/'
         needsPadding = "padme"  # base64 encodes to 'cGFkbWU='

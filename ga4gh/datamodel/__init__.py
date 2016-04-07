@@ -267,6 +267,14 @@ class CompoundId(object):
         return base64.urlsafe_b64decode(str((
             data + b'A=='[(len(data) - 1) % 4:])))
 
+    @classmethod
+    def getInvalidIdString(cls):
+        """
+        Return an id string that is well-formed but probably does not
+        correspond to any existing object; used mostly in testing
+        """
+        return cls.join(['notValid'] * len(cls.fields))
+
 
 class ReferenceSetCompoundId(CompoundId):
     """
