@@ -15,7 +15,7 @@ RUN mkdir -p /data/
 # Fetch the example data and extract
 # On some terminals the progress bar freezes during build
 WORKDIR /data/
-RUN curl http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar | tar -x
+RUN curl https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v3.2.tar | tar -x
 WORKDIR /
 
 # Set the dataset location explicitly
