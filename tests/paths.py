@@ -53,4 +53,3 @@ simulatedReferenceSetId = "referenceSet0"
 simulatedReferenceId = "referenceSet0:srs0"
 simulatedVariantAnnotationSetId = (
     "simulatedDataset0:simVas0:variantannotations")
-simulatedFeatureSetId = "simulatedDataset0:fs:gencodeV21Set1"
