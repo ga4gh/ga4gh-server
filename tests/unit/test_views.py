@@ -319,7 +319,7 @@ class TestFrontend(unittest.TestCase):
         variantSetId = responseData.variantSets[0].id
         response = self.sendGetVariantSet(variantSetId)
         self.assertEqual(200, response.status_code)
-        obfuscated = datamodel.CompoundId.obfuscate("notValid:notValid")
+        obfuscated = datamodel.CompoundId.obfuscate("notValid:vs:notValid")
         compoundId = datamodel.VariantSetCompoundId.parse(obfuscated)
         response = self.sendGetVariantSet(str(compoundId))
         self.assertEqual(404, response.status_code)

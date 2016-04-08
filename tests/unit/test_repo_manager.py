@@ -46,6 +46,7 @@ class RepoManagerTest(AbstractRepoManagerTest):
         metadata = {'description': 'aDescription'}
         self.repoManager.addReferenceSet(
             paths.faPath, self.moveMode, metadata)
+        self.repoManager.addOntologyMap(paths.ontologyPath, self.moveMode)
         self.repoManager.addReadGroupSet(
             datasetName, paths.bamPath, self.moveMode)
         self.repoManager.addVariantSet(
@@ -57,6 +58,7 @@ class RepoManagerTest(AbstractRepoManagerTest):
         self.repoManager.list()
         self.repoManager.removeReadGroupSet(
             datasetName, paths.readGroupSetName)
+        self.repoManager.removeOntologyMap(paths.ontologyName)
         self.repoManager.removeVariantSet(
             datasetName, paths.variantSetName)
         self.repoManager.removeReferenceSet(paths.referenceSetName)
@@ -182,3 +184,24 @@ class RepoManagerInidividualCommandTest(AbstractRepoManagerTest):
         with self.assertRaises(exceptions.RepoManagerException):
             self.repoManager.removeVariantSet(
                 'dataset1', paths.variantSetName)
+
+    def testAddOntologyMap(self):
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.addOntologyMap(paths.bamPath, 'link')
+        self.repoManager.addOntologyMap(
+            paths.ontologyPath, 'link')
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.addOntologyMap(
+                paths.ontologyPath, 'link')
+
+    def testRemoveOntologyMap(self):
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.removeOntologyMap(
+                paths.ontologyName)
+        self.repoManager.addOntologyMap(
+            paths.ontologyPath, 'link')
+        self.repoManager.removeOntologyMap(
+            paths.ontologyName)
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.repoManager.removeOntologyMap(
+                paths.ontologyName)

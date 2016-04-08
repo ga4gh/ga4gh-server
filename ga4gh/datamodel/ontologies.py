@@ -14,11 +14,12 @@ class FileSystemOntology(object):
     The base class of storing an ontology
     At this moment an "Ontology" is just a map between names and IDs (e.g.
     in Sequence Ontology we would have "SO:0001583 <-> missense_variant")
-    This is a tempotrary solution adn must be replaced by more comprehensive
+    This is a tempotrary solution and must be replaced by more comprehensive
     ontology object.
     """
 
-    def __init__(self):
+    def __init__(self, dataDir):
+        self._localId = os.path.basename(dataDir)
         self._nameIdMap = dict()
         self._idNameMap = dict()
 
@@ -26,11 +27,20 @@ class FileSystemOntology(object):
         self._nameIdMap[id_] = name
         self._idNameMap[name] = id_
 
-    def getId(self, name):
-        return self._idNameMap[name]
+    def getLocalId(self):
+        return self._localId
 
-    def getName(self, id_):
-        return self._nameIdMap[id_]
+    def getId(self, name, default=""):
+        return self._idNameMap.get(name, default)
+
+    def hasId(self, id_):
+        return id_ in self._nameIdMap
+
+    def hasName(self, name):
+        return name in self._idNameIdMap
+
+    def getName(self, id_, default=""):
+        return self._nameIdMap.get(id_, default)
 
     def readOntology(self, filename):
         with open(filename) as f:
@@ -48,7 +58,11 @@ class FileSystemOntologies(object):
 
     def __init__(self, localId, dataDir, backend):
         self._ontologyNameMap = dict()
+        self._localId = localId
         self.readOntologies(dataDir)
+
+    def getLocalId(self):
+        return self._localId
 
     def add(self, ontologyName, ontology):
         self._ontologyNameMap[ontologyName] = ontology
@@ -69,6 +83,6 @@ class FileSystemOntologies(object):
             if fnmatch.fnmatch(filename, '*.txt'):
                 ontologyName, _ = os.path.splitext(filename)
                 path = os.path.join(dataDir, filename)
-                ontology = FileSystemOntology()
+                ontology = FileSystemOntology(dataDir)
                 ontology.readOntology(path)
                 self.add(ontologyName, ontology)

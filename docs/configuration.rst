@@ -283,6 +283,30 @@ Removes a given reference set from a given data repository.
 
     $ ga4gh_repo remove-referenceset path/to/datarepo aReferenceSet
 
+++++++++++++++++
+add-ontologymap
+++++++++++++++++
+
+Adds an Ontology Map, which maps identifiers to ontology terms, to 
+the repository. Ontology maps are tab delimited files with an
+identifier/term pair per row.
+
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-ontologymap path/to/datarepo path/to/aOntoMap.txt
+
+++++++++++++++++++++
+remove-ontologymap
+++++++++++++++++++++
+
+Removes a given Ontology Map from a given data repository.
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-ontologymap path/to/datarepo aOntoMap
+
+
 +++++++++++++++++
 add-readgroupset
 +++++++++++++++++

@@ -34,7 +34,7 @@ RUN mkdir -p /data/
 WORKDIR /data/
 
 #wget the example data
-RUN wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data.tar -nv -O - | tar -x
+RUN wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v3.2.tar -nv -O - | tar -x
 
 # Install setuptools and pip
 RUN easy_install setuptools
