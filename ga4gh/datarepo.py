@@ -104,7 +104,7 @@ class AbstractDataRepository(object):
         """
         Returns an ontology map by name
         """
-        return self._ontologyNameMap[name]
+        return self._ontologyNameMap.get(name, None)
 
     def getOntologyMaps(self):
         """

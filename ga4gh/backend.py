@@ -552,13 +552,54 @@ class Backend(object):
             request, variantAnnotationSet)
         return intervalIterator
 
+    def featuresGenerator(self, request):
+        """
+        Returns a generator over the (features, nextPageToken) pairs
+        defined by the (JSON string) request.
+        """
+        compoundId = None
+        parentId = None
+        if request.featureSetId is not None:
+            compoundId = datamodel.FeatureSetCompoundId.parse(
+                request.featureSetId)
+        if request.parentId is not None and request.parentId != "":
+            compoundParentId = datamodel.FeatureCompoundId.parse(
+                request.parentId)
+            parentId = compoundParentId.featureId
+            # A client can optionally specify JUST the (compound) parentID,
+            # and the server needs to derive the dataset & featureSet
+            # from this (compound) parentID.
+            if compoundId is None:
+                compoundId = compoundParentId
+            else:
+                # check that the dataset and featureSet of the parent
+                # compound ID is the same as that of the featureSetId
+                mismatchCheck = (
+                    compoundParentId.datasetId != compoundId.datasetId or
+                    compoundParentId.featureSetId != compoundId.featureSetId)
+                if mismatchCheck:
+                    raise exceptions.ParentIncompatibleWithFeatureSet()
+
+        if compoundId is None:
+            raise exceptions.FeatureSetNotSpecifiedException()
+
+        dataset = self.getDataRepository().getDataset(
+            compoundId.datasetId)
+        featureSet = dataset.getFeatureSet(compoundId.featureSetId)
+        return featureSet.getFeatures(
+            request.referenceName, request.start, request.end,
+            request.pageToken, request.pageSize,
+            request.featureTypes, parentId)
+
     def callSetsGenerator(self, request):
         """
         Returns a generator over the (callSet, nextPageToken) pairs defined
         by the specified request.
         """
-        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        compoundId = datamodel.VariantSetCompoundId.parse(
+            request.variantSetId)
+        dataset = self.getDataRepository().getDataset(
+            compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         if request.name is None:
             return self._topLevelObjectGenerator(
@@ -570,6 +611,16 @@ class Backend(object):
             except exceptions.CallSetNameNotFoundException:
                 return self._noObjectGenerator()
             return self._singleObjectGenerator(callSet)
+
+    def featureSetsGenerator(self, request):
+        """
+        Returns a generator over the (featureSet, nextPageToken) pairs
+        defined by the specified request.
+        """
+        dataset = self.getDataRepository().getDataset(request.datasetId)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumFeatureSets(),
+            dataset.getFeatureSetByIndex)
 
     ###########################################################
     #
@@ -678,6 +729,18 @@ class Backend(object):
         jsonString = gaVariant.toJsonString()
         return jsonString
 
+    def runGetFeature(self, id_):
+        """
+        Returns JSON string of the feature object corresponding to
+        the feature compoundID passed in.
+        """
+        compoundId = datamodel.FeatureCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        featureSet = dataset.getFeatureSet(compoundId.featureSetId)
+        gaFeature = featureSet.getFeature(compoundId)
+        jsonString = gaFeature.toJsonString()
+        return jsonString
+
     def runGetReadGroupSet(self, id_):
         """
         Returns a readGroupSet with the given id_
@@ -722,6 +785,15 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(id_)
         return self.runGetRequest(variantSet)
+
+    def runGetFeatureSet(self, id_):
+        """
+        Runs a getFeatureSet request for the specified ID.
+        """
+        compoundId = datamodel.FeatureSetCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        featureSet = dataset.getFeatureSet(id_)
+        return self.runGetRequest(featureSet)
 
     def runGetDataset(self, id_):
         """
@@ -830,3 +902,26 @@ class Backend(object):
             request, protocol.SearchDatasetsRequest,
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
+
+    def runSearchFeatureSets(self, request):
+        """
+        Returns a SearchFeatureSetsResponse for the specified
+        SearchFeatureSetsRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchFeatureSetsRequest,
+            protocol.SearchFeatureSetsResponse,
+            self.featureSetsGenerator)
+
+    def runSearchFeatures(self, request):
+        """
+        Returns a SearchFeaturesResponse for the specified
+        SearchFeaturesRequest object.
+
+        :param request: JSON string representing searchFeaturesRequest
+        :return: JSON string representing searchFeatureResponse
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchFeaturesRequest,
+            protocol.SearchFeaturesResponse,
+            self.featuresGenerator)

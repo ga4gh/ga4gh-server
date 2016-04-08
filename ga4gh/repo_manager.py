@@ -80,6 +80,7 @@ class RepoManager(object):
         datarepo.FileSystemDataRepository.referenceSetsDirName
     readsDirName = datasets.FileSystemDataset.readsDirName
     variantsDirName = datasets.FileSystemDataset.variantsDirName
+    featuresDirName = datasets.FileSystemDataset.featuresDirName
     fastaExtension = '.fa.gz'
     fastaIndexExtensionFai = '.fa.gz.fai'
     fastaIndexExtensionGzi = '.fa.gz.gzi'
@@ -88,6 +89,7 @@ class RepoManager(object):
     vcfIndexExtension = '.vcf.gz.tbi'
     bamExtension = '.bam'
     bamIndexExtension = '.bam.bai'
+    dbExtension = '.db'
     ontologyExtension = '.txt'
 
     def __init__(self, repoPath):
@@ -97,7 +99,7 @@ class RepoManager(object):
             self.ontologiesDirName,
             self.referenceSetsDirName]
         self._datasetStructure = [
-            self.readsDirName, self.variantsDirName]
+            self.readsDirName, self.variantsDirName, self.featuresDirName]
 
     def _assertFileExists(
             self, filePath, text='File', inRepo=False, emitName=None):
@@ -186,6 +188,12 @@ class RepoManager(object):
             self._repoPath, self.datasetsDirName, datasetName,
             self.variantsDirName, variantSetName)
         return variantSetPath
+
+    def _getFeatureSetPath(self, datasetName, featureSetName):
+        featureSetPath = os.path.join(
+            self._repoPath, self.datasetsDirName, datasetName,
+            self.featuresDirName, featureSetName) + self.dbExtension
+        return featureSetPath
 
     def _moveFile(self, src, dst, mode):
         if mode == 'move':
@@ -503,6 +511,37 @@ class RepoManager(object):
         self._repoEmit("Variant set '{}/{}' removed".format(
             datasetName, variantSetName))
 
+    def addFeatureSet(self, datasetName, filePath, moveMode):
+        """
+        Add a feature set to the repo
+        """
+        self._check()
+        self._checkDataset(datasetName)
+        self._checkFile(filePath, self.dbExtension)
+        fileName = os.path.basename(filePath)
+        destPath = os.path.join(
+            self._repoPath, self.datasetsDirName, datasetName,
+            self.featuresDirName, fileName)
+        self._assertPathEmpty(destPath, inRepo=True)
+        self._moveFile(filePath, destPath, moveMode)
+
+        # finish
+        self._repoEmit("FeatureSet '{}' added to dataset '{}'".format(
+            fileName, datasetName))
+
+    def removeFeatureSet(self, datasetName, featureSetName):
+        """
+        Remove a feature set from the repo
+        """
+        self._check()
+        self._checkDataset(datasetName)
+        featureSetPath = self._getFeatureSetPath(
+            datasetName, featureSetName)
+        self._assertFileExists(featureSetPath, inRepo=True)
+        self._removePath(featureSetPath)
+        self._repoEmit("FeatureSet '{}/{}' removed".format(
+            datasetName, featureSetName))
+
     def addOntologyMap(self, filePath, moveMode):
         self._check()
         self._checkFile(filePath, self.ontologyExtension)
@@ -532,8 +571,8 @@ class RepoManager(object):
         """
         self._check()
         self._repoEmit("Listing")
-
-        dataRepo = datarepo.FileSystemDataRepository(self._repoPath)
+        dataRepo = datarepo.FileSystemDataRepository(
+            self._repoPath)
         self._emit(self.referenceSetsDirName)
         for referenceSet in dataRepo.getReferenceSets():
             self._emitIndent(referenceSet.getLocalId())
@@ -553,3 +592,6 @@ class RepoManager(object):
                 self._emitIndent(variantSet.getLocalId(), 3)
                 for chromFile in sorted(variantSet._chromFileMap.keys()):
                     self._emitIndent(chromFile, 4)
+            self._emitIndent(self.featuresDirName, 2)
+            for featureSet in dataset.getFeatureSets():
+                self._emitIndent(featureSet.getLocalId(), 3)

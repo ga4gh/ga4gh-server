@@ -13,6 +13,7 @@ import random
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.sequenceAnnotations as features
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 
@@ -160,6 +161,19 @@ class TestSimulatedStack(unittest.TestCase):
             gaReferenceSet.isDerived, referenceSet.getIsDerived())
         self.assertEqual(
             gaReferenceSet.name, referenceSet.getLocalId())
+
+    def verifyFeatureSetsEqual(self, gaFeatureSet, featureSet):
+        dataset = featureSet.getParentContainer()
+        self.assertEqual(gaFeatureSet.id, featureSet.getId())
+        self.assertEqual(gaFeatureSet.datasetId, dataset.getId())
+        self.assertEqual(gaFeatureSet.name, featureSet.getLocalId())
+
+    def verifyFeaturesEquivalent(self, f1, f2):
+        # at least modulo featureId. They can obviously have different
+        # start/end/etc parameters if randomly generated from search vs get.
+        self.assertEqual(f1.id, f2.id)
+        self.assertEqual(f1.parentId, f2.parentId)
+        self.assertEqual(f1.featureSetId, f2.featureSetId)
 
     def verifyReferencesEqual(self, gaReference, reference):
         self.assertEqual(gaReference.id, reference.getId())
@@ -645,8 +659,8 @@ class TestSimulatedStack(unittest.TestCase):
         for ann in responseData.variantAnnotations:
             effectPresent = False
             for effect in ann.transcriptEffects:
-                for ontologyTerm in effect.effects:
-                    if ontologyTerm.id in map(
+                for featureType in effect.effects:
+                    if featureType.id in map(
                             lambda e: e['id'], request.effects):
                         effectPresent = True
             self.assertEquals(
@@ -669,8 +683,8 @@ class TestSimulatedStack(unittest.TestCase):
         for ann in responseData.variantAnnotations:
             effectPresent = False
             for effect in ann.transcriptEffects:
-                for ontologyTerm in effect.effects:
-                    if ontologyTerm.id in map(
+                for featureType in effect.effects:
+                    if featureType.id in map(
                             lambda e: e['id'], request.effects):
                         effectPresent = True
             self.assertEquals(
@@ -692,8 +706,8 @@ class TestSimulatedStack(unittest.TestCase):
         for ann in responseData.variantAnnotations:
             effectPresent = False
             for effect in ann.transcriptEffects:
-                for ontologyTerm in effect.effects:
-                    if ontologyTerm.id in map(
+                for featureType in effect.effects:
+                    if featureType.id in map(
                             lambda e: e['id'], request.effects):
                         effectPresent = True
             self.assertEquals(True, effectPresent,
@@ -709,6 +723,90 @@ class TestSimulatedStack(unittest.TestCase):
         responseData = protocol.SearchVariantAnnotationsResponse. \
             fromJsonString(response.data)
         self.assertGreater(len(responseData.variantAnnotations), 0)
+
+    def testGetFeatureSet(self):
+        path = "/featuresets"
+        for dataset in self.dataRepo.getDatasets():
+            for featureSet in dataset.getFeatureSets():
+                responseObject = self.sendGetObject(
+                    path, featureSet.getId(), protocol.FeatureSet)
+                self.verifyFeatureSetsEqual(responseObject, featureSet)
+            for badId in self.getBadIds():
+                featureSet = features.AbstractFeatureSet(dataset, badId)
+                self.verifyGetMethodFails(path, featureSet.getId())
+        for badId in self.getBadIds():
+            self.verifyGetMethodFails(path, badId)
+
+    def testFeatureSetsSearch(self):
+        path = '/featuresets/search'
+        for dataset in self.dataRepo.getDatasets():
+            featureSets = dataset.getFeatureSets()
+            request = protocol.SearchFeatureSetsRequest()
+            request.datasetId = dataset.getId()
+            self.verifySearchMethod(
+                request, path, protocol.SearchFeatureSetsResponse, featureSets,
+                self.verifyFeatureSetsEqual)
+        for badId in self.getBadIds():
+            request = protocol.SearchFeatureSetsRequest()
+            request.datasetId = badId
+            self.verifySearchMethodFails(request, path)
+
+    def testGetFeature(self):
+        dataset = self.dataRepo.getDatasets()[0]
+        featureSet = dataset.getFeatureSets()[0]
+        request = protocol.SearchFeaturesRequest()
+        request.featureSetId = featureSet.getId()
+        request.referenceName = "chr1"
+        request.start = 0
+        request.end = 2**16
+        request.parentId = None
+        request.featureTypes = []
+        path = '/features/search'
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchFeaturesResponse)
+        features = responseData.features[:10]
+
+        # get 'the same' feature using the get method
+        for feature in features:
+            path = '/features'
+            responseObject = self.sendGetObject(
+                path, feature.id, protocol.Feature)
+            self.verifyFeaturesEquivalent(responseObject, feature)
+
+    def testFeaturesSearch(self):
+        dataset = self.dataRepo.getDatasets()[0]
+        featureSet = dataset.getFeatureSets()[0]
+        referenceName = 'chr1'
+
+        request = protocol.SearchFeaturesRequest()
+        request.referenceName = referenceName
+        request.featureSetId = featureSet.getId()
+
+        # Request window is outside of simulated dataset bounds, no results
+        request.start = 0
+        request.end = 1
+        request.parentId = ''
+        path = '/features/search'
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchFeaturesResponse)
+        self.assertIsNone(responseData.nextPageToken)
+        self.assertEqual([], responseData.features)
+
+        # Larger request window, expect results
+        request.start = 0
+        request.end = 2 ** 16
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchFeaturesResponse)
+        self.assertTrue(protocol.SearchFeaturesResponse.validate(
+            responseData.toJsonDict()))
+        self.assertGreater(len(responseData.features), 0)
+
+        # Verify all results are in the correct range, set and reference
+        for feature in responseData.features:
+            self.assertGreaterEqual(feature.start, 0)
+            self.assertLessEqual(feature.end, 2 ** 16)
+            self.assertEqual(feature.featureSetId, featureSet.getId())
+            self.assertEqual(feature.referenceName, referenceName)
 
     def testListReferenceBases(self):
         for referenceSet in self.dataRepo.getReferenceSets():
