@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
+import glob
 import os
 import sqlite3
 
@@ -659,18 +660,10 @@ class FileSystemDataRepository(AbstractDataRepository):
     def __init__(self, dataDir):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = [
-            # self.referenceSetsDirName,
-            # self.ontologiesDirName,
-            self.datasetsDirName]
+        sourceDirNames = [self.ontologiesDirName, self.datasetsDirName]
         constructors = [
-            # references.HtslibReferenceSet,
-            # ontologies.FileSystemOntologies,
-            datasets.FileSystemDataset]
-        objectAdders = [
-            # self.addReferenceSet,
-            # self.addOntologyMap,
-            self.addDataset]
+            ontologies.FileSystemOntologies, datasets.FileSystemDataset]
+        objectAdders = [self.addOntologyMap, self.addDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)
@@ -678,6 +671,13 @@ class FileSystemDataRepository(AbstractDataRepository):
                 relativePath = os.path.join(sourceDir, setName)
                 if os.path.isdir(relativePath):
                     objectAdder(constructor(setName, relativePath, self))
+        pattern = os.path.join(
+            self._dataDir, self.referenceSetsDirName, "*.fa.gz")
+        for fastaFile in glob.glob(pattern):
+            name = os.path.basename(fastaFile).split(".")[0]
+            referenceSet = references.HtslibReferenceSet(name)
+            referenceSet.populateFromFile(fastaFile)
+            self.addReferenceSet(referenceSet)
 
     def checkConsistency(self):
         """
