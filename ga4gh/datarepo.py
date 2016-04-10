@@ -18,6 +18,9 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 
+MODE_READ = 'r'
+MODE_WRITE = 'w'
+
 
 class AbstractDataRepository(object):
     """
@@ -208,6 +211,10 @@ class SqlDataRepository(AbstractDataRepository):
     def __init__(self, fileName):
         super(SqlDataRepository, self).__init__()
         self._dbFilename = fileName
+        # We open the repo in either read or write mode. When we want to
+        # update the repo we open it in write mode. For normal online
+        # server use, we open it in read mode.
+        self._openMode = None
         # Values filled in using the DB. These will all be None until
         # we have called load()
         self._repositoryVersion = None
@@ -215,19 +222,47 @@ class SqlDataRepository(AbstractDataRepository):
         # Connection to the DB.
         self._dbConnection = None
 
-    def openDb(self):
-        """
-        Opens the DB connection to make the repository ready for updates.
-        Must be called before inserting any objects with the 'insertX'
-        methods.
-        """
-        self._dbConnection = sqlite3.connect(self._dbFilename)
+    def _checkWriteMode(self):
+        if self._openMode != MODE_WRITE:
+            raise ValueError("Repo must be opened in write mode")
 
-    def closeDb(self):
+    def _checkReadMode(self):
+        if self._openMode != MODE_READ:
+            raise ValueError("Repo must be opened in read mode")
+
+    def open(self, mode="r"):
         """
-        Closes the DB connection and commits all changes made.
+        Opens this repo in the specified mode.
+
+        TODO: figure out the correct semantics of this and document
+        the intended future behaviour as well as the current
+        transitional behaviour.
         """
+        if mode not in [MODE_READ, MODE_WRITE]:
+            raise ValueError("Open mode must be 'r' or 'w'")
+        self._openMode = mode
+        self._dbConnection = sqlite3.connect(self._dbFilename)
+        if mode == MODE_READ:
+            # This is part of the transitional behaviour where
+            # we load the whole DB into memory to get access to
+            # the data model.
+            self.load()
+
+    def commit(self):
+        """
+        Commits any changes made to the repo. It is an error to call
+        this function if the repo is not opened in write-mode.
+        """
+        self._checkWriteMode()
         self._dbConnection.commit()
+
+    def close(self):
+        """
+        Closes this repo.
+        """
+        if self._openMode is None:
+            raise ValueError("Repo already closed")
+        self._openMode = None
         self._dbConnection.close()
         self._dbConnection = None
 
@@ -588,9 +623,9 @@ class SqlDataRepository(AbstractDataRepository):
             # If it is annotated, also create a VariantAnnotationSet
             if variantSet.isAnnotated():
                 sequenceOntology = self.getOntology('sequence_ontology')
+                name = "va"  # TODO what is a proper name here?
                 variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                    variantSet, sequenceOntology)
-                variantAnnotationSet.populateFromFile()
+                    variantSet, name, sequenceOntology)
                 dataset.addVariantAnnotationSet(variantAnnotationSet)
 
     def initialise(self):
@@ -598,19 +633,17 @@ class SqlDataRepository(AbstractDataRepository):
         Initialise this data repostitory, creating any necessary directories
         and file paths.
         """
-        # Create the SQLite DB
-        with sqlite3.connect(self._dbFilename) as db:
-            cursor = db.cursor()
-            self._createSystemTable(cursor)
-            self._createOntologyTable(cursor)
-            self._createReferenceSetTable(cursor)
-            self._createReferenceTable(cursor)
-            self._createDatasetTable(cursor)
-            self._createReadGroupSetTable(cursor)
-            self._createReadGroupTable(cursor)
-            self._createCallSetTable(cursor)
-            self._createVariantSetTable(cursor)
-            # TODO add ReadStats, Experiment and other ReadGroup tables.
+        self._checkWriteMode()
+        cursor = self._dbConnection
+        self._createSystemTable(cursor)
+        self._createOntologyTable(cursor)
+        self._createReferenceSetTable(cursor)
+        self._createReferenceTable(cursor)
+        self._createDatasetTable(cursor)
+        self._createReadGroupSetTable(cursor)
+        self._createReadGroupTable(cursor)
+        self._createCallSetTable(cursor)
+        self._createVariantSetTable(cursor)
 
     def exists(self):
         """

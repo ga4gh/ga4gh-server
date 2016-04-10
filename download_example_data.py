@@ -334,8 +334,8 @@ class AbstractFileDownloader(object):
         Creates the repository for all the data we've just downloaded.
         """
         repo = datarepo.SqlDataRepository(self.repoPath)
+        repo.open("w")
         repo.initialise()
-        repo.openDb()
 
         referenceSet = references.HtslibReferenceSet("GRCh37-subset")
         referenceSet.populateFromFile(self.fastaFilePath)
@@ -366,9 +366,10 @@ class AbstractFileDownloader(object):
             readGroupSet.setReferenceSet(referenceSet)
             repo.insertReadGroupSet(readGroupSet)
 
-        repo.closeDb()
+        repo.commit()
+        repo.close()
         self.log("Finished creating the repository; summary:\n")
-        repo.load()
+        repo.open("r")
         repo.printSummary()
 
     def cleanup(self):
