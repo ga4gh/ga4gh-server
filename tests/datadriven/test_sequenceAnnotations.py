@@ -11,7 +11,6 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
-import ga4gh.exceptions as exceptions
 
 _datasetName = "ds"
 
@@ -149,15 +148,6 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         self.assertEqual(
             feature.strand,
             self._testData["sampleStrand"])
-
-    def testGetFeatureFailsWithBadId(self):
-        idString = str(self._testData["sampleFeatureId"]) + "W00t"
-        try:
-            compoundId = datamodel.FeatureCompoundId.parse(idString)
-            self._gaObject.getFeature(compoundId)
-            self.assertFalse("Exception should be thrown by this point")
-        except exceptions.ObjectWithIdNotFoundException:
-            pass
 
     def testFetchAllFeaturesInRegion(self):
         features = []
