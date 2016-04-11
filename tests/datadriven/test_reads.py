@@ -93,7 +93,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     def __init__(self, localId, dataPath):
         self._backend = backend.Backend(datarepo.AbstractDataRepository())
         self._referenceSet = None
-        self._dataset = datasets.AbstractDataset("ds")
+        self._dataset = datasets.Dataset("ds")
         self._readGroupInfos = {}
         self._readGroupSetInfo = None
         self._samFile = pysam.AlignmentFile(dataPath)
@@ -141,9 +141,9 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self._readGroupInfos[readGroupName] = readGroupInfo
 
     def getDataModelInstance(self, localId, dataPath):
-        return reads.HtslibReadGroupSet(
-            self._dataset, localId, dataPath,
-            self._backend.getDataRepository())
+        readGroupSet = reads.HtslibReadGroupSet(self._dataset, localId)
+        readGroupSet.populateFromFile(dataPath)
+        return readGroupSet
 
     def getProtocolClass(self):
         return protocol.ReadGroupSet

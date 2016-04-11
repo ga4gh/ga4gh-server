@@ -603,6 +603,19 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             finally:
                 varFile.close()
 
+    def populateFromDirectory(self, vcfDirectory):
+        """
+        Populates this VariantSet by examing all the VCF files in the
+        specified directory.
+        """
+        pattern = os.path.join(vcfDirectory, "*.vcf.gz")
+        dataFiles = []
+        indexFiles = []
+        for vcfFile in glob.glob(pattern):
+            dataFiles.append(vcfFile)
+            indexFiles.append(vcfFile + ".tbi")
+        self.populateFromFile(dataFiles, indexFiles)
+
     def checkConsistency(self):
         """
         Perform consistency check on the variant set

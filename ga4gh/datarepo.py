@@ -642,7 +642,7 @@ class SqlDataRepository(AbstractDataRepository):
                     sep="\t")
 
 
-class FileSystemDataRepository(SqlDataRepository):
+class FileSystemDataRepository(AbstractDataRepository):
     """
     Class representing and old-style FileSystem based data repository.
     This is primarily intended to provide an easy way to keep existing
@@ -659,14 +659,18 @@ class FileSystemDataRepository(SqlDataRepository):
     def __init__(self, dataDir):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = [self.referenceSetsDirName,
-                          self.ontologiesDirName,
-                          self.datasetsDirName]
+        sourceDirNames = [
+            # self.referenceSetsDirName,
+            # self.ontologiesDirName,
+            self.datasetsDirName]
         constructors = [
-            references.HtslibReferenceSet, ontologies.FileSystemOntologies,
+            # references.HtslibReferenceSet,
+            # ontologies.FileSystemOntologies,
             datasets.FileSystemDataset]
-        objectAdders = [self.addReferenceSet, self.addOntologyMap,
-                        self.addDataset]
+        objectAdders = [
+            # self.addReferenceSet,
+            # self.addOntologyMap,
+            self.addDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)

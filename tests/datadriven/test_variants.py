@@ -13,6 +13,7 @@ import vcf
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -35,7 +36,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
     built by the variants.VariantSet object.
     """
     def __init__(self, variantSetId, baseDir):
-        self._dataset = datasets.AbstractDataset("ds")
+        self._dataset = datasets.Dataset("ds")
         super(VariantSetTest, self).__init__(variantSetId, baseDir)
         self._variantRecords = []
         self._referenceNames = set()
@@ -62,8 +63,11 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self._variantRecords.append(record)
 
     def getDataModelInstance(self, localId, dataPath):
-        return variants.HtslibVariantSet(
-            self._dataset, localId, dataPath, None)
+        variantSet = variants.HtslibVariantSet(self._dataset, localId)
+        variantSet.populateFromDirectory(dataPath)
+        referenceSet = references.AbstractReferenceSet("test")
+        variantSet.setReferenceSet(referenceSet)
+        return variantSet
 
     def getProtocolClass(self):
         return protocol.VariantSet

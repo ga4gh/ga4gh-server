@@ -5,6 +5,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import fnmatch
+import os
+
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
@@ -249,9 +252,14 @@ class SimulatedDataset(Dataset):
             self.addFeatureSet(featureSet)
 
 
-class FileSystemDataset(AbstractDataset):
+class FileSystemDataset(Dataset):
     """
-    A dataset based on the file system
+    A dataset based on the file system.
+
+    This is now a deprecated interface, and is only kept as a transitional
+    approach allowing us to keep the majority of test cases working. We
+    should remove this class and replace the testing data structures with
+    an alternative approach.
     """
     variantsDirName = "variants"
     readsDirName = "reads"
@@ -272,24 +280,24 @@ class FileSystemDataset(AbstractDataset):
         for localId in os.listdir(variantSetDir):
             relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
-                variantSet = variants.HtslibVariantSet(
-                    self, localId, relativePath, dataRepository)
+                variantSet = variants.HtslibVariantSet(self, localId)
+                variantSet.populateFromDirectory(relativePath)
                 self.addVariantSet(variantSet)
-            # Variant annotations sets
-                if variantSet.isAnnotated(relativePath):
-                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                            self, localId, relativePath, dataRepository,
-                            variantSet)
-                    self.addVariantAnnotationSet(variantAnnotationSet)
-
+                # Variant annotations sets
+                # if variantSet.isAnnotated(relativePath):
+                #     variantAnnotationSet =
+                # variants.HtslibVariantAnnotationSet(
+                #             self, localId, relativePath, dataRepository,
+                #             variantSet)
+                #     self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):
             if fnmatch.fnmatch(filename, '*.bam'):
                 localId, _ = os.path.splitext(filename)
                 bamPath = os.path.join(readGroupSetDir, filename)
-                readGroupSet = reads.HtslibReadGroupSet(
-                    self, localId, bamPath, dataRepository)
+                readGroupSet = reads.HtslibReadGroupSet(self, localId)
+                readGroupSet.populateFromFile(bamPath, bamPath + ".bai")
                 self.addReadGroupSet(readGroupSet)
         # Sequence Annotations
         featureSetDir = os.path.join(dataDir, self.featuresDirName)

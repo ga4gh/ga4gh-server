@@ -362,13 +362,16 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
             program = protocol.Program.fromJsonDict(jsonDict)
             self._programs.append(program)
 
-    def populateFromFile(self, dataUrl, indexFile):
+    def populateFromFile(self, dataUrl, indexFile=None):
         """
         Populates the instance variables of this ReadGroupSet from the
-        specified dataUrl and indexFile.
+        specified dataUrl and indexFile. If indexFile is not specified
+        guess usual form.
         """
         self._dataUrl = dataUrl
         self._indexFile = indexFile
+        if indexFile is None:
+            self._indexFile = dataUrl + ".bai"
         samFile = self.getFileHandle(self._dataUrl)
         self._setHeaderFields(samFile)
         if 'RG' not in samFile.header or len(samFile.header['RG']) == 0:
