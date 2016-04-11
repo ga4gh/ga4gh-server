@@ -34,7 +34,9 @@ _expressionTestData = {
     "is_normalized": True,
     "raw_read_count": 4317.0,
     "score": 23.34315,
-    "units": "TPM"
+    "units": "TPM",
+    "conf_low": 24.1,
+    "conf_hi": 24.6
 
 }
 
@@ -139,6 +141,9 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             gaExpression.rawReadCount, testData["raw_read_count"])
         self.assertEqual(gaExpression.score, testData["score"])
         self.assertEqual(gaExpression.units, testData["units"])
+        self.assertEqual(
+            gaExpression.confInterval,
+            [testData["conf_low"], testData["conf_hi"]])
 
     def testGetFeatureGroupById(self):
         rnaQuantification = self._gaObject

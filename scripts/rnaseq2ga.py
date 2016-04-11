@@ -51,7 +51,9 @@ class RNASqliteStore(object):
                        is_normalized boolean,
                        raw_read_count real,
                        score real,
-                       units text)''')
+                       units text,
+                       conf_low real,
+                       conf_hi real)''')
 
     def addRNAQuantification(self, datafields):
         """
@@ -70,7 +72,8 @@ class RNASqliteStore(object):
         feature_group_id, is_normalized, raw_read_count, score, units
         """
         self._cursor.execute('INSERT INTO EXPRESSION VALUES '
-                             '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', datafields)
+                             '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                             datafields)
         self._dbConn.commit()
 
 
@@ -106,20 +109,21 @@ class AbstractWriter(object):
             expressionId = fields[self._idCol]
             name = fields[self._nameCol]
             featureGroupId = fields[self._featureCol]
+            rawCount = 0.0
             if self._countCol is not None:
                 rawCount = fields[self._countCol]
-            else:
-                rawCount = 0.0
-            if (self._confColLow is None or self._confColHi is None):
-                score = 0.0
-            else:
+            confidenceLow = 0.0
+            confidenceHi = 0.0
+            score = 0.0
+            if (self._confColLow is not None and self._confColHi is not None):
                 confidenceLow = float(fields[self._confColLow])
                 confidenceHi = float(fields[self._confColHi])
                 score = (confidenceLow + confidenceHi)/2
 
             datafields = (expressionId, name, analysisId,
                           self._annotationId, expressionLevel, featureGroupId,
-                          isNormalized, rawCount, str(score), units)
+                          isNormalized, rawCount, str(score), units,
+                          confidenceLow, confidenceHi)
             self._db.addExpression(datafields)
 
 

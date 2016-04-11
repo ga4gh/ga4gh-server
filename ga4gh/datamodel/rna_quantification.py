@@ -12,25 +12,17 @@ import ga4gh.exceptions as exceptions
 import ga4gh.sqliteBackend as sqliteBackend
 
 
-# TODO: update
 """
-    The RNA Quantification data model:
-    Top level is the RNAQuantification which will sit right under the dataset
-    Next level sits under each RNAQuant and hold expressionLevel, readCount,
-    Characterization
+    The RNA Quantifications associated with a GA4GH dataset reside in a sqlite
+    database which is contained in the rnaQuant subdirectory of the dataset
+    directory.
 
-    So to get all the RNAQuants will need to do a search over all datasets for
-    the ID/name of the desired Quant
+    The sqlite .db file has 2 tables:
+    RNAQUANTIFICATION : contains rnaQuantification data
+    EXPRESSION : contains feature level expression data
 
-    To get all expressionLevels will have to search over all RNAQuants for all
-    Datasets.
-
-    ----
-
-    sqlite file is going to sit directly under the dataset.  It will have
-    entries for all of the quants in the dataset.  Desired objects will be
-    generated on the fly by the queries and returned to the backend.  After
-    that will be treated the same as now w.r.t. toProtocolElement, etc.
+    Desired GA4GH objects will be generated on the fly by the dictionaries
+    returned by database queries and sent to the backend.
 """
 
 
@@ -51,6 +43,7 @@ class ExpressionLevel(datamodel.DatamodelObject):
         self._score = record["score"]
         self._units = record["units"]
         self._name = record["name"]
+        self._confInterval = [record["conf_low"], record["conf_hi"]]
 
     def getName(self):
         return self._name
@@ -68,6 +61,7 @@ class ExpressionLevel(datamodel.DatamodelObject):
         protocolElement.rawReadCount = self._rawReadCount
         protocolElement.score = self._score
         protocolElement.units = self._units
+        protocolElement.confInterval = self._confInterval
         return protocolElement
 
 
@@ -172,9 +166,6 @@ class RNASeqResult(AbstractRNAQuantification):
                 rnaQuantID, pageToken=pageToken,
                 pageSize=pageSize, expressionId=expressionId,
                 featureGroupId=featureGroupId, threshold=threshold)
-        # TOOD: try to use a generator - something like below
-        # for expressionEntry in expressionsReturned:
-        #    yield ExpressionLevel(self, expressionEntry)
         return [ExpressionLevel(self, expressionEntry) for
                 expressionEntry in expressionsReturned]
 
@@ -221,26 +212,6 @@ class RNASeqResult(AbstractRNAQuantification):
         return FeatureGroup(self, featureGroupReturned)
 
 
-_rnaQuantColumns = [
-    ('id', 'TEXT'),
-    ('annotation_ids', 'TEXT'),
-    ('description', 'TEXT'),
-    ('name', 'TEXT'),
-    ('read_group_id', 'TEXT')]
-
-
-_expressionColumns = [
-    ('id', 'TEXT'),
-    ('name', 'TEXT'),
-    ('annotation_id', 'TEXT'),
-    ('expression', 'REAL'),
-    ('feature_group_id', 'TEXT'),
-    ('is_normalized', 'BOOLEAN'),
-    ('raw_read_count', 'REAL'),
-    ('score', 'REAL'),
-    ('units', 'TEXT')]
-
-
 class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
     """
     Defines an interface to a sqlite DB which stores all RNA quantifications
@@ -248,10 +219,6 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
     """
     def __init__(self, rnaQuantSqlFile="ga4gh-rnaQuant.db"):
         super(SqliteRNABackend, self).__init__(rnaQuantSqlFile)
-        self.rnaQuantColumnNames = [f[0] for f in _rnaQuantColumns]
-        self.rnaQuantColumnTypes = [f[1] for f in _rnaQuantColumns]
-        self.expressionColumnNames = [f[0] for f in _expressionColumns]
-        self.expressionColumnTypes = [f[1] for f in _expressionColumns]
 
     def searchRnaQuantificationsInDb(
             self, pageToken=0, pageSize=None, rnaQuantificationId=None):
