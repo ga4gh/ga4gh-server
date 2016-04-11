@@ -104,7 +104,7 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         """
         # TODO If reference is None, return against all references,
         # including unmapped reads.
-        samFile = self.getFileHandle(self._samFilePath)
+        samFile = self.getFileHandle(self._dataUrl)
         referenceName = reference.getLocalId().encode()
         # TODO deal with errors from htslib
         start, end = self.sanitizeAlignmentFileFetch(start, end)
@@ -132,7 +132,7 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         """
         Convert a pysam ReadAlignment to a GA4GH ReadAlignment
         """
-        samFile = self.getFileHandle(self._samFilePath)
+        samFile = self.getFileHandle(self._dataUrl)
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.ReadAlignment()
@@ -204,7 +204,8 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         return ret
 
     def openFile(self, dataFile):
-        return pysam.AlignmentFile(dataFile)
+        return pysam.AlignmentFile(
+            self._dataUrl, filepath_index=self._indexFile)
 
 
 class AbstractReadGroupSet(datamodel.DatamodelObject):
@@ -423,15 +424,6 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
                 program.version = htslibProgram.get('VN', None)
                 programs.append(program)
         self._programs = programs
-
-    def openFile(self, dataFile):
-        return pysam.AlignmentFile(dataFile, filepath_index=self._indexFile)
-
-    def getSamFilePath(self):
-        """
-        Returns the file path of the sam file
-        """
-        return self._dataUrl
 
     def getNumAlignedReads(self):
         samFile = self.getFileHandle(self._dataUrl)
@@ -700,7 +692,9 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
     """
     def __init__(self, parentContainer, localId):
         super(HtslibReadGroup, self).__init__(parentContainer, localId)
-        self._parentSamFilePath = parentContainer.getSamFilePath()
+        # These attributes are used in AlignmentDataMixin.openFile
+        self._dataUrl = parentContainer.getDataUrl()
+        self._indexFile = parentContainer.getIndexFile()
         self._filterReads = localId != HtslibReadGroupSet.defaultReadGroupName
         self._sampleId = None
         self._description = None
@@ -741,9 +735,6 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         """
         return self._getReadAlignments(
             reference, start, end, self._parentContainer, self)
-
-    def getSamFilePath(self):
-        return self._samFilePath
 
     def getNumAlignedReads(self):
         return -1  # TODO populate with metadata
