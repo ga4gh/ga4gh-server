@@ -307,8 +307,8 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, response.status_code)
 
         # Test Error: 404, ID not found
-        idStr = '["notValid"]'
-        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        invalidId = datamodel.DatasetCompoundId.getInvalidIdString()
+        obfuscated = datamodel.CompoundId.obfuscate(invalidId)
         compoundId = datamodel.DatasetCompoundId.parse(obfuscated)
         response = self.sendGetDataset(str(compoundId))
         self.assertEqual(404, response.status_code)
@@ -320,8 +320,8 @@ class TestFrontend(unittest.TestCase):
         variantSetId = responseData.variantSets[0].id
         response = self.sendGetVariantSet(variantSetId)
         self.assertEqual(200, response.status_code)
-        idStr = '["notValid","vs","notValid"]'
-        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        invalidId = datamodel.VariantSetCompoundId.getInvalidIdString()
+        obfuscated = datamodel.CompoundId.obfuscate(invalidId)
         compoundId = datamodel.VariantSetCompoundId.parse(obfuscated)
         response = self.sendGetVariantSet(str(compoundId))
         self.assertEqual(404, response.status_code)
