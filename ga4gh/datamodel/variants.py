@@ -1096,8 +1096,11 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
                 annotations, variant, hgvsG, transcriptConverter)
         else:
             annotations = record.info.get('CSQ'.encode())
-            transcriptEffects = self.convertTranscriptEffectCSQ(
-                annotations[0], hgvsG)
+            transcriptEffects = []
+            for ann in annotations:
+                transcriptEffects.extend(
+                    self.convertTranscriptEffectCSQ(
+                        ann, hgvsG))
 
         annotation.transcriptEffects = transcriptEffects
         annotation.id = self.getVariantAnnotationId(variant, annotation)
