@@ -218,11 +218,14 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        # dataRepository = datarepo.FileSystemDataRepository(os.path.join(
-        #     dataSource.netloc, dataSource.path))
-        dataRepository = datarepo.SqlDataRepository(os.path.join(
-            dataSource.netloc, dataSource.path))
-        dataRepository.load()
+        # Temporary hack. While we still have the FileSystemDataRepository
+        # for testing, only use the SQL repo if the path is a directory.
+        path = os.path.join(dataSource.netloc, dataSource.path)
+        if os.path.isdir(path):
+            dataRepository = datarepo.FileSystemDataRepository(path)
+        else:
+            dataRepository = datarepo.SqlDataRepository(path)
+            dataRepository.open("r")
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)

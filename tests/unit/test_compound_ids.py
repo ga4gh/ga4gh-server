@@ -28,7 +28,7 @@ class TestCompoundIds(unittest.TestCase):
     def testTopLevelIdsUnique(self):
         datasetId = "a"
         idStr = "b"
-        dataset = datasets.AbstractDataset(datasetId)
+        dataset = datasets.Dataset(datasetId)
         readGroupSet = reads.AbstractReadGroupSet(dataset, idStr)
         variantSet = variants.AbstractVariantSet(dataset, idStr)
         self.assertNotEqual(readGroupSet.getId(), variantSet.getId())

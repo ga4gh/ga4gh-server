@@ -16,6 +16,7 @@ import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.exceptions as exceptions
 
 MODE_READ = 'r'
@@ -159,6 +160,57 @@ class AbstractDataRepository(object):
         compoundId = datamodel.VariantSetCompoundId.parse(id_)
         dataset = self.getDataset(compoundId.datasetId)
         return dataset.getVariantSet(id_)
+
+    def printSummary(self):
+        """
+        Prints a summary of this data repository to stdout.
+        """
+        print("ReferenceSets:")
+        for referenceSet in self.getReferenceSets():
+            print(
+                "", referenceSet.getLocalId(), referenceSet.getId(),
+                referenceSet.getDescription(), referenceSet.getDataUrl(),
+                sep="\t")
+            for reference in referenceSet.getReferences():
+                print(
+                    "\t", reference.getLocalId(), reference.getId(),
+                    sep="\t")
+        print("Datasets:")
+        for dataset in self.getDatasets():
+            print(
+                "", dataset.getLocalId(), dataset.getId(),
+                dataset.getDescription(), sep="\t")
+            print("\tReadGroupSets:")
+            for readGroupSet in dataset.getReadGroupSets():
+                print(
+                    "\t", readGroupSet.getLocalId(),
+                    readGroupSet.getReferenceSet().getLocalId(),
+                    readGroupSet.getId(),
+                    readGroupSet.getDataUrl(), sep="\t")
+                for readGroup in readGroupSet.getReadGroups():
+                    print(
+                        "\t\t", readGroup.getId(), readGroup.getLocalId(),
+                        sep="\t")
+            print("\tVariantSets:")
+            for variantSet in dataset.getVariantSets():
+                print(
+                    "\t", variantSet.getLocalId(),
+                    variantSet.getReferenceSet().getLocalId(),
+                    variantSet.getId(),
+                    sep="\t")
+            print("\tVariantAnnotationSets")
+            for variantAnnotationSet in dataset.getVariantAnnotationSets():
+                print(
+                    "\t", variantAnnotationSet.getLocalId(),
+                    variantAnnotationSet.getVariantSet().getLocalId(),
+                    sep="\t")
+            print("\tFeatureSets:")
+            for featureSet in dataset.getFeatureSets():
+                print(
+                    "\t", featureSet.getLocalId(),
+                    featureSet.getReferenceSet().getLocalId(),
+                    featureSet.getId(),
+                    sep="\t")
 
 
 class EmptyDataRepository(AbstractDataRepository):
@@ -628,6 +680,51 @@ class SqlDataRepository(AbstractDataRepository):
                     variantSet, name, sequenceOntology)
                 dataset.addVariantAnnotationSet(variantAnnotationSet)
 
+    def _createFeatureSetTable(self, cursor):
+        sql = """
+            CREATE TABLE FeatureSet (
+                id TEXT,
+                datasetId TEXT,
+                referenceSetId TEXT,
+                name TEXT,
+                info TEXT,
+                sourceUri TEXT,
+                dataUrl TEXT
+            );
+        """
+        cursor.execute(sql)
+
+    def insertFeatureSet(self, featureSet):
+        """
+        Inserts a the specified featureSet into this repository.
+        """
+        # TODO add support for info and sourceUri fields.
+        sql = """
+            INSERT INTO FeatureSet (
+                id, datasetId, referenceSetId, name, dataUrl)
+            VALUES (?, ?, ?, ?, ?)
+        """
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (
+            featureSet.getId(), featureSet.getParentContainer().getId(),
+            featureSet.getReferenceSet().getId(), featureSet.getLocalId(),
+            featureSet.getDataUrl()))
+
+    def _readFeatureSetTable(self, cursor):
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT * FROM FeatureSet;")
+        for row in cursor:
+            dataset = self.getDataset(row[b'datasetId'])
+            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
+            featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+                dataset, row[b'name'])
+            featureSet.setReferenceSet(referenceSet)
+            featureSet.setSequenceOntology(
+                self.getOntology('sequence_ontology'))
+            featureSet.populateFromRow(row)
+            assert featureSet.getId() == row[b'id']
+            dataset.addFeatureSet(featureSet)
+
     def initialise(self):
         """
         Initialise this data repostitory, creating any necessary directories
@@ -644,6 +741,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createReadGroupTable(cursor)
         self._createCallSetTable(cursor)
         self._createVariantSetTable(cursor)
+        self._createFeatureSetTable(cursor)
 
     def exists(self):
         """
@@ -676,43 +774,7 @@ class SqlDataRepository(AbstractDataRepository):
             self._readReadGroupTable(cursor)
             self._readVariantSetTable(cursor)
             self._readCallSetTable(cursor)
-
-    def printSummary(self):
-        """
-        Prints a summary of this data repository to stdout.
-        """
-        print("Repository version {} at path '{}'".format(
-            self._repositoryVersion, self._dbFilename))
-        print("Created at ", self._creationTimeStamp)
-        print("ReferenceSets:")
-        for referenceSet in self.getReferenceSets():
-            print(
-                "", referenceSet.getLocalId(), referenceSet.getId(),
-                referenceSet.getDescription(), referenceSet.getDataUrl(),
-                sep="\t")
-            for reference in referenceSet.getReferences():
-                print(
-                    "\t", reference.getLocalId(), reference.getId(),
-                    sep="\t")
-        print("Datasets:")
-        for dataset in self.getDatasets():
-            print(
-                "", dataset.getLocalId(), dataset.getId(),
-                dataset.getDescription(), sep="\t")
-            print("\tReadGroupSets:")
-            for readGroupSet in dataset.getReadGroupSets():
-                print(
-                    "\t", readGroupSet.getLocalId(), readGroupSet.getId(),
-                    readGroupSet.getDataUrl(), sep="\t")
-                for readGroup in readGroupSet.getReadGroups():
-                    print(
-                        "\t\t", readGroup.getId(), readGroup.getLocalId(),
-                        sep="\t")
-            print("\tVariantSets:")
-            for variantSet in dataset.getVariantSets():
-                print(
-                    "\t", variantSet.getLocalId(), variantSet.getId(),
-                    sep="\t")
+            self._readFeatureSetTable(cursor)
 
 
 class FileSystemDataRepository(AbstractDataRepository):

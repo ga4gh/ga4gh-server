@@ -15,7 +15,6 @@ import server as server
 
 class TestServerStart(unittest.TestCase):
 
-    @unittest.skip("Skip test until test data is converted to DB repo")
     def testServerStart(self):
         dataDir = "tests/data"
         app = server.Ga4ghServerForTestingDataSource(dataDir)

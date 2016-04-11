@@ -691,6 +691,12 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         self._creationTime = datetime.datetime.now().isoformat() + "Z"
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
+    def getVariantSet(self):
+        """
+        Returns the VariantSet that this VariantAnnotationSet refers to.
+        """
+        return self._variantSet
+
     def _createGaVariantAnnotation(self):
         """
         Convenience method to set the common fields in a GA VariantAnnotation

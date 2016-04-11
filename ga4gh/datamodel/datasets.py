@@ -252,6 +252,7 @@ class SimulatedDataset(Dataset):
             seed = randomSeed + i
             featureSet = sequenceAnnotations.SimulatedFeatureSet(
                 self, localId, seed)
+            featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
 
 
@@ -270,6 +271,7 @@ class FileSystemDataset(Dataset):
 
     @classmethod
     def fromRow(cls, row, dataRepository):
+        print("When is this called??", row)
         dataset = cls(row[b'name'], row[b'dataDir'], dataRepository)
         dataset._description = row[b'description']
         return dataset
@@ -280,8 +282,9 @@ class FileSystemDataset(Dataset):
 
         # Variants
         variantSetDir = os.path.join(dataDir, self.variantsDirName)
-        # We need a referenceSet instance for variants. To make this work
-        # we just pick the first reference set. This is NOT a good idea!!
+        # We need a referenceSet instance for variants and features.
+        # To make this work we just pick the first reference set.
+        # This is NOT a good idea!!
         # None of this code is intended to last long, just until we get
         # all our test data into the repo format.
         referenceSet = dataRepository.getReferenceSets()[0]
@@ -294,7 +297,7 @@ class FileSystemDataset(Dataset):
                 self.addVariantSet(variantSet)
                 # Variant annotations sets
                 if variantSet.isAnnotated():
-                    vaName = "VA"
+                    vaName = localId + "_va"  # TODO does this make sense?
                     sequenceOntology = dataRepository.getOntology(
                         "sequence_ontology")
                     variantAnnotationSet = variants.HtslibVariantAnnotationSet(
@@ -318,6 +321,11 @@ class FileSystemDataset(Dataset):
             if fnmatch.fnmatch(filename, '*.db'):
                 localId, _ = os.path.splitext(filename)
                 fullPath = os.path.join(featureSetDir, filename)
+                sequenceOntology = dataRepository.getOntology(
+                    "sequence_ontology")
                 featureSet = sequenceAnnotations.Gff3DbFeatureSet(
-                    self, localId, fullPath, dataRepository)
+                    self, localId)
+                featureSet.setReferenceSet(referenceSet)
+                featureSet.setSequenceOntology(sequenceOntology)
+                featureSet.populateFromFile(fullPath)
                 self.addFeatureSet(featureSet)
