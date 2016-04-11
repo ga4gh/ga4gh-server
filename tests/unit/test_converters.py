@@ -81,8 +81,7 @@ class TestSamConverter(unittest.TestCase):
                 convertedReads = list(samFile.fetch())
             finally:
                 samFile.close()
-            samFile = pysam.AlignmentFile(
-                readGroupSet.getSamFilePath(), "rb")
+            samFile = pysam.AlignmentFile(readGroupSet.getDataUrl(), "rb")
             try:
                 sourceReads = []
                 referenceName = reference.getName().encode()

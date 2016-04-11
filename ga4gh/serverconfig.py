@@ -39,7 +39,7 @@ class DevelopmentConfig(BaseConfig):
     """
     Configuration used for development.
     """
-    DATA_SOURCE = "ga4gh-example-data"
+    DATA_SOURCE = "ga4gh-example-data/repo.db"
     DEBUG = True
 
 
