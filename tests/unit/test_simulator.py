@@ -33,9 +33,10 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.bases = ["A", "C", "G", "T"]
 
     def _getSimulatedVariantSet(self):
-        dataset = datasets.AbstractDataset('dataset1')
+        dataset = datasets.Dataset('dataset1')
+        referenceSet = references.SimulatedReferenceSet("srs1")
         simulatedVariantSet = variants.SimulatedVariantSet(
-            dataset, 'variantSet1', randomSeed=self.randomSeed,
+            dataset, referenceSet, 'variantSet1', randomSeed=self.randomSeed,
             numCalls=self.numCalls, variantDensity=self.variantDensity)
         return simulatedVariantSet
 
@@ -134,10 +135,11 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
         self.bases = ["A", "C", "G", "T"]
 
     def testCreation(self):
-        dataset = datasets.AbstractDataset('dataset1')
+        dataset = datasets.Dataset('dataset1')
+        referenceSet = references.SimulatedReferenceSet("srs1")
         localId = "variantAnnotationSetId"
         simulatedVariantSet = variants.SimulatedVariantSet(
-            dataset, 'variantSet1', randomSeed=self.randomSeed,
+            dataset, referenceSet, 'variantSet1', randomSeed=self.randomSeed,
             numCalls=self.numCalls, variantDensity=self.variantDensity)
         simulatedVariantAnnotationSet = variants.SimulatedVariantAnnotationSet(
             dataset, localId, simulatedVariantSet, self.randomSeed)
@@ -162,7 +164,7 @@ class TestSimulatedReadGroupSet(unittest.TestCase):
     Test properties of the simulated ReadGroupSet
     """
     def testCreation(self):
-        dataset = datasets.AbstractDataset('dataset1')
+        dataset = datasets.Dataset('dataset1')
         localId = "readGroupSetId"
         referenceSet = references.SimulatedReferenceSet("srs1")
         simulatedReadGroupSet = reads.SimulatedReadGroupSet(

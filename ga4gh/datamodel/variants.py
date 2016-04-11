@@ -7,11 +7,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import random
-import hashlib
-import re
-import os
 import glob
+import hashlib
+import json
+import os
+import random
+import re
 
 import pysam
 
@@ -65,6 +66,12 @@ class CallSet(datamodel.DatamodelObject):
     """
     compoundIdClass = datamodel.CallSetCompoundId
 
+    def populateFromRow(self, row):
+        """
+        Populates this CallSet from the specified DB row.
+        """
+        # currently a noop
+
     def toProtocolElement(self):
         """
         Returns the representation of this CallSet as the corresponding
@@ -100,7 +107,19 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._callSetIds = []
         self._creationTime = None
         self._updatedTime = None
-        self._referenceSetId = ""
+        self._referenceSet = None
+
+    def setReferenceSet(self, referenceSet):
+        """
+        Sets the ReferenceSet for this VariantSet to the specified value.
+        """
+        self._referenceSet = referenceSet
+
+    def getReferenceSet(self):
+        """
+        Returns the reference set associated with this VariantSet.
+        """
+        return self._referenceSet
 
     def getCreationTime(self):
         """
@@ -114,15 +133,21 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         return self._updatedTime
 
-    def addCallSet(self, sampleName):
+    def addCallSet(self, callSet):
+        """
+        Adds the specfied CallSet to this VariantSet.
+        """
+        callSetId = callSet.getId()
+        self._callSetIdMap[callSetId] = callSet
+        self._callSetNameMap[callSet.getLocalId()] = callSet
+        self._callSetIds.append(callSetId)
+
+    def addCallSetFromName(self, sampleName):
         """
         Adds a CallSet for the specified sample name.
         """
         callSet = CallSet(self, sampleName)
-        callSetId = callSet.getId()
-        self._callSetIdMap[callSetId] = callSet
-        self._callSetNameMap[sampleName] = callSet
-        self._callSetIds.append(callSetId)
+        self.addCallSet(callSet)
 
     def getCallSets(self):
         """
@@ -167,7 +192,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement = protocol.VariantSet()
         protocolElement.id = self.getId()
         protocolElement.datasetId = self.getParentContainer().getId()
-        protocolElement.referenceSetId = self._referenceSetId
+        protocolElement.referenceSetId = self._referenceSet.getId()
         protocolElement.metadata = self.getMetadata()
         protocolElement.name = self.getLocalId()
         return protocolElement
@@ -266,13 +291,14 @@ class SimulatedVariantSet(AbstractVariantSet):
     Used mostly for testing.
     """
     def __init__(
-            self, parentContainer, localId, randomSeed=1, numCalls=1,
-            variantDensity=1):
+            self, parentContainer, referenceSet, localId, randomSeed=1,
+            numCalls=1, variantDensity=1):
         super(SimulatedVariantSet, self).__init__(parentContainer, localId)
+        self._referenceSet = referenceSet
         self._randomSeed = randomSeed
         self._numCalls = numCalls
         for j in range(numCalls):
-            self.addCallSet("simCallSet_{}".format(j))
+            self.addCallSetFromName("simCallSet_{}".format(j))
         self._variantDensity = variantDensity
         now = protocol.convertDatetime(datetime.datetime.now())
         self._creationTime = now
@@ -536,14 +562,81 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
     Class representing a single variant set backed by a directory of indexed
     VCF or BCF files.
     """
-    def __init__(self, parentContainer, localId, dataDir, dataRepository):
+    def __init__(self, parentContainer, localId):
         super(HtslibVariantSet, self).__init__(parentContainer, localId)
-        self._dataDir = dataDir
-        self._setAccessTimes(dataDir)
         self._chromFileMap = {}
         self._metadata = None
-        self._patterns = ['*.bcf', '*.vcf.gz']
-        self._scanDataFiles(self._dataDir, self._patterns)
+
+    def getReferenceToDataUrlIndexMap(self):
+        """
+        Returns the map of Reference names to the (dataUrl, indexFile) pairs.
+        """
+        return self._chromFileMap
+
+    def populateFromRow(self, row):
+        """
+        Populates this VariantSet from the specified DB row.
+        """
+        self._created = row[b'created']
+        self._updated = row[b'updated']
+        self._chromFileMap = {}
+        # We can't load directly as we want tuples to be stored
+        # rather than lists.
+        for key, value in json.loads(row[b'dataUrlIndexMap']).items():
+            self._chromFileMap[key] = tuple(value)
+        self._metadata = []
+        for jsonDict in json.loads(row[b'metadata']):
+            metadata = protocol.VariantSetMetadata.fromJsonDict(jsonDict)
+            self._metadata.append(metadata)
+
+    def populateFromFile(self, dataUrls, indexFiles):
+        """
+        Populates this variant set using the specified lists of data
+        files and indexes. These must be in the same order, such that
+        the jth index file corresponds to the jth data file.
+        """
+        assert len(dataUrls) == len(indexFiles)
+        for dataUrl, indexFile in zip(dataUrls, indexFiles):
+            varFile = pysam.VariantFile(dataUrl, index_filename=indexFile)
+            try:
+                self._populateFromVariantFile(varFile, dataUrl, indexFile)
+            finally:
+                varFile.close()
+
+    def checkConsistency(self):
+        """
+        Perform consistency check on the variant set
+        """
+        for referenceName, (dataUrl, indexFile) in self._chromFileMap.items():
+            varFile = pysam.VariantFile(dataUrl, index_filename=indexFile)
+            try:
+                for chrom in varFile.index:
+                    chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
+                    if not isEmptyIter(varFile.fetch(chrom)):
+                        self._checkMetadata(varFile)
+                        self._checkCallSetIds(varFile)
+            finally:
+                varFile.close()
+
+    def _populateFromVariantFile(self, varFile, dataUrl, indexFile):
+        """
+        Populates the instance variables of this VariantSet from the specified
+        pysam VariantFile object.
+        """
+        if varFile.index is None:
+            raise exceptions.NotIndexedException(dataUrl)
+        for chrom in varFile.index:
+            # Unlike Tabix indices, CSI indices include all contigs defined
+            # in the BCF header.  Thus we must test each one to see if
+            # records exist or else they are likely to trigger spurious
+            # overlapping errors.
+            chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
+            if not isEmptyIter(varFile.fetch(chrom)):
+                if chrom in self._chromFileMap:
+                    raise exceptions.OverlappingVcfException(dataUrl, chrom)
+                self._updateMetadata(varFile)
+                self._updateCallSetIds(varFile)
+                self._chromFileMap[chrom] = dataUrl, indexFile
 
     def _updateMetadata(self, variantFile):
         """
@@ -575,20 +668,6 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 raise exceptions.InconsistentCallSetIdException(
                     variantFile.filename)
 
-    def checkConsistency(self):
-        """
-        Perform consistency check on the variant set
-        """
-        filenames = self._getDataFilenames(self._dataDir, self._patterns)
-        for filename in filenames:
-            varFile = self.openFile(filename)
-            for chrom in varFile.index:
-                chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
-                if not isEmptyIter(varFile.fetch(chrom)):
-                    self._checkMetadata(varFile)
-                    self._checkCallSetIds(varFile)
-            varFile.close()
-
     def getNumVariants(self):
         """
         Returns the total number of variants in this VariantSet.
@@ -602,28 +681,11 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         if len(self._callSetIdMap) == 0:
             for sample in variantFile.header.samples:
-                self.addCallSet(sample)
+                self.addCallSetFromName(sample)
 
-    def openFile(self, filename):
-        return pysam.VariantFile(filename)
-
-    def _addDataFile(self, filename):
-        varFile = self.openFile(filename)
-        if varFile.index is None:
-            raise exceptions.NotIndexedException(filename)
-        for chrom in varFile.index:
-            # Unlike Tabix indices, CSI indices include all contigs defined
-            # in the BCF header.  Thus we must test each one to see if
-            # records exist or else they are likely to trigger spurious
-            # overlapping errors.
-            chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
-            if not isEmptyIter(varFile.fetch(chrom)):
-                if chrom in self._chromFileMap:
-                    raise exceptions.OverlappingVcfException(filename, chrom)
-                self._updateMetadata(varFile)
-                self._updateCallSetIds(varFile)
-                self._chromFileMap[chrom] = filename
-        varFile.close()
+    def openFile(self, dataUrlIndexFilePair):
+        dataUrl, indexFile = dataUrlIndexFilePair
+        return pysam.VariantFile(dataUrl, index_filename=indexFile)
 
     def _convertGaCall(self, recordId, name, pysamCall, genotypeData):
         compoundId = self.getCallSetId(name)
@@ -815,10 +877,10 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
     Class representing a single variant annotation set backed by a directory of
     indexed VCF or BCF files.
     """
-    def __init__(self, parentContainer, localId, dataDir,
-                 backend, variantSet):
+    def __init__(
+            self, parentContainer, localId, dataDir, backend, variantSet):
         super(HtslibVariantAnnotationSet, self).__init__(
-            parentContainer, localId, dataDir, backend)
+                parentContainer, localId)
         self.compoundIdClass = datamodel.VariantAnnotationSetCompoundId
         self._variantSetId = variantSet.getCompoundId()
         self._variantSet = variantSet

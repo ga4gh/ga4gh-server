@@ -218,8 +218,11 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        dataRepository = datarepo.FileSystemDataRepository(os.path.join(
+        # dataRepository = datarepo.FileSystemDataRepository(os.path.join(
+        #     dataSource.netloc, dataSource.path))
+        dataRepository = datarepo.SqlDataRepository(os.path.join(
             dataSource.netloc, dataSource.path))
+        dataRepository.load()
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)

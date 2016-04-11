@@ -27,7 +27,7 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testAddOneDataset(self):
         datasetName = "ds"
-        dataset = datasets.AbstractDataset(datasetName)
+        dataset = datasets.Dataset(datasetName)
         self.assertEqual(self._dataRepo.getNumDatasets(), 0)
         self.assertEqual(self._dataRepo.getDatasets(), [])
         self._dataRepo.addDataset(dataset)
@@ -39,9 +39,9 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testAddMultipleDatasets(self):
         firstDatasetName = "ds1"
-        firstDataset = datasets.AbstractDataset(firstDatasetName)
+        firstDataset = datasets.Dataset(firstDatasetName)
         secondDatasetName = "ds2"
-        secondDataset = datasets.AbstractDataset(secondDatasetName)
+        secondDataset = datasets.Dataset(secondDatasetName)
         self.assertEqual(self._dataRepo.getNumDatasets(), 0)
         self.assertEqual(self._dataRepo.getDatasets(), [])
         self._dataRepo.addDataset(firstDataset)
@@ -132,7 +132,7 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertRaises(TypeError, self._dataRepo.getDatasetByIndex, None)
         self.assertRaises(TypeError, self._dataRepo.getDatasetByIndex, "")
         datasetName = "ds"
-        dataset = datasets.AbstractDataset(datasetName)
+        dataset = datasets.Dataset(datasetName)
         self._dataRepo.addDataset(dataset)
         self.assertRaises(IndexError, self._dataRepo.getDatasetByIndex, 1)
 

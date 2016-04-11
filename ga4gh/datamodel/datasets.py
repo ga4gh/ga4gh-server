@@ -5,10 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import fnmatch
-import json
-import os
-
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
@@ -17,14 +13,15 @@ import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
 
-class AbstractDataset(datamodel.DatamodelObject):
+class Dataset(datamodel.DatamodelObject):
     """
     The base class of datasets containing variants and reads
     """
     compoundIdClass = datamodel.DatasetCompoundId
 
     def __init__(self, localId):
-        super(AbstractDataset, self).__init__(None, localId)
+        super(Dataset, self).__init__(None, localId)
+        self._description = None
         self._variantSetIds = []
         self._variantSetIdMap = {}
         self._featureSetIds = []
@@ -34,7 +31,19 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetNameMap = {}
         self._variantAnnotationSetIds = []
         self._variantAnnotationSetIdMap = {}
-        self._description = None
+
+    def populateFromRow(self, row):
+        """
+        Populates the instance variables of this Dataset from the
+        specified database row.
+        """
+        self._description = row[b'description']
+
+    def setDescription(self, description):
+        """
+        Sets the description for this dataset to the specified value.
+        """
+        self._description = description
 
     def addVariantSet(self, variantSet):
         """
@@ -202,7 +211,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         return self._description
 
 
-class SimulatedDataset(AbstractDataset):
+class SimulatedDataset(Dataset):
     """
     A simulated dataset
     """
@@ -218,7 +227,7 @@ class SimulatedDataset(AbstractDataset):
             localId = "simVs{}".format(i)
             seed = randomSeed + i
             variantSet = variants.SimulatedVariantSet(
-                self, localId, seed, numCalls, variantDensity)
+                self, referenceSet, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
                 self, "simVas{}".format(i), variantSet)
@@ -248,10 +257,15 @@ class FileSystemDataset(AbstractDataset):
     readsDirName = "reads"
     featuresDirName = "sequenceAnnotations"
 
+    @classmethod
+    def fromRow(cls, row, dataRepository):
+        dataset = cls(row[b'name'], row[b'dataDir'], dataRepository)
+        dataset._description = row[b'description']
+        return dataset
+
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
         self._dataDir = dataDir
-        self._setMetadata()
 
         # Variants
         variantSetDir = os.path.join(dataDir, self.variantsDirName)
@@ -286,14 +300,3 @@ class FileSystemDataset(AbstractDataset):
                 featureSet = sequenceAnnotations.Gff3DbFeatureSet(
                     self, localId, fullPath, dataRepository)
                 self.addFeatureSet(featureSet)
-
-    def _setMetadata(self):
-        metadataFileName = '{}.json'.format(self._dataDir)
-        if os.path.isfile(metadataFileName):
-            with open(metadataFileName) as metadataFile:
-                metadata = json.load(metadataFile)
-                try:
-                    self._description = metadata['description']
-                except KeyError as err:
-                    raise exceptions.MissingDatasetMetadataException(
-                        metadataFileName, str(err))

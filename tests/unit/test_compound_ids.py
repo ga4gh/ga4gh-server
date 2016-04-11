@@ -150,7 +150,7 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(compoundId.__class__, ExampleCompoundId)
 
     def getDataset(self):
-        return datasets.AbstractDataset("dataset")
+        return datasets.Dataset("dataset")
 
     def getReferenceSet(self):
         return references.AbstractReferenceSet("referenceSet")

@@ -21,7 +21,7 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
     def setUp(self):
         self._variantSetName = "testVariantSet"
         self._backend = datarepo.FileSystemDataRepository("tests/data")
-        self._dataset = datasets.AbstractDataset(self._backend)
+        self._dataset = datasets.Dataset(self._backend)
         self._variantSet = variants.AbstractVariantSet(
             self._dataset, self._variantSetName)
         self._variantAnnotationSet = \

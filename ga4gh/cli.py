@@ -24,8 +24,8 @@ import ga4gh.frontend as frontend
 import ga4gh.configtest as configtest
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
-import ga4gh.repo_manager as repo_manager
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.references as references
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -1503,7 +1503,7 @@ class AbstractRepoCommandRunner(object):
     def __init__(self, args):
         self.args = args
         self.repoPath = args.repoPath
-        self.repoManager = repo_manager.RepoManager(self.repoPath)
+        self.repo = datarepo.SqlDataRepository(self.repoPath)
         if 'force' in args:
             self.force = args.force
 
@@ -1532,7 +1532,7 @@ class AbstractRepoAddMoveCommandRunner(AbstractRepoAddCommandRunner):
 
     def __init__(self, args):
         super(AbstractRepoAddMoveCommandRunner, self).__init__(args)
-        self.moveMode = args.moveMode
+        # self.moveMode = args.moveMode
 
 
 class AbstractRepoDatasetCommandRunner(AbstractRepoCommandRunner):
@@ -1632,13 +1632,25 @@ class AddReferenceSetRunner(AbstractRepoAddMoveCommandRunner):
 
     def __init__(self, args):
         super(AddReferenceSetRunner, self).__init__(args)
-        self.metadata = {
-            'description': args.description,
-        }
+        self.description = args.description
+        self.name = args.name
 
     def run(self):
-        self.repoManager.addReferenceSet(
-            self.filePath, self.moveMode, self.metadata)
+        if self.name is None:
+            # derive name from the filename?
+            name = "temp"
+        referenceSet = references.HtslibReferenceSet(self.filePath, name)
+        referenceSet.setDescription(self.description)
+        # Set all the other metadata here using CLI options.
+
+        # Now catch any errors that arise and provide a good error
+        # message to the user.
+        # TODO need to do initialisation checks here.
+        self.repo.openDb()
+        self.repo.addReferenceSet(referenceSet)
+        self.repo.closeDb()
+        print("updated repo")
+        self.repo.printSummary()
 
 
 class RemoveReferenceSetRunner(AbstractRepoCommandRunner):
@@ -1841,7 +1853,7 @@ def getRepoParser():
     addReferenceSetParser.set_defaults(runner=AddReferenceSetRunner)
     addRepoArgument(addReferenceSetParser)
     addFilePathArgument(addReferenceSetParser)
-    addMoveModeArgument(addReferenceSetParser)
+    addNameArgument(addReferenceSetParser)
     addReferenceSetMetadataArguments(addReferenceSetParser)
 
     removeReferenceSetParser = addSubparser(

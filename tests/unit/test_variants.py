@@ -83,14 +83,14 @@ class TestAbstractVariantSet(unittest.TestCase):
     def setUp(self):
         self._variantSetName = "testVariantSet"
         self._backend = backend.Backend(datarepo.AbstractDataRepository())
-        self._dataset = datasets.AbstractDataset(self._backend)
+        self._dataset = datasets.Dataset(self._backend)
         self._variantSet = variants.AbstractVariantSet(
             self._dataset, self._variantSetName)
 
     def testAddOneCallSet(self):
         self.assertEqual(self._variantSet.getNumCallSets(), 0)
         callSetName = "callSetName"
-        self._variantSet.addCallSet(callSetName)
+        self._variantSet.addCallSetFromName(callSetName)
         self.assertEqual(self._variantSet.getNumCallSets(), 1)
         callSet = self._variantSet.getCallSetByIndex(0)
         self.assertEqual(
@@ -105,7 +105,7 @@ class TestAbstractVariantSet(unittest.TestCase):
         callSetCount = 10
         allCallSets = []
         for i in range(callSetCount):
-            self._variantSet.addCallSet(callSetName.format(i))
+            self._variantSet.addCallSetFromName(callSetName.format(i))
             callSet = self._variantSet.getCallSetByIndex(i)
             self.assertEqual(
                 self._variantSet.getCallSetByName(
@@ -127,7 +127,7 @@ class TestAbstractVariantSet(unittest.TestCase):
                           self._variantSet.getCallSet, 617)
         self.assertRaises(exceptions.CallSetNotFoundException,
                           self._variantSet.getCallSet, None)
-        self.assertRaises(TypeError, self._variantSet.addCallSet,
+        self.assertRaises(TypeError, self._variantSet.addCallSetFromName,
                           ['a list of', 2])
         self.assertRaises(NotImplementedError,
                           self._variantSet.getNumVariants)

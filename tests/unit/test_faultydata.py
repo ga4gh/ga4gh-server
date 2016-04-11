@@ -13,8 +13,6 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
-import ga4gh.backend as backend
-import ga4gh.datarepo as datarepo
 
 
 class FaultyVariantDataTest(unittest.TestCase):
@@ -23,7 +21,7 @@ class FaultyVariantDataTest(unittest.TestCase):
     """
     def setUp(self):
         self.testDataDir = "tests/faultydata/variants"
-        self.dataset = datasets.AbstractDataset('dataset1')
+        self.dataset = datasets.Dataset('dataset1')
 
     def getFullPath(self, localId):
         return os.path.join(self.testDataDir, localId)
@@ -190,26 +188,3 @@ class TestInvalidReferenceSetMetadata(FaultyReferenceSetDataTest):
         path = self.getFullPath(localId)
         with self.assertRaises(ValueError):
             references.HtslibReferenceSet(localId, path, None)
-
-
-class FaultyDatasetTest(unittest.TestCase):
-    """
-    Superclass of faulty dataset tests.
-    """
-    def setUp(self):
-        self.testDataDir = "tests/faultydata/datasets"
-
-    def getFullPath(self, localId):
-        return os.path.join(self.testDataDir, localId)
-
-
-class TestBadDatasetMetadata(FaultyDatasetTest):
-    """
-    Tests that we raise an expcetion if the metadata is not correct.
-    """
-    def testBadReferenceDatasetMetadata(self):
-        localId = "bad_metadata"
-        path = self.getFullPath(localId)
-        localBackend = backend.Backend(datarepo.EmptyDataRepository())
-        with self.assertRaises(exceptions.MissingDatasetMetadataException):
-            datasets.FileSystemDataset(localId, path, localBackend)
