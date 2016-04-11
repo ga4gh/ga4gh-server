@@ -44,6 +44,7 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         for vcfFile in glob.glob(os.path.join(self._dataPath, "*.vcf.gz")):
             if self._isAnnotated():
                 self._readVcf(vcfFile)
+        self._isCsq = self._hasConsequenceField()
 
     def _isAnnotated(self):
         """
@@ -54,7 +55,15 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         pyvcfreader = vcf.Reader(
             filename=glob.glob(
                 os.path.join(self._dataPath, "*.vcf.gz"))[0])
-        return 'ANN' in [x for x in pyvcfreader.infos]
+        items = [x for x in pyvcfreader.infos]
+        return ('ANN' in items) or ('CSQ' in items)
+
+    def _hasConsequenceField(self):
+        pyvcfreader = vcf.Reader(
+            filename=glob.glob(
+                os.path.join(self._dataPath, "*.vcf.gz"))[0])
+        items = [x for x in pyvcfreader.infos]
+        return 'CSQ' in items
 
     def _readVcf(self, vcfFileName):
         """
@@ -87,7 +96,7 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         :return: dictionary of k, v pairs along from the ann string
         """
         # Have yet to see if other files follow this pattern
-        if self._isVEP:
+        if self._isVEP and not self._isCsq:
             fields = ["alt", "effects", "impact", "symbol", "geneName",
                       "featureType", "featureId", "trBiotype", "exon",
                       "intron", "hgvsC", "hgvsP",
@@ -141,26 +150,52 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
             self.assertEqual(gaVariantAnnotation.start, pyvcfVariant.POS - 1)
             self.assertEqual(gaVariantAnnotation.end, pyvcfVariant.end)
             # Annotated VCFs contain an ANN field in the record info
-            self.assertIn('ANN', pyvcfVariant.INFO)
-            self.assertIsNotNone(gaVariantAnnotation.transcriptEffects)
-            pyvcfAnn = pyvcfVariant.INFO['ANN']
-            i = 0
-            for pyvcfEffect, gaEffect in \
-                    zip(pyvcfAnn, gaVariantAnnotation.transcriptEffects):
-                effectDict = self.splitAnnField(pyvcfEffect)
-                self.assertEqual(gaEffect.alternateBases, effectDict['alt'])
-                self.assertEqual(gaEffect.featureId, effectDict['featureId'])
-                self.assertEqual(gaEffect.hgvsAnnotation.transcript,
-                                 effectDict['hgvsC'])
-                self.assertEqual(gaEffect.hgvsAnnotation.protein,
-                                 effectDict['hgvsP'])
-                if 'HGVS.g' in pyvcfVariant.INFO:
-                    # Not all VCF have this field
-                    index = i % len(pyvcfVariant.INFO['HGVS.g'])
+            if 'ANN' in pyvcfVariant.INFO:
+                pyvcfAnn = pyvcfVariant.INFO['ANN']
+                i = 0
+                for pyvcfEffect, gaEffect in \
+                        zip(pyvcfAnn, gaVariantAnnotation.transcriptEffects):
+                    effectDict = self.splitAnnField(pyvcfEffect)
                     self.assertEqual(
-                        gaEffect.hgvsAnnotation.genomic,
-                        pyvcfVariant.INFO['HGVS.g'][index])
-                i += 1
+                        gaEffect.alternateBases, effectDict['alt'])
+                    self.assertEqual(
+                        gaEffect.featureId, effectDict['featureId'])
+                    self.assertEqual(
+                        gaEffect.hgvsAnnotation.transcript,
+                        effectDict['hgvsC'])
+                    self.assertEqual(
+                        gaEffect.hgvsAnnotation.protein, effectDict['hgvsP'])
+                    if 'HGVS.g' in pyvcfVariant.INFO:
+                        # Not all VCF have this field
+                        index = i % len(pyvcfVariant.INFO['HGVS.g'])
+                        self.assertEqual(
+                            gaEffect.hgvsAnnotation.genomic,
+                            pyvcfVariant.INFO['HGVS.g'][index])
+                    i += 1
+            elif 'CSQ' in pyvcfVariant.INFO:
+                pyvcfAnn = pyvcfVariant.INFO['CSQ']
+                transcriptEffects = self._splitCsqEffects(pyvcfAnn[0])
+                for treff, gaEffect in zip(
+                        transcriptEffects,
+                        gaVariantAnnotation.transcriptEffects):
+                    self.assertEqual(gaEffect.alternateBases, treff['alt'])
+                    self.assertEqual(gaEffect.featureId, treff['featureId'])
+            self.assertIsNotNone(gaVariantAnnotation.transcriptEffects)
+
+    def _splitCsqEffects(self, annStr):
+        (alt, gene, featureId, featureType, effects, cdnaPos,
+            cdsPos, protPos, aminos, codons, existingVar,
+            distance, strand, sift, polyPhen, motifName,
+            motifPos, highInfPos,
+            motifScoreChange) = annStr.split('|')
+        terms = effects.split("&")
+        treffs = []
+        for term in terms:
+            effect = {}
+            effect['featureId'] = featureId
+            effect['alt'] = alt
+            treffs.append(effect)
+        return treffs
 
     def testVariantsValid(self):
         end = datamodel.PysamDatamodelMixin.vcfMax

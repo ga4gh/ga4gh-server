@@ -10,6 +10,17 @@ except ImportError:
 with open("README.pypi.rst") as readmeFile:
     long_description = readmeFile.read()
 
+install_requires = []
+with open("requirements.txt") as requirementsFile:
+    for line in requirementsFile:
+        line = line.strip()
+        if len(line) == 0:
+            continue
+        if line[0] == '#':
+            continue
+        pinnedVersion = line.split()[0]
+        install_requires.append(pinnedVersion)
+
 setup(
     name="ga4gh",
     description="A reference implementation of the ga4gh API",
@@ -40,17 +51,7 @@ setup(
         'Topic :: Scientific/Engineering :: Bio-Informatics',
     ],
     keywords='genomics reference',
-    # Flask must come after all other requirements that have "flask" as a
-    # prefix due to a setuptools bug.
-    install_requires=[
-        "Flask-Cors==2.0.1",
-        "Flask==0.10.1",
-        "avro==1.7.7",
-        "humanize==0.5.1",
-        "pysam==0.8.4",
-        "oic==0.7.6",
-        "requests==2.7.0",
-    ],
+    install_requires=install_requires,
     # Use setuptools_scm to set the version number automatically from Git
     setup_requires=['setuptools_scm'],
     use_scm_version={

@@ -120,6 +120,17 @@ class CompoundId(object):
     further up the tree. This list is a set of tuples giving the
     name and length of a given prefix forming an identifier.
     """
+    differentiator = None
+    """
+    A string used to guarantee unique ids for objects.  A value of None
+    indicates no string is used.  Otherwise, this string will be spliced
+    into the object's id.
+    """
+    differentiatorFieldName = 'differentiator'
+    """
+    The name of the differentiator field in the fields array for CompoundId
+    subclasses.
+    """
 
     def __init__(self, parentCompoundId, *localIds):
         """
@@ -134,6 +145,14 @@ class CompoundId(object):
             for field in parentCompoundId.fields:
                 setattr(self, field, getattr(parentCompoundId, field))
                 index += 1
+        if (self.differentiator is not None and
+                self.differentiatorFieldName in self.fields[index:]):
+            # insert a differentiator into the localIds if appropriate
+            # for this class and we haven't advanced beyond it already
+            differentiatorIndex = self.fields[index:].index(
+                self.differentiatorFieldName)
+            localIds = localIds[:differentiatorIndex] + tuple([
+                self.differentiator]) + localIds[differentiatorIndex:]
         for field, localId in zip(self.fields[index:], localIds):
             setattr(self, field, str(localId))
         if len(localIds) != len(self.fields) - index:
@@ -176,7 +195,19 @@ class CompoundId(object):
             # Sometimes base64 decoding succeeds but we're left with
             # unicode gibberish. This is also and IdNotFound.
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
-        if len(splits) != len(cls.fields):
+        # pull the differentiator out of the splits before instantiating
+        # the class, if the differentiator exists
+        fieldsLength = len(cls.fields)
+        if cls.differentiator is not None:
+            differentiatorIndex = cls.fields.index(
+                cls.differentiatorFieldName)
+            if differentiatorIndex < len(splits):
+                del splits[differentiatorIndex]
+            else:
+                raise exceptions.ObjectWithIdNotFoundException(
+                    compoundIdStr)
+            fieldsLength -= 1
+        if len(splits) != fieldsLength:
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
         return cls(None, *splits)
 
@@ -227,8 +258,10 @@ class VariantSetCompoundId(DatasetCompoundId):
     """
     The compound id for a variant set
     """
-    fields = DatasetCompoundId.fields + ['variantSet']
-    containerIds = DatasetCompoundId.containerIds + [('variantSetId', 1)]
+    fields = DatasetCompoundId.fields + [
+        CompoundId.differentiatorFieldName, 'variantSet']
+    containerIds = DatasetCompoundId.containerIds + [('variantSetId', 2)]
+    differentiator = 'vs'
 
 
 class VariantAnnotationSetCompoundId(VariantSetCompoundId):
@@ -237,7 +270,7 @@ class VariantAnnotationSetCompoundId(VariantSetCompoundId):
     """
     fields = VariantSetCompoundId.fields + ['variantAnnotationSet']
     containerIds = VariantSetCompoundId.containerIds + [
-        ('variantAnnotationSetId', 2)]
+        ('variantAnnotationSetId', 3)]
 
 
 class VariantSetMetadataCompoundId(VariantSetCompoundId):
@@ -246,7 +279,7 @@ class VariantSetMetadataCompoundId(VariantSetCompoundId):
     """
     fields = VariantSetCompoundId.fields + ['key']
     containerIds = VariantSetCompoundId.containerIds + [
-        ('variantSetMetadataId', 1)]
+        ('variantSetMetadataId', 2)]
 
 
 class VariantCompoundId(VariantSetCompoundId):
@@ -282,8 +315,10 @@ class ReadGroupSetCompoundId(DatasetCompoundId):
     """
     The compound id for a read group set
     """
-    fields = DatasetCompoundId.fields + ['readGroupSet']
-    containerIds = DatasetCompoundId.containerIds + [('readGroupSetId', 1)]
+    fields = DatasetCompoundId.fields + [
+        CompoundId.differentiatorFieldName, 'readGroupSet']
+    containerIds = DatasetCompoundId.containerIds + [('readGroupSetId', 2)]
+    differentiator = 'rgs'
 
 
 class ReadGroupCompoundId(ReadGroupSetCompoundId):
@@ -291,7 +326,7 @@ class ReadGroupCompoundId(ReadGroupSetCompoundId):
     The compound id for a read group
     """
     fields = ReadGroupSetCompoundId.fields + ['readGroup']
-    containerIds = ReadGroupSetCompoundId.containerIds + [('readGroupId', 2)]
+    containerIds = ReadGroupSetCompoundId.containerIds + [('readGroupId', 3)]
 
 
 class ExperimentCompoundId(ReadGroupCompoundId):
@@ -302,11 +337,13 @@ class ExperimentCompoundId(ReadGroupCompoundId):
     containerIds = ReadGroupCompoundId.containerIds + [('experimentId', 3)]
 
 
-class ReadAlignmentCompoundId(ReadGroupCompoundId):
+class ReadAlignmentCompoundId(ReadGroupSetCompoundId):
     """
     The compound id for a read alignment
     """
-    fields = ReadGroupCompoundId.fields + ['readAlignment']
+    fields = ReadGroupSetCompoundId.fields + ['readAlignment']
+    containerIds = ReadGroupSetCompoundId.containerIds + \
+        [('readAlignmentId', 2)]
 
 
 class RnaQuantificationCompoundId(DatasetCompoundId):

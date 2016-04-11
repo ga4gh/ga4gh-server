@@ -37,9 +37,18 @@ def filenameWithoutExtension(filepath, extension):
     (os.path.splitext(filename)[0] messes up
     on filenames with more than one period)
     """
-    filename = os.path.basename(filepath)
+    filename = basename(filepath)
     index = filename.index(extension)
     return filename[:index]
+
+
+def basename(path):
+    """
+    Return the final component of a pathname, after normalizing
+    the path (os.path.basename returns a empty string when given
+    a path with a trailing slash)
+    """
+    return os.path.basename(os.path.normpath(path))
 
 
 def runCommandSplits(splits, silent=False):
@@ -80,6 +89,7 @@ class RepoManager(object):
     vcfIndexExtension = '.vcf.gz.tbi'
     bamExtension = '.bam'
     bamIndexExtension = '.bam.bai'
+    ontologyExtension = '.txt'
     dbExtension = '.db'
 
     def __init__(self, repoPath):
@@ -149,6 +159,11 @@ class RepoManager(object):
         referenceSetPath = os.path.join(
             self._repoPath, self.referenceSetsDirName, referenceSetName)
         return referenceSetPath
+
+    def _getOntologyMapPath(self, ontologyMapName):
+        ontologyMapPath = os.path.join(
+            self._repoPath, self.ontologiesDirName, ontologyMapName)
+        return ontologyMapPath
 
     def _getReferenceSetJsonPath(self, referenceSetName):
         jsonPath = os.path.join(
@@ -327,7 +342,7 @@ class RepoManager(object):
             self._repoPath, self.referenceSetsDirName, fileName)
         self._assertPathEmpty(destPath, inRepo=True)
         os.mkdir(destPath)
-        fileDestPath = os.path.join(destPath, os.path.basename(filePath))
+        fileDestPath = os.path.join(destPath, basename(filePath))
         self._moveFile(filePath, fileDestPath, moveMode)
 
         # move the index files if they exist, otherwise do indexing
@@ -341,11 +356,11 @@ class RepoManager(object):
         if os.path.exists(indexPathFai) and os.path.exists(indexPathGzi):
             self._moveFile(
                 indexPathFai,
-                os.path.join(destPath, os.path.basename(indexPathFai)),
+                os.path.join(destPath, basename(indexPathFai)),
                 moveMode)
             self._moveFile(
                 indexPathGzi,
-                os.path.join(destPath, os.path.basename(indexPathGzi)),
+                os.path.join(destPath, basename(indexPathGzi)),
                 moveMode)
         else:
             runCommand("samtools faidx {}".format(fileDestPath))
@@ -402,7 +417,7 @@ class RepoManager(object):
         self._check()
         self._checkDataset(datasetName)
         self._checkFile(filePath, self.bamExtension)
-        fileName = os.path.basename(filePath)
+        fileName = basename(filePath)
         readGroupSetName = filenameWithoutExtension(
             fileName, self.bamExtension)
         destPath = os.path.join(
@@ -420,7 +435,7 @@ class RepoManager(object):
             dstDir = os.path.split(destPath)[0]
             self._moveFile(
                 indexPath,
-                os.path.join(dstDir, os.path.basename(indexPath)),
+                os.path.join(dstDir, basename(indexPath)),
                 moveMode)
         else:
             pysam.index(destPath.encode('utf-8'))
@@ -455,7 +470,7 @@ class RepoManager(object):
         self._check()
         self._checkDataset(datasetName)
         self._checkFolder(filePath, self.vcfExtension)
-        dirName = os.path.basename(filePath)
+        dirName = basename(filePath)
         destPath = os.path.join(
             self._repoPath, self.datasetsDirName, datasetName,
             self.variantsDirName, dirName)
@@ -495,6 +510,29 @@ class RepoManager(object):
         self._removePath(variantSetPath)
         self._repoEmit("Variant set '{}/{}' removed".format(
             datasetName, variantSetName))
+
+    def addOntologyMap(self, filePath, moveMode):
+        self._check()
+        self._checkFile(filePath, self.ontologyExtension)
+        fileName = os.path.basename(filePath)
+        destPath = self._getOntologyMapPath(
+            filenameWithoutExtension(fileName, self.ontologyExtension))
+        self._assertPathEmpty(destPath, inRepo=True)
+        os.mkdir(destPath)
+        self._moveFile(filePath, os.path.join(destPath, fileName), moveMode)
+        self._repoEmit("Ontology map '{}' added to repository".format(
+            fileName))
+
+    def removeOntologyMap(self, ontologyName):
+        self._check()
+        ontologyPath = os.path.join(
+            self._repoPath,
+            self.ontologiesDirName,
+            ontologyName)
+        self._assertFileExists(ontologyPath, inRepo=True)
+        self._removePath(ontologyPath)
+        self._repoEmit("Ontology '{}' removed".format(
+            ontologyName))
 
     def addRnaQuantification(self, datasetName, filePath, moveMode):
         """
@@ -540,6 +578,9 @@ class RepoManager(object):
             self._emitIndent(referenceSet.getLocalId())
             for reference in referenceSet.getReferences():
                 self._emitIndent(reference.getLocalId(), 2)
+        self._emit(self.ontologiesDirName)
+        for ontologyMap in dataRepo.getOntologyMaps():
+            self._emitIndent(ontologyMap.getLocalId(), 1)
         self._emit(self.datasetsDirName)
         for dataset in dataRepo.getDatasets():
             self._emitIndent(dataset.getLocalId())

@@ -16,6 +16,7 @@ import unittest.suite
 
 import requests
 
+import ga4gh
 import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.converters as converters
@@ -112,6 +113,7 @@ def addServerOptions(parser):
     parser.add_argument(
         "--dont-use-reloader", default=False, action="store_true",
         help="Don't use the flask reloader")
+    addVersionArgument(parser)
     addDisableUrllibWarningsArgument(parser)
 
 
@@ -521,9 +523,9 @@ class SearchVariantAnnotationsRunner(
         """
         Returns all variant annotation sets on the server.
         """
-        for dataset in self.getAllDatasets():
+        for variantSet in self.getAllVariantSets():
             iterator = self._client.searchVariantAnnotationSets(
-                datasetId=dataset.id)
+                variantSetId=variantSet.id)
             for variantAnnotationSet in iterator:
                 yield variantAnnotationSet
 
@@ -771,6 +773,16 @@ def addDisableUrllibWarningsArgument(parser):
         help="Disable urllib3 warnings")
 
 
+def addVersionArgument(parser):
+    # TODO argparse strips newlines from version output
+    versionString = (
+        "GA4GH Server Version {}\n"
+        "(Protocol Version {})".format(
+            ga4gh.__version__, protocol.version))
+    parser.add_argument(
+        "--version", version=versionString, action="version")
+
+
 def addVariantSearchOptions(parser):
     """
     Adds common options to a variant searches command line parser.
@@ -792,7 +804,6 @@ def addAnnotationsSearchOptions(parser):
     addReferenceIdArgument(parser)
     addStartArgument(parser)
     addEndArgument(parser)
-    addFeatureIdsArgument(parser)
     addEffectsArgument(parser)
     addPageSizeArgument(parser)
 
@@ -811,7 +822,7 @@ def addVariantSetIdMandatoryArgument(parser):
 def addAnnotationSetIdArgument(parser):
     parser.add_argument(
         "--variantAnnotationSetId", "-V", default=None,
-        help="The annotation set id to search over")
+        help="The variant annotation set id to search over")
 
 
 def addReferenceNameArgument(parser):
@@ -936,6 +947,7 @@ def addClientGlobalOptions(parser):
         "--key", "-k", default='invalid',
         help="Auth Key. Found on server index page.")
     addDisableUrllibWarningsArgument(parser)
+    addVersionArgument(parser)
 
 
 def addHelpParser(subparsers):
@@ -969,8 +981,8 @@ def addVariantSetsSearchParser(subparsers):
 def addVariantAnnotationSearchParser(subparsers):
     parser = subparsers.add_parser(
         "variantannotations-search",
-        description="Search for variant annotaions",
-        help="Search for variantAnnotaions.")
+        description="Search for variant annotations",
+        help="Search for variant annotations.")
     parser.set_defaults(runner=SearchVariantAnnotationsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -1405,6 +1417,8 @@ def configtest_main(parser=None):
     parser.add_argument(
         "--config-file", "-f", type=str, default=None,
         help="The configuration file to use")
+    addVersionArgument(parser)
+
     args = parser.parse_args()
     configStr = 'ga4gh.serverconfig:{0}'.format(args.config)
 
@@ -1544,6 +1558,26 @@ class AddDatasetRunner(AbstractRepoDatasetCommandRunner):
         self.repoManager.addDataset(self.datasetName)
 
 
+class AddOntologyMapRunner(AbstractRepoAddMoveCommandRunner):
+
+    def __init__(self, args):
+        super(AddOntologyMapRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.addOntologyMap(self.filePath, self.moveMode)
+
+
+class RemoveOntologyMapRunner(AbstractRepoCommandRunner):
+
+    def __init__(self, args):
+        super(RemoveOntologyMapRunner, self).__init__(args)
+        self.ontologyMapName = args.ontologyMapName
+
+    def run(self):
+        def func(): self.repoManager.removeOntologyMap(self.ontologyMapName)
+        self.confirmRun(func, 'ontology map {}'.format(self.ontologyMapName))
+
+
 class RemoveDatasetRunner(AbstractRepoDatasetCommandRunner):
 
     def __init__(self, args):
@@ -1649,6 +1683,12 @@ def addDatasetNameArgument(subparser):
         "datasetName", help="the name of the dataset to create/modify")
 
 
+def addOntologyNameArgument(subparser):
+    subparser.add_argument(
+        "ontologyMapName",
+        help="the name of the ontology map to create/modify")
+
+
 def addReadGroupSetNameArgument(subparser):
     subparser.add_argument(
         "readGroupSetName",
@@ -1688,6 +1728,7 @@ def getRepoParser():
     parser.add_argument(
         "--loud", default=False, action="store_true",
         help="propagate exceptions from RepoManager")
+    addVersionArgument(parser)
 
     initParser = addSubparser(
         subparsers, "init", "Initialize a data repository")
@@ -1752,6 +1793,22 @@ def getRepoParser():
     addDatasetNameArgument(addReadGroupSetParser)
     addFilePathArgument(addReadGroupSetParser)
     addMoveModeArgument(addReadGroupSetParser)
+
+    addOntologyMapParser = addSubparser(
+        subparsers, "add-ontologymap",
+        "Add an ontology map to the repo")
+    addOntologyMapParser.set_defaults(runner=AddOntologyMapRunner)
+    addRepoArgument(addOntologyMapParser)
+    addFilePathArgument(addOntologyMapParser)
+    addMoveModeArgument(addOntologyMapParser)
+
+    removeOntologyMapParser = addSubparser(
+        subparsers, "remove-ontologymap",
+        "Remove an ontology map from the repo")
+    removeOntologyMapParser.set_defaults(runner=RemoveOntologyMapRunner)
+    addRepoArgument(removeOntologyMapParser)
+    addOntologyNameArgument(removeOntologyMapParser)
+    addForceArgument(removeOntologyMapParser)
 
     removeReadGroupSetParser = addSubparser(
         subparsers, "remove-readgroupset",

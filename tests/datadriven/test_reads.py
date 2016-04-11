@@ -356,7 +356,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             gaAlignment.fragmentName,
             pysamAlignment.query_name)
         compoundId = datamodel.ReadAlignmentCompoundId(
-            readGroupInfo.gaReadGroup.getCompoundId(),
+            self._gaObject.getCompoundId(),
             pysamAlignment.query_name)
         self.assertEqual(gaAlignment.id, str(compoundId))
         self.assertEqual(

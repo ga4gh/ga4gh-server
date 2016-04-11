@@ -38,6 +38,19 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
         testLoc = self._variantAnnotationSet.convertLocation(pos)
         self.assertEqual(testLoc, loc)
 
+    def testThousandGenomesAnnotation(self):
+        variantAnnotationSet = \
+            variants.HtslibVariantAnnotationSet(
+                self._dataset,
+                "vas",
+                "tests/data/datasets/dataset1/variants/1kg.3.annotations",
+                self._backend, self._variantSet)
+        isAnnotated = variantAnnotationSet.isAnnotated(
+            "tests/data/datasets/dataset1/variants/1kg.3.annotations")
+        self.assertEqual(
+            isAnnotated,
+            True)
+
     def testConvertLocationHgvsC(self):
         loc = protocol.AlleleLocation()
         loc.start = 430
