@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 import argparse
 import logging
 import operator
+import sys
 import unittest
 import unittest.loader
 import unittest.suite
@@ -1495,22 +1496,18 @@ def configtest_main(parser=None):
 ##############################################################################
 
 
-class AbstractRepoCommandRunner(object):
+class RepoManager(object):
     """
-    Superclass of all command line interface runner objects for the
-    repo manager tool.
+    Class that provide command line functionality to manage a
+    data repository.
     """
     def __init__(self, args):
-        self.args = args
-        self.repoPath = args.repoPath
-        self.repo = datarepo.SqlDataRepository(self.repoPath)
-        self.repo.open("r")
-        self.force = False
-        if 'force' in args:
-            self.force = args.force
+        self._args = args
+        self._repoPath = args.repoPath
+        self._repo = datarepo.SqlDataRepository(self._repoPath)
 
-    def confirmRun(self, func, deleteString):
-        if self.force:
+    def _confirmRun(self, func, deleteString):
+        if self._args.force:
             func()
         else:
             displayString = (
@@ -1522,472 +1519,330 @@ class AbstractRepoCommandRunner(object):
             else:
                 print("Aborted")
 
-    def updateRepo(self, func, *args, **kwargs):
+    def _updateRepo(self, func, *args, **kwargs):
         """
         Runs the specified function that updates the repo with the specified
         arguments. This method ensures that all updates are transatctional,
         so that if any part of the update fails no changes are made to the
         repo.
         """
-        # currently in read mode.
-        self.repo.close()
         # TODO how do we make this properly transactional?
-        self.repo.open("w")
+        self._repo.open("w")
         try:
             func(*args, **kwargs)
-            self.repo.commit()
+            self._repo.commit()
         finally:
-            self.repo.close()
+            self._repo.close()
 
+    def _openRepo(self):
+        if not self._repo.exists():
+            raise exceptions.RepoManagerException(
+                "Repo '{}' does not exist. Please create a new repo "
+                "using the 'init' command.".format(self._repoPath))
+        self._repo.open("r")
 
-class AbstractRepoAddCommandRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(AbstractRepoAddCommandRunner, self).__init__(args)
-        self.filePath = args.filePath
-
-
-class AbstractRepoAddMoveCommandRunner(AbstractRepoAddCommandRunner):
-
-    def __init__(self, args):
-        super(AbstractRepoAddMoveCommandRunner, self).__init__(args)
-        # self.moveMode = args.moveMode
-
-
-class AbstractRepoDatasetCommandRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(AbstractRepoDatasetCommandRunner, self).__init__(args)
-        self.datasetName = args.datasetName
-
-
-class AbstractRepoDatasetFilepathCommandRunner(
-        AbstractRepoDatasetCommandRunner):
-
-    def __init__(self, args):
-        super(AbstractRepoDatasetFilepathCommandRunner, self).__init__(args)
-        self.filePath = args.filePath
-        self.moveMode = args.moveMode
-
-
-class CheckRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(CheckRunner, self).__init__(args)
-        self.doConsistencyCheck = not args.skipConsistencyCheck
-
-    def run(self):
-        self.repoManager.check(self.doConsistencyCheck)
-
-
-class ListRunner(AbstractRepoCommandRunner):
-    """
-    Lists the contents of this repo.
-    """
-
-    def run(self):
-        self.repo.printSummary()
-
-
-class DestroyRunner(AbstractRepoCommandRunner):
-    """
-    Deletes this repo.
-    """
-    def run(self):
-        def func():
-            self.repo.delete()
-        self.confirmRun(func, "the repo '{}'".format(self.repoPath))
-
-
-class InitRunner(AbstractRepoCommandRunner):
-    """
-    Initialises an empty data repository.
-    """
-    forceMessage = "Respository '{}' already exists. Use --force to overwrite"
-
-    def run(self):
-        if self.repo.exists():
-            if self.force:
-                self.repo.delete()
+    def init(self):
+        forceMessage = (
+            "Respository '{}' already exists. Use --force to overwrite")
+        if self._repo.exists():
+            if self._args.force:
+                self._repo.delete()
             else:
                 raise exceptions.RepoManagerException(
-                    self.forceMessage.format(self.repoPath))
-        self.updateRepo(self.repo.initialise)
+                    forceMessage.format(self._repoPath))
+        self._updateRepo(self._repo.initialise)
 
+    def list(self):
+        """
+        Lists the contents of this repo.
+        """
+        self._openRepo()
+        # TODO this is _very_ crude. We need much more options and detail here.
+        self._repo.printSummary()
 
-class AddDatasetRunner(AbstractRepoDatasetCommandRunner):
-    """
-    Adds a new dataset to this repo.
-    """
+    def addDataset(self):
+        """
+        Adds a new dataset into this repo.
+        """
+        self._openRepo()
+        name = self._args.datasetName
+        # TODO need a better API for this...
+        datasetExists = True
+        try:
+            self._repo.getDatasetByName(name)
+        except exceptions.DatasetNameNotFoundException:
+            datasetExists = False
+        if datasetExists:
+            raise exceptions.RepoManagerException(
+                "dataset with name {} already exists".format(name))
+        dataset = datasets.Dataset(self._args.datasetName)
+        dataset.setDescription(self._args.description)
+        self._updateRepo(self._repo.insertDataset, dataset)
 
-    def run(self):
-        dataset = datasets.Dataset(self.datasetName)
-        dataset.setDescription("Default description")
-        self.updateRepo(self.repo.insertDataset, dataset)
-
-
-class AddOntologyMapRunner(AbstractRepoAddMoveCommandRunner):
-
-    def __init__(self, args):
-        super(AddOntologyMapRunner, self).__init__(args)
-
-    def run(self):
-        self.repoManager.addOntologyMap(self.filePath, self.moveMode)
-
-
-class RemoveOntologyMapRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(RemoveOntologyMapRunner, self).__init__(args)
-        self.ontologyMapName = args.ontologyMapName
-
-    def run(self):
-        def func(): self.repoManager.removeOntologyMap(self.ontologyMapName)
-        self.confirmRun(func, 'ontology map {}'.format(self.ontologyMapName))
-
-
-class RemoveDatasetRunner(AbstractRepoDatasetCommandRunner):
-
-    def __init__(self, args):
-        super(RemoveDatasetRunner, self).__init__(args)
-
-    def run(self):
-        def func(): self.repoManager.removeDataset(self.datasetName)
-        self.confirmRun(func, 'dataset {}'.format(self.datasetName))
-
-
-class AddReferenceSetRunner(AbstractRepoAddMoveCommandRunner):
-    """
-    Adds a new ReferenceSet.
-    """
-    def run(self):
-        name = self.args.name
-        if self.args.name is None:
-            # derive name from the filename?
-            name = "TODO"
+    def addReferenceSet(self):
+        """
+        Adds a new reference set into this repo.
+        """
+        self._openRepo()
+        name = self._args.name
+        # TODO need a better API for this...
+        referenceSetExists = True
+        try:
+            self._repo.getReferenceSetByName(name)
+        except exceptions.ReferenceSetNameNotFoundException:
+            referenceSetExists = False
+        if referenceSetExists:
+            raise exceptions.RepoManagerException(
+                "referenceSet with name {} already exists".format(name))
         referenceSet = references.HtslibReferenceSet(name)
-        referenceSet.populateFromFile(self.args.filePath)
-        referenceSet.setDescription(self.args.description)
-        # Set all the other metadata here using CLI options.
-        self.updateRepo(self.repo.insertReferenceSet, referenceSet)
+        referenceSet.populateFromFile(self._args.filePath)
+        referenceSet.setDescription(self._args.description)
+        # TODO other reference set metadata.
+        self._updateRepo(self._repo.insertReferenceSet, referenceSet)
 
-
-class RemoveReferenceSetRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(RemoveReferenceSetRunner, self).__init__(args)
-        self.referenceSetName = args.referenceSetName
-
-    def run(self):
-        def func():
-            self.repoManager.removeReferenceSet(self.referenceSetName)
-        self.confirmRun(
-            func, 'reference set {}'.format(self.referenceSetName))
-
-
-class AddReadGroupSetRunner(AbstractRepoCommandRunner):
-    """
-    Adds a ReadGroupSet to a given Dataset in this repo.
-    """
-    def run(self):
-        dataset = self.repo.getDatasetByName(self.args.datasetName)
-        dataUrl = self.args.filePath
+    def addReadGroupSet(self):
+        """
+        Adds a new ReadGroupSet into this repo.
+        """
+        self._openRepo()
+        # TODO put this into a method which we can reuse.
+        try:
+            dataset = self._repo.getDatasetByName(self._args.datasetName)
+        except exceptions.DatasetNameNotFoundException:
+            raise exceptions.RepoManagerException(
+                "Cannot find dataset with name '{}'".format(
+                    self._args.datasetName))
+        dataUrl = self._args.filePath
         indexFile = dataUrl + ".bai"
-        name = self.args.name
-        if self.args.name is None:
+        name = self._args.name
+        if self._args.name is None:
             # TODO derive the name from the input URL.
             name = "TODO"
         readGroupSet = reads.HtslibReadGroupSet(dataset, name)
         readGroupSet.populateFromFile(dataUrl, indexFile)
-        referenceSetName = self.args.referenceSetName
-        if self.args.referenceSetName is None:
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
             # Try to find a reference set name from the BAM header.
             referenceSetName = readGroupSet.getBamHeaderReferenceSetName()
-        referenceSet = self.repo.getReferenceSetByName(referenceSetName)
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         readGroupSet.setReferenceSet(referenceSet)
-        self.updateRepo(self.repo.insertReadGroupSet, readGroupSet)
+        self.updateRepo(self._repo.insertReadGroupSet, readGroupSet)
 
+    #
+    # Methods to simplify adding common arguments to the parser.
+    #
 
-class RemoveReadGroupSetRunner(AbstractRepoDatasetCommandRunner):
+    @classmethod
+    def addRepoArgument(cls, subparser):
+        subparser.add_argument(
+            "repoPath", help="the file path of the data repository")
 
-    def __init__(self, args):
-        super(RemoveReadGroupSetRunner, self).__init__(args)
-        self.readGroupSetName = args.readGroupSetName
+    @classmethod
+    def addForceOption(cls, subparser):
+        subparser.add_argument(
+            "-f", "--force", action='store_true',
+            default=False, help="do not prompt for confirmation")
 
-    def run(self):
-        def func():
-            self.repoManager.removeReadGroupSet(
-                self.datasetName, self.readGroupSetName)
-        self.confirmRun(
-            func, 'read group set {}'.format(self.readGroupSetName))
+    @classmethod
+    def addDescriptionOption(cls, subparser):
+        subparser.add_argument(
+            "-d", "--description", default="",
+            help="The human-readable description of an object.")
 
+    @classmethod
+    def addDatasetNameArgument(cls, subparser):
+        subparser.add_argument(
+            "datasetName", help="the name of the dataset")
 
-class AddVariantSetRunner(AbstractRepoDatasetFilepathCommandRunner):
+    @classmethod
+    def addReferenceSetNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the reference set to associate with this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "--referenceSetName", default=None, help=helpText)
 
-    def __init__(self, args):
-        super(AddVariantSetRunner, self).__init__(args)
+    @classmethod
+    def addOntologyNameArgument(cls, subparser):
+        subparser.add_argument(
+            "ontologyMapName",
+            help="the name of the ontology map to create/modify")
 
-    def run(self):
-        self.repoManager.addVariantSet(
-            self.datasetName, self.filePath, self.moveMode)
+    @classmethod
+    def addReadGroupSetNameArgument(cls, subparser):
+        subparser.add_argument(
+            "readGroupSetName",
+            help="the name of the read group set")
 
+    @classmethod
+    def addVariantSetNameArgument(cls, subparser):
+        subparser.add_argument(
+            "variantSetName",
+            help="the name of the variant set")
 
-class RemoveVariantSetRunner(AbstractRepoDatasetCommandRunner):
+    @classmethod
+    def addFeatureSetNameArgument(cls, subparser):
+        subparser.add_argument(
+            "featureSetName",
+            help="the name of the variant set")
 
-    def __init__(self, args):
-        super(RemoveVariantSetRunner, self).__init__(args)
-        self.variantSetName = args.variantSetName
+    @classmethod
+    def addFilePathArgument(cls, subparser):
+        subparser.add_argument(
+            "filePath", help="the path of the file to be moved into the repo")
 
-    def run(self):
-        def func():
-            self.repoManager.removeVariantSet(
-                self.datasetName, self.variantSetName)
-        self.confirmRun(func, 'variant set {}'.format(self.variantSetName))
+    @classmethod
+    def addNameOption(cls, parser, objectType):
+        parser.add_argument(
+            "-n", "--name", default=None,
+            help="The name of the {}".format(objectType))
 
+    @classmethod
+    def getParser(cls):
+        parser = createArgumentParser(
+            "GA4GH data repository management tool")
+        subparsers = parser.add_subparsers(title='subcommands',)
+        addVersionArgument(parser)
 
-class AddFeatureSetRunner(AbstractRepoDatasetFilepathCommandRunner):
+        initParser = addSubparser(
+            subparsers, "init", "Initialize a data repository")
+        initParser.set_defaults(runner="init")
+        cls.addRepoArgument(initParser)
+        cls.addForceOption(initParser)
 
-    def __init__(self, args):
-        super(AddFeatureSetRunner, self).__init__(args)
+        checkParser = addSubparser(
+            subparsers, "check", "Check to see if repo is well-formed")
+        checkParser.set_defaults(runner="check")
+        cls.addRepoArgument(checkParser)
 
-    def run(self):
-        self.repoManager.addFeatureSet(
-            self.datasetName, self.filePath, self.moveMode)
+        listParser = addSubparser(
+            subparsers, "list", "List the contents of the repo")
+        listParser.set_defaults(runner="list")
+        cls.addRepoArgument(listParser)
 
+        destroyParser = addSubparser(
+            subparsers, "destroy", "Destroy the repo")
+        destroyParser.set_defaults(runner="destroy")
+        cls.addRepoArgument(destroyParser)
+        cls.addForceOption(destroyParser)
 
-class RemoveFeatureSetRunner(AbstractRepoDatasetCommandRunner):
+        addDatasetParser = addSubparser(
+            subparsers, "add-dataset", "Add a dataset to the data repo")
+        addDatasetParser.set_defaults(runner="addDataset")
+        cls.addRepoArgument(addDatasetParser)
+        cls.addDatasetNameArgument(addDatasetParser)
+        cls.addDescriptionOption(addDatasetParser)
 
-    def __init__(self, args):
-        super(RemoveFeatureSetRunner, self).__init__(args)
-        self.featureSetName = args.featureSetName
+        removeDatasetParser = addSubparser(
+            subparsers, "remove-dataset",
+            "Remove a dataset from the data repo")
+        removeDatasetParser.set_defaults(runner="removeDataset")
+        cls.addRepoArgument(removeDatasetParser)
+        cls.addDatasetNameArgument(removeDatasetParser)
+        cls.addForceOption(removeDatasetParser)
 
-    def run(self):
-        def func():
-            self.repoManager.removeFeatureSet(
-                self.datasetName, self.featureSetName)
-        self.confirmRun(func, 'feature set {}'.format(self.featureSetName))
+        objectType = "reference set"
+        addReferenceSetParser = addSubparser(
+            subparsers, "add-referenceset",
+            "Add a reference set to the data repo")
+        addReferenceSetParser.set_defaults(runner="addReferenceSet")
+        cls.addRepoArgument(addReferenceSetParser)
+        cls.addFilePathArgument(addReferenceSetParser)
+        cls.addNameOption(addReferenceSetParser, objectType)
+        cls.addDescriptionOption(addReferenceSetParser)
 
+        removeReferenceSetParser = addSubparser(
+            subparsers, "remove-referenceset",
+            "Remove a reference set from the repo")
+        removeReferenceSetParser.set_defaults(runner="removeReferenceSet")
+        cls.addRepoArgument(removeReferenceSetParser)
+        removeReferenceSetParser.add_argument(
+            "referenceSetName",
+            help="the name of the reference set")
+        cls.addForceOption(removeReferenceSetParser)
 
-def addRepoArgument(subparser):
-    subparser.add_argument(
-        "repoPath", help="the file path of the data repository")
+        objectType = "ReadGroupSet"
+        addReadGroupSetParser = addSubparser(
+            subparsers, "add-readgroupset",
+            "Add a read group set to the data repo")
+        addReadGroupSetParser.set_defaults(runner="addReadGroupSet")
+        cls.addRepoArgument(addReadGroupSetParser)
+        cls.addDatasetNameArgument(addReadGroupSetParser)
+        cls.addNameOption(addReadGroupSetParser, objectType)
+        cls.addReferenceSetNameOption(addReadGroupSetParser, "ReadGroupSet")
+        cls.addFilePathArgument(addReadGroupSetParser)
 
+        addOntologyMapParser = addSubparser(
+            subparsers, "add-ontologymap",
+            "Add an ontology map to the repo")
+        addOntologyMapParser.set_defaults(runner="addOntologyMap")
+        cls.addRepoArgument(addOntologyMapParser)
+        cls.addFilePathArgument(addOntologyMapParser)
 
-def addSkipConsistencyCheckArgument(subparser):
-    subparser.add_argument(
-        "-s", "--skipConsistencyCheck", action='store_true', default=False,
-        help="skip the data repo consistency check")
+        removeOntologyMapParser = addSubparser(
+            subparsers, "remove-ontologymap",
+            "Remove an ontology map from the repo")
+        removeOntologyMapParser.set_defaults(runner="removeOntology")
+        cls.addRepoArgument(removeOntologyMapParser)
+        cls.addOntologyNameArgument(removeOntologyMapParser)
+        cls.addForceOption(removeOntologyMapParser)
 
+        removeReadGroupSetParser = addSubparser(
+            subparsers, "remove-readgroupset",
+            "Remove a read group set from the repo")
+        removeReadGroupSetParser.set_defaults(runner="removeReadGroupSet")
+        cls.addRepoArgument(removeReadGroupSetParser)
+        cls.addDatasetNameArgument(removeReadGroupSetParser)
+        cls.addReadGroupSetNameArgument(removeReadGroupSetParser)
+        cls.addForceOption(removeReadGroupSetParser)
 
-def addForceArgument(subparser):
-    subparser.add_argument(
-        "-f", "--force", action='store_true',
-        default=False, help="do not prompt for confirmation")
+        addVariantSetParser = addSubparser(
+            subparsers, "add-variantset", "Add a variant set to the data repo")
+        addVariantSetParser.set_defaults(runner="addVariantSet")
+        cls.addRepoArgument(addVariantSetParser)
+        cls.addDatasetNameArgument(addVariantSetParser)
+        cls.addFilePathArgument(addVariantSetParser)
 
+        removeVariantSetParser = addSubparser(
+            subparsers, "remove-variantset",
+            "Remove a variant set from the repo")
+        removeVariantSetParser.set_defaults(runner="removeVariantSet")
+        cls.addRepoArgument(removeVariantSetParser)
+        cls.addDatasetNameArgument(removeVariantSetParser)
+        cls.addVariantSetNameArgument(removeVariantSetParser)
+        cls.addForceOption(removeVariantSetParser)
 
-def addDatasetNameArgument(subparser):
-    subparser.add_argument(
-        "datasetName", help="the name of the dataset to create/modify")
+        addFeatureSetParser = addSubparser(
+            subparsers, "add-featureset", "Add a feature set to the data repo")
+        addFeatureSetParser.set_defaults(runner="addFeatureSet")
+        cls.addRepoArgument(addFeatureSetParser)
+        cls.addDatasetNameArgument(addFeatureSetParser)
+        cls.addFilePathArgument(addFeatureSetParser)
 
+        removeFeatureSetParser = addSubparser(
+            subparsers, "remove-featureset",
+            "Remove a feature set from the repo")
+        removeFeatureSetParser.set_defaults(runner="removeFeatureSet")
+        cls.addRepoArgument(removeFeatureSetParser)
+        cls.addDatasetNameArgument(removeFeatureSetParser)
+        cls.addFeatureSetNameArgument(removeFeatureSetParser)
+        cls.addForceOption(removeFeatureSetParser)
 
-def addReferenceSetNameOption(subparser, objectType):
-    subparser.add_argument(
-        "--referenceSetName", default=None,
-        help="the name of the reference set to associate with this {}".format(
-            objectType))
+        return parser
 
-
-def addOntologyNameArgument(subparser):
-    subparser.add_argument(
-        "ontologyMapName",
-        help="the name of the ontology map to create/modify")
-
-
-def addReadGroupSetNameArgument(subparser):
-    subparser.add_argument(
-        "readGroupSetName",
-        help="the name of the read group set")
-
-
-def addVariantSetNameArgument(subparser):
-    subparser.add_argument(
-        "variantSetName",
-        help="the name of the variant set")
-
-
-def addFeatureSetNameArgument(subparser):
-    subparser.add_argument(
-        "featureSetName",
-        help="the name of the variant set")
-
-
-def addFilePathArgument(subparser):
-    subparser.add_argument(
-        "filePath", help="the path of the file to be moved into the repo")
-
-
-def addMoveModeArgument(subparser):
-    subparser.add_argument(
-        "--moveMode",
-        help="move, copy or link the target file (default link)",
-        choices=['move', 'copy', 'link'],
-        default='link')
-
-
-def addReferenceSetMetadataArguments(subparser):
-    subparser.add_argument(
-        "--description",
-        help="description of the reference set",
-        default="TODO")
-
-
-def getRepoParser():
-    parser = createArgumentParser(
-        "GA4GH data repository management tool")
-    subparsers = parser.add_subparsers(title='subcommands',)
-    parser.add_argument(
-        "--loud", default=False, action="store_true",
-        help="propagate exceptions from RepoManager")
-    addVersionArgument(parser)
-
-    initParser = addSubparser(
-        subparsers, "init", "Initialize a data repository")
-    initParser.set_defaults(runner=InitRunner)
-    addRepoArgument(initParser)
-    addForceArgument(initParser)
-
-    checkParser = addSubparser(
-        subparsers, "check", "Check to see if repo is well-formed")
-    checkParser.set_defaults(runner=CheckRunner)
-    addRepoArgument(checkParser)
-    addSkipConsistencyCheckArgument(checkParser)
-
-    listParser = addSubparser(
-        subparsers, "list", "List the contents of the repo")
-    listParser.set_defaults(runner=ListRunner)
-    addRepoArgument(listParser)
-
-    destroyParser = addSubparser(
-        subparsers, "destroy", "Destroy the repo")
-    destroyParser.set_defaults(runner=DestroyRunner)
-    addRepoArgument(destroyParser)
-    addForceArgument(destroyParser)
-
-    addDatasetParser = addSubparser(
-        subparsers, "add-dataset", "Add a dataset to the data repo")
-    addDatasetParser.set_defaults(runner=AddDatasetRunner)
-    addRepoArgument(addDatasetParser)
-    addDatasetNameArgument(addDatasetParser)
-
-    removeDatasetParser = addSubparser(
-        subparsers, "remove-dataset",
-        "Remove a dataset from the data repo")
-    removeDatasetParser.set_defaults(runner=RemoveDatasetRunner)
-    addRepoArgument(removeDatasetParser)
-    addDatasetNameArgument(removeDatasetParser)
-    addForceArgument(removeDatasetParser)
-
-    addReferenceSetParser = addSubparser(
-        subparsers, "add-referenceset",
-        "Add a reference set to the data repo")
-    addReferenceSetParser.set_defaults(runner=AddReferenceSetRunner)
-    addRepoArgument(addReferenceSetParser)
-    addFilePathArgument(addReferenceSetParser)
-    addNameArgument(addReferenceSetParser)
-    addReferenceSetMetadataArguments(addReferenceSetParser)
-
-    removeReferenceSetParser = addSubparser(
-        subparsers, "remove-referenceset",
-        "Remove a reference set from the repo")
-    removeReferenceSetParser.set_defaults(runner=RemoveReferenceSetRunner)
-    addRepoArgument(removeReferenceSetParser)
-    removeReferenceSetParser.add_argument(
-        "referenceSetName",
-        help="the name of the reference set")
-    addForceArgument(removeReferenceSetParser)
-
-    addReadGroupSetParser = addSubparser(
-        subparsers, "add-readgroupset",
-        "Add a read group set to the data repo")
-    addReadGroupSetParser.set_defaults(runner=AddReadGroupSetRunner)
-    addRepoArgument(addReadGroupSetParser)
-    addDatasetNameArgument(addReadGroupSetParser)
-    addNameArgument(addReadGroupSetParser)
-    addReferenceSetNameOption(addReadGroupSetParser, "ReadGroupSet")
-    addFilePathArgument(addReadGroupSetParser)
-
-    addOntologyMapParser = addSubparser(
-        subparsers, "add-ontologymap",
-        "Add an ontology map to the repo")
-    addOntologyMapParser.set_defaults(runner=AddOntologyMapRunner)
-    addRepoArgument(addOntologyMapParser)
-    addFilePathArgument(addOntologyMapParser)
-    addMoveModeArgument(addOntologyMapParser)
-
-    removeOntologyMapParser = addSubparser(
-        subparsers, "remove-ontologymap",
-        "Remove an ontology map from the repo")
-    removeOntologyMapParser.set_defaults(runner=RemoveOntologyMapRunner)
-    addRepoArgument(removeOntologyMapParser)
-    addOntologyNameArgument(removeOntologyMapParser)
-    addForceArgument(removeOntologyMapParser)
-
-    removeReadGroupSetParser = addSubparser(
-        subparsers, "remove-readgroupset",
-        "Remove a read group set from the repo")
-    removeReadGroupSetParser.set_defaults(runner=RemoveReadGroupSetRunner)
-    addRepoArgument(removeReadGroupSetParser)
-    addDatasetNameArgument(removeReadGroupSetParser)
-    addReadGroupSetNameArgument(removeReadGroupSetParser)
-    addForceArgument(removeReadGroupSetParser)
-
-    addVariantSetParser = addSubparser(
-        subparsers, "add-variantset", "Add a variant set to the data repo")
-    addVariantSetParser.set_defaults(runner=AddVariantSetRunner)
-    addRepoArgument(addVariantSetParser)
-    addDatasetNameArgument(addVariantSetParser)
-    addFilePathArgument(addVariantSetParser)
-    addMoveModeArgument(addVariantSetParser)
-
-    removeVariantSetParser = addSubparser(
-        subparsers, "remove-variantset",
-        "Remove a variant set from the repo")
-    removeVariantSetParser.set_defaults(runner=RemoveVariantSetRunner)
-    addRepoArgument(removeVariantSetParser)
-    addDatasetNameArgument(removeVariantSetParser)
-    addVariantSetNameArgument(removeVariantSetParser)
-    addForceArgument(removeVariantSetParser)
-
-    addFeatureSetParser = addSubparser(
-        subparsers, "add-featureset", "Add a feature set to the data repo")
-    addFeatureSetParser.set_defaults(runner=AddFeatureSetRunner)
-    addRepoArgument(addFeatureSetParser)
-    addDatasetNameArgument(addFeatureSetParser)
-    addFilePathArgument(addFeatureSetParser)
-    addMoveModeArgument(addFeatureSetParser)
-
-    removeFeatureSetParser = addSubparser(
-        subparsers, "remove-featureset",
-        "Remove a feature set from the repo")
-    removeFeatureSetParser.set_defaults(runner=RemoveFeatureSetRunner)
-    addRepoArgument(removeFeatureSetParser)
-    addDatasetNameArgument(removeFeatureSetParser)
-    addFeatureSetNameArgument(removeFeatureSetParser)
-    addForceArgument(removeFeatureSetParser)
-
-    return parser
+    @classmethod
+    def runCommand(cls, args):
+        parser = cls.getParser()
+        parsedArgs = parser.parse_args(args)
+        if "runner" not in parsedArgs:
+            parser.print_help()
+        manager = RepoManager(parsedArgs)
+        runMethod = getattr(manager, parsedArgs.runner)
+        runMethod()
 
 
 def repo_main(args=None):
-    parser = getRepoParser()
-    parsedArgs = parser.parse_args(args)
-    if "runner" not in parsedArgs:
-        parser.print_help()
-    else:
-        runner = parsedArgs.runner(parsedArgs)
-        try:
-            runner.run()
-        except exceptions.RepoManagerException as exception:
-            print(exception.message)
-            if parsedArgs.loud:
-                raise
+    try:
+        RepoManager.runCommand(args)
+    except exceptions.RepoManagerException as rme:
+        print("Error: ", str(rme), file=sys.stderr)

@@ -291,7 +291,9 @@ class SqlDataRepository(AbstractDataRepository):
         transitional behaviour.
         """
         if mode not in [MODE_READ, MODE_WRITE]:
-            raise ValueError("Open mode must be 'r' or 'w'")
+            error = "Open mode must be '{}' or '{}'".format(
+                MODE_READ, MODE_WRITE)
+            raise ValueError(error)
         self._openMode = mode
         self._dbConnection = sqlite3.connect(self._dbFilename)
         if mode == MODE_READ:
