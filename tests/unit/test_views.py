@@ -386,7 +386,8 @@ class TestFrontend(unittest.TestCase):
                                         referenceId=None)
         self.assertEqual(501, response.status_code)
 
-    def testSearchReadsMultipleReadGroupSets(self):
-        response = self.sendReadsSearch(readGroupIds=[self.readGroupId, "42"],
-                                        referenceId=self.referenceId)
-        self.assertEqual(501, response.status_code)
+    def testSearchReadsMultipleReadGroupSetsSetMismatch(self):
+        response = self.sendReadsSearch(
+            readGroupIds=[self.readGroupId, "42"],
+            referenceId=self.referenceId)
+        self.assertEqual(400, response.status_code)

@@ -123,13 +123,7 @@ class TestReadsGenerator(unittest.TestCase):
     def testNoReadGroupsNotSupported(self):
         # a request for no read groups should throw an exception
         self.request.readGroupIds = []
-        with self.assertRaises(exceptions.NotImplementedException):
-            self.backend.readsGenerator(self.request)
-
-    def testMultipleReadGroupsNotSupported(self):
-        # a request for multiple read groups should throw an exception
-        self.request.readGroupIds = ["1", "2"]
-        with self.assertRaises(exceptions.NotImplementedException):
+        with self.assertRaises(exceptions.BadRequestException):
             self.backend.readsGenerator(self.request)
 
     def testNonexistantReadGroup(self):
