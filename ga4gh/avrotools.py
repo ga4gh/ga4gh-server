@@ -201,6 +201,8 @@ class SchemaValidator(AvroTypeSwitch):
     Provides methods for schema validation
     """
     sinkValue = 'aRandomStringBecauseWeCanNotUseNone'
+    missingValue = 'MISSING_VALUE'
+    extraValue = 'EXTRA_VALUE'
 
     def handleSchemaDispatch(self, schema, handler, extra):
         if schema.type in self.schemaRequired:
@@ -322,22 +324,24 @@ class SchemaValidator(AvroTypeSwitch):
             return datum
         dic = {}
         datumKeys = set(datum.keys())
+        requiredFields = getattr(protocol, schema.name).requiredFields
         for field in schema.fields:
             key = field.name
-            value = datum.get(key)
-            result = self.handleSchema(field.type, value)
-            if result != self.sinkValue:
-                dic[key] = result
-            try:
+            if key in datum:
+                value = datum.get(key)
+                result = self.handleSchema(field.type, value)
+                if result != self.sinkValue:
+                    dic[key] = result
                 datumKeys.remove(key)
-            except KeyError:
-                # field that the schema defines as in the record is
-                # missing from the jsonDict
-                raise AvrotoolsException(key)
+            elif key in requiredFields:
+                # field that the schema defines as in the record
+                # and required is missing from the jsonDict
+                dic[key] = self.missingValue
         if len(datumKeys):
-            # field that the schema does not define is present
+            # field(s) that the schema does not define is present
             # in the jsonDict
-            raise AvrotoolsException(datumKeys)
+            for key in datumKeys:
+                dic[key] = self.extraValue
         if len(dic):
             return dic
         else:

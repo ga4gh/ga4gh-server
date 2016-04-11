@@ -84,6 +84,17 @@
                     </tr>
                     {% endfor %}
                 </table>
+                <h6>VariantAnnotationSets</h6>
+                <table class="table table-striped">
+                    <th>Name</th>
+                    <th>Id</th>
+                    {% for variantAnnotationSet in info.getVariantAnnotationSets(dataset.getId()) %}
+                    <tr>
+                        <td>{{ variantAnnotationSet.getLocalId() }}</td>
+                        <td>{{ variantAnnotationSet.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
                 <h6>ReadGroupSets</h6>
                 <table class="table table-striped">
                     <th>Name</th>

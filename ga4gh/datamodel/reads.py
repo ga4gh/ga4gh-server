@@ -25,11 +25,14 @@ def parseMalformedBamHeader(headerDict):
     of tabs as a seperator.
     """
     headerString = " ".join(
-        "{}:{}".format(k, v) for k, v in headerDict.items())
+        "{}:{}".format(k, v) for k, v in headerDict.items() if k != 'CL')
     ret = {}
     for item in headerString.split():
         key, value = item.split(":", 1)
-        ret[key] = value
+        # build up dict, casting everything back to original type
+        ret[key] = type(headerDict.get(key, ""))(value)
+    if 'CL' in headerDict:
+        ret['CL'] = headerDict['CL']
     return ret
 
 
@@ -335,8 +338,8 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         experiment.molecule = None
         experiment.name = None
         experiment.platformUnit = self.getPlatformUnit()
-        experiment.recordCreateTime = self._iso8601
-        experiment.recordUpdateTime = self._iso8601
+        experiment.createDateTime = self._iso8601
+        experiment.updateDateTime = self._iso8601
         experiment.runTime = self.getRunTime()
         experiment.selection = None
         experiment.strategy = None
@@ -478,7 +481,7 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.info = {}
         alignment.nextMatePosition = None
         alignment.numberReads = None
-        alignment.properPlacement = False
+        alignment.improperPlacement = False
         alignment.readGroupId = self.getId()
         alignment.readNumber = None
         alignment.secondaryAlignment = False
@@ -641,7 +644,7 @@ class HtslibReadGroup(datamodel.PysamDatamodelMixin, AbstractReadGroup):
                 ret.readNumber = 0
         elif SamFlags.isFlagSet(read.flag, SamFlags.SECOND_IN_PAIR):
             ret.readNumber = 1
-        ret.properPlacement = SamFlags.isFlagSet(
+        ret.improperPlacement = not SamFlags.isFlagSet(
             read.flag, SamFlags.READ_PROPER_PAIR)
         ret.readGroupId = self.getId()
         ret.secondaryAlignment = SamFlags.isFlagSet(

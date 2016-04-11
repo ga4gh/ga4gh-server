@@ -66,6 +66,7 @@ class RepoManager(object):
     Performs operations on a GA4GH data repository
     """
     datasetsDirName = datarepo.FileSystemDataRepository.datasetsDirName
+    ontologiesDirName = datarepo.FileSystemDataRepository.ontologiesDirName
     referenceSetsDirName = \
         datarepo.FileSystemDataRepository.referenceSetsDirName
     readsDirName = datasets.FileSystemDataset.readsDirName
@@ -83,7 +84,9 @@ class RepoManager(object):
     def __init__(self, repoPath):
         self._repoPath = repoPath
         self._topStructure = [
-            self.datasetsDirName, self.referenceSetsDirName]
+            self.datasetsDirName,
+            self.ontologiesDirName,
+            self.referenceSetsDirName]
         self._datasetStructure = [
             self.readsDirName, self.variantsDirName, self.g2pDirName]
 
@@ -211,16 +214,11 @@ class RepoManager(object):
         if not os.path.isdir(self._repoPath):
             self._raiseException("Another file at path")
         topLevelDirs = os.listdir(self._repoPath)
-        if len(topLevelDirs) != len(self._topStructure):
-            self._raiseException(
-                "top-level directory contents should be '{}' "
-                "but are actually '{}'".format(
-                    self._topStructure, topLevelDirs))
-        for directory in topLevelDirs:
-            if directory not in self._topStructure:
+        for topDir in self._topStructure:
+            if topDir not in topLevelDirs:
                 self._raiseException(
                     "top-level directory does not contain required "
-                    "directory '{}'".format(directory))
+                    "directory '{}'".format(topDir))
         # TODO more checks here ...
         # or perhaps just init a FileSystemDataRepository
 

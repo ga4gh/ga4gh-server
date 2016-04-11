@@ -161,7 +161,10 @@ class FormattedOutputRunner(AbstractQueryRunner):
         per line.
         """
         for gaObject in gaObjects:
-            print(gaObject.id, gaObject.name, sep="\t")
+            if hasattr(gaObject, 'name'):
+                print(gaObject.id, gaObject.name, sep="\t")
+            else:
+                print(gaObject.id, sep="\t")
 
 
 class AbstractGetRunner(FormattedOutputRunner):
@@ -304,6 +307,23 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
             self._run(self._datasetId)
 
 
+class SearchVariantAnnotationSetsRunner(AbstractSearchRunner):
+    """
+    Runner class for the variantannotationsets/search method.
+    """
+    def __init__(self, args):
+        super(SearchVariantAnnotationSetsRunner, self).__init__(args)
+        self._variantSetId = args.variantSetId
+
+    def _run(self, variantSetId):
+        iterator = self._client.searchVariantAnnotationSets(
+            variantSetId=variantSetId)
+        self._output(iterator)
+
+    def run(self):
+        self._run(self._variantSetId)
+
+
 class SearchReadGroupSetsRunner(AbstractSearchRunner):
     """
     Runner class for the readgroupsets/search method
@@ -372,6 +392,28 @@ class VariantFormatterMixin(object):
             print()
 
 
+class AnnotationFormatterMixin(object):
+    """
+    Simple mixin to format variant objects.
+    """
+    def _textOutput(self, gaObjects):
+        """
+        Prints out the specified Variant objects in a VCF-like form.
+        """
+        for variantAnnotation in gaObjects:
+            print(
+                variantAnnotation.id, variantAnnotation.variantId,
+                variantAnnotation.variantAnnotationSetId,
+                variantAnnotation.created, sep="\t", end="\t")
+            for effect in variantAnnotation.transcriptEffects:
+                print(effect.alternateBases, sep="|", end="|")
+                for so in effect.effects:
+                    print(so.term, sep="&", end="|")
+                print(effect.hgvsAnnotation.transcript,
+                      effect.hgvsAnnotation.protein, sep="|", end="\t")
+            print()
+
+
 class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
     """
     Runner class for the variants/search method.
@@ -402,6 +444,55 @@ class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
                 self._run(variantSet.id)
         else:
             self._run(self._variantSetId)
+
+
+class SearchVariantAnnotationsRunner(
+        AnnotationFormatterMixin, AbstractSearchRunner):
+    """
+    Runner class for the variantannotations/search method.
+    """
+    def __init__(self, args):
+        super(SearchVariantAnnotationsRunner, self).__init__(args)
+        self._referenceName = args.referenceName
+        self._referenceId = args.referenceId
+        self._variantAnnotationSetId = args.variantAnnotationSetId
+        self._start = args.start
+        self._end = args.end
+
+        if args.featureIds == []:
+            self._featureIds = []
+        else:
+            self._featureIds = args.featureIds.split(",")
+
+        if args.effects == []:
+            self._effects = []
+        else:
+            self._effects = args.effects.split(",")
+
+    def _run(self, variantAnnotationSetId):
+        iterator = self._client.searchVariantAnnotations(
+            variantAnnotationSetId=variantAnnotationSetId,
+            referenceName=self._referenceName, referenceId=self._referenceId,
+            start=self._start, end=self._end,
+            featureIds=self._featureIds, effects=self._effects)
+        self._output(iterator)
+
+    def getAllAnnotaionSets(self):
+        """
+        Returns all variant annotation sets on the server.
+        """
+        for dataset in self.getAllDatasets():
+            iterator = self._client.searchVariantAnnotationSets(
+                datasetId=dataset.id)
+            for variantSet in iterator:
+                yield variantSet
+
+    def run(self):
+        if self._variantAnnotationSetId is None:
+            for annotationSet in self.getAllAnnotaionSets():
+                self._run(annotationSet.id)
+        else:
+            self._run(self._variantAnnotationSetId)
 
 
 class SearchReadsRunner(AbstractSearchRunner):
@@ -650,10 +741,22 @@ def addVariantSetIdArgument(parser):
         help="The variant set id to search over")
 
 
+def addAnnotationSetIdArgument(parser):
+    parser.add_argument(
+        "--variantAnnotationSetId", "-V", default=None,
+        help="The annotation set id to search over")
+
+
 def addReferenceNameArgument(parser):
     parser.add_argument(
         "--referenceName", "-r", default="1",
         help="Only return variants on this reference.")
+
+
+def addReferenceIdArgument(parser):
+    parser.add_argument(
+        "--referenceId", "-c", default="",
+        help="Only return variants on this reference ID.")
 
 
 def addCallSetIdsArgument(parser):
@@ -662,6 +765,22 @@ def addCallSetIdsArgument(parser):
         help="""Return variant calls which belong to call sets
             with these IDs. Pass in IDs as a comma separated list (no spaces).
             Use '*' to request all call sets (the quotes are important!).
+            """)
+
+
+def addFeatureIdsArgument(parser):
+    parser.add_argument(
+        "--featureIds", "-f", default=[],
+        help="""Return annotations on any of the feature IDs.
+            Pass in IDs as a comma separated list (no spaces).
+            """)
+
+
+def addEffectsArgument(parser):
+    parser.add_argument(
+        "--effects", "-effs", default=[],
+        help="""Return annotations having any of these effects.
+            Pass in IDs as a comma separated list (no spaces).
             """)
 
 
@@ -794,6 +913,31 @@ def addVariantSetsSearchParser(subparsers):
     addUrlArgument(parser)
     addPageSizeArgument(parser)
     addDatasetIdArgument(parser)
+    return parser
+
+
+def addVariantAnnotationSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "variantannotations-search",
+        description="Search for variant annotaions",
+        help="Search for variantAnnotaions.")
+    parser.set_defaults(runner=SearchVariantAnnotationsRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addAnnotationsSearchOptions(parser)
+    return parser
+
+
+def addVariantAnnotationSetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "variantannotationsets-search",
+        description="Search for variant annotation sets",
+        help="Search for variantAnnotationSets.")
+    parser.set_defaults(runner=SearchVariantAnnotationSetsRunner)
+    addOutputFormatArgument(parser)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addVariantSetIdArgument(parser)
     return parser
 
 
@@ -973,6 +1117,8 @@ def getClientParser():
     addHelpParser(subparsers)
     addVariantsSearchParser(subparsers)
     addVariantSetsSearchParser(subparsers)
+    addVariantAnnotationSearchParser(subparsers)
+    addVariantAnnotationSetsSearchParser(subparsers)
     addVariantSetsGetParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)

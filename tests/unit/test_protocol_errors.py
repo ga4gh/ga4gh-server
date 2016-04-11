@@ -53,6 +53,14 @@ class TestFrontendErrors(unittest.TestCase):
         instance = creator.getTypicalInstance()
         return instance
 
+    def _createInvalidInstance(self, requestClass):
+        """
+        Returns an invalid instance of the specified class.
+        """
+        creator = avrotools.Creator(requestClass)
+        instance = creator.getInvalidInstance()
+        return instance
+
     def assertRawRequestRaises(self, exceptionClass, url, requestString):
         """
         Verifies that the specified request string returns a protocol
@@ -95,4 +103,18 @@ class TestFrontendErrors(unittest.TestCase):
                 request = self._createInstance(requestClass)
                 request.pageToken = badType
                 self.assertRequestRaises(
-                    exceptions.RequestValidationFailureException, url, request)
+                    exceptions.RequestValidationFailureException,
+                    url, request)
+
+    def testInvalidFields(self):
+        for url, requestClass in self.endPointMap.items():
+            request = self._createInvalidInstance(requestClass)
+            self.assertRequestRaises(
+                exceptions.RequestValidationFailureException, url, request)
+
+    def testMissingFields(self):
+        for url, requestClass in self.endPointMap.items():
+            requestString = '{}'
+            self.assertRawRequestRaises(
+                exceptions.RequestValidationFailureException,
+                url, requestString)

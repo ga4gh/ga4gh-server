@@ -14,7 +14,7 @@ import urlparse
 import functools
 
 import flask
-import flask.ext.cors as cors
+from flask.ext.cors import CORS
 import humanize
 import werkzeug
 import oic
@@ -145,6 +145,13 @@ class ServerStatus(object):
         """
         return app.backend.getDataRepository().getReferenceSets()
 
+    def getVariantAnnotationSets(self, datasetId):
+        """
+        Returns the list of ReferenceSets for this server.
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getVariantAnnotationSets()
+
 
 def reset():
     """
@@ -172,7 +179,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     datamodel.fileHandleCache.setMaxCacheSize(
         app.config["FILE_HANDLE_CACHE_MAX_SIZE"])
     # Setup CORS
-    cors.CORS(app, allow_headers='Content-Type')
+    CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
     # Allocate the backend
     # We use URLs to specify the backend. Currently we have file:// URLs (or
@@ -501,6 +508,18 @@ def searchVariants():
         flask.request, app.backend.runSearchVariants)
 
 
+@DisplayedRoute('/variantannotationsets/search', postMethod=True)
+def searchVariantAnnotationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchVariantAnnotationSets)
+
+
+@DisplayedRoute('/variantannotations/search', postMethod=True)
+def searchVariantAnnotations():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchVariantAnnotations)
+
+
 @DisplayedRoute('/datasets/search', postMethod=True)
 def searchDatasets():
     return handleFlaskPostRequest(
@@ -623,6 +642,14 @@ def oidcCallback():
 def getDataset(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetDataset)
+
+
+@DisplayedRoute(
+    '/variantannotationsets/<no(search):id>',
+    pathDisplay='/variantannotationsets/<id>')
+def getVariantAnnotationSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetVariantAnnotationSet)
 
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html

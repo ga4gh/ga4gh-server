@@ -25,6 +25,24 @@ class TestCompoundIds(unittest.TestCase):
     """
     Test the compound ids
     """
+    def testURLUnsafe(self):
+        hasSlashes = "???"  # base64 encodes to 'Pz8/'
+        needsPadding = "padme"  # base64 encodes to 'cGFkbWU='
+        realistic = ("YnJjYTE6V0FTSDdQX2Fubm90YXRpb246MToxNzY5"
+                     "NDpmMzQxM2JkMTVjNWNiYzI4ZDFiYjY2OGY4ZWM2NzczMg")
+        unsafeCharacters = ['$', '&', '+', ',', '/', ':', ';', '=', '?', '@']
+        for char in unsafeCharacters:
+            self.assertNotIn(char, datamodel.CompoundId.obfuscate(
+                    hasSlashes))
+            self.assertNotIn(char, datamodel.CompoundId.obfuscate(
+                    needsPadding))
+            self.assertNotIn(char, datamodel.CompoundId.obfuscate(
+                    realistic))
+        for idStr in [hasSlashes, needsPadding]:
+            obfuscated = datamodel.CompoundId.obfuscate(idStr)
+            deobfuscated = datamodel.CompoundId.deobfuscate(obfuscated)
+            self.assertEqual(idStr, deobfuscated)
+
     def testBadParse(self):
         for badId in ['a;b', 'a;b;c;d', 'a;b;sd;', ';;;;']:
             obfuscated = datamodel.CompoundId.obfuscate(badId)

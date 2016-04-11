@@ -30,6 +30,8 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
+        self._variantAnnotationSetIds = []
+        self._variantAnnotationSetIdMap = {}
         self._description = None
         self._phenotypeAssociationSetIdMap = {}
         self._phenotypeAssociationSetNameMap = {}
@@ -42,6 +44,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         id_ = variantSet.getId()
         self._variantSetIdMap[id_] = variantSet
         self._variantSetIds.append(id_)
+
+    def addVariantAnnotationSet(self, variantAnnotationSet):
+        """
+        Adds the specified variantAnnotationSet to this dataset.
+        """
+        id_ = variantAnnotationSet.getId()
+        self._variantAnnotationSetIdMap[id_] = variantAnnotationSet
+        self._variantAnnotationSetIds.append(id_)
 
     def addReadGroupSet(self, readGroupSet):
         """
@@ -70,6 +80,27 @@ class AbstractDataset(datamodel.DatamodelObject):
         Returns the number of variant sets in this dataset.
         """
         return len(self._variantSetIds)
+
+    def getVariantAnnotationSets(self):
+        """
+        Returns the list of VariantAnnotationSets in this dataset
+        """
+        return [self._variantAnnotationSetIdMap[id_] for id_ in
+                self._variantAnnotationSetIds]
+
+    def getVariantAnnotationSet(self, id_):
+        """
+        Returns the AnnotationSet in this dataset with the specified 'id'
+        """
+        if id_ not in self._variantAnnotationSetIdMap:
+            raise exceptions.AnnotationSetNotFoundException(id_)
+        return self._variantAnnotationSetIdMap[id_]
+
+    def getNumVariantAnnotationSets(self):
+        """
+        Returns the number of variant annotation sets in this dataset.
+        """
+        return len(self._variantAnnotationSetIds)
 
     def getVariantSet(self, id_):
         """
@@ -184,6 +215,9 @@ class SimulatedDataset(AbstractDataset):
             variantSet = variants.SimulatedVariantSet(
                 self, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
+            variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
+                self, "simVas{}".format(i), variantSet)
+            self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
             localId = 'simRgs{}'.format(i)
@@ -226,6 +260,13 @@ class FileSystemDataset(AbstractDataset):
                 variantSet = variants.HtslibVariantSet(
                     self, localId, relativePath, dataRepository)
                 self.addVariantSet(variantSet)
+            # Variant annotations sets
+                if variantSet.isAnnotated(relativePath):
+                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+                            self, localId, relativePath, dataRepository,
+                            variantSet)
+                    self.addVariantAnnotationSet(variantAnnotationSet)
+
         # Reads
         readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):

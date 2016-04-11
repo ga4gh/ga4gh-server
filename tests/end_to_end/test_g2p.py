@@ -16,7 +16,7 @@ class TestG2P(unittest.TestCase):
     def setUpClass(cls):
         config = {
             "DATA_SOURCE": "tests/data",
-            # "DEBUG" : True
+            # "DEBUG": True
         }
         frontend.reset()
         frontend.configure(
@@ -69,7 +69,6 @@ class TestG2P(unittest.TestCase):
         # simple string regexp
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-
         request.feature = "KIT *wild"
         response = self.sendPostRequest('/genotypephenotype/search', request)
         self.assertEqual(200, response.status_code)
@@ -91,6 +90,12 @@ class TestG2P(unittest.TestCase):
             response.data)
         self.assertEqual(1, len(response.associations[0].features))
 
+        # TODO search with protocol.PhenotypeQuery
+        pass
+
+    def testNoFind(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         request.phenotype = "FOOBAR"
         response = self.sendPostRequest('/genotypephenotype/search', request)
         self.assertEqual(200, response.status_code)
@@ -98,38 +103,13 @@ class TestG2P(unittest.TestCase):
             response.data)
         self.assertEqual(0, len(response.associations))
 
-        # identifiers
+    def testFindEvidenceExternalIdentifier(self):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-        request.feature = protocol.ExternalIdentifierQuery()
-        id = protocol.ExternalIdentifier()
-        id.database = "http://ohsu.edu/cgd/"
-        id.identifier = "4841bf74"
-        id.version = "*"
-        request.feature.ids = [id]
-        response = self.sendPostRequest('/genotypephenotype/search', request)
-        self.assertEqual(200, response.status_code)
-        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
-            response.data)
-        self.assertEqual(1, len(response.associations[0].features))
-
-        request.phenotype = protocol.ExternalIdentifierQuery()
-        id = protocol.ExternalIdentifier()
-        id.database = "http://ohsu.edu/cgd/"
-        id.identifier = "37da8697"
-        id.version = "*"
-        request.phenotype.ids = [id]
-        response = self.sendPostRequest('/genotypephenotype/search', request)
-        self.assertEqual(200, response.status_code)
-        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
-            response.data)
-        self.assertEqual(1, len(response.associations[0].features))
-
         request.evidence = protocol.ExternalIdentifierQuery()
-
         id = protocol.ExternalIdentifier()
         id.database = "http://www.drugbank.ca/drugs/"
-        id.identifier = "DB00398"
+        id.identifier = "DB00619"
         id.version = "*"
         request.evidence.ids = [id]
         response = self.sendPostRequest('/genotypephenotype/search', request)
@@ -139,21 +119,35 @@ class TestG2P(unittest.TestCase):
         self.assertNotEqual(0, len(response.associations))
         self.assertEqual(1, len(response.associations[0].features))
 
-        request.evidence = protocol.ExternalIdentifierQuery()
+    def testFindFeatureExternalIdentifier(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        request.feature = protocol.ExternalIdentifierQuery()
         id = protocol.ExternalIdentifier()
-        id.database = "FOO"
-        id.identifier = "DB00619"
+        id.database = "http://ohsu.edu/cgd/"
+        id.identifier = "055b872c"
         id.version = "*"
-        request.evidence.ids = [id]
+        request.feature.ids = [id]
         response = self.sendPostRequest('/genotypephenotype/search', request)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
-        self.assertEqual(0, len(response.associations))
-        self.testGenotypePhenotypeSearchFeaturePagingOne()
-        self.testGenotypePhenotypeSearchFeaturePagingMore()
-        # TODO search with protocol.PhenotypeQuery
-        pass
+        self.assertEqual(1, len(response.associations[0].features))
+
+    def testFindPhenotypeExternalIdentifier(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        request.phenotype = protocol.ExternalIdentifierQuery()
+        id = protocol.ExternalIdentifier()
+        id.database = "http://ohsu.edu/cgd/"
+        id.identifier = "032c97e8"
+        id.version = "*"
+        request.phenotype.ids = [id]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations[0].features))
 
     def testGenotypePhenotypeSearchFeaturePagingOne(self):
         """
@@ -201,8 +195,8 @@ class TestG2P(unittest.TestCase):
             response.data)
         self.assertEqual(1, len(response.associations))
         self.assertIsNotNone(response.nextPageToken)
-
-        for i in range(3):
+        pageCount = 1
+        while response.nextPageToken:
             previous_id = response.associations[0].id
             request = protocol.SearchGenotypePhenotypeRequest()
             request.phenotypeAssociationSetId =\
@@ -217,9 +211,8 @@ class TestG2P(unittest.TestCase):
                 fromJsonString(response.data)
             self.assertEqual(1, len(response.associations))
             self.assertNotEqual(previous_id, response.associations[0].id)
-            if i != 2:
-                self.assertIsNotNone(response.nextPageToken)
-        # from IPython.core.debugger import Pdb ;        Pdb().set_trace()
+            pageCount += 1
+        self.assertEqual(3, pageCount)
 
     def testGenotypePhenotypeSearchEnsureEvidenceLevel(self):
         """
@@ -238,8 +231,47 @@ class TestG2P(unittest.TestCase):
         sample_evidence_type = sample_evidence['evidenceType']
         self.assertIn('sourceName', sample_evidence_type)
         self.assertEqual(sample_evidence_type['sourceName'],
-                         'http://ohsu.edu/cgd/')
+                         'CGD')
         self.assertIn('id', sample_evidence_type)
-        self.assertEqual(sample_evidence_type['id'], 'c703f7ab')
+        self.assertEqual(sample_evidence_type['id'],
+                         'http://ohsu.edu/cgd/87752f6c')
         self.assertIn('term', sample_evidence_type)
-        self.assertEqual(sample_evidence_type['term'], 'early trials')
+        self.assertEqual(sample_evidence_type['term'],
+                         'http://purl.obolibrary.org/obo/ECO_0000033')
+        self.assertEqual(sample_evidence['description'],
+                         'decreased_sensitivity')
+
+    def testGenotypePheontypeSearchOntologyTermPrefixTerm(self):
+        """
+        ensure we can read ontology terms usng term
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+
+        term = protocol.OntologyTerm()
+        term.term = "DrugBank:DB01268"
+        request.evidence = protocol.OntologyTermQuery()
+        request.evidence.terms = [term]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertTrue(hasattr(response.associations[0],
+                                'evidence'))
+
+    def testGenotypePheontypeSearchEnsureOntologyTermFeature(self):
+        """
+        Ensure evidence level is serialized in responses
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        term = protocol.OntologyTerm()
+        term.term = "CGD:27d2169c"
+        request.feature = protocol.OntologyTermQuery()
+        request.feature.terms = [term]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertTrue(hasattr(response.associations[0],
+                                'evidence'))
