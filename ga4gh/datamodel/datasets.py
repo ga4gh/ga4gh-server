@@ -12,6 +12,7 @@ import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
@@ -225,6 +226,8 @@ class SimulatedDataset(Dataset):
             numAlignments=1, numFeatureSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+        sequenceOntology = ontologies.Ontology("sequence_ontology")
+        # TODO add some terms into the simualated sequence ontology
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)
@@ -233,7 +236,7 @@ class SimulatedDataset(Dataset):
                 self, referenceSet, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
-                self, "simVas{}".format(i), variantSet)
+                variantSet, "simVas{}".format(i), sequenceOntology, seed)
             self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
@@ -277,19 +280,26 @@ class FileSystemDataset(Dataset):
 
         # Variants
         variantSetDir = os.path.join(dataDir, self.variantsDirName)
+        # We need a referenceSet instance for variants. To make this work
+        # we just pick the first reference set. This is NOT a good idea!!
+        # None of this code is intended to last long, just until we get
+        # all our test data into the repo format.
+        referenceSet = dataRepository.getReferenceSets()[0]
         for localId in os.listdir(variantSetDir):
             relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
                 variantSet = variants.HtslibVariantSet(self, localId)
                 variantSet.populateFromDirectory(relativePath)
+                variantSet.setReferenceSet(referenceSet)
                 self.addVariantSet(variantSet)
                 # Variant annotations sets
-                # if variantSet.isAnnotated(relativePath):
-                #     variantAnnotationSet =
-                # variants.HtslibVariantAnnotationSet(
-                #             self, localId, relativePath, dataRepository,
-                #             variantSet)
-                #     self.addVariantAnnotationSet(variantAnnotationSet)
+                if variantSet.isAnnotated():
+                    vaName = "VA"
+                    sequenceOntology = dataRepository.getOntology(
+                        "sequence_ontology")
+                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+                            variantSet, vaName, sequenceOntology)
+                    self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):
@@ -298,6 +308,9 @@ class FileSystemDataset(Dataset):
                 bamPath = os.path.join(readGroupSetDir, filename)
                 readGroupSet = reads.HtslibReadGroupSet(self, localId)
                 readGroupSet.populateFromFile(bamPath, bamPath + ".bai")
+                referenceSet = dataRepository.getReferenceSetByName(
+                    readGroupSet.getBamHeaderReferenceSetName())
+                readGroupSet.setReferenceSet(referenceSet)
                 self.addReadGroupSet(readGroupSet)
         # Sequence Annotations
         featureSetDir = os.path.join(dataDir, self.featuresDirName)

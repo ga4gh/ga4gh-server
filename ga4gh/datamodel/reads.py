@@ -349,6 +349,15 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
         self._programs = []
         self._dataUrl = None
         self._indexFile = None
+        # Used when we populate from a file. Not defined when we populate
+        # from the DB.
+        self._bamHeaderReferenceSetName = None
+
+    def getBamHeaderReferenceSetName(self):
+        """
+        Returns the ReferenceSet name using in the BAM header.
+        """
+        return self._bamHeaderReferenceSetName
 
     def populateFromRow(self, row):
         """
@@ -382,42 +391,24 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
                 readGroup = HtslibReadGroup(self, readGroupHeader['ID'])
                 readGroup.populateFromHeader(readGroupHeader)
                 self.addReadGroup(readGroup)
-        # TODO get the referenceName and md5 from the header and
-        # make these available via methods.
-
-        # self._referenceSetInit(dataRepository, False)
-
-    def _referenceSetInit(self, dataRepository, shouldThrowExceptions):
-        # Find the reference set name (if there is one) by looking at
-        # the BAM headers.
-        samFile = self.getFileHandle(self._dataUrl)
-        referenceSetName = None
+        self._bamHeaderReferenceSetName = None
         for referenceInfo in samFile.header['SQ']:
             if 'AS' not in referenceInfo:
                 infoDict = parseMalformedBamHeader(referenceInfo)
             else:
                 infoDict = referenceInfo
             name = infoDict.get('AS', references.DEFAULT_REFERENCESET_NAME)
-            if referenceSetName is None:
-                referenceSetName = name
-            elif referenceSetName != name:
-                if shouldThrowExceptions:
-                    raise exceptions.MultipleReferenceSetsInReadGroupSet(
-                        self._dataUrl, name, referenceSetName)
-        self._referenceSet = None
-        if referenceSetName is not None:
-            try:
-                self._referenceSet = dataRepository.getReferenceSetByName(
-                    referenceSetName)
-            except exceptions.ReferenceSetNameNotFoundException as exception:
-                if shouldThrowExceptions:
-                    raise exception
-            # TODO verify that the references in the BAM file exist
-            # in the reference set. Otherwise, we won't be able to
-            # query for them.
+            if self._bamHeaderReferenceSetName is None:
+                self._bamHeaderReferenceSetName = name
+            elif self._bamHeaderReferenceSetName != name:
+                raise exceptions.MultipleReferenceSetsInReadGroupSet(
+                    self._dataUrl, name, self._bamFileReferenceName)
 
     def checkConsistency(self, dataRepository):
-        self._referenceSetInit(dataRepository, True)
+        pass
+        # TODO verify that the references in the BAM file exist
+        # in the reference set. Otherwise, we won't be able to
+        # query for them.
 
     def _setHeaderFields(self, samFile):
         programs = []
@@ -710,7 +701,7 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
     def __init__(self, parentContainer, localId):
         super(HtslibReadGroup, self).__init__(parentContainer, localId)
         self._parentSamFilePath = parentContainer.getSamFilePath()
-        self._filterReads = localId == HtslibReadGroupSet.defaultReadGroupName
+        self._filterReads = localId != HtslibReadGroupSet.defaultReadGroupName
         self._sampleId = None
         self._description = None
         self._predictedInsertSize = None

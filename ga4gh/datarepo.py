@@ -51,13 +51,13 @@ class AbstractDataRepository(object):
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
 
-    def addOntologyMap(self, ontologyMap):
+    def addOntology(self, ontology):
         """
         Add an ontology map to this data repository.
         """
-        for name in ontologyMap.keys():
-            self._ontologyNameMap[name] = ontologyMap.get(name)
-            self._ontologyNames.append(name)
+        name = ontology.getLocalId()
+        self._ontologyNameMap[name] = ontology
+        self._ontologyNames.append(name)
 
     def getDatasets(self):
         """
@@ -106,13 +106,13 @@ class AbstractDataRepository(object):
         """
         return len(self._referenceSetIds)
 
-    def getOntologyMap(self, name):
+    def getOntology(self, name):
         """
         Returns an ontology map by name
         """
         return self._ontologyNameMap.get(name, None)
 
-    def getOntologyMaps(self):
+    def getOntologys(self):
         """
         Returns all ontology maps in the repo
         """
@@ -247,6 +247,35 @@ class SqlDataRepository(AbstractDataRepository):
         row = cursor.fetchone()
         self._repositoryVersion = row[0]
         self._creationTimeStamp = row[1]
+
+    def _createOntologyTable(self, cursor):
+        sql = """
+            CREATE TABLE Ontology (
+                name TEXT,
+                dataUrl TEXT
+            );
+        """
+        cursor.execute(sql)
+
+    def insertOntology(self, ontology):
+        """
+        Inserts the specified ontology into this repository.
+        """
+        sql = """
+            INSERT INTO Ontology (name, dataUrl)
+            VALUES (?, ?);
+        """
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (
+            ontology.getLocalId(), ontology.getDataUrl()))
+
+    def _readOntologyTable(self, cursor):
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT * FROM Ontology;")
+        for row in cursor:
+            ontology = ontologies.Ontology(row[b'name'])
+            ontology.populateFromRow(row)
+            self.addOntology(ontology)
 
     def _createReferenceTable(self, cursor):
         sql = """
@@ -514,6 +543,7 @@ class SqlDataRepository(AbstractDataRepository):
                 created TEXT,
                 updated TEXT,
                 metadata TEXT,
+                isAnnotated INTEGER,
                 dataUrlIndexMap TEXT
             );
         """
@@ -526,8 +556,8 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             INSERT INTO VariantSet (
                 id, datasetId, referenceSetId, name, created, updated,
-                metadata, dataUrlIndexMap)
-            VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), ?, ?);
+                metadata, isAnnotated, dataUrlIndexMap)
+            VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), ?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
         # We cheat a little here with the VariantSetMetadata, and encode these
@@ -539,7 +569,7 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute(sql, (
             variantSet.getId(), variantSet.getParentContainer().getId(),
             variantSet.getReferenceSet().getId(), variantSet.getLocalId(),
-            metadataJson, urlMapJson))
+            metadataJson, variantSet.isAnnotated(), urlMapJson))
         for callSet in variantSet.getCallSets():
             self.insertCallSet(callSet)
 
@@ -555,6 +585,13 @@ class SqlDataRepository(AbstractDataRepository):
             assert variantSet.getId() == row[b'id']
             # Insert the variantSet into the memory-based object model.
             dataset.addVariantSet(variantSet)
+            # If it is annotated, also create a VariantAnnotationSet
+            if variantSet.isAnnotated():
+                sequenceOntology = self.getOntology('sequence_ontology')
+                variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+                    variantSet, sequenceOntology)
+                variantAnnotationSet.populateFromFile()
+                dataset.addVariantAnnotationSet(variantAnnotationSet)
 
     def initialise(self):
         """
@@ -565,6 +602,7 @@ class SqlDataRepository(AbstractDataRepository):
         with sqlite3.connect(self._dbFilename) as db:
             cursor = db.cursor()
             self._createSystemTable(cursor)
+            self._createOntologyTable(cursor)
             self._createReferenceSetTable(cursor)
             self._createReferenceTable(cursor)
             self._createDatasetTable(cursor)
@@ -597,6 +635,7 @@ class SqlDataRepository(AbstractDataRepository):
         with sqlite3.connect(self._dbFilename) as db:
             cursor = db.cursor()
             self._readSystemTable(cursor)
+            self._readOntologyTable(cursor)
             self._readReferenceSetTable(cursor)
             self._readReferenceTable(cursor)
             self._readDatasetTable(cursor)
@@ -650,7 +689,7 @@ class FileSystemDataRepository(AbstractDataRepository):
     tests working, and may also provide a smooth upgrade path for any
     users who have data stored in the old file system based repos.
 
-    This is deprecated and should be removed in time, along with updating
+    This is deprecated and should be removed , along with updating
     the necessary tests.
     """
     referenceSetsDirName = "referenceSets"
@@ -660,17 +699,7 @@ class FileSystemDataRepository(AbstractDataRepository):
     def __init__(self, dataDir):
         super(FileSystemDataRepository, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = [self.ontologiesDirName, self.datasetsDirName]
-        constructors = [
-            ontologies.FileSystemOntologies, datasets.FileSystemDataset]
-        objectAdders = [self.addOntologyMap, self.addDataset]
-        for sourceDirName, constructor, objectAdder in zip(
-                sourceDirNames, constructors, objectAdders):
-            sourceDir = os.path.join(self._dataDir, sourceDirName)
-            for setName in os.listdir(sourceDir):
-                relativePath = os.path.join(sourceDir, setName)
-                if os.path.isdir(relativePath):
-                    objectAdder(constructor(setName, relativePath, self))
+
         pattern = os.path.join(
             self._dataDir, self.referenceSetsDirName, "*.fa.gz")
         for fastaFile in glob.glob(pattern):
@@ -678,6 +707,28 @@ class FileSystemDataRepository(AbstractDataRepository):
             referenceSet = references.HtslibReferenceSet(name)
             referenceSet.populateFromFile(fastaFile)
             self.addReferenceSet(referenceSet)
+
+        # for ontologies we go into each directory within the
+        # main directory.
+        sourceDir = os.path.join(self._dataDir, self.ontologiesDirName)
+        for setName in os.listdir(sourceDir):
+            relativePath = os.path.join(sourceDir, setName)
+            if os.path.isdir(relativePath):
+                for filename in os.listdir(relativePath):
+                    if filename.endswith(".txt"):
+                        name = filename.split(".")[0]
+                        ontology = ontologies.Ontology(name)
+                        ontology.populateFromFile(
+                            os.path.join(relativePath, filename))
+                        self.addOntology(ontology)
+
+        sourceDir = os.path.join(self._dataDir, self.datasetsDirName)
+        for setName in os.listdir(sourceDir):
+            relativePath = os.path.join(sourceDir, setName)
+            if os.path.isdir(relativePath):
+                dataset = datasets.FileSystemDataset(
+                    setName, relativePath, self)
+                self.addDataset(dataset)
 
     def checkConsistency(self):
         """
