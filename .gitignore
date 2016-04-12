@@ -3,6 +3,7 @@
 *.swo
 ga4gh-example-data*
 ga4gh-downloaded-data*
+ga4gh-compliance-data*
 scripts/auth.yml
 *.fa
 *.pid
