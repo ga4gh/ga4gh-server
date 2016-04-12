@@ -236,7 +236,8 @@ class SimulatedDataset(Dataset):
                 self, referenceSet, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
-                variantSet, "simVas{}".format(i), sequenceOntology, seed)
+                variantSet, "simVas{}".format(i), seed)
+            variantAnnotationSet.setSequenceOntology(sequenceOntology)
             self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
@@ -269,13 +270,6 @@ class FileSystemDataset(Dataset):
     readsDirName = "reads"
     featuresDirName = "sequenceAnnotations"
 
-    @classmethod
-    def fromRow(cls, row, dataRepository):
-        print("When is this called??", row)
-        dataset = cls(row[b'name'], row[b'dataDir'], dataRepository)
-        dataset._description = row[b'description']
-        return dataset
-
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
         self._dataDir = dataDir
@@ -297,11 +291,9 @@ class FileSystemDataset(Dataset):
                 self.addVariantSet(variantSet)
                 # Variant annotations sets
                 if variantSet.isAnnotated():
-                    vaName = localId + "_va"  # TODO does this make sense?
-                    sequenceOntology = dataRepository.getOntology(
-                        "sequence_ontology")
-                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                            variantSet, vaName, sequenceOntology)
+                    variantAnnotationSet = variantSet.getVariantAnnotationSet()
+                    variantAnnotationSet.setSequenceOntology(
+                        dataRepository.getOntology("sequence_ontology"))
                     self.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         readGroupSetDir = os.path.join(dataDir, self.readsDirName)

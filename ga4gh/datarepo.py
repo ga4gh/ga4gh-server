@@ -587,6 +587,54 @@ class SqlDataRepository(AbstractDataRepository):
             # Insert the readGroupSet into the memory-based object model.
             dataset.addReadGroupSet(readGroupSet)
 
+    def _createVariantAnnotationSetTable(self, cursor):
+        sql = """
+            CREATE TABLE VariantAnnotationSet (
+                id TEXT,
+                variantSetId TEXT,
+                name TEXT,
+                analysis TEXT,
+                annotationType TEXT
+            );
+        """
+        cursor.execute(sql)
+
+    def insertVariantAnnotationSet(self, variantAnnotationSet):
+        """
+        Inserts a the specified variantAnnotationSet into this repository.
+        """
+        sql = """
+            INSERT INTO VariantAnnotationSet (
+                id, variantSetId, name, analysis, annotationType)
+            VALUES (?, ?, ?, ?, ?);
+        """
+        analysisJson = json.dumps(
+            variantAnnotationSet.getAnalysis().toJsonDict())
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (
+            variantAnnotationSet.getId(),
+            variantAnnotationSet.getParentContainer().getId(),
+            variantAnnotationSet.getLocalId(), analysisJson,
+            variantAnnotationSet.getAnnotationType()))
+
+    def _readVariantAnnotationSetTable(self, cursor):
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT * FROM VariantAnnotationSet;")
+        for row in cursor:
+            variantSet = self.getVariantSet(row[b'variantSetId'])
+            variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+                variantSet, row[b'name'])
+            variantAnnotationSet.populateFromRow(row)
+            assert variantAnnotationSet.getId() == row[b'id']
+            # Insert the variantAnnotationSet into the memory-based model.
+            # TODO we shouldn't be adding the variant annotation set to the
+            # dataset since it's logically contained in a VariantSet. We should
+            # replace the following lines with
+            # variantSet.addVariantAnnotationSet(variantAnnotationSet)
+            variantSet.setVariantAnnotationSet(variantAnnotationSet)
+            dataset = variantSet.getParentContainer()
+            dataset.addVariantAnnotationSet(variantAnnotationSet)
+
     def _createCallSetTable(self, cursor):
         sql = """
             CREATE TABLE CallSet (
@@ -645,8 +693,8 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             INSERT INTO VariantSet (
                 id, datasetId, referenceSetId, name, created, updated,
-                metadata, isAnnotated, dataUrlIndexMap)
-            VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), ?, ?, ?);
+                metadata, dataUrlIndexMap)
+            VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), ?, ?);
         """
         cursor = self._dbConnection.cursor()
         # We cheat a little here with the VariantSetMetadata, and encode these
@@ -658,9 +706,12 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute(sql, (
             variantSet.getId(), variantSet.getParentContainer().getId(),
             variantSet.getReferenceSet().getId(), variantSet.getLocalId(),
-            metadataJson, variantSet.isAnnotated(), urlMapJson))
+            metadataJson, urlMapJson))
         for callSet in variantSet.getCallSets():
             self.insertCallSet(callSet)
+        if variantSet.isAnnotated():
+            self.insertVariantAnnotationSet(
+                variantSet.getVariantAnnotationSet())
 
     def _readVariantSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -674,13 +725,6 @@ class SqlDataRepository(AbstractDataRepository):
             assert variantSet.getId() == row[b'id']
             # Insert the variantSet into the memory-based object model.
             dataset.addVariantSet(variantSet)
-            # If it is annotated, also create a VariantAnnotationSet
-            if variantSet.isAnnotated():
-                sequenceOntology = self.getOntology('sequence_ontology')
-                name = "va"  # TODO what is a proper name here?
-                variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                    variantSet, name, sequenceOntology)
-                dataset.addVariantAnnotationSet(variantAnnotationSet)
 
     def _createFeatureSetTable(self, cursor):
         sql = """
@@ -743,6 +787,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createReadGroupTable(cursor)
         self._createCallSetTable(cursor)
         self._createVariantSetTable(cursor)
+        self._createVariantAnnotationSetTable(cursor)
         self._createFeatureSetTable(cursor)
 
     def exists(self):
@@ -776,6 +821,7 @@ class SqlDataRepository(AbstractDataRepository):
             self._readReadGroupTable(cursor)
             self._readVariantSetTable(cursor)
             self._readCallSetTable(cursor)
+            self._readVariantAnnotationSetTable(cursor)
             self._readFeatureSetTable(cursor)
 
 

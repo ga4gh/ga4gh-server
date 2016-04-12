@@ -30,7 +30,8 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
             self._dataset, self._variantSetName)
         self._variantSet.populateFromDirectory(vcfDir)
         self._variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-            self._variantSet, "testVAs",
+            self._variantSet, "testVAs")
+        self._variantAnnotationSet.setSequenceOntology(
             self._repo.getOntology("sequence_ontology"))
 
     def setUp(self):

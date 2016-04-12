@@ -20,6 +20,9 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
 
+ANNOTATIONS_VEP = "VEP"
+ANNOTATIONS_SNPEFF = "SNPEff"
+
 
 def isUnspecified(str):
     """
@@ -352,15 +355,31 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         super(HtslibVariantSet, self).__init__(parentContainer, localId)
         self._chromFileMap = {}
         self._metadata = None
-        self._isAnnotated = False
+        self._variantAnnotationSet = None
+
+    def setVariantAnnotationSet(self, variantAnnotationSet):
+        """
+        Sets the VariantAnnotationSet instance associated with this
+        VariantSet to the specified value.
+
+        Note that currently this assumed that we have a 1-1 mapping between
+        variant sets and annotation sets. This can be relaxed in the future
+        if we need to support VCFS with mixed annotations.
+        """
+        self._variantAnnotationSet = variantAnnotationSet
+
+    def getVariantAnnotationSet(self):
+        """
+        Returns the VariantAnnotationSet associated with this VariantSet.
+        """
+        return self._variantAnnotationSet
 
     def isAnnotated(self):
         """
-        Returns True if this VariantSet is annotated.
-
-        TODO document the exact conditions where this is true.
+        Returns True if there is a VariantAnnotationSet associated with this
+        VariantSet.
         """
-        return self._isAnnotated
+        return self._variantAnnotationSet is not None
 
     def getReferenceToDataUrlIndexMap(self):
         """
@@ -374,7 +393,6 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         self._created = row[b'created']
         self._updated = row[b'updated']
-        self._isAnnotated = row[b'isAnnotated']
         self._chromFileMap = {}
         # We can't load directly as we want tuples to be stored
         # rather than lists.
@@ -446,9 +464,27 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             self._chromFileMap[chrom] = dataUrl, indexFile
         self._updateMetadata(varFile)
         self._updateCallSetIds(varFile)
-        # Is this VariantSet annotated?
-        header = varFile.header.info.keys()
-        self._isAnnotated = b'ANN' in header or b'CSQ' in header
+        self._updateVariantAnnotationSets(varFile)
+
+    def _updateVariantAnnotationSets(self, variantFile):
+        """
+        Updates the variant annotation set associated with this variant using
+        information in the specified pysam variantFile.
+        """
+        # TODO check the consistency of this between VCF files.
+        if self._variantAnnotationSet is None:
+            annotationType = None
+            infoKeys = variantFile.header.info.keys()
+            if 'CSQ' in infoKeys:
+                annotationType = ANNOTATIONS_VEP
+            elif 'ANN' in infoKeys:
+                annotationType = ANNOTATIONS_SNPEFF
+            # TODO detect other annotation types.
+            if annotationType is not None:
+                self._variantAnnotationSet = HtslibVariantAnnotationSet(
+                    self, annotationType)
+                self._variantAnnotationSet.populateFromFile(
+                    variantFile, annotationType)
 
     def _updateMetadata(self, variantFile):
         """
@@ -591,6 +627,21 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 raise exceptions.ObjectNotFoundException()
         raise exceptions.ObjectNotFoundException(compoundId)
 
+    def getPysamVariants(self, referenceName, startPosition, endPosition):
+        """
+        Returns an iterator over the pysam VCF records corresponding to the
+        specified query.
+        """
+        if referenceName in self._chromFileMap:
+            varFileName = self._chromFileMap[referenceName]
+            referenceName, startPosition, endPosition = \
+                self.sanitizeVariantFileFetch(
+                    referenceName, startPosition, endPosition)
+            cursor = self.getFileHandle(varFileName).fetch(
+                referenceName, startPosition, endPosition)
+            for record in cursor:
+                yield record
+
     def getVariants(self, referenceName, startPosition, endPosition,
                     callSetIds=None):
         """
@@ -604,15 +655,9 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 if callSetId not in self._callSetIds:
                     raise exceptions.CallSetNotInVariantSetException(
                         callSetId, self.getId())
-        if referenceName in self._chromFileMap:
-            varFileName = self._chromFileMap[referenceName]
-            referenceName, startPosition, endPosition = \
-                self.sanitizeVariantFileFetch(
-                    referenceName, startPosition, endPosition)
-            cursor = self.getFileHandle(varFileName).fetch(
-                referenceName, startPosition, endPosition)
-            for record in cursor:
-                yield self.convertVariant(record, callSetIds)
+        for record in self.getPysamVariants(
+                referenceName, startPosition, endPosition):
+            yield self.convertVariant(record, callSetIds)
 
     def getMetadata(self):
         return self._metadata
@@ -682,14 +727,28 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
     """
     compoundIdClass = datamodel.VariantAnnotationSetCompoundId
 
-    def __init__(self, variantSet, localId, sequenceOntology):
+    def __init__(self, variantSet, localId):
         super(AbstractVariantAnnotationSet, self).__init__(variantSet, localId)
         self._variantSet = variantSet
-        self._sequenceOntology = sequenceOntology
+        self._sequenceOntology = None
+        self._analysis = None
         # TODO these should be set from the DB, not created on
         # instantiation.
         self._creationTime = datetime.datetime.now().isoformat() + "Z"
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
+
+    def setSequenceOntology(self, sequenceOntology):
+        """
+        Sets the sequence ontology object used in this VariantAnnotationSet
+        to the specified value.
+        """
+        self._sequenceOntology = sequenceOntology
+
+    def getAnalysis(self):
+        """
+        Returns the Analysis object associated with this VariantAnnotationSet.
+        """
+        return self._analysis
 
     def getVariantSet(self):
         """
@@ -774,12 +833,13 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
     A variant annotation set that doesn't derive from a data store.
     Used mostly for testing.
     """
-    def __init__(self, variantSet, localId, sequenceOntology, randomSeed):
+    def __init__(self, variantSet, localId, randomSeed):
         super(SimulatedVariantAnnotationSet, self).__init__(
-            variantSet, localId, sequenceOntology)
+            variantSet, localId)
         self._randomSeed = randomSeed
+        self._analysis = self._createAnalysis
 
-    def getAnalysis(self):
+    def _createAnalysis(self):
         analysis = protocol.Analysis()
         analysis.createDateTime = self._creationTime
         analysis.updateDateTime = self._updatedTime
@@ -917,31 +977,69 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
     Class representing a single variant annotation derived from an
     annotated variant set.
     """
-    def __init__(self, variantSet, localId, sequenceOntology):
-        super(HtslibVariantAnnotationSet, self).__init__(
-            variantSet, localId, sequenceOntology)
+    def __init__(self, variantSet, localId):
+        super(HtslibVariantAnnotationSet, self).__init__(variantSet, localId)
+        self._annotationCreatedDateTime = self._creationTime
 
-        # self._variantSetId = variantSet.getCompoundId()
-        # self._compoundId = datamodel.VariantAnnotationSetCompoundId(
-        #     self.getCompoundId(), 'variantannotations')
-        # Annotations are currently either from VEP or SNPEff. If they are
-        # not from VEP we assume they are from SNPEff.
-        # TODO Detect this more rigorously at import time and throw an
-        # exception if we don't see the formats we're expecting.
-        # print("Metadata = ", self.getMetadata())
+    def populateFromFile(self, varFile, annotationType):
+        self._annotationType = annotationType
+        self._analysis = self._getAnnotationAnalysis(varFile)
+        # TODO parse the annotation creation time from the VCF header and
+        # store it in an instance variable.
 
-        # self._isVep = "VEP" in self.toProtocolElement().analysis.info
-        # self._isCsq = self.hasConsequenceField(dataDir)
+    def populateFromRow(self, row):
+        """
+        Populates this VariantAnnotationSet from the specified DB row.
+        """
+        self._annotationType = row[b'annotationType']
+        self._analysis = protocol.Analysis.fromJsonDict(
+            json.loads(row[b'analysis']))
 
-        # Parse the annotation creation time out of the VCF header.
-        # TODO Check this at import time, and raise an exception if the
-        # time is not in the expected format.
-        # self._annotationCreatedDateTime = self._creationTime
-        # for r in self.getMetadata().records:
-        #     # TODO handle more date formats
-        #     if r.key == "created":
-        #         self._annotationCreatedDateTime = datetime.datetime.strptime(
-        #             r.value, "%Y-%m-%d").isoformat() + "Z"
+    def getAnnotationType(self):
+        """
+        Returns the type of variant annotations. This is one of
+        ANNOTATIONS_VEP or ANNOTATIONS_SNPEFF.
+        """
+        return self._annotationType
+
+    def _getAnnotationAnalysis(self, varFile):
+        """
+        Assembles metadata within the VCF header into a GA4GH Analysis object.
+
+        :return: protocol.Analysis
+        """
+        header = varFile.header
+        analysis = protocol.Analysis()
+        formats = header.formats.items()
+        infos = header.info.items()
+        for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
+            for contentKey, value in content:
+                key = "{0}.{1}".format(prefix, value.name)
+                if key not in analysis.info:
+                    analysis.info[key] = []
+                if value.description is not None:
+                    analysis.info[key].append(value.description)
+        analysis.createDateTime = self._creationTime
+        analysis.updateDateTime = self._updatedTime
+        for r in header.records:
+            # Don't add a key to info if there's nothing in the value
+            if r.value is not None:
+                if r.key not in analysis.info:
+                    analysis.info[r.key] = []
+                analysis.info[r.key].append(str(r.value))
+            if r.key == "created":
+                # TODO handle more date formats
+                analysis.createDateTime = datetime.datetime.strptime(
+                    r.value, "%Y-%m-%d").isoformat() + "Z"
+            if r.key == "software":
+                analysis.software.append(r.value)
+            if r.key == "name":
+                analysis.name = r.value
+            if r.key == "description":
+                analysis.description = r.value
+        analysis.id = str(datamodel.VariantAnnotationSetAnalysisCompoundId(
+            self._compoundId, "analysis"))
+        return analysis
 
     def getVariantAnnotations(self, referenceName, startPosition, endPosition):
         """
@@ -952,21 +1050,16 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         :param endPosition:
         :return: generator of protocol.VariantAnnotation
         """
-        if referenceName in self._chromFileMap:
-            varFileName = self._chromFileMap[referenceName]
-            referenceName, startPosition, endPosition = \
-                self.sanitizeVariantFileFetch(
-                    referenceName, startPosition, endPosition)
-            cursor = self.getFileHandle(varFileName).fetch(
-                referenceName, startPosition, endPosition)
+        variantIter = self._variantSet.getPysamVariants(
+            referenceName, startPosition, endPosition)
+        if self._annotationType == ANNOTATIONS_SNPEFF:
             transcriptConverter = self.convertTranscriptEffectSnpEff
-            if self._isVep and not self._isCsq:
-                transcriptConverter = self.convertTranscriptEffectVEP
-            elif self._isCsq:
-                transcriptConverter = self.convertTranscriptEffectCSQ
-            for record in cursor:
-                yield self.convertVariantAnnotation(
-                    record, transcriptConverter)
+        elif self._annotationType == ANNOTATIONS_VEP:
+            transcriptConverter = self.convertTranscriptEffectVEP
+        else:
+            transcriptConverter = self.convertTranscriptEffectCSQ
+        for record in variantIter:
+            yield self.convertVariantAnnotation(record, transcriptConverter)
 
     def convertLocation(self, pos):
         """
@@ -1181,11 +1274,12 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         annotation object using the specified function to convert the
         transcripts.
         """
-        variant = self.convertVariant(record, None)
+        variant = self._variantSet.convertVariant(record, None)
         annotation = self._createGaVariantAnnotation()
         annotation.start = variant.start
         annotation.end = variant.end
-        annotation.createDateTime = self._annotationCreatedDateTime
+        # TODO can we actually derive this??
+        # annotation.createDateTime = self._annotationCreatedDateTime
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         transcriptEffects = []
@@ -1230,60 +1324,3 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
             self.getCompoundId(), gaVariant.referenceName,
             gaVariant.start, md5)
         return str(compoundId)
-
-    def getVariantId(self, gaVariant):
-        """
-        Produces a variant ID for a variant annotated within this
-        variant annotation set.
-        :param gaVariant: protocol.Variant
-        :return:  compoundId String
-        """
-        md5 = self.hashVariant(gaVariant)
-        compoundId = datamodel.VariantCompoundId(
-            self._variantSetId, gaVariant.referenceName,
-            gaVariant.start, md5)
-        return str(compoundId)
-
-    def getAnalysis(self):
-        """
-        Assembles metadata within the VCF header into a GA4GH
-        Analysis object.
-        :return: protocol.Analysis
-        """
-        metadata = self.getMetadata()
-        analysis = protocol.Analysis()
-        formats = metadata.formats.items()
-        infos = metadata.info.items()
-        for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
-            for contentKey, value in content:
-                key = "{0}.{1}".format(prefix, value.name)
-                if key not in analysis.info:
-                    analysis.info[key] = []
-                if value.description is not None:
-                    analysis.info[key].append(value.description)
-        analysis.createDateTime = self._creationTime
-        analysis.updateDateTime = self._updatedTime
-        for r in metadata.records:
-            # Don't add a key to info if there's nothing in the value
-            if r.value is not None:
-                if r.key not in analysis.info:
-                    analysis.info[r.key] = []
-                analysis.info[r.key].append(str(r.value))
-
-            if r.key == "created":
-                # TODO handle more date formats
-                analysis.createDateTime = datetime.datetime.strptime(
-                    r.value, "%Y-%m-%d").isoformat() + "Z"
-            if r.key == "software":
-                analysis.software.append(r.value)
-            if r.key == "name":
-                analysis.name = r.value
-            if r.key == "description":
-                analysis.description = r.value
-        analysis.id = str(datamodel.VariantAnnotationSetAnalysisCompoundId(
-            self._compoundId, "analysis"))
-        return analysis
-
-    def _getMetadataFromVcf(self, varFile):
-        header = varFile.header
-        return header

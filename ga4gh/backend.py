@@ -502,7 +502,7 @@ class Backend(object):
                 variantSetId = request.variantSetId
             except ValueError:
                 variantSetId = ""
-            if str(annset._variantSetId) == str(variantSetId):
+            if annset.getVariantSet().getId() == variantSetId:
                 results.append(annset)
         return self._objectListGenerator(request, results)
 

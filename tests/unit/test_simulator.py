@@ -142,7 +142,7 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
             dataset, referenceSet, 'variantSet1', randomSeed=self.randomSeed,
             numCalls=self.numCalls, variantDensity=self.variantDensity)
         simulatedVariantAnnotationSet = variants.SimulatedVariantAnnotationSet(
-            simulatedVariantSet, localId, None, self.randomSeed)
+            simulatedVariantSet, localId, self.randomSeed)
         annotations = simulatedVariantAnnotationSet.getVariantAnnotations(
                     self.referenceName, self.startPosition, self.endPosition)
         self.assertEquals(
