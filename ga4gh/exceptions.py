@@ -162,6 +162,14 @@ class DatamodelValidationException(BadRequestException):
     """
 
 
+class ReadGroupSetNotMappedToReferenceSetException(BadRequestException):
+
+    def __init__(self, readGroupSetId):
+        self.message = (
+            "ReadGroupSet '{}' is not mapped to any referenceSet".format(
+                readGroupSetId))
+
+
 class NotFoundException(RuntimeException):
     """
     The superclass of all exceptions in which some resource was not
