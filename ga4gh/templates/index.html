@@ -15,7 +15,7 @@
             {{ info.getLandingMessageHtml() | safe}}
         </div>
         <div>
-            <h3>Session Token {{ session['key']}}</h3>
+            <h3>Session Token <span class="session-token">{{ session['key']}}</span></h3>
         </div>
         <div>
             <h3>Operations available</h3>

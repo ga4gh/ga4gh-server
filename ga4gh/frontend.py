@@ -95,12 +95,16 @@ class ServerStatus(object):
 
     def getLandingMessageHtml(self):
         filePath = app.config.get('LANDING_MESSAGE_HTML')
-        if os.path.exists(filePath):
-            with open(filePath, 'r') as html:
-                return html.read()
-        else:
-            with open("ga4gh/templates/landing_message.html", 'r') as html:
-                return html.read()
+        try:
+            htmlFile = open(filePath, 'r')
+            html = htmlFile.read()
+        except:
+            filePath = "ga4gh/templates/landing_message.html"
+            htmlFile = open(filePath, 'r')
+            html = htmlFile.read()
+        finally:
+            htmlFile.close()
+        return html
 
     def getNaturalUptime(self):
         """
