@@ -307,7 +307,8 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, response.status_code)
 
         # Test Error: 404, ID not found
-        obfuscated = datamodel.CompoundId.obfuscate("notValid")
+        invalidId = datamodel.DatasetCompoundId.getInvalidIdString()
+        obfuscated = datamodel.CompoundId.obfuscate(invalidId)
         compoundId = datamodel.DatasetCompoundId.parse(obfuscated)
         response = self.sendGetDataset(str(compoundId))
         self.assertEqual(404, response.status_code)
@@ -319,7 +320,8 @@ class TestFrontend(unittest.TestCase):
         variantSetId = responseData.variantSets[0].id
         response = self.sendGetVariantSet(variantSetId)
         self.assertEqual(200, response.status_code)
-        obfuscated = datamodel.CompoundId.obfuscate("notValid:vs:notValid")
+        invalidId = datamodel.VariantSetCompoundId.getInvalidIdString()
+        obfuscated = datamodel.CompoundId.obfuscate(invalidId)
         compoundId = datamodel.VariantSetCompoundId.parse(obfuscated)
         response = self.sendGetVariantSet(str(compoundId))
         self.assertEqual(404, response.status_code)
@@ -386,7 +388,8 @@ class TestFrontend(unittest.TestCase):
                                         referenceId=None)
         self.assertEqual(501, response.status_code)
 
-    def testSearchReadsMultipleReadGroupSets(self):
-        response = self.sendReadsSearch(readGroupIds=[self.readGroupId, "42"],
-                                        referenceId=self.referenceId)
-        self.assertEqual(501, response.status_code)
+    def testSearchReadsMultipleReadGroupSetsSetMismatch(self):
+        response = self.sendReadsSearch(
+            readGroupIds=[self.readGroupId, "42"],
+            referenceId=self.referenceId)
+        self.assertEqual(400, response.status_code)

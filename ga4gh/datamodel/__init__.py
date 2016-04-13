@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
 import base64
 import collections
 import glob
@@ -99,15 +100,14 @@ fileHandleCache = PysamFileHandleCache()
 
 class CompoundId(object):
     """
-    Base class for an id composed of several different parts, separated
-    by a separator. Each compound ID consists of a set of fields, each
-    of which corresponds to a local ID in the data hierarchy. For example,
-    we might have fields like ["dataset", "variantSet"] for a variantSet.
-    These are available as cid.dataset, and cid.variantSet.  The actual IDs
-    of the containing objects can be obtained using the corresponding
-    like cid.datasetId and cid.variantSetId.
+    Base class for an id composed of several different parts.  Each
+    compound ID consists of a set of fields, each of which corresponds to a
+    local ID in the data hierarchy. For example, we might have fields like
+    ["dataset", "variantSet"] for a variantSet.  These are available as
+    cid.dataset, and cid.variantSet.  The actual IDs of the containing
+    objects can be obtained using the corresponding attributes, e.g.
+    cid.datasetId and cid.variantSetId.
     """
-    separator = ':'
     fields = []
     """
     The fields that the compound ID is composed of. These are parsed and
@@ -154,20 +154,56 @@ class CompoundId(object):
             localIds = localIds[:differentiatorIndex] + tuple([
                 self.differentiator]) + localIds[differentiatorIndex:]
         for field, localId in zip(self.fields[index:], localIds):
-            setattr(self, field, str(localId))
+            encodedLocalId = self.encode(str(localId))
+            setattr(self, field, encodedLocalId)
         if len(localIds) != len(self.fields) - index:
             raise ValueError(
                 "Incorrect number of fields provided to instantiate ID")
         for idFieldName, prefix in self.containerIds:
             values = [getattr(self, f) for f in self.fields[:prefix + 1]]
-            containerId = self.separator.join(values)
+            containerId = self.join(values)
             obfuscated = self.obfuscate(containerId)
             setattr(self, idFieldName, obfuscated)
 
     def __str__(self):
         values = [getattr(self, f) for f in self.fields]
-        compoundIdStr = self.separator.join(values)
+        compoundIdStr = self.join(values)
         return self.obfuscate(compoundIdStr)
+
+    @classmethod
+    def join(cls, splits):
+        """
+        Join an array of ids into a compound id string
+        """
+        segments = []
+        for split in splits:
+            segments.append('"{}",'.format(split))
+        if len(segments) > 0:
+            segments[-1] = segments[-1][:-1]
+        jsonString = '[{}]'.format(''.join(segments))
+        return jsonString
+
+    @classmethod
+    def split(cls, jsonString):
+        """
+        Split a compound id string into an array of ids
+        """
+        splits = json.loads(jsonString)
+        return splits
+
+    @classmethod
+    def encode(cls, idString):
+        """
+        Encode a string by escaping problematic characters
+        """
+        return idString.replace('"', '\\"')
+
+    @classmethod
+    def decode(cls, encodedString):
+        """
+        Decode an encoded string
+        """
+        return encodedString.replace('\\"', '"')
 
     @classmethod
     def parse(cls, compoundIdStr):
@@ -190,8 +226,9 @@ class CompoundId(object):
             # this as an ID not found error.
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
         try:
-            splits = deobfuscated.split(cls.separator)
-        except UnicodeDecodeError:
+            encodedSplits = cls.split(deobfuscated)
+            splits = [cls.decode(split) for split in encodedSplits]
+        except (UnicodeDecodeError, ValueError):
             # Sometimes base64 decoding succeeds but we're left with
             # unicode gibberish. This is also and IdNotFound.
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
@@ -229,6 +266,14 @@ class CompoundId(object):
         """
         return base64.urlsafe_b64decode(str((
             data + b'A=='[(len(data) - 1) % 4:])))
+
+    @classmethod
+    def getInvalidIdString(cls):
+        """
+        Return an id string that is well-formed but probably does not
+        correspond to any existing object; used mostly in testing
+        """
+        return cls.join(['notValid'] * len(cls.fields))
 
 
 class ReferenceSetCompoundId(CompoundId):
@@ -309,6 +354,21 @@ class CallSetCompoundId(VariantSetCompoundId):
     The compound id for a callset
     """
     fields = VariantSetCompoundId.fields + ['name']
+
+
+class FeatureSetCompoundId(DatasetCompoundId):
+    """
+    The compound id for a feature set
+    """
+    fields = DatasetCompoundId.fields + ['featureSet']
+    containerIds = DatasetCompoundId.containerIds + [('featureSetId', 1)]
+
+
+class FeatureCompoundId(FeatureSetCompoundId):
+    """
+    The compound id class for a feature
+    """
+    fields = FeatureSetCompoundId.fields + ['featureId']
 
 
 class ReadGroupSetCompoundId(DatasetCompoundId):
