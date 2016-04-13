@@ -384,7 +384,7 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
 
     def _addDataFile(self, path):
         dirname, filename = os.path.split(path)
-        localId = filename.split(".")[0]
+        localId = ".".join(filename.split(".")[:-2])
         metadataFileName = os.path.join(dirname, "{}.json".format(localId))
         with open(metadataFileName) as metadataFile:
             metadata = json.load(metadataFile)
