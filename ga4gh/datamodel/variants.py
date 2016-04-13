@@ -111,6 +111,46 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._creationTime = None
         self._updatedTime = None
         self._referenceSet = None
+        self._variantAnnotationSetIds = []
+        self._variantAnnotationSetIdMap = {}
+
+    def addVariantAnnotationSet(self, variantAnnotationSet):
+        """
+        Adds the specified variantAnnotationSet to this dataset.
+        """
+        id_ = variantAnnotationSet.getId()
+        self._variantAnnotationSetIdMap[id_] = variantAnnotationSet
+        self._variantAnnotationSetIds.append(id_)
+
+    def getVariantAnnotationSets(self):
+        """
+        Returns the list of VariantAnnotationSets in this dataset
+        """
+        return [
+            self._variantAnnotationSetIdMap[id_] for id_ in
+            self._variantAnnotationSetIds]
+
+    def getVariantAnnotationSet(self, id_):
+        """
+        Returns the AnnotationSet in this dataset with the specified 'id'
+        """
+        if id_ not in self._variantAnnotationSetIdMap:
+            raise exceptions.AnnotationSetNotFoundException(id_)
+        return self._variantAnnotationSetIdMap[id_]
+
+    def getNumVariantAnnotationSets(self):
+        """
+        Returns the number of variant annotation sets in this dataset.
+        """
+        return len(self._variantAnnotationSetIds)
+
+    def getVariantAnnotationSetByIndex(self, index):
+        """
+        Returns the variant annotation set at the specified index in this
+        dataset.
+        """
+        return self._variantAnnotationSetIdMap[
+            self._variantAnnotationSetIds[index]]
 
     def setReferenceSet(self, referenceSet):
         """
@@ -355,31 +395,13 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         super(HtslibVariantSet, self).__init__(parentContainer, localId)
         self._chromFileMap = {}
         self._metadata = None
-        self._variantAnnotationSet = None
-
-    def setVariantAnnotationSet(self, variantAnnotationSet):
-        """
-        Sets the VariantAnnotationSet instance associated with this
-        VariantSet to the specified value.
-
-        Note that currently this assumed that we have a 1-1 mapping between
-        variant sets and annotation sets. This can be relaxed in the future
-        if we need to support VCFS with mixed annotations.
-        """
-        self._variantAnnotationSet = variantAnnotationSet
-
-    def getVariantAnnotationSet(self):
-        """
-        Returns the VariantAnnotationSet associated with this VariantSet.
-        """
-        return self._variantAnnotationSet
 
     def isAnnotated(self):
         """
         Returns True if there is a VariantAnnotationSet associated with this
         VariantSet.
         """
-        return self._variantAnnotationSet is not None
+        return len(self._variantAnnotationSetIdMap) > 0
 
     def getReferenceToDataUrlIndexMap(self):
         """
@@ -472,7 +494,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         information in the specified pysam variantFile.
         """
         # TODO check the consistency of this between VCF files.
-        if self._variantAnnotationSet is None:
+        if not self.isAnnotated():
             annotationType = None
             infoKeys = variantFile.header.info.keys()
             if 'CSQ' in infoKeys:
@@ -481,10 +503,9 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 annotationType = ANNOTATIONS_SNPEFF
             # TODO detect other annotation types.
             if annotationType is not None:
-                self._variantAnnotationSet = HtslibVariantAnnotationSet(
-                    self, annotationType)
-                self._variantAnnotationSet.populateFromFile(
-                    variantFile, annotationType)
+                vas = HtslibVariantAnnotationSet(self, annotationType)
+                vas.populateFromFile(variantFile, annotationType)
+                self.addVariantAnnotationSet(vas)
 
     def _updateMetadata(self, variantFile):
         """
@@ -837,7 +858,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         super(SimulatedVariantAnnotationSet, self).__init__(
             variantSet, localId)
         self._randomSeed = randomSeed
-        self._analysis = self._createAnalysis
+        self._analysis = self._createAnalysis()
 
     def _createAnalysis(self):
         analysis = protocol.Analysis()
@@ -849,10 +870,6 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         analysis.id = str(datamodel.VariantAnnotationSetAnalysisCompoundId(
             self._compoundId, "analysis"))
         return analysis
-
-    def getNumVariantAnnotations(self):
-        # TODO find out where this is used and how
-        return 0
 
     def getVariantAnnotation(self, variant, randomNumberGenerator):
         ann = self.generateVariantAnnotation(

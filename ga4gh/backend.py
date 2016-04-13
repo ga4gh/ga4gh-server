@@ -496,15 +496,10 @@ class Backend(object):
         """
         compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        results = []
-        for annset in dataset.getVariantAnnotationSets():
-            try:
-                variantSetId = request.variantSetId
-            except ValueError:
-                variantSetId = ""
-            if annset.getVariantSet().getId() == variantSetId:
-                results.append(annset)
-        return self._objectListGenerator(request, results)
+        variantSet = dataset.getVariantSet(request.variantSetId)
+        return self._topLevelObjectGenerator(
+            request, variantSet.getNumVariantAnnotationSets(),
+            variantSet.getVariantAnnotationSetByIndex)
 
     def readsGenerator(self, request):
         """
@@ -568,7 +563,8 @@ class Backend(object):
         compoundId = datamodel.VariantAnnotationSetCompoundId.parse(
             request.variantAnnotationSetId)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        variantAnnotationSet = dataset.getVariantAnnotationSet(
+        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        variantAnnotationSet = variantSet.getVariantAnnotationSet(
             request.variantAnnotationSetId)
         intervalIterator = VariantAnnotationsIntervalIterator(
             request, variantAnnotationSet)
@@ -830,7 +826,8 @@ class Backend(object):
         """
         compoundId = datamodel.VariantAnnotationSetCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        variantAnnotationSet = dataset.getVariantAnnotationSet(id_)
+        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        variantAnnotationSet = variantSet.getVariantAnnotationSet(id_)
         return self.runGetRequest(variantAnnotationSet)
 
     # Search requests.

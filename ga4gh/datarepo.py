@@ -198,12 +198,12 @@ class AbstractDataRepository(object):
                     variantSet.getReferenceSet().getLocalId(),
                     variantSet.getId(),
                     sep="\t")
-            print("\tVariantAnnotationSets")
-            for variantAnnotationSet in dataset.getVariantAnnotationSets():
-                print(
-                    "\t", variantAnnotationSet.getLocalId(),
-                    variantAnnotationSet.getVariantSet().getLocalId(),
-                    sep="\t")
+                if variantSet.getNumVariantAnnotationSets() > 0:
+                    print("\t\tVariantAnnotationSets:")
+                    for vas in variantSet.getVariantAnnotationSets():
+                        print(
+                            "\t\t", vas.getLocalId(),
+                            vas.getVariantSet().getLocalId(), sep="\t")
             print("\tFeatureSets:")
             for featureSet in dataset.getFeatureSets():
                 print(

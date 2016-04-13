@@ -58,7 +58,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.readGroupSet.getReferenceSet().getReferences()[0]
         self.variantSet = self.dataset.getVariantSets()[0]
         self.variantAnnotationSet = \
-            self.dataset.getVariantAnnotationSets()[0]
+            self.variantSet.getVariantAnnotationSets()[0]
         self.backend.setMaxResponseLength(10000)
 
     def getBadIds(self):
@@ -450,17 +450,16 @@ class TestSimulatedStack(unittest.TestCase):
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
 
-    @unittest.skip("Disabled while VA code is refactored.")
     def testGetVariantAnnotationSet(self):
         path = "/variantannotationsets"
         for dataset in self.dataRepo.getDatasets():
-            for variantAnnotationSet in dataset.getVariantAnnotationSets():
-                responseObject = self.sendGetObject(
-                    path, variantAnnotationSet.getId(),
-                    protocol.VariantAnnotationSet)
-                self.assertEqual(variantAnnotationSet.getId(),
-                                 responseObject.id,
-                                 "The requested ID should match the returned")
+            for variantSet in dataset.getVariantSets():
+                for vas in variantSet.getVariantAnnotationSets():
+                    responseObject = self.sendGetObject(
+                        path, vas.getId(), protocol.VariantAnnotationSet)
+                    self.assertEqual(
+                        vas.getId(), responseObject.id,
+                        "The requested ID should match the returned")
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
 
@@ -572,9 +571,6 @@ class TestSimulatedStack(unittest.TestCase):
         # TODO: Add more useful test scenarios, including some covering
         # pagination behavior.
 
-    @unittest.skip("Disabled while VA code is refactored.")
-    # Temporarily disabling these tests as the VariantAnnotation code
-    # needs refactoring.
     def testVariantAnnotationSetsSearch(self):
         self.assertIsNotNone(self.variantAnnotationSet)
 
@@ -602,9 +598,6 @@ class TestSimulatedStack(unittest.TestCase):
         # the values from the protocol object we get back with the values
         # in the original variantAnnotationSet.
 
-    @unittest.skip("Disabled while VA code is refactored.")
-    # Temporarily disabling these tests as the VariantAnnotation code
-    # needs refactoring.
     def testVariantAnnotationsSearch(self):
         self.assertIsNotNone(self.variantAnnotationSet)
 
@@ -620,9 +613,9 @@ class TestSimulatedStack(unittest.TestCase):
         request.effects = None
         request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         response = self.sendJsonPostRequest(path, request.toJsonString())
-        responseData = protocol.SearchVariantAnnotationSetsResponse. \
+        responseData = protocol.SearchVariantAnnotationsResponse. \
             fromJsonString(response.data)
-        self.assertGreater(len(responseData.variantAnnotationSets), 0)
+        self.assertGreater(len(responseData.variantAnnotations), 0)
         self.assertIsNotNone(
             responseData.nextPageToken,
             "Expected more than one page of results")
