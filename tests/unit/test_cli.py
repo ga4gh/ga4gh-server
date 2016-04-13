@@ -261,6 +261,16 @@ class TestClientArguments(unittest.TestCase):
         self.assertEquals(
             args.runner, cli.SearchVariantAnnotationSetsRunner)
 
+    def testVariationAnnotationSetsGet(self):
+        cliInput = (
+            "variantannotationsets-get "
+            "BASEURL VARIANTANNOTATIONSETID")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.id, "VARIANTANNOTATIONSETID")
+        self.assertEquals(
+            args.runner, cli.GetVariantAnnotationSetRunner)
+
 
 class TestRepoManagerCli(unittest.TestCase):
 
