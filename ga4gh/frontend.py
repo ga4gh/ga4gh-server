@@ -83,7 +83,7 @@ class ServerStatus(object):
         # TODO what other config keys are appropriate to export here?
         keys = [
             'DEBUG', 'REQUEST_VALIDATION', 'RESPONSE_VALIDATION',
-            'DEFAULT_PAGE_SIZE', 'MAX_RESPONSE_LENGTH',
+            'DEFAULT_PAGE_SIZE', 'MAX_RESPONSE_LENGTH', 'LANDING_MESSAGE_HTML'
         ]
         return [(k, app.config[k]) for k in keys]
 
@@ -92,6 +92,19 @@ class ServerStatus(object):
         Returns the server precisely.
         """
         return self.startupTime.strftime("%H:%M:%S %d %b %Y")
+
+    def getLandingMessageHtml(self):
+        filePath = app.config.get('LANDING_MESSAGE_HTML')
+        try:
+            htmlFile = open(filePath, 'r')
+            html = htmlFile.read()
+        except:
+            filePath = "ga4gh/templates/landing_message.html"
+            htmlFile = open(filePath, 'r')
+            html = htmlFile.read()
+        finally:
+            htmlFile.close()
+        return html
 
     def getNaturalUptime(self):
         """

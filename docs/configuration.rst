@@ -410,6 +410,12 @@ RESPONSE_VALIDATION
     that they conform to the protocol. This should only be used for development
     purposes.
 
+LANDING_MESSAGE_HTML
+    The server provides a simple landing page at its root. By setting this 
+    value to point at a file containing an HTML block element it is possible to
+    customize the landing page. This can be helpful to provide support links
+    or details about the hosted datasets.
+
 OIDC_PROVIDER
     If this value is provided, then OIDC is configured and SSL is used. It is
     the URI of the OpenID Connect provider, which should return an OIDC
