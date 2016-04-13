@@ -174,7 +174,9 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
                     i += 1
             elif 'CSQ' in pyvcfVariant.INFO:
                 pyvcfAnn = pyvcfVariant.INFO['CSQ']
-                transcriptEffects = self._splitCsqEffects(pyvcfAnn[0])
+                transcriptEffects = []
+                for ann in pyvcfAnn:
+                    transcriptEffects += self._splitCsqEffects(ann)
                 for treff, gaEffect in zip(
                         transcriptEffects,
                         gaVariantAnnotation.transcriptEffects):

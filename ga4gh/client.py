@@ -222,6 +222,26 @@ class AbstractClient(object):
             "variantannotationsets", protocol.VariantAnnotationSet,
             variantAnnotationSetId)
 
+    def getFeatureSet(self, featureSetId):
+        """
+        Returns the FeatureSet with the specified ID from the server.
+
+        :param str featureSetId: The ID of the FeatureSet of interest.
+        :return: The FeatureSet of interest.
+        :rtype: :class:`ga4gh.protocol.FeatureSet`
+        """
+        return self._runGetRequest(
+            "featuresets", protocol.FeatureSet, featureSetId)
+
+    def getFeature(self, compoundId):
+        """
+        Returns the feature with the specified ID from the server.
+
+        :param str compoundId: The compound ID of the requested feature
+        :return: The requested ga4gh.protocol.Feature object.
+        """
+        return self._runGetRequest("features", protocol.Feature, compoundId)
+
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
             callSetIds=None):
@@ -282,6 +302,35 @@ class AbstractClient(object):
             request, "variantannotations",
             protocol.SearchVariantAnnotationsResponse)
 
+    def searchFeatures(
+            self, featureSetId=None, parentId=None, referenceName=None,
+            start=0, end=None, featureTypes=[]):
+        """
+        Returns the result of running a searchFeatures method
+        on a request with the passed-in parameters.
+
+        :param str featureSetId: ID of the feature Set being searched
+        :param str parentId: ID (optional) of the parent feature
+        :param str referenceName: name of the reference to search
+            (ex: "chr1")
+        :param int start: search start position on reference
+        :param int end: end position on reference
+        :param featureTypes: array of terms to limit search by (ex: "gene")
+        :return: an iterator over Features as returned in the
+            SearchFeaturesResponse object.
+        """
+        request = protocol.SearchFeaturesRequest()
+        request.featureSetId = featureSetId
+        request.parentId = parentId
+        request.referenceName = referenceName
+        request.start = start
+        request.end = end
+        request.featureTypes = featureTypes
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "features",
+            protocol.SearchFeaturesResponse)
+
     def searchDatasets(self):
         """
         Returns an iterator over the Datasets on the server.
@@ -313,10 +362,10 @@ class AbstractClient(object):
     def searchVariantAnnotationSets(self, variantSetId):
         """
         Returns an iterator over the AnnotationSets fulfilling the specified
-        conditions from the specified Dataset.
+        conditions from the specified variant set.
 
-        :param str datasetId: The ID of the :class:`ga4gh.protocol.Dataset`
-            of interest.
+        :param str variantSetId: The ID of the
+            :class:`ga4gh.protocol.VariantSet` of interest.
         :return: An iterator over the :class:`ga4gh.protocol.AnnotationSet`
             objects defined by the query parameters.
         """
@@ -326,6 +375,22 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "variantannotationsets",
             protocol.SearchVariantAnnotationSetsResponse)
+
+    def searchFeatureSets(self, datasetId):
+        """
+        Returns an iterator over the FeatureSets fulfilling the specified
+        conditions from the specified Dataset.
+
+        :param str datasetId: The ID of the
+            :class:`ga4gh.protocol.Dataset` of interest.
+        :return: An iterator over the :class:`ga4gh.protocol.FeatureSet`
+            objects defined by the query parameters.
+        """
+        request = protocol.SearchFeatureSetsRequest()
+        request.datasetId = datasetId
+        request.pageSize = self._pageSize
+        return self._runSearchRequest(
+            request, "featuresets", protocol.SearchFeatureSetsResponse)
 
     def searchReferenceSets(
             self, accession=None, md5checksum=None, assemblyId=None):
@@ -537,7 +602,9 @@ class LocalClient(AbstractClient):
             "referencesets": self._backend.runGetReferenceSet,
             "references": self._backend.runGetReference,
             "variantsets": self._backend.runGetVariantSet,
+            "featuresets": self._backend.runGetFeatureSet,
             "variants": self._backend.runGetVariant,
+            "features": self._backend.runGetFeature,
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
             "variantannotationsets": self._backend.runGetVariantAnnotationSet
@@ -548,7 +615,9 @@ class LocalClient(AbstractClient):
             "referencesets": self._backend.runSearchReferenceSets,
             "references": self._backend.runSearchReferences,
             "variantsets": self._backend.runSearchVariantSets,
+            "featuresets": self._backend.runSearchFeatureSets,
             "variants": self._backend.runSearchVariants,
+            "features": self._backend.runSearchFeatures,
             "readgroupsets": self._backend.runSearchReadGroupSets,
             "reads": self._backend.runSearchReads,
             "variantannotations": self._backend.runSearchVariantAnnotations,

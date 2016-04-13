@@ -247,6 +247,15 @@ class AbstractSearchRunner(FormattedOutputRunner):
             for variantSet in iterator:
                 yield variantSet
 
+    def getAllFeatureSets(self):
+        """
+        Returns all feature sets on the server.
+        """
+        for dataset in self.getAllDatasets():
+            iterator = self._client.searchFeatureSets(datasetId=dataset.id)
+            for featureSet in iterator:
+                yield featureSet
+
     def getAllReadGroupSets(self):
         """
         Returns all readgroup sets on the server.
@@ -366,6 +375,26 @@ class SearchVariantAnnotationSetsRunner(AbstractSearchRunner):
         self._run(self._variantSetId)
 
 
+class SearchFeatureSetsRunner(AbstractSearchRunner):
+    """
+    Runner class for the featuresets/search method.
+    """
+    def __init__(self, args):
+        super(SearchFeatureSetsRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+
+    def _run(self, datasetId):
+        iterator = self._client.searchFeatureSets(datasetId=datasetId)
+        self._output(iterator)
+
+    def run(self):
+        if self._datasetId is None:
+            for dataset in self.getAllDatasets():
+                self._run(dataset.id)
+        else:
+            self._run(self._datasetId)
+
+
 class SearchReadGroupSetsRunner(AbstractSearchRunner):
     """
     Runner class for the readgroupsets/search method
@@ -457,6 +486,26 @@ class AnnotationFormatterMixin(object):
             print()
 
 
+class FeatureFormatterMixin(object):
+    """
+    Mix-in class to format Feature (Sequence Annotation) objects
+    """
+    def _textOutput(self, gaObjects):
+        for feature in gaObjects:
+            print(
+                feature.id, feature.parentId, feature.featureSetId,
+                feature.referenceName, feature.start, feature.end,
+                feature.strand, sep="\t", end="\t")
+            print(
+                "FeatureType:", feature.featureType.id,
+                feature.featureType.term, end="\t")
+            for attrkey in feature.attributes.vals.keys():
+                print(
+                    attrkey, feature.attributes.vals[attrkey],
+                    sep=":", end="; ")
+            print()
+
+
 class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
     """
     Runner class for the variants/search method.
@@ -535,6 +584,38 @@ class SearchVariantAnnotationsRunner(
                 self._run(annotationSet.id)
         else:
             self._run(self._variantAnnotationSetId)
+
+
+class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
+    """
+    Runner class for the features/search method.
+    """
+    def __init__(self, args):
+        super(SearchFeaturesRunner, self).__init__(args)
+        self._referenceName = args.referenceName
+        self._featureSetId = args.featureSetId
+        self._parentId = args.parentId
+        self._start = args.start
+        self._end = args.end
+        if args.featureTypes == "":
+            self._featureTypes = []
+        else:
+            self._featureTypes = args.featureTypes.split(",")
+
+    def _run(self, featureSetId):
+        iterator = self._client.searchFeatures(
+            start=self._start, end=self._end,
+            referenceName=self._referenceName,
+            featureSetId=featureSetId, parentId=self._parentId,
+            featureTypes=self._featureTypes)
+        self._output(iterator)
+
+    def run(self):
+        if self._featureSetId is None and self._parentId is None:
+            for featureSet in self.getAllFeatureSets():
+                self._run(featureSet)
+        else:
+            self._run(self._featureSetId)
 
 
 class SearchReadsRunner(AbstractSearchRunner):
@@ -691,6 +772,24 @@ class GetVariantSetRunner(AbstractGetRunner):
         self._method = self._client.getVariantSet
 
 
+class GetFeatureRunner(FeatureFormatterMixin, AbstractGetRunner):
+    """
+    Runner class for the features/{id} method
+    """
+    def __init__(self, args):
+        super(GetFeatureRunner, self).__init__(args)
+        self._method = self._client.getFeature
+
+
+class GetFeatureSetRunner(AbstractGetRunner):
+    """
+    Runner class for the featuresets/{id} method
+    """
+    def __init__(self, args):
+        super(GetFeatureSetRunner, self).__init__(args)
+        self._method = self._client.getFeatureSet
+
+
 def addDisableUrllibWarningsArgument(parser):
     parser.add_argument(
         "--disable-urllib-warnings", default=False, action="store_true",
@@ -732,6 +831,18 @@ def addAnnotationsSearchOptions(parser):
     addPageSizeArgument(parser)
 
 
+def addFeaturesSearchOptions(parser):
+    """
+    Adds common options to a features search command line parser.
+    """
+    addFeatureSetIdArgument(parser)
+    addReferenceNameArgument(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+    addParentFeatureIdArgument(parser)
+    addFeatureTypesArgument(parser)
+
+
 def addVariantSetIdArgument(parser):
     parser.add_argument(
         "--variantSetId", "-V", default=None,
@@ -747,6 +858,12 @@ def addAnnotationSetIdArgument(parser):
     parser.add_argument(
         "--variantAnnotationSetId", "-V", default=None,
         help="The variant annotation set id to search over")
+
+
+def addFeatureSetIdArgument(parser):
+    parser.add_argument(
+        "--featureSetId", "-F", default=None,
+        help="The feature set id to search over")
 
 
 def addReferenceNameArgument(parser):
@@ -784,6 +901,21 @@ def addEffectsArgument(parser):
         help="""Return annotations having any of these effects.
             Pass in IDs as a comma separated list (no spaces).
             """)
+
+
+def addFeatureTypesArgument(parser):
+    parser.add_argument(
+        "--featureTypes", "-t", default="",
+        help="""Return features matching any of the supplied
+            feature types (ontology terms).
+            Pass in terms as a comma separated list (no spaces).
+            """)
+
+
+def addParentFeatureIdArgument(parser):
+    parser.add_argument(
+        "--parentId", "-p", default=None,
+        help="Filter features by supplied parent ID")
 
 
 def addStartArgument(parser):
@@ -932,6 +1064,46 @@ def addVariantSetsGetParser(subparsers):
         subparsers, "variantsets-get", "Get a variantSet")
     parser.set_defaults(runner=GetVariantSetRunner)
     addGetArguments(parser)
+
+
+def addFeaturesGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "features-get", "Get a feature by ID")
+    parser.set_defaults(runner=GetFeatureRunner)
+    addGetArguments(parser)
+
+
+def addFeatureSetsGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "featuresets-get", "Get a featureSet by ID")
+    parser.set_defaults(runner=GetFeatureSetRunner)
+    addGetArguments(parser)
+
+
+def addFeaturesSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "features-search",
+        description="Search for sequence annotation features",
+        help="Search for sequence annotation features.")
+    parser.set_defaults(runner=SearchFeaturesRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addPageSizeArgument(parser)
+    addFeaturesSearchOptions(parser)
+    return parser
+
+
+def addFeatureSetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "featuresets-search",
+        description="Search for sequence annotation feature sets",
+        help="Search for featureSets.")
+    parser.set_defaults(runner=SearchFeatureSetsRunner)
+    addOutputFormatArgument(parser)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addDatasetIdArgument(parser)
+    return parser
 
 
 def addReferenceSetsSearchParser(subparsers):
@@ -1093,6 +1265,10 @@ def getClientParser():
     addVariantAnnotationSearchParser(subparsers)
     addVariantAnnotationSetsSearchParser(subparsers)
     addVariantSetsGetParser(subparsers)
+    addFeaturesSearchParser(subparsers)
+    addFeaturesGetParser(subparsers)
+    addFeatureSetsGetParser(subparsers)
+    addFeatureSetsSearchParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
@@ -1525,6 +1701,29 @@ class RemoveVariantSetRunner(AbstractRepoDatasetCommandRunner):
         self.confirmRun(func, 'variant set {}'.format(self.variantSetName))
 
 
+class AddFeatureSetRunner(AbstractRepoDatasetFilepathCommandRunner):
+
+    def __init__(self, args):
+        super(AddFeatureSetRunner, self).__init__(args)
+
+    def run(self):
+        self.repoManager.addFeatureSet(
+            self.datasetName, self.filePath, self.moveMode)
+
+
+class RemoveFeatureSetRunner(AbstractRepoDatasetCommandRunner):
+
+    def __init__(self, args):
+        super(RemoveFeatureSetRunner, self).__init__(args)
+        self.featureSetName = args.featureSetName
+
+    def run(self):
+        def func():
+            self.repoManager.removeFeatureSet(
+                self.datasetName, self.featureSetName)
+        self.confirmRun(func, 'feature set {}'.format(self.featureSetName))
+
+
 def addRepoArgument(subparser):
     subparser.add_argument(
         "repoPath", help="the file path of the data repository")
@@ -1562,6 +1761,12 @@ def addReadGroupSetNameArgument(subparser):
 def addVariantSetNameArgument(subparser):
     subparser.add_argument(
         "variantSetName",
+        help="the name of the variant set")
+
+
+def addFeatureSetNameArgument(subparser):
+    subparser.add_argument(
+        "featureSetName",
         help="the name of the variant set")
 
 
@@ -1699,6 +1904,23 @@ def getRepoParser():
     addDatasetNameArgument(removeVariantSetParser)
     addVariantSetNameArgument(removeVariantSetParser)
     addForceArgument(removeVariantSetParser)
+
+    addFeatureSetParser = addSubparser(
+        subparsers, "add-featureset", "Add a feature set to the data repo")
+    addFeatureSetParser.set_defaults(runner=AddFeatureSetRunner)
+    addRepoArgument(addFeatureSetParser)
+    addDatasetNameArgument(addFeatureSetParser)
+    addFilePathArgument(addFeatureSetParser)
+    addMoveModeArgument(addFeatureSetParser)
+
+    removeFeatureSetParser = addSubparser(
+        subparsers, "remove-featureset",
+        "Remove a feature set from the repo")
+    removeFeatureSetParser.set_defaults(runner=RemoveFeatureSetRunner)
+    addRepoArgument(removeFeatureSetParser)
+    addDatasetNameArgument(removeFeatureSetParser)
+    addFeatureSetNameArgument(removeFeatureSetParser)
+    addForceArgument(removeFeatureSetParser)
 
     return parser
 

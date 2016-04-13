@@ -3,12 +3,16 @@
 *.swo
 ga4gh-example-data*
 ga4gh-downloaded-data*
+ga4gh-compliance-data*
 scripts/auth.yml
 *.fa
 *.pid
 *.fai
 *.gzi
 *.bak
+*.db-shm
+*.db-wal
+ga4gh/_version.py
 
 # Below based off of https://gist.github.com/octocat/9257657
 # and https://github.com/github/gitignore/blob/master/Python.gitignore
@@ -66,6 +70,7 @@ develop-eggs/
 dist/
 downloads/
 eggs/
+.eggs/
 lib/
 lib64/
 parts/
