@@ -18,6 +18,9 @@ import requests
 import yaml
 import pysam
 
+import requests.packages.urllib3
+requests.packages.urllib3.disable_warnings()
+
 
 def log(message):
     print(message)

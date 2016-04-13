@@ -62,10 +62,24 @@ class Gff32Db(object):
         """
         self.gff3File = inputFile
         self.dbFile = outputFile
+        self.valueList = []
+        self.batchSize = 100
         if os.path.exists(outputFile):
             print("DB output file already exists, please remove or rename.",
                   file=sys.stderr)
             exit()
+
+    def _batchInsertValues(self, values, dbcur, dbconn):
+        self.valueList.append(values)
+        if len(self.valueList) >= self.batchSize:
+            self._insertValues(dbcur, dbconn)
+
+    def _insertValues(self, dbcur, dbconn):
+        if len(self.valueList) > 0:
+            sql = "INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            dbcur.executemany(sql, self.valueList)
+            dbconn.commit()
+            self.valueList = []
 
     def run(self):
         print("Running GFF3 parser...", file=sys.stderr)
@@ -100,13 +114,8 @@ class Gff32Db(object):
                     feature.attributes.get("gene_name", [None])[0],
                     feature.attributes.get("transcript_name", [None])[0],
                     _db_serialize(feature.attributes))
-                dbcur.execute((
-                    "INSERT INTO FEATURE ("
-                    "id, parent_id, child_ids, reference_name, "
-                    "source, type, start, end, score, strand, "
-                    "name, gene_name, transcript_name, attributes) "
-                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"), values)
-                dbconn.commit()
+                self._batchInsertValues(values, dbcur, dbconn)
+        self._insertValues(dbcur, dbconn)
         dbcur.execute((
             "create INDEX idx1 "
             "on feature(start, end, reference_name)"))
