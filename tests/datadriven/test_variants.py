@@ -328,7 +328,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
             keyMap[metadata.key] = metadata
             # Check that ID is present and has the right 'structure'
             deobfuscatedId = datamodel.CompoundId.deobfuscate(metadata.id)
-            self.assertTrue(deobfuscatedId.endswith(metadata.key))
+            splits = datamodel.CompoundId.split(deobfuscatedId)
+            self.assertTrue(splits[-1].endswith(metadata.key))
 
         metadata = keyMap["version"]
         self.assertEqual(metadata.value, self._vcfVersion)

@@ -95,6 +95,17 @@
                     </tr>
                     {% endfor %}
                 </table>
+             <h6>FeatureSets</h6>
+                <table class="table table-striped">
+                    <th>Name</th>
+                    <th>Id</th>
+                    {% for featureSet in info.getFeatureSets(dataset.getId()) %}
+                    <tr>
+                        <td>{{ featureSet.getLocalId() }}</td>
+                        <td>{{ featureSet.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
                 <h6>ReadGroupSets</h6>
                 <table class="table table-striped">
                     <th>Name</th>

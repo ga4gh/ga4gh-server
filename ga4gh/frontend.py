@@ -132,6 +132,13 @@ class ServerStatus(object):
         return app.backend.getDataRepository().getDataset(
             datasetId).getVariantSets()
 
+    def getFeatureSets(self, datasetId):
+        """
+        Returns the list of feature sets for the dataset
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getFeatureSets()
+
     def getReadGroupSets(self, datasetId):
         """
         Returns the list of ReadGroupSets for the dataset
@@ -206,11 +213,14 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET"]
         numAlignmentsPerReadGroup = app.config[
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
+        numReadGroupsPerReadGroupSet = app.config[
+            "SIMULATED_BACKEND_NUM_READ_GROUPS_PER_READ_GROUP_SET"]
         dataRepository = datarepo.SimulatedDataRepository(
             randomSeed=randomSeed, numCalls=numCalls,
             variantDensity=variantDensity, numVariantSets=numVariantSets,
             numReferenceSets=numReferenceSets,
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
+            numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
             numAlignments=numAlignmentsPerReadGroup)
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
@@ -532,6 +542,18 @@ def searchDatasets():
         flask.request, app.backend.runSearchDatasets)
 
 
+@DisplayedRoute('/featuresets/search', postMethod=True)
+def searchFeatureSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatureSets)
+
+
+@DisplayedRoute('/features/search', postMethod=True)
+def searchFeatures():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatures)
+
+
 @DisplayedRoute('/rnaquantification/search', postMethod=True)
 def searchRNAQuantification():
     return handleFlaskPostRequest(
@@ -586,6 +608,22 @@ def getReadGroup(id):
 def getCallSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetCallSet)
+
+
+@DisplayedRoute(
+    '/featuresets/<no(search):id>',
+    pathDisplay='/featuresets/<id>')
+def getFeatureSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetFeatureSet)
+
+
+@DisplayedRoute(
+    '/features/<no(search):id>',
+    pathDisplay='/features/<id>')
+def getFeature(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetFeature)
 
 
 @DisplayedRoute(

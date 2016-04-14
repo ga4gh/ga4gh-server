@@ -6,12 +6,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
+import ga4gh.datarepo as datarepo
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
-import ga4gh.protocol as protocol
 import ga4gh.datamodel.rna_quantification as rna_quantification
+import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
-import ga4gh.exceptions as exceptions
 
 
 _datasetName = "ds"
@@ -48,13 +48,17 @@ _featureGroupTestData = {
 
 
 def _getRnaQuantCompoundId(dataSetName, rnaQuant):
-    return datamodel.CompoundId.obfuscate(":".join(
-        [dataSetName, rnaQuant]))
+    splits = [dataSetName, rnaQuant]
+    joined = datamodel.CompoundId.join(splits)
+    obfuscated = datamodel.CompoundId.obfuscate(joined)
+    return obfuscated
 
 
 def _getExpressionCompoundId(dataSetName, rnaQuant, expressionId):
-    return datamodel.CompoundId.obfuscate(":".join(
-        [dataSetName, rnaQuant, expressionId]))
+    splits = [dataSetName, rnaQuant, expressionId]
+    joined = datamodel.CompoundId.join(splits)
+    obfuscated = datamodel.CompoundId.obfuscate(joined)
+    return obfuscated
 
 
 def testRnaQuantification():
@@ -71,14 +75,15 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
     built by the rna_quantification.RNASeqResult object.
     """
     def __init__(self, rnaQuantificationLocalId, baseDir):
-        self._dataset = datasets.AbstractDataset("ds")
+        self._dataset = datasets.AbstractDataset(_datasetName)
+        self._datarepo = datarepo.FileSystemDataRepository("tests/data")
         rnaQuantificationId = rnaQuantificationLocalId[:-3]  # remove '.db'
         super(RnaQuantificationTest, self).__init__(
             rnaQuantificationId, baseDir)
 
     def getDataModelInstance(self, localId, dataPath):
         return rna_quantification.RNASeqResult(
-            self._dataset, localId, dataPath, None)
+            self._dataset, localId, dataPath, self._datarepo)
 
     def getProtocolClass(self):
         return protocol.RnaQuantification
@@ -113,13 +118,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         compoundId = datamodel.ExpressionLevelCompoundId.parse(idString)
         gaExpression = rnaQuantification.getExpressionLevel(compoundId)
         self.assertExpressionEqual(gaExpression, _expressionTestData)
-
-    def testGetExpressionLevelByBadIdFails(self):
-        rnaQuantification = self._gaObject
-        badId = datamodel.ExpressionLevelCompoundId(
-            rnaQuantification.getCompoundId(), "bad_id")
-        with self.assertRaises(exceptions.ExpressionLevelNotFoundException):
-            rnaQuantification.getExpressionLevel(badId)
 
     def assertExpressionEqual(self, gaExpressionObj, testData):
         gaExpression = gaExpressionObj.toProtocolElement()
@@ -156,14 +154,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             compoundId)
         self.assertFeatureGroupEqual(
             gaFeatureGroup, _featureGroupTestData)
-
-    def testGetFeatureGroupByBadIdFails(self):
-        rnaQuantification = self._gaObject
-        badId = datamodel.FeatureGroupCompoundId.parse(
-            _expressionTestData["bad_id"])
-        with self.assertRaises(
-                exceptions.FeatureGroupNotFoundException):
-            rnaQuantification.getFeatureGroup(badId)
 
     def assertFeatureGroupEqual(
             self, gaFeatureGroupObj, testData):

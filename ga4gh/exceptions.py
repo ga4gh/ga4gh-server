@@ -338,6 +338,32 @@ class DatasetNameNotFoundException(NotFoundException):
         self.message = "Dataset with name '{0}' not found".format(name)
 
 
+class FeatureSetNotFoundException(NotFoundException):
+    def __init__(self, featureSetId):
+        self.message = (
+            "FeatureSet with id '{0}' not found".format(featureSetId))
+
+
+class ParentIncompatibleWithFeatureSet(BadRequestException):
+    def __init__(self):
+        self.message = (
+            "Parent feature incompatible with requested Feature Set."
+        )
+
+
+class FeatureSetNotSpecifiedException(BadRequestException):
+    def __init__(self):
+        self.message = (
+            "One of featureSetId or parentId must be supplied."
+        )
+
+
+class SequenceAnnotationNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "SequenceAnnotation with name '{0}' not found".format(name))
+
+
 class RnaQuantificationNotFoundException(NotFoundException):
     def __init__(self, name):
         self.message = (
