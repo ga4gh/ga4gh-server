@@ -380,6 +380,8 @@ information as follows:
 .. warning::
 
     Debugging should only be used temporarily and not left on by default.
+    Running the server with Flask debugging enable is insecure and should
+    never be used in a production environment.
 
 ++++++++++++++++++++
 Configuration Values
