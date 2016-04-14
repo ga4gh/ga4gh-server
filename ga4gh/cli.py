@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 import argparse
 import logging
 import operator
+import os.path
 import sys
 import unittest
 import unittest.loader
@@ -1496,6 +1497,21 @@ def configtest_main(parser=None):
 ##############################################################################
 
 
+def getNameFromPath(filePath):
+    """
+    Returns the filename of the specified path without its extensions.
+    This is usually how we derive the default name for a given object.
+    """
+    if len(filePath) == 0:
+        raise ValueError("Cannot have empty path for name")
+    fileName = os.path.split(filePath)[1]
+    # We need to handle things like .fa.gz, so we can't use
+    # os.path.splitext
+    ret = fileName.split(".")[0]
+    assert ret != ""
+    return ret
+
+
 class RepoManager(object):
     """
     Class that provide command line functionality to manage a
@@ -1565,16 +1581,6 @@ class RepoManager(object):
         Adds a new dataset into this repo.
         """
         self._openRepo()
-        name = self._args.datasetName
-        # TODO need a better API for this...
-        datasetExists = True
-        try:
-            self._repo.getDatasetByName(name)
-        except exceptions.DatasetNameNotFoundException:
-            datasetExists = False
-        if datasetExists:
-            raise exceptions.RepoManagerException(
-                "dataset with name {} already exists".format(name))
         dataset = datasets.Dataset(self._args.datasetName)
         dataset.setDescription(self._args.description)
         self._updateRepo(self._repo.insertDataset, dataset)
@@ -1585,15 +1591,8 @@ class RepoManager(object):
         """
         self._openRepo()
         name = self._args.name
-        # TODO need a better API for this...
-        referenceSetExists = True
-        try:
-            self._repo.getReferenceSetByName(name)
-        except exceptions.ReferenceSetNameNotFoundException:
-            referenceSetExists = False
-        if referenceSetExists:
-            raise exceptions.RepoManagerException(
-                "referenceSet with name {} already exists".format(name))
+        if name is None:
+            name = getNameFromPath(self._args.filePath)
         referenceSet = references.HtslibReferenceSet(name)
         referenceSet.populateFromFile(self._args.filePath)
         referenceSet.setDescription(self._args.description)
@@ -1605,19 +1604,12 @@ class RepoManager(object):
         Adds a new ReadGroupSet into this repo.
         """
         self._openRepo()
-        # TODO put this into a method which we can reuse.
-        try:
-            dataset = self._repo.getDatasetByName(self._args.datasetName)
-        except exceptions.DatasetNameNotFoundException:
-            raise exceptions.RepoManagerException(
-                "Cannot find dataset with name '{}'".format(
-                    self._args.datasetName))
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
         dataUrl = self._args.filePath
         indexFile = dataUrl + ".bai"
         name = self._args.name
         if self._args.name is None:
-            # TODO derive the name from the input URL.
-            name = "TODO"
+            name = getNameFromPath(dataUrl)
         readGroupSet = reads.HtslibReadGroupSet(dataset, name)
         readGroupSet.populateFromFile(dataUrl, indexFile)
         referenceSetName = self._args.referenceSetName
@@ -1626,7 +1618,7 @@ class RepoManager(object):
             referenceSetName = readGroupSet.getBamHeaderReferenceSetName()
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         readGroupSet.setReferenceSet(referenceSet)
-        self.updateRepo(self._repo.insertReadGroupSet, readGroupSet)
+        self._updateRepo(self._repo.insertReadGroupSet, readGroupSet)
 
     #
     # Methods to simplify adding common arguments to the parser.
@@ -1841,8 +1833,21 @@ class RepoManager(object):
         runMethod()
 
 
+def repoExitError(message):
+    """
+    Exits the repo manager with error status.
+    """
+    sys.exit("Error: {}".format(message))
+
+
 def repo_main(args=None):
     try:
         RepoManager.runCommand(args)
-    except exceptions.RepoManagerException as rme:
-        print("Error: ", str(rme), file=sys.stderr)
+    except exceptions.RepoManagerException as e:
+        # These are exceptions that happen throughout the CLI, and are
+        # used to communicate back to the user
+        repoExitError(str(e))
+    except exceptions.NotFoundException as e:
+        # We expect NotFoundExceptions to occur when we're looking for
+        # datasets, readGroupsets, etc.
+        repoExitError(str(e))

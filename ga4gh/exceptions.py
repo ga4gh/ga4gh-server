@@ -453,48 +453,6 @@ class InconsistentCallSetIdException(MalformedException):
             " directory.".format(fileName))
 
 
-class NotExactlyOneReferenceException(MalformedException):
-    """
-    A FASTA file has a reference count not equal to one
-    """
-    def __init__(self, fileName, numReferences):
-        self.message = (
-            "FASTA files must have one and only one reference.  "
-            "File {} has {} references.".format(fileName, numReferences))
-
-
-class InconsistentReferenceNameException(MalformedException):
-    """
-    A FASTA file has a reference name not equal to its file name.
-    """
-    def __init__(self, fileName):
-        self.message = (
-            "FASTA file {} has a reference not equal to its "
-            "file name.".format(fileName))
-
-
-class MissingReferenceMetadata(MalformedException):
-    """
-    A FASTA file is missing some metadata in the corresponding JSON file.
-    """
-    def __init__(self, fileName, key):
-        self.message = (
-            "JSON reference metadata for file {} is missing key {}".format(
-                fileName, key))
-
-
-class MissingReferenceSetMetadata(MalformedException):
-    """
-    A directory containing FASTA files is missing some metadata in the
-    corresponding JSON file.
-    """
-    def __init__(self, fileName, key):
-        self.message = (
-            "JSON reference set metadata for file {} "
-            "is missing key {}".format(
-                fileName, key))
-
-
 class ReadGroupReferenceNotFound(MalformedException):
     """
     A BAM file contains reference names that are not in the linked
@@ -595,3 +553,15 @@ class RepoManagerException(Exception):
     """
     Signals something went wrong inside the repo manager
     """
+
+
+class DuplicateNameException(RepoManagerException):
+    """
+    The user has tried to insert an object with the same name as
+    an existing object.
+    """
+    def __init__(self, objectName, containerName=None):
+        msg = "Name '{}' already exists".format(objectName)
+        if containerName is not None:
+            msg += " in '{}'".format(containerName)
+        super(DuplicateNameException, self).__init__(msg)

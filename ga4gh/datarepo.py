@@ -430,6 +430,11 @@ class SqlDataRepository(AbstractDataRepository):
             );
         """
         cursor.execute(sql)
+        sql = """
+            CREATE UNIQUE INDEX ReferenceSetName
+            ON ReferenceSet (name);
+        """
+        cursor.execute(sql)
 
     def insertReferenceSet(self, referenceSet):
         """
@@ -442,15 +447,18 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            referenceSet.getId(), referenceSet.getLocalId(),
-            referenceSet.getDescription(), referenceSet.getAssemblyId(),
-            referenceSet.getIsDerived(), referenceSet.getMd5Checksum(),
-            referenceSet.getNcbiTaxonId(),
-            # We store the list of sourceAccessions as a JSON string. Perhaps
-            # this should be another table?
-            json.dumps(referenceSet.getSourceAccessions()),
-            referenceSet.getSourceUri(), referenceSet.getDataUrl()))
+        try:
+            cursor.execute(sql, (
+                referenceSet.getId(), referenceSet.getLocalId(),
+                referenceSet.getDescription(), referenceSet.getAssemblyId(),
+                referenceSet.getIsDerived(), referenceSet.getMd5Checksum(),
+                referenceSet.getNcbiTaxonId(),
+                # We store the list of sourceAccessions as a JSON string.
+                # Perhaps this should be another table?
+                json.dumps(referenceSet.getSourceAccessions()),
+                referenceSet.getSourceUri(), referenceSet.getDataUrl()))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(referenceSet.getLocalId())
         for reference in referenceSet.getReferences():
             self.insertReference(reference)
 
@@ -473,6 +481,11 @@ class SqlDataRepository(AbstractDataRepository):
             );
         """
         cursor.execute(sql)
+        sql = """
+            CREATE UNIQUE INDEX DatasetName
+            ON Dataset (name);
+        """
+        cursor.execute(sql)
 
     def insertDataset(self, dataset):
         """
@@ -483,8 +496,12 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            dataset.getId(), dataset.getLocalId(), dataset.getDescription()))
+        try:
+            cursor.execute(sql, (
+                dataset.getId(), dataset.getLocalId(),
+                dataset.getDescription()))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(dataset.getLocalId())
 
     def _readDatasetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -552,6 +569,11 @@ class SqlDataRepository(AbstractDataRepository):
             );
         """
         cursor.execute(sql)
+        sql = """
+            CREATE UNIQUE INDEX DatasetIdReadGroupSetName
+            ON ReadGroupSet (dataSetId, name);
+        """
+        cursor.execute(sql)
 
     def insertReadGroupSet(self, readGroupSet):
         """
@@ -566,11 +588,18 @@ class SqlDataRepository(AbstractDataRepository):
         programsJson = json.dumps(
             [program.toJsonDict() for program in readGroupSet.getPrograms()])
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            readGroupSet.getId(), readGroupSet.getParentContainer().getId(),
-            readGroupSet.getReferenceSet().getId(), readGroupSet.getLocalId(),
-            programsJson, readGroupSet.getDataUrl(),
-            readGroupSet.getIndexFile()))
+        try:
+            cursor.execute(sql, (
+                readGroupSet.getId(),
+                readGroupSet.getParentContainer().getId(),
+                readGroupSet.getReferenceSet().getId(),
+                readGroupSet.getLocalId(),
+                programsJson, readGroupSet.getDataUrl(),
+                readGroupSet.getIndexFile()))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(
+                readGroupSet.getLocalId(),
+                readGroupSet.getParentContainer().getLocalId())
         for readGroup in readGroupSet.getReadGroups():
             self.insertReadGroup(readGroup)
 
@@ -627,13 +656,7 @@ class SqlDataRepository(AbstractDataRepository):
             variantAnnotationSet.populateFromRow(row)
             assert variantAnnotationSet.getId() == row[b'id']
             # Insert the variantAnnotationSet into the memory-based model.
-            # TODO we shouldn't be adding the variant annotation set to the
-            # dataset since it's logically contained in a VariantSet. We should
-            # replace the following lines with
-            # variantSet.addVariantAnnotationSet(variantAnnotationSet)
-            variantSet.setVariantAnnotationSet(variantAnnotationSet)
-            dataset = variantSet.getParentContainer()
-            dataset.addVariantAnnotationSet(variantAnnotationSet)
+            variantSet.addVariantAnnotationSet(variantAnnotationSet)
 
     def _createCallSetTable(self, cursor):
         sql = """
@@ -710,8 +733,8 @@ class SqlDataRepository(AbstractDataRepository):
         for callSet in variantSet.getCallSets():
             self.insertCallSet(callSet)
         if variantSet.isAnnotated():
-            self.insertVariantAnnotationSet(
-                variantSet.getVariantAnnotationSet())
+            for annotationSet in variantSet.getVariantAnnotationSets():
+                self.insertVariantAnnotationSet(annotationSet)
 
     def _readVariantSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
