@@ -28,6 +28,8 @@ import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
+import logging
+from logging import StreamHandler
 
 
 MIMETYPE = "application/json"
@@ -188,6 +190,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     TODO Document this critical function! What does it do? What does
     it assume?
     """
+    file_handler = StreamHandler()
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
     configStr = 'ga4gh.serverconfig:{0}'.format(baseConfig)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
@@ -340,7 +345,7 @@ def handleException(exception):
     Handles an exception that occurs somewhere in the process of handling
     a request.
     """
-    if app.config['DEBUG']:
+    with app.test_request_context():
         app.log_exception(exception)
     serverException = exception
     if not isinstance(exception, exceptions.BaseServerException):
