@@ -149,6 +149,16 @@ class TestClientJson(TestClientOutput):
                         [variant], "variants-get", variant.id)
         self.assertGreater(test_executed, 0)
 
+    def testGetVariantAnnotationSet(self):
+        test_executed = 0
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                for annSet in self._client.searchVariantAnnotationSets(
+                        variantSet.id):
+                    test_executed += self.verifyParsedOutputsEqual(
+                        [annSet], "variantannotationsets-get", annSet.id)
+        self.assertGreater(test_executed, 0)
+
     def testGetVariantSet(self):
         for dataset in self._client.searchDatasets():
             for variantSet in self._client.searchVariantSets(dataset.id):
