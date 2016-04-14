@@ -13,7 +13,8 @@ import vcf
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.variants as variants
-import ga4gh.datarepo as datarepo
+import ga4gh.datamodel.references as references
+import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 
@@ -32,15 +33,11 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
     variants.VariantAnnotationSet object.
     """
     def __init__(self, variantAnnotationSetId, baseDir):
-        self._dataset = datasets.AbstractDataset("ds")
-        self._datarepo = datarepo.FileSystemDataRepository("tests/data")
         super(VariantAnnotationSetTest, self).__init__(
             variantAnnotationSetId, baseDir)
-        self._variantSet = variants.HtslibVariantSet(
-            self._dataset, "vs", self._dataPath, None)
         self._variantRecords = []
         self._referenceNames = set()
-        # Only read in VCF files with a JSON sidecar saying they're annotated.
+        # Only read in VCF files that are annotated.
         for vcfFile in glob.glob(os.path.join(self._dataPath, "*.vcf.gz")):
             if self._isAnnotated():
                 self._readVcf(vcfFile)
@@ -48,8 +45,8 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
 
     def _isAnnotated(self):
         """
-        Determines whether the variant set under test is annotated
-        by looking for a JSON sidecar.
+        Determines whether the variant set under test is annotated.
+
         :return: Boolean
         """
         pyvcfreader = vcf.Reader(
@@ -113,16 +110,18 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         return dict(zip(fields, values))
 
     def getDataModelInstance(self, localId, dataPath):
-        # Return a VA set if it is one
-        if self._isAnnotated():
-            self._variantSet = variants.HtslibVariantSet(
-                self._dataset, "vs", self._dataPath, None)
-            return variants.HtslibVariantAnnotationSet(
-                self._dataset, localId, dataPath,
-                self._datarepo, self._variantSet)
+        dataset = datasets.Dataset("ds")
+        variantSet = variants.HtslibVariantSet(dataset, localId)
+        variantSet.populateFromDirectory(dataPath)
+        referenceSet = references.AbstractReferenceSet("rs")
+        variantSet.setReferenceSet(referenceSet)
+        if variantSet.isAnnotated():
+            sequenceOntology = ontologies.Ontology("sequence_ontology")
+            annotationSet = variantSet.getVariantAnnotationSets()[0]
+            annotationSet.setSequenceOntology(sequenceOntology)
+            return annotationSet
         else:
-            return variants.HtslibVariantSet(
-                self._dataset, localId, dataPath, None)
+            return variantSet
 
     def getProtocolClass(self):
         if self._isAnnotated():
@@ -203,8 +202,9 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
             iterator = self._gaObject.getVariantAnnotations(
                 referenceName, 0, end)
             for gaVariantAnnotation in iterator:
-                self.assertValid(protocol.VariantAnnotation,
-                                 gaVariantAnnotation.toJsonDict())
+                self.assertValid(
+                    protocol.VariantAnnotation,
+                    gaVariantAnnotation.toJsonDict())
 
     def _getPyvcfVariants(
             self, referenceName, startPosition=0, endPosition=2**30):

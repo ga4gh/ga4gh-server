@@ -156,8 +156,13 @@ class ServerStatus(object):
         """
         Returns the list of ReferenceSets for this server.
         """
-        return app.backend.getDataRepository().getDataset(
-            datasetId).getVariantAnnotationSets()
+        # TODO this should be displayed per-variant set, not per dataset.
+        variantAnnotationSets = []
+        dataset = app.backend.getDataRepository().getDataset(datasetId)
+        for variantSet in dataset.getVariantSets():
+            variantAnnotationSets.extend(
+                variantSet.getVariantAnnotationSets())
+        return variantAnnotationSets
 
 
 def reset():
@@ -218,8 +223,14 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        dataRepository = datarepo.FileSystemDataRepository(os.path.join(
-            dataSource.netloc, dataSource.path))
+        # Temporary hack. While we still have the FileSystemDataRepository
+        # for testing, only use the SQL repo if the path is a directory.
+        path = os.path.join(dataSource.netloc, dataSource.path)
+        if os.path.isdir(path):
+            dataRepository = datarepo.FileSystemDataRepository(path)
+        else:
+            dataRepository = datarepo.SqlDataRepository(path)
+            dataRepository.open("r")
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)

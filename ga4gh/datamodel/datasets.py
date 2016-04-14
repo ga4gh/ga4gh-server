@@ -6,25 +6,26 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import fnmatch
-import json
 import os
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
 
-class AbstractDataset(datamodel.DatamodelObject):
+class Dataset(datamodel.DatamodelObject):
     """
     The base class of datasets containing variants and reads
     """
     compoundIdClass = datamodel.DatasetCompoundId
 
     def __init__(self, localId):
-        super(AbstractDataset, self).__init__(None, localId)
+        super(Dataset, self).__init__(None, localId)
+        self._description = None
         self._variantSetIds = []
         self._variantSetIdMap = {}
         self._featureSetIds = []
@@ -32,9 +33,19 @@ class AbstractDataset(datamodel.DatamodelObject):
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
-        self._variantAnnotationSetIds = []
-        self._variantAnnotationSetIdMap = {}
-        self._description = None
+
+    def populateFromRow(self, row):
+        """
+        Populates the instance variables of this Dataset from the
+        specified database row.
+        """
+        self._description = row[b'description']
+
+    def setDescription(self, description):
+        """
+        Sets the description for this dataset to the specified value.
+        """
+        self._description = description
 
     def addVariantSet(self, variantSet):
         """
@@ -43,14 +54,6 @@ class AbstractDataset(datamodel.DatamodelObject):
         id_ = variantSet.getId()
         self._variantSetIdMap[id_] = variantSet
         self._variantSetIds.append(id_)
-
-    def addVariantAnnotationSet(self, variantAnnotationSet):
-        """
-        Adds the specified variantAnnotationSet to this dataset.
-        """
-        id_ = variantAnnotationSet.getId()
-        self._variantAnnotationSetIdMap[id_] = variantAnnotationSet
-        self._variantAnnotationSetIds.append(id_)
 
     def addFeatureSet(self, featureSet):
         """
@@ -88,27 +91,6 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return len(self._variantSetIds)
 
-    def getVariantAnnotationSets(self):
-        """
-        Returns the list of VariantAnnotationSets in this dataset
-        """
-        return [self._variantAnnotationSetIdMap[id_] for id_ in
-                self._variantAnnotationSetIds]
-
-    def getVariantAnnotationSet(self, id_):
-        """
-        Returns the AnnotationSet in this dataset with the specified 'id'
-        """
-        if id_ not in self._variantAnnotationSetIdMap:
-            raise exceptions.AnnotationSetNotFoundException(id_)
-        return self._variantAnnotationSetIdMap[id_]
-
-    def getNumVariantAnnotationSets(self):
-        """
-        Returns the number of variant annotation sets in this dataset.
-        """
-        return len(self._variantAnnotationSetIds)
-
     def getVariantSet(self, id_):
         """
         Returns the VariantSet with the specified name, or raises a
@@ -123,14 +105,6 @@ class AbstractDataset(datamodel.DatamodelObject):
         Returns the variant set at the specified index in this dataset.
         """
         return self._variantSetIdMap[self._variantSetIds[index]]
-
-    def getVariantAnnotationSetByIndex(self, index):
-        """
-        Returns the variant annotation set at the specified index in this
-        dataset.
-        """
-        return self._variantAnnotationSetIdMap[
-            self._variantAnnotationSetIds[index]]
 
     def getFeatureSets(self):
         """
@@ -202,7 +176,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         return self._description
 
 
-class SimulatedDataset(AbstractDataset):
+class SimulatedDataset(Dataset):
     """
     A simulated dataset
     """
@@ -213,16 +187,19 @@ class SimulatedDataset(AbstractDataset):
             numAlignments=1, numFeatureSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+        sequenceOntology = ontologies.Ontology("sequence_ontology")
+        # TODO add some terms into the simualated sequence ontology
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)
             seed = randomSeed + i
             variantSet = variants.SimulatedVariantSet(
-                self, localId, seed, numCalls, variantDensity)
+                self, referenceSet, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
-                self, "simVas{}".format(i), variantSet)
-            self.addVariantAnnotationSet(variantAnnotationSet)
+                variantSet, "simVas{}".format(i), seed)
+            variantAnnotationSet.setSequenceOntology(sequenceOntology)
+            variantSet.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
             localId = 'simRgs{}'.format(i)
@@ -237,12 +214,18 @@ class SimulatedDataset(AbstractDataset):
             seed = randomSeed + i
             featureSet = sequenceAnnotations.SimulatedFeatureSet(
                 self, localId, seed)
+            featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
 
 
-class FileSystemDataset(AbstractDataset):
+class FileSystemDataset(Dataset):
     """
-    A dataset based on the file system
+    A dataset based on the file system.
+
+    This is now a deprecated interface, and is only kept as a transitional
+    approach allowing us to keep the majority of test cases working. We
+    should remove this class and replace the testing data structures with
+    an alternative approach.
     """
     variantsDirName = "variants"
     readsDirName = "reads"
@@ -251,31 +234,37 @@ class FileSystemDataset(AbstractDataset):
     def __init__(self, localId, dataDir, dataRepository):
         super(FileSystemDataset, self).__init__(localId)
         self._dataDir = dataDir
-        self._setMetadata()
 
         # Variants
         variantSetDir = os.path.join(dataDir, self.variantsDirName)
+        # We need a referenceSet instance for variants and features.
+        # To make this work we just pick the first reference set.
+        # This is NOT a good idea!!
+        # None of this code is intended to last long, just until we get
+        # all our test data into the repo format.
+        referenceSet = dataRepository.getReferenceSets()[0]
         for localId in os.listdir(variantSetDir):
             relativePath = os.path.join(variantSetDir, localId)
             if os.path.isdir(relativePath):
-                variantSet = variants.HtslibVariantSet(
-                    self, localId, relativePath, dataRepository)
+                variantSet = variants.HtslibVariantSet(self, localId)
+                variantSet.populateFromDirectory(relativePath)
+                variantSet.setReferenceSet(referenceSet)
                 self.addVariantSet(variantSet)
-            # Variant annotations sets
-                if variantSet.isAnnotated(relativePath):
-                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                            self, localId, relativePath, dataRepository,
-                            variantSet)
-                    self.addVariantAnnotationSet(variantAnnotationSet)
-
+                # Variant annotations sets
+                for vas in variantSet.getVariantAnnotationSets():
+                    vas.setSequenceOntology(
+                        dataRepository.getOntology("sequence_ontology"))
         # Reads
         readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):
             if fnmatch.fnmatch(filename, '*.bam'):
                 localId, _ = os.path.splitext(filename)
                 bamPath = os.path.join(readGroupSetDir, filename)
-                readGroupSet = reads.HtslibReadGroupSet(
-                    self, localId, bamPath, dataRepository)
+                readGroupSet = reads.HtslibReadGroupSet(self, localId)
+                readGroupSet.populateFromFile(bamPath, bamPath + ".bai")
+                referenceSet = dataRepository.getReferenceSetByName(
+                    readGroupSet.getBamHeaderReferenceSetName())
+                readGroupSet.setReferenceSet(referenceSet)
                 self.addReadGroupSet(readGroupSet)
         # Sequence Annotations
         featureSetDir = os.path.join(dataDir, self.featuresDirName)
@@ -283,17 +272,11 @@ class FileSystemDataset(AbstractDataset):
             if fnmatch.fnmatch(filename, '*.db'):
                 localId, _ = os.path.splitext(filename)
                 fullPath = os.path.join(featureSetDir, filename)
+                sequenceOntology = dataRepository.getOntology(
+                    "sequence_ontology")
                 featureSet = sequenceAnnotations.Gff3DbFeatureSet(
-                    self, localId, fullPath, dataRepository)
+                    self, localId)
+                featureSet.setReferenceSet(referenceSet)
+                featureSet.setSequenceOntology(sequenceOntology)
+                featureSet.populateFromFile(fullPath)
                 self.addFeatureSet(featureSet)
-
-    def _setMetadata(self):
-        metadataFileName = '{}.json'.format(self._dataDir)
-        if os.path.isfile(metadataFileName):
-            with open(metadataFileName) as metadataFile:
-                metadata = json.load(metadataFile)
-                try:
-                    self._description = metadata['description']
-                except KeyError as err:
-                    raise exceptions.MissingDatasetMetadataException(
-                        metadataFileName, str(err))

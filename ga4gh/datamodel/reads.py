@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import json
 import random
 
 import pysam
@@ -103,7 +104,7 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         """
         # TODO If reference is None, return against all references,
         # including unmapped reads.
-        samFile = self.getFileHandle(self._samFilePath)
+        samFile = self.getFileHandle(self._dataUrl)
         referenceName = reference.getLocalId().encode()
         # TODO deal with errors from htslib
         start, end = self.sanitizeAlignmentFileFetch(start, end)
@@ -131,7 +132,7 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         """
         Convert a pysam ReadAlignment to a GA4GH ReadAlignment
         """
-        samFile = self.getFileHandle(self._samFilePath)
+        samFile = self.getFileHandle(self._dataUrl)
         # TODO fill out remaining fields
         # TODO refine in tandem with code in converters module
         ret = protocol.ReadAlignment()
@@ -203,7 +204,8 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         return ret
 
     def openFile(self, dataFile):
-        return pysam.AlignmentFile(dataFile)
+        return pysam.AlignmentFile(
+            self._dataUrl, filepath_index=self._indexFile)
 
 
 class AbstractReadGroupSet(datamodel.DatamodelObject):
@@ -217,6 +219,12 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         self._readGroupIdMap = {}
         self._readGroupIds = []
         self._referenceSet = None
+
+    def setReferenceSet(self, referenceSet):
+        """
+        Sets the reference set for this ReadGroupSet to the specified value.
+        """
+        self._referenceSet = referenceSet
 
     def addReadGroup(self, readGroup):
         """
@@ -335,66 +343,73 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
     """
     Class representing a logical collection ReadGroups.
     """
-    def __init__(
-            self, parentContainer, localId, samFilePath, dataRepository):
+    defaultReadGroupName = "default"
+
+    def __init__(self, parentContainer, localId):
         super(HtslibReadGroupSet, self).__init__(parentContainer, localId)
-        self._samFilePath = samFilePath
-        samFile = self.getFileHandle(self._samFilePath)
+        self._programs = []
+        self._dataUrl = None
+        self._indexFile = None
+        # Used when we populate from a file. Not defined when we populate
+        # from the DB.
+        self._bamHeaderReferenceSetName = None
+
+    def getBamHeaderReferenceSetName(self):
+        """
+        Returns the ReferenceSet name using in the BAM header.
+        """
+        return self._bamHeaderReferenceSetName
+
+    def populateFromRow(self, row):
+        """
+        Populates the instance variables of this ReadGroupSet from the
+        specified database row.
+        """
+        self._dataUrl = row[b'dataUrl']
+        self._indexFile = row[b'indexFile']
+        self._programs = []
+        for jsonDict in json.loads(row[b'programs']):
+            program = protocol.Program.fromJsonDict(jsonDict)
+            self._programs.append(program)
+
+    def populateFromFile(self, dataUrl, indexFile=None):
+        """
+        Populates the instance variables of this ReadGroupSet from the
+        specified dataUrl and indexFile. If indexFile is not specified
+        guess usual form.
+        """
+        self._dataUrl = dataUrl
+        self._indexFile = indexFile
+        if indexFile is None:
+            self._indexFile = dataUrl + ".bai"
+        samFile = self.getFileHandle(self._dataUrl)
         self._setHeaderFields(samFile)
         if 'RG' not in samFile.header or len(samFile.header['RG']) == 0:
-            self._defaultReadGroup = True
-            readGroup = HtslibReadGroup(self, 'default')
+            readGroup = HtslibReadGroup(self, self.defaultReadGroupName)
             self.addReadGroup(readGroup)
         else:
-            self._defaultReadGroup = False
             for readGroupHeader in samFile.header['RG']:
-                readGroup = HtslibReadGroup(
-                    self, readGroupHeader['ID'], readGroupHeader)
+                readGroup = HtslibReadGroup(self, readGroupHeader['ID'])
+                readGroup.populateFromHeader(readGroupHeader)
                 self.addReadGroup(readGroup)
-        self._referenceSetInit(dataRepository, False)
-        self._readGroupLocalIdMap = {}
-        for readGroupId, readGroup in self._readGroupIdMap.items():
-            localId = datamodel.ReadGroupCompoundId.parse(
-                readGroupId).readGroup
-            self._readGroupLocalIdMap[localId] = readGroup
-
-    def getReadAlignments(self, reference, start=None, end=None):
-        """
-        Returns an iterator over the specified reads
-        """
-        return self._getReadAlignments(reference, start, end, self, None)
-
-    def _referenceSetInit(self, dataRepository, shouldThrowExceptions):
-        # Find the reference set name (if there is one) by looking at
-        # the BAM headers.
-        samFile = self.getFileHandle(self._samFilePath)
-        referenceSetName = None
+        self._bamHeaderReferenceSetName = None
         for referenceInfo in samFile.header['SQ']:
             if 'AS' not in referenceInfo:
                 infoDict = parseMalformedBamHeader(referenceInfo)
             else:
                 infoDict = referenceInfo
             name = infoDict.get('AS', references.DEFAULT_REFERENCESET_NAME)
-            if referenceSetName is None:
-                referenceSetName = name
-            elif referenceSetName != name:
-                if shouldThrowExceptions:
-                    raise exceptions.MultipleReferenceSetsInReadGroupSet(
-                        self._samFilePath, name, referenceSetName)
-        self._referenceSet = None
-        if referenceSetName is not None:
-            try:
-                self._referenceSet = dataRepository.getReferenceSetByName(
-                    referenceSetName)
-            except exceptions.ReferenceSetNameNotFoundException as exception:
-                if shouldThrowExceptions:
-                    raise exception
-            # TODO verify that the references in the BAM file exist
-            # in the reference set. Otherwise, we won't be able to
-            # query for them.
+            if self._bamHeaderReferenceSetName is None:
+                self._bamHeaderReferenceSetName = name
+            elif self._bamHeaderReferenceSetName != name:
+                raise exceptions.MultipleReferenceSetsInReadGroupSet(
+                    self._dataUrl, name, self._bamFileReferenceName)
 
     def checkConsistency(self, dataRepository):
-        self._referenceSetInit(dataRepository, True)
+        pass
+        # TODO verify that the references in the BAM file exist
+        # in the reference set. Otherwise, we won't be able to
+        # query for them.
 
     def _setHeaderFields(self, samFile):
         programs = []
@@ -410,28 +425,28 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
                 programs.append(program)
         self._programs = programs
 
-    def getSamFilePath(self):
-        """
-        Returns the file path of the sam file
-        """
-        return self._samFilePath
-
-    def isUsingDefaultReadGroup(self):
-        """
-        Returns whether the readGroupSet is using a default read group
-        """
-        return self._defaultReadGroup
-
     def getNumAlignedReads(self):
-        samFile = self.getFileHandle(self._samFilePath)
+        samFile = self.getFileHandle(self._dataUrl)
         return samFile.mapped
 
     def getNumUnalignedReads(self):
-        samFile = self.getFileHandle(self._samFilePath)
+        samFile = self.getFileHandle(self._dataUrl)
         return samFile.unmapped
 
     def getPrograms(self):
         return self._programs
+
+    def getDataUrl(self):
+        """
+        Returns the data URL for this ReadGroupSet.
+        """
+        return self._dataUrl
+
+    def getIndexFile(self):
+        """
+        Returns the index file for this ReadGroupSet.
+        """
+        return self._indexFile
 
 
 class AbstractReadGroup(datamodel.DatamodelObject):
@@ -675,10 +690,12 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
     """
     A readgroup based on htslib's reading of a given file
     """
-    def __init__(self, parentContainer, localId, readGroupHeader=None):
+    def __init__(self, parentContainer, localId):
         super(HtslibReadGroup, self).__init__(parentContainer, localId)
-        self._samFilePath = parentContainer.getSamFilePath()
-        self._filterReads = not parentContainer.isUsingDefaultReadGroup()
+        # These attributes are used in AlignmentDataMixin.openFile
+        self._dataUrl = parentContainer.getDataUrl()
+        self._indexFile = parentContainer.getIndexFile()
+        self._filterReads = localId != HtslibReadGroupSet.defaultReadGroupName
         self._sampleId = None
         self._description = None
         self._predictedInsertSize = None
@@ -688,17 +705,29 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         self._library = None
         self._platformUnit = None
         self._runTime = None
-        if readGroupHeader is not None:
-            self._sampleId = readGroupHeader.get('SM', None)
-            self._description = readGroupHeader.get('DS', None)
-            if 'PI' in readGroupHeader:
-                self._predictedInsertSize = int(readGroupHeader['PI'])
-            self._instrumentModel = readGroupHeader.get('PL', None)
-            self._sequencingCenter = readGroupHeader.get('CN', None)
-            self._experimentDescription = readGroupHeader.get('DS', None)
-            self._library = readGroupHeader.get('LB', None)
-            self._platformUnit = readGroupHeader.get('PU', None)
-            self._runTime = readGroupHeader.get('DT', None)
+
+    def populateFromHeader(self, readGroupHeader):
+        """
+        Populate the instance variables using the specified SAM header.
+        """
+        self._sampleId = readGroupHeader.get('SM', None)
+        self._description = readGroupHeader.get('DS', None)
+        if 'PI' in readGroupHeader:
+            self._predictedInsertSize = int(readGroupHeader['PI'])
+        self._instrumentModel = readGroupHeader.get('PL', None)
+        self._sequencingCenter = readGroupHeader.get('CN', None)
+        self._experimentDescription = readGroupHeader.get('DS', None)
+        self._library = readGroupHeader.get('LB', None)
+        self._platformUnit = readGroupHeader.get('PU', None)
+        self._runTime = readGroupHeader.get('DT', None)
+
+    def populateFromRow(self, row):
+        """
+        Populate the instance variables using the specified DB row.
+        """
+        self._sampleId = row[b'sampleId']
+        self._description = row[b'description']
+        self._predictedInsertSize = row[b'predictedInsertSize']
 
     def getReadAlignments(self, reference, start=None, end=None):
         """
@@ -706,9 +735,6 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         """
         return self._getReadAlignments(
             reference, start, end, self._parentContainer, self)
-
-    def getSamFilePath(self):
-        return self._samFilePath
 
     def getNumAlignedReads(self):
         return -1  # TODO populate with metadata
