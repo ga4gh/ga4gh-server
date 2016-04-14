@@ -14,8 +14,7 @@ import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references
-# import ga4gh.datamodel.ontologies as ontologies
-import ga4gh.datarepo as datarepo
+import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 
@@ -34,20 +33,15 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
     variants.VariantAnnotationSet object.
     """
     def __init__(self, variantAnnotationSetId, baseDir):
-        self._dataset = datasets.Dataset("ds")
-        self._datarepo = datarepo.FileSystemDataRepository("tests/data")
         super(VariantAnnotationSetTest, self).__init__(
             variantAnnotationSetId, baseDir)
-        self._variantSet = variants.HtslibVariantSet(self._dataset, "vs")
-        self._variantSet.populateFromDirectory(self._dataPath)
         self._variantRecords = []
         self._referenceNames = set()
-        # # Only read in VCF files with a JSON sidecar saying they're
-        # # annotated.
-        # for vcfFile in glob.glob(os.path.join(self._dataPath, "*.vcf.gz")):
-        #     if self._isAnnotated():
-        #         self._readVcf(vcfFile)
-        # self._isCsq = self._hasConsequenceField()
+        # Only read in VCF files that are annotated.
+        for vcfFile in glob.glob(os.path.join(self._dataPath, "*.vcf.gz")):
+            if self._isAnnotated():
+                self._readVcf(vcfFile)
+        self._isCsq = self._hasConsequenceField()
 
     def _isAnnotated(self):
         """
@@ -59,12 +53,7 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
             filename=glob.glob(
                 os.path.join(self._dataPath, "*.vcf.gz"))[0])
         items = [x for x in pyvcfreader.infos]
-        # return ('ANN' in items) or ('CSQ' in items)
-        if ('ANN' in items) or ('CSQ' in items):
-            print("SKIPPING VA test!! FIXME!!")
-
-        # TODO Force False while we're fixing VA code.
-        return False
+        return ('ANN' in items) or ('CSQ' in items)
 
     def _hasConsequenceField(self):
         pyvcfreader = vcf.Reader(
@@ -121,19 +110,16 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         return dict(zip(fields, values))
 
     def getDataModelInstance(self, localId, dataPath):
-        # Return a VA set if it is one
-        variantSet = variants.HtslibVariantSet(self._dataset, "vs")
+        dataset = datasets.Dataset("ds")
+        variantSet = variants.HtslibVariantSet(dataset, localId)
         variantSet.populateFromDirectory(dataPath)
         referenceSet = references.AbstractReferenceSet("rs")
-        # sequenceOntology = ontologies.Ontology("sequence_ontology")
         variantSet.setReferenceSet(referenceSet)
         if variantSet.isAnnotated():
-            print("FIXME:: SKIPPING UNTIL VA Code is FIXED!!!")
-            # return variants.HtslibVariantAnnotationSet(
-            #     variantSet, "va", sequenceOntology)
-            # HACK!!! Don't do this!!!
-            variantSet._isAnnotated = False
-            return variantSet
+            sequenceOntology = ontologies.Ontology("sequence_ontology")
+            annotationSet = variantSet.getVariantAnnotationSets()[0]
+            annotationSet.setSequenceOntology(sequenceOntology)
+            return annotationSet
         else:
             return variantSet
 
@@ -216,8 +202,9 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
             iterator = self._gaObject.getVariantAnnotations(
                 referenceName, 0, end)
             for gaVariantAnnotation in iterator:
-                self.assertValid(protocol.VariantAnnotation,
-                                 gaVariantAnnotation.toJsonDict())
+                self.assertValid(
+                    protocol.VariantAnnotation,
+                    gaVariantAnnotation.toJsonDict())
 
     def _getPyvcfVariants(
             self, referenceName, startPosition=0, endPosition=2**30):

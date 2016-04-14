@@ -226,7 +226,6 @@ class TestClientJson(TestClientOutput):
                     iterator, "variants-search", args)
         self.assertGreater(test_executed, 0)
 
-    @unittest.skip("Skip until VA code is fixed")
     def testSearchVariantAnnotationSets(self):
         for dataset in self._client.searchDatasets():
             for variantSet in self._client.searchVariantSets(dataset.id):
@@ -236,7 +235,6 @@ class TestClientJson(TestClientOutput):
                 self.verifyParsedOutputsEqual(
                     iterator, "variantannotationsets-search", args)
 
-    @unittest.skip("Skip until VA code is fixed")
     def testSearchVariantAnnotations(self):
         test_executed = 0
         start = 0

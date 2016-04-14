@@ -20,7 +20,8 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
 
-ANNOTATIONS_VEP = "VEP"
+ANNOTATIONS_VEP_V82 = "VEP_v82"
+ANNOTATIONS_VEP_V77 = "VEP_v77"
 ANNOTATIONS_SNPEFF = "SNPEff"
 
 
@@ -486,9 +487,9 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             self._chromFileMap[chrom] = dataUrl, indexFile
         self._updateMetadata(varFile)
         self._updateCallSetIds(varFile)
-        self._updateVariantAnnotationSets(varFile)
+        self._updateVariantAnnotationSets(varFile, dataUrl)
 
-    def _updateVariantAnnotationSets(self, variantFile):
+    def _updateVariantAnnotationSets(self, variantFile, dataUrl):
         """
         Updates the variant annotation set associated with this variant using
         information in the specified pysam variantFile.
@@ -496,12 +497,33 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         # TODO check the consistency of this between VCF files.
         if not self.isAnnotated():
             annotationType = None
-            infoKeys = variantFile.header.info.keys()
-            if 'CSQ' in infoKeys:
-                annotationType = ANNOTATIONS_VEP
-            elif 'ANN' in infoKeys:
-                annotationType = ANNOTATIONS_SNPEFF
-            # TODO detect other annotation types.
+            for record in variantFile.header.records:
+                if record.type == "GENERIC":
+                    if record.key == "SnpEffVersion":
+                        annotationType = ANNOTATIONS_SNPEFF
+                    elif record.key == "VEP":
+                        version = record.value.split()[0]
+                        # TODO we need _much_ more sophisticated processing
+                        # of VEP versions here. When do they become
+                        # incompatible?
+                        if version == "v82":
+                            annotationType = ANNOTATIONS_VEP_V82
+                        elif version == "v77":
+                            annotationType = ANNOTATIONS_VEP_V77
+                        else:
+                            # TODO raise a proper typed exception there with
+                            # the file name as an argument.
+                            raise ValueError(
+                                "Unsupported VEP version {} in '{}'".format(
+                                    version, dataUrl))
+            if annotationType is None:
+                infoKeys = variantFile.header.info.keys()
+                if 'CSQ' in infoKeys or 'ANN' in infoKeys:
+                    # TODO likewise, we want a properly typed exception that
+                    # we can throw back to the repo manager UI and display
+                    # as an import error.
+                    raise ValueError(
+                        "Unsupported annotations in '{}'".format(dataUrl))
             if annotationType is not None:
                 vas = HtslibVariantAnnotationSet(self, annotationType)
                 vas.populateFromFile(variantFile, annotationType)
@@ -848,6 +870,20 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
                 treffs)
             ).hexdigest()
 
+    def getVariantAnnotationId(self, gaVariant, gaAnnotation):
+        """
+        Produces a stringified compoundId representing a variant
+        annotation.
+        :param gaVariant:   protocol.Variant
+        :param gaAnnotation: protocol.VariantAnnotation
+        :return:  compoundId String
+        """
+        md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
+        compoundId = datamodel.VariantAnnotationCompoundId(
+            self.getCompoundId(), gaVariant.referenceName,
+            gaVariant.start, md5)
+        return str(compoundId)
+
 
 class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
     """
@@ -908,22 +944,6 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann.id = self.getVariantAnnotationId(variant, ann)
         return ann
 
-    def getTranscriptEffectId(self, gaTranscriptEffect):
-        effs = [eff.term for eff in gaTranscriptEffect.effects]
-        return hashlib.md5(
-            "{}\t{}\t{}\t{}".format(
-                gaTranscriptEffect.alternateBases,
-                gaTranscriptEffect.featureId,
-                effs, gaTranscriptEffect.hgvsAnnotation)
-            ).hexdigest()
-
-    def getVariantAnnotationId(self, gaVariant, gaAnnotation):
-        md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
-        compoundId = datamodel.VariantAnnotationCompoundId(
-            self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5)
-        return str(compoundId)
-
     def _addTranscriptEffectLocations(self, effect, ann):
         # TODO Make these valid HGVS values
         effect.hgvsAnnotation = protocol.HGVSAnnotation()
@@ -944,8 +964,9 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def _getRandomOntologyTerm(self, randomNumberGenerator):
         # TODO more mock options from simulated seqOnt?
-        ontologyTuples = [("intron_variant", "SO:0001627"),
-                          ("exon_variant", "SO:0001791")]
+        ontologyTuples = [
+            ("intron_variant", "SO:0001627"),
+            ("exon_variant", "SO:0001791")]
         term = protocol.OntologyTerm()
         ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
         term.term, term.id = ontologyTuple[0], ontologyTuple[1]
@@ -1014,8 +1035,8 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def getAnnotationType(self):
         """
-        Returns the type of variant annotations. This is one of
-        ANNOTATIONS_VEP or ANNOTATIONS_SNPEFF.
+        Returns the type of variant annotations, allowing us to determine
+        how to interpret the annotations within the VCF file.
         """
         return self._annotationType
 
@@ -1067,11 +1088,14 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         :param endPosition:
         :return: generator of protocol.VariantAnnotation
         """
+        # TODO Refactor this so that we use the annotationType information
+        # where it makes most sense, and rename the various methods so that
+        # it's clear what program/version combination they operate on.
         variantIter = self._variantSet.getPysamVariants(
             referenceName, startPosition, endPosition)
         if self._annotationType == ANNOTATIONS_SNPEFF:
             transcriptConverter = self.convertTranscriptEffectSnpEff
-        elif self._annotationType == ANNOTATIONS_VEP:
+        elif self._annotationType == ANNOTATIONS_VEP_V82:
             transcriptConverter = self.convertTranscriptEffectVEP
         else:
             transcriptConverter = self.convertTranscriptEffectCSQ
@@ -1280,8 +1304,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         for soName in seqOntTerms:
             so = self._createGaOntologyTermSo()
             so.term = soName
-            if self._sequenceOntology is not None:
-                so.id = self._sequenceOntology.getId(soName, "")
+            so.id = self._sequenceOntology.getId(soName, "")
             soTerms.append(so)
         return soTerms
 
@@ -1295,18 +1318,17 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         annotation = self._createGaVariantAnnotation()
         annotation.start = variant.start
         annotation.end = variant.end
-        # TODO can we actually derive this??
-        # annotation.createDateTime = self._annotationCreatedDateTime
+        annotation.createDateTime = self._annotationCreatedDateTime
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         transcriptEffects = []
-        hgvsG = record.info.get('HGVS.g'.encode())
+        hgvsG = record.info.get(b'HGVS.g')
         if transcriptConverter != self.convertTranscriptEffectCSQ:
-            annotations = record.info.get('ANN'.encode())
+            annotations = record.info.get(b'ANN')
             transcriptEffects = self._convertAnnotations(
                 annotations, variant, hgvsG, transcriptConverter)
         else:
-            annotations = record.info.get('CSQ'.encode())
+            annotations = record.info.get(b'CSQ')
             transcriptEffects = self.convertTranscriptEffectCSQ(
                 annotations[0], hgvsG)
 
@@ -1327,17 +1349,3 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                 transcriptEffects.append(
                     transcriptConverter(ann, altshgvsG))
         return transcriptEffects
-
-    def getVariantAnnotationId(self, gaVariant, gaAnnotation):
-        """
-        Produces a stringified compoundId representing a variant
-        annotation.
-        :param gaVariant:   protocol.Variant
-        :param gaAnnotation: protocol.VariantAnnotation
-        :return:  compoundId String
-        """
-        md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
-        compoundId = datamodel.VariantAnnotationCompoundId(
-            self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5)
-        return str(compoundId)
