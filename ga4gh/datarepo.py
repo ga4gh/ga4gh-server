@@ -296,6 +296,10 @@ class SqlDataRepository(AbstractDataRepository):
             raise ValueError(error)
         self._openMode = mode
         self._dbConnection = sqlite3.connect(self._dbFilename)
+        # Turn on foreign key constraints.
+        cursor = self._dbConnection.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON;")
+        self._dbConnection.commit()
         if mode == MODE_READ:
             # This is part of the transitional behaviour where
             # we load the whole DB into memory to get access to
@@ -362,25 +366,31 @@ class SqlDataRepository(AbstractDataRepository):
     def _createSystemTable(self, cursor):
         sql = """
             CREATE TABLE System (
-                repositoryVersion TEXT,
-                creationTimeStamp TEXT
+                key TEXT NOT NULL PRIMARY KEY,
+                value TEXT NOT NULL
             );
         """
         cursor.execute(sql)
-        cursor.execute("INSERT INTO System VALUES (0.1, datetime('now'));")
+        cursor.execute(
+            "INSERT INTO System VALUES ('repositoryVersion', '0.1')")
+        cursor.execute(
+            "INSERT INTO System VALUES ('creationTimeStamp', datetime('now'))")
 
     def _readSystemTable(self, cursor):
-        sql = "SELECT repositoryVersion, creationTimeStamp FROM System;"
+        sql = "SELECT key, value FROM System;"
         cursor.execute(sql)
+        config = {}
+        for row in cursor:
+            config[row[0]] = row[1]
         row = cursor.fetchone()
-        self._repositoryVersion = row[0]
-        self._creationTimeStamp = row[1]
+        self._repositoryVersion = config["repositoryVersion"]
+        self._creationTimeStamp = config["creationTimeStamp"]
 
     def _createOntologyTable(self, cursor):
         sql = """
             CREATE TABLE Ontology (
-                name TEXT,
-                dataUrl TEXT
+                name TEXT NOT NULL PRIMARY KEY,
+                dataUrl TEXT NOT NULL
             );
         """
         cursor.execute(sql)
@@ -408,16 +418,18 @@ class SqlDataRepository(AbstractDataRepository):
     def _createReferenceTable(self, cursor):
         sql = """
             CREATE TABLE Reference (
-                id TEXT,
-                referenceSetId TEXT,
-                name TEXT,
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
                 length INTEGER,
                 isDerived INTEGER,
                 md5checksum TEXT,
                 ncbiTaxonId TEXT,
                 sourceAccessions TEXT,
                 sourceDivergence REAL,
-                sourceUri TEXT
+                sourceUri TEXT,
+                UNIQUE (referenceSetId, name),
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
             );
         """
         cursor.execute(sql)
@@ -456,8 +468,8 @@ class SqlDataRepository(AbstractDataRepository):
     def _createReferenceSetTable(self, cursor):
         sql = """
             CREATE TABLE ReferenceSet (
-                id TEXT,
-                name TEXT,
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
                 description TEXT,
                 assemblyId TEXT,
                 isDerived INTEGER,
@@ -465,13 +477,9 @@ class SqlDataRepository(AbstractDataRepository):
                 ncbiTaxonId TEXT,
                 sourceAccessions TEXT,
                 sourceUri TEXT,
-                dataUrl TEXT
+                dataUrl TEXT NOT NULL,
+                UNIQUE (name)
             );
-        """
-        cursor.execute(sql)
-        sql = """
-            CREATE UNIQUE INDEX ReferenceSetName
-            ON ReferenceSet (name);
         """
         cursor.execute(sql)
 
@@ -498,7 +506,9 @@ class SqlDataRepository(AbstractDataRepository):
                 referenceSet.getSourceUri(), referenceSet.getDataUrl()))
         except sqlite3.IntegrityError:
             raise exceptions.DuplicateNameException(referenceSet.getLocalId())
+        self._dbConnection.commit()
         for reference in referenceSet.getReferences():
+            print(referenceSet.getId(), reference.getParentContainer().getId())
             self.insertReference(reference)
 
     def _readReferenceSetTable(self, cursor):
@@ -514,15 +524,11 @@ class SqlDataRepository(AbstractDataRepository):
     def _createDatasetTable(self, cursor):
         sql = """
             CREATE TABLE Dataset (
-                id TEXT,
-                name TEXT,
-                description TEXT
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                UNIQUE (name)
             );
-        """
-        cursor.execute(sql)
-        sql = """
-            CREATE UNIQUE INDEX DatasetName
-            ON Dataset (name);
         """
         cursor.execute(sql)
 
@@ -542,6 +548,15 @@ class SqlDataRepository(AbstractDataRepository):
         except sqlite3.IntegrityError:
             raise exceptions.DuplicateNameException(dataset.getLocalId())
 
+    def removeDataset(self, dataset):
+        """
+        Removes the specified dataset from this repository. This performs
+        a cascading removal of all items within this dataset.
+        """
+        sql = "DELETE FROM Dataset WHERE name=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (dataset.getLocalId(),))
+
     def _readDatasetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
         cursor.execute("SELECT * FROM Dataset;")
@@ -555,14 +570,16 @@ class SqlDataRepository(AbstractDataRepository):
     def _createReadGroupTable(self, cursor):
         sql = """
             CREATE TABLE ReadGroup (
-                id TEXT,
-                readGroupSetId TEXT,
-                name TEXT,
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                readGroupSetId TEXT NOT NULL,
                 predictedInsertSize INTEGER,
                 sampleId TEXT,
                 description TEXT,
                 created TEXT,
-                updated TEXT
+                updated TEXT,
+                UNIQUE (readGroupSetId, name),
+                FOREIGN KEY(readGroupSetId) REFERENCES ReadGroupSet(id)
             );
         """
         cursor.execute(sql)
@@ -598,19 +615,17 @@ class SqlDataRepository(AbstractDataRepository):
     def _createReadGroupSetTable(self, cursor):
         sql = """
             CREATE TABLE ReadGroupSet (
-                id TEXT,
-                datasetId TEXT,
-                referenceSetId TEXT,
-                name TEXT,
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
                 programs TEXT,
-                dataUrl TEXT,
-                indexFile TEXT
+                dataUrl TEXT NOT NULL,
+                indexFile TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id),
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
             );
-        """
-        cursor.execute(sql)
-        sql = """
-            CREATE UNIQUE INDEX DatasetIdReadGroupSetName
-            ON ReadGroupSet (dataSetId, name);
         """
         cursor.execute(sql)
 
@@ -658,11 +673,13 @@ class SqlDataRepository(AbstractDataRepository):
     def _createVariantAnnotationSetTable(self, cursor):
         sql = """
             CREATE TABLE VariantAnnotationSet (
-                id TEXT,
-                variantSetId TEXT,
-                name TEXT,
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                variantSetId TEXT NOT NULL,
                 analysis TEXT,
-                annotationType TEXT
+                annotationType TEXT,
+                UNIQUE (variantSetId, name),
+                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
             );
         """
         cursor.execute(sql)
@@ -700,9 +717,11 @@ class SqlDataRepository(AbstractDataRepository):
     def _createCallSetTable(self, cursor):
         sql = """
             CREATE TABLE CallSet (
-                id TEXT,
-                variantSetId TEXT,
-                name TEXT
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                variantSetId TEXT NOT NULL,
+                UNIQUE (variantSetId, name),
+                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
             );
         """
         cursor.execute(sql)
@@ -735,15 +754,17 @@ class SqlDataRepository(AbstractDataRepository):
     def _createVariantSetTable(self, cursor):
         sql = """
             CREATE TABLE VariantSet (
-                id TEXT,
-                datasetId TEXT,
-                referenceSetId TEXT,
-                name TEXT,
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
                 created TEXT,
                 updated TEXT,
                 metadata TEXT,
-                isAnnotated INTEGER,
-                dataUrlIndexMap TEXT
+                dataUrlIndexMap TEXT NOT NULL,
+                UNIQUE (datasetID, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id),
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
             );
         """
         cursor.execute(sql)
@@ -791,13 +812,16 @@ class SqlDataRepository(AbstractDataRepository):
     def _createFeatureSetTable(self, cursor):
         sql = """
             CREATE TABLE FeatureSet (
-                id TEXT,
-                datasetId TEXT,
-                referenceSetId TEXT,
-                name TEXT,
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
                 info TEXT,
                 sourceUri TEXT,
-                dataUrl TEXT
+                dataUrl TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id),
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
             );
         """
         cursor.execute(sql)

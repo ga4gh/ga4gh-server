@@ -1636,6 +1636,14 @@ class RepoManager(object):
         readGroupSet.setReferenceSet(referenceSet)
         self._updateRepo(self._repo.insertReadGroupSet, readGroupSet)
 
+    def removeDataset(self):
+        """
+        Removes a dataset from the repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        self._updateRepo(self._repo.removeDataset, dataset)
+
     #
     # Methods to simplify adding common arguments to the parser.
     #
@@ -1728,12 +1736,6 @@ class RepoManager(object):
             subparsers, "list", "List the contents of the repo")
         listParser.set_defaults(runner="list")
         cls.addRepoArgument(listParser)
-
-        destroyParser = addSubparser(
-            subparsers, "destroy", "Destroy the repo")
-        destroyParser.set_defaults(runner="destroy")
-        cls.addRepoArgument(destroyParser)
-        cls.addForceOption(destroyParser)
 
         addDatasetParser = addSubparser(
             subparsers, "add-dataset", "Add a dataset to the data repo")
