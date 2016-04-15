@@ -601,6 +601,15 @@ class SqlDataRepository(AbstractDataRepository):
             readGroup.getLocalId(), readGroup.getPredictedInsertSize(),
             readGroup.getSampleId()))
 
+    def removeReadGroupSet(self, readGroupSet):
+        """
+        Removes the specified readGroupSet from this repository. This performs
+        a cascading removal of all items within this readGroupSet.
+        """
+        sql = "DELETE FROM ReadGroupSet WHERE name=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (readGroupSet.getLocalId(),))
+
     def _readReadGroupTable(self, cursor):
         cursor.row_factory = sqlite3.Row
         cursor.execute("SELECT * FROM ReadGroup;")

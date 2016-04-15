@@ -62,21 +62,45 @@ class AbstractRepoManagerTest(unittest.TestCase):
         repo.open("r")
         return repo
 
+    def init(self):
+        self.runCommand("init {}".format(self._repoPath))
+
+    def addDataset(self):
+        self._datasetName = "test_dataset"
+        cmd = "add-dataset {} {}".format(self._repoPath, self._datasetName)
+        self.runCommand(cmd)
+
+    def addReferenceSet(self):
+        self._referenceSetName = "test_rs"
+        fastaFile = paths.ncbi37FaPath
+        self.runCommand("add-referenceset {} {} --name={}".format(
+            self._repoPath, fastaFile, self._referenceSetName))
+
+    def addReadGroupSet(self):
+        bamFile = paths.bamPath
+        self._readGroupSetName = "test_rgs"
+        cmd = (
+            "add-readgroupset {} {} {} --referenceSetName={} "
+            "--name={}").format(
+            self._repoPath, self._datasetName, bamFile,
+            self._referenceSetName, self._readGroupSetName)
+        self.runCommand(cmd)
+
 
 class TestAddDataset(AbstractRepoManagerTest):
 
     def setUp(self):
         super(TestAddDataset, self).setUp()
-        self.runCommand("init {}".format(self._repoPath))
+        self.init()
 
-    def testAddDataset(self):
+    def testDefaults(self):
         name = "test_dataset"
         self.runCommand("add-dataset {} {}".format(self._repoPath, name))
         repo = self.readRepo()
         dataset = repo.getDatasetByName(name)
         self.assertEqual(dataset.getLocalId(), name)
 
-    def testAddDatasetWithSameName(self):
+    def testSameName(self):
         name = "test_dataset"
         cmd = "add-dataset {} {}".format(self._repoPath, name)
         self.runCommand(cmd)
@@ -84,31 +108,13 @@ class TestAddDataset(AbstractRepoManagerTest):
             exceptions.DuplicateNameException, self.runCommand, cmd)
 
 
-class TestRemoveDataset(AbstractRepoManagerTest):
-
-    def setUp(self):
-        super(TestRemoveDataset, self).setUp()
-        self.runCommand("init {}".format(self._repoPath))
-        self._datasetName = "test_dataset"
-        cmd = "add-dataset {} {}".format(self._repoPath, self._datasetName)
-        self.runCommand(cmd)
-
-    def testRemoveEmptyDatasetForce(self):
-        self.runCommand("remove-dataset {} {} -f".format(
-            self._repoPath, self._datasetName))
-        repo = self.readRepo()
-        self.assertRaises(
-            exceptions.DatasetNameNotFoundException,
-            repo.getDatasetByName, self._datasetName)
-
-
 class TestAddReferenceSet(AbstractRepoManagerTest):
 
     def setUp(self):
         super(TestAddReferenceSet, self).setUp()
-        self.runCommand("init {}".format(self._repoPath))
+        self.init()
 
-    def testAddReferenceSetDefaults(self):
+    def testDefaults(self):
         fastaFile = paths.ncbi37FaPath
         name = os.path.split(fastaFile)[1].split(".")[0]
         self.runCommand("add-referenceset {} {}".format(
@@ -119,7 +125,7 @@ class TestAddReferenceSet(AbstractRepoManagerTest):
         self.assertEqual(referenceSet.getDataUrl(), fastaFile)
         # TODO check that the default values for all fields are set correctly.
 
-    def testAddReferenceSetWithName(self):
+    def testWithName(self):
         name = "test_reference_set"
         fastaFile = paths.ncbi37FaPath
         cmd = "add-referenceset {} {} --name={}".format(
@@ -130,7 +136,7 @@ class TestAddReferenceSet(AbstractRepoManagerTest):
         self.assertEqual(referenceSet.getLocalId(), name)
         self.assertEqual(referenceSet.getDataUrl(), fastaFile)
 
-    def testAddReferenceSetWithSameName(self):
+    def testWithSameName(self):
         fastaFile = paths.ncbi37FaPath
         # Default name
         cmd = "add-referenceset {} {}".format(self._repoPath, fastaFile)
@@ -145,18 +151,80 @@ class TestAddReferenceSet(AbstractRepoManagerTest):
             exceptions.DuplicateNameException, self.runCommand, cmd)
 
 
+class TestRemoveDataset(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveDataset, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+
+    def assertDatasetRemoved(self):
+        repo = self.readRepo()
+        self.assertRaises(
+            exceptions.DatasetNameNotFoundException,
+            repo.getDatasetByName, self._datasetName)
+
+    def testEmptyDatasetForce(self):
+        self.runCommand("remove-dataset {} {} -f".format(
+            self._repoPath, self._datasetName))
+        self.assertDatasetRemoved()
+
+    def testContainsReadGroupSet(self):
+        self.addReadGroupSet()
+        self.runCommand("remove-dataset {} {} -f".format(
+            self._repoPath, self._datasetName))
+        self.assertDatasetRemoved()
+
+
+class TestRemoveReadGroupSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveReadGroupSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addReadGroupSet()
+
+    def assertReadGroupSetRemoved(self):
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        self.assertRaises(
+            exceptions.ReadGroupSetNameNotFoundException,
+            dataset.getReadGroupSetByName, self._readGroupSetName)
+
+    def testWithForce(self):
+        self.runCommand("remove-readgroupset {} {} {} -f".format(
+            self._repoPath, self._datasetName, self._readGroupSetName))
+        self.assertReadGroupSetRemoved()
+
+
+class TestRemoveReferenceSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveReferenceSet, self).setUp()
+        self.init()
+        self.addReferenceSet()
+
+    def assertReferenceSetRemoved(self):
+        repo = self.readRepo()
+        self.assertRaises(
+            exceptions.ReferenceSetNameNotFoundException,
+            repo.getReferenceSetByName, self._referenceSetName)
+
+    def testDefaults(self):
+        self.runCommand("remove-referenceset {} {} -f".format(
+            self._repoPath, self._referenceSetName))
+        self.assertReferenceSetRemoved()
+
+
 class TestAddReadGroupSet(AbstractRepoManagerTest):
 
     def setUp(self):
         super(TestAddReadGroupSet, self).setUp()
-        self._datasetName = "test_ds"
-        self._referenceSetName = "test_rs"
-        self.runCommand("init {}".format(self._repoPath))
-        self.runCommand("add-dataset {} {}".format(
-            self._repoPath, self._datasetName))
-        fastaFile = paths.ncbi37FaPath
-        self.runCommand("add-referenceset {} {} --name={}".format(
-            self._repoPath, fastaFile, self._referenceSetName))
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
 
     def verifyReadGroupSet(self, name, dataUrl, indexFile):
         repo = self.readRepo()
@@ -168,7 +236,7 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         self.assertEqual(readGroupSet.getDataUrl(), dataUrl)
         self.assertEqual(readGroupSet.getIndexFile(), indexFile)
 
-    def testAddReadGroupSetDefaultsLocalFile(self):
+    def testDefaultsLocalFile(self):
         bamFile = paths.bamPath
         name = os.path.split(bamFile)[1].split(".")[0]
         cmd = "add-readgroupset {} {} {} --referenceSetName={}".format(
@@ -177,7 +245,7 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         self.runCommand(cmd)
         self.verifyReadGroupSet(name, bamFile, bamFile + ".bai")
 
-    def testAddReadGroupSetLocalFileWithIndex(self):
+    def testLocalFileWithIndex(self):
         bamFile = paths.bamPath
         name = os.path.split(bamFile)[1].split(".")[0]
         with tempfile.NamedTemporaryFile() as temp:
@@ -189,7 +257,7 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
             self.runCommand(cmd)
             self.verifyReadGroupSet(name, bamFile, indexFile)
 
-    def testAddReadGroupSetWithNameLocalFile(self):
+    def testLocalFileWithName(self):
         bamFile = paths.bamPath
         name = "test_rgs"
         cmd = (
@@ -221,7 +289,7 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         self.assertRaises(
             exceptions.DuplicateNameException, self.runCommand, cmd)
 
-    def testAddReadGroupSetFromUrlMissingIndexFile(self):
+    def testUrlWithMissingIndex(self):
         bamFile = "http://example.com/example.bam"
         cmd = "add-readgroupset {} {} {} --referenceSetName={}".format(
                 self._repoPath, self._datasetName, bamFile,
@@ -229,7 +297,7 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         self.assertRaises(
             exceptions.MissingIndexException, self.runCommand, cmd)
 
-    def testAddReadGroupSetMissingDataset(self):
+    def testMissingDataset(self):
         bamFile = paths.bamPath
         cmd = "add-readgroupset {} {} {} --referenceSetName={}".format(
                 self._repoPath, "not_a_dataset_name", bamFile,
@@ -237,7 +305,7 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         self.assertRaises(
             exceptions.DatasetNameNotFoundException, self.runCommand, cmd)
 
-    def testAddReadGroupSetMissingReferenceSet(self):
+    def testMissingReferenceSet(self):
         bamFile = paths.bamPath
         cmd = "add-readgroupset {} {} {} --referenceSetName={}".format(
                 self._repoPath, self._datasetName, bamFile,
