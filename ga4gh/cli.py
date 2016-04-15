@@ -1513,6 +1513,14 @@ def getNameFromPath(filePath):
     return ret
 
 
+def getRawInput(display):
+    """
+    Wrapper around raw_input; put into separate function so that it
+    can be easily mocked for tests.
+    """
+    return raw_input(display)
+
+
 class RepoManager(object):
     """
     Class that provide command line functionality to manage a
@@ -1523,14 +1531,14 @@ class RepoManager(object):
         self._repoPath = args.repoPath
         self._repo = datarepo.SqlDataRepository(self._repoPath)
 
-    def _confirmRun(self, func, deleteString):
+    def _confirmDelete(self, objectType, name, func):
         if self._args.force:
             func()
         else:
             displayString = (
-                "Are you sure you want to delete data in {}? "
-                "[y|N] ".format(deleteString))
-            userResponse = raw_input(displayString)
+                "Are you sure you want to delete the {} '{}'? "
+                "[y|N] ".format(objectType, name))
+            userResponse = getRawInput(displayString)
             if userResponse.strip() == 'y':
                 func()
             else:
@@ -1636,13 +1644,28 @@ class RepoManager(object):
         readGroupSet.setReferenceSet(referenceSet)
         self._updateRepo(self._repo.insertReadGroupSet, readGroupSet)
 
+    def removeReferenceSet(self):
+        """
+        Removes a referenceSet from the repo.
+        """
+        self._openRepo()
+        referenceSet = self._repo.getReferenceSetByName(
+            self._args.referenceSetName)
+
+        def func():
+            self._updateRepo(self._repo.removeReferenceSet, referenceSet)
+        self._confirmDelete("ReferenceSet", referenceSet.getLocalId(), func)
+
     def removeDataset(self):
         """
         Removes a dataset from the repo.
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        self._updateRepo(self._repo.removeDataset, dataset)
+
+        def func():
+            self._updateRepo(self._repo.removeDataset, dataset)
+        self._confirmDelete("Dataset", dataset.getLocalId(), func)
 
     #
     # Methods to simplify adding common arguments to the parser.
@@ -1803,7 +1826,7 @@ class RepoManager(object):
         removeOntologyMapParser = addSubparser(
             subparsers, "remove-ontologymap",
             "Remove an ontology map from the repo")
-        removeOntologyMapParser.set_defaults(runner="removeOntology")
+        removeOntologyMapParser.set_defaults(runner="removeOntologyMap")
         cls.addRepoArgument(removeOntologyMapParser)
         cls.addOntologyNameArgument(removeOntologyMapParser)
         cls.addForceOption(removeOntologyMapParser)

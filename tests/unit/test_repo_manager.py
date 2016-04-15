@@ -84,6 +84,24 @@ class TestAddDataset(AbstractRepoManagerTest):
             exceptions.DuplicateNameException, self.runCommand, cmd)
 
 
+class TestRemoveDataset(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveDataset, self).setUp()
+        self.runCommand("init {}".format(self._repoPath))
+        self._datasetName = "test_dataset"
+        cmd = "add-dataset {} {}".format(self._repoPath, self._datasetName)
+        self.runCommand(cmd)
+
+    def testRemoveEmptyDatasetForce(self):
+        self.runCommand("remove-dataset {} {} -f".format(
+            self._repoPath, self._datasetName))
+        repo = self.readRepo()
+        self.assertRaises(
+            exceptions.DatasetNameNotFoundException,
+            repo.getDatasetByName, self._datasetName)
+
+
 class TestAddReferenceSet(AbstractRepoManagerTest):
 
     def setUp(self):
@@ -226,160 +244,3 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
                 "not_a_referenceset_name")
         self.assertRaises(
             exceptions.ReferenceSetNameNotFoundException, self.runCommand, cmd)
-
-    # TODO adapt the code below to test the repo manager code within
-    # the above framework.
-# class RepoManagerInidividualCommandTest(AbstractRepoManagerTest):
-    # """
-    # Tests for individiual repo manager commands
-    # """
-    # def setUp(self):
-    #     self.tempdir = self.getTempDirPath()
-    #     # self.repoManager = repo_manager.RepoManager(self.tempdir)
-    #     self.repoManager.init()
-
-    # def tearDown(self):
-    #     try:
-    #         self.repoManager.destroy()
-    #     except exceptions.RepoManagerException:
-    #         pass
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testInit(self):
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.init()
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testDestroy(self):
-    #     self.repoManager.destroy()
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.destroy()
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testCheck(self):
-    #     self.repoManager.check()
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testList(self):
-    #     self.repoManager.list()
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testAddDataset(self):
-    #     self.repoManager.addDataset('dataset1')
-    #     self.repoManager.addDataset('dataset2')
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addDataset('dataset2')
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testRemoveDataset(self):
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeDataset('dataset1')
-    #     self.repoManager.addDataset('dataset1')
-    #     self.repoManager.removeDataset('dataset1')
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeDataset('dataset1')
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testAddReferenceSet(self):
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addReferenceSet(paths.bamPath, 'link', {})
-    #     self.repoManager.addReferenceSet(
-    #         paths.faPath, 'link', {'description': 'aDescription'})
-    #     self.repoManager.addReferenceSet(
-    #         paths.faPath2, 'copy', {})
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addReferenceSet(paths.faPath, 'link', {})
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testRemoveReferenceSet(self):
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeReferenceSet(paths.referenceSetName)
-    #     self.repoManager.addReferenceSet(paths.faPath, 'link', {})
-    #     self.repoManager.removeReferenceSet(paths.referenceSetName)
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeReferenceSet(paths.referenceSetName)
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testAddReadGroupSet(self):
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addReadGroupSet(
-    #             'dataset1', paths.bamPath, 'link')
-    #     self.repoManager.addDataset('dataset1')
-    #     self.repoManager.addDataset('dataset2')
-    #     self.repoManager.addReadGroupSet(
-    #         'dataset1', paths.bamPath, 'link')
-    #     self.repoManager.addReadGroupSet(
-    #         'dataset1', paths.bamPath2, 'link')
-    #     self.repoManager.addReadGroupSet(
-    #         'dataset2', paths.bamPath, 'link')
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addReadGroupSet(
-    #             'dataset1', paths.bamPath, 'link')
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testRemoveReadGroupSet(self):
-    #     self.repoManager.addDataset('dataset1')
-    #     self.repoManager.addReadGroupSet(
-    #         'dataset1', paths.bamPath, 'link')
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeReadGroupSet(
-    #             'dataset2', paths.readGroupSetName)
-    #     self.repoManager.removeReadGroupSet(
-    #         'dataset1', paths.readGroupSetName)
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeReadGroupSet(
-    #             'dataset1', paths.readGroupSetName)
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testAddVariantSet(self):
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addVariantSet(
-    #             'dataset1', paths.vcfDirPath, 'link')
-    #     self.repoManager.addDataset('dataset1')
-    #     self.repoManager.addDataset('dataset2')
-    #     self.repoManager.addVariantSet(
-    #         'dataset1', paths.vcfDirPath, 'link')
-    #     self.repoManager.addVariantSet(
-    #         'dataset1', paths.vcfDirPath2, 'link')
-    #     self.repoManager.addVariantSet(
-    #         'dataset2', paths.vcfDirPath, 'link')
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addVariantSet(
-    #             'dataset1', paths.vcfDirPath, 'link')
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testRemoveVariantSet(self):
-    #     self.repoManager.addDataset('dataset1')
-    #     self.repoManager.addVariantSet(
-    #         'dataset1', paths.vcfDirPath, 'link')
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeVariantSet(
-    #             'dataset2', paths.variantSetName)
-    #     self.repoManager.removeVariantSet(
-    #         'dataset1', paths.variantSetName)
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeVariantSet(
-    #             'dataset1', paths.variantSetName)
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testAddOntologyMap(self):
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addOntologyMap(paths.bamPath, 'link')
-    #     self.repoManager.addOntologyMap(
-    #         paths.ontologyPath, 'link')
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.addOntologyMap(
-    #             paths.ontologyPath, 'link')
-
-    # @unittest.skip("Skip until repo manager completed")
-    # def testRemoveOntologyMap(self):
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeOntologyMap(
-    #             paths.ontologyName)
-    #     self.repoManager.addOntologyMap(
-    #         paths.ontologyPath, 'link')
-    #     self.repoManager.removeOntologyMap(
-    #         paths.ontologyName)
-    #     with self.assertRaises(exceptions.RepoManagerException):
-    #         self.repoManager.removeOntologyMap(
-    #             paths.ontologyName)

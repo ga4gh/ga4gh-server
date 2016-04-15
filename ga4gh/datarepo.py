@@ -430,6 +430,7 @@ class SqlDataRepository(AbstractDataRepository):
                 sourceUri TEXT,
                 UNIQUE (referenceSetId, name),
                 FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+                    ON DELETE CASCADE
             );
         """
         cursor.execute(sql)
@@ -508,7 +509,6 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.DuplicateNameException(referenceSet.getLocalId())
         self._dbConnection.commit()
         for reference in referenceSet.getReferences():
-            print(referenceSet.getId(), reference.getParentContainer().getId())
             self.insertReference(reference)
 
     def _readReferenceSetTable(self, cursor):
@@ -580,6 +580,7 @@ class SqlDataRepository(AbstractDataRepository):
                 updated TEXT,
                 UNIQUE (readGroupSetId, name),
                 FOREIGN KEY(readGroupSetId) REFERENCES ReadGroupSet(id)
+                    ON DELETE CASCADE
             );
         """
         cursor.execute(sql)
@@ -623,7 +624,8 @@ class SqlDataRepository(AbstractDataRepository):
                 dataUrl TEXT NOT NULL,
                 indexFile TEXT NOT NULL,
                 UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
                 FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
             );
         """
@@ -657,6 +659,18 @@ class SqlDataRepository(AbstractDataRepository):
         for readGroup in readGroupSet.getReadGroups():
             self.insertReadGroup(readGroup)
 
+    def removeReferenceSet(self, referenceSet):
+        """
+        Removes the specified referenceSet from this repository. This performs
+        a cascading removal of all references within this referenceSet.
+        However, it does not remove any of the ReadGroupSets or items that
+        refer to this ReferenceSet. These must be deleted before the
+        referenceSet can be removed.
+        """
+        sql = "DELETE FROM ReferenceSet WHERE name=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (referenceSet.getLocalId(),))
+
     def _readReadGroupSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
         cursor.execute("SELECT * FROM ReadGroupSet;")
@@ -680,6 +694,7 @@ class SqlDataRepository(AbstractDataRepository):
                 annotationType TEXT,
                 UNIQUE (variantSetId, name),
                 FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
+                    ON DELETE CASCADE
             );
         """
         cursor.execute(sql)
@@ -722,6 +737,7 @@ class SqlDataRepository(AbstractDataRepository):
                 variantSetId TEXT NOT NULL,
                 UNIQUE (variantSetId, name),
                 FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
+                    ON DELETE CASCADE
             );
         """
         cursor.execute(sql)
@@ -763,7 +779,8 @@ class SqlDataRepository(AbstractDataRepository):
                 metadata TEXT,
                 dataUrlIndexMap TEXT NOT NULL,
                 UNIQUE (datasetID, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
                 FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
             );
         """
@@ -820,7 +837,8 @@ class SqlDataRepository(AbstractDataRepository):
                 sourceUri TEXT,
                 dataUrl TEXT NOT NULL,
                 UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
                 FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
             );
         """
