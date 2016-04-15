@@ -100,12 +100,9 @@ class ServerStatus(object):
         try:
             htmlFile = open(filePath, 'r')
             html = htmlFile.read()
-        except:
-            filePath = "ga4gh/templates/landing_message.html"
-            htmlFile = open(filePath, 'r')
-            html = htmlFile.read()
-        finally:
             htmlFile.close()
+        except:
+            html = flask.render_template("landing_message.html")
         return html
 
     def getNaturalUptime(self):
