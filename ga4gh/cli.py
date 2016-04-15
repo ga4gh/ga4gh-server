@@ -15,6 +15,7 @@ import sys
 import unittest
 import unittest.loader
 import unittest.suite
+import urlparse
 
 import requests
 
@@ -1576,6 +1577,14 @@ class RepoManager(object):
         # TODO this is _very_ crude. We need much more options and detail here.
         self._repo.printSummary()
 
+    def verify(self):
+        """
+        Checks that the data pointed to in the repository works and
+        we don't have any broken URLs, missing files, etc.
+        """
+        self._openRepo()
+        self._repo.verify()
+
     def addDataset(self):
         """
         Adds a new dataset into this repo.
@@ -1605,8 +1614,15 @@ class RepoManager(object):
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        dataUrl = self._args.filePath
-        indexFile = dataUrl + ".bai"
+        dataUrl = self._args.dataFile
+        indexFile = self._args.indexFile
+        parsed = urlparse.urlparse(dataUrl)
+        if parsed.scheme == 'http':
+            if indexFile is None:
+                raise exceptions.MissingIndexException(dataUrl)
+        else:
+            if indexFile is None:
+                indexFile = dataUrl + ".bai"
         name = self._args.name
         if self._args.name is None:
             name = getNameFromPath(dataUrl)
@@ -1652,7 +1668,7 @@ class RepoManager(object):
             "the name of the reference set to associate with this {}"
         ).format(objectType)
         subparser.add_argument(
-            "--referenceSetName", default=None, help=helpText)
+            "-R", "--referenceSetName", default=None, help=helpText)
 
     @classmethod
     def addOntologyNameArgument(cls, subparser):
@@ -1702,10 +1718,11 @@ class RepoManager(object):
         cls.addRepoArgument(initParser)
         cls.addForceOption(initParser)
 
-        checkParser = addSubparser(
-            subparsers, "check", "Check to see if repo is well-formed")
-        checkParser.set_defaults(runner="check")
-        cls.addRepoArgument(checkParser)
+        verifyParser = addSubparser(
+            subparsers, "verify",
+            "Verifies the repository by examing all data files")
+        verifyParser.set_defaults(runner="verify")
+        cls.addRepoArgument(verifyParser)
 
         listParser = addSubparser(
             subparsers, "list", "List the contents of the repo")
@@ -1762,7 +1779,17 @@ class RepoManager(object):
         cls.addDatasetNameArgument(addReadGroupSetParser)
         cls.addNameOption(addReadGroupSetParser, objectType)
         cls.addReferenceSetNameOption(addReadGroupSetParser, "ReadGroupSet")
-        cls.addFilePathArgument(addReadGroupSetParser)
+        addReadGroupSetParser.add_argument(
+            "dataFile",
+            help="The file path or URL of the BAM file for this ReadGroupSet")
+        addReadGroupSetParser.add_argument(
+            "indexFile", nargs='?', default=None,
+            help=(
+                "The file path of the BAM index for this ReadGroupSet. "
+                "If the dataFile is a argument is a local file, this will "
+                "be automatically inferred by appending '.bai' to the "
+                "file name. If the dataFile is a remote URL the path to "
+                "a local file containing the BAM index must be provided"))
 
         addOntologyMapParser = addSubparser(
             subparsers, "add-ontologymap",
@@ -1850,4 +1877,8 @@ def repo_main(args=None):
     except exceptions.NotFoundException as e:
         # We expect NotFoundExceptions to occur when we're looking for
         # datasets, readGroupsets, etc.
+        repoExitError(str(e))
+    except exceptions.DataException as e:
+        # We expect DataExceptions to occur when a file open fails,
+        # a URL cannot be reached, etc.
         repoExitError(str(e))

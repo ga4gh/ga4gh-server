@@ -374,8 +374,7 @@ class DataException(BaseServerException):
 class FileOpenFailedException(DataException):
 
     def __init__(self, filename):
-        msg = "Failed to open file '{}'".format(filename)
-        super(FileOpenFailedException, self).__init__(msg)
+        self.message = "Failed to open file '{}'".format(filename)
 
 
 class EmptyDirException(DataException):
@@ -565,3 +564,13 @@ class DuplicateNameException(RepoManagerException):
         if containerName is not None:
             msg += " in '{}'".format(containerName)
         super(DuplicateNameException, self).__init__(msg)
+
+
+class MissingIndexException(RepoManagerException):
+    """
+    An index file for a remote BAM/VCF has not been provided.
+    """
+    def __init__(self, dataUrl):
+        msg = "An index file must be provided for remote file '{}'".format(
+            dataUrl)
+        super(MissingIndexException, self).__init__(msg)

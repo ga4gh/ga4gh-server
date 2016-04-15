@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 import datetime
 import json
+import os.path
 import random
 
 import pysam
@@ -204,6 +205,10 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         return ret
 
     def openFile(self, dataFile):
+        # We need to check to see if the path exists here as pysam does
+        # not throw an error if the index is missing.
+        if not os.path.exists(self._indexFile):
+            raise exceptions.FileOpenFailedException(self._indexFile)
         return pysam.AlignmentFile(
             self._dataUrl, filepath_index=self._indexFile)
 

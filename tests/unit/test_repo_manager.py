@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -158,6 +159,18 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         self.runCommand(cmd)
         self.verifyReadGroupSet(name, bamFile, bamFile + ".bai")
 
+    def testAddReadGroupSetLocalFileWithIndex(self):
+        bamFile = paths.bamPath
+        name = os.path.split(bamFile)[1].split(".")[0]
+        with tempfile.NamedTemporaryFile() as temp:
+            indexFile = temp.name
+            shutil.copyfile(bamFile + ".bai", indexFile)
+            cmd = "add-readgroupset {} {} {} {} --referenceSetName={}".format(
+                    self._repoPath, self._datasetName, bamFile,
+                    indexFile, self._referenceSetName)
+            self.runCommand(cmd)
+            self.verifyReadGroupSet(name, bamFile, indexFile)
+
     def testAddReadGroupSetWithNameLocalFile(self):
         bamFile = paths.bamPath
         name = "test_rgs"
@@ -190,6 +203,14 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         self.assertRaises(
             exceptions.DuplicateNameException, self.runCommand, cmd)
 
+    def testAddReadGroupSetFromUrlMissingIndexFile(self):
+        bamFile = "http://example.com/example.bam"
+        cmd = "add-readgroupset {} {} {} --referenceSetName={}".format(
+                self._repoPath, self._datasetName, bamFile,
+                self._referenceSetName)
+        self.assertRaises(
+            exceptions.MissingIndexException, self.runCommand, cmd)
+
     def testAddReadGroupSetMissingDataset(self):
         bamFile = paths.bamPath
         cmd = "add-readgroupset {} {} {} --referenceSetName={}".format(
@@ -197,6 +218,15 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
                 self._referenceSetName)
         self.assertRaises(
             exceptions.DatasetNameNotFoundException, self.runCommand, cmd)
+
+    def testAddReadGroupSetMissingReferenceSet(self):
+        bamFile = paths.bamPath
+        cmd = "add-readgroupset {} {} {} --referenceSetName={}".format(
+                self._repoPath, self._datasetName, bamFile,
+                "not_a_referenceset_name")
+        self.assertRaises(
+            exceptions.ReferenceSetNameNotFoundException, self.runCommand, cmd)
+
     # TODO adapt the code below to test the repo manager code within
     # the above framework.
 # class RepoManagerInidividualCommandTest(AbstractRepoManagerTest):

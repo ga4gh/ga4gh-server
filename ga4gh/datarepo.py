@@ -320,6 +320,45 @@ class SqlDataRepository(AbstractDataRepository):
         self._dbConnection.close()
         self._dbConnection = None
 
+    def verify(self):
+        """
+        Verifies that the data in the repository is consistent.
+        """
+        # TODO this should emit to a log that we can configure so we can
+        # have verbosity levels. We should provide a way to configure
+        # where we look at various chromosomes and so on. This will be
+        # an important debug tool for administrators.
+        for referenceSet in self.getReferenceSets():
+            print(
+                "Verifying ReferenceSet", referenceSet.getLocalId(),
+                "@", referenceSet.getDataUrl())
+            for reference in referenceSet.getReferences():
+                length = min(reference.getLength(), 1000)
+                bases = reference.getBases(0, length)
+                assert len(bases) == length
+                print(
+                    "\tReading", length, "bases from",
+                    reference.getLocalId())
+        for dataset in self.getDatasets():
+            print("Verifying Dataset", dataset.getLocalId())
+            for readGroupSet in dataset.getReadGroupSets():
+                print(
+                    "\tVerifying ReadGroupSet", readGroupSet.getLocalId(),
+                    "@", readGroupSet.getDataUrl())
+                references = readGroupSet.getReferenceSet().getReferences()
+                # TODO should we cycle through the references? Should probably
+                # be an option.
+                reference = references[0]
+                max_alignments = 10
+                for readGroup in readGroupSet.getReadGroups():
+                    alignments = readGroup.getReadAlignments(reference)
+                    for i, alignment in enumerate(alignments):
+                        if i == max_alignments:
+                            break
+                    print(
+                        "\t\tRead", i, "alignments from",
+                        readGroup.getLocalId())
+
     def _createSystemTable(self, cursor):
         sql = """
             CREATE TABLE System (
