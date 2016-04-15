@@ -10,7 +10,7 @@ reads API. Some missing features are:
 
 - Unmapped reads. We do not support searching for unmapped reads.
 
-- Searching over multiple ReadGroups.
+- Searching over multiple ReadGroups in different ReadGroupSets.
 
 For more detail on individual development issues, please see the project's
 `issue page <https://github.com/ga4gh/server/issues>`_.
@@ -18,6 +18,30 @@ For more detail on individual development issues, please see the project's
 +++++++++++++
 Release Notes
 +++++++++++++
+
+*****
+0.2.2
+*****
+
+Alpha pre-release supporting major feature update. This release is backwards
+incompatible with previous releases, and requires a revised data directory
+layout.
+
+- Added sequence and variant annotations (which introduces a sqlite
+  database component)
+
+- Added repo manager, a command line tool to manage data files and
+  import them into the server's data repository
+
+- Supported searching over multiple ReadGroups, so long as they are
+  all in the same ReadGroupSet and all of the ReadGroups in the 
+  ReadGroupSet are specified
+
+*****
+0.2.1
+*****
+
+Bugfix release that fixes a problem introduced by upstream package changes
 
 *****
 0.2.0
