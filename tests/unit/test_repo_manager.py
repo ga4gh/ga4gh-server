@@ -65,6 +65,12 @@ class AbstractRepoManagerTest(unittest.TestCase):
     def init(self):
         self.runCommand("init {}".format(self._repoPath))
 
+    def addOntology(self):
+        # Add the sequence ontology
+        self._ontologyName = paths.ontologyName
+        cmd = "add-ontology {} {}".format(self._repoPath, paths.ontologyPath)
+        self.runCommand(cmd)
+
     def addDataset(self):
         self._datasetName = "test_dataset"
         cmd = "add-dataset {} {}".format(self._repoPath, self._datasetName)
@@ -151,6 +157,46 @@ class TestAddReferenceSet(AbstractRepoManagerTest):
             exceptions.DuplicateNameException, self.runCommand, cmd)
 
 
+class TestAddOntology(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddOntology, self).setUp()
+        self.init()
+
+    def testDefaults(self):
+        mapFile = paths.ontologyPath
+        name = os.path.split(mapFile)[1].split(".")[0]
+        self.runCommand("add-ontology {} {}".format(self._repoPath, mapFile))
+        repo = self.readRepo()
+        ontologyTermMap = repo.getOntologyTermMapByName(name)
+        self.assertEqual(ontologyTermMap.getLocalId(), name)
+        self.assertEqual(ontologyTermMap.getDataUrl(), mapFile)
+
+    def testWithName(self):
+        mapFile = paths.ontologyPath
+        name = "test_name"
+        self.runCommand("add-ontology {} {} --name={}".format(
+            self._repoPath, mapFile, name))
+        repo = self.readRepo()
+        ontologyTermMap = repo.getOntologyTermMapByName(name)
+        self.assertEqual(ontologyTermMap.getLocalId(), name)
+        self.assertEqual(ontologyTermMap.getDataUrl(), mapFile)
+
+    def testWithSameName(self):
+        mapFile = paths.ontologyPath
+        # Default name
+        cmd = "add-ontology {} {}".format(self._repoPath, mapFile)
+        self.runCommand(cmd)
+        self.assertRaises(
+            exceptions.RepoManagerException, self.runCommand, cmd)
+        # Specified name
+        cmd = "add-ontology {} {} --name=testname".format(
+            self._repoPath, mapFile)
+        self.runCommand(cmd)
+        self.assertRaises(
+            exceptions.DuplicateNameException, self.runCommand, cmd)
+
+
 class TestRemoveDataset(AbstractRepoManagerTest):
 
     def setUp(self):
@@ -216,6 +262,25 @@ class TestRemoveReferenceSet(AbstractRepoManagerTest):
         self.runCommand("remove-referenceset {} {} -f".format(
             self._repoPath, self._referenceSetName))
         self.assertReferenceSetRemoved()
+
+
+class TestRemoveOntology(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveOntology, self).setUp()
+        self.init()
+        self.addOntology()
+
+    def assertOntologyRemoved(self):
+        repo = self.readRepo()
+        self.assertRaises(
+            exceptions.OntologyNameNotFoundException,
+            repo.getOntologyTermMapByName, self._ontologyName)
+
+    def testDefaults(self):
+        self.runCommand("remove-ontology {} {} -f".format(
+            self._repoPath, self._ontologyName))
+        self.assertOntologyRemoved()
 
 
 class TestAddReadGroupSet(AbstractRepoManagerTest):

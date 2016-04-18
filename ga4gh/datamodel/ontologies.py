@@ -46,7 +46,7 @@ class OntologyTermMap(object):
         self._sourceName = self._dataUrl
         self._readFile()
 
-    def add(self, id_, name):
+    def _add(self, id_, name):
         """
         Adds an ontology term (id, name pair)
 
@@ -112,4 +112,4 @@ class OntologyTermMap(object):
             for line in f:
                 # File format: id \t name
                 fields = line.rstrip().split("\t")
-                self.add(fields[0], fields[1])
+                self._add(fields[0], fields[1])

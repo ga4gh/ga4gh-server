@@ -338,6 +338,15 @@ class DatasetNameNotFoundException(NotFoundException):
         self.message = "Dataset with name '{0}' not found".format(name)
 
 
+class OntologyNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for an Ontology with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "Ontology with name '{0}' not found".format(name)
+
+
 class FeatureSetNotFoundException(NotFoundException):
     def __init__(self, featureSetId):
         self.message = (

@@ -111,7 +111,7 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         """
         self._dataset = datasets.Dataset(_datasetName)
         self._repo = datarepo.FileSystemDataRepository("tests/data")
-        self._sequenceOntologyTermMap = self._repo.getOntologyTermMap(
+        self._sequenceOntologyTermMap = self._repo.getOntologyTermMapByName(
             "sequence_ontology")
         self._referenceSet = references.AbstractReferenceSet("test_rs")
         featureSetLocalName = featureSetLocalName[:-3]  # remove '.db'
