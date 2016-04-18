@@ -199,7 +199,8 @@ class SimulatedDataset(Dataset):
             numAlignments=1, numFeatureSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
-        sequenceOntology = ontologies.Ontology("sequence_ontology")
+        # TODO create a simulated OntologyTermMap
+        sequenceOntology = ontologies.OntologyTermMap("sequence_ontology")
         # TODO add some terms into the simualated sequence ontology
         # Variants
         for i in range(numVariantSets):
@@ -210,7 +211,7 @@ class SimulatedDataset(Dataset):
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
                 variantSet, "simVas{}".format(i), seed)
-            variantAnnotationSet.setSequenceOntology(sequenceOntology)
+            variantAnnotationSet.setSequenceOntologyTermMap(sequenceOntology)
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
@@ -264,8 +265,8 @@ class FileSystemDataset(Dataset):
                 self.addVariantSet(variantSet)
                 # Variant annotations sets
                 for vas in variantSet.getVariantAnnotationSets():
-                    vas.setSequenceOntology(
-                        dataRepository.getOntology("sequence_ontology"))
+                    vas.setSequenceOntologyTermMap(
+                        dataRepository.getOntologyTermMap("sequence_ontology"))
         # Reads
         readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):
@@ -284,11 +285,11 @@ class FileSystemDataset(Dataset):
             if fnmatch.fnmatch(filename, '*.db'):
                 localId, _ = os.path.splitext(filename)
                 fullPath = os.path.join(featureSetDir, filename)
-                sequenceOntology = dataRepository.getOntology(
+                sequenceOntology = dataRepository.getOntologyTermMap(
                     "sequence_ontology")
                 featureSet = sequenceAnnotations.Gff3DbFeatureSet(
                     self, localId)
                 featureSet.setReferenceSet(referenceSet)
-                featureSet.setSequenceOntology(sequenceOntology)
+                featureSet.setSequenceOntologyTermMap(sequenceOntology)
                 featureSet.populateFromFile(fullPath)
                 self.addFeatureSet(featureSet)
