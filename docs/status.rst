@@ -34,7 +34,7 @@ layout.
   import them into the server's data repository
 
 - Supported searching over multiple ReadGroups, so long as they are
-  all in the same ReadGroupSet and all of the ReadGroups in the 
+  all in the same ReadGroupSet and all of the ReadGroups in the
   ReadGroupSet are specified
 
 *****
