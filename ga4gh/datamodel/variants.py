@@ -773,19 +773,20 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
     def __init__(self, variantSet, localId):
         super(AbstractVariantAnnotationSet, self).__init__(variantSet, localId)
         self._variantSet = variantSet
-        self._sequenceOntology = None
+        self._sequenceOntologyTermMap = None
         self._analysis = None
         # TODO these should be set from the DB, not created on
         # instantiation.
         self._creationTime = datetime.datetime.now().isoformat() + "Z"
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
-    def setSequenceOntology(self, sequenceOntology):
+    def setSequenceOntologyTermMap(self, sequenceOntologyTermMap):
         """
-        Sets the sequence ontology object used in this VariantAnnotationSet
-        to the specified value.
+        Sets the OntologyTermMap used in this VariantAnnotationSet to
+        translate sequence ontology term names into IDs to the
+        specified value.
         """
-        self._sequenceOntology = sequenceOntology
+        self._sequenceOntologyTermMap = sequenceOntologyTermMap
 
     def getAnalysis(self):
         """
@@ -1304,7 +1305,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         for soName in seqOntTerms:
             so = self._createGaOntologyTermSo()
             so.term = soName
-            so.id = self._sequenceOntology.getId(soName, "")
+            so.id = self._sequenceOntologyTermMap.getId(soName, "")
             soTerms.append(so)
         return soTerms
 

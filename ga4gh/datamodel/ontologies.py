@@ -8,34 +8,43 @@ from __future__ import unicode_literals
 import ga4gh.protocol as protocol
 
 
-class Ontology(object):
+class OntologyTermMap(object):
     """
-    At this moment an "Ontology" is just a map between names and IDs (e.g.
-    in Sequence Ontology we would have "SO:0001583 <-> missense_variant")
-    This is a tempotrary solution and must be replaced by more comprehensive
-    ontology object.
+    A bidectional map between ontology names and IDs (e.g. in Sequence
+    Ontology we would have "SO:0001583 <-> missense_variant"). This
+    implementation uses a tab separated TXT file: "id\tname"
 
-    This implementation uses a tab separated TXT file: "id\tname"
+    This is a temporary solution and must be replaced by more comprehensive
+    ontology object.
     """
     def __init__(self, localId):
         self._localId = localId
         self._dataUrl = None
+        self._sourceName = None
         self._nameIdMap = dict()
         self._idNameMap = dict()
 
     def populateFromFile(self, dataUrl):
         """
         Populates this ontology map from the specified dataUrl.
+        This reads the ontology term name and ID pairs from the
+        specified file.
         """
         self._dataUrl = dataUrl
-        self.readOntology(self._dataUrl)
+        # TODO shouldn't sourceName be the name of the ontology, (e.g,
+        # sequence_ontology?)
+        self._sourceName = self._dataUrl
+        self._readFile()
 
     def populateFromRow(self, row):
         """
         Populates this Ontology using values in the specified DB row.
         """
         self._dataUrl = row[b'dataUrl']
-        self.readOntology(self._dataUrl)
+        # TODO shouldn't sourceName be the name of the ontology, (e.g,
+        # sequence_ontology?)
+        self._sourceName = self._dataUrl
+        self._readFile()
 
     def add(self, id_, name):
         """
@@ -97,15 +106,9 @@ class Ontology(object):
         term.sourceVersion = None
         return term
 
-    def readOntology(self, filename):
-        """
-        Extracts ontology maps (ID's to names and vice versa)
-        from a file.
-
-        :param filename: the name of the file with ID, name pairs.
-        """
-        self._sourceName = filename
-        with open(filename) as f:
+    def _readFile(self):
+        self._sourceName = self._dataUrl
+        with open(self._dataUrl) as f:
             for line in f:
                 # File format: id \t name
                 fields = line.rstrip().split("\t")
