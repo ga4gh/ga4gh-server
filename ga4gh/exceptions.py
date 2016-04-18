@@ -557,7 +557,7 @@ class RepoManagerException(Exception):
 class DuplicateNameException(RepoManagerException):
     """
     The user has tried to insert an object with the same name as
-    an existing object.
+    an existing object within a given container.
     """
     def __init__(self, objectName, containerName=None):
         msg = "Name '{}' already exists".format(objectName)

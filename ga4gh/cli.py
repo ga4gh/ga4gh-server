@@ -1625,7 +1625,9 @@ class RepoManager(object):
         dataUrl = self._args.dataFile
         indexFile = self._args.indexFile
         parsed = urlparse.urlparse(dataUrl)
-        if parsed.scheme == 'http':
+        # TODO, add https support and others when they have been
+        # tested.
+        if parsed.scheme in ['http', 'ftp']:
             if indexFile is None:
                 raise exceptions.MissingIndexException(dataUrl)
         else:
@@ -1824,7 +1826,7 @@ class RepoManager(object):
             "indexFile", nargs='?', default=None,
             help=(
                 "The file path of the BAM index for this ReadGroupSet. "
-                "If the dataFile is a argument is a local file, this will "
+                "If the dataFile argument is a local file, this will "
                 "be automatically inferred by appending '.bai' to the "
                 "file name. If the dataFile is a remote URL the path to "
                 "a local file containing the BAM index must be provided"))

@@ -332,6 +332,19 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.dataFile, self.filePath)
+        self.assertEquals(args.indexFile, None)
+        self.assertEquals(args.runner, "addReadGroupSet")
+
+    def testAddReadGroupSetWithIndexFile(self):
+        indexPath = self.filePath + ".bai"
+        cliInput = "add-readgroupset {} {} {} {}".format(
+            self.repoPath, self.datasetName, self.filePath,
+            indexPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.dataFile, self.filePath)
+        self.assertEquals(args.indexFile, indexPath)
         self.assertEquals(args.runner, "addReadGroupSet")
 
     def testRemoveReadGroupSet(self):
