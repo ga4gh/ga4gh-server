@@ -26,6 +26,9 @@ class RNASqliteStore(object):
                 self._cursor = self._dbConn.cursor()
             else:
                 self.createNewRepo(sqlFilePath)
+        self._batchSize = 100
+        self._rnaValueList = []
+        self._expressionValueList = []
 
     def createNewRepo(self, sqlFilePath):
         self._dbConn = sqlite3.connect(sqlFilePath)
@@ -61,9 +64,16 @@ class RNASqliteStore(object):
         order:
         id, annotation_ids, description, name, read_group_id
         """
-        self._cursor.execute('INSERT INTO RNAQUANTIFICATION VALUES '
-                             '(?, ?, ?, ?, ?)', datafields)
-        self._dbConn.commit()
+        self._rnaValueList.append(datafields)
+        if len(self._rnaValueList) >= self._batchSize:
+            self.batchAddRNAQuantification()
+
+    def batchAddRNAQuantification(self):
+        if len(self._rnaValueList) > 0:
+            sql = "INSERT INTO RNAQUANTIFICATION VALUES (?,?,?,?,?)"
+            self._cursor.executemany(sql, self._rnaValueList)
+            self._dbConn.commit()
+            self._rnaValueList = []
 
     def addExpression(self, datafields):
         """
@@ -71,10 +81,16 @@ class RNASqliteStore(object):
         id, name, rna_quantification_id, annotation_id, expression,
         feature_group_id, is_normalized, raw_read_count, score, units
         """
-        self._cursor.execute('INSERT INTO EXPRESSION VALUES '
-                             '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                             datafields)
-        self._dbConn.commit()
+        self._expressionValueList.append(datafields)
+        if len(self._expressionValueList) >= self._batchSize:
+            self.batchAddExpression()
+
+    def batchAddExpression(self):
+        if len(self._expressionValueList) > 0:
+            sql = "INSERT INTO EXPRESSION VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+            self._cursor.executemany(sql, self._expressionValueList)
+            self._dbConn.commit()
+            self._expressionValueList = []
 
 
 class AbstractWriter(object):
@@ -125,6 +141,7 @@ class AbstractWriter(object):
                           isNormalized, rawCount, str(score), units,
                           confidenceLow, confidenceHi)
             self._db.addExpression(datafields)
+        self._db.batchAddExpression()
 
 
 class CufflinksWriter(AbstractWriter):
@@ -202,6 +219,7 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
         datafields = (analysisId, annotationId, description, analysisId,
                       readGroupId)
         rnaDB.addRNAQuantification(datafields)
+    rnaDB.batchAddRNAQuantification()
 
 
 def writeExpressionTable(writer, data):
