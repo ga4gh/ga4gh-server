@@ -22,7 +22,7 @@ First, we install some basic pre-requisite packages:
 
 .. code-block:: bash
 
-  $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev libssl-dev
+  $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev libssl-dev libcurl4-openssl-dev
 
 Install Apache and mod_wsgi, and enable mod_wsgi:
 
@@ -55,7 +55,7 @@ Make a virtualenv, and install the ga4gh package:
 
   $ virtualenv ga4gh-server-env
   $ source ga4gh-server-env/bin/activate
-  (ga4gh-server-env) $ pip install --pre ga4gh  # We need the --pre because ga4gh is pre-release
+  (ga4gh-server-env) $ pip install ga4gh
   (ga4gh-server-env) $ deactivate
 
 Download and unpack the example data:
@@ -84,7 +84,7 @@ following contents:
 (Many more configuration options are available --- see the :ref:`configuration`
 section for a detailed discussion on the server configuration and input data.)
 
-Configure Apache. Edit the file ``/etc/apache2/sites-enabled/000-default.conf``
+Configure Apache. Edit the file ``/etc/apache2/sites-available/000-default.conf``
 and insert the following contents towards the end of the file
 (*within* the ``<VirtualHost:80>...</VirtualHost>`` block):
 
@@ -107,16 +107,19 @@ Restart Apache:
 
   $ sudo service apache2 restart
 
-Test the installation by pointing a web-browser at the root URL; for example,
-to test on the installation server use:
+We will now test to see the server started properly by requesting the
+landing page. 
 
 .. code-block:: bash
 
-    $ links http://localhost/ga4gh
+    $ curl http://localhost/ga4gh/ --silent | grep GA4GH
+    #         <title>GA4GH reference server 0.2.3.dev4+nge0b07f3</title>
+    #    <h2>GA4GH reference server 0.2.3.dev4+nge0b07f3</h2>
+    # Welcome to the GA4GH reference server landing page! This page describes
 
-We can also test the server by running some API commands; the instructions
-in the :ref:`demo` can be easily adapted here to test out the server across
-the network.
+We can also test the server by running some API commands. Please refer to 
+the instructions in the :ref:`demo` for how to access data made available
+by this server.
 
 There are any number of different ways in which we can set up a WSGI
 application under Apache, which may be preferable in different installations.
@@ -131,13 +134,6 @@ The server can be deployed on any WSGI compliant web server. See the
 instructions in the `Flask documentation
 <http://flask.pocoo.org/docs/0.10/deploying/>`_ for more details on
 how to deploy on various other servers.
-
-**TODO**
-
-1. Add more detail on how we can test out the API by making some client
-   queries.
-2. Add links to the Configuration section to give details on how we
-   configure the server.
 
 +++++++++++++++
 Troubleshooting
