@@ -284,8 +284,8 @@ class AbstractSearchRunner(FormattedOutputRunner):
         """
         return self._client.searchReferenceSets()
 
-
 # Runners for the various search methods
+
 
 class SearchDatasetsRunner(AbstractSearchRunner):
     """
@@ -669,9 +669,85 @@ class SearchReadsRunner(AbstractSearchRunner):
             print(read.id)
 
 
+class SearchRnaQuantificationRunner(AbstractSearchRunner):
+    """
+    Runner class for the rnaquantification/search method
+    """
+    def __init__(self, args):
+        super(SearchRnaQuantificationRunner, self).__init__(args)
+        self._rnaQuantificationId = args.rnaQuantificationId
+
+    def run(self):
+        iterator = self._client.searchRnaQuantification(
+            self._rnaQuantificationId)
+        self._output(iterator)
+
+    def _textOutput(self, rnaQuants):
+        for rnaQuant in rnaQuants:
+            print(
+                rnaQuant.id, rnaQuant.description, rnaQuant.name,
+                rnaQuant.readGroupId, sep="\t", end="\t")
+            for annotation in rnaQuant.annotationIds:
+                print(annotation, sep=",", end="")
+            print()
+
+
+class SearchExpressionLevelRunner(AbstractSearchRunner):
+    """
+    Runner class for the ExpressionLevel/search method
+    """
+    def __init__(self, args):
+        super(SearchExpressionLevelRunner, self).__init__(args)
+        self._expressionLevelId = args.expressionLevelId
+        self._featureGroupId = args.featureGroupId
+        self._rnaQuantificationId = args.rnaQuantificationId
+        self.threshold = args.threshold
+
+    def run(self):
+        iterator = self._client.searchExpressionLevel(
+            expressionLevelId=self._expressionLevelId,
+            featureGroupId=self._featureGroupId,
+            rnaQuantificationId=self._rnaQuantificationId,
+            threshold=self.threshold)
+        self._output(iterator)
+
+    def _textOutput(self, expressionObjs):
+        for expression in expressionObjs:
+            print(
+                expression.annotationId, expression.expression,
+                expression.featureGroupId, expression.id,
+                expression.isNormalized, expression.rawReadCount,
+                expression.score, expression.units, sep="\t", end="\t")
+            print()
+
+
+class SearchFeatureGroupRunner(AbstractSearchRunner):
+    """
+    Runner class for the featuregroup/search method
+    """
+    def __init__(self, args):
+        super(SearchFeatureGroupRunner, self).__init__(args)
+        self._rnaQuantificationId = args.rnaQuantificationId
+        self._featureGroupId = args.featureGroupId
+        self._threshold = args.threshold
+
+    def run(self):
+        iterator = self._client.searchFeatureGroup(
+            rnaQuantificationId=self._rnaQuantificationId,
+            featureGroupId=self._featureGroupId, threshold=self._threshold)
+        self._output(iterator)
+
+    def _textOutput(self, expressionObjs):
+        for expression in expressionObjs:
+            print(
+                expression.id,
+                expression.analysisId,
+                expression.name, sep="\t", end="\t")
+            print()
+
+
 # ListReferenceBases is an oddball, and doesn't fit either get or
 # search patterns.
-
 class ListReferenceBasesRunner(AbstractQueryRunner):
     """
     Runner class for the references/{id}/bases method
@@ -1255,6 +1331,63 @@ def addReferencesBasesListParser(subparsers):
     addEndArgument(parser, defaultValue=None)
 
 
+def addRnaQuantificationSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "rnaquantification-search",
+        description="Search for rna quantification",
+        help="Search for rna quantification")
+    parser.set_defaults(runner=SearchRnaQuantificationRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    parser.add_argument(
+        "--rnaQuantificationId", default=None,
+        help="The rnaQuantificationId to search over")
+    addOutputFormatArgument(parser)
+    return parser
+
+
+def addExpressionLevelSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "expressionlevel-search",
+        description="Search for feature expression",
+        help="Search for feature expression")
+    parser.set_defaults(runner=SearchExpressionLevelRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    parser.add_argument(
+        "--expressionLevelId", default=None,
+        help="The expression level Id to search over")
+    parser.add_argument(
+        "--rnaQuantificationId", default=None,
+        help="The RNA Quantification Id to search over")
+    parser.add_argument(
+        "--featureGroupId", default=None,
+        help="The feature group Id to search over")
+    parser.add_argument(
+        "--threshold", default=0.0, type=float,
+        help="The minimum value for expression results to report.")
+    addOutputFormatArgument(parser)
+    return parser
+
+
+def addFeatureGroupSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "featuregroup-search",
+        description="Search for feature group",
+        help="Search for feature group")
+    parser.set_defaults(runner=SearchFeatureGroupRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    parser.add_argument(
+        "--rnaQuantificationId", default=None,
+        help="The RNA Quantification Id to search over")
+    parser.add_argument(
+        "--featureGroupId", default=None,
+        help="The feature group Id to search over")
+    addOutputFormatArgument(parser)
+    return parser
+
+
 def getClientParser():
     parser = createArgumentParser("GA4GH reference client")
     addClientGlobalOptions(parser)
@@ -1283,6 +1416,9 @@ def getClientParser():
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
+    addRnaQuantificationSearchParser(subparsers)
+    addExpressionLevelSearchParser(subparsers)
+    addFeatureGroupSearchParser(subparsers)
     return parser
 
 

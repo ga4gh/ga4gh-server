@@ -81,6 +81,7 @@ class RepoManager(object):
     readsDirName = datasets.FileSystemDataset.readsDirName
     variantsDirName = datasets.FileSystemDataset.variantsDirName
     featuresDirName = datasets.FileSystemDataset.featuresDirName
+    rnaDirName = datasets.FileSystemDataset.rnaDirName
     fastaExtension = '.fa.gz'
     fastaIndexExtensionFai = '.fa.gz.fai'
     fastaIndexExtensionGzi = '.fa.gz.gzi'
@@ -91,6 +92,7 @@ class RepoManager(object):
     bamIndexExtension = '.bam.bai'
     dbExtension = '.db'
     ontologyExtension = '.txt'
+    dbExtension = '.db'
 
     def __init__(self, repoPath):
         self._repoPath = repoPath
@@ -99,7 +101,8 @@ class RepoManager(object):
             self.ontologiesDirName,
             self.referenceSetsDirName]
         self._datasetStructure = [
-            self.readsDirName, self.variantsDirName, self.featuresDirName]
+            self.readsDirName, self.variantsDirName, self.featuresDirName,
+            self.rnaDirName]
 
     def _assertFileExists(
             self, filePath, text='File', inRepo=False, emitName=None):
@@ -194,6 +197,12 @@ class RepoManager(object):
             self._repoPath, self.datasetsDirName, datasetName,
             self.featuresDirName, featureSetName) + self.dbExtension
         return featureSetPath
+
+    def _getRnaQuantificationPath(self, datasetName, rnaQuantificationName):
+        rnaQuantificationPath = os.path.join(
+            self._repoPath, self.datasetsDirName, datasetName,
+            self.rnaDirName, rnaQuantificationName) + self.dbExtension
+        return rnaQuantificationPath
 
     def _moveFile(self, src, dst, mode):
         if mode == 'move':
@@ -565,6 +574,37 @@ class RepoManager(object):
         self._repoEmit("Ontology '{}' removed".format(
             ontologyName))
 
+    def addRnaQuantification(self, datasetName, filePath, moveMode):
+        """
+        Add an RNA quantification to the repo
+        """
+        self._check()
+        self._checkDataset(datasetName)
+        self._checkFile(filePath, self.dbExtension)
+        fileName = os.path.basename(filePath)
+        destPath = os.path.join(
+            self._repoPath, self.datasetsDirName, datasetName,
+            self.rnaDirName, fileName)
+        self._assertPathEmpty(destPath, inRepo=True)
+        self._moveFile(filePath, destPath, moveMode)
+
+        # finish
+        self._repoEmit("RnaQuantification '{}' added to dataset '{}'".format(
+            fileName, datasetName))
+
+    def removeRnaQuantification(self, datasetName, rnaQuantificationName):
+        """
+        Remove an RNA quantification from the repo
+        """
+        self._check()
+        self._checkDataset(datasetName)
+        rnaQuantificationPath = self._getRnaQuantificationPath(
+            datasetName, rnaQuantificationName)
+        self._assertFileExists(rnaQuantificationPath, inRepo=True)
+        self._removePath(rnaQuantificationPath)
+        self._repoEmit("RnaQuantification '{}/{}' removed".format(
+            datasetName, rnaQuantificationName))
+
     def list(self):
         """
         List the contents of the repo
@@ -595,3 +635,6 @@ class RepoManager(object):
             self._emitIndent(self.featuresDirName, 2)
             for featureSet in dataset.getFeatureSets():
                 self._emitIndent(featureSet.getLocalId(), 3)
+            self._emitIndent(self.rnaDirName, 2)
+            for rnaQuantification in dataset.getRnaQuantifications():
+                self._emitIndent(rnaQuantification.getLocalId(), 3)

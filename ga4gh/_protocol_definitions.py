@@ -11,7 +11,7 @@ from protocol import SearchResponse
 
 import avro.schema
 
-version = '0.6.0a4'
+version = '0.6-rna'
 
 
 class AlleleLocation(ProtocolElement):
@@ -741,6 +741,123 @@ class Experiment(ProtocolElement):
         """
 
 
+class ExpressionLevel(ProtocolElement):
+    """
+    The actual numerical quantification for each feature.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"ExpressionLevel", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"doc": "", "type": "string", "name":
+"featureGroupId"}, {"doc": "", "type": "string", "name":
+"annotationId"}, {"doc": "", "type": "float", "name": "rawReadCount"},
+{"default": null, "doc": "", "type": ["null", "float"], "name":
+"expression"}, {"default": null, "doc": "", "type": ["null",
+"boolean"], "name": "isNormalized"}, {"default": null, "doc": "",
+"type": ["null", {"symbols": ["FPKM", "TPM"], "doc": "", "type":
+"enum", "name": "ExpressionUnits"}], "name": "units"}, {"default":
+null, "doc": "", "type": ["null", "float"], "name": "score"},
+{"default": [], "doc": "", "type": {"items": "float", "type":
+"array"}, "name": "confInterval"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "annotationId",
+        "featureGroupId",
+        "id",
+        "rawReadCount",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'annotationId', 'confInterval', 'expression',
+        'featureGroupId', 'id', 'isNormalized', 'name',
+        'rawReadCount', 'score', 'units'
+    ]
+
+    def __init__(self, **kwargs):
+        self.annotationId = kwargs.get(
+            'annotationId', None)
+        """
+        The associated annotation.
+        """
+        self.confInterval = kwargs.get(
+            'confInterval', [])
+        """
+        Confidence interval on the expression value.  Expressed as a
+        sorted array   from low to high.
+        """
+        self.expression = kwargs.get(
+            'expression', None)
+        """
+        Numerical expression value.
+        """
+        self.featureGroupId = kwargs.get(
+            'featureGroupId', None)
+        """
+        The associated FeatureGoup.
+        """
+        self.id = kwargs.get(
+            'id', None)
+        """
+        Feature ID
+        """
+        self.isNormalized = kwargs.get(
+            'isNormalized', None)
+        """
+        True if the expression value is a normalized value.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        Name
+        """
+        self.rawReadCount = kwargs.get(
+            'rawReadCount', None)
+        """
+        The number of reads mapped to this feature.
+        """
+        self.score = kwargs.get(
+            'score', None)
+        """
+        Weighted score for the expression value.
+        """
+        self.units = kwargs.get(
+            'units', None)
+        """
+        The units of the expression value if one is given.
+        """
+
+
+class ExpressionUnits(object):
+    """
+    Units for expression level. FPKM - number of Fragments Per
+    Kilobase of feature length per Million reads FPKM is calculated by
+    dividing the fragment count per feature by the total number of
+    reads in millions (FPM - Fragments Per Million).  FPM is then
+    divided by feature length in kilobases to obtain FPKM.  TPM -
+    Transcripts per kilobase Per Million reads TPM is calculated by
+    first dividing the fragment/read count by feature length in
+    kilobases (RPK - Reads Per Kilobase).  The count of all RPKs in
+    the sample are then divided by a million to generate a 'per
+    million' scaling value.  For each feature RPK divided by the 'per
+    million' scaling factor generated TPM.
+    """
+    FPKM = "FPKM"
+    TPM = "TPM"
+
+
 class ExternalIdentifier(ProtocolElement):
     """
     Identifier from a public database
@@ -926,6 +1043,84 @@ class Feature(ProtocolElement):
             'strand', None)
         """
         The strand on which the feature is present.
+        """
+
+
+class FeatureGroup(ProtocolElement):
+    """
+    Identifying information for annotated features.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"FeatureGroup", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"doc": "", "type": "string", "name": "analysisId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"default": null, "doc": "", "type": ["null",
+"long"], "name": "created"}, {"default": null, "doc": "", "type":
+["null", "long"], "name": "updated"}, {"default": {}, "doc": "",
+"type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "analysisId",
+        "id",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'analysisId', 'created', 'description', 'id', 'info', 'name',
+        'updated'
+    ]
+
+    def __init__(self, **kwargs):
+        self.analysisId = kwargs.get(
+            'analysisId', None)
+        """
+        The associated RnaQuantification.
+        """
+        self.created = kwargs.get(
+            'created', None)
+        """
+        The time at which this feature group was created in
+        milliseconds from the epoch.
+        """
+        self.description = kwargs.get(
+            'description', None)
+        """
+        Description
+        """
+        self.id = kwargs.get(
+            'id', None)
+        """
+        Feature group ID
+        """
+        self.info = kwargs.get(
+            'info', {})
+        """
+        A map of additional feature group information.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        Name
+        """
+        self.updated = kwargs.get(
+            'updated', None)
+        """
+        The time at which this feature group was last updated in
+        milliseconds   from the epoch.
         """
 
 
@@ -2205,6 +2400,78 @@ class ReferenceSet(ProtocolElement):
         """
 
 
+class RnaQuantification(ProtocolElement):
+    """
+    Top level identifying information
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"RnaQuantification", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "name"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "description"}, {"doc": "", "type": "string",
+"name": "readGroupId"}, {"default": [], "doc": "", "type": {"items":
+"string", "type": "array"}, "name": "programIds"}, {"default": [],
+"doc": "", "type": {"items": "string", "type": "array"}, "name":
+"annotationIds"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "id",
+        "readGroupId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'annotationIds', 'description', 'id', 'name', 'programIds',
+        'readGroupId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.annotationIds = kwargs.get(
+            'annotationIds', [])
+        """
+        List of annotations used.
+        """
+        self.description = kwargs.get(
+            'description', None)
+        """
+        Description
+        """
+        self.id = kwargs.get(
+            'id', None)
+        """
+        The unique ID assigned to the results of running the described
+        programs on the specified reads and assignment to the listed
+        annotation.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        Name
+        """
+        self.programIds = kwargs.get(
+            'programIds', [])
+        """
+        List of programIds used in the analysis.
+        """
+        self.readGroupId = kwargs.get(
+            'readGroupId', None)
+        """
+        ID of the ReadGroup providing the reads for the analysis.
+        """
+
+
 class SearchCallSetsRequest(SearchRequest):
     """
     This request maps to the body of POST /callsets/search as JSON.
@@ -2420,6 +2687,269 @@ class SearchDatasetsResponse(SearchResponse):
         result sets.   Provide this value in a subsequent request to
         return the next page of   results. This field will be empty if
         there aren't any additional results.
+        """
+
+
+class SearchExpressionLevelRequest(SearchRequest):
+    """
+    This request maps to the body of 'POST /expressionlevel/search' as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchExpressionLevelRequest", "fields": [{"default": null, "doc":
+"", "type": ["null", "string"], "name": "expressionLevelId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"featureGroupId"}, {"doc": "", "type": "string", "name":
+"rnaQuantificationId"}, {"default": null, "doc": "", "type": ["null",
+"float"], "name": "threshold"}, {"default": null, "doc": "", "type":
+["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "rnaQuantificationId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'expressionLevelId', 'featureGroupId', 'pageSize',
+        'pageToken', 'rnaQuantificationId', 'threshold'
+    ]
+
+    def __init__(self, **kwargs):
+        self.expressionLevelId = kwargs.get(
+            'expressionLevelId', None)
+        """
+        If present, return matching Expression Level record.
+        """
+        self.featureGroupId = kwargs.get(
+            'featureGroupId', None)
+        """
+        If present return only ExpressionLevel records which belong to
+        this set.
+        """
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   'nextPageToken' from the previous
+        response.
+        """
+        self.rnaQuantificationId = kwargs.get(
+            'rnaQuantificationId', None)
+        """
+        The rnaQuantification to restrict search to.
+        """
+        self.threshold = kwargs.get(
+            'threshold', 0.0)
+        """
+        If present returns ExpressionLevel records with expressions
+        exceeding   this value.
+        """
+
+
+class SearchExpressionLevelResponse(SearchResponse):
+    """
+    This is the response from 'POST /expressionlevel/search' expressed
+    as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchExpressionLevelResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
+"name": "ExpressionLevel", "fields": [{"doc": "", "type": "string",
+"name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"doc": "", "type": "string", "name":
+"featureGroupId"}, {"doc": "", "type": "string", "name":
+"annotationId"}, {"doc": "", "type": "float", "name": "rawReadCount"},
+{"default": null, "doc": "", "type": ["null", "float"], "name":
+"expression"}, {"default": null, "doc": "", "type": ["null",
+"boolean"], "name": "isNormalized"}, {"default": null, "doc": "",
+"type": ["null", {"symbols": ["FPKM", "TPM"], "doc": "", "type":
+"enum", "name": "ExpressionUnits"}], "name": "units"}, {"default":
+null, "doc": "", "type": ["null", "float"], "name": "score"},
+{"default": [], "doc": "", "type": {"items": "float", "type":
+"array"}, "name": "confInterval"}], "doc": ""}, "type": "array"},
+"name": "expressionLevel"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "expressionLevel"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'expressionLevel': ExpressionLevel,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'expressionLevel': ExpressionLevel,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'expressionLevel', 'nextPageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.expressionLevel = kwargs.get(
+            'expressionLevel', [])
+        """
+        The line below is causing problems - naming or something wrong
+        with the   import perhaps?
+        """
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   'nextPageToken' from the previous
+        response.
+        """
+
+
+class SearchFeatureGroupRequest(SearchRequest):
+    """
+    This request maps to the body of 'POST /featuregroup/search' as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchFeatureGroupRequest", "fields": [{"doc": "", "type": "string",
+"name": "rnaQuantificationId"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "featureGroupId"}, {"default": null,
+"doc": "", "type": ["null", "int"], "name": "pageSize"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "pageToken"}],
+"doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "rnaQuantificationId",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'featureGroupId', 'pageSize', 'pageToken',
+        'rnaQuantificationId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.featureGroupId = kwargs.get(
+            'featureGroupId', None)
+        """
+        Feature Groups of interest.
+        """
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   'nextPageToken' from the previous
+        response.
+        """
+        self.rnaQuantificationId = kwargs.get(
+            'rnaQuantificationId', None)
+        """
+        RNA Quantification to search.
+        """
+
+
+class SearchFeatureGroupResponse(SearchResponse):
+    """
+    This is the response from 'POST /featuregroup/search' expressed as
+    JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchFeatureGroupResponse", "fields": [{"default": [], "doc": "",
+"type": {"items": {"namespace": "org.ga4gh.models", "type": "record",
+"name": "FeatureGroup", "fields": [{"doc": "", "type": "string",
+"name": "id"}, {"doc": "", "type": "string", "name": "analysisId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"name"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "description"}, {"default": null, "doc": "", "type": ["null",
+"long"], "name": "created"}, {"default": null, "doc": "", "type":
+["null", "long"], "name": "updated"}, {"default": {}, "doc": "",
+"type": {"values": {"items": "string", "type": "array"}, "type":
+"map"}, "name": "info"}], "doc": ""}, "type": "array"}, "name":
+"featureGroup"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "featureGroup"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'featureGroup': FeatureGroup,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'featureGroup': FeatureGroup,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'featureGroup', 'nextPageToken'
+    ]
+
+    def __init__(self, **kwargs):
+        self.featureGroup = kwargs.get(
+            'featureGroup', [])
+        """
+        The list of matching feature groups.
+        """
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   'nextPageToken' from the previous
+        response.
         """
 
 
@@ -3311,6 +3841,126 @@ class SearchReferencesResponse(SearchResponse):
             'references', [])
         """
         The list of matching references.
+        """
+
+
+class SearchRnaQuantificationRequest(SearchRequest):
+    """
+    This request maps to the body of 'POST /rnaquantification/search'
+    as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchRnaQuantificationRequest", "fields": [{"default": null, "doc":
+"", "type": ["null", "string"], "name": "rnaQuantificationId"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"datasetId"}, {"default": null, "doc": "", "type": ["null", "int"],
+"name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "pageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {}
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'datasetId', 'pageSize', 'pageToken', 'rnaQuantificationId'
+    ]
+
+    def __init__(self, **kwargs):
+        self.datasetId = kwargs.get(
+            'datasetId', None)
+        """
+        If present, return only Rna Quantifications which belong to
+        this set.
+        """
+        self.pageSize = kwargs.get(
+            'pageSize', None)
+        """
+        Specifies the maximum number of results to return in a single
+        page.   If unspecified, a system default will be used.
+        """
+        self.pageToken = kwargs.get(
+            'pageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   'nextPageToken' from the previous
+        response.
+        """
+        self.rnaQuantificationId = kwargs.get(
+            'rnaQuantificationId', None)
+        """
+        If present, return only Rna Quantifications which belong to
+        this set.
+        """
+
+
+class SearchRnaQuantificationResponse(SearchResponse):
+    """
+    This is the response from 'POST /rnaquantification/search'
+    expressed as JSON.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"SearchRnaQuantificationResponse", "fields": [{"default": [], "doc":
+"", "type": {"items": {"namespace": "org.ga4gh.models", "type":
+"record", "name": "RnaQuantification", "fields": [{"doc": "", "type":
+"string", "name": "id"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "name"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "description"}, {"doc": "", "type":
+"string", "name": "readGroupId"}, {"default": [], "doc": "", "type":
+{"items": "string", "type": "array"}, "name": "programIds"},
+{"default": [], "doc": "", "type": {"items": "string", "type":
+"array"}, "name": "annotationIds"}], "doc": ""}, "type": "array"},
+"name": "rnaQuantification"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "nextPageToken"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([])
+    _valueListName = "rnaQuantification"
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'rnaQuantification': RnaQuantification,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'rnaQuantification': RnaQuantification,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'nextPageToken', 'rnaQuantification'
+    ]
+
+    def __init__(self, **kwargs):
+        self.nextPageToken = kwargs.get(
+            'nextPageToken', None)
+        """
+        The continuation token, which is used to page through large
+        result sets.   To get the next page of results, set this
+        parameter to the value of   'nextPageToken' from the previous
+        response.
+        """
+        self.rnaQuantification = kwargs.get(
+            'rnaQuantification', [])
+        """
+        The list of matching quantifications.
         """
 
 
@@ -4541,6 +5191,12 @@ postMethods = \
      ('/datasets/search',
       SearchDatasetsRequest,
       SearchDatasetsResponse),
+     ('/expressionlevel/search',
+      SearchExpressionLevelRequest,
+      SearchExpressionLevelResponse),
+     ('/featuregroup/search',
+      SearchFeatureGroupRequest,
+      SearchFeatureGroupResponse),
      ('/features/search',
       SearchFeaturesRequest,
       SearchFeaturesResponse),
@@ -4559,6 +5215,9 @@ postMethods = \
      ('/referencesets/search',
       SearchReferenceSetsRequest,
       SearchReferenceSetsResponse),
+     ('/rnaquantification/search',
+      SearchRnaQuantificationRequest,
+      SearchRnaQuantificationResponse),
      ('/variantannotations/search',
       SearchVariantAnnotationsRequest,
       SearchVariantAnnotationsResponse),
