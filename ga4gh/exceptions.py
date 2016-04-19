@@ -302,6 +302,15 @@ class CallSetNameNotFoundException(NotFoundException):
         self.message = "CallSet with name '{0}' not found".format(name)
 
 
+class VariantSetNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for a VariantSet with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "VariantSet with name '{0}' not found".format(name)
+
+
 class ReadGroupSetNameNotFoundException(NotFoundException):
     """
     Indicates a request was made for a ReadGroupSet with a name that
