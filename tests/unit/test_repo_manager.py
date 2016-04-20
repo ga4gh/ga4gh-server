@@ -86,6 +86,60 @@ class AbstractRepoManagerTest(unittest.TestCase):
             self._referenceSetName, self._readGroupSetName)
         self.runCommand(cmd)
 
+    def addFeatureSet(self):
+        featuresPath = paths.featuresPath
+        self._featureSetName = paths.featureSetName
+        cmd = "add-featureset {} {} {} --referenceSetName={}".format(
+            self._repoPath, self._datasetName, featuresPath,
+            self._referenceSetName)
+        self.runCommand(cmd)
+
+    def getFeatureSet(self):
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        featureSet = dataset.getFeatureSetByName(self._featureSetName)
+        return featureSet
+
+
+class TestAddFeatureSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddFeatureSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addFeatureSet()
+
+    def testAddFeatureSet(self):
+        featureSet = self.getFeatureSet()
+        self.assertEqual(featureSet.getLocalId(), self._featureSetName)
+        self.assertEqual(
+            featureSet._parentContainer.getLocalId(), self._datasetName)
+        self.assertEqual(
+            featureSet.getReferenceSet().getLocalId(),
+            self._referenceSetName)
+        # TODO not clear these fields get populated now
+        # self.assertEqual(featureSet.getInfo(), "TODO")
+        # self.assertEqual(featureSet.getSourceUrl(), "TODO")
+
+
+class TestRemoveFeatureSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveFeatureSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addFeatureSet()
+
+    def testRemoveFeatureSet(self):
+        featureSet = self.getFeatureSet()
+        cmd = "remove-featureset {} {} {} -f".format(
+            self._repoPath, self._datasetName, featureSet.getLocalId())
+        self.runCommand(cmd)
+        with self.assertRaises(exceptions.FeatureSetNameNotFoundException):
+            self.getFeatureSet()
+
 
 class TestAddDataset(AbstractRepoManagerTest):
 
@@ -216,6 +270,23 @@ class TestRemoveReferenceSet(AbstractRepoManagerTest):
         self.runCommand("remove-referenceset {} {} -f".format(
             self._repoPath, self._referenceSetName))
         self.assertReferenceSetRemoved()
+
+
+class TestVerify(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestVerify, self).setUp()
+
+    @unittest.skip("Skip test until repo manager is updated")
+    def testVerify(self):
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addReadGroupSet()
+        self.addFeatureSet()
+        # TODO fill out with other objects
+        cmd = "verify {}".format(self._repoPath)
+        self.runCommand(cmd)
 
 
 class TestAddReadGroupSet(AbstractRepoManagerTest):

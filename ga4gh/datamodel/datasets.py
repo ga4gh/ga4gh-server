@@ -30,6 +30,7 @@ class Dataset(datamodel.DatamodelObject):
         self._variantSetIdMap = {}
         self._featureSetIds = []
         self._featureSetIdMap = {}
+        self._featureSetNameMap = {}
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
@@ -62,6 +63,8 @@ class Dataset(datamodel.DatamodelObject):
         id_ = featureSet.getId()
         self._featureSetIdMap[id_] = featureSet
         self._featureSetIds.append(id_)
+        name = featureSet.getLocalId()
+        self._featureSetNameMap[name] = featureSet
 
     def addReadGroupSet(self, readGroupSet):
         """
@@ -120,12 +123,21 @@ class Dataset(datamodel.DatamodelObject):
 
     def getFeatureSet(self, id_):
         """
-        Returns the FeatureSet with the specified name, or raises a
+        Returns the FeatureSet with the specified id, or raises a
         FeatureSetNotFoundException otherwise.
         """
         if id_ not in self._featureSetIdMap:
             raise exceptions.FeatureSetNotFoundException(id_)
         return self._featureSetIdMap[id_]
+
+    def getFeatureSetByName(self, name):
+        """
+        Returns the FeatureSet with the specified name, or raises
+        an exception otherwise.
+        """
+        if name not in self._featureSetNameMap:
+            raise exceptions.FeatureSetNameNotFoundException(name)
+        return self._featureSetNameMap[name]
 
     def getFeatureSetByIndex(self, index):
         """

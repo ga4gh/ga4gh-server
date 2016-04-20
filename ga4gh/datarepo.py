@@ -345,6 +345,19 @@ class SqlDataRepository(AbstractDataRepository):
                     reference.getLocalId())
         for dataset in self.getDatasets():
             print("Verifying Dataset", dataset.getLocalId())
+            for featureSet in dataset.getFeatureSets():
+                for referenceSet in self.getReferenceSets():
+                    # TODO cycle through references?
+                    reference = referenceSet.getReferences()[0]
+                    print(
+                        "\tVerifying FeatureSet",
+                        featureSet.getLocalId(),
+                        "with reference", reference.getLocalId())
+                    length = min(reference.getLength(), 1000)
+                    features = featureSet.getFeatures(
+                        reference.getLocalId(), 0, length, None, 3)
+                    for feature in features:
+                        print("\t{}".format(feature))
             for readGroupSet in dataset.getReadGroupSets():
                 print(
                     "\tVerifying ReadGroupSet", readGroupSet.getLocalId(),
@@ -556,6 +569,14 @@ class SqlDataRepository(AbstractDataRepository):
         sql = "DELETE FROM Dataset WHERE name=?"
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (dataset.getLocalId(),))
+
+    def removeFeatureSet(self, featureSet):
+        """
+        Removes the specified featureSet from this repository.
+        """
+        sql = "DELETE FROM FeatureSet WHERE id=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (featureSet.getId(),))
 
     def _readDatasetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
