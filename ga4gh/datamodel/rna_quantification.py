@@ -302,7 +302,6 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
     def searchFeatureGroupsInDb(
             self, rnaQuantId, pageToken=0, pageSize=None,
             featureGroupId=None):
-
         """
         :param rnaQuantId: string restrict search by quantification id
         :param pageToken: int representing first record to return
