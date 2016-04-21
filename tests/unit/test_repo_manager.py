@@ -59,7 +59,7 @@ class AbstractRepoManagerTest(unittest.TestCase):
 
     def readRepo(self):
         repo = datarepo.SqlDataRepository(self._repoPath)
-        repo.open("r")
+        repo.open(datarepo.MODE_READ)
         return repo
 
     def init(self):
