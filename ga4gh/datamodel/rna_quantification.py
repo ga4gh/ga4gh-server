@@ -302,6 +302,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
     def searchFeatureGroupsInDb(
             self, rnaQuantId, pageToken=0, pageSize=None,
             featureGroupId=None):
+
         """
         :param rnaQuantId: string restrict search by quantification id
         :param pageToken: int representing first record to return
@@ -312,7 +313,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         """
         sql = ("SELECT DISTINCT feature_group_id,rna_quantification_id FROM "
                "EXPRESSION WHERE rna_quantification_id = ? ")
-        sql_args = (rnaQuantId)
+        sql_args = (rnaQuantId,)
         if featureGroupId is not None:
             sql += "AND feature_group_id = ? "
             sql_args += (featureGroupId,)
