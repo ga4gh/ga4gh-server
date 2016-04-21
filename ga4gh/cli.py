@@ -10,10 +10,12 @@ from __future__ import unicode_literals
 import argparse
 import logging
 import operator
+import os.path
 import sys
 import unittest
 import unittest.loader
 import unittest.suite
+import urlparse
 
 import requests
 
@@ -1496,6 +1498,29 @@ def configtest_main(parser=None):
 ##############################################################################
 
 
+def getNameFromPath(filePath):
+    """
+    Returns the filename of the specified path without its extensions.
+    This is usually how we derive the default name for a given object.
+    """
+    if len(filePath) == 0:
+        raise ValueError("Cannot have empty path for name")
+    fileName = os.path.split(filePath)[1]
+    # We need to handle things like .fa.gz, so we can't use
+    # os.path.splitext
+    ret = fileName.split(".")[0]
+    assert ret != ""
+    return ret
+
+
+def getRawInput(display):
+    """
+    Wrapper around raw_input; put into separate function so that it
+    can be easily mocked for tests.
+    """
+    return raw_input(display)
+
+
 class RepoManager(object):
     """
     Class that provide command line functionality to manage a
@@ -1506,14 +1531,14 @@ class RepoManager(object):
         self._repoPath = args.repoPath
         self._repo = datarepo.SqlDataRepository(self._repoPath)
 
-    def _confirmRun(self, func, deleteString):
+    def _confirmDelete(self, objectType, name, func):
         if self._args.force:
             func()
         else:
             displayString = (
-                "Are you sure you want to delete data in {}? "
-                "[y|N] ".format(deleteString))
-            userResponse = raw_input(displayString)
+                "Are you sure you want to delete the {} '{}'? "
+                "[y|N] ".format(objectType, name))
+            userResponse = getRawInput(displayString)
             if userResponse.strip() == 'y':
                 func()
             else:
@@ -1560,21 +1585,19 @@ class RepoManager(object):
         # TODO this is _very_ crude. We need much more options and detail here.
         self._repo.printSummary()
 
+    def verify(self):
+        """
+        Checks that the data pointed to in the repository works and
+        we don't have any broken URLs, missing files, etc.
+        """
+        self._openRepo()
+        self._repo.verify()
+
     def addDataset(self):
         """
         Adds a new dataset into this repo.
         """
         self._openRepo()
-        name = self._args.datasetName
-        # TODO need a better API for this...
-        datasetExists = True
-        try:
-            self._repo.getDatasetByName(name)
-        except exceptions.DatasetNameNotFoundException:
-            datasetExists = False
-        if datasetExists:
-            raise exceptions.RepoManagerException(
-                "dataset with name {} already exists".format(name))
         dataset = datasets.Dataset(self._args.datasetName)
         dataset.setDescription(self._args.description)
         self._updateRepo(self._repo.insertDataset, dataset)
@@ -1585,15 +1608,8 @@ class RepoManager(object):
         """
         self._openRepo()
         name = self._args.name
-        # TODO need a better API for this...
-        referenceSetExists = True
-        try:
-            self._repo.getReferenceSetByName(name)
-        except exceptions.ReferenceSetNameNotFoundException:
-            referenceSetExists = False
-        if referenceSetExists:
-            raise exceptions.RepoManagerException(
-                "referenceSet with name {} already exists".format(name))
+        if name is None:
+            name = getNameFromPath(self._args.filePath)
         referenceSet = references.HtslibReferenceSet(name)
         referenceSet.populateFromFile(self._args.filePath)
         referenceSet.setDescription(self._args.description)
@@ -1605,19 +1621,21 @@ class RepoManager(object):
         Adds a new ReadGroupSet into this repo.
         """
         self._openRepo()
-        # TODO put this into a method which we can reuse.
-        try:
-            dataset = self._repo.getDatasetByName(self._args.datasetName)
-        except exceptions.DatasetNameNotFoundException:
-            raise exceptions.RepoManagerException(
-                "Cannot find dataset with name '{}'".format(
-                    self._args.datasetName))
-        dataUrl = self._args.filePath
-        indexFile = dataUrl + ".bai"
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        dataUrl = self._args.dataFile
+        indexFile = self._args.indexFile
+        parsed = urlparse.urlparse(dataUrl)
+        # TODO, add https support and others when they have been
+        # tested.
+        if parsed.scheme in ['http', 'ftp']:
+            if indexFile is None:
+                raise exceptions.MissingIndexException(dataUrl)
+        else:
+            if indexFile is None:
+                indexFile = dataUrl + ".bai"
         name = self._args.name
         if self._args.name is None:
-            # TODO derive the name from the input URL.
-            name = "TODO"
+            name = getNameFromPath(dataUrl)
         readGroupSet = reads.HtslibReadGroupSet(dataset, name)
         readGroupSet.populateFromFile(dataUrl, indexFile)
         referenceSetName = self._args.referenceSetName
@@ -1626,7 +1644,43 @@ class RepoManager(object):
             referenceSetName = readGroupSet.getBamHeaderReferenceSetName()
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         readGroupSet.setReferenceSet(referenceSet)
-        self.updateRepo(self._repo.insertReadGroupSet, readGroupSet)
+        self._updateRepo(self._repo.insertReadGroupSet, readGroupSet)
+
+    def removeReferenceSet(self):
+        """
+        Removes a referenceSet from the repo.
+        """
+        self._openRepo()
+        referenceSet = self._repo.getReferenceSetByName(
+            self._args.referenceSetName)
+
+        def func():
+            self._updateRepo(self._repo.removeReferenceSet, referenceSet)
+        self._confirmDelete("ReferenceSet", referenceSet.getLocalId(), func)
+
+    def removeReadGroupSet(self):
+        """
+        Removes a readGroupSet from the repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        readGroupSet = dataset.getReadGroupSetByName(
+            self._args.readGroupSetName)
+
+        def func():
+            self._updateRepo(self._repo.removeReadGroupSet, readGroupSet)
+        self._confirmDelete("ReadGroupSet", readGroupSet.getLocalId(), func)
+
+    def removeDataset(self):
+        """
+        Removes a dataset from the repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+
+        def func():
+            self._updateRepo(self._repo.removeDataset, dataset)
+        self._confirmDelete("Dataset", dataset.getLocalId(), func)
 
     #
     # Methods to simplify adding common arguments to the parser.
@@ -1660,7 +1714,7 @@ class RepoManager(object):
             "the name of the reference set to associate with this {}"
         ).format(objectType)
         subparser.add_argument(
-            "--referenceSetName", default=None, help=helpText)
+            "-R", "--referenceSetName", default=None, help=helpText)
 
     @classmethod
     def addOntologyNameArgument(cls, subparser):
@@ -1710,21 +1764,16 @@ class RepoManager(object):
         cls.addRepoArgument(initParser)
         cls.addForceOption(initParser)
 
-        checkParser = addSubparser(
-            subparsers, "check", "Check to see if repo is well-formed")
-        checkParser.set_defaults(runner="check")
-        cls.addRepoArgument(checkParser)
+        verifyParser = addSubparser(
+            subparsers, "verify",
+            "Verifies the repository by examing all data files")
+        verifyParser.set_defaults(runner="verify")
+        cls.addRepoArgument(verifyParser)
 
         listParser = addSubparser(
             subparsers, "list", "List the contents of the repo")
         listParser.set_defaults(runner="list")
         cls.addRepoArgument(listParser)
-
-        destroyParser = addSubparser(
-            subparsers, "destroy", "Destroy the repo")
-        destroyParser.set_defaults(runner="destroy")
-        cls.addRepoArgument(destroyParser)
-        cls.addForceOption(destroyParser)
 
         addDatasetParser = addSubparser(
             subparsers, "add-dataset", "Add a dataset to the data repo")
@@ -1770,7 +1819,17 @@ class RepoManager(object):
         cls.addDatasetNameArgument(addReadGroupSetParser)
         cls.addNameOption(addReadGroupSetParser, objectType)
         cls.addReferenceSetNameOption(addReadGroupSetParser, "ReadGroupSet")
-        cls.addFilePathArgument(addReadGroupSetParser)
+        addReadGroupSetParser.add_argument(
+            "dataFile",
+            help="The file path or URL of the BAM file for this ReadGroupSet")
+        addReadGroupSetParser.add_argument(
+            "indexFile", nargs='?', default=None,
+            help=(
+                "The file path of the BAM index for this ReadGroupSet. "
+                "If the dataFile argument is a local file, this will "
+                "be automatically inferred by appending '.bai' to the "
+                "file name. If the dataFile is a remote URL the path to "
+                "a local file containing the BAM index must be provided"))
 
         addOntologyMapParser = addSubparser(
             subparsers, "add-ontologymap",
@@ -1782,7 +1841,7 @@ class RepoManager(object):
         removeOntologyMapParser = addSubparser(
             subparsers, "remove-ontologymap",
             "Remove an ontology map from the repo")
-        removeOntologyMapParser.set_defaults(runner="removeOntology")
+        removeOntologyMapParser.set_defaults(runner="removeOntologyMap")
         cls.addRepoArgument(removeOntologyMapParser)
         cls.addOntologyNameArgument(removeOntologyMapParser)
         cls.addForceOption(removeOntologyMapParser)
@@ -1841,8 +1900,25 @@ class RepoManager(object):
         runMethod()
 
 
+def repoExitError(message):
+    """
+    Exits the repo manager with error status.
+    """
+    sys.exit("Error: {}".format(message))
+
+
 def repo_main(args=None):
     try:
         RepoManager.runCommand(args)
-    except exceptions.RepoManagerException as rme:
-        print("Error: ", str(rme), file=sys.stderr)
+    except exceptions.RepoManagerException as e:
+        # These are exceptions that happen throughout the CLI, and are
+        # used to communicate back to the user
+        repoExitError(str(e))
+    except exceptions.NotFoundException as e:
+        # We expect NotFoundExceptions to occur when we're looking for
+        # datasets, readGroupsets, etc.
+        repoExitError(str(e))
+    except exceptions.DataException as e:
+        # We expect DataExceptions to occur when a file open fails,
+        # a URL cannot be reached, etc.
+        repoExitError(str(e))

@@ -265,60 +265,46 @@ class TestClientArguments(unittest.TestCase):
 class TestRepoManagerCli(unittest.TestCase):
 
     def setUp(self):
-        self.parser = cli.getRepoParser()
+        self.parser = cli.RepoManager.getParser()
         self.repoPath = 'a/repo/path'
         self.datasetName = "datasetName"
         self.filePath = 'a/file/path'
 
-    @unittest.skip("Skip until repo manager completed")
     def testInit(self):
         cliInput = "init {}".format(self.repoPath)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.runner, cli.InitRunner)
+        self.assertEquals(args.runner, "init")
 
-    @unittest.skip("Skip until repo manager completed")
-    def testCheck(self):
-        cliInput = "check {}".format(self.repoPath)
+    def testVerify(self):
+        cliInput = "verify {}".format(self.repoPath)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.runner, cli.CheckRunner)
+        self.assertEquals(args.runner, "verify")
 
-    @unittest.skip("Skip until repo manager completed")
     def testList(self):
         cliInput = "list {}".format(self.repoPath)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.runner, cli.ListRunner)
+        self.assertEquals(args.runner, "list")
 
-    @unittest.skip("Skip until repo manager completed")
-    def testDestroy(self):
-        cliInput = "destroy {} --force".format(self.repoPath)
-        args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.runner, cli.DestroyRunner)
-        self.assertEquals(args.force, True)
-
-    @unittest.skip("Skip until repo manager completed")
     def testAddDataset(self):
         cliInput = "add-dataset {} {}".format(
             self.repoPath, self.datasetName)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.runner, cli.AddDatasetRunner)
+        self.assertEquals(args.runner, "addDataset")
 
-    @unittest.skip("Skip until repo manager completed")
     def testRemoveDataset(self):
         cliInput = "remove-dataset {} {} -f".format(
             self.repoPath, self.datasetName)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.runner, cli.RemoveDatasetRunner)
+        self.assertEquals(args.runner, "removeDataset")
         self.assertEquals(args.force, True)
 
-    @unittest.skip("Skip until repo manager completed")
     def testAddReferenceSet(self):
         description = "description"
         cliInput = "add-referenceset {} {} --description={}".format(
@@ -327,9 +313,8 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.filePath, self.filePath)
         self.assertEquals(args.description, description)
-        self.assertEquals(args.runner, cli.AddReferenceSetRunner)
+        self.assertEquals(args.runner, "addReferenceSet")
 
-    @unittest.skip("Skip until repo manager completed")
     def testRemoveReferenceSet(self):
         referenceSetName = "referenceSetName"
         cliInput = "remove-referenceset {} {} -f".format(
@@ -337,21 +322,31 @@ class TestRepoManagerCli(unittest.TestCase):
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.referenceSetName, referenceSetName)
-        self.assertEquals(args.runner, cli.RemoveReferenceSetRunner)
+        self.assertEquals(args.runner, "removeReferenceSet")
         self.assertEquals(args.force, True)
 
-    @unittest.skip("Skip until repo manager completed")
     def testAddReadGroupSet(self):
-        cliInput = "add-readgroupset {} {} {} --moveMode=copy".format(
+        cliInput = "add-readgroupset {} {} {} ".format(
             self.repoPath, self.datasetName, self.filePath)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.filePath, self.filePath)
-        self.assertEquals(args.moveMode, "copy")
-        self.assertEquals(args.runner, cli.AddReadGroupSetRunner)
+        self.assertEquals(args.dataFile, self.filePath)
+        self.assertEquals(args.indexFile, None)
+        self.assertEquals(args.runner, "addReadGroupSet")
 
-    @unittest.skip("Skip until repo manager completed")
+    def testAddReadGroupSetWithIndexFile(self):
+        indexPath = self.filePath + ".bai"
+        cliInput = "add-readgroupset {} {} {} {}".format(
+            self.repoPath, self.datasetName, self.filePath,
+            indexPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.dataFile, self.filePath)
+        self.assertEquals(args.indexFile, indexPath)
+        self.assertEquals(args.runner, "addReadGroupSet")
+
     def testRemoveReadGroupSet(self):
         readGroupSetName = "readGroupSetName"
         cliInput = "remove-readgroupset {} {} {} -f".format(
@@ -360,21 +355,18 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.readGroupSetName, readGroupSetName)
-        self.assertEquals(args.runner, cli.RemoveReadGroupSetRunner)
+        self.assertEquals(args.runner, "removeReadGroupSet")
         self.assertEquals(args.force, True)
 
-    @unittest.skip("Skip until repo manager completed")
     def testAddVariantSet(self):
-        cliInput = "add-variantset {} {} {} --moveMode=move".format(
+        cliInput = "add-variantset {} {} {} ".format(
             self.repoPath, self.datasetName, self.filePath)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.filePath, self.filePath)
-        self.assertEquals(args.moveMode, "move")
-        self.assertEquals(args.runner, cli.AddVariantSetRunner)
+        self.assertEquals(args.runner, "addVariantSet")
 
-    @unittest.skip("Skip until repo manager completed")
     def testRemoveVariantSet(self):
         variantSetName = "variantSetName"
         cliInput = "remove-variantset {} {} {}".format(
@@ -383,20 +375,17 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.variantSetName, variantSetName)
-        self.assertEquals(args.runner, cli.RemoveVariantSetRunner)
+        self.assertEquals(args.runner, "removeVariantSet")
         self.assertEquals(args.force, False)
 
-    @unittest.skip("Skip until repo manager completed")
     def testAddOntologyMap(self):
-        cliInput = "add-ontologymap {} {} --moveMode=move".format(
+        cliInput = "add-ontologymap {} {}".format(
             self.repoPath, self.filePath)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.filePath, self.filePath)
-        self.assertEquals(args.moveMode, "move")
-        self.assertEquals(args.runner, cli.AddOntologyMapRunner)
+        self.assertEquals(args.runner, "addOntologyMap")
 
-    @unittest.skip("Skip until repo manager completed")
     def testRemoveOntologyMap(self):
         ontologyMapName = "ontologyMap"
         cliInput = "remove-ontologymap {} {}".format(
@@ -404,7 +393,7 @@ class TestRepoManagerCli(unittest.TestCase):
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.ontologyMapName, ontologyMapName)
-        self.assertEquals(args.runner, cli.RemoveOntologyMapRunner)
+        self.assertEquals(args.runner, "removeOntologyMap")
         self.assertEquals(args.force, False)
 
 

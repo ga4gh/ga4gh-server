@@ -374,8 +374,7 @@ class DataException(BaseServerException):
 class FileOpenFailedException(DataException):
 
     def __init__(self, filename):
-        msg = "Failed to open file '{}'".format(filename)
-        super(FileOpenFailedException, self).__init__(msg)
+        self.message = "Failed to open file '{}'".format(filename)
 
 
 class EmptyDirException(DataException):
@@ -451,48 +450,6 @@ class InconsistentCallSetIdException(MalformedException):
             "Inconsistent sample names found in {}. Sample IDs must be"
             " consistent within the same VariantSet"
             " directory.".format(fileName))
-
-
-class NotExactlyOneReferenceException(MalformedException):
-    """
-    A FASTA file has a reference count not equal to one
-    """
-    def __init__(self, fileName, numReferences):
-        self.message = (
-            "FASTA files must have one and only one reference.  "
-            "File {} has {} references.".format(fileName, numReferences))
-
-
-class InconsistentReferenceNameException(MalformedException):
-    """
-    A FASTA file has a reference name not equal to its file name.
-    """
-    def __init__(self, fileName):
-        self.message = (
-            "FASTA file {} has a reference not equal to its "
-            "file name.".format(fileName))
-
-
-class MissingReferenceMetadata(MalformedException):
-    """
-    A FASTA file is missing some metadata in the corresponding JSON file.
-    """
-    def __init__(self, fileName, key):
-        self.message = (
-            "JSON reference metadata for file {} is missing key {}".format(
-                fileName, key))
-
-
-class MissingReferenceSetMetadata(MalformedException):
-    """
-    A directory containing FASTA files is missing some metadata in the
-    corresponding JSON file.
-    """
-    def __init__(self, fileName, key):
-        self.message = (
-            "JSON reference set metadata for file {} "
-            "is missing key {}".format(
-                fileName, key))
 
 
 class ReadGroupReferenceNotFound(MalformedException):
@@ -595,3 +552,25 @@ class RepoManagerException(Exception):
     """
     Signals something went wrong inside the repo manager
     """
+
+
+class DuplicateNameException(RepoManagerException):
+    """
+    The user has tried to insert an object with the same name as
+    an existing object within a given container.
+    """
+    def __init__(self, objectName, containerName=None):
+        msg = "Name '{}' already exists".format(objectName)
+        if containerName is not None:
+            msg += " in '{}'".format(containerName)
+        super(DuplicateNameException, self).__init__(msg)
+
+
+class MissingIndexException(RepoManagerException):
+    """
+    An index file for a remote BAM/VCF has not been provided.
+    """
+    def __init__(self, dataUrl):
+        msg = "An index file must be provided for remote file '{}'".format(
+            dataUrl)
+        super(MissingIndexException, self).__init__(msg)

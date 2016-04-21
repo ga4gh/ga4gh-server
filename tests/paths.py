@@ -13,9 +13,10 @@ testDataDir = os.path.join(testDir, 'data')
 
 # references
 referenceSetName = 'chr17'
-faPath = os.path.join(testDataDir, 'referenceSets/Default/chr17.fa.gz')
-faPath2 = os.path.join(testDataDir, 'referenceSets/example_1/simple.fa.gz')
-faPath3 = os.path.join(testDataDir, 'referenceSets/example_2/random1.fa.gz')
+faPath = os.path.join(testDataDir, 'referenceSets/Default.fa.gz')
+faPath2 = os.path.join(testDataDir, 'referenceSets/example_1.fa.gz')
+faPath3 = os.path.join(testDataDir, 'referenceSets/example_2.fa.gz')
+ncbi37FaPath = os.path.join(testDataDir, 'referenceSets/NCBI37.fa.gz')
 
 # variants
 variantSetName = '1kgPhase1'
