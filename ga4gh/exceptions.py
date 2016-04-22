@@ -344,6 +344,12 @@ class FeatureSetNotFoundException(NotFoundException):
             "FeatureSet with id '{0}' not found".format(featureSetId))
 
 
+class FeatureSetNameNotFoundException(NotFoundException):
+    def __init__(self, featureSetId):
+        self.message = (
+            "FeatureSet with name '{0}' not found".format(featureSetId))
+
+
 class ParentIncompatibleWithFeatureSet(BadRequestException):
     def __init__(self):
         self.message = (

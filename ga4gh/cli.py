@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 import argparse
 import logging
 import operator
-import os.path
+import os
 import sys
 import unittest
 import unittest.loader
@@ -30,6 +30,7 @@ import ga4gh.datarepo as datarepo
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
+import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
 
 
@@ -1682,6 +1683,36 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeDataset, dataset)
         self._confirmDelete("Dataset", dataset.getLocalId(), func)
 
+    def addFeatureSet(self):
+        """
+        Adds a new feature set into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        name = getNameFromPath(self._args.filePath)
+        featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+            dataset, name)
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
+            raise exceptions.RepoManagerException(
+                "a reference set name must be provided")
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
+        featureSet.setReferenceSet(referenceSet)
+        featureSet.populateFromFile(self._args.filePath)
+        self._updateRepo(self._repo.insertFeatureSet, featureSet)
+
+    def removeFeatureSet(self):
+        """
+        Removes a feature set from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        featureSet = dataset.getFeatureSetByName(self._args.featureSetName)
+
+        def func():
+            self._updateRepo(self._repo.removeFeatureSet, featureSet)
+        self._confirmDelete("FeatureSet", featureSet.getLocalId(), func)
+
     #
     # Methods to simplify adding common arguments to the parser.
     #
@@ -1877,6 +1908,7 @@ class RepoManager(object):
         cls.addRepoArgument(addFeatureSetParser)
         cls.addDatasetNameArgument(addFeatureSetParser)
         cls.addFilePathArgument(addFeatureSetParser)
+        cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
 
         removeFeatureSetParser = addSubparser(
             subparsers, "remove-featureset",
