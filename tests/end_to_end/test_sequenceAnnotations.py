@@ -1,13 +1,16 @@
 """
 Sequence Annotations testing on the test data
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import unittest
+import logging
 
 import ga4gh.protocol as protocol
 import ga4gh.frontend as frontend
-
-import logging
+import tests.paths as paths
 
 
 class TestSequenceAnnotations(unittest.TestCase):
@@ -17,7 +20,7 @@ class TestSequenceAnnotations(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config = {
-            "DATA_SOURCE": "tests/data",
+            "DATA_SOURCE": paths.testDataRepo,
             "DEBUG": False
         }
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)

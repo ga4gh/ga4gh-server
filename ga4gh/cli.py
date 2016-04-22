@@ -179,9 +179,10 @@ class AbstractQueryRunner(object):
         # depending on the prefix.
         filePrefix = "file://"
         if args.baseUrl.startswith(filePrefix):
-            dataDir = args.baseUrl[len(filePrefix):]
-            theBackend = backend.Backend(
-                datarepo.FileSystemDataRepository(dataDir))
+            repoPath = args.baseUrl[len(filePrefix):]
+            repo = datarepo.SqlDataRepository(repoPath)
+            repo.open("r")
+            theBackend = backend.Backend(repo)
             self._client = client.LocalClient(theBackend)
         else:
             self._client = client.HttpClient(

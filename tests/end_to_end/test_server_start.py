@@ -12,12 +12,13 @@ import unittest
 
 import server as server
 
+import tests.paths as paths
+
 
 class TestServerStart(unittest.TestCase):
 
     def testServerStart(self):
-        dataDir = "tests/data"
-        app = server.Ga4ghServerForTestingDataSource(dataDir)
+        app = server.Ga4ghServerForTestingDataSource(paths.testDataRepo)
         try:
             app.start()
         finally:
