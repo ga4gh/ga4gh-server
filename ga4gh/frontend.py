@@ -478,6 +478,13 @@ def index():
     return flask.render_template('index.html', info=app.serverStatus)
 
 
+@app.route('/favicon.ico')
+@app.route('/robots.txt')
+def robots():
+    return flask.send_from_directory(
+        app.static_folder, flask.request.path[1:])
+
+
 @DisplayedRoute('/references/<id>')
 def getReference(id):
     return handleFlaskGetRequest(
