@@ -266,7 +266,8 @@ class FileSystemDataset(Dataset):
                 # Variant annotations sets
                 for vas in variantSet.getVariantAnnotationSets():
                     vas.setSequenceOntologyTermMap(
-                        dataRepository.getOntologyTermMap("sequence_ontology"))
+                        dataRepository.getOntologyTermMapByName(
+                            "sequence_ontology"))
         # Reads
         readGroupSetDir = os.path.join(dataDir, self.readsDirName)
         for filename in os.listdir(readGroupSetDir):
@@ -285,7 +286,7 @@ class FileSystemDataset(Dataset):
             if fnmatch.fnmatch(filename, '*.db'):
                 localId, _ = os.path.splitext(filename)
                 fullPath = os.path.join(featureSetDir, filename)
-                sequenceOntology = dataRepository.getOntologyTermMap(
+                sequenceOntology = dataRepository.getOntologyTermMapByName(
                     "sequence_ontology")
                 featureSet = sequenceAnnotations.Gff3DbFeatureSet(
                     self, localId)

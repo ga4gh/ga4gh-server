@@ -32,7 +32,7 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
         self._variantAnnotationSet = variants.HtslibVariantAnnotationSet(
             self._variantSet, "testVAs")
         self._variantAnnotationSet.setSequenceOntologyTermMap(
-            self._repo.getOntologyTermMap("sequence_ontology"))
+            self._repo.getOntologyTermMapByName("sequence_ontology"))
 
     def setUp(self):
         vcfDir = "tests/data/datasets/dataset1/variants/WASH7P_annotation"

@@ -18,9 +18,10 @@ class OntologyTermMap(object):
     ontology object.
     """
     def __init__(self, localId):
+        # TODO The instance variables need to be refactored here.
         self._localId = localId
+        self._sourceName = localId
         self._dataUrl = None
-        self._sourceName = None
         self._nameIdMap = dict()
         self._idNameMap = dict()
 
@@ -31,9 +32,6 @@ class OntologyTermMap(object):
         specified file.
         """
         self._dataUrl = dataUrl
-        # TODO shouldn't sourceName be the name of the ontology, (e.g,
-        # sequence_ontology?)
-        self._sourceName = self._dataUrl
         self._readFile()
 
     def populateFromRow(self, row):
@@ -41,12 +39,9 @@ class OntologyTermMap(object):
         Populates this Ontology using values in the specified DB row.
         """
         self._dataUrl = row[b'dataUrl']
-        # TODO shouldn't sourceName be the name of the ontology, (e.g,
-        # sequence_ontology?)
-        self._sourceName = self._dataUrl
         self._readFile()
 
-    def add(self, id_, name):
+    def _add(self, id_, name):
         """
         Adds an ontology term (id, name pair)
 
@@ -84,7 +79,6 @@ class OntologyTermMap(object):
         term = protocol.OntologyTerm()
         term.term = name
         term.id = self.getId(name)
-        # TODO set source name smarter
         term.sourceName = self._sourceName
         # TODO how do we get the right version?
         term.sourceVersion = None
@@ -107,9 +101,8 @@ class OntologyTermMap(object):
         return term
 
     def _readFile(self):
-        self._sourceName = self._dataUrl
         with open(self._dataUrl) as f:
             for line in f:
                 # File format: id \t name
                 fields = line.rstrip().split("\t")
-                self.add(fields[0], fields[1])
+                self._add(fields[0], fields[1])

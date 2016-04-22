@@ -110,10 +110,12 @@ class AbstractDataRepository(object):
         """
         return len(self._referenceSetIds)
 
-    def getOntologyTermMap(self, name):
+    def getOntologyTermMapByName(self, name):
         """
         Returns an ontologyTermMap by name
         """
+        if name not in self._ontologyNameMap:
+            raise exceptions.OntologyNameNotFoundException(name)
         return self._ontologyNameMap[name]
 
     def getOntologyTermMaps(self):
@@ -165,6 +167,11 @@ class AbstractDataRepository(object):
         """
         Prints a summary of this data repository to stdout.
         """
+        print("Ontologies:")
+        for ontologyTermMap in self.getOntologyTermMaps():
+            print(
+                "", ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl(),
+                sep="\t")
         print("ReferenceSets:")
         for referenceSet in self.getReferenceSets():
             print(
@@ -332,6 +339,11 @@ class SqlDataRepository(AbstractDataRepository):
         # have verbosity levels. We should provide a way to configure
         # where we look at various chromosomes and so on. This will be
         # an important debug tool for administrators.
+        for ontologyTermMap in self.getOntologyTermMaps():
+            print(
+                "Verifying OntologyTermMap", ontologyTermMap.getLocalId(),
+                "@", ontologyTermMap.getDataUrl())
+            # TODO how do we verify this? Check some well-know SO terms?
         for referenceSet in self.getReferenceSets():
             print(
                 "Verifying ReferenceSet", referenceSet.getLocalId(),
@@ -422,8 +434,12 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?);
         """
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl()))
+        try:
+            cursor.execute(sql, (
+                ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl()))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(
+                ontologyTermMap.getLocalId())
 
     def _readOntologyTermMapTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -432,6 +448,14 @@ class SqlDataRepository(AbstractDataRepository):
             ontologyTermMap = ontologies.OntologyTermMap(row[b'name'])
             ontologyTermMap.populateFromRow(row)
             self.addOntologyTermMap(ontologyTermMap)
+
+    def removeOntologyTermMap(self, ontologyTermMap):
+        """
+        Removes the specified ontology term map from this repository.
+        """
+        sql = "DELETE FROM Ontology WHERE name=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (ontologyTermMap.getLocalId(),))
 
     def _createReferenceTable(self, cursor):
         sql = """
@@ -905,7 +929,7 @@ class SqlDataRepository(AbstractDataRepository):
                 dataset, row[b'name'])
             featureSet.setReferenceSet(referenceSet)
             featureSet.setSequenceOntologyTermMap(
-                self.getOntologyTermMap('sequence_ontology'))
+                self.getOntologyTermMapByName('sequence_ontology'))
             featureSet.populateFromRow(row)
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
