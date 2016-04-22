@@ -312,7 +312,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         """
         sql = ("SELECT DISTINCT feature_group_id,rna_quantification_id FROM "
                "EXPRESSION WHERE rna_quantification_id = ? ")
-        sql_args = (rnaQuantId)
+        sql_args = (rnaQuantId,)
         if featureGroupId is not None:
             sql += "AND feature_group_id = ? "
             sql_args += (featureGroupId,)

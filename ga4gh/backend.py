@@ -723,7 +723,7 @@ class Backend(object):
                 rnaQuant.getFeatureGroup(featureGroupCompoundId))
         return self._objectListGenerator(
             request, rnaQuant.getFeatureGroups(
-                rnaQuant, pageToken=request.pageToken,
+                rnaQuant.getLocalId(), pageToken=request.pageToken,
                 pageSize=request.pageSize,
                 featureGroupId=featureGroupId))
 
