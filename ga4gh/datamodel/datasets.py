@@ -28,6 +28,7 @@ class Dataset(datamodel.DatamodelObject):
         self._description = None
         self._variantSetIds = []
         self._variantSetIdMap = {}
+        self._variantSetNameMap = {}
         self._featureSetIds = []
         self._featureSetIdMap = {}
         self._featureSetNameMap = {}
@@ -54,6 +55,7 @@ class Dataset(datamodel.DatamodelObject):
         """
         id_ = variantSet.getId()
         self._variantSetIdMap[id_] = variantSet
+        self._variantSetNameMap[variantSet.getLocalId()] = variantSet
         self._variantSetIds.append(id_)
 
     def addFeatureSet(self, featureSet):
@@ -108,6 +110,15 @@ class Dataset(datamodel.DatamodelObject):
         Returns the variant set at the specified index in this dataset.
         """
         return self._variantSetIdMap[self._variantSetIds[index]]
+
+    def getVariantSetByName(self, name):
+        """
+        Returns a VariantSet with the specified name, or raises a
+        VariantSetNameNotFoundException if it does not exist.
+        """
+        if name not in self._variantSetNameMap:
+            raise exceptions.VariantSetNameNotFoundException(name)
+        return self._variantSetNameMap[name]
 
     def getFeatureSets(self):
         """

@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import glob
 import shutil
 import tempfile
 import unittest
@@ -41,6 +42,12 @@ class TestGetNameFromPath(unittest.TestCase):
         self.assertEqual(cli.getNameFromPath("file:///no_ext"), "no_ext")
         self.assertEqual(cli.getNameFromPath("http://example.com/x.y"), "x")
         self.assertEqual(cli.getNameFromPath("ftp://x.y.z"), "x")
+
+    def testDirectoryName(self):
+        self.assertEqual(cli.getNameFromPath("/a/xy"), "xy")
+        self.assertEqual(cli.getNameFromPath("/a/xy/"), "xy")
+        self.assertEqual(cli.getNameFromPath("xy/"), "xy")
+        self.assertEqual(cli.getNameFromPath("xy"), "xy")
 
 
 class AbstractRepoManagerTest(unittest.TestCase):
@@ -90,6 +97,16 @@ class AbstractRepoManagerTest(unittest.TestCase):
             "--name={}").format(
             self._repoPath, self._datasetName, bamFile,
             self._referenceSetName, self._readGroupSetName)
+        self.runCommand(cmd)
+
+    def addVariantSet(self):
+        vcfDir = paths.vcfDirPath
+        self._variantSetName = "test_vs"
+        cmd = (
+            "add-variantset {} {} {} --referenceSetName={} "
+            "--name={}").format(
+            self._repoPath, self._datasetName, vcfDir,
+            self._referenceSetName, self._variantSetName)
         self.runCommand(cmd)
 
     def addFeatureSet(self):
@@ -301,6 +318,31 @@ class TestRemoveReadGroupSet(AbstractRepoManagerTest):
         self.assertReadGroupSetRemoved()
 
 
+class TestRemoveVariantSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveVariantSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addVariantSet()
+
+    def assertVariantSetRemoved(self):
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        self.assertRaises(
+            exceptions.VariantSetNameNotFoundException,
+            dataset.getVariantSetByName, self._variantSetName)
+
+    def testWithForce(self):
+        self.runCommand("remove-variantset {} {} {} -f".format(
+            self._repoPath, self._datasetName, self._variantSetName))
+        self.assertVariantSetRemoved()
+
+    # TODO test when we have a variant set with the same name in
+    # a different dataset. This should be unaffected.
+
+
 class TestRemoveReferenceSet(AbstractRepoManagerTest):
 
     def setUp(self):
@@ -389,7 +431,9 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         with tempfile.NamedTemporaryFile() as temp:
             indexFile = temp.name
             shutil.copyfile(bamFile + ".bai", indexFile)
-            cmd = "add-readgroupset {} {} {} {} --referenceSetName={}".format(
+            cmd = (
+                "add-readgroupset {} {} {} -I {} "
+                "--referenceSetName={}").format(
                     self._repoPath, self._datasetName, bamFile,
                     indexFile, self._referenceSetName)
             self.runCommand(cmd)
@@ -450,3 +494,111 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
                 "not_a_referenceset_name")
         self.assertRaises(
             exceptions.ReferenceSetNameNotFoundException, self.runCommand, cmd)
+
+
+class TestAddVariantSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddVariantSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.vcfDir = paths.vcfDirPath
+        self.vcfFiles = glob.glob(os.path.join(paths.vcfDirPath, "*.vcf.gz"))
+        self.indexFiles = [vcfFile + ".tbi" for vcfFile in self.vcfFiles]
+
+    def verifyVariantSet(self, name, dataUrls, indexFiles):
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        referenceSet = repo.getReferenceSetByName(self._referenceSetName)
+        variantSet = dataset.getVariantSetByName(name)
+        self.assertEqual(variantSet.getLocalId(), name)
+        self.assertEqual(variantSet.getReferenceSet(), referenceSet)
+        pairs = sorted(zip(dataUrls, indexFiles))
+        self.assertEqual(pairs, sorted(variantSet.getDataUrlIndexPairs()))
+
+    def testDefaultsLocalFiles(self):
+        dataFiles = self.vcfFiles
+        name = "test_name"
+        cmd = "add-variantset {} {} {} --name={} --referenceSetName={}".format(
+                self._repoPath, self._datasetName, " ".join(dataFiles),
+                name, self._referenceSetName)
+        self.runCommand(cmd)
+        self.verifyVariantSet(name, dataFiles, self.indexFiles)
+
+    def testDefaultsLocalDirectory(self):
+        vcfDir = self.vcfDir
+        name = os.path.split(vcfDir)[1]
+        cmd = "add-variantset {} {} {} --referenceSetName={}".format(
+                self._repoPath, self._datasetName, vcfDir,
+                self._referenceSetName)
+        self.runCommand(cmd)
+        self.verifyVariantSet(name, self.vcfFiles, self.indexFiles)
+
+    def testLocalFilesWithIndexes(self):
+        dataFiles = self.vcfFiles
+        tempdir = tempfile.mkdtemp(prefix="ga4gh_test_add_variantset")
+        name = "test_name"
+        try:
+            indexFiles = []
+            for indexFile in self.indexFiles:
+                indexFileCopy = os.path.join(
+                    tempdir, os.path.split(indexFile)[1])
+                shutil.copyfile(indexFile, indexFileCopy)
+                indexFiles.append(indexFileCopy)
+            cmd = (
+                "add-variantset {} {} {} -I {} --name={} "
+                "--referenceSetName={}".format(
+                    self._repoPath, self._datasetName, " ".join(dataFiles),
+                    " ".join(indexFiles), name, self._referenceSetName))
+            self.runCommand(cmd)
+            self.verifyVariantSet(name, dataFiles, indexFiles)
+        finally:
+            shutil.rmtree(tempdir)
+
+    def testAddVariantSetWithSameName(self):
+        # Default name
+        vcfDir = self.vcfDir
+        name = os.path.split(vcfDir)[1]
+        cmd = "add-variantset {} {} {} --referenceSetName={}".format(
+                self._repoPath, self._datasetName, vcfDir,
+                self._referenceSetName)
+        self.runCommand(cmd)
+        self.assertRaises(
+            exceptions.DuplicateNameException, self.runCommand, cmd)
+        # Specified name
+        name = "test_vs"
+        cmd = (
+            "add-variantset {} {} {} --referenceSetName={} "
+            "--name={}").format(
+            self._repoPath, self._datasetName, vcfDir,
+            self._referenceSetName, name)
+        self.runCommand(cmd)
+        self.assertRaises(
+            exceptions.DuplicateNameException, self.runCommand, cmd)
+
+    def testUrlWithMissingIndex(self):
+        dataFile = "http://example.com/example.vcf.gz"
+        cmd = "add-variantset {} {} {} --referenceSetName={}".format(
+                self._repoPath, self._datasetName, dataFile,
+                self._referenceSetName)
+        self.assertRaises(
+            exceptions.MissingIndexException, self.runCommand, cmd)
+
+    def testMissingDataset(self):
+        cmd = "add-variantset {} {} {} --referenceSetName={}".format(
+                self._repoPath, "not_a_dataset_name", self.vcfDir,
+                self._referenceSetName)
+        self.assertRaises(
+            exceptions.DatasetNameNotFoundException, self.runCommand, cmd)
+
+    def testMissingReferenceSet(self):
+        cmd = "add-variantset {} {} {} --referenceSetName={}".format(
+                self._repoPath, self._datasetName, self.vcfDir,
+                "not_a_referenceset_name")
+        self.assertRaises(
+            exceptions.ReferenceSetNameNotFoundException, self.runCommand, cmd)
+
+    # TODO add more tests for to verify that errors are correctly thrown
+    # when incorrect indexes are passed, mixtures of directories and URLS
+    # for the dataFiles argument, and other common error cases in the UI.

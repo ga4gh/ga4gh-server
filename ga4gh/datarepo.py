@@ -404,6 +404,32 @@ class SqlDataRepository(AbstractDataRepository):
                     print(
                         "\t\tRead", i, "alignments from",
                         readGroup.getLocalId())
+            for variantSet in dataset.getVariantSets():
+                print("\tVerifying VariantSet", variantSet.getLocalId())
+                max_variants = 10
+                max_annotations = 10
+                refMap = variantSet.getReferenceToDataUrlIndexMap()
+                for referenceName, (dataUrl, indexFile) in refMap.items():
+                    variants = variantSet.getVariants(referenceName, 0, 2**31)
+                    for i, variant in enumerate(variants):
+                        if i == max_variants:
+                            break
+                    print(
+                        "\t\tRead", i, "variants from reference",
+                        referenceName, "@", dataUrl)
+                for annotationSet in variantSet.getVariantAnnotationSets():
+                    print(
+                        "\t\tVerifying VariantAnnotationSet",
+                        annotationSet.getLocalId())
+                    for referenceName in refMap.keys():
+                        annotations = annotationSet.getVariantAnnotations(
+                            referenceName, 0, 2**31)
+                        for i, annotation in enumerate(annotations):
+                            if i == max_annotations:
+                                break
+                    print(
+                        "\t\t\tRead", i, "annotations from reference",
+                        referenceName)
 
     def _createSystemTable(self, cursor):
         sql = """
@@ -619,9 +645,9 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        sql = "DELETE FROM Dataset WHERE name=?"
+        sql = "DELETE FROM Dataset WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (dataset.getLocalId(),))
+        cursor.execute(sql, (dataset.getId(),))
 
     def removeFeatureSet(self, featureSet):
         """
@@ -686,9 +712,18 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified readGroupSet from this repository. This performs
         a cascading removal of all items within this readGroupSet.
         """
-        sql = "DELETE FROM ReadGroupSet WHERE name=?"
+        sql = "DELETE FROM ReadGroupSet WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (readGroupSet.getLocalId(),))
+        cursor.execute(sql, (readGroupSet.getId(),))
+
+    def removeVariantSet(self, variantSet):
+        """
+        Removes the specified variantSet from this repository. This performs
+        a cascading removal of all items within this variantSet.
+        """
+        sql = "DELETE FROM VariantSet WHERE id=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (variantSet.getId(),))
 
     def _readReadGroupTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -758,9 +793,9 @@ class SqlDataRepository(AbstractDataRepository):
         refer to this ReferenceSet. These must be deleted before the
         referenceSet can be removed.
         """
-        sql = "DELETE FROM ReferenceSet WHERE name=?"
+        sql = "DELETE FROM ReferenceSet WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (referenceSet.getLocalId(),))
+        cursor.execute(sql, (referenceSet.getId(),))
 
     def _readReadGroupSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -816,6 +851,11 @@ class SqlDataRepository(AbstractDataRepository):
             variantAnnotationSet = variants.HtslibVariantAnnotationSet(
                 variantSet, row[b'name'])
             variantAnnotationSet.populateFromRow(row)
+            # TODO can we make this relationship more explicit??
+            sequenceOntologyTermMap = self.getOntologyTermMapByName(
+                "sequence_ontology")
+            variantAnnotationSet.setSequenceOntologyTermMap(
+                sequenceOntologyTermMap)
             assert variantAnnotationSet.getId() == row[b'id']
             # Insert the variantAnnotationSet into the memory-based model.
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
@@ -894,13 +934,23 @@ class SqlDataRepository(AbstractDataRepository):
         metadataJson = json.dumps(
             [metadata.toJsonDict() for metadata in variantSet.getMetadata()])
         urlMapJson = json.dumps(variantSet.getReferenceToDataUrlIndexMap())
-        cursor.execute(sql, (
-            variantSet.getId(), variantSet.getParentContainer().getId(),
-            variantSet.getReferenceSet().getId(), variantSet.getLocalId(),
-            metadataJson, urlMapJson))
+        try:
+            cursor.execute(sql, (
+                variantSet.getId(), variantSet.getParentContainer().getId(),
+                variantSet.getReferenceSet().getId(), variantSet.getLocalId(),
+                metadataJson, urlMapJson))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(
+                variantSet.getLocalId(),
+                variantSet.getParentContainer().getLocalId())
         for callSet in variantSet.getCallSets():
             self.insertCallSet(callSet)
         if variantSet.isAnnotated():
+            # Make sure that we have the Sequence Ontology that we
+            # require. TODO we should make this requirement explicit.
+            # This is a very ugly way of doing this, we need a better
+            # approach.
+            self.getOntologyTermMapByName("sequence_ontology")
             for annotationSet in variantSet.getVariantAnnotationSets():
                 self.insertVariantAnnotationSet(annotationSet)
 

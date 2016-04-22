@@ -410,6 +410,12 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         return self._chromFileMap
 
+    def getDataUrlIndexPairs(self):
+        """
+        Returns the set of (dataUrl, indexFile) pairs.
+        """
+        return set(self._chromFileMap.values())
+
     def populateFromRow(self, row):
         """
         Populates this VariantSet from the specified DB row.
@@ -452,6 +458,13 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             dataFiles.append(vcfFile)
             indexFiles.append(vcfFile + ".tbi")
         self.populateFromFile(dataFiles, indexFiles)
+
+    def getVcfHeaderReferenceSetName(self):
+        """
+        Returns the name of the reference set from the VCF header.
+        """
+        # TODO implemenent
+        return None
 
     def checkConsistency(self):
         """
