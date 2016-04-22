@@ -2701,8 +2701,8 @@ class SearchExpressionLevelRequest(SearchRequest):
 "", "type": ["null", "string"], "name": "expressionLevelId"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
 "featureGroupId"}, {"doc": "", "type": "string", "name":
-"rnaQuantificationId"}, {"default": null, "doc": "", "type": ["null",
-"float"], "name": "threshold"}, {"default": null, "doc": "", "type":
+"rnaQuantificationId"}, {"default": null, "doc": "", "type":
+"float", "name": "threshold"}, {"default": null, "doc": "", "type":
 ["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
