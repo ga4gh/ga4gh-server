@@ -36,14 +36,16 @@ _expressionTestData = {
     "score": 23.34315,
     "units": "TPM",
     "conf_low": 24.1,
-    "conf_hi": 24.6
-
+    "conf_hi": 24.6,
+    "num_expression_entries": 2,
+    "num_entries_over_threshold": 1
 }
 
 
 _featureGroupTestData = {
     "analysisId": "ENCFF305LZB",
-    "name": "ENSG00000076984.13"
+    "name": "ENSG00000076984.13",
+    "num_feature_group_entries": 2
 }
 
 
@@ -143,6 +145,19 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             gaExpression.confInterval,
             [testData["conf_low"], testData["conf_hi"]])
 
+    def testSearchExpressionLevels(self):
+        rnaQuantification = self._gaObject
+        rnaQuantID = rnaQuantification.getLocalId()
+        expressionLevels = rnaQuantification.getExpressionLevels(rnaQuantID)
+        self.assertEqual(
+            _expressionTestData["num_expression_entries"],
+            len(expressionLevels))
+        overThreshold = rnaQuantification.getExpressionLevels(
+            rnaQuantID, threshold=100.0)
+        self.assertEqual(
+            _expressionTestData["num_entries_over_threshold"],
+            len(overThreshold))
+
     def testGetFeatureGroupById(self):
         rnaQuantification = self._gaObject
         idString = _getExpressionCompoundId(
@@ -167,3 +182,11 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(
             gaFeatureGroup.analysisId, testData["analysisId"])
         self.assertEqual(gaFeatureGroup.name, testData["name"])
+
+    def testSearchFeatureGroups(self):
+        rnaQuantification = self._gaObject
+        rnaQuantID = rnaQuantification.getLocalId()
+        featureGroups = rnaQuantification.getFeatureGroups(rnaQuantID)
+        self.assertEqual(
+            _featureGroupTestData["num_feature_group_entries"],
+            len(featureGroups))
