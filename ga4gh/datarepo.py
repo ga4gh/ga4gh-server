@@ -6,7 +6,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
-import glob
 import os
 import sqlite3
 
@@ -55,12 +54,12 @@ class AbstractDataRepository(object):
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
 
-    def addOntology(self, ontology):
+    def addOntologyTermMap(self, ontologyTermMap):
         """
-        Add an ontology map to this data repository.
+        Add an ontologyTermMap map to this data repository.
         """
-        name = ontology.getLocalId()
-        self._ontologyNameMap[name] = ontology
+        name = ontologyTermMap.getLocalId()
+        self._ontologyNameMap[name] = ontologyTermMap
         self._ontologyNames.append(name)
 
     def getDatasets(self):
@@ -110,15 +109,17 @@ class AbstractDataRepository(object):
         """
         return len(self._referenceSetIds)
 
-    def getOntology(self, name):
+    def getOntologyTermMapByName(self, name):
         """
-        Returns an ontology map by name
+        Returns an ontologyTermMap by name
         """
-        return self._ontologyNameMap.get(name, None)
+        if name not in self._ontologyNameMap:
+            raise exceptions.OntologyNameNotFoundException(name)
+        return self._ontologyNameMap[name]
 
-    def getOntologys(self):
+    def getOntologyTermMaps(self):
         """
-        Returns all ontology maps in the repo
+        Returns all ontologyTermMaps in the repo
         """
         return [self._ontologyNameMap[name] for name in self._ontologyNames]
 
@@ -165,6 +166,11 @@ class AbstractDataRepository(object):
         """
         Prints a summary of this data repository to stdout.
         """
+        print("Ontologies:")
+        for ontologyTermMap in self.getOntologyTermMaps():
+            print(
+                "", ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl(),
+                sep="\t")
         print("ReferenceSets:")
         for referenceSet in self.getReferenceSets():
             print(
@@ -332,6 +338,11 @@ class SqlDataRepository(AbstractDataRepository):
         # have verbosity levels. We should provide a way to configure
         # where we look at various chromosomes and so on. This will be
         # an important debug tool for administrators.
+        for ontologyTermMap in self.getOntologyTermMaps():
+            print(
+                "Verifying OntologyTermMap", ontologyTermMap.getLocalId(),
+                "@", ontologyTermMap.getDataUrl())
+            # TODO how do we verify this? Check some well-know SO terms?
         for referenceSet in self.getReferenceSets():
             print(
                 "Verifying ReferenceSet", referenceSet.getLocalId(),
@@ -362,6 +373,32 @@ class SqlDataRepository(AbstractDataRepository):
                     print(
                         "\t\tRead", i, "alignments from",
                         readGroup.getLocalId())
+            for variantSet in dataset.getVariantSets():
+                print("\tVerifying VariantSet", variantSet.getLocalId())
+                max_variants = 10
+                max_annotations = 10
+                refMap = variantSet.getReferenceToDataUrlIndexMap()
+                for referenceName, (dataUrl, indexFile) in refMap.items():
+                    variants = variantSet.getVariants(referenceName, 0, 2**31)
+                    for i, variant in enumerate(variants):
+                        if i == max_variants:
+                            break
+                    print(
+                        "\t\tRead", i, "variants from reference",
+                        referenceName, "@", dataUrl)
+                for annotationSet in variantSet.getVariantAnnotationSets():
+                    print(
+                        "\t\tVerifying VariantAnnotationSet",
+                        annotationSet.getLocalId())
+                    for referenceName in refMap.keys():
+                        annotations = annotationSet.getVariantAnnotations(
+                            referenceName, 0, 2**31)
+                        for i, annotation in enumerate(annotations):
+                            if i == max_annotations:
+                                break
+                    print(
+                        "\t\t\tRead", i, "annotations from reference",
+                        referenceName)
 
     def _createSystemTable(self, cursor):
         sql = """
@@ -387,33 +424,50 @@ class SqlDataRepository(AbstractDataRepository):
         self._creationTimeStamp = config["creationTimeStamp"]
 
     def _createOntologyTable(self, cursor):
+        # Right now we support a crude ontology term name-ID bidirectional
+        # map. However, in the future we will want to have better ontology
+        # support. Therefore we're not making the SQL schema too specific
+        # so that we can make this transition without needing backwards
+        # incompatible schema changes.
         sql = """
-            CREATE TABLE Ontology (
+            CREATE TABLE Ontology(
                 name TEXT NOT NULL PRIMARY KEY,
                 dataUrl TEXT NOT NULL
             );
         """
         cursor.execute(sql)
 
-    def insertOntology(self, ontology):
+    def insertOntologyTermMap(self, ontologyTermMap):
         """
-        Inserts the specified ontology into this repository.
+        Inserts the specified ontologyTermMap into this repository.
         """
         sql = """
-            INSERT INTO Ontology (name, dataUrl)
+            INSERT INTO Ontology(name, dataUrl)
             VALUES (?, ?);
         """
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            ontology.getLocalId(), ontology.getDataUrl()))
+        try:
+            cursor.execute(sql, (
+                ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl()))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(
+                ontologyTermMap.getLocalId())
 
-    def _readOntologyTable(self, cursor):
+    def _readOntologyTermMapTable(self, cursor):
         cursor.row_factory = sqlite3.Row
         cursor.execute("SELECT * FROM Ontology;")
         for row in cursor:
-            ontology = ontologies.Ontology(row[b'name'])
-            ontology.populateFromRow(row)
-            self.addOntology(ontology)
+            ontologyTermMap = ontologies.OntologyTermMap(row[b'name'])
+            ontologyTermMap.populateFromRow(row)
+            self.addOntologyTermMap(ontologyTermMap)
+
+    def removeOntologyTermMap(self, ontologyTermMap):
+        """
+        Removes the specified ontology term map from this repository.
+        """
+        sql = "DELETE FROM Ontology WHERE name=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (ontologyTermMap.getLocalId(),))
 
     def _createReferenceTable(self, cursor):
         sql = """
@@ -553,9 +607,9 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        sql = "DELETE FROM Dataset WHERE name=?"
+        sql = "DELETE FROM Dataset WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (dataset.getLocalId(),))
+        cursor.execute(sql, (dataset.getId(),))
 
     def _readDatasetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -606,9 +660,18 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified readGroupSet from this repository. This performs
         a cascading removal of all items within this readGroupSet.
         """
-        sql = "DELETE FROM ReadGroupSet WHERE name=?"
+        sql = "DELETE FROM ReadGroupSet WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (readGroupSet.getLocalId(),))
+        cursor.execute(sql, (readGroupSet.getId(),))
+
+    def removeVariantSet(self, variantSet):
+        """
+        Removes the specified variantSet from this repository. This performs
+        a cascading removal of all items within this variantSet.
+        """
+        sql = "DELETE FROM VariantSet WHERE id=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (variantSet.getId(),))
 
     def _readReadGroupTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -676,9 +739,9 @@ class SqlDataRepository(AbstractDataRepository):
         refer to this ReferenceSet. These must be deleted before the
         referenceSet can be removed.
         """
-        sql = "DELETE FROM ReferenceSet WHERE name=?"
+        sql = "DELETE FROM ReferenceSet WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (referenceSet.getLocalId(),))
+        cursor.execute(sql, (referenceSet.getId(),))
 
     def _readReadGroupSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -734,6 +797,11 @@ class SqlDataRepository(AbstractDataRepository):
             variantAnnotationSet = variants.HtslibVariantAnnotationSet(
                 variantSet, row[b'name'])
             variantAnnotationSet.populateFromRow(row)
+            # TODO can we make this relationship more explicit??
+            sequenceOntologyTermMap = self.getOntologyTermMapByName(
+                "sequence_ontology")
+            variantAnnotationSet.setSequenceOntologyTermMap(
+                sequenceOntologyTermMap)
             assert variantAnnotationSet.getId() == row[b'id']
             # Insert the variantAnnotationSet into the memory-based model.
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
@@ -812,13 +880,23 @@ class SqlDataRepository(AbstractDataRepository):
         metadataJson = json.dumps(
             [metadata.toJsonDict() for metadata in variantSet.getMetadata()])
         urlMapJson = json.dumps(variantSet.getReferenceToDataUrlIndexMap())
-        cursor.execute(sql, (
-            variantSet.getId(), variantSet.getParentContainer().getId(),
-            variantSet.getReferenceSet().getId(), variantSet.getLocalId(),
-            metadataJson, urlMapJson))
+        try:
+            cursor.execute(sql, (
+                variantSet.getId(), variantSet.getParentContainer().getId(),
+                variantSet.getReferenceSet().getId(), variantSet.getLocalId(),
+                metadataJson, urlMapJson))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(
+                variantSet.getLocalId(),
+                variantSet.getParentContainer().getLocalId())
         for callSet in variantSet.getCallSets():
             self.insertCallSet(callSet)
         if variantSet.isAnnotated():
+            # Make sure that we have the Sequence Ontology that we
+            # require. TODO we should make this requirement explicit.
+            # This is a very ugly way of doing this, we need a better
+            # approach.
+            self.getOntologyTermMapByName("sequence_ontology")
             for annotationSet in variantSet.getVariantAnnotationSets():
                 self.insertVariantAnnotationSet(annotationSet)
 
@@ -878,8 +956,8 @@ class SqlDataRepository(AbstractDataRepository):
             featureSet = sequenceAnnotations.Gff3DbFeatureSet(
                 dataset, row[b'name'])
             featureSet.setReferenceSet(referenceSet)
-            featureSet.setSequenceOntology(
-                self.getOntology('sequence_ontology'))
+            featureSet.setSequenceOntologyTermMap(
+                self.getOntologyTermMapByName('sequence_ontology'))
             featureSet.populateFromRow(row)
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
@@ -926,7 +1004,7 @@ class SqlDataRepository(AbstractDataRepository):
         with sqlite3.connect(self._dbFilename) as db:
             cursor = db.cursor()
             self._readSystemTable(cursor)
-            self._readOntologyTable(cursor)
+            self._readOntologyTermMapTable(cursor)
             self._readReferenceSetTable(cursor)
             self._readReferenceTable(cursor)
             self._readDatasetTable(cursor)
@@ -936,65 +1014,3 @@ class SqlDataRepository(AbstractDataRepository):
             self._readCallSetTable(cursor)
             self._readVariantAnnotationSetTable(cursor)
             self._readFeatureSetTable(cursor)
-
-
-class FileSystemDataRepository(AbstractDataRepository):
-    """
-    Class representing and old-style FileSystem based data repository.
-    This is primarily intended to provide an easy way to keep existing
-    tests working, and may also provide a smooth upgrade path for any
-    users who have data stored in the old file system based repos.
-
-    This is deprecated and should be removed , along with updating
-    the necessary tests.
-    """
-    referenceSetsDirName = "referenceSets"
-    datasetsDirName = "datasets"
-    ontologiesDirName = "ontologymaps"
-
-    def __init__(self, dataDir):
-        super(FileSystemDataRepository, self).__init__()
-        self._dataDir = dataDir
-
-        pattern = os.path.join(
-            self._dataDir, self.referenceSetsDirName, "*.fa.gz")
-        for fastaFile in glob.glob(pattern):
-            name = os.path.basename(fastaFile).split(".")[0]
-            referenceSet = references.HtslibReferenceSet(name)
-            referenceSet.populateFromFile(fastaFile)
-            self.addReferenceSet(referenceSet)
-
-        # for ontologies we go into each directory within the
-        # main directory.
-        sourceDir = os.path.join(self._dataDir, self.ontologiesDirName)
-        for setName in os.listdir(sourceDir):
-            relativePath = os.path.join(sourceDir, setName)
-            if os.path.isdir(relativePath):
-                for filename in os.listdir(relativePath):
-                    if filename.endswith(".txt"):
-                        name = filename.split(".")[0]
-                        ontology = ontologies.Ontology(name)
-                        ontology.populateFromFile(
-                            os.path.join(relativePath, filename))
-                        self.addOntology(ontology)
-
-        sourceDir = os.path.join(self._dataDir, self.datasetsDirName)
-        for setName in os.listdir(sourceDir):
-            relativePath = os.path.join(sourceDir, setName)
-            if os.path.isdir(relativePath):
-                dataset = datasets.FileSystemDataset(
-                    setName, relativePath, self)
-                self.addDataset(dataset)
-
-    def checkConsistency(self):
-        """
-        Perform checks that ensure the consistency of the data.
-        Factored into a separate method from server init since the
-        data repo object can be created on a partially-complete
-        data set.
-        """
-        for dataset in self.getDatasets():
-            for readGroupSet in dataset.getReadGroupSets():
-                readGroupSet.checkConsistency(self)
-            for variantSet in dataset.getVariantSets():
-                variantSet.checkConsistency()

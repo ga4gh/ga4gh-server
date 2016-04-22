@@ -13,6 +13,8 @@ import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.datasets as datasets
 
+import tests.paths as paths
+
 
 class TestHtslibVariantAnnotationSet(unittest.TestCase):
     """
@@ -24,15 +26,16 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
         VCF files.
         """
         self._variantSetName = "testVariantSet"
-        self._repo = datarepo.FileSystemDataRepository("tests/data")
+        self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
+        self._repo.open("r")
         self._dataset = datasets.Dataset("testDs")
         self._variantSet = variants.HtslibVariantSet(
             self._dataset, self._variantSetName)
         self._variantSet.populateFromDirectory(vcfDir)
         self._variantAnnotationSet = variants.HtslibVariantAnnotationSet(
             self._variantSet, "testVAs")
-        self._variantAnnotationSet.setSequenceOntology(
-            self._repo.getOntology("sequence_ontology"))
+        self._variantAnnotationSet.setSequenceOntologyTermMap(
+            self._repo.getOntologyTermMapByName("sequence_ontology"))
 
     def setUp(self):
         vcfDir = "tests/data/datasets/dataset1/variants/WASH7P_annotation"
