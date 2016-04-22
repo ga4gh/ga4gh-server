@@ -210,7 +210,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.serverStatus = ServerStatus()
     # Allocate the backend
     # We use URLs to specify the backend. Currently we have file:// URLs (or
-    # URLs with no scheme) for the FileSystemBackend, and special empty:// and
+    # URLs with no scheme) for the SqlDataRepository, and special empty:// and
     # simulated:// URLs for empty or simulated data sources.
     dataSource = urlparse.urlparse(app.config["DATA_SOURCE"], "file")
 
@@ -238,14 +238,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        # Temporary hack. While we still have the FileSystemDataRepository
-        # for testing, only use the SQL repo if the path is a directory.
         path = os.path.join(dataSource.netloc, dataSource.path)
-        if os.path.isdir(path):
-            dataRepository = datarepo.FileSystemDataRepository(path)
-        else:
-            dataRepository = datarepo.SqlDataRepository(path)
-            dataRepository.open("r")
+        dataRepository = datarepo.SqlDataRepository(path)
+        dataRepository.open(datarepo.MODE_READ)
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)

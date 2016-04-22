@@ -449,7 +449,8 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
     def populateFromDirectory(self, vcfDirectory):
         """
         Populates this VariantSet by examing all the VCF files in the
-        specified directory.
+        specified directory. This is mainly used for as a convenience
+        for testing purposes.
         """
         pattern = os.path.join(vcfDirectory, "*.vcf.gz")
         dataFiles = []

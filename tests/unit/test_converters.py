@@ -22,8 +22,8 @@ class TestSamConverter(unittest.TestCase):
     Tests for the GA4GH reads API -> SAM conversion.
     """
     def setUp(self):
-        dataRepository = datarepo.FileSystemDataRepository(
-            paths.testDataDir)
+        dataRepository = datarepo.SqlDataRepository(paths.testDataRepo)
+        dataRepository.open(datarepo.MODE_READ)
         self._backend = backend.Backend(dataRepository)
         self._client = client.LocalClient(self._backend)
 

@@ -13,6 +13,8 @@ import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.datasets as datasets
 
+import tests.paths as paths
+
 
 class TestHtslibVariantAnnotationSet(unittest.TestCase):
     """
@@ -24,7 +26,8 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
         VCF files.
         """
         self._variantSetName = "testVariantSet"
-        self._repo = datarepo.FileSystemDataRepository("tests/data")
+        self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
+        self._repo.open(datarepo.MODE_READ)
         self._dataset = datasets.Dataset("testDs")
         self._variantSet = variants.HtslibVariantSet(
             self._dataset, self._variantSetName)
