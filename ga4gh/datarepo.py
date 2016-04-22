@@ -645,11 +645,13 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             CREATE TABLE ReadGroup (
                 id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
                 readGroupSetId TEXT NOT NULL,
+                name TEXT NOT NULL,
                 predictedInsertSize INTEGER,
                 sampleId TEXT,
                 description TEXT,
+                stats TEXT NOT NULL,
+                experiment TEXT NOT NULL,
                 created TEXT,
                 updated TEXT,
                 UNIQUE (readGroupSetId, name),
@@ -666,14 +668,18 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             INSERT INTO ReadGroup (
                 id, readGroupSetId, name, predictedInsertSize,
-                sampleId, created, updated)
-            VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'));
+                sampleId, description, stats, experiment, created, updated)
+            VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
         """
         cursor = self._dbConnection.cursor()
+        statsJson = json.dumps(readGroup.getStats().toJsonDict())
+        experimentJson = json.dumps(readGroup.getExperiment().toJsonDict())
         cursor.execute(sql, (
             readGroup.getId(), readGroup.getParentContainer().getId(),
             readGroup.getLocalId(), readGroup.getPredictedInsertSize(),
-            readGroup.getSampleId()))
+            readGroup.getSampleId(), readGroup.getDescription(),
+            statsJson, experimentJson))
 
     def removeReadGroupSet(self, readGroupSet):
         """
@@ -704,6 +710,7 @@ class SqlDataRepository(AbstractDataRepository):
                 datasetId TEXT NOT NULL,
                 referenceSetId TEXT NOT NULL,
                 programs TEXT,
+                stats TEXT NOT NULL,
                 dataUrl TEXT NOT NULL,
                 indexFile TEXT NOT NULL,
                 UNIQUE (datasetId, name),
@@ -720,12 +727,13 @@ class SqlDataRepository(AbstractDataRepository):
         """
         sql = """
             INSERT INTO ReadGroupSet (
-                id, datasetId, referenceSetId, name, programs,
+                id, datasetId, referenceSetId, name, programs, stats,
                 dataUrl, indexFile)
-            VALUES (?, ?, ?, ?, ?, ?, ?);
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """
         programsJson = json.dumps(
             [program.toJsonDict() for program in readGroupSet.getPrograms()])
+        statsJson = json.dumps(readGroupSet.getStats().toJsonDict())
         cursor = self._dbConnection.cursor()
         try:
             cursor.execute(sql, (
@@ -733,7 +741,7 @@ class SqlDataRepository(AbstractDataRepository):
                 readGroupSet.getParentContainer().getId(),
                 readGroupSet.getReferenceSet().getId(),
                 readGroupSet.getLocalId(),
-                programsJson, readGroupSet.getDataUrl(),
+                programsJson, statsJson, readGroupSet.getDataUrl(),
                 readGroupSet.getIndexFile()))
         except sqlite3.IntegrityError:
             raise exceptions.DuplicateNameException(
