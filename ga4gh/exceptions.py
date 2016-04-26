@@ -403,6 +403,24 @@ class DataException(BaseServerException):
     message = "Faulty data found or data file is missing."
 
 
+class RepoNotFoundException(DataException):
+
+    def __init__(self, repoPath):
+        self.message = (
+            "Database file '{}' does not exist.  Either "
+            "change the configuration to point to a valid file or "
+            "create one using the repo manager.".format(repoPath))
+
+
+class RepoInvalidDatabaseException(DataException):
+
+    def __init__(self, repoPath):
+        self.message = (
+            "Database file '{}' is malformed.  Either "
+            "change the configuration to point to a valid file or "
+            "create one using the repo manager.".format(repoPath))
+
+
 class RepoSchemaVersionMismatchException(DataException):
 
     def __init__(self, repoVersion, expectedVersion):
