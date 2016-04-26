@@ -277,23 +277,20 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
             for readGroup in self.getReadGroups()]
         readGroupSet.name = self.getLocalId()
         readGroupSet.datasetId = self.getParentContainer().getId()
-        stats = protocol.ReadStats()
-        stats.alignedReadCount = self.getNumAlignedReads()
-        stats.unalignedReadCount = self.getNumUnalignedReads()
-        readGroupSet.stats = stats
+        readGroupSet.stats = self.getStats()
         return readGroupSet
 
     def getNumAlignedReads(self):
         """
         Return the number of aligned reads in this read group set
         """
-        raise NotImplementedError()
+        return self._numAlignedReads
 
     def getNumUnalignedReads(self):
         """
         Return the number of unaligned reads in this read group set
         """
-        raise NotImplementedError()
+        return self._numUnalignedReads
 
     def getPrograms(self):
         """
@@ -310,6 +307,17 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
             self.getCompoundId(), gaAlignment.fragmentName)
         return str(compoundId)
 
+    def getStats(self):
+        """
+        Returns the GA4GH protocol representation of this read group set's
+        ReadStats.
+        """
+        stats = protocol.ReadStats()
+        stats.alignedReadCount = self._numAlignedReads
+        stats.unalignedReadCount = self._numUnalignedReads
+        stats.baseCount = None
+        return stats
+
 
 class SimulatedReadGroupSet(AbstractReadGroupSet):
     """
@@ -322,17 +330,13 @@ class SimulatedReadGroupSet(AbstractReadGroupSet):
             parentContainer, localId)
         self._referenceSet = referenceSet
         self._numAlignments = numAlignments
+        self._numAlignedReads = self._numAlignments
+        self._numUnalignedReads = 0
         for i in range(numReadGroups):
             localId = "rg{}".format(i)
             readGroup = SimulatedReadGroup(
                 self, localId, randomSeed + i, numAlignments)
             self.addReadGroup(readGroup)
-
-    def getNumAlignedReads(self):
-        return self._numAlignments
-
-    def getNumUnalignedReads(self):
-        return 0
 
     def getPrograms(self):
         return []
@@ -376,6 +380,10 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
         for jsonDict in json.loads(row[b'programs']):
             program = protocol.Program.fromJsonDict(jsonDict)
             self._programs.append(program)
+        jsonStats = json.loads(row[b'stats'])
+        stats = protocol.ReadStats.fromJsonDict(jsonStats)
+        self._numAlignedReads = stats.alignedReadCount
+        self._numUnalignedReads = stats.unalignedReadCount
 
     def populateFromFile(self, dataUrl, indexFile=None):
         """
@@ -409,6 +417,8 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
             elif self._bamHeaderReferenceSetName != name:
                 raise exceptions.MultipleReferenceSetsInReadGroupSet(
                     self._dataUrl, name, self._bamFileReferenceName)
+        self._numAlignedReads = samFile.mapped
+        self._numUnalignedReads = samFile.unmapped
 
     def checkConsistency(self, dataRepository):
         pass
@@ -429,14 +439,6 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
                 program.version = htslibProgram.get('VN', None)
                 programs.append(program)
         self._programs = programs
-
-    def getNumAlignedReads(self):
-        samFile = self.getFileHandle(self._dataUrl)
-        return samFile.mapped
-
-    def getNumUnalignedReads(self):
-        samFile = self.getFileHandle(self._dataUrl)
-        return samFile.unmapped
 
     def getPrograms(self):
         return self._programs
@@ -492,13 +494,28 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.sampleId = self.getSampleId()
         if referenceSet is not None:
             readGroup.referenceSetId = referenceSet.getId()
+        readGroup.stats = self.getStats()
+        readGroup.programs = self.getPrograms()
+        readGroup.description = self.getDescription()
+        readGroup.experiment = self.getExperiment()
+        return readGroup
+
+    def getStats(self):
+        """
+        Returns the GA4GH protocol representation of this read group's
+        ReadStats.
+        """
         stats = protocol.ReadStats()
         stats.alignedReadCount = self.getNumAlignedReads()
         stats.unalignedReadCount = self.getNumUnalignedReads()
         stats.baseCount = None  # TODO requires iterating through all reads
-        readGroup.stats = stats
-        readGroup.programs = self.getPrograms()
-        readGroup.description = self.getDescription()
+        return stats
+
+    def getExperiment(self):
+        """
+        Returns the GA4GH protocol representation of this read group's
+        Experiment.
+        """
         experiment = protocol.Experiment()
         experiment.id = self.getExperimentId()
         experiment.instrumentModel = self.getInstrumentModel()
@@ -516,20 +533,19 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         experiment.runTime = self.getRunTime()
         experiment.selection = None
         experiment.strategy = None
-        readGroup.experiment = experiment
-        return readGroup
+        return experiment
 
     def getNumAlignedReads(self):
         """
         Return the number of aligned reads in the read group
         """
-        raise NotImplementedError()
+        return self._numAlignedReads
 
     def getNumUnalignedReads(self):
         """
         Return the number of unaligned reads in the read group
         """
-        raise NotImplementedError()
+        return self._numUnalignedReads
 
     def getPrograms(self):
         """
@@ -606,6 +622,8 @@ class SimulatedReadGroup(AbstractReadGroup):
     def __init__(self, parentContainer, localId, randomSeed, numAlignments=2):
         super(SimulatedReadGroup, self).__init__(parentContainer, localId)
         self._randomSeed = randomSeed
+        self._numAlignedReads = self._parentContainer.getNumAlignedReads()
+        self._numUnalignedReads = 0
 
     def getReadAlignments(self, referenceId=None, start=None, end=None):
         rng = random.Random(self._randomSeed)
@@ -653,12 +671,6 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.supplementaryAlignment = False
         alignment.id = self._parentContainer.getReadAlignmentId(alignment)
         return alignment
-
-    def getNumAlignedReads(self):
-        return self._parentContainer.getNumAlignedReads()
-
-    def getNumUnalignedReads(self):
-        return 0
 
     def getPrograms(self):
         return []
@@ -710,6 +722,8 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         self._library = None
         self._platformUnit = None
         self._runTime = None
+        self._numAlignedReads = -1  # TODO populate with metadata
+        self._numUnalignedReads = -1  # TODO populate with metadata
 
     def populateFromHeader(self, readGroupHeader):
         """
@@ -733,6 +747,18 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         self._sampleId = row[b'sampleId']
         self._description = row[b'description']
         self._predictedInsertSize = row[b'predictedInsertSize']
+        jsonStats = json.loads(row[b'stats'])
+        stats = protocol.ReadStats.fromJsonDict(jsonStats)
+        self._numAlignedReads = stats.alignedReadCount
+        self._numUnalignedReads = stats.unalignedReadCount
+        jsonExperiment = json.loads(row[b'experiment'])
+        experiment = protocol.Experiment.fromJsonDict(jsonExperiment)
+        self._instrumentModel = experiment.instrumentModel
+        self._sequencingCenter = experiment.sequencingCenter
+        self._experimentDescription = experiment.description
+        self._library = experiment.library
+        self._platformUnit = experiment.platformUnit
+        self._runTime = experiment.runTime
 
     def getReadAlignments(self, reference, start=None, end=None):
         """
@@ -740,12 +766,6 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         """
         return self._getReadAlignments(
             reference, start, end, self._parentContainer, self)
-
-    def getNumAlignedReads(self):
-        return -1  # TODO populate with metadata
-
-    def getNumUnalignedReads(self):
-        return -1  # TODO populate with metadata
 
     def getPrograms(self):
         return self._parentContainer.getPrograms()
