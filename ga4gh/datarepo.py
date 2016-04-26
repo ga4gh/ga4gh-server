@@ -55,12 +55,12 @@ class AbstractDataRepository(object):
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
 
-    def addOntology(self, ontology):
+    def addOntologyTermMap(self, ontologyTermMap):
         """
-        Add an ontology map to this data repository.
+        Add an ontologyTermMap map to this data repository.
         """
-        name = ontology.getLocalId()
-        self._ontologyNameMap[name] = ontology
+        name = ontologyTermMap.getLocalId()
+        self._ontologyNameMap[name] = ontologyTermMap
         self._ontologyNames.append(name)
 
     def getDatasets(self):
@@ -110,15 +110,17 @@ class AbstractDataRepository(object):
         """
         return len(self._referenceSetIds)
 
-    def getOntology(self, name):
+    def getOntologyTermMapByName(self, name):
         """
-        Returns an ontology map by name
+        Returns an ontologyTermMap by name
         """
-        return self._ontologyNameMap.get(name, None)
+        if name not in self._ontologyNameMap:
+            raise exceptions.OntologyNameNotFoundException(name)
+        return self._ontologyNameMap[name]
 
-    def getOntologys(self):
+    def getOntologyTermMaps(self):
         """
-        Returns all ontology maps in the repo
+        Returns all ontologyTermMaps in the repo
         """
         return [self._ontologyNameMap[name] for name in self._ontologyNames]
 
@@ -165,6 +167,11 @@ class AbstractDataRepository(object):
         """
         Prints a summary of this data repository to stdout.
         """
+        print("Ontologies:")
+        for ontologyTermMap in self.getOntologyTermMaps():
+            print(
+                "", ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl(),
+                sep="\t")
         print("ReferenceSets:")
         for referenceSet in self.getReferenceSets():
             print(
@@ -332,6 +339,11 @@ class SqlDataRepository(AbstractDataRepository):
         # have verbosity levels. We should provide a way to configure
         # where we look at various chromosomes and so on. This will be
         # an important debug tool for administrators.
+        for ontologyTermMap in self.getOntologyTermMaps():
+            print(
+                "Verifying OntologyTermMap", ontologyTermMap.getLocalId(),
+                "@", ontologyTermMap.getDataUrl())
+            # TODO how do we verify this? Check some well-know SO terms?
         for referenceSet in self.getReferenceSets():
             print(
                 "Verifying ReferenceSet", referenceSet.getLocalId(),
@@ -400,33 +412,50 @@ class SqlDataRepository(AbstractDataRepository):
         self._creationTimeStamp = config["creationTimeStamp"]
 
     def _createOntologyTable(self, cursor):
+        # Right now we support a crude ontology term name-ID bidirectional
+        # map. However, in the future we will want to have better ontology
+        # support. Therefore we're not making the SQL schema too specific
+        # so that we can make this transition without needing backwards
+        # incompatible schema changes.
         sql = """
-            CREATE TABLE Ontology (
+            CREATE TABLE Ontology(
                 name TEXT NOT NULL PRIMARY KEY,
                 dataUrl TEXT NOT NULL
             );
         """
         cursor.execute(sql)
 
-    def insertOntology(self, ontology):
+    def insertOntologyTermMap(self, ontologyTermMap):
         """
-        Inserts the specified ontology into this repository.
+        Inserts the specified ontologyTermMap into this repository.
         """
         sql = """
-            INSERT INTO Ontology (name, dataUrl)
+            INSERT INTO Ontology(name, dataUrl)
             VALUES (?, ?);
         """
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            ontology.getLocalId(), ontology.getDataUrl()))
+        try:
+            cursor.execute(sql, (
+                ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl()))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(
+                ontologyTermMap.getLocalId())
 
-    def _readOntologyTable(self, cursor):
+    def _readOntologyTermMapTable(self, cursor):
         cursor.row_factory = sqlite3.Row
         cursor.execute("SELECT * FROM Ontology;")
         for row in cursor:
-            ontology = ontologies.Ontology(row[b'name'])
-            ontology.populateFromRow(row)
-            self.addOntology(ontology)
+            ontologyTermMap = ontologies.OntologyTermMap(row[b'name'])
+            ontologyTermMap.populateFromRow(row)
+            self.addOntologyTermMap(ontologyTermMap)
+
+    def removeOntologyTermMap(self, ontologyTermMap):
+        """
+        Removes the specified ontology term map from this repository.
+        """
+        sql = "DELETE FROM Ontology WHERE name=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (ontologyTermMap.getLocalId(),))
 
     def _createReferenceTable(self, cursor):
         sql = """
@@ -899,8 +928,8 @@ class SqlDataRepository(AbstractDataRepository):
             featureSet = sequenceAnnotations.Gff3DbFeatureSet(
                 dataset, row[b'name'])
             featureSet.setReferenceSet(referenceSet)
-            featureSet.setSequenceOntology(
-                self.getOntology('sequence_ontology'))
+            featureSet.setSequenceOntologyTermMap(
+                self.getOntologyTermMapByName('sequence_ontology'))
             featureSet.populateFromRow(row)
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
@@ -947,7 +976,7 @@ class SqlDataRepository(AbstractDataRepository):
         with sqlite3.connect(self._dbFilename) as db:
             cursor = db.cursor()
             self._readSystemTable(cursor)
-            self._readOntologyTable(cursor)
+            self._readOntologyTermMapTable(cursor)
             self._readReferenceSetTable(cursor)
             self._readReferenceTable(cursor)
             self._readDatasetTable(cursor)
@@ -994,10 +1023,10 @@ class FileSystemDataRepository(AbstractDataRepository):
                 for filename in os.listdir(relativePath):
                     if filename.endswith(".txt"):
                         name = filename.split(".")[0]
-                        ontology = ontologies.Ontology(name)
-                        ontology.populateFromFile(
+                        ontologyTermMap = ontologies.OntologyTermMap(name)
+                        ontologyTermMap.populateFromFile(
                             os.path.join(relativePath, filename))
-                        self.addOntology(ontology)
+                        self.addOntologyTermMap(ontologyTermMap)
 
         sourceDir = os.path.join(self._dataDir, self.datasetsDirName)
         for setName in os.listdir(sourceDir):

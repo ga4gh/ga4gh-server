@@ -116,9 +116,10 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         referenceSet = references.AbstractReferenceSet("rs")
         variantSet.setReferenceSet(referenceSet)
         if variantSet.isAnnotated():
-            sequenceOntology = ontologies.Ontology("sequence_ontology")
+            sequenceOntology = ontologies.OntologyTermMap(
+                "sequence_ontology")
             annotationSet = variantSet.getVariantAnnotationSets()[0]
-            annotationSet.setSequenceOntology(sequenceOntology)
+            annotationSet.setSequenceOntologyTermMap(sequenceOntology)
             return annotationSet
         else:
             return variantSet

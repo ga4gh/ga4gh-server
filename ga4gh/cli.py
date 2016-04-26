@@ -32,6 +32,7 @@ import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.ontologies as ontologies
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -1594,6 +1595,18 @@ class RepoManager(object):
         self._openRepo()
         self._repo.verify()
 
+    def addOntology(self):
+        """
+        Adds a new Ontology to this repo.
+        """
+        self._openRepo()
+        name = self._args.name
+        if name is None:
+            name = getNameFromPath(self._args.filePath)
+        ontologyTermMap = ontologies.OntologyTermMap(name)
+        ontologyTermMap.populateFromFile(self._args.filePath)
+        self._updateRepo(self._repo.insertOntologyTermMap, ontologyTermMap)
+
     def addDataset(self):
         """
         Adds a new dataset into this repo.
@@ -1713,6 +1726,19 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeFeatureSet, featureSet)
         self._confirmDelete("FeatureSet", featureSet.getLocalId(), func)
 
+    def removeOntology(self):
+        """
+        Removes an ontology from the repo.
+        """
+        self._openRepo()
+        ontologyTermMap = self._repo.getOntologyTermMapByName(
+            self._args.ontologyName)
+
+        def func():
+            self._updateRepo(
+                self._repo.removeOntologyTermMap, ontologyTermMap)
+        self._confirmDelete("Ontology", ontologyTermMap.getLocalId(), func)
+
     #
     # Methods to simplify adding common arguments to the parser.
     #
@@ -1750,8 +1776,8 @@ class RepoManager(object):
     @classmethod
     def addOntologyNameArgument(cls, subparser):
         subparser.add_argument(
-            "ontologyMapName",
-            help="the name of the ontology map to create/modify")
+            "ontologyName",
+            help="the name of the ontology")
 
     @classmethod
     def addReadGroupSetNameArgument(cls, subparser):
@@ -1772,9 +1798,8 @@ class RepoManager(object):
             help="the name of the variant set")
 
     @classmethod
-    def addFilePathArgument(cls, subparser):
-        subparser.add_argument(
-            "filePath", help="the path of the file to be moved into the repo")
+    def addFilePathArgument(cls, subparser, helpText):
+        subparser.add_argument("filePath", help=helpText)
 
     @classmethod
     def addNameOption(cls, parser, objectType):
@@ -1827,7 +1852,10 @@ class RepoManager(object):
             "Add a reference set to the data repo")
         addReferenceSetParser.set_defaults(runner="addReferenceSet")
         cls.addRepoArgument(addReferenceSetParser)
-        cls.addFilePathArgument(addReferenceSetParser)
+        cls.addFilePathArgument(
+            addReferenceSetParser,
+            "The path of the FASTA file to use as a reference set. This "
+            "file must be bgzipped and indexed.")
         cls.addNameOption(addReferenceSetParser, objectType)
         cls.addDescriptionOption(addReferenceSetParser)
 
@@ -1862,20 +1890,29 @@ class RepoManager(object):
                 "file name. If the dataFile is a remote URL the path to "
                 "a local file containing the BAM index must be provided"))
 
-        addOntologyMapParser = addSubparser(
-            subparsers, "add-ontologymap",
-            "Add an ontology map to the repo")
-        addOntologyMapParser.set_defaults(runner="addOntologyMap")
-        cls.addRepoArgument(addOntologyMapParser)
-        cls.addFilePathArgument(addOntologyMapParser)
+        addOntologyParser = addSubparser(
+            subparsers, "add-ontology",
+            "Adds an ontology to the repo. Currently ontology support "
+            "consists of a map between ontology term IDs and names "
+            "stored in a tab-delimited text file. For example, in "
+            "Sequence Ontology, we map from the term ID 'SO:0000024' "
+            "to the name 'sarcin_like_RNA_motif'. ")
+        addOntologyParser.set_defaults(runner="addOntology")
+        cls.addRepoArgument(addOntologyParser)
+        cls.addFilePathArgument(
+            addOntologyParser,
+            "The path to the text file used to define the ontology term "
+            "map to use. This must be a tab-delimited text file consisting "
+            "of ontology term IDs and names.")
+        cls.addNameOption(addOntologyParser, "ontology")
 
-        removeOntologyMapParser = addSubparser(
-            subparsers, "remove-ontologymap",
-            "Remove an ontology map from the repo")
-        removeOntologyMapParser.set_defaults(runner="removeOntologyMap")
-        cls.addRepoArgument(removeOntologyMapParser)
-        cls.addOntologyNameArgument(removeOntologyMapParser)
-        cls.addForceOption(removeOntologyMapParser)
+        removeOntologyParser = addSubparser(
+            subparsers, "remove-ontology",
+            "Remove an ontology from the repo")
+        removeOntologyParser.set_defaults(runner="removeOntology")
+        cls.addRepoArgument(removeOntologyParser)
+        cls.addOntologyNameArgument(removeOntologyParser)
+        cls.addForceOption(removeOntologyParser)
 
         removeReadGroupSetParser = addSubparser(
             subparsers, "remove-readgroupset",
@@ -1891,7 +1928,9 @@ class RepoManager(object):
         addVariantSetParser.set_defaults(runner="addVariantSet")
         cls.addRepoArgument(addVariantSetParser)
         cls.addDatasetNameArgument(addVariantSetParser)
-        cls.addFilePathArgument(addVariantSetParser)
+        cls.addFilePathArgument(
+            addVariantSetParser,
+            "The path to the variant file. TODO")
 
         removeVariantSetParser = addSubparser(
             subparsers, "remove-variantset",
@@ -1907,7 +1946,10 @@ class RepoManager(object):
         addFeatureSetParser.set_defaults(runner="addFeatureSet")
         cls.addRepoArgument(addFeatureSetParser)
         cls.addDatasetNameArgument(addFeatureSetParser)
-        cls.addFilePathArgument(addFeatureSetParser)
+        cls.addFilePathArgument(
+            addFeatureSetParser,
+            "The path to the converted SQLite database containing Feature "
+            "data")
         cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
 
         removeFeatureSetParser = addSubparser(

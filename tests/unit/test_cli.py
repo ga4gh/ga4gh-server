@@ -378,22 +378,21 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.runner, "removeVariantSet")
         self.assertEquals(args.force, False)
 
-    def testAddOntologyMap(self):
-        cliInput = "add-ontologymap {} {}".format(
+    def testAddOntology(self):
+        cliInput = "add-ontology {} {}".format(
             self.repoPath, self.filePath)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.filePath, self.filePath)
-        self.assertEquals(args.runner, "addOntologyMap")
+        self.assertEquals(args.runner, "addOntology")
 
-    def testRemoveOntologyMap(self):
-        ontologyMapName = "ontologyMap"
-        cliInput = "remove-ontologymap {} {}".format(
-            self.repoPath, ontologyMapName)
+    def testRemoveOntology(self):
+        ontologyName = "the_ontology_name"
+        cliInput = "remove-ontology {} {}".format(self.repoPath, ontologyName)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.ontologyMapName, ontologyMapName)
-        self.assertEquals(args.runner, "removeOntologyMap")
+        self.assertEquals(args.ontologyName, ontologyName)
+        self.assertEquals(args.runner, "removeOntology")
         self.assertEquals(args.force, False)
 
 

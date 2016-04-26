@@ -316,16 +316,16 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
     """
     def __init__(self, parentContainer, localId):
         super(Gff3DbFeatureSet, self).__init__(parentContainer, localId)
-        self._sequenceOntology = None
+        self._sequenceOntologyTermMap = None
         self._dbFilePath = None
         self._db = None
 
-    def setSequenceOntology(self, sequenceOntology):
+    def setSequenceOntologyTermMap(self, sequenceOntologyTermMap):
         """
-        Sets the sequence ontology instance used by this FeatureSet to the
+        Sets the OntologyTermMap instance used by this FeatureSet to the
         specified value.
         """
-        self._sequenceOntology = sequenceOntology
+        self._sequenceOntologyTermMap = sequenceOntologyTermMap
 
     def populateFromFile(self, dataUrl):
         """
@@ -391,8 +391,8 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         gaFeature.childIds = map(
                 self.getCompoundIdForFeatureId,
                 json.loads(feature['child_ids']))
-        gaFeature.featureType = \
-            self._sequenceOntology.getGaTermByName(feature['type'])
+        gaFeature.featureType = self._sequenceOntologyTermMap.getGaTermByName(
+                feature['type'])
         gaFeature.attributes = protocol.Attributes()
         gaFeature.attributes.vals = json.loads(feature['attributes'])
         return gaFeature
