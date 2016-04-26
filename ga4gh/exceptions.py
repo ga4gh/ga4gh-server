@@ -386,6 +386,14 @@ class DataException(BaseServerException):
     message = "Faulty data found or data file is missing."
 
 
+class RepoSchemaVersionMismatchException(DataException):
+
+    def __init__(self, repoVersion, expectedVersion):
+        self.message = (
+            "Repository version '{}' does not match expected "
+            "version '{}'".format(repoVersion, expectedVersion))
+
+
 class FileOpenFailedException(DataException):
 
     def __init__(self, filename):

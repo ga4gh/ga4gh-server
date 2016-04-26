@@ -267,6 +267,23 @@ class SqlDataRepository(AbstractDataRepository):
     """
     A data repository based on a SQL database.
     """
+    class SchemaVersion(object):
+        """
+        The version of the data repository SQL schema
+        """
+        def __init__(self, versionString):
+            splits = versionString.split('.')
+            assert len(splits) == 2
+            self.major = splits[0]
+            self.minor = splits[1]
+
+        def __str__(self):
+            return "{}.{}".format(self.major, self.minor)
+
+    version = SchemaVersion("0.1")
+    systemKeySchemaVersion = "schemaVersion"
+    systemKeyCreationTimeStamp = "creationTimeStamp"
+
     def __init__(self, fileName):
         super(SqlDataRepository, self).__init__()
         self._dbFilename = fileName
@@ -276,7 +293,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._openMode = None
         # Values filled in using the DB. These will all be None until
         # we have called load()
-        self._repositoryVersion = None
+        self._schemaVersion = None
         self._creationTimeStamp = None
         # Connection to the DB.
         self._dbConnection = None
@@ -289,7 +306,7 @@ class SqlDataRepository(AbstractDataRepository):
         if self._openMode != MODE_READ:
             raise ValueError("Repo must be opened in read mode")
 
-    def open(self, mode="r"):
+    def open(self, mode=MODE_READ):
         """
         Opens this repo in the specified mode.
 
@@ -397,9 +414,12 @@ class SqlDataRepository(AbstractDataRepository):
         """
         cursor.execute(sql)
         cursor.execute(
-            "INSERT INTO System VALUES ('repositoryVersion', '0.1')")
+            "INSERT INTO System VALUES "
+            "('{}', '{}')".format(
+                self.systemKeySchemaVersion, self.version))
         cursor.execute(
-            "INSERT INTO System VALUES ('creationTimeStamp', datetime('now'))")
+            "INSERT INTO System VALUES ('{}', datetime('now'))".format(
+                self.systemKeyCreationTimeStamp))
 
     def _readSystemTable(self, cursor):
         sql = "SELECT key, value FROM System;"
@@ -408,8 +428,12 @@ class SqlDataRepository(AbstractDataRepository):
         for row in cursor:
             config[row[0]] = row[1]
         row = cursor.fetchone()
-        self._repositoryVersion = config["repositoryVersion"]
-        self._creationTimeStamp = config["creationTimeStamp"]
+        self._schemaVersion = config[self.systemKeySchemaVersion]
+        self._creationTimeStamp = config[self.systemKeyCreationTimeStamp]
+        schemaVersion = self.SchemaVersion(self._schemaVersion)
+        if schemaVersion.major != self.version.major:
+            raise exceptions.RepoSchemaVersionMismatchException(
+                schemaVersion, self.version)
 
     def _createOntologyTable(self, cursor):
         # Right now we support a crude ontology term name-ID bidirectional
