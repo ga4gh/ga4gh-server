@@ -204,8 +204,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     def testSearchRnaQuantification(self):
         request = protocol.SearchRnaQuantificationRequest()
         request.rnaQuantificationId = self.rnaQuantificationId
+        request.datasetId = self.datasetId
         request.pageSize = self.pageSize
-        self.httpClient.searchRnaQuantification(self.rnaQuantificationId)
+        self.httpClient.searchRnaQuantification(
+            self.datasetId, self.rnaQuantificationId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "rnaquantification",
             protocol.SearchRnaQuantificationResponse)
