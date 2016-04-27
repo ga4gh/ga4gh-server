@@ -342,10 +342,10 @@ def handleException(exception):
     Handles an exception that occurs somewhere in the process of handling
     a request.
     """
-    with app.test_request_context():
-        app.log_exception(exception)
     serverException = exception
     if not isinstance(exception, exceptions.BaseServerException):
+        with app.test_request_context():
+            app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
     responseStr = serverException.toProtocolElement().toJsonString()
     return getFlaskResponse(responseStr, serverException.httpStatus)
