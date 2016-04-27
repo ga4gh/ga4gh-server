@@ -521,9 +521,12 @@ class Backend(object):
             request.readGroupIds[0])
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
-        readGroup = readGroupSet.getReadGroup(compoundId.readGroupId)
         referenceSet = readGroupSet.getReferenceSet()
+        if referenceSet is None:
+            raise exceptions.ReadGroupSetNotMappedToReferenceSetException(
+                    readGroupSet.getId())
         reference = referenceSet.getReference(request.referenceId)
+        readGroup = readGroupSet.getReadGroup(compoundId.readGroupId)
         intervalIterator = ReadsIntervalIterator(
             request, readGroup, reference)
         return intervalIterator
@@ -533,13 +536,16 @@ class Backend(object):
             request.readGroupIds[0])
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         readGroupSet = dataset.getReadGroupSet(compoundId.readGroupSetId)
+        referenceSet = readGroupSet.getReferenceSet()
+        if referenceSet is None:
+            raise exceptions.ReadGroupSetNotMappedToReferenceSetException(
+                    readGroupSet.getId())
+        reference = referenceSet.getReference(request.referenceId)
         readGroupIds = readGroupSet.getReadGroupIds()
         if set(readGroupIds) != set(request.readGroupIds):
             raise exceptions.BadRequestException(
                 "If multiple readGroupIds are specified, "
                 "they must be all of the readGroupIds in a ReadGroup")
-        referenceSet = readGroupSet.getReferenceSet()
-        reference = referenceSet.getReference(request.referenceId)
         intervalIterator = ReadsIntervalIterator(
             request, readGroupSet, reference)
         return intervalIterator

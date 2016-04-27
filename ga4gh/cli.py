@@ -782,6 +782,15 @@ class GetVariantSetRunner(AbstractGetRunner):
         self._method = self._client.getVariantSet
 
 
+class GetVariantAnnotationSetRunner(AbstractGetRunner):
+    """
+    Runner class for the variantannotationsets/{id} method
+    """
+    def __init__(self, args):
+        super(GetVariantAnnotationSetRunner, self).__init__(args)
+        self._method = self._client.getVariantAnnotationSet
+
+
 class GetFeatureRunner(FeatureFormatterMixin, AbstractGetRunner):
     """
     Runner class for the features/{id} method
@@ -1069,6 +1078,13 @@ def addVariantAnnotationSetsSearchParser(subparsers):
     return parser
 
 
+def addVariantAnnotationSetsGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "variantannotationsets-get", "Get a variantAnnotationSet")
+    parser.set_defaults(runner=GetVariantAnnotationSetRunner)
+    addGetArguments(parser)
+
+
 def addVariantSetsGetParser(subparsers):
     parser = addSubparser(
         subparsers, "variantsets-get", "Get a variantSet")
@@ -1275,6 +1291,7 @@ def getClientParser():
     addVariantAnnotationSearchParser(subparsers)
     addVariantAnnotationSetsSearchParser(subparsers)
     addVariantSetsGetParser(subparsers)
+    addVariantAnnotationSetsGetParser(subparsers)
     addFeaturesSearchParser(subparsers)
     addFeaturesGetParser(subparsers)
     addFeatureSetsGetParser(subparsers)

@@ -515,16 +515,22 @@ patch updates are routinely and regularly released.
 
 This entails:
 
-1) Create a PR against ``master`` with the release notes;
-2) Once this has been merged, tag the release on GitHub with the
+1) Create a PR against ``master`` with the release notes; presently, the
+   release notes are located in ``docs/status.rst``
+2) Once this has been merged, tag the release on GitHub (on the `releases
+   <https://github.com/ga4gh/server/releases>`_ page) with the
    appropriate version number.
-3) Fetch the tag from the upstream repo, and checkout this tag.
-   Create the distribution tarball using ``python setup.py sdist``,
-   and then upload the resulting tarball to PyPI.
+3) Fetch the tag from the upstream repo, and checkout this tag.  Create the
+   distribution tarball using ``python setup.py sdist``, and then upload the
+   resulting tarball to PyPI using ``twine upload
+   dist/ga4gh-MAJOR.MINOR.PATCH.tar.gz`` (of course, using the correct file
+   name)
 4) Verify that the documentation at
    http://ga4gh-reference-implementation.readthedocs.org/en/stable/
    is for the correct version (it may take a few minutes for this to
-   happen after the release has been tagged on GitHub).
+   happen after the release has been tagged on GitHub).  The release
+   notes docs should have changed, so that is a good section to look at
+   to confirm the change.
 
 +++++++++++++++++++++
 Stable bugfix release
