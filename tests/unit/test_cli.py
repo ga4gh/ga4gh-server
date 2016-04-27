@@ -337,7 +337,7 @@ class TestRepoManagerCli(unittest.TestCase):
 
     def testAddReadGroupSetWithIndexFile(self):
         indexPath = self.filePath + ".bai"
-        cliInput = "add-readgroupset {} {} {} {}".format(
+        cliInput = "add-readgroupset {} {} {} -I {}".format(
             self.repoPath, self.datasetName, self.filePath,
             indexPath)
         args = self.parser.parse_args(cliInput.split())
@@ -364,7 +364,23 @@ class TestRepoManagerCli(unittest.TestCase):
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.filePath, self.filePath)
+        self.assertEquals(args.dataFiles, [self.filePath])
+        self.assertEquals(args.indexFiles, None)
+        self.assertEquals(args.runner, "addVariantSet")
+
+    def testAddVariantSetWithIndexFiles(self):
+        file1 = "file1"
+        file2 = "file2"
+        indexFile1 = file1 + ".tbi"
+        indexFile2 = file2 + ".tbi"
+        cliInput = "add-variantset {} {} {} {} -I {} {}".format(
+            self.repoPath, self.datasetName, file1, file2,
+            indexFile1, indexFile2)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.dataFiles, [file1, file2])
+        self.assertEquals(args.indexFiles, [indexFile1, indexFile2])
         self.assertEquals(args.runner, "addVariantSet")
 
     def testRemoveVariantSet(self):

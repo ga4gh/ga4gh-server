@@ -8,10 +8,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
+import glob
 import logging
 import operator
 import os
 import sys
+import textwrap
 import unittest
 import unittest.loader
 import unittest.suite
@@ -29,6 +31,7 @@ import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.reads as reads
+import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
@@ -1507,7 +1510,7 @@ def getNameFromPath(filePath):
     """
     if len(filePath) == 0:
         raise ValueError("Cannot have empty path for name")
-    fileName = os.path.split(filePath)[1]
+    fileName = os.path.split(os.path.normpath(filePath))[1]
     # We need to handle things like .fa.gz, so we can't use
     # os.path.splitext
     ret = fileName.split(".")[0]
@@ -1660,6 +1663,68 @@ class RepoManager(object):
         readGroupSet.setReferenceSet(referenceSet)
         self._updateRepo(self._repo.insertReadGroupSet, readGroupSet)
 
+    def addVariantSet(self):
+        """
+        Adds a new VariantSet into this repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        dataUrls = self._args.dataFiles
+        name = self._args.name
+        if len(dataUrls) == 1:
+            if self._args.name is None:
+                name = getNameFromPath(dataUrls[0])
+            if os.path.isdir(dataUrls[0]):
+                # Read in the VCF files from the directory.
+                # TODO support uncompressed VCF and BCF files
+                vcfDir = dataUrls[0]
+                pattern = os.path.join(vcfDir, "*.vcf.gz")
+                dataUrls = glob.glob(pattern)
+                if len(dataUrls) == 0:
+                    raise exceptions.RepoManagerException(
+                        "Cannot find any VCF files in the directory "
+                        "'{}'.".format(vcfDir))
+        elif self._args.name is None:
+            raise exceptions.RepoManagerException(
+                "Cannot infer the intended name of the VariantSet when "
+                "more than one VCF file is provided. Please provide a "
+                "name argument using --name.")
+
+        # Now, get the index files for the data files that we've now obtained.
+        indexFiles = self._args.indexFiles
+        if indexFiles is None:
+            # First check if all the paths exist locally, as they must
+            # if we are making a default index path.
+            for dataUrl in dataUrls:
+                if not os.path.exists(dataUrl):
+                    raise exceptions.MissingIndexException(
+                        "Cannot find file '{}'. All variant files must be "
+                        "stored locally if the default index location is "
+                        "used. If you are trying to create a VariantSet "
+                        "based on remote URLs, please download the index "
+                        "files to the local file system and provide them "
+                        "with the --indexFiles argument".format(dataUrl))
+            # We assume that the indexes are made by adding .tbi
+            indexSuffix = ".tbi"
+            # TODO support BCF input properly here by adding .csi
+            indexFiles = [filename + indexSuffix for filename in dataUrls]
+
+        variantSet = variants.HtslibVariantSet(dataset, name)
+        variantSet.populateFromFile(dataUrls, indexFiles)
+        # Get the reference set that is associated with the variant set.
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
+            # Try to find a reference set name from the VCF header.
+            referenceSetName = variantSet.getVcfHeaderReferenceSetName()
+        if referenceSetName is None:
+            raise exceptions.RepoManagerException(
+                "Cannot infer the ReferenceSet from the VCF header. Please "
+                "specify the ReferenceSet to associate with this "
+                "VariantSet using the --referenceSetName option")
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
+        variantSet.setReferenceSet(referenceSet)
+        self._updateRepo(self._repo.insertVariantSet, variantSet)
+
     def removeReferenceSet(self):
         """
         Removes a referenceSet from the repo.
@@ -1684,6 +1749,18 @@ class RepoManager(object):
         def func():
             self._updateRepo(self._repo.removeReadGroupSet, readGroupSet)
         self._confirmDelete("ReadGroupSet", readGroupSet.getLocalId(), func)
+
+    def removeVariantSet(self):
+        """
+        Removes a variantSet from the repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        variantSet = dataset.getVariantSetByName(self._args.variantSetName)
+
+        def func():
+            self._updateRepo(self._repo.removeVariantSet, variantSet)
+        self._confirmDelete("VariantSet", variantSet.getLocalId(), func)
 
     def removeDataset(self):
         """
@@ -1882,7 +1959,7 @@ class RepoManager(object):
             "dataFile",
             help="The file path or URL of the BAM file for this ReadGroupSet")
         addReadGroupSetParser.add_argument(
-            "indexFile", nargs='?', default=None,
+            "-I", "--indexFile", default=None,
             help=(
                 "The file path of the BAM index for this ReadGroupSet. "
                 "If the dataFile argument is a local file, this will "
@@ -1923,14 +2000,33 @@ class RepoManager(object):
         cls.addReadGroupSetNameArgument(removeReadGroupSetParser)
         cls.addForceOption(removeReadGroupSetParser)
 
+        objectType = "VariantSet"
         addVariantSetParser = addSubparser(
-            subparsers, "add-variantset", "Add a variant set to the data repo")
+            subparsers, "add-variantset",
+            "Add a variant set to the data repo based on one or "
+            "more VCF files. ")
         addVariantSetParser.set_defaults(runner="addVariantSet")
         cls.addRepoArgument(addVariantSetParser)
         cls.addDatasetNameArgument(addVariantSetParser)
-        cls.addFilePathArgument(
-            addVariantSetParser,
-            "The path to the variant file. TODO")
+        addVariantSetParser.add_argument(
+            "dataFiles", nargs="+",
+            help=(
+                "The VCF/BCF files representing the new VariantSet. "
+                "These may be specified either one or more paths "
+                "to local files or remote URLS, or as a path to "
+                "a local directory containing VCF files. Either "
+                "a single directory argument may be passed or a "
+                "list of file paths/URLS, but not a mixture of "
+                "directories and paths.")
+            )
+        addVariantSetParser.add_argument(
+            "-I", "--indexFiles", nargs="+", metavar="indexFiles",
+            help=(
+                "The index files for the VCF/BCF files provided in "
+                "the dataFiles argument. These must be provided in the "
+                "same order as the data files."))
+        cls.addNameOption(addVariantSetParser, objectType)
+        cls.addReferenceSetNameOption(addVariantSetParser, objectType)
 
         removeVariantSetParser = addSubparser(
             subparsers, "remove-variantset",
@@ -1978,7 +2074,10 @@ def repoExitError(message):
     """
     Exits the repo manager with error status.
     """
-    sys.exit("Error: {}".format(message))
+    wrapper = textwrap.TextWrapper(
+        break_on_hyphens=False, break_long_words=False)
+    formatted = wrapper.fill("{}: error: {}".format(sys.argv[0], message))
+    sys.exit(formatted)
 
 
 def repo_main(args=None):
