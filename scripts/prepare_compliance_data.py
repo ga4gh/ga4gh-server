@@ -196,6 +196,7 @@ class ComplianceDataMunger(object):
         if self.tempdir is not None:
             shutil.rmtree(self.tempdir)
         utils.log("Done converting compliance data.")
+        utils.log("Result in '{}'".format(self.outputDirectory))
 
 
 @utils.Timed()
@@ -214,8 +215,8 @@ def main():
         default=None)
     parser.add_argument('--verbose', '-v', action='count', default=0)
     args = parser.parse_args()
+    cdm = ComplianceDataMunger(args.inputDirectory, args.outputDirectory)
     try:
-        cdm = ComplianceDataMunger(args.inputDirectory, args.outputDirectory)
         cdm.run()
     finally:
         cdm.cleanup()

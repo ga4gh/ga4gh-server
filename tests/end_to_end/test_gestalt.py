@@ -46,6 +46,8 @@ class TestGestalt(server_test.ServerTest):
         self.runReadsRequest()
         self.runReferencesRequest()
         self.runVariantSetsRequestDatasetTwo()
+        self.runVariantAnnotationsRequest()
+        self.runGetVariantAnnotationSetsRequest()
         self.client.cleanup()
 
     def assertLogsWritten(self):
@@ -98,6 +100,13 @@ class TestGestalt(server_test.ServerTest):
         self.runClientCmd(
             self.client,
             "variantannotations-search",
+            "--variantAnnotationSetId {} -s 0 -e 2".format(
+                self.simulatedVariantAnnotationSetId))
+
+    def runGetVariantAnnotationSetsRequest(self):
+        self.runClientCmd(
+            self.client,
+            "variantannotationsets-get",
             "{}".format(self.simulatedVariantAnnotationSetId))
 
     def runReadsRequest(self):
