@@ -17,11 +17,15 @@ import urllib2
 
 import pysam
 
-import ga4gh.datarepo as datarepo
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.reads as reads
+import utils
+utils.ga4ghImportGlue()
+
+# We need to turn off QA because of the import glue
+import ga4gh.datarepo as datarepo  # NOQA
+import ga4gh.datamodel.references as references  # NOQA
+import ga4gh.datamodel.datasets as datasets  # NOQA
+import ga4gh.datamodel.variants as variants  # NOQA
+import ga4gh.datamodel.reads as reads  # NOQA
 
 
 class ChromMinMax(object):
@@ -109,7 +113,7 @@ class AbstractFileDownloader(object):
         self.tempDir = tempfile.mkdtemp(prefix="ga4gh-download")
         self.numChromosomes = args.num_chromosomes
         self.chromosomes = [str(j + 1) for j in range(self.numChromosomes)]
-        self.dirName = args.dir_name
+        self.dirName = args.destination
         self.datasetName = '1kg-p3-subset'
         self.variantSetName = 'mvncall'
         self.referenceSetName = 'GRCh37-subset'
@@ -402,14 +406,14 @@ sources = {
 def parseArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "destination",
+        help="the name of the directory that the data is downloaded to")
+    parser.add_argument(
         "-f", "--force", default=False, action="store_true",
         help="Overwrite an existing directory with the same name")
     parser.add_argument(
         "--source", default="ncbi", choices=sources.keys(),
         help="the source to download from")
-    parser.add_argument(
-        "--dir-name", default="ga4gh-downloaded-data",
-        help="the name of the directory that the data is downloaded to")
     parser.add_argument(
         "--samples", default='HG00096,HG00533,HG00534',
         help="a comma-seperated list of samples to download")
