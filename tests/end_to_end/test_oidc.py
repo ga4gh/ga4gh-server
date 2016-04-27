@@ -16,8 +16,7 @@ import client
 import server
 import server_test
 
-import ga4gh.datamodel as datamodel
-import tests.paths as paths
+import ga4gh.datarepo as datarepo
 
 
 def getClientKey(server_url, username, password):
@@ -58,9 +57,13 @@ class TestOidc(server_test.ServerTestClass):
     """
     @classmethod
     def otherSetup(cls):
-        cls.simulatedVariantSetId = \
-            datamodel.VariantSetCompoundId.obfuscate(
-                paths.simulatedVariantSetId)
+        # extract ids from a simulated data repo with the same config
+        repo = datarepo.SimulatedDataRepository()
+        dataset = repo.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        variantSetId = variantSet.getId()
+
+        cls.simulatedVariantSetId = variantSetId
         requests.packages.urllib3.disable_warnings()
         cls.opServer = server.OidcOpServerForTesting()
         cls.opServer.start()

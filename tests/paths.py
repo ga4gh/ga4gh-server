@@ -47,13 +47,5 @@ featuresPath = os.path.join(
 featuresPath2 = os.path.join(
     testDataDir, 'datasets/dataset1/sequenceAnnotations/specialCasesTest.db')
 
-# simulated object ids
-simulatedDatasetId = '["simulatedDataset0"]'
-simulatedVariantSetId = '["simulatedDataset0","vs","simVs0"]'
-simulatedReadGroupId = '["simulatedDataset0","rgs","simRgs0","rg0"]'
-simulatedReferenceSetId = '["referenceSet0"]'
-simulatedReferenceId = '["referenceSet0","srs0"]'
-simulatedVariantAnnotationSetId = (
-    '["simulatedDataset0","vs","simVs0","simVas0"]')
-
+# misc.
 landingMessageHtml = os.path.join(testDataDir, "test.html")
