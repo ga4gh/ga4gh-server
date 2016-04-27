@@ -319,7 +319,9 @@ class SqlDataRepository(AbstractDataRepository):
                 MODE_READ, MODE_WRITE)
             raise ValueError(error)
         self._openMode = mode
-        self._dbConnection = sqlite3.connect(self._dbFilename)
+        if mode == MODE_READ:
+            self.assertExists()
+        self._safeConnect()
         # Turn on foreign key constraints.
         cursor = self._dbConnection.cursor()
         cursor.execute("PRAGMA foreign_keys = ON;")
@@ -430,6 +432,14 @@ class SqlDataRepository(AbstractDataRepository):
                     print(
                         "\t\t\tRead", i, "annotations from reference",
                         referenceName)
+
+    def _safeConnect(self):
+        try:
+            # The next line creates the file if it did not exist previously
+            self._dbConnection = sqlite3.connect(self._dbFilename)
+        except sqlite3.OperationalError:
+            # raised e.g. when directory passed as dbFilename
+            raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
 
     def _createSystemTable(self, cursor):
         sql = """
@@ -1044,6 +1054,10 @@ class SqlDataRepository(AbstractDataRepository):
         # exists?
         return os.path.exists(self._dbFilename)
 
+    def assertExists(self):
+        if not self.exists():
+            raise exceptions.RepoNotFoundException(self._dbFilename)
+
     def delete(self):
         """
         Delete this data repository by recursively removing all directories.
@@ -1057,7 +1071,11 @@ class SqlDataRepository(AbstractDataRepository):
         """
         with sqlite3.connect(self._dbFilename) as db:
             cursor = db.cursor()
-            self._readSystemTable(cursor)
+            try:
+                self._readSystemTable(cursor)
+            except (sqlite3.OperationalError, sqlite3.DatabaseError):
+                raise exceptions.RepoInvalidDatabaseException(
+                    self._dbFilename)
             self._readOntologyTermMapTable(cursor)
             self._readReferenceSetTable(cursor)
             self._readReferenceTable(cursor)
