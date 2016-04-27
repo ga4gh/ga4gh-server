@@ -651,16 +651,14 @@ class Backend(object):
         Returns a generator over the (rnaQuantification, nextPageToken) pairs
         defined by the specified request.
         """
+        dataset = self.getDataRepository().getDataset(request.datasetId)
         if request.rnaQuantificationId is None:
-            allRnaQuants = []
-            for dataset in self.getDataRepository().getDatasets():
-                for rnaQuant in dataset.getRnaQuantifications():
-                    allRnaQuants.append(rnaQuant)
-            return self._objectListGenerator(request, allRnaQuants)
+            return self._topLevelObjectGenerator(
+                request, dataset.getNumRnaQuantifications(),
+                dataset.getRnaQuantificationByIndex)
         else:
             compoundId = datamodel.RnaQuantificationCompoundId.parse(
                 request.rnaQuantificationId)
-            dataset = self.getDataRepository().getDataset(compoundId.datasetId)
             try:
                 rnaQuant = dataset.getRnaQuantification(
                     compoundId.rnaQuantificationId)

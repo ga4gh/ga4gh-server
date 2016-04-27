@@ -675,10 +675,12 @@ class SearchRnaQuantificationRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchRnaQuantificationRunner, self).__init__(args)
+        self._datasetId = args.datasetId
         self._rnaQuantificationId = args.rnaQuantificationId
 
     def run(self):
         iterator = self._client.searchRnaQuantification(
+            self._datasetId,
             self._rnaQuantificationId)
         self._output(iterator)
 
@@ -1339,6 +1341,7 @@ def addRnaQuantificationSearchParser(subparsers):
     parser.set_defaults(runner=SearchRnaQuantificationRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
+    addDatasetIdArgument(parser)
     parser.add_argument(
         "--rnaQuantificationId", default=None,
         help="The rnaQuantificationId to search over")

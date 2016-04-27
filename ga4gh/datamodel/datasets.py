@@ -212,17 +212,11 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return self._description
 
-    def getRnaQuantificationIds(self):
+    def getNumRnaQuantifications(self):
         """
-        Return a list of ids of rna quants that this dataset has
+        Returns the number of rna quantifications in this dataset.
         """
-        return self._rnaQuantificationIds
-
-    def getRnaQuantificationIdMap(self):
-        """
-        Return a map of the dataset's rna quant ids to rna quants
-        """
-        return self._rnaQuantificationIdMap
+        return len(self._rnaQuantificationIds)
 
     def getRnaQuantifications(self):
         """
@@ -230,6 +224,12 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return [self._rnaQuantificationIdMap[id_] for
                 id_ in self._rnaQuantificationIds]
+
+    def getRnaQuantificationByIndex(self, index):
+        """
+        Returns the rna quantification at the specified index in this dataset.
+        """
+        return self._rnaQuantificationIdMap[self._rnaQuantificationIds[index]]
 
     def getRnaQuantification(self, id_):
         """

@@ -520,7 +520,7 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "reads", protocol.SearchReadsResponse)
 
-    def searchRnaQuantification(self, rnaQuantificationId):
+    def searchRnaQuantification(self, datasetId, rnaQuantificationId=None):
         """
         Returns an iterator over the RnaQuantification objects from the server
 
@@ -529,6 +529,7 @@ class AbstractClient(object):
         """
         request = protocol.SearchRnaQuantificationRequest()
         request.rnaQuantificationId = rnaQuantificationId
+        request.datasetId = datasetId
         request.pageSize = self._pageSize
         return self._runSearchRequest(
             request, "rnaquantification",
