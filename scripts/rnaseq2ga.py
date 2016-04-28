@@ -50,7 +50,7 @@ class RNASqliteStore(object):
                        rna_quantification_id text,
                        annotation_id text,
                        expression real,
-                       feature_group_id text,
+                       quantification_group_id text,
                        is_normalized boolean,
                        raw_read_count real,
                        score real,
@@ -79,7 +79,7 @@ class RNASqliteStore(object):
         """
         Adds an Expression to the db.  Datafields is a tuple in the order:
         id, name, rna_quantification_id, annotation_id, expression,
-        feature_group_id, is_normalized, raw_read_count, score, units
+        quantification_group_id, is_normalized, raw_read_count, score, units
         """
         self._expressionValueList.append(datafields)
         if len(self._expressionValueList) >= self._batchSize:
@@ -124,7 +124,7 @@ class AbstractWriter(object):
             expressionLevel = fields[self._expressionLevelCol]
             expressionId = fields[self._idCol]
             name = fields[self._nameCol]
-            featureGroupId = fields[self._featureCol]
+            quantificationGroupId = fields[self._featureCol]
             rawCount = 0.0
             if self._countCol is not None:
                 rawCount = fields[self._countCol]
@@ -137,9 +137,9 @@ class AbstractWriter(object):
                 score = (confidenceLow + confidenceHi)/2
 
             datafields = (expressionId, name, analysisId,
-                          self._annotationId, expressionLevel, featureGroupId,
-                          isNormalized, rawCount, str(score), units,
-                          confidenceLow, confidenceHi)
+                          self._annotationId, expressionLevel,
+                          quantificationGroupId, isNormalized, rawCount,
+                          str(score), units, confidenceLow, confidenceHi)
             self._db.addExpression(datafields)
         self._db.batchAddExpression()
 

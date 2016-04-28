@@ -566,10 +566,10 @@ def searchExpressionLevel():
         flask.request, app.backend.runSearchExpressionLevel)
 
 
-@DisplayedRoute('/featuregroup/search', postMethod=True)
-def searchFeatureGroup():
+@DisplayedRoute('/quantificationgroup/search', postMethod=True)
+def searchQuantificationGroup():
     return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchFeatureGroup)
+        flask.request, app.backend.runSearchQuantificationGroup)
 
 
 @DisplayedRoute(
