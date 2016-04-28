@@ -428,7 +428,7 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
         self._dataUrl = row[b'dataUrl']
         self._description = row[b'description']
         self._assemblyId = row[b'assemblyId']
-        self._isDerived = row[b'isDerived']
+        self._isDerived = bool(row[b'isDerived'])
         self._md5checksum = row[b'md5checksum']
         self._ncbiTaxonId = row[b'ncbiTaxonId']
         self._sourceAccessions = json.loads(row[b'sourceAccessions'])
@@ -463,7 +463,7 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
         Populates this reference from the values in the specified DB row.
         """
         self._length = row[b'length']
-        self._isDerived = row[b'isDerived']
+        self._isDerived = bool(row[b'isDerived'])
         self._md5checksum = row[b'md5checksum']
         self._ncbiTaxonId = row[b'ncbiTaxonId']
         self._sourceAccessions = json.loads(row[b'sourceAccessions'])
