@@ -3853,13 +3853,15 @@ class SearchRnaQuantificationRequest(SearchRequest):
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
 "SearchRnaQuantificationRequest", "fields": [{"default": null, "doc":
 "", "type": ["null", "string"], "name": "rnaQuantificationId"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"datasetId"}, {"default": null, "doc": "", "type": ["null", "int"],
-"name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
-"string"], "name": "pageToken"}], "doc": ""}
+{"doc": "", "type": "string", "name": "datasetId"}, {"default": null,
+"doc": "", "type": ["null", "int"], "name": "pageSize"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "pageToken"}],
+"doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
-    requiredFields = set([])
+    requiredFields = set([
+        "datasetId",
+    ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
@@ -3880,8 +3882,7 @@ class SearchRnaQuantificationRequest(SearchRequest):
         self.datasetId = kwargs.get(
             'datasetId', None)
         """
-        If present, return only Rna Quantifications which belong to
-        this set.
+        The Dataset to search.
         """
         self.pageSize = kwargs.get(
             'pageSize', None)
