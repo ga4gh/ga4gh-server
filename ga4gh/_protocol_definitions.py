@@ -2701,8 +2701,8 @@ class SearchExpressionLevelRequest(SearchRequest):
 "", "type": ["null", "string"], "name": "expressionLevelId"},
 {"default": null, "doc": "", "type": ["null", "string"], "name":
 "featureGroupId"}, {"doc": "", "type": "string", "name":
-"rnaQuantificationId"}, {"default": null, "doc": "", "type": ["null",
-"float"], "name": "threshold"}, {"default": null, "doc": "", "type":
+"rnaQuantificationId"}, {"default": 0.0, "doc": "", "type": ["float",
+"null"], "name": "threshold"}, {"default": null, "doc": "", "type":
 ["null", "int"], "name": "pageSize"}, {"default": null, "doc": "",
 "type": ["null", "string"], "name": "pageToken"}], "doc": ""}
 """
@@ -2761,8 +2761,8 @@ class SearchExpressionLevelRequest(SearchRequest):
         self.threshold = kwargs.get(
             'threshold', 0.0)
         """
-        If present returns ExpressionLevel records with expressions
-        exceeding   this value.
+        Only return ExpressionLevel records with expressions exceeding
+        this value.  (Defaults to 0.0)
         """
 
 
