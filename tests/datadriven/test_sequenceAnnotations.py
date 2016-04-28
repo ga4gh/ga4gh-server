@@ -12,6 +12,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
+import tests.paths as paths
 
 _datasetName = "ds"
 
@@ -109,7 +110,8 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         :return:
         """
         self._dataset = datasets.Dataset(_datasetName)
-        self._repo = datarepo.FileSystemDataRepository("tests/data")
+        self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
+        self._repo.open(datarepo.MODE_READ)
         self._sequenceOntologyTermMap = self._repo.getOntologyTermMapByName(
             "sequence_ontology")
         self._referenceSet = references.AbstractReferenceSet("test_rs")

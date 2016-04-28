@@ -6,7 +6,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import json
-import glob
 import os
 import sqlite3
 
@@ -1086,65 +1085,3 @@ class SqlDataRepository(AbstractDataRepository):
             self._readCallSetTable(cursor)
             self._readVariantAnnotationSetTable(cursor)
             self._readFeatureSetTable(cursor)
-
-
-class FileSystemDataRepository(AbstractDataRepository):
-    """
-    Class representing and old-style FileSystem based data repository.
-    This is primarily intended to provide an easy way to keep existing
-    tests working, and may also provide a smooth upgrade path for any
-    users who have data stored in the old file system based repos.
-
-    This is deprecated and should be removed , along with updating
-    the necessary tests.
-    """
-    referenceSetsDirName = "referenceSets"
-    datasetsDirName = "datasets"
-    ontologiesDirName = "ontologymaps"
-
-    def __init__(self, dataDir):
-        super(FileSystemDataRepository, self).__init__()
-        self._dataDir = dataDir
-
-        pattern = os.path.join(
-            self._dataDir, self.referenceSetsDirName, "*.fa.gz")
-        for fastaFile in glob.glob(pattern):
-            name = os.path.basename(fastaFile).split(".")[0]
-            referenceSet = references.HtslibReferenceSet(name)
-            referenceSet.populateFromFile(fastaFile)
-            self.addReferenceSet(referenceSet)
-
-        # for ontologies we go into each directory within the
-        # main directory.
-        sourceDir = os.path.join(self._dataDir, self.ontologiesDirName)
-        for setName in os.listdir(sourceDir):
-            relativePath = os.path.join(sourceDir, setName)
-            if os.path.isdir(relativePath):
-                for filename in os.listdir(relativePath):
-                    if filename.endswith(".txt"):
-                        name = filename.split(".")[0]
-                        ontologyTermMap = ontologies.OntologyTermMap(name)
-                        ontologyTermMap.populateFromFile(
-                            os.path.join(relativePath, filename))
-                        self.addOntologyTermMap(ontologyTermMap)
-
-        sourceDir = os.path.join(self._dataDir, self.datasetsDirName)
-        for setName in os.listdir(sourceDir):
-            relativePath = os.path.join(sourceDir, setName)
-            if os.path.isdir(relativePath):
-                dataset = datasets.FileSystemDataset(
-                    setName, relativePath, self)
-                self.addDataset(dataset)
-
-    def checkConsistency(self):
-        """
-        Perform checks that ensure the consistency of the data.
-        Factored into a separate method from server init since the
-        data repo object can be created on a partially-complete
-        data set.
-        """
-        for dataset in self.getDatasets():
-            for readGroupSet in dataset.getReadGroupSets():
-                readGroupSet.checkConsistency(self)
-            for variantSet in dataset.getVariantSets():
-                variantSet.checkConsistency()

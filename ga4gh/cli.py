@@ -180,9 +180,10 @@ class AbstractQueryRunner(object):
         # depending on the prefix.
         filePrefix = "file://"
         if args.baseUrl.startswith(filePrefix):
-            dataDir = args.baseUrl[len(filePrefix):]
-            theBackend = backend.Backend(
-                datarepo.FileSystemDataRepository(dataDir))
+            repoPath = args.baseUrl[len(filePrefix):]
+            repo = datarepo.SqlDataRepository(repoPath)
+            repo.open(datarepo.MODE_READ)
+            theBackend = backend.Backend(repo)
             self._client = client.LocalClient(theBackend)
         else:
             self._client = client.HttpClient(
@@ -1569,12 +1570,12 @@ class RepoManager(object):
     def _updateRepo(self, func, *args, **kwargs):
         """
         Runs the specified function that updates the repo with the specified
-        arguments. This method ensures that all updates are transatctional,
+        arguments. This method ensures that all updates are transactional,
         so that if any part of the update fails no changes are made to the
         repo.
         """
         # TODO how do we make this properly transactional?
-        self._repo.open("w")
+        self._repo.open(datarepo.MODE_WRITE)
         try:
             func(*args, **kwargs)
             self._repo.commit()
@@ -1586,7 +1587,7 @@ class RepoManager(object):
             raise exceptions.RepoManagerException(
                 "Repo '{}' does not exist. Please create a new repo "
                 "using the 'init' command.".format(self._repoPath))
-        self._repo.open("r")
+        self._repo.open(datarepo.MODE_READ)
 
     def init(self):
         forceMessage = (

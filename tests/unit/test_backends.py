@@ -7,7 +7,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import unittest
 
 import ga4gh.exceptions as exceptions
@@ -15,6 +14,8 @@ import ga4gh.backend as backend
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
+
+import tests.paths as paths
 
 
 class TestAbstractBackend(unittest.TestCase):
@@ -147,16 +148,14 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertRaises(IndexError, self._dataRepo.getReferenceSetByIndex, 1)
 
 
-class TestFileSystemBackend(unittest.TestCase):
+class TestSqlRepoTestData(unittest.TestCase):
     """
-    Tests proper initialization of the filesystem backend using indexed
+    Tests proper initialization of the SQL repo based on known
     files in the tests/data directory.
     """
     def setUp(self):
-        self._dataDir = os.path.join("tests", "data")
-        self._backend = backend.Backend(
-            datarepo.FileSystemDataRepository(self._dataDir))
-        self._dataRepo = self._backend.getDataRepository()
+        self._dataRepo = datarepo.SqlDataRepository(paths.testDataRepo)
+        self._dataRepo.open(datarepo.MODE_READ)
 
     def testDatasets(self):
         self.assertEqual(self._dataRepo.getNumDatasets(), 1)
