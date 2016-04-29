@@ -525,7 +525,7 @@ class SqlDataRepository(AbstractDataRepository):
                 length INTEGER,
                 isDerived INTEGER,
                 md5checksum TEXT,
-                ncbiTaxonId TEXT,
+                ncbiTaxonId INTEGER,
                 sourceAccessions TEXT,
                 sourceDivergence REAL,
                 sourceUri TEXT,
@@ -576,7 +576,7 @@ class SqlDataRepository(AbstractDataRepository):
                 assemblyId TEXT,
                 isDerived INTEGER,
                 md5checksum TEXT,
-                ncbiTaxonId TEXT,
+                ncbiTaxonId INTEGER,
                 sourceAccessions TEXT,
                 sourceUri TEXT,
                 dataUrl TEXT NOT NULL,
@@ -608,7 +608,6 @@ class SqlDataRepository(AbstractDataRepository):
                 referenceSet.getSourceUri(), referenceSet.getDataUrl()))
         except sqlite3.IntegrityError:
             raise exceptions.DuplicateNameException(referenceSet.getLocalId())
-        self._dbConnection.commit()
         for reference in referenceSet.getReferences():
             self.insertReference(reference)
 
