@@ -66,6 +66,30 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         """
         self._ncbiTaxonId = ncbiTaxonId
 
+    def setIsDerived(self, isDerived):
+        """
+        Sets the isDerived attribute
+        """
+        self._isDerived = isDerived
+
+    def setAssemblyId(self, assemblyId):
+        """
+        Sets the assemblyId attribute
+        """
+        self._assemblyId = assemblyId
+
+    def setSourceAccessions(self, sourceAccessions):
+        """
+        Sets the sourceAccessions attribute
+        """
+        self._sourceAccessions = sourceAccessions
+
+    def setSourceUri(self, sourceUri):
+        """
+        Sets the sourceUri attribute
+        """
+        self._sourceUri = sourceUri
+
     def getReferences(self):
         """
         Returns the References in this ReferenceSet.

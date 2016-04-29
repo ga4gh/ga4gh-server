@@ -1648,7 +1648,14 @@ class RepoManager(object):
         referenceSet = references.HtslibReferenceSet(name)
         referenceSet.populateFromFile(self._args.filePath)
         referenceSet.setDescription(self._args.description)
-        # TODO other reference set metadata.
+        referenceSet.setNcbiTaxonId(self._args.ncbiTaxonId)
+        referenceSet.setIsDerived(self._args.isDerived)
+        referenceSet.setAssemblyId(self._args.assemblyId)
+        sourceAccessions = []
+        if self._args.sourceAccessions is not None:
+            sourceAccessions = self._args.sourceAccessions.split(",")
+        referenceSet.setSourceAccessions(sourceAccessions)
+        referenceSet.setSourceUri(self._args.sourceUri)
         self._updateRepo(self._repo.insertReferenceSet, referenceSet)
 
     def addReadGroupSet(self):
@@ -1953,6 +1960,20 @@ class RepoManager(object):
             "file must be bgzipped and indexed.")
         cls.addNameOption(addReferenceSetParser, objectType)
         cls.addDescriptionOption(addReferenceSetParser)
+        addReferenceSetParser.add_argument(
+            "--ncbiTaxonId", default=None, help="The NCBI Taxon Id")
+        addReferenceSetParser.add_argument(
+            "--isDerived", default=False, type=bool,
+            help="Indicates if this is a derived object")
+        addReferenceSetParser.add_argument(
+            "--assemblyId", default=None,
+            help="The assembly id")
+        addReferenceSetParser.add_argument(
+            "--sourceAccessions", default=None,
+            help="The source accessions (pass as comma-separated list)")
+        addReferenceSetParser.add_argument(
+            "--sourceUri", default=None,
+            help="The source URI")
 
         removeReferenceSetParser = addSubparser(
             subparsers, "remove-referenceset",

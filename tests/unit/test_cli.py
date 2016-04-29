@@ -317,12 +317,23 @@ class TestRepoManagerCli(unittest.TestCase):
 
     def testAddReferenceSet(self):
         description = "description"
-        cliInput = "add-referenceset {} {} --description={}".format(
+        cliInput = (
+            "add-referenceset {} {} --description={} "
+            "--ncbiTaxonId NCBITAXONID "
+            "--isDerived True "
+            "--assemblyId ASSEMBLYID "
+            "--sourceAccessions SOURCEACCESSIONS "
+            "--sourceUri SOURCEURI ").format(
             self.repoPath, self.filePath, description)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.filePath, self.filePath)
         self.assertEquals(args.description, description)
+        self.assertEquals(args.ncbiTaxonId, "NCBITAXONID")
+        self.assertEquals(args.isDerived, True)
+        self.assertEquals(args.assemblyId, "ASSEMBLYID")
+        self.assertEquals(args.sourceAccessions, "SOURCEACCESSIONS")
+        self.assertEquals(args.sourceUri, "SOURCEURI")
         self.assertEquals(args.runner, "addReferenceSet")
 
     def testRemoveReferenceSet(self):
