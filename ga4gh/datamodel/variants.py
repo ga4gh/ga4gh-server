@@ -237,7 +237,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         md5 = self.hashVariant(gaVariant)
         compoundId = datamodel.VariantCompoundId(
             self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5)
+            str(gaVariant.start), md5)
         return str(compoundId)
 
     def getCallSetId(self, sampleName):
@@ -437,7 +437,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
         compoundId = datamodel.VariantAnnotationCompoundId(
             self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5)
+            str(gaVariant.start), md5)
         return str(compoundId)
 
     def _addTranscriptEffectLocations(self, effect, ann):
@@ -1131,7 +1131,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
         compoundId = datamodel.VariantAnnotationCompoundId(
             self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5)
+            str(gaVariant.start), md5)
         return str(compoundId)
 
     def getVariantId(self, gaVariant):
@@ -1144,7 +1144,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         md5 = self.hashVariant(gaVariant)
         compoundId = datamodel.VariantCompoundId(
             self._variantSetId, gaVariant.referenceName,
-            gaVariant.start, md5)
+            str(gaVariant.start), md5)
         return str(compoundId)
 
     def getAnalysis(self):
