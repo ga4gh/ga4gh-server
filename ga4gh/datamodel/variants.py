@@ -539,7 +539,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                     raise ValueError(
                         "Unsupported annotations in '{}'".format(dataUrl))
             if annotationType is not None:
-                vas = HtslibVariantAnnotationSet(self, annotationType)
+                vas = HtslibVariantAnnotationSet(self, self.getLocalId())
                 vas.populateFromFile(variantFile, annotationType)
                 self.addVariantAnnotationSet(vas)
 
