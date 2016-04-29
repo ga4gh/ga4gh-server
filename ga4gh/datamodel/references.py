@@ -184,7 +184,10 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         which do not belong to the modeled species, e.g.  EBV in a
         human reference genome.
         """
-        return self._ncbiTaxonId
+        if self._ncbiTaxonId is not None:
+            return int(self._ncbiTaxonId)
+        else:
+            return None
 
     def toProtocolElement(self):
         """
@@ -305,7 +308,10 @@ class AbstractReference(datamodel.DatamodelObject):
         which do not belong to the modeled species, e.g.  EBV in a
         human reference genome.
         """
-        return self._ncbiTaxonId
+        if self._ncbiTaxonId is not None:
+            return int(self._ncbiTaxonId)
+        else:
+            return None
 
     def getMd5Checksum(self):
         """
@@ -454,7 +460,7 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
         self._assemblyId = row[b'assemblyId']
         self._isDerived = bool(row[b'isDerived'])
         self._md5checksum = row[b'md5checksum']
-        self._ncbiTaxonId = row[b'ncbiTaxonId']
+        self.setNcbiTaxonId(row[b'ncbiTaxonId'])
         self._sourceAccessions = json.loads(row[b'sourceAccessions'])
         self._sourceUri = row[b'sourceUri']
 
