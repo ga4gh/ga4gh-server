@@ -608,7 +608,6 @@ class SqlDataRepository(AbstractDataRepository):
                 referenceSet.getSourceUri(), referenceSet.getDataUrl()))
         except sqlite3.IntegrityError:
             raise exceptions.DuplicateNameException(referenceSet.getLocalId())
-        self._dbConnection.commit()
         for reference in referenceSet.getReferences():
             self.insertReference(reference)
 
