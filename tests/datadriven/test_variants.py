@@ -29,6 +29,34 @@ def testVariantSets():
         yield test
 
 
+def convertVCFPhaseset(vcfPhaseset):
+    """
+    Parses the VCF phaseset string
+    """
+    if vcfPhaseset is not None and vcfPhaseset != ".":
+        phaseset = vcfPhaseset
+    else:
+        phaseset = "*"
+    return phaseset
+
+
+def convertVCFGenotype(vcfGenotype):
+    """
+    Parses the VCF genotype
+    """
+    if vcfGenotype is not None:
+        delim = "/"
+        if "|" in vcfGenotype:
+            delim = "|"
+        if "." in vcfGenotype:
+            genotype = [-1]
+        else:
+            genotype = map(int, vcfGenotype.split(delim))
+    else:
+        genotype = [-1]
+    return genotype
+
+
 class VariantSetTest(datadriven.DataDrivenTest):
     """
     Data driven test class for variant sets. Builds an alternative model of
@@ -101,15 +129,20 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 self.assertEqual(len(gaObjectInfo[key]), 1)
 
     def _verifyVariantCallEqual(self, gaCall, pyvcfCall):
-        genotype, phaseset = variants.convertVCFGenotype(
-            pyvcfCall.data.GT, pyvcfCall.phased)
+        genotype = convertVCFGenotype(pyvcfCall.data.GT)
         # callSetId information is not available in pyvcf.model._Call
         self.assertEqual(gaCall.callSetName, pyvcfCall.sample)
         self.assertEqual(gaCall.genotype, genotype)
-        phaseset = None
-        if pyvcfCall.phased:
-            phaseset = "*"
-        self.assertEqual(gaCall.phaseset, phaseset)
+        if len(pyvcfCall.data.GT.split("/")) == 1:
+            # corner case when there is only a single genotype pyvcf
+            # and pysam disagree
+            self.assertTrue(gaCall.phaseset)
+        else:
+            # Compare our value for phased with pyvcf
+            phaseset = None
+            if pyvcfCall.phased:
+                phaseset = str(pyvcfCall.phased)
+            self.assertEqual(gaCall.phaseset, phaseset)
         if len(gaCall.genotypeLikelihood) > 0:
             self._compareTwoListFloats(
                 gaCall.genotypeLikelihood, pyvcfCall.data.GL)
