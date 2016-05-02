@@ -45,7 +45,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.md5checksum = "md5checksum"
         self.rnaQuantificationId = "rnaQuantificationId"
         self.expressionLevelId = "expressionLevelId"
-        self.featureGroupId = "featureGroupId"
+        self.quantificationGroupId = "quantificationGroupId"
         self.threshold = 0.0
 
     def testSetPageSize(self):
@@ -190,12 +190,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     def testSearchExpressionLevel(self):
         request = protocol.SearchExpressionLevelRequest()
         request.expressionLevelId = self.expressionLevelId
-        request.featureGroupId = self.featureGroupId
+        request.quantificationGroupId = self.quantificationGroupId
         request.rnaQuantificationId = self.rnaQuantificationId
         request.threshold = self.threshold
         request.pageSize = self.pageSize
         self.httpClient.searchExpressionLevel(
-            self.expressionLevelId, self.featureGroupId,
+            self.expressionLevelId, self.quantificationGroupId,
             self.rnaQuantificationId, self.threshold)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "expressionlevel",
@@ -212,16 +212,16 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
             request, "rnaquantification",
             protocol.SearchRnaQuantificationResponse)
 
-    def testSearchFeatureGroup(self):
-        request = protocol.SearchFeatureGroupRequest()
+    def testSearchQuantificationGroup(self):
+        request = protocol.SearchQuantificationGroupRequest()
         request.rnaQuantificationId = self.rnaQuantificationId
-        request.featureGroupId = self.featureGroupId
+        request.quantificationGroupId = self.quantificationGroupId
         request.pageSize = self.pageSize
-        self.httpClient.searchFeatureGroup(
-            self.rnaQuantificationId, self.featureGroupId)
+        self.httpClient.searchQuantificationGroup(
+            self.rnaQuantificationId, self.quantificationGroupId)
         self.httpClient._runSearchRequest.assert_called_once_with(
-            request, "featuregroup",
-            protocol.SearchFeatureGroupResponse)
+            request, "quantificationgroup",
+            protocol.SearchQuantificationGroupResponse)
 
     def testGetReferenceSet(self):
         self.httpClient.getReferenceSet(self.objectId)

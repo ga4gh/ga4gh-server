@@ -475,7 +475,8 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.datasetId, dataset.getId())
         self.assertEqual(cid.rnaQuantification, rnaQuantification.getLocalId())
         self.assertEqual(cid.rnaQuantificationId, rnaQuantification.getId())
-        self.assertEqual(cid.quantificationGroupId, quantificationGroup.getLocalId())
+        self.assertEqual(
+            cid.quantificationGroupId, quantificationGroup.getLocalId())
 
     def testQuantificationGroupParse(self):
         idStr = '["a","b","c"]'
