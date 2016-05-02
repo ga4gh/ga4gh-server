@@ -87,7 +87,7 @@ class AbstractRepoManagerTest(unittest.TestCase):
 
     def addReferenceSet(self):
         self._referenceSetName = "test_rs"
-        fastaFile = paths.ncbi37FaPath
+        fastaFile = paths.faPath
         self.runCommand("add-referenceset {} {} --name={}".format(
             self._repoPath, fastaFile, self._referenceSetName))
 
@@ -369,14 +369,14 @@ class TestVerify(AbstractRepoManagerTest):
     def setUp(self):
         super(TestVerify, self).setUp()
 
-    @unittest.skip("Skip test until repo manager is updated")
     def testVerify(self):
         self.init()
         self.addDataset()
+        self.addOntology()
         self.addReferenceSet()
         self.addReadGroupSet()
         self.addFeatureSet()
-        # TODO fill out with other objects
+        self.addVariantSet()
         cmd = "verify {}".format(self._repoPath)
         self.runCommand(cmd)
 
