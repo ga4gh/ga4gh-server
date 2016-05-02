@@ -422,11 +422,11 @@ class ExpressionLevelCompoundId(RnaQuantificationCompoundId):
     fields = RnaQuantificationCompoundId.fields + ['expressionLevelId']
 
 
-class FeatureGroupCompoundId(RnaQuantificationCompoundId):
+class QuantificationGroupCompoundId(RnaQuantificationCompoundId):
     """
-    The compound id for a feature group
+    The compound id for a quantification group
     """
-    fields = RnaQuantificationCompoundId.fields + ['featureGroupId']
+    fields = RnaQuantificationCompoundId.fields + ['quantificationGroupId']
 
 
 class DatamodelObject(object):

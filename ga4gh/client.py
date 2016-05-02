@@ -535,23 +535,23 @@ class AbstractClient(object):
             request, "rnaquantification",
             protocol.SearchRnaQuantificationResponse)
 
-    def searchExpressionLevel(self, expressionLevelId=None,
-                              featureGroupId=None, rnaQuantificationId=None,
-                              threshold=0.0):
+    def searchExpressionLevel(
+            self, expressionLevelId=None, quantificationGroupId=None,
+            rnaQuantificationId=None, threshold=0.0):
         """
         Returns an iterator over the ExpressionLevel objects from the server
 
         :param str expressionLevelId: The ID of the
             :class:`ga4gh.protocol.ExpressionLevel` of interest.
-        :param str featureGroupId: The ID of the
-            :class:`ga4gh.protocol.FeatureGroup` of interest.
+        :param str quantificationGroupId: The ID of the
+            :class:`ga4gh.protocol.QuantificationGroup` of interest.
         :param str rnaQuantificationIdIDs: The ID of the
             :class:`ga4gh.protocol.RnaQuantification` of interest.
         :param float threshold: Minimum expression of responses to return.
         """
         request = protocol.SearchExpressionLevelRequest()
         request.expressionLevelId = expressionLevelId
-        request.featureGroupId = featureGroupId
+        request.quantificationGroupId = quantificationGroupId
         request.rnaQuantificationId = rnaQuantificationId
         request.threshold = threshold
         request.pageSize = self._pageSize
@@ -559,21 +559,22 @@ class AbstractClient(object):
             request, "expressionlevel",
             protocol.SearchExpressionLevelResponse)
 
-    def searchFeatureGroup(self, rnaQuantificationId=None,
-                           featureGroupId=None):
+    def searchQuantificationGroup(
+            self, rnaQuantificationId=None, quantificationGroupId=None):
         """
-        Returns an iterator over the FeatureGroup objects from the server
+        Returns an iterator over the QuantificationGroup objects from the
+        server
 
-        :param: str featureGroupId: The ID of the
-            :class:`ga4gh.protocol.FeatureGroup` of interest.
+        :param: str quantificationGroupId: The ID of the
+            :class:`ga4gh.protocol.QuantificationGroup` of interest.
         """
-        request = protocol.SearchFeatureGroupRequest()
+        request = protocol.SearchQuantificationGroupRequest()
         request.rnaQuantificationId = rnaQuantificationId
-        request.featureGroupId = featureGroupId
+        request.quantificationGroupId = quantificationGroupId
         request.pageSize = self._pageSize
         return self._runSearchRequest(
-            request, "featuregroup",
-            protocol.SearchFeatureGroupResponse)
+            request, "quantificationgroup",
+            protocol.SearchQuantificationGroupResponse)
 
 
 class HttpClient(AbstractClient):
@@ -693,7 +694,7 @@ class LocalClient(AbstractClient):
                 self._backend.runSearchVariantAnnotationSets,
             "rnaquantification": self._backend.runSearchRnaQuantification,
             "expressionlevel": self._backend.runSearchExpressionLevel,
-            "featuregroup": self._backend.runSearchFeatureGroup
+            "quantificationgroup": self._backend.runSearchQuantificationGroup
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):

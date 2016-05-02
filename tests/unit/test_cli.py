@@ -272,25 +272,25 @@ class TestClientArguments(unittest.TestCase):
     def testExpressionLevelSearchArguments(self):
         cliInput = (
             "expressionlevel-search --expressionLevelId ID "
-            "--rnaQuantificationId rID --featureGroupId fID "
+            "--rnaQuantificationId rID --quantificationGroupId fID "
             "--threshold 0.0 BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.expressionLevelId, "ID")
         self.assertEqual(args.rnaQuantificationId, "rID")
-        self.assertEqual(args.featureGroupId, "fID")
+        self.assertEqual(args.quantificationGroupId, "fID")
         self.assertEqual(args.threshold, 0.0)
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.runner, cli.SearchExpressionLevelRunner)
 
-    def testFeatureGroupSearchArguments(self):
+    def testQuantificationGroupSearchArguments(self):
         cliInput = (
-            "featuregroup-search --featureGroupId ID --rnaQuantificationId "
-            "rID BASEURL")
+            "quantificationgroup-search --quantificationGroupId ID "
+            "--rnaQuantificationId rID BASEURL")
         args = self.parser.parse_args(cliInput.split())
-        self.assertEqual(args.featureGroupId, "ID")
+        self.assertEqual(args.quantificationGroupId, "ID")
         self.assertEqual(args.rnaQuantificationId, "rID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEqual(args.runner, cli.SearchFeatureGroupRunner)
+        self.assertEqual(args.runner, cli.SearchQuantificationGroupRunner)
 
 
 class TestRepoManagerCli(unittest.TestCase):

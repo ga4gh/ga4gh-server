@@ -689,21 +689,22 @@ class Backend(object):
             except exceptions.ExpressionLevelNotFoundException:
                 return self._noObjectGenerator()
         rnaQuantificationId = rnaQuant.getLocalId()
-        featureGroupId = request.featureGroupId
-        if featureGroupId is not None:
-            featureGroupId = datamodel.FeatureGroupCompoundId.parse(
-                request.featureGroupId)
+        quantificationGroupId = request.quantificationGroupId
+        if quantificationGroupId is not None:
+            quantificationGroupId = \
+                datamodel.QuantificationGroupCompoundId.parse(
+                    request.quantificationGroupId)
         return self._objectListGenerator(
             request,
             rnaQuant.getExpressionLevels(
                 rnaQuantificationId, pageToken=request.pageToken,
                 pageSize=request.pageSize, expressionId=expressionLevelId,
-                featureGroupId=featureGroupId,
+                quantificationGroupId=quantificationGroupId,
                 threshold=request.threshold))
 
-    def featureGroupGenerator(self, request):
+    def quantificationGroupGenerator(self, request):
         """
-        Returns a generator over the (featureGroup, nextPageToken) pairs
+        Returns a generator over the (quantificationGroup, nextPageToken) pairs
         defined by the specified request.
 
         Currently only supports searching over a specified rnaQuantification
@@ -713,17 +714,18 @@ class Backend(object):
             rnaQuantificationId)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
-        featureGroupId = request.featureGroupId
-        if featureGroupId is not None:
-            featureGroupCompoundId = datamodel.FeatureGroupCompoundId.parse(
-                request.featureGroupId)
+        quantificationGroupId = request.quantificationGroupId
+        if quantificationGroupId is not None:
+            quantificationGroupCompoundId = \
+                datamodel.QuantificationGroupCompoundId.parse(
+                    request.quantificationGroupId)
             return self._singleObjectGenerator(
-                rnaQuant.getFeatureGroup(featureGroupCompoundId))
+                rnaQuant.getQuantificationGroup(quantificationGroupCompoundId))
         return self._objectListGenerator(
-            request, rnaQuant.getFeatureGroups(
+            request, rnaQuant.getQuantificationGroups(
                 rnaQuant.getLocalId(), pageToken=request.pageToken,
                 pageSize=request.pageSize,
-                featureGroupId=featureGroupId))
+                quantificationGroupId=quantificationGroupId))
 
     ###########################################################
     #
@@ -1058,12 +1060,12 @@ class Backend(object):
             protocol.SearchExpressionLevelResponse,
             self.expressionLevelGenerator)
 
-    def runSearchFeatureGroup(self, request):
+    def runSearchQuantificationGroup(self, request):
         """
-        Returns a SearchFeatureGroupResponse for the specified
-        SearchFeatureGroupRequest object.
+        Returns a SearchQuantificationGroupResponse for the specified
+        SearchQuantificationGroupRequest object.
         """
         return self.runSearchRequest(
-            request, protocol.SearchFeatureGroupRequest,
-            protocol.SearchFeatureGroupResponse,
-            self.featureGroupGenerator)
+            request, protocol.SearchQuantificationGroupRequest,
+            protocol.SearchQuantificationGroupResponse,
+            self.quantificationGroupGenerator)

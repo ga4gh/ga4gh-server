@@ -701,14 +701,14 @@ class SearchExpressionLevelRunner(AbstractSearchRunner):
     def __init__(self, args):
         super(SearchExpressionLevelRunner, self).__init__(args)
         self._expressionLevelId = args.expressionLevelId
-        self._featureGroupId = args.featureGroupId
+        self._quantificationGroupId = args.quantificationGroupId
         self._rnaQuantificationId = args.rnaQuantificationId
         self.threshold = args.threshold
 
     def run(self):
         iterator = self._client.searchExpressionLevel(
             expressionLevelId=self._expressionLevelId,
-            featureGroupId=self._featureGroupId,
+            quantificationGroupId=self._quantificationGroupId,
             rnaQuantificationId=self._rnaQuantificationId,
             threshold=self.threshold)
         self._output(iterator)
@@ -717,26 +717,27 @@ class SearchExpressionLevelRunner(AbstractSearchRunner):
         for expression in expressionObjs:
             print(
                 expression.annotationId, expression.expression,
-                expression.featureGroupId, expression.id,
+                expression.quantificationGroupId, expression.id,
                 expression.isNormalized, expression.rawReadCount,
                 expression.score, expression.units, sep="\t", end="\t")
             print()
 
 
-class SearchFeatureGroupRunner(AbstractSearchRunner):
+class SearchQuantificationGroupRunner(AbstractSearchRunner):
     """
-    Runner class for the featuregroup/search method
+    Runner class for the quantificationgroup/search method
     """
     def __init__(self, args):
-        super(SearchFeatureGroupRunner, self).__init__(args)
+        super(SearchQuantificationGroupRunner, self).__init__(args)
         self._rnaQuantificationId = args.rnaQuantificationId
-        self._featureGroupId = args.featureGroupId
+        self._quantificationGroupId = args.quantificationGroupId
         self._threshold = args.threshold
 
     def run(self):
-        iterator = self._client.searchFeatureGroup(
+        iterator = self._client.searchQuantificationGroup(
             rnaQuantificationId=self._rnaQuantificationId,
-            featureGroupId=self._featureGroupId, threshold=self._threshold)
+            quantificationGroupId=self._quantificationGroupId,
+            threshold=self._threshold)
         self._output(iterator)
 
     def _textOutput(self, expressionObjs):
@@ -1364,8 +1365,8 @@ def addExpressionLevelSearchParser(subparsers):
         "--rnaQuantificationId", default=None,
         help="The RNA Quantification Id to search over")
     parser.add_argument(
-        "--featureGroupId", default=None,
-        help="The feature group Id to search over")
+        "--quantificationGroupId", default=None,
+        help="The quantification group Id to search over")
     parser.add_argument(
         "--threshold", default=0.0, type=float,
         help="The minimum value for expression results to report.")
@@ -1373,20 +1374,20 @@ def addExpressionLevelSearchParser(subparsers):
     return parser
 
 
-def addFeatureGroupSearchParser(subparsers):
+def addQuantificationGroupSearchParser(subparsers):
     parser = subparsers.add_parser(
-        "featuregroup-search",
-        description="Search for feature group",
-        help="Search for feature group")
-    parser.set_defaults(runner=SearchFeatureGroupRunner)
+        "quantificationgroup-search",
+        description="Search for quantification group",
+        help="Search for quantification group")
+    parser.set_defaults(runner=SearchQuantificationGroupRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
     parser.add_argument(
         "--rnaQuantificationId", default=None,
         help="The RNA Quantification Id to search over")
     parser.add_argument(
-        "--featureGroupId", default=None,
-        help="The feature group Id to search over")
+        "--quantificationGroupId", default=None,
+        help="The quantification group Id to search over")
     addOutputFormatArgument(parser)
     return parser
 
@@ -1421,7 +1422,7 @@ def getClientParser():
     addReferencesBasesListParser(subparsers)
     addRnaQuantificationSearchParser(subparsers)
     addExpressionLevelSearchParser(subparsers)
-    addFeatureGroupSearchParser(subparsers)
+    addQuantificationGroupSearchParser(subparsers)
     return parser
 
 

@@ -376,10 +376,10 @@ class ExpressionLevelNotFoundException(NotFoundException):
             "ExpressionLevel with name '{0}' not found".format(name))
 
 
-class FeatureGroupNotFoundException(NotFoundException):
+class QuantificationGroupNotFoundException(NotFoundException):
     def __init__(self, name):
         self.message = (
-            "FeatureGroup with name '{0}' not found".format(name))
+            "QuantificationGroup with name '{0}' not found".format(name))
 
 
 class DataException(BaseServerException):
