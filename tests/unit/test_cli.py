@@ -220,6 +220,10 @@ class TestClientArguments(unittest.TestCase):
         self.verifyGetArguments(
             "variants-get", cli.GetVariantRunner)
 
+    def testRnaQuantificationGetArguments(self):
+        self.verifyGetArguments(
+            "rnaquantification-get", cli.GetRnaQuantificationRunner)
+
     def testReferenceBasesListArguments(self):
         cliInput = (
             "references-list-bases BASEURL ID --start 1 --end 2 "

@@ -26,15 +26,46 @@ import ga4gh.sqliteBackend as sqliteBackend
 """
 
 
-class ExpressionLevel(datamodel.DatamodelObject):
+class AbstractExpressionLevel(datamodel.DatamodelObject):
     """
-    Class representing a single ExpressionLevel in the GA4GH data model.
+    An abstract base class of a expression level
     """
     compoundIdClass = datamodel.ExpressionLevelCompoundId
 
+    def __init__(self, parentContainer, localId):
+        super(AbstractExpressionLevel, self).__init__(
+            parentContainer, localId)
+        self._annotationId = ""
+        self._expression = 0.0
+        self._quantificationGroupId = ""
+        self._isNormalized = ""
+        self._rawReadCount = 0.0
+        self._score = 0.0
+        self._units = ""
+        self._name = localId
+        self._confInterval = []
+
+    def toProtocolElement(self):
+        protocolElement = protocol.ExpressionLevel()
+        protocolElement.annotationId = self._annotationId
+        protocolElement.expression = self._expression
+        protocolElement.quantificationGroupId = (self._quantificationGroupId)
+        protocolElement.id = self.getId()
+        protocolElement.isNormalized = self._isNormalized
+        protocolElement.rawReadCount = self._rawReadCount
+        protocolElement.score = self._score
+        protocolElement.units = self._units
+        protocolElement.confInterval = self._confInterval
+        return protocolElement
+
+
+class ExpressionLevel(AbstractExpressionLevel):
+    """
+    Class representing a single ExpressionLevel in the GA4GH data model.
+    """
+
     def __init__(self, parentContainer, record):
         super(ExpressionLevel, self).__init__(parentContainer, record["id"])
-        self._id = self.getId()
         self._annotationId = record["annotation_id"]
         self._expression = record["expression"]
         self._quantificationGroupId = record["quantification_group_id"]
@@ -51,39 +82,37 @@ class ExpressionLevel(datamodel.DatamodelObject):
     def getQuantificationGroup(self):
         return self._quantificationGroupId
 
-    def toProtocolElement(self):
-        protocolElement = protocol.ExpressionLevel()
-        protocolElement.annotationId = self._annotationId
-        protocolElement.expression = self._expression
-        protocolElement.quantificationGroupId = (self._quantificationGroupId)
-        protocolElement.id = self._id
-        protocolElement.isNormalized = self._isNormalized
-        protocolElement.rawReadCount = self._rawReadCount
-        protocolElement.score = self._score
-        protocolElement.units = self._units
-        protocolElement.confInterval = self._confInterval
-        return protocolElement
 
-
-class QuantificationGroup(datamodel.DatamodelObject):
+class AbstractQuantificationGroup(datamodel.DatamodelObject):
     """
     Class representing a single QuantificationGroup in the GA4GH model.
     """
     compoundIdClass = datamodel.QuantificationGroupCompoundId
 
-    def __init__(self, parentContainer, record):
-        super(QuantificationGroup, self).__init__(
-            parentContainer, record["quantification_group_id"])
-        self._id = self.getId()
-        self._analysisId = record["rna_quantification_id"]
-        self._name = record["quantification_group_id"]
+    def __init__(self, parentContainer, localId):
+        super(AbstractQuantificationGroup, self).__init__(
+            parentContainer, localId)
+        self._analysisId = ""
+        self._name = localId
 
     def toProtocolElement(self):
         protocolElement = protocol.QuantificationGroup()
-        protocolElement.id = self._id
+        protocolElement.id = self.getId()
         protocolElement.analysisId = self._analysisId
         protocolElement.name = self._name
         return protocolElement
+
+
+class QuantificationGroup(AbstractQuantificationGroup):
+    """
+    Class representing a single QuantificationGroup in the GA4GH model.
+    """
+
+    def __init__(self, parentContainer, record):
+        super(QuantificationGroup, self).__init__(
+            parentContainer, record["quantification_group_id"])
+        self._analysisId = record["rna_quantification_id"]
+        self._name = record["quantification_group_id"]
 
 
 class AbstractRNAQuantification(datamodel.DatamodelObject):

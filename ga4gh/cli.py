@@ -869,6 +869,15 @@ class GetFeatureSetRunner(AbstractGetRunner):
         self._method = self._client.getFeatureSet
 
 
+class GetRnaQuantificationRunner(AbstractGetRunner):
+    """
+    Runner class for the rnaquantification/{id} method
+    """
+    def __init__(self, args):
+        super(GetRnaQuantificationRunner, self).__init__(args)
+        self._method = self._client.getRnaQuantification
+
+
 def addDisableUrllibWarningsArgument(parser):
     parser.add_argument(
         "--disable-urllib-warnings", default=False, action="store_true",
@@ -1318,6 +1327,13 @@ def addVariantsGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addRnaQuantificationGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "rnaquantification-get", "Get a rna quantification")
+    parser.set_defaults(runner=GetRnaQuantificationRunner)
+    addGetArguments(parser)
+
+
 def addReferencesBasesListParser(subparsers):
     parser = addSubparser(
         subparsers, "references-list-bases", "List bases of a reference")
@@ -1419,6 +1435,7 @@ def getClientParser():
     addCallSetsGetParser(subparsers)
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
+    addRnaQuantificationGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
     addRnaQuantificationSearchParser(subparsers)
     addExpressionLevelSearchParser(subparsers)

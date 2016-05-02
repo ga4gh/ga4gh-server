@@ -269,6 +269,11 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._runGetRequest.assert_called_once_with(
             "variants", protocol.Variant, self.objectId)
 
+    def testGetRnaQuantification(self):
+        self.httpClient.getRnaQuantification(self.objectId)
+        self.httpClient._runGetRequest.assert_called_once_with(
+            "rnaquantification", protocol.RnaQuantification, self.objectId)
+
 
 class DatamodelObjectWrapper(object):
     """
@@ -309,6 +314,7 @@ class DummyRequestsSession(object):
             "variants": self._backend.runGetVariant,
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
+            "rnaquantification": self._backend.runGetRnaQuantification,
         }
         self._searchMethodMap = {
             "datasets": self._backend.runSearchDatasets,
@@ -318,6 +324,7 @@ class DummyRequestsSession(object):
             "variants": self._backend.runSearchVariants,
             "readgroupsets": self._backend.runSearchReadGroupSets,
             "reads": self._backend.runSearchReads,
+            "rnaquantification": self._backend.runSearchRnaQuantification,
         }
         self.headers = {}
 
@@ -395,7 +402,7 @@ class ExhaustiveListingsMixin(object):
             numVariantSets=3, numCalls=3, variantDensity=0.5,
             numReferenceSets=3, numReferencesPerReferenceSet=3,
             numReadGroupSets=3, numReadGroupsPerReadGroupSet=3,
-            numAlignments=3))
+            numAlignments=3, numRnaQuants=3))
         cls.dataRepo = cls.backend.getDataRepository()
 
     def setUp(self):
@@ -496,6 +503,16 @@ class ExhaustiveListingsMixin(object):
                         self.assertGreater(len(reads), 0)
                         for dmRead, read in utils.zipLists(dmReads, reads):
                             self.assertEqual(dmRead, read)
+
+    def testAllRnaQuantifications(self):
+        for dataset in self.client.searchDatasets():
+            rnaQuantifications = list(self.client.searchRnaQuantification(
+                dataset.id))
+            datamodelRnaQuantifications = self.dataRepo.getDataset(
+                dataset.id).getRnaQuantifications()
+            self.verifyObjectList(
+                rnaQuantifications, datamodelRnaQuantifications,
+                self.client.getRnaQuantification)
 
 
 class TestExhaustiveListingsHttp(ExhaustiveListingsMixin, unittest.TestCase):
