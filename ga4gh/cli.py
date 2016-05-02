@@ -14,6 +14,7 @@ import operator
 import os
 import sys
 import textwrap
+import traceback
 import unittest
 import unittest.loader
 import unittest.suite
@@ -2122,15 +2123,26 @@ def repoExitError(message):
 def repo_main(args=None):
     try:
         RepoManager.runCommand(args)
-    except exceptions.RepoManagerException as e:
+    except exceptions.RepoManagerException as exception:
         # These are exceptions that happen throughout the CLI, and are
         # used to communicate back to the user
-        repoExitError(str(e))
-    except exceptions.NotFoundException as e:
+        repoExitError(str(exception))
+    except exceptions.NotFoundException as exception:
         # We expect NotFoundExceptions to occur when we're looking for
         # datasets, readGroupsets, etc.
-        repoExitError(str(e))
-    except exceptions.DataException as e:
+        repoExitError(str(exception))
+    except exceptions.DataException as exception:
         # We expect DataExceptions to occur when a file open fails,
         # a URL cannot be reached, etc.
-        repoExitError(str(e))
+        repoExitError(str(exception))
+    except Exception as exception:
+        # Uncaught exception: this is a bug
+        message = """
+An internal error has occurred.  Please file a bug report at
+https://github.com/ga4gh/server/issues
+with all the relevant details, and the following stack trace.
+"""
+        print("{}: error:".format(sys.argv[0]), file=sys.stderr)
+        print(message, file=sys.stderr)
+        traceback.print_exception(*sys.exc_info())
+        sys.exit(1)
