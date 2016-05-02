@@ -209,7 +209,7 @@ class SimulatedDataset(Dataset):
         self._description = "Simulated dataset {}".format(localId)
         # TODO create a simulated OntologyTermMap
         sequenceOntology = ontologies.OntologyTermMap("sequence_ontology")
-        # TODO add some terms into the simualated sequence ontology
+        # TODO add some terms into the simulated sequence ontology
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)

@@ -7,13 +7,13 @@ from __future__ import unicode_literals
 
 import os
 
-
 testDir = 'tests'
 testDataDir = os.path.join(testDir, 'data')
 testDataRepo = os.path.join(testDataDir, 'repo.db')
 
 # references
 referenceSetName = 'chr17'
+ncbi37FaName = 'NCBI37'
 faPath = os.path.join(testDataDir, 'referenceSets/Default.fa.gz')
 faPath2 = os.path.join(testDataDir, 'referenceSets/example_1.fa.gz')
 faPath3 = os.path.join(testDataDir, 'referenceSets/example_2.fa.gz')
@@ -32,9 +32,11 @@ ontologyPath = os.path.join(
     testDataDir, 'ontologymaps/sequence_ontology/sequence_ontology.txt')
 
 # reads
-readGroupSetName = 'chr17.1-250'
+readGroupSetName = 'HG00096'
+readsDir = os.path.join(testDataDir, 'datasets/dataset1/reads')
 bamPath = os.path.join(
-    testDataDir, 'datasets/dataset1/reads/chr17.1-250.bam')
+    readsDir,
+    'HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam')
 bamPath2 = os.path.join(
     testDataDir,
     'datasets/dataset1/reads/'

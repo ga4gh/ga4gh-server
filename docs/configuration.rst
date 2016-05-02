@@ -41,8 +41,8 @@ the first command you run.
 verify
 +++++++
 
-Checks that the data pointed to in the repository works and
-there aren't any broken URLs or missing files.
+Checks that the data files pointed to in the repository exist and are readable
+in the locations specified by file paths or URLs.
 
 .. code-block:: bash
 
@@ -109,9 +109,9 @@ Removes a given reference set from a given data repository.
 
     $ ga4gh_repo remove-referenceset path/to/repo.db aReferenceSet
 
-++++++++++++++++
-add-ontologymap
-++++++++++++++++
+++++++++++++
+add-ontology
+++++++++++++
 
 Adds an Ontology Map, which maps identifiers to ontology terms, to
 the repository. Ontology maps are tab delimited files with an
@@ -128,15 +128,15 @@ Optional arguments
 
     [-n NAME]
 
-++++++++++++++++++++
-remove-ontologymap
-++++++++++++++++++++
++++++++++++++++
+remove-ontology
++++++++++++++++
 
 Removes a given Ontology Map from a given data repository.
 
 .. code-block:: bash
 
-    $ ga4gh_repo remove-ontologymap path/to/repo.db aOntoMap
+    $ ga4gh_repo remove-ontology path/to/repo.db aOntoMap
 
 
 +++++++++++++++++
