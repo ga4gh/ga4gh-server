@@ -78,9 +78,11 @@ class AbstractRepoManagerTest(unittest.TestCase):
         cmd = "add-ontology {} {}".format(self._repoPath, paths.ontologyPath)
         self.runCommand(cmd)
 
-    def addDataset(self):
-        self._datasetName = "test_dataset"
-        cmd = "add-dataset {} {}".format(self._repoPath, self._datasetName)
+    def addDataset(self, datasetName=None):
+        if datasetName is None:
+            datasetName = "test_dataset"
+            self._datasetName = datasetName
+        cmd = "add-dataset {} {}".format(self._repoPath, datasetName)
         self.runCommand(cmd)
 
     def addReferenceSet(self):
@@ -602,3 +604,80 @@ class TestAddVariantSet(AbstractRepoManagerTest):
     # TODO add more tests for to verify that errors are correctly thrown
     # when incorrect indexes are passed, mixtures of directories and URLS
     # for the dataFiles argument, and other common error cases in the UI.
+
+
+class TestDuplicateNameDelete(AbstractRepoManagerTest):
+    """
+    If two objects exist with the same name in different datasets,
+    ensure that only one is deleted on a delete call
+    """
+    def setUp(self):
+        super(TestDuplicateNameDelete, self).setUp()
+        self.init()
+        self.dataset1Name = "dataset1"
+        self.dataset2Name = "dataset2"
+        self.addDataset(self.dataset1Name)
+        self.addDataset(self.dataset2Name)
+        self.addOntology()
+        self.addReferenceSet()
+
+    def readDatasets(self):
+        repo = self.readRepo()
+        self.dataset1 = repo.getDatasetByName(self.dataset1Name)
+        self.dataset2 = repo.getDatasetByName(self.dataset2Name)
+
+    def testReadGroupSetDelete(self):
+        readGroupSetName = "test_rgs"
+        cmdString = (
+            "add-readgroupset {} {} {} --referenceSetName={} "
+            "--name={}")
+        addReadGroupSetCmd1 = cmdString.format(
+            self._repoPath, self.dataset1Name, paths.bamPath,
+            self._referenceSetName, readGroupSetName)
+        self.runCommand(addReadGroupSetCmd1)
+        addReadGroupSetCmd2 = cmdString.format(
+            self._repoPath, self.dataset2Name, paths.bamPath,
+            self._referenceSetName, readGroupSetName)
+        self.runCommand(addReadGroupSetCmd2)
+        removeCmd = "remove-readgroupset {} {} {} -f".format(
+            self._repoPath, self.dataset1Name, readGroupSetName)
+        self.runCommand(removeCmd)
+        self.readDatasets()
+        self.assertEqual(len(self.dataset1.getReadGroupSets()), 0)
+        self.assertEqual(len(self.dataset2.getReadGroupSets()), 1)
+
+    def testVariantSetDelete(self):
+        vcfDir = paths.vcfDirPath
+        variantSetName = "test_vs"
+        cmdString = "add-variantset {} {} {} --referenceSetName={} --name={}"
+        addVariantSetCmd1 = cmdString.format(
+            self._repoPath, self.dataset1Name, vcfDir,
+            self._referenceSetName, variantSetName)
+        self.runCommand(addVariantSetCmd1)
+        addVariantSetCmd2 = cmdString.format(
+            self._repoPath, self.dataset2Name, vcfDir,
+            self._referenceSetName, variantSetName)
+        self.runCommand(addVariantSetCmd2)
+        removeCmd = "remove-variantset {} {} {} -f".format(
+            self._repoPath, self.dataset1Name, variantSetName)
+        self.runCommand(removeCmd)
+        self.readDatasets()
+        self.assertEqual(len(self.dataset1.getVariantSets()), 0)
+        self.assertEqual(len(self.dataset2.getVariantSets()), 1)
+
+    def testFeatureSetDelete(self):
+        cmdString = "add-featureset {} {} {} --referenceSetName={}"
+        addFeatureSetCmd1 = cmdString.format(
+            self._repoPath, self.dataset1Name, paths.featuresPath,
+            self._referenceSetName)
+        self.runCommand(addFeatureSetCmd1)
+        addFeatureSetCmd2 = cmdString.format(
+            self._repoPath, self.dataset2Name, paths.featuresPath,
+            self._referenceSetName)
+        self.runCommand(addFeatureSetCmd2)
+        removeCmd = "remove-featureset {} {} {} -f".format(
+            self._repoPath, self.dataset1Name, paths.featureSetName)
+        self.runCommand(removeCmd)
+        self.readDatasets()
+        self.assertEqual(len(self.dataset1.getFeatureSets()), 0)
+        self.assertEqual(len(self.dataset2.getFeatureSets()), 1)
