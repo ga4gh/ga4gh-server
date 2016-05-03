@@ -154,7 +154,9 @@ class CompoundId(object):
             localIds = localIds[:differentiatorIndex] + tuple([
                 self.differentiator]) + localIds[differentiatorIndex:]
         for field, localId in zip(self.fields[index:], localIds):
-            encodedLocalId = self.encode(str(localId))
+            if not isinstance(localId, basestring):
+                raise exceptions.BadIdentifierNotStringException(localId)
+            encodedLocalId = self.encode(localId)
             setattr(self, field, encodedLocalId)
         if len(localIds) != len(self.fields) - index:
             raise ValueError(
@@ -255,7 +257,8 @@ class CompoundId(object):
         fashion. This is not intended for security purposes, but rather to
         dissuade users from depending on our internal ID structures.
         """
-        return base64.urlsafe_b64encode(str(idStr)).replace(b'=', b'')
+        return unicode(base64.urlsafe_b64encode(
+            idStr.encode('utf-8')).replace(b'=', b''))
 
     @classmethod
     def deobfuscate(cls, data):
@@ -264,6 +267,9 @@ class CompoundId(object):
         If an identifier arrives without correct base64 padding this
         function will append it to the end.
         """
+        # the str() call is necessary to convert the unicode string
+        # to an ascii string since the urlsafe_b64decode method
+        # sometimes chokes on unicode strings
         return base64.urlsafe_b64decode(str((
             data + b'A=='[(len(data) - 1) % 4:])))
 

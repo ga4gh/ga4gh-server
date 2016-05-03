@@ -133,6 +133,13 @@ class BadIdentifierException(BadRequestException):
             self.message += msg
 
 
+class BadIdentifierNotStringException(BadIdentifierException):
+    def __init__(self, localId):
+        self.message = (
+            "The identifier provided is not a string: '{}'".format(
+                localId))
+
+
 class InvalidJsonException(BadRequestException):
     def __init__(self, jsonString):
         self.message = "Cannot parse JSON: '{}'".format(jsonString)

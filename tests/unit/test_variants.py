@@ -83,7 +83,7 @@ class TestAbstractVariantSet(unittest.TestCase):
     def setUp(self):
         self._variantSetName = "testVariantSet"
         self._backend = backend.Backend(datarepo.AbstractDataRepository())
-        self._dataset = datasets.AbstractDataset(self._backend)
+        self._dataset = datasets.AbstractDataset("datasetId")
         self._variantSet = variants.AbstractVariantSet(
             self._dataset, self._variantSetName)
 
@@ -127,8 +127,8 @@ class TestAbstractVariantSet(unittest.TestCase):
                           self._variantSet.getCallSet, 617)
         self.assertRaises(exceptions.CallSetNotFoundException,
                           self._variantSet.getCallSet, None)
-        self.assertRaises(TypeError, self._variantSet.addCallSet,
-                          ['a list of', 2])
+        self.assertRaises(exceptions.BadIdentifierNotStringException,
+                          self._variantSet.addCallSet, ['a list of', 2])
         self.assertRaises(NotImplementedError,
                           self._variantSet.getNumVariants)
 

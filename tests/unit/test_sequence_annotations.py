@@ -22,7 +22,7 @@ class TestAbstractFeatureSet(unittest.TestCase):
     def setUp(self):
         self._featureSetName = "testFeatureSet"
         self._backend = backend.Backend(datarepo.AbstractDataRepository())
-        self._dataset = datasets.AbstractDataset(self._backend)
+        self._dataset = datasets.AbstractDataset("datasetId")
         self._featureSet = features.AbstractFeatureSet(
             self._dataset, self._featureSetName)
 
