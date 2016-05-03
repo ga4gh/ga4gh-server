@@ -324,3 +324,61 @@ To enable DEBUG on your docker server, call docker run with ``-e GA4GH_DEBUG=Tru
 This will set the environment variable which is read by config.py
 
 You can then get logs from the docker container by running ``docker logs (container)`` e.g. ``docker logs ga4gh_demo``
+
+-----------------------
+Deployment on Mac OS X
+-----------------------
+To deploy on Mac OS X, you need to install libraries and header code for `Python 2.7 <https://www.python.org/download/releases/2.7/>`_. It will be a lot easier if you have `Homebrew <http://brew.sh/index.html>`_, which is called the missing package manager for OS X, installed first. To install Homebrew, please paste the following at a Terminal prompt ($):
+
+.. code-block:: bash
+
+  $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+1. Now you can use ``brew install`` to install libraries for Python.
+
+.. code-block:: bash
+
+  $ brew install openssl
+  $ pip install virtualenv 
+
+2. Download source code from GitHub to a target folder, here we create a folder ``/ga4gh/`` under home directory. First of all, you need to `set up github to work <https://help.github.com/articles/set-up-git/>`_ from your command line (Terminal) if you have not done so.
+
+.. code-block:: bash
+
+  $ mkdir ~/ga4gh
+  $ cd ~/ga4gh/
+  $ git clone https://github.com/ga4gh/server.git
+
+3. Install Python dependencies:
+
+.. code-block:: bash
+
+  $ cd server/
+  $ pip install -r dev-requirements.txt 
+  
+One possible error may be "ssl.h not found"; if so, you will have to tell the compiler about the newly downloaded headers using ``export C_INCLUDE_PATH="/usr/local/opt/openssl/include"``.
+
+4. Download and extract the example data:
+
+.. code-block:: bash
+
+  $ curl -L -O https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v3.2.tar
+  $ tar -xf ga4gh-example-data-v3.2.tar
+
+5. Start server:
+
+.. code-block:: bash
+
+  $ python server-dev.py
+
+Point a web browser to `http://localhost:8000/ <http://localhost:8000/>`_.
+
+6. Run tests.
+
+.. code-block:: bash
+
+  $ python scripts/run_tests.py
+
+
+
+ 
