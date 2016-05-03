@@ -425,7 +425,8 @@ class TestRepoManagerCli(unittest.TestCase):
 
     def testRemoveOntology(self):
         ontologyName = "the_ontology_name"
-        cliInput = "remove-ontology {} {}".format(self.repoPath, ontologyName)
+        cliInput = "remove-ontology {} {}".format(
+            self.repoPath, ontologyName)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.repoPath, self.repoPath)
         self.assertEquals(args.ontologyName, ontologyName)

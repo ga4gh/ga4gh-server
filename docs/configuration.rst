@@ -11,12 +11,13 @@ the `Data repository`_ and the `Configuration file`_.
 Data repository
 ---------------
 
-The repository in the GA4GH reference server defines how your data is organised. The
+The repository in the GA4GH reference server defines how your data are organised. The
 repository itself is a SQLite database, which contains information about your
 datasets, reference sets and so on. Bulk data (such as variants and reads)
-is not stored in database, but instead accessed directly from the primary
+are not stored in database, but instead accessed directly from the primary
 data files at run time. The locations of these data files is entirely up
-to the administrator.
+to the administrator. In some cases, the server may need write access to the 
+directories containing data files.
 
 The repository manager provides an administration interface to the the data
 repository. It can be accessed via ``ga4gh_repo`` (or ``python repo_dev.py`` if
@@ -40,8 +41,8 @@ the first command you run.
 verify
 +++++++
 
-Performs some consistency checks on the given data repository to ensure it is
-well-formed.
+Checks that the data files pointed to in the repository exist and are readable
+in the locations specified by file paths or URLs.
 
 .. code-block:: bash
 
@@ -87,6 +88,17 @@ Adds a given reference set file to a given data repository.
 
     $ ga4gh_repo add-referenceset path/to/repo.db path/to/aReferenceSet.fa.gz
 
+Optional arguments
+
+.. code-block:: bash
+
+    [-n NAME] [-d DESCRIPTION]
+    [--ncbiTaxonId NCBITAXONID]
+    [--isDerived ISDERIVED]
+    [--assemblyId ASSEMBLYID]
+    [--sourceAccessions SOURCEACCESSIONS]
+    [--sourceUri SOURCEURI]
+
 ++++++++++++++++++++
 remove-referenceset
 ++++++++++++++++++++
@@ -97,9 +109,9 @@ Removes a given reference set from a given data repository.
 
     $ ga4gh_repo remove-referenceset path/to/repo.db aReferenceSet
 
-++++++++++++++++
+++++++++++++
 add-ontology
-++++++++++++++++
+++++++++++++
 
 Adds an Ontology Map, which maps identifiers to ontology terms, to
 the repository. Ontology maps are tab delimited files with an
@@ -110,15 +122,21 @@ identifier/term pair per row.
 
     $ ga4gh_repo add-ontologymap path/to/repo.db path/to/aOntoMap.txt
 
-++++++++++++++++++++
-remove-ontologymap
-++++++++++++++++++++
+Optional arguments
+
+.. code-block:: bash
+
+    [-n NAME]
+
++++++++++++++++
+remove-ontology
++++++++++++++++
 
 Removes a given Ontology Map from a given data repository.
 
 .. code-block:: bash
 
-    $ ga4gh_repo remove-ontologymap path/to/repo.db aOntoMap
+    $ ga4gh_repo remove-ontology path/to/repo.db aOntoMap
 
 
 +++++++++++++++++
@@ -131,6 +149,13 @@ file must have the extension ``.bam``.
 .. code-block:: bash
 
     $ ga4gh_repo add-readgroupset path/to/repo.db aDataset path/to/aReadGroupSet.bam
+
+Optional arguments
+
+.. code-block:: bash
+
+    [-n NAME] [-R REFERENCESETNAME]
+    [-I INDEXFILE]
 
 ++++++++++++++++++++
 remove-readgroupset
@@ -150,9 +175,19 @@ Adds a variant set directory to a given data repository and dataset.  The
 directory should contain file(s) with extension ``.vcf.gz``. If a variant set
 is annotated it will be added as both a variant set and a variant annotation set.
 
+No two VCFs in a variant set can cover the same contig.
+
 .. code-block:: bash
 
     $ ga4gh_repo add-variantset path/to/repo.db aDataset path/to/aVariantSet
+
+Optional Arguments
+
+.. code-block:: bash
+
+    [-I indexFiles [indexFiles ...]]
+    [-n NAME] [-R REFERENCESETNAME]
+    [dataFiles ...]
 
 +++++++++++++++++
 remove-variantset
@@ -163,6 +198,33 @@ Removes a variant set from a given data repository and dataset.
 .. code-block:: bash
 
     $ ga4gh_repo remove-variantset path/to/repo.db aDataset aVariantSet
+
+++++++++++++++
+add-featureset
+++++++++++++++
+
+Adds a feature set to the repo created using `scripts/generate_gff3_db.py`.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-featureset path/to/repo.db aDataset aFeatureSet.db
+
+Optional arguments
+
+.. code-block:: bash
+
+    [-R REFERENCESETNAME]
+
++++++++++++++++++
+remove-featureset
++++++++++++++++++
+
+Removes a feature set from a given data repository and dataset using the 
+feature set's name.
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-featureset path/to/repo.db aDataset aFeatureSet
 
 ------------------
 Configuration file

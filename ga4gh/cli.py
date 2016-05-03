@@ -1810,7 +1810,7 @@ class RepoManager(object):
         referenceSetName = self._args.referenceSetName
         if referenceSetName is None:
             raise exceptions.RepoManagerException(
-                "a reference set name must be provided")
+                "A reference set name must be provided")
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         featureSet.setReferenceSet(referenceSet)
         featureSet.populateFromFile(self._args.filePath)
@@ -1897,7 +1897,7 @@ class RepoManager(object):
     def addFeatureSetNameArgument(cls, subparser):
         subparser.add_argument(
             "featureSetName",
-            help="the name of the variant set")
+            help="the name of the feature set")
 
     @classmethod
     def addFilePathArgument(cls, subparser, helpText):

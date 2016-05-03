@@ -75,7 +75,8 @@ class AbstractRepoManagerTest(unittest.TestCase):
     def addOntology(self):
         # Add the sequence ontology
         self._ontologyName = paths.ontologyName
-        cmd = "add-ontology {} {}".format(self._repoPath, paths.ontologyPath)
+        cmd = "add-ontology {} {}".format(
+            self._repoPath, paths.ontologyPath)
         self.runCommand(cmd)
 
     def addDataset(self, datasetName=None):
@@ -241,7 +242,8 @@ class TestAddOntology(AbstractRepoManagerTest):
     def testDefaults(self):
         mapFile = paths.ontologyPath
         name = os.path.split(mapFile)[1].split(".")[0]
-        self.runCommand("add-ontology {} {}".format(self._repoPath, mapFile))
+        self.runCommand(
+            "add-ontology {} {}".format(self._repoPath, mapFile))
         repo = self.readRepo()
         ontologyTermMap = repo.getOntologyTermMapByName(name)
         self.assertEqual(ontologyTermMap.getLocalId(), name)
