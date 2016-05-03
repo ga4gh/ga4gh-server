@@ -69,7 +69,8 @@ class ExpressionLevel(AbstractExpressionLevel):
         self._annotationId = record["annotation_id"]
         self._expression = record["expression"]
         self._quantificationGroupId = record["quantification_group_id"]
-        self._isNormalized = record["is_normalized"]
+        # sqlite stores booleans as int (False = 0, True = 1)
+        self._isNormalized = record["is_normalized"] != 0
         self._rawReadCount = record["raw_read_count"]
         self._score = record["score"]
         self._units = record["units"]
