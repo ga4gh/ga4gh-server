@@ -113,23 +113,25 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         for readAlignment in readAlignments:
             tags = dict(readAlignment.tags)
             if readGroup is None:
-                alignmentReadGroup = None
                 if 'RG' in tags:
-                    alignmentReadGroupId = tags['RG']
-                    alignmentReadGroup = self._readGroupLocalIdMap.get(
-                        alignmentReadGroupId, None)
+                    alignmentReadGroupLocalId = tags['RG']
+                    readGroupCompoundId = datamodel.ReadGroupCompoundId(
+                        readGroupSet.getCompoundId(),
+                        str(alignmentReadGroupLocalId))
                 yield self.convertReadAlignment(
-                    readAlignment, readGroupSet, alignmentReadGroup)
+                    readAlignment, readGroupSet, str(readGroupCompoundId))
             else:
                 if self._filterReads:
                     if 'RG' in tags and tags['RG'] == self._localId:
                         yield self.convertReadAlignment(
-                            readAlignment, readGroupSet, readGroup)
+                            readAlignment, readGroupSet,
+                            str(readGroup.getCompoundId()))
                 else:
                     yield self.convertReadAlignment(
-                        readAlignment, readGroupSet, readGroup)
+                        readAlignment, readGroupSet,
+                        str(readGroup.getCompoundId()))
 
-    def convertReadAlignment(self, read, readGroupSet, readGroup):
+    def convertReadAlignment(self, read, readGroupSet, readGroupId):
         """
         Convert a pysam ReadAlignment to a GA4GH ReadAlignment
         """
@@ -196,7 +198,7 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
             ret.readNumber = 1
         ret.improperPlacement = not SamFlags.isFlagSet(
             read.flag, SamFlags.READ_PROPER_PAIR)
-        ret.readGroupId = readGroup.getId()
+        ret.readGroupId = readGroupId
         ret.secondaryAlignment = SamFlags.isFlagSet(
             read.flag, SamFlags.SECONDARY_ALIGNMENT)
         ret.supplementaryAlignment = SamFlags.isFlagSet(
@@ -362,6 +364,12 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
         # Used when we populate from a file. Not defined when we populate
         # from the DB.
         self._bamHeaderReferenceSetName = None
+
+    def getReadAlignments(self, reference, start=None, end=None):
+        """
+        Returns an iterator over the specified reads
+        """
+        return self._getReadAlignments(reference, start, end, self, None)
 
     def getBamHeaderReferenceSetName(self):
         """
