@@ -404,7 +404,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 md5 = self._hashVariant(variant)
                 compoundId = datamodel.VariantCompoundId(
                     variantSet.getCompoundId(), referenceName,
-                    variant.start, md5)
+                    str(variant.start), md5)
                 gotVariant = variantSet.getVariant(compoundId)
                 self.assertEqual(str(compoundId), gotVariant.id)
 
@@ -412,7 +412,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 wrongStart = variant.end
                 compoundId = datamodel.VariantCompoundId(
                     variantSet.getCompoundId(), referenceName,
-                    wrongStart, md5)
+                    str(wrongStart), md5)
                 try:
                     gotVariant = variantSet.getVariant(compoundId)
                     self.assertNotEqual(variant.start, gotVariant.start)
@@ -422,14 +422,14 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 # negative test: change reference name
                 compoundId = datamodel.VariantCompoundId(
                     variantSet.getCompoundId(), "wrong reference name",
-                    variant.start, md5)
+                    str(variant.start), md5)
                 with self.assertRaises(exceptions.ObjectNotFoundException):
                     variantSet.getVariant(compoundId)
 
                 # negative test: change hash
                 compoundId = datamodel.VariantCompoundId(
                     variantSet.getCompoundId(), referenceName,
-                    variant.start, "wrong hash")
+                    str(variant.start), "wrong hash")
                 with self.assertRaises(exceptions.ObjectNotFoundException):
                     variantSet.getVariant(compoundId)
 

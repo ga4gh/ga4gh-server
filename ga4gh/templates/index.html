@@ -12,7 +12,7 @@
             <h3>Protocol version {{ info.getProtocolVersion() }}</h3>
         </div>
         <div>
-            {{ info.getLandingMessageHtml() | safe}}
+            {{ info.getLandingMessageHtml().decode('utf-8') | safe}}
         </div>
         <div>
             <h3>Session Token <span class="session-token">{{ session['key']}}</span></h3>
