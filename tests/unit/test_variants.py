@@ -9,8 +9,6 @@ from __future__ import unicode_literals
 import unittest
 
 import ga4gh.exceptions as exceptions
-import ga4gh.backend as backend
-import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.datasets as datasets
 
@@ -82,8 +80,7 @@ class TestAbstractVariantSet(unittest.TestCase):
     """
     def setUp(self):
         self._variantSetName = "testVariantSet"
-        self._backend = backend.Backend(datarepo.AbstractDataRepository())
-        self._dataset = datasets.Dataset(self._backend)
+        self._dataset = datasets.Dataset("datasetId")
         self._variantSet = variants.AbstractVariantSet(
             self._dataset, self._variantSetName)
 
@@ -127,8 +124,6 @@ class TestAbstractVariantSet(unittest.TestCase):
                           self._variantSet.getCallSet, 617)
         self.assertRaises(exceptions.CallSetNotFoundException,
                           self._variantSet.getCallSet, None)
-        self.assertRaises(TypeError, self._variantSet.addCallSetFromName,
-                          ['a list of', 2])
         self.assertRaises(NotImplementedError,
                           self._variantSet.getNumVariants)
 
@@ -145,6 +140,5 @@ class TestAbstractVariantSet(unittest.TestCase):
                           self._variantSet.hashVariant, "hi")
 
     def testVariantSetProtocolElement(self):
-        # 'AbstractVariantSet' object has no attribute 'getMetadata'
         self.assertRaises(AttributeError,
                           self._variantSet.toProtocolElement)
