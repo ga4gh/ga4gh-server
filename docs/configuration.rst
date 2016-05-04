@@ -108,17 +108,17 @@ identifier/term pair per row.
 
 .. code-block:: bash
 
-    $ ga4gh_repo add-ontologymap path/to/repo.db path/to/aOntoMap.txt
+    $ ga4gh_repo add-ontology path/to/repo.db path/to/aOntoMap.txt
 
 ++++++++++++++++++++
-remove-ontologymap
+remove-ontology
 ++++++++++++++++++++
 
 Removes a given Ontology Map from a given data repository.
 
 .. code-block:: bash
 
-    $ ga4gh_repo remove-ontologymap path/to/repo.db aOntoMap
+    $ ga4gh_repo remove-ontology path/to/repo.db aOntoMap
 
 
 +++++++++++++++++
