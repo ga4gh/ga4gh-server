@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Tests the compound ids
 """
@@ -26,6 +27,23 @@ class TestCompoundIds(unittest.TestCase):
     """
     Test the compound ids
     """
+    def testUnicode(self):
+        latin1chars = (
+            "¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑ"
+            "ÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ")
+        foo = latin1chars
+        bar = "a unicode string"
+        baz = str("an ascii string")
+        self.assertEqual(type(foo), unicode)
+        self.assertEqual(type(bar), unicode)
+        self.assertEqual(type(baz), str)
+        compoundId = ExampleCompoundId(None, foo, bar, baz)
+        self.assertEqual(type(compoundId.foo), unicode)
+        self.assertEqual(type(compoundId.bar), unicode)
+        self.assertEqual(type(compoundId.baz), unicode)
+        self.assertEqual(type(compoundId.foobar), unicode)
+        self.assertEqual(type(compoundId.foobarbaz), unicode)
+
     def testTopLevelIdsUnique(self):
         datasetId = "a"
         idStr = "b"
@@ -59,10 +77,12 @@ class TestCompoundIds(unittest.TestCase):
             self.assertEqual(idStr, decoded)
 
     def testEncodeRoundTrip(self):
-        splits = ['"a"', 'b', '"c']
+        # tests both double quote escaping and appropriate handling
+        # of non-ascii characters
+        splits = ['"å"', '字', '"c']
         compoundId = ExampleCompoundId(None, *splits)
-        self.assertEqual(compoundId.foo, '\\"a\\"')
-        self.assertEqual(compoundId.bar, 'b')
+        self.assertEqual(compoundId.foo, '\\"å\\"')
+        self.assertEqual(compoundId.bar, '字')
         self.assertEqual(compoundId.baz, '\\"c')
         obfuscated = str(compoundId)
         parsedCompoundId = ExampleCompoundId.parse(obfuscated)

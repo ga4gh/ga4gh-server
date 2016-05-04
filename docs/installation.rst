@@ -84,13 +84,15 @@ following contents:
 (Many more configuration options are available --- see the :ref:`configuration`
 section for a detailed discussion on the server configuration and input data.)
 
-Configure Apache. Edit the file ``/etc/apache2/sites-available/000-default.conf``
+Configure Apache. Note that these instructions are for Apache 2.4 or greater.
+Edit the file ``/etc/apache2/sites-available/000-default.conf``
 and insert the following contents towards the end of the file
 (*within* the ``<VirtualHost:80>...</VirtualHost>`` block):
 
 .. code-block:: apacheconf
 
     WSGIDaemonProcess ga4gh \
+        processes=10 threads=1 \
         python-path=/srv/ga4gh/ga4gh-server-env/lib/python2.7/site-packages \
         python-eggs=/var/cache/apache2/python-egg-cache
     WSGIScriptAlias /ga4gh /srv/ga4gh/application.wsgi
@@ -101,7 +103,35 @@ and insert the following contents towards the end of the file
         Require all granted
     </Directory>
 
-Restart Apache:
+.. warning::
+
+    Be sure to keep the number of threads limited to 1 in the WSGIDaemonProcess
+    setting. Performance tuning should be done using the processes setting.
+
+The instructions for configuring Apache 2.2 (on Ubuntu 14.04) are the same as
+above with thee following exceptions:
+
+You need to edit
+``/etc/apache2/sites-enabled/000-default``
+
+instead of
+``/etc/apache2/sites-enabled/000-default.conf``
+
+And while in that file, you need to set permissions for the directory to
+
+.. code-block:: apacheconf
+
+    Allow from all
+
+instead of
+
+.. code-block:: apacheconf
+
+    Require all granted
+
+
+
+Now restart Apache:
 
 .. code-block:: bash
 
@@ -139,16 +169,12 @@ how to deploy on various other servers.
 Troubleshooting
 +++++++++++++++
 
-If you are encountering difficulties getting the above to work, it is helpful
-to turn on debugging output. Do this by adding the following line to your
-config file:
+Server errors will be output to the web server's error log by default (in Apache on
+Debian/Ubuntu, for example, this is ``/var/log/apache2/error.log``). Each client
+request will be logged to the web server's access log (in Apache on Debian/Ubuntu
+this is ``/var/log/apache2/access.log``). 
 
-.. code-block:: python
-
-    DEBUG = True
-
-When an error occurs, the details of this will then be printed to the web server's
-error log (in Apache on Debian/Ubuntu, for example, this is ``/var/log/apache2/error.log``).
+For more server configuration options see :ref:`Configuration`
 
 --------------------
 Deployment on Docker
@@ -197,7 +223,7 @@ From the client, the server is accessible at ``http://server/``, and the ``/tmp/
 
   #make a development dir and place the example client script in it
   $ mkdir /tmp/mydev
-  $ curl https://raw.githubusercontent.com/ga4gh/server/develop/scripts/demo_example.py > /tmp/mydev/demo_example.py
+  $ curl https://raw.githubusercontent.com/ga4gh/server/master/scripts/demo_example.py > /tmp/mydev/demo_example.py
   $ chmod +x /tmp/mydev/demo_example.py
 
   # start the server daemon

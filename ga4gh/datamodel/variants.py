@@ -266,7 +266,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         md5 = self.hashVariant(gaVariant)
         compoundId = datamodel.VariantCompoundId(
             self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5)
+            str(gaVariant.start), md5)
         return str(compoundId)
 
     def getCallSetId(self, sampleName):
@@ -896,7 +896,7 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
         compoundId = datamodel.VariantAnnotationCompoundId(
             self.getCompoundId(), gaVariant.referenceName,
-            gaVariant.start, md5)
+            str(gaVariant.start), md5)
         return str(compoundId)
 
 

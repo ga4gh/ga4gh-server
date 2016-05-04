@@ -55,3 +55,5 @@ simulatedReferenceSetId = '["referenceSet0"]'
 simulatedReferenceId = '["referenceSet0","srs0"]'
 simulatedVariantAnnotationSetId = (
     '["simulatedDataset0","vs","simVs0","simVas0"]')
+
+landingMessageHtml = os.path.join(testDataDir, "test.html")
