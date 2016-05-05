@@ -25,6 +25,14 @@ vcfDirPath = os.path.join(
     testDataDir, 'datasets/dataset1/variants/1kgPhase1')
 vcfDirPath2 = os.path.join(
     testDataDir, 'datasets/dataset1/variants/1kgPhase3')
+vcfPath1 = os.path.join(
+    vcfDirPath, 'chr1.vcf.gz')
+vcfPath2 = os.path.join(
+    vcfDirPath, 'chr2.vcf.gz')
+vcfIndexPath1 = os.path.join(
+    vcfDirPath, 'chr1.vcf.gz.tbi')
+vcfIndexPath2 = os.path.join(
+    vcfDirPath, 'chr2.vcf.gz.tbi')
 
 
 ontologyName = "sequence_ontology"
@@ -33,12 +41,16 @@ ontologyPath = os.path.join(
 
 # reads
 readGroupSetName = 'chr17.1-250'
+bamDir = os.path.join(
+    testDataDir, 'datasets/dataset1/reads')
 bamPath = os.path.join(
-    testDataDir, 'datasets/dataset1/reads/chr17.1-250.bam')
+    bamDir, 'chr17.1-250.bam')
 bamPath2 = os.path.join(
-    testDataDir,
-    'datasets/dataset1/reads/'
-    'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample.bam')
+    bamDir, 'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample.bam')
+bamIndexPath = os.path.join(
+    bamDir, 'chr17.1-250.bam.bai')
+bamIndexPath2 = os.path.join(
+    bamDir, 'wgEncodeUwRepliSeqBg02esG1bAlnRep1_sample.bam.bai')
 
 # sequence annotations
 featureSetName = 'gencodeV21Set1'

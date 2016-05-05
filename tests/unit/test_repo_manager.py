@@ -14,6 +14,7 @@ import unittest
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
 import ga4gh.cli as cli
+import ga4gh.datamodel as datamodel
 import tests.paths as paths
 
 
@@ -681,3 +682,80 @@ class TestDuplicateNameDelete(AbstractRepoManagerTest):
         self.readDatasets()
         self.assertEqual(len(self.dataset1.getFeatureSets()), 0)
         self.assertEqual(len(self.dataset2.getFeatureSets()), 1)
+
+
+class TestInvalidVariantIndexFile(AbstractRepoManagerTest):
+    """
+    Test that the repo manager throws exceptions when invalid index
+    files are provided for vcf files.
+    """
+    def setUp(self):
+        super(TestInvalidVariantIndexFile, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+
+    def _testWithIndexPath(self, indexPath):
+        cmd = (
+            "add-variantset {} {} {} --referenceSetName={} -I {}").format(
+                self._repoPath, self._datasetName, paths.vcfPath1,
+                self._referenceSetName, indexPath)
+        with self.assertRaises(exceptions.NotIndexedException):
+            self.runCommand(cmd)
+
+    def testNonexistentIndexFile(self):
+        indexPath = '/path/does/not/exist'
+        self._testWithIndexPath(indexPath)
+
+    def testIndexFileNotAnIndexFile(self):
+        indexPath = paths.vcfPath2  # not an index file
+        self._testWithIndexPath(indexPath)
+
+    @unittest.skip("Skipping until we can detect incorrect indexes")
+    def testWrongIndexFile(self):
+        indexPath = paths.vcfIndexPath2  # incorrect index
+        self._testWithIndexPath(indexPath)
+
+
+class TestInvalidReadGroupSetIndexFile(AbstractRepoManagerTest):
+    """
+    Test that the repo manager throws exceptions when invalid index
+    files are provided for bam files.
+    """
+    @classmethod
+    def setUpClass(cls):
+        # clear the file handle cache because if the data file we are
+        # testing with an invalid index is already in the cache, the
+        # index will not be opened during the test; without this line
+        # the below tests will succeed when the test class is run but
+        # fail when the file's tests are run
+        datamodel.fileHandleCache = datamodel.PysamFileHandleCache()
+
+    def setUp(self):
+        super(TestInvalidReadGroupSetIndexFile, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+
+    def _testWithIndexPath(self, indexPath):
+        cmd = (
+            "add-readgroupset {} {} {} --referenceSetName={} "
+            "-I {}").format(
+                self._repoPath, self._datasetName, paths.bamPath,
+                self._referenceSetName, indexPath)
+        self.runCommand(cmd)
+
+    def testNonexistentIndexFile(self):
+        indexPath = '/path/does/not/exist'
+        with self.assertRaises(exceptions.FileOpenFailedException):
+            self._testWithIndexPath(indexPath)
+
+    def testIndexFileNotAnIndexFile(self):
+        indexPath = paths.bamPath2  # not an index file
+        with self.assertRaises(exceptions.DataException):
+            self._testWithIndexPath(indexPath)
+
+    @unittest.skip("Skipping until we can detect incorrect indexes")
+    def testWrongIndexFile(self):
+        indexPath = paths.bamIndexPath2  # incorrect index
+        self._testWithIndexPath(indexPath)
