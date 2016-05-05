@@ -62,8 +62,8 @@ Download and unpack the example data:
 
 .. code-block:: bash
 
-  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v3.2.tar
-  $ tar -xf ga4gh-example-data-v3.2.tar
+  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.0.tar
+  $ tar -xf ga4gh-example-data-v4.0.tar
 
 Create the WSGI file at ``/srv/ga4gh/application.wsgi`` and write the following
 contents:
@@ -138,7 +138,7 @@ Now restart Apache:
   $ sudo service apache2 restart
 
 We will now test to see the server started properly by requesting the
-landing page. 
+landing page.
 
 .. code-block:: bash
 
@@ -147,7 +147,7 @@ landing page.
     #    <h2>GA4GH reference server 0.2.3.dev4+nge0b07f3</h2>
     # Welcome to the GA4GH reference server landing page! This page describes
 
-We can also test the server by running some API commands. Please refer to 
+We can also test the server by running some API commands. Please refer to
 the instructions in the :ref:`demo` for how to access data made available
 by this server.
 

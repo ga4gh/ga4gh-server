@@ -13,23 +13,33 @@ import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.datasets as datasets
 
+import tests.paths as paths
+
 
 class TestHtslibVariantAnnotationSet(unittest.TestCase):
     """
     Unit tests for the abstract variant set.
     """
-    def setUp(self):
+    def _createVariantAnnotationSet(self, vcfDir):
+        """
+        Creates a VariantAnnotationSet from the specified directory of
+        VCF files.
+        """
         self._variantSetName = "testVariantSet"
-        self._backend = datarepo.FileSystemDataRepository("tests/data")
-        self._dataset = datasets.AbstractDataset("datasetId")
-        self._variantSet = variants.AbstractVariantSet(
+        self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
+        self._repo.open(datarepo.MODE_READ)
+        self._dataset = datasets.Dataset("testDs")
+        self._variantSet = variants.HtslibVariantSet(
             self._dataset, self._variantSetName)
-        self._variantAnnotationSet = \
-            variants.HtslibVariantAnnotationSet(
-                self._dataset,
-                "vas",
-                "tests/data/datasets/dataset1/variants/WASH7P_annotation",
-                self._backend, self._variantSet)
+        self._variantSet.populateFromDirectory(vcfDir)
+        self._variantAnnotationSet = variants.HtslibVariantAnnotationSet(
+            self._variantSet, "testVAs")
+        self._variantAnnotationSet.setSequenceOntologyTermMap(
+            self._repo.getOntologyTermMapByName("sequence_ontology"))
+
+    def setUp(self):
+        vcfDir = "tests/data/datasets/dataset1/variants/WASH7P_annotation"
+        self._createVariantAnnotationSet(vcfDir)
 
     def testConvertLocation(self):
         loc = protocol.AlleleLocation()
@@ -39,17 +49,9 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
         self.assertEqual(testLoc, loc)
 
     def testThousandGenomesAnnotation(self):
-        variantAnnotationSet = \
-            variants.HtslibVariantAnnotationSet(
-                self._dataset,
-                "vas",
-                "tests/data/datasets/dataset1/variants/1kg.3.annotations",
-                self._backend, self._variantSet)
-        isAnnotated = variantAnnotationSet.isAnnotated(
-            "tests/data/datasets/dataset1/variants/1kg.3.annotations")
-        self.assertEqual(
-            isAnnotated,
-            True)
+        vcfDir = "tests/data/datasets/dataset1/variants/1kg.3.annotations"
+        self._createVariantAnnotationSet(vcfDir)
+        self.assertTrue(self._variantSet.isAnnotated())
 
     def testConvertLocationHgvsC(self):
         loc = protocol.AlleleLocation()

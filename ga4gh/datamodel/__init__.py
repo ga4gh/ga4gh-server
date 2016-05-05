@@ -9,8 +9,6 @@ from __future__ import unicode_literals
 import json
 import base64
 import collections
-import glob
-import os
 
 import ga4gh.exceptions as exceptions
 
@@ -553,41 +551,6 @@ class PysamDatamodelMixin(object):
         if len(attr) > cls.maxStringLength:
             attr = attr[:cls.maxStringLength]
         return attr
-
-    def _setAccessTimes(self, directoryPath):
-        """
-        Sets the creationTime and accessTime for this file system based
-        DatamodelObject. This is derived from the ctime of the specified
-        directoryPath.
-        """
-        ctimeInMillis = int(os.path.getctime(directoryPath) * 1000)
-        self._creationTime = ctimeInMillis
-        self._updatedTime = ctimeInMillis
-
-    def _scanDataFiles(self, dataDir, patterns):
-        """
-        Scans the specified directory for files with the specified globbing
-        pattern and calls self._addDataFile for each. Raises an
-        EmptyDirException if no data files are found.
-        """
-        numDataFiles = 0
-        filenames = self._getDataFilenames(dataDir, patterns)
-        for filename in filenames:
-            self._addDataFile(filename)
-            numDataFiles += 1
-        if numDataFiles == 0:
-            raise exceptions.EmptyDirException(dataDir, patterns)
-
-    def _getDataFilenames(self, dataDir, patterns):
-        """
-        Return a list of filenames in dataDir that match one of patterns
-        """
-        filenames = []
-        for pattern in patterns:
-            scanPath = os.path.join(dataDir, pattern)
-            for filename in glob.glob(scanPath):
-                filenames.append(filename)
-        return filenames
 
     def getFileHandle(self, dataFile):
         return fileHandleCache.getFileHandle(dataFile, self.openFile)

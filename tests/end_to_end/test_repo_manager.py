@@ -7,12 +7,10 @@ from __future__ import unicode_literals
 
 import mock
 import os
-import shutil
 import tempfile
 import unittest
 
 import ga4gh.cli as cli
-import ga4gh.exceptions as exceptions
 import tests.paths as paths
 
 
@@ -22,28 +20,37 @@ class RepoManagerEndToEndTest(unittest.TestCase):
     metadata = {'description': 'aDescription'}
 
     def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
-        os.rmdir(self.tempdir)
+        _, self.repoFile = tempfile.mkstemp(
+            prefix='ga4gh_repo_manager_end2end_test')
+        os.unlink(self.repoFile)
 
     def tearDown(self):
-        if os.path.exists(self.tempdir):
-            shutil.rmtree(self.tempdir)
+        if os.path.exists(self.repoFile):
+            os.unlink(self.repoFile)
 
     def _runCmd(self, cmd, *args):
-        command = ["--loud", cmd, self.tempdir] + list(args)
+        command = [cmd, self.repoFile] + list(args)
         cli.repo_main(command)
 
     def testEndToEnd(self):
         self._runCmd("init")
-        self._runCmd("add-ontologymap", paths.ontologyPath)
-        self._runCmd("add-referenceset", paths.faPath)
+        self._runCmd("add-ontology", paths.ontologyPath)
+        self._runCmd(
+            "add-referenceset", paths.faPath,
+            '-n', paths.referenceSetName)
         self._runCmd("add-dataset", self.datasetName)
-        self._runCmd("add-readgroupset", self.datasetName, paths.bamPath)
-        self._runCmd("add-featureset", self.datasetName, paths.featuresPath)
+        self._runCmd(
+            "add-readgroupset", self.datasetName, paths.bamPath,
+            '-R', paths.referenceSetName, '-n', paths.readGroupSetName)
+        self._runCmd(
+            "add-featureset", self.datasetName, paths.featuresPath,
+            '-R', paths.referenceSetName)
+        # ensure we can handle trailing slashes
+        vcfPath = paths.vcfDirPath + '/'
         self._runCmd(
             "add-variantset", self.datasetName,
-            paths.vcfDirPath + '/')  # ensure we can handle trailing slashes
-        self._runCmd("check", "--skipConsistencyCheck")
+            vcfPath, '-R', paths.referenceSetName)
+        self._runCmd("verify")
         self._runCmd("list")
         self._runCmd(
             "remove-variantset", self.datasetName, paths.variantSetName,
@@ -59,15 +66,15 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         self._runCmd(
             "remove-referenceset", paths.referenceSetName, "-f")
         self._runCmd(
-            "remove-ontologymap", paths.ontologyName, "-f")
-        self._runCmd("destroy", "-f")
+            "remove-ontology", paths.ontologyName, "-f")
 
     def testForce(self):
+        datasetName = 'dataset1'
         self._runCmd("init")
+        self._runCmd("add-dataset", datasetName)
         with mock.patch('ga4gh.cli.getRawInput', lambda x: 'N'):
-            self._runCmd("destroy")
-        self._runCmd("list")
+            self._runCmd("remove-dataset", datasetName)
         with mock.patch('ga4gh.cli.getRawInput', lambda x: 'y'):
-            self._runCmd("destroy")
-        with self.assertRaises(exceptions.RepoManagerException):
-            self._runCmd("list")
+            self._runCmd("remove-dataset", datasetName)
+            with self.assertRaises(SystemExit):
+                self._runCmd("remove-dataset", datasetName)

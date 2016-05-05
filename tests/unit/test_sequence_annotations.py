@@ -9,8 +9,6 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.backend as backend
-import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.sequenceAnnotations as features
 import ga4gh.datamodel.datasets as datasets
 
@@ -21,8 +19,7 @@ class TestAbstractFeatureSet(unittest.TestCase):
     """
     def setUp(self):
         self._featureSetName = "testFeatureSet"
-        self._backend = backend.Backend(datarepo.AbstractDataRepository())
-        self._dataset = datasets.AbstractDataset("datasetId")
+        self._dataset = datasets.Dataset("test_ds")
         self._featureSet = features.AbstractFeatureSet(
             self._dataset, self._featureSetName)
 
