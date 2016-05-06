@@ -20,21 +20,28 @@ to the administrator.
 
 The repository manager provides an administration interface to the the data
 repository. It can be accessed via ``ga4gh_repo`` (or ``python repo_dev.py`` if
-developing). Following are descriptions of the commands that the repo manager
-exposes.
+developing). The ``ga4gh_repo`` commands provides a suite of commands to
+help administer a GA4GH data repository.
 
 +++++++
 init
 +++++++
 
-Initializes a data repository at the path provided.  All of the other
-commands require a data repository file as an argument, so this will likely be
-the first command you run.
+.. todo:: Description of init.
+
+.. argparse::
+    :module: ga4gh.cli
+    :func: getRepoManagerParser
+    :prog: ga4gh_repo
+    :path: init
+    :nodefault:
+
+
+**Examples:**
 
 .. code-block:: bash
 
     $ ga4gh_repo init path/to/repo.db
-
 
 +++++++
 verify
@@ -42,6 +49,15 @@ verify
 
 Performs some consistency checks on the given data repository to ensure it is
 well-formed.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: verify
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
@@ -53,6 +69,15 @@ list
 
 Lists the contents of the given data repository.
 
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: list
+   :nodefault:
+
+**Examples:**
+
 .. code-block:: bash
 
     $ ga4gh_repo list path/to/repo.db
@@ -62,6 +87,15 @@ add-dataset
 +++++++++++
 
 Creates a dataset in the given repository with a given name.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-dataset
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
@@ -73,6 +107,15 @@ remove-dataset
 
 Destroys a dataset in the given repository with a given name.
 
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-dataset
+   :nodefault:
+
+**Examples:**
+
 .. code-block:: bash
 
     $ ga4gh_repo remove-dataset path/to/repo.db aDataset
@@ -83,6 +126,15 @@ add-referenceset
 
 Adds a given reference set file to a given data repository.
 
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-referenceset
+   :nodefault:
+
+**Examples:**
+
 .. code-block:: bash
 
     $ ga4gh_repo add-referenceset path/to/repo.db path/to/aReferenceSet.fa.gz
@@ -92,6 +144,15 @@ remove-referenceset
 ++++++++++++++++++++
 
 Removes a given reference set from a given data repository.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-referenceset
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
@@ -105,6 +166,14 @@ Adds an Ontology Map, which maps identifiers to ontology terms, to
 the repository. Ontology maps are tab delimited files with an
 identifier/term pair per row.
 
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-ontology
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
@@ -116,10 +185,18 @@ remove-ontology
 
 Removes a given Ontology Map from a given data repository.
 
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-ontology
+   :nodefault:
+
+**Examples:**
+
 .. code-block:: bash
 
     $ ga4gh_repo remove-ontology path/to/repo.db aOntoMap
-
 
 +++++++++++++++++
 add-readgroupset
@@ -127,6 +204,15 @@ add-readgroupset
 
 Adds a given read group set file to a given data repository and dataset.  The
 file must have the extension ``.bam``.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-readgroupset
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
@@ -137,6 +223,15 @@ remove-readgroupset
 ++++++++++++++++++++
 
 Removes a read group set from a given data repository and dataset.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-readgroupset
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
@@ -150,6 +245,15 @@ Adds a variant set directory to a given data repository and dataset.  The
 directory should contain file(s) with extension ``.vcf.gz``. If a variant set
 is annotated it will be added as both a variant set and a variant annotation set.
 
+.. argparse::
+    :module: ga4gh.cli
+    :func: getRepoManagerParser
+    :prog: ga4gh_repo
+    :path: add-variantset
+    :nodefault:
+
+**Examples:**
+
 .. code-block:: bash
 
     $ ga4gh_repo add-variantset path/to/repo.db aDataset path/to/aVariantSet
@@ -159,6 +263,15 @@ remove-variantset
 +++++++++++++++++
 
 Removes a variant set from a given data repository and dataset.
+
+.. argparse::
+    :module: ga4gh.cli
+    :func: getRepoManagerParser
+    :prog: ga4gh_repo
+    :path: remove-variantset
+    :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
