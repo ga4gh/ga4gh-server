@@ -33,36 +33,6 @@ def isUnspecified(str):
     return str == "" or str is None
 
 
-def convertVCFPhaseset(vcfPhaseset):
-    """
-    Parses the VCF phaseset string
-    """
-    if vcfPhaseset is not None and vcfPhaseset != ".":
-        phaseset = vcfPhaseset
-    else:
-        phaseset = "*"
-    return phaseset
-
-
-def convertVCFGenotype(vcfGenotype, vcfPhaseset):
-    """
-    Parses the VCF genotype and VCF phaseset strings
-    """
-    phaseset = None
-    if vcfGenotype is not None:
-        delim = "/"
-        if "|" in vcfGenotype:
-            delim = "|"
-            phaseset = convertVCFPhaseset(vcfPhaseset)
-        if "." in vcfGenotype:
-            genotype = [-1]
-        else:
-            genotype = map(int, vcfGenotype.split(delim))
-    else:
-        genotype = [-1]
-    return genotype, phaseset
-
-
 class CallSet(datamodel.DatamodelObject):
     """
     Class representing a CallSet. A CallSet basically represents the
@@ -109,6 +79,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._callSetIdMap = {}
         self._callSetNameMap = {}
         self._callSetIds = []
+        self._callSetIdToIndex = {}
         self._creationTime = None
         self._updatedTime = None
         self._referenceSet = None
@@ -185,6 +156,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._callSetIdMap[callSetId] = callSet
         self._callSetNameMap[callSet.getLocalId()] = callSet
         self._callSetIds.append(callSetId)
+        self._callSetIdToIndex[callSet.getId()] = len(self._callSetIds) - 1
 
     def addCallSetFromName(self, sampleName):
         """
@@ -592,36 +564,25 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         dataUrl, indexFile = dataUrlIndexFilePair
         return pysam.VariantFile(dataUrl, index_filename=indexFile)
 
-    def _convertGaCall(self, recordId, name, pysamCall, genotypeData):
-        compoundId = self.getCallSetId(name)
-        callSet = self.getCallSet(compoundId)
-        call = protocol.Call()
-        call.callSetId = callSet.getId()
-        call.callSetName = callSet.getSampleName()
-        call.sampleId = callSet.getSampleName()
-        # TODO:
-        # NOTE: THE FOLLOWING TWO LINES IS NOT THE INTENDED IMPLEMENTATION,
-        ###########################################
-        call.phaseset = None
-        call.genotype, call.phaseset = convertVCFGenotype(
-            genotypeData, call.phaseset)
-        ###########################################
-
-        # THEY SHOULD BE REPLACED BY THE FOLLOWING, ONCE NEW PYSAM
-        # RELEASE SUPPORTS phaseset. AS WELL AS REMOVING genotypeData
-        # FROM THE FUNCTION CALL
-
-        ###########################################
-        # call.genotype = list(pysamCall.allele_indices)
-        # call.phaseset = pysamCall.phaseset
-        ###########################################
-
-        call.genotypeLikelihood = []
+    def _convertGaCall(self, callSet, pysamCall):
+        phaseset = None
+        if pysamCall.phased:
+            phaseset = str(pysamCall.phased)
+        genotypeLikelihood = []
+        info = {}
         for key, value in pysamCall.iteritems():
             if key == 'GL' and value is not None:
-                call.genotypeLikelihood = list(value)
+                genotypeLikelihood = list(value)
             elif key != 'GT':
-                call.info[key] = _encodeValue(value)
+                info[key] = _encodeValue(value)
+        call = protocol.Call(
+            callSetId=callSet.getId(),
+            callSetName=callSet.getSampleName(),
+            sampleId=callSet.getSampleName(),
+            genotype=list(pysamCall.allele_indices),
+            phaseset=phaseset,
+            info=info,
+            genotypeLikelihood=genotypeLikelihood)
         return call
 
     def convertVariant(self, record, callSetIds):
@@ -647,20 +608,12 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                     value = value.split(',')
                 variant.info[key] = _encodeValue(value)
 
-        # NOTE: THE LABELED LINES SHOULD BE REMOVED ONCE PYSAM SUPPORTS
-        # phaseset
-
-        sampleData = record.__str__().split()[9:]  # REMOVAL
         variant.calls = []
-        sampleIterator = 0  # REMOVAL
-        if callSetIds is not None:
-            for name, call in record.samples.iteritems():
-                if self.getCallSetId(name) in callSetIds:
-                    genotypeData = sampleData[sampleIterator].split(
-                        ":")[0]  # REMOVAL
-                    variant.calls.append(self._convertGaCall(
-                        record.id, name, call, genotypeData))  # REPLACE
-                sampleIterator += 1  # REMOVAL
+        for callSetId in callSetIds:
+            callSet = self.getCallSet(callSetId)
+            pysamCall = record.samples[str(callSet.getSampleName())]
+            variant.calls.append(
+                self._convertGaCall(callSet, pysamCall))
         variant.id = self.getVariantId(variant)
         return variant
 
@@ -1329,7 +1282,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         annotation object using the specified function to convert the
         transcripts.
         """
-        variant = self._variantSet.convertVariant(record, None)
+        variant = self._variantSet.convertVariant(record, [])
         annotation = self._createGaVariantAnnotation()
         annotation.start = variant.start
         annotation.end = variant.end
