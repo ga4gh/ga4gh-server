@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Tests the compound ids
 """
@@ -14,6 +15,7 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
+import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.rna_quantification as rna_quantification
 
 
@@ -26,10 +28,27 @@ class TestCompoundIds(unittest.TestCase):
     """
     Test the compound ids
     """
+    def testUnicode(self):
+        latin1chars = (
+            "¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑ"
+            "ÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ")
+        foo = latin1chars
+        bar = "a unicode string"
+        baz = str("an ascii string")
+        self.assertEqual(type(foo), unicode)
+        self.assertEqual(type(bar), unicode)
+        self.assertEqual(type(baz), str)
+        compoundId = ExampleCompoundId(None, foo, bar, baz)
+        self.assertEqual(type(compoundId.foo), unicode)
+        self.assertEqual(type(compoundId.bar), unicode)
+        self.assertEqual(type(compoundId.baz), unicode)
+        self.assertEqual(type(compoundId.foobar), unicode)
+        self.assertEqual(type(compoundId.foobarbaz), unicode)
+
     def testTopLevelIdsUnique(self):
         datasetId = "a"
         idStr = "b"
-        dataset = datasets.AbstractDataset(datasetId)
+        dataset = datasets.Dataset(datasetId)
         readGroupSet = reads.AbstractReadGroupSet(dataset, idStr)
         variantSet = variants.AbstractVariantSet(dataset, idStr)
         self.assertNotEqual(readGroupSet.getId(), variantSet.getId())
@@ -59,10 +78,12 @@ class TestCompoundIds(unittest.TestCase):
             self.assertEqual(idStr, decoded)
 
     def testEncodeRoundTrip(self):
-        splits = ['"a"', 'b', '"c']
+        # tests both double quote escaping and appropriate handling
+        # of non-ascii characters
+        splits = ['"å"', '字', '"c']
         compoundId = ExampleCompoundId(None, *splits)
-        self.assertEqual(compoundId.foo, '\\"a\\"')
-        self.assertEqual(compoundId.bar, 'b')
+        self.assertEqual(compoundId.foo, '\\"å\\"')
+        self.assertEqual(compoundId.bar, '字')
         self.assertEqual(compoundId.baz, '\\"c')
         obfuscated = str(compoundId)
         parsedCompoundId = ExampleCompoundId.parse(obfuscated)
@@ -151,7 +172,7 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(compoundId.__class__, ExampleCompoundId)
 
     def getDataset(self):
-        return datasets.AbstractDataset("dataset")
+        return datasets.Dataset("dataset")
 
     def getReferenceSet(self):
         return references.AbstractReferenceSet("referenceSet")
@@ -164,6 +185,10 @@ class TestCompoundIds(unittest.TestCase):
 
     def getReadGroup(self):
         return reads.AbstractReadGroup(self.getReadGroupSet(), "readGroup")
+
+    def getFeatureSet(self):
+        return sequenceAnnotations.AbstractFeatureSet(
+            self.getDataset(), "featureSet")
 
     def getRnaQuantification(self):
         return rna_quantification.AbstractRNAQuantification(
@@ -392,7 +417,7 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.experiment, "d")
         self.verifyParseFailure(idStr, datamodel.ExperimentCompoundId)
 
-    def testVariantSetMetadataCompoundId(self):
+    def testVariantSetMetadata(self):
         varSet = self.getVariantSet()
         dataSet = varSet.getParentContainer()
         localId = "metadata_key"
@@ -405,7 +430,7 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.variantSet, varSet.getLocalId())
         self.assertEqual(cid.key, localId)
 
-    def testVariantSetMetadataCompoundIdParse(self):
+    def testVariantSetMetadataParse(self):
         idStr = '["a","vs","b","c"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.VariantSetMetadataCompoundId.parse(obfuscated)
@@ -413,6 +438,28 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.variantSet, "b")
         self.assertEqual(cid.key, "c")
         self.verifyParseFailure(idStr, datamodel.VariantSetMetadataCompoundId)
+
+    def testFeatureSet(self):
+        featureSet = self.getFeatureSet()
+        dataset = featureSet.getParentContainer()
+        localId = "featureSet"
+        cid = datamodel.FeatureSetCompoundId(
+            dataset.getCompoundId(), localId)
+        self.assertRaises(
+            ValueError, datamodel.FeatureSetCompoundId,
+            dataset.getCompoundId())
+        self.assertEqual(cid.dataset, dataset.getLocalId())
+        self.assertEqual(cid.featureSet, featureSet.getLocalId())
+        self.assertEqual(cid.datasetId, dataset.getId())
+        self.assertEqual(cid.featureSetId, featureSet.getId())
+
+    def testFeatureSetParse(self):
+        idStr = '["a","b"]'
+        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        cid = datamodel.FeatureSetCompoundId.parse(obfuscated)
+        self.assertEqual(cid.dataset, "a")
+        self.assertEqual(cid.featureSet, "b")
+        self.verifyParseFailure(idStr, datamodel.FeatureSetCompoundId)
 
     def testRnaQuantification(self):
         rnaQuantification = self.getRnaQuantification()

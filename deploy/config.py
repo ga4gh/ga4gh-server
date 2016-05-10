@@ -1,3 +1,5 @@
+# Configuration file for server, including Flask, see configuration documentation
+# for details
 # This file needs to be copied to /app/ga4gh/config.py by default
 import os
 
@@ -7,5 +9,6 @@ import os
 DATA_SOURCE = os.getenv('GA4GH_DATA_SOURCE', "/ga4gh-example-data")
 
 # If the env variable GA4GH_DEBUG is set, use that. Otherwise, use the empty string (False)
-# Enable with True
+# Enable with True.
+# WARNING: this enables Flask debugging and is insecure.
 DEBUG = os.getenv('GA4GH_DEBUG', "")

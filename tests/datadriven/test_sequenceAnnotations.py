@@ -8,9 +8,11 @@ from __future__ import unicode_literals
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
+import tests.paths as paths
 
 _datasetName = "ds"
 
@@ -107,8 +109,12 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         :param dataPath: string representing full path to the .db file
         :return:
         """
-        self._dataset = datasets.AbstractDataset(_datasetName)
-        self._datarepo = datarepo.FileSystemDataRepository("tests/data")
+        self._dataset = datasets.Dataset(_datasetName)
+        self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
+        self._repo.open(datarepo.MODE_READ)
+        self._sequenceOntologyTermMap = self._repo.getOntologyTermMapByName(
+            "sequence_ontology")
+        self._referenceSet = references.AbstractReferenceSet("test_rs")
         featureSetLocalName = featureSetLocalName[:-3]  # remove '.db'
         self._testData = _testDataForFeatureSetName[featureSetLocalName]
         super(FeatureSetTests, self).__init__(featureSetLocalName, dataPath)
@@ -117,8 +123,12 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         return protocol.FeatureSet
 
     def getDataModelInstance(self, localId, dataPath):
-        return sequenceAnnotations.Gff3DbFeatureSet(
-            self._dataset, localId, dataPath, self._datarepo)
+        featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+            self._dataset, localId)
+        featureSet.setSequenceOntologyTermMap(self._sequenceOntologyTermMap)
+        featureSet.setReferenceSet(self._referenceSet)
+        featureSet.populateFromFile(dataPath)
+        return featureSet
 
     def testGetFeatureById(self):
         idString = _getFeatureCompoundId(

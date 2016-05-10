@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 import hashlib
 import json
-import os
 import random
 
 import pysam
@@ -53,6 +52,43 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         self._referenceIdMap[id_] = reference
         self._referenceNameMap[reference.getLocalId()] = reference
         self._referenceIds.append(id_)
+
+    def setDescription(self, description):
+        """
+        Sets the description to the specified value.
+        """
+        self._description = description
+
+    def setNcbiTaxonId(self, ncbiTaxonId):
+        """
+        Sets the ncbiTaxonId to the specified value. See the documentation
+        for getNcbiTaxonId for details of this field.
+        """
+        self._ncbiTaxonId = ncbiTaxonId
+
+    def setIsDerived(self, isDerived):
+        """
+        Sets the isDerived attribute
+        """
+        self._isDerived = isDerived
+
+    def setAssemblyId(self, assemblyId):
+        """
+        Sets the assemblyId attribute
+        """
+        self._assemblyId = assemblyId
+
+    def setSourceAccessions(self, sourceAccessions):
+        """
+        Sets the sourceAccessions attribute
+        """
+        self._sourceAccessions = sourceAccessions
+
+    def setSourceUri(self, sourceUri):
+        """
+        Sets the sourceUri attribute
+        """
+        self._sourceUri = sourceUri
 
     def getReferences(self):
         """
@@ -148,7 +184,10 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         which do not belong to the modeled species, e.g.  EBV in a
         human reference genome.
         """
-        return self._ncbiTaxonId
+        if self._ncbiTaxonId is not None:
+            return int(self._ncbiTaxonId)
+        else:
+            return None
 
     def toProtocolElement(self):
         """
@@ -186,6 +225,32 @@ class AbstractReference(datamodel.DatamodelObject):
         self._isDerived = False
         self._sourceDivergence = None
         self._ncbiTaxonId = None
+
+    def setMd5checksum(self, md5checksum):
+        """
+        Sets the md5checksum to the specified value.
+        """
+        self._md5checksum = md5checksum
+
+    def setNcbiTaxonId(self, ncbiTaxonId):
+        """
+        Sets the ncbiTaxonId to the specified value. See the documentation
+        for getNcbiTaxonId for details of this field.
+        """
+        self._ncbiTaxonId = ncbiTaxonId
+
+    def setSourceAccessions(self, sourceAccessions):
+        """
+        Sets the sourceAccessions to the specified list. See the documentation
+        for getSourceAccessions for details on this field.
+        """
+        self._sourceAccessions = sourceAccessions
+
+    def setLength(self, length):
+        """
+        Sets the length of this referefnce to the specified value.
+        """
+        self._length = length
 
     def getLength(self):
         """
@@ -243,7 +308,10 @@ class AbstractReference(datamodel.DatamodelObject):
         which do not belong to the modeled species, e.g.  EBV in a
         human reference genome.
         """
-        return self._ncbiTaxonId
+        if self._ncbiTaxonId is not None:
+            return int(self._ncbiTaxonId)
+        else:
+            return None
 
     def getMd5Checksum(self):
         """
@@ -361,75 +429,80 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
     """
     A referenceSet based on data on a file system
     """
-    def __init__(self, localId, dataDir, dataRepository):
+    def __init__(self, localId):
         super(HtslibReferenceSet, self).__init__(localId)
-        self._dataDir = dataDir
-        self._setMetadata()
-        self._scanDataFiles(dataDir, ["*.fa.gz"])
+        self._dataUrl = None
 
-    def _setMetadata(self):
-        metadataFileName = '{}.json'.format(self._dataDir)
-        with open(metadataFileName) as metadataFile:
-            metadata = json.load(metadataFile)
-            try:
-                self._assemblyId = metadata['assemblyId']
-                self._description = metadata['description']
-                self._isDerived = metadata['isDerived']
-                self._ncbiTaxonId = metadata['ncbiTaxonId']
-                self._sourceAccessions = metadata['sourceAccessions']
-                self._sourceUri = metadata['sourceUri']
-            except KeyError as err:
-                raise exceptions.MissingReferenceSetMetadata(
-                    metadataFileName, str(err))
+    def populateFromFile(self, dataUrl):
+        """
+        Populates the instance variables of this ReferencSet from the
+        data URL.
+        """
+        self._dataUrl = dataUrl
+        fastaFile = self.getFastaFile()
+        for referenceName in fastaFile.references:
+            reference = HtslibReference(self, referenceName)
+            # TODO break this up into chunks and calculate the MD5
+            # in bits (say, 64K chunks?)
+            bases = fastaFile.fetch(referenceName)
+            md5checksum = hashlib.md5(bases).hexdigest()
+            reference.setMd5checksum(md5checksum)
+            reference.setLength(len(bases))
+            self.addReference(reference)
 
-    def _addDataFile(self, path):
-        dirname, filename = os.path.split(path)
-        localId = filename.split(".")[0]
-        metadataFileName = os.path.join(dirname, "{}.json".format(localId))
-        with open(metadataFileName) as metadataFile:
-            metadata = json.load(metadataFile)
-        reference = HtslibReference(self, localId, path, metadata)
-        self.addReference(reference)
+    def populateFromRow(self, row):
+        """
+        Populates this reference set from the values in the specified DB
+        row.
+        """
+        self._dataUrl = row[b'dataUrl']
+        self._description = row[b'description']
+        self._assemblyId = row[b'assemblyId']
+        self._isDerived = bool(row[b'isDerived'])
+        self._md5checksum = row[b'md5checksum']
+        self.setNcbiTaxonId(row[b'ncbiTaxonId'])
+        self._sourceAccessions = json.loads(row[b'sourceAccessions'])
+        self._sourceUri = row[b'sourceUri']
+
+    def getDataUrl(self):
+        """
+        Returns the path of the the data URL for this ReferenceSet.
+        """
+        return self._dataUrl
+
+    def openFile(self, dataFile):
+        return pysam.FastaFile(dataFile)
+
+    def getFastaFile(self):
+        """
+        Returns a reference to the Fasta file instance used to read the
+        data in this reference set.
+        """
+        return self.getFileHandle(self._dataUrl)
 
 
 class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
     """
     A reference based on data stored in a file on the file system
     """
-    def __init__(self, parentContainer, localId, dataFile, metadata):
+    def __init__(self, parentContainer, localId):
         super(HtslibReference, self).__init__(parentContainer, localId)
-        self._fastaFilePath = dataFile
-        fastaFile = self.getFileHandle(dataFile)
-        numReferences = len(fastaFile.references)
-        if numReferences != 1:
-            raise exceptions.NotExactlyOneReferenceException(
-                self._fastaFilePath, numReferences)
-        if fastaFile.references[0] != localId:
-            raise exceptions.InconsistentReferenceNameException(
-                self._fastaFilePath)
-        self._length = fastaFile.lengths[0]
-        try:
-            self._md5checksum = metadata["md5checksum"]
-            self._sourceUri = metadata["sourceUri"]
-            self._ncbiTaxonId = metadata["ncbiTaxonId"]
-            self._isDerived = metadata["isDerived"]
-            self._sourceDivergence = metadata["sourceDivergence"]
-            self._sourceAccessions = metadata["sourceAccessions"]
-        except KeyError as err:
-            raise exceptions.MissingReferenceMetadata(dataFile, str(err))
 
-    def getFastaFilePath(self):
+    def populateFromRow(self, row):
         """
-        Returns the fasta file that this reference is derived from.
+        Populates this reference from the values in the specified DB row.
         """
-        return self._fastaFilePath
-
-    def openFile(self, dataFile):
-        return pysam.FastaFile(dataFile)
+        self._length = row[b'length']
+        self._isDerived = bool(row[b'isDerived'])
+        self._md5checksum = row[b'md5checksum']
+        self._ncbiTaxonId = row[b'ncbiTaxonId']
+        self._sourceAccessions = json.loads(row[b'sourceAccessions'])
+        self._sourceDivergence = row[b'sourceDivergence']
+        self._sourceUri = row[b'sourceUri']
 
     def getBases(self, start, end):
         self.checkQueryRange(start, end)
-        fastaFile = self.getFileHandle(self._fastaFilePath)
+        fastaFile = self._parentContainer.getFastaFile()
         localId = self.getLocalId().encode()
         # TODO we should have some error checking here...
         bases = fastaFile.fetch(localId, start, end)

@@ -28,9 +28,10 @@ class TestClientOutput(unittest.TestCase):
     """
     def setUp(self):
         self._maxDiff = None
-        self._dataDir = paths.testDataDir
-        self._dataUrl = "file://{}".format(self._dataDir)
-        dataRepository = datarepo.FileSystemDataRepository(self._dataDir)
+        repoPath = paths.testDataRepo
+        self._dataUrl = "file://{}".format(repoPath)
+        dataRepository = datarepo.SqlDataRepository(repoPath)
+        dataRepository.open(datarepo.MODE_READ)
         self._backend = backend.Backend(dataRepository)
         self._client = client.LocalClient(self._backend)
 
@@ -149,6 +150,16 @@ class TestClientJson(TestClientOutput):
                         [variant], "variants-get", variant.id)
         self.assertGreater(test_executed, 0)
 
+    def testGetVariantAnnotationSet(self):
+        test_executed = 0
+        for dataset in self._client.searchDatasets():
+            for variantSet in self._client.searchVariantSets(dataset.id):
+                for annSet in self._client.searchVariantAnnotationSets(
+                        variantSet.id):
+                    test_executed += self.verifyParsedOutputsEqual(
+                        [annSet], "variantannotationsets-get", annSet.id)
+        self.assertGreater(test_executed, 0)
+
     def testGetVariantSet(self):
         for dataset in self._client.searchDatasets():
             for variantSet in self._client.searchVariantSets(dataset.id):
@@ -177,7 +188,7 @@ class TestClientJson(TestClientOutput):
     def testSearchReads(self):
         test_executed = 0
         start = 0
-        end = 1000
+        end = 1000000
         for dataset in self._client.searchDatasets():
             for readGroupSet in self._client.searchReadGroupSets(dataset.id):
                 for readGroup in readGroupSet.readGroups:
