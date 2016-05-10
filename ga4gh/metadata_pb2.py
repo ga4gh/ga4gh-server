@@ -20,12 +20,64 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/metadata.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x14ga4gh/metadata.proto\x12\x05ga4gh\x1a\x1cgoogle/protobuf/struct.proto\"\xc5\x03\n\nExperiment\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x1b\n\x13message_create_time\x18\x04 \x01(\t\x12\x1b\n\x13message_update_time\x18\x05 \x01(\t\x12\x10\n\x08run_time\x18\x06 \x01(\t\x12\x10\n\x08molecule\x18\x07 \x01(\t\x12\x10\n\x08strategy\x18\x08 \x01(\t\x12\x11\n\tselection\x18\t \x01(\t\x12\x0f\n\x07library\x18\n \x01(\t\x12\x16\n\x0elibrary_layout\x18\x0b \x01(\t\x12\x18\n\x10instrument_model\x18\x0c \x01(\t\x12\x1c\n\x14instrument_data_file\x18\r \x01(\t\x12\x19\n\x11sequencing_center\x18\x0e \x01(\t\x12\x15\n\rplatform_unit\x18\x0f \x01(\t\x12)\n\x04info\x18\x10 \x03(\x0b\x32\x1b.ga4gh.Experiment.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"8\n\x07\x44\x61taset\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x14ga4gh/metadata.proto\x12\x05ga4gh\x1a\x1cgoogle/protobuf/struct.proto\"U\n\x0cOntologyTerm\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04term\x18\x02 \x01(\t\x12\x13\n\x0bsource_name\x18\x03 \x01(\t\x12\x16\n\x0esource_version\x18\x04 \x01(\t\"\xc5\x03\n\nExperiment\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x1b\n\x13message_create_time\x18\x04 \x01(\t\x12\x1b\n\x13message_update_time\x18\x05 \x01(\t\x12\x10\n\x08run_time\x18\x06 \x01(\t\x12\x10\n\x08molecule\x18\x07 \x01(\t\x12\x10\n\x08strategy\x18\x08 \x01(\t\x12\x11\n\tselection\x18\t \x01(\t\x12\x0f\n\x07library\x18\n \x01(\t\x12\x16\n\x0elibrary_layout\x18\x0b \x01(\t\x12\x18\n\x10instrument_model\x18\x0c \x01(\t\x12\x1c\n\x14instrument_data_file\x18\r \x01(\t\x12\x19\n\x11sequencing_center\x18\x0e \x01(\t\x12\x15\n\rplatform_unit\x18\x0f \x01(\t\x12)\n\x04info\x18\x10 \x03(\x0b\x32\x1b.ga4gh.Experiment.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"8\n\x07\x44\x61taset\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\"\xff\x01\n\x08\x41nalysis\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x18\n\x10\x63reate_date_time\x18\x04 \x01(\t\x12\x18\n\x10update_date_time\x18\x05 \x01(\t\x12\x0c\n\x04type\x18\x06 \x01(\t\x12\x10\n\x08software\x18\x07 \x03(\t\x12\'\n\x04info\x18\x08 \x03(\x0b\x32\x19.ga4gh.Analysis.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
+
+
+_ONTOLOGYTERM = _descriptor.Descriptor(
+  name='OntologyTerm',
+  full_name='ga4gh.OntologyTerm',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='ga4gh.OntologyTerm.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='term', full_name='ga4gh.OntologyTerm.term', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='source_name', full_name='ga4gh.OntologyTerm.source_name', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='source_version', full_name='ga4gh.OntologyTerm.source_version', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=61,
+  serialized_end=146,
+)
 
 
 _EXPERIMENT_INFOENTRY = _descriptor.Descriptor(
@@ -61,8 +113,8 @@ _EXPERIMENT_INFOENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=444,
-  serialized_end=515,
+  serialized_start=531,
+  serialized_end=602,
 )
 
 _EXPERIMENT = _descriptor.Descriptor(
@@ -196,8 +248,8 @@ _EXPERIMENT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=62,
-  serialized_end=515,
+  serialized_start=149,
+  serialized_end=602,
 )
 
 
@@ -241,15 +293,144 @@ _DATASET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=517,
-  serialized_end=573,
+  serialized_start=604,
+  serialized_end=660,
+)
+
+
+_ANALYSIS_INFOENTRY = _descriptor.Descriptor(
+  name='InfoEntry',
+  full_name='ga4gh.Analysis.InfoEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='ga4gh.Analysis.InfoEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='ga4gh.Analysis.InfoEntry.value', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=531,
+  serialized_end=602,
+)
+
+_ANALYSIS = _descriptor.Descriptor(
+  name='Analysis',
+  full_name='ga4gh.Analysis',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='id', full_name='ga4gh.Analysis.id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='name', full_name='ga4gh.Analysis.name', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='description', full_name='ga4gh.Analysis.description', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='create_date_time', full_name='ga4gh.Analysis.create_date_time', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='update_date_time', full_name='ga4gh.Analysis.update_date_time', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='type', full_name='ga4gh.Analysis.type', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='software', full_name='ga4gh.Analysis.software', index=6,
+      number=7, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='info', full_name='ga4gh.Analysis.info', index=7,
+      number=8, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[_ANALYSIS_INFOENTRY, ],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=663,
+  serialized_end=918,
 )
 
 _EXPERIMENT_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
 _EXPERIMENT_INFOENTRY.containing_type = _EXPERIMENT
 _EXPERIMENT.fields_by_name['info'].message_type = _EXPERIMENT_INFOENTRY
+_ANALYSIS_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
+_ANALYSIS_INFOENTRY.containing_type = _ANALYSIS
+_ANALYSIS.fields_by_name['info'].message_type = _ANALYSIS_INFOENTRY
+DESCRIPTOR.message_types_by_name['OntologyTerm'] = _ONTOLOGYTERM
 DESCRIPTOR.message_types_by_name['Experiment'] = _EXPERIMENT
 DESCRIPTOR.message_types_by_name['Dataset'] = _DATASET
+DESCRIPTOR.message_types_by_name['Analysis'] = _ANALYSIS
+
+OntologyTerm = _reflection.GeneratedProtocolMessageType('OntologyTerm', (_message.Message,), dict(
+  DESCRIPTOR = _ONTOLOGYTERM,
+  __module__ = 'ga4gh.metadata_pb2'
+  # @@protoc_insertion_point(class_scope:ga4gh.OntologyTerm)
+  ))
+_sym_db.RegisterMessage(OntologyTerm)
 
 Experiment = _reflection.GeneratedProtocolMessageType('Experiment', (_message.Message,), dict(
 
@@ -273,7 +454,24 @@ Dataset = _reflection.GeneratedProtocolMessageType('Dataset', (_message.Message,
   ))
 _sym_db.RegisterMessage(Dataset)
 
+Analysis = _reflection.GeneratedProtocolMessageType('Analysis', (_message.Message,), dict(
+
+  InfoEntry = _reflection.GeneratedProtocolMessageType('InfoEntry', (_message.Message,), dict(
+    DESCRIPTOR = _ANALYSIS_INFOENTRY,
+    __module__ = 'ga4gh.metadata_pb2'
+    # @@protoc_insertion_point(class_scope:ga4gh.Analysis.InfoEntry)
+    ))
+  ,
+  DESCRIPTOR = _ANALYSIS,
+  __module__ = 'ga4gh.metadata_pb2'
+  # @@protoc_insertion_point(class_scope:ga4gh.Analysis)
+  ))
+_sym_db.RegisterMessage(Analysis)
+_sym_db.RegisterMessage(Analysis.InfoEntry)
+
 
 _EXPERIMENT_INFOENTRY.has_options = True
 _EXPERIMENT_INFOENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
+_ANALYSIS_INFOENTRY.has_options = True
+_ANALYSIS_INFOENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
 # @@protoc_insertion_point(module_scope)

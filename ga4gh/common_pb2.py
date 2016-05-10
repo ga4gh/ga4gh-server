@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/common.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x12ga4gh/common.proto\x12\x05ga4gh\"2\n\x0bGAException\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x12\n\nerror_code\x18\x02 \x01(\x03\"S\n\x08Position\x12\x16\n\x0ereference_name\x18\x01 \x01(\t\x12\x10\n\x08position\x18\x02 \x01(\x03\x12\x1d\n\x06strand\x18\x03 \x01(\x0e\x32\r.ga4gh.Strand\"K\n\x12\x45xternalIdentifier\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x12\n\nidentifier\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\"\xa2\x02\n\tCigarUnit\x12-\n\toperation\x18\x01 \x01(\x0e\x32\x1a.ga4gh.CigarUnit.Operation\x12\x18\n\x10operation_length\x18\x02 \x01(\x03\x12\x1a\n\x12reference_sequence\x18\x03 \x01(\t\"\xaf\x01\n\tOperation\x12\x19\n\x15OPERATION_UNSPECIFIED\x10\x00\x12\x13\n\x0f\x41LIGNMENT_MATCH\x10\x01\x12\n\n\x06INSERT\x10\x02\x12\n\n\x06\x44\x45LETE\x10\x03\x12\x08\n\x04SKIP\x10\x04\x12\r\n\tCLIP_SOFT\x10\x05\x12\r\n\tCLIP_HARD\x10\x06\x12\x07\n\x03PAD\x10\x07\x12\x12\n\x0eSEQUENCE_MATCH\x10\x08\x12\x15\n\x11SEQUENCE_MISMATCH\x10\t*@\n\x06Strand\x12\x16\n\x12STRAND_UNSPECIFIED\x10\x00\x12\x0e\n\nNEG_STRAND\x10\x01\x12\x0e\n\nPOS_STRAND\x10\x02\x62\x06proto3')
+  serialized_pb=_b('\n\x12ga4gh/common.proto\x12\x05ga4gh\"2\n\x0bGAException\x12\x12\n\nerror_code\x18\x01 \x01(\x05\x12\x0f\n\x07message\x18\x02 \x01(\t\"S\n\x08Position\x12\x16\n\x0ereference_name\x18\x01 \x01(\t\x12\x10\n\x08position\x18\x02 \x01(\x03\x12\x1d\n\x06strand\x18\x03 \x01(\x0e\x32\r.ga4gh.Strand\"K\n\x12\x45xternalIdentifier\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x12\n\nidentifier\x18\x02 \x01(\t\x12\x0f\n\x07version\x18\x03 \x01(\t\"\xa2\x02\n\tCigarUnit\x12-\n\toperation\x18\x01 \x01(\x0e\x32\x1a.ga4gh.CigarUnit.Operation\x12\x18\n\x10operation_length\x18\x02 \x01(\x03\x12\x1a\n\x12reference_sequence\x18\x03 \x01(\t\"\xaf\x01\n\tOperation\x12\x19\n\x15OPERATION_UNSPECIFIED\x10\x00\x12\x13\n\x0f\x41LIGNMENT_MATCH\x10\x01\x12\n\n\x06INSERT\x10\x02\x12\n\n\x06\x44\x45LETE\x10\x03\x12\x08\n\x04SKIP\x10\x04\x12\r\n\tCLIP_SOFT\x10\x05\x12\r\n\tCLIP_HARD\x10\x06\x12\x07\n\x03PAD\x10\x07\x12\x12\n\x0eSEQUENCE_MATCH\x10\x08\x12\x15\n\x11SEQUENCE_MISMATCH\x10\t*@\n\x06Strand\x12\x16\n\x12STRAND_UNSPECIFIED\x10\x00\x12\x0e\n\nNEG_STRAND\x10\x01\x12\x0e\n\nPOS_STRAND\x10\x02\x62\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -119,16 +119,16 @@ _GAEXCEPTION = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='message', full_name='ga4gh.GAException.message', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      name='error_code', full_name='ga4gh.GAException.error_code', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='error_code', full_name='ga4gh.GAException.error_code', index=1,
-      number=2, type=3, cpp_type=2, label=1,
-      has_default_value=False, default_value=0,
+      name='message', full_name='ga4gh.GAException.message', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
