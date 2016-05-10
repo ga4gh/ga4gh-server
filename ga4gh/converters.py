@@ -166,7 +166,7 @@ class SamLine(object):
         if read.number_reads == 2:
             flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.READ_PAIRED)
-        if read.proper_placement:
+        if not read.improper_placement:
             flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.READ_PROPER_PAIR)
         if read.alignment is None:
