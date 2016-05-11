@@ -12,6 +12,7 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.rna_quantification as rna_quantification
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
+import tests.paths as paths
 
 
 _datasetName = "ds"
@@ -77,15 +78,16 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
     built by the rna_quantification.RNASeqResult object.
     """
     def __init__(self, rnaQuantificationLocalId, baseDir):
-        self._dataset = datasets.AbstractDataset(_datasetName)
-        self._datarepo = datarepo.FileSystemDataRepository("tests/data")
+        self._dataset = datasets.Dataset(_datasetName)
+        self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
+        self._repo.open(datarepo.MODE_READ)
         rnaQuantificationId = rnaQuantificationLocalId[:-3]  # remove '.db'
         super(RnaQuantificationTest, self).__init__(
             rnaQuantificationId, baseDir)
 
     def getDataModelInstance(self, localId, dataPath):
         return rna_quantification.RNASeqResult(
-            self._dataset, localId, dataPath, self._datarepo)
+            self._dataset, localId, dataPath)
 
     def getProtocolClass(self):
         return protocol.RnaQuantification
