@@ -132,12 +132,12 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         if self._testData["sampleParentId"] is not None:
             self.assertEqual(
                 datamodel.FeatureCompoundId.parse(
-                    feature.parentId).featureId,
+                    feature.parent_id).featureId,
                 str(self._testData["sampleParentId"]))
         else:
-            self.assertEqual(feature.parentId, '')
+            self.assertEqual(feature.parent_id, '')
         self.assertEqual(
-            feature.referenceName,
+            feature.reference_name,
             self._testData["referenceName"])
         self.assertEqual(
             feature.start,

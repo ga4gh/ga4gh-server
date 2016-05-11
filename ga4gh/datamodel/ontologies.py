@@ -60,9 +60,9 @@ class FileSystemOntology(object):
         term.term = name
         term.id = self.getId(name)
         # TODO set source name smarter
-        term.sourceName = self._sourceName
+        term.source_name = self._sourceName
         # TODO how do we get the right version?
-        term.sourceVersion = None
+        term.source_version = ""
         return term
 
     def getGaTermById(self, id_):

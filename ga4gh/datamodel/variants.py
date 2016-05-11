@@ -365,8 +365,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
 
     def getAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.createDateTime = self._creationTime
-        analysis.updateDateTime = self._updatedTime
+        analysis.create_date_time = self._creationTime
+        analysis.update_date_time = self._updatedTime
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -379,7 +379,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         Converts this VariantAnnotationSet into its GA4GH protocol equivalent.
         """
         protocolElement = protocol.VariantAnnotationSet()
-        protocolElement.variantSetId = self._variantSet.getId()
+        protocolElement.variantSet_id = self._variantSet.getId()
         protocolElement.id = self.getId()
         protocolElement.name = self.getLocalId()
         protocolElement.analysis = self.getAnalysis()
@@ -415,7 +415,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         ann.variantId = variant.id
         ann.start = variant.start
         ann.end = variant.end
-        ann.createDateTime = self._creationTime
+        ann.create_date_time = self._creationTime
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (0,5)
         ann.transcriptEffects = []
@@ -510,7 +510,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantSet):
         """
         Produces an MD5 hash of the gaVariant and gaVariantAnnotation objects
         """
-        treffs = [treff.id for treff in gaVariantAnnotation.transcriptEffects]
+        treffs = [treff.id for treff in gaVariantAnnotation.transcript_effects]
         return hashlib.md5(
             "{}\t{}\t{}\t".format(
                 gaVariant.referenceBases, tuple(gaVariant.alternateBases),
@@ -1017,16 +1017,16 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
          cdnaPos, cdsPos, protPos, aminos, codons,
          existingVar, distance, strand, symbolSource,
          hgncId, hgvsOffset) = annStr.split('|')
-        effect.alternateBases = alt
+        effect.alternate_bases = alt
         effect.effects = self.convertSeqOntology(effects)
-        effect.featureId = featureId
-        effect.hgvsAnnotation = protocol.HGVSAnnotation()
-        effect.hgvsAnnotation.genomic = hgvsG
-        effect.hgvsAnnotation.transcript = hgvsC
+        effect.feature_id = featureId
+        effect.hgvs_annotation = protocol.HGVSAnnotation()
+        effect.hgvs_annotation.genomic = hgvsG
+        effect.hgvs_annotation.transcript = hgvsC
         effect.hgvsAnnotation.protein = hgvsP
         self.addLocations(effect, protPos, cdnaPos)
         effect.id = self.getTranscriptEffectId(effect)
-        effect.analysisResults = []
+        effect.analysis_results.clear()
         return effect
 
     def convertTranscriptEffectSnpEff(self, annStr, hgvsG):
@@ -1082,8 +1082,8 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         annotation = self._createGaVariantAnnotation()
         annotation.start = variant.start
         annotation.end = variant.end
-        annotation.createDateTime = self._annotationCreatedDateTime
-        annotation.variantId = variant.id
+        annotation.create_date_time = self._annotationCreatedDateTime
+        annotation.variant_id = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         transcriptEffects = []
         hgvsG = record.info.get('HGVS.g'.encode())
@@ -1099,7 +1099,7 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
                     self.convertTranscriptEffectCSQ(
                         ann, hgvsG))
 
-        annotation.transcriptEffects = transcriptEffects
+        annotation.transcript_effects.CopyFrom(transcriptEffects)
         annotation.id = self.getVariantAnnotationId(variant, annotation)
         return annotation
 
@@ -1158,21 +1158,22 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
             for contentKey, value in content:
                 key = "{0}.{1}".format(prefix, value.name)
                 if key not in analysis.info:
-                    analysis.info[key] = []
+                    analysis.info[key].Clear()
                 if value.description is not None:
-                    analysis.info[key].append(value.description)
-        analysis.createDateTime = self._creationTime
-        analysis.updateDateTime = self._updatedTime
+                    analysis.info[
+                        key].values.add().string_value = value.description
+        analysis.create_date_time = self._creationTime
+        analysis.update_date_time = self._updatedTime
         for r in metadata.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:
                 if r.key not in analysis.info:
-                    analysis.info[r.key] = []
-                analysis.info[r.key].append(str(r.value))
+                    analysis.info[r.key].Clear()
+                analysis.info[r.key].values.add().string_value = str(r.value)
 
             if r.key == "created":
                 # TODO handle more date formats
-                analysis.createDateTime = datetime.datetime.strptime(
+                analysis.create_date_time = datetime.datetime.strptime(
                     r.value, "%Y-%m-%d").isoformat() + "Z"
             if r.key == "software":
                 analysis.software.append(r.value)
@@ -1194,9 +1195,9 @@ class HtslibVariantAnnotationSet(HtslibVariantSet):
         """
         protocolElement = protocol.VariantAnnotationSet()
         protocolElement.id = self.getId()
-        protocolElement.variantSetId = str(self._variantSetId)
+        protocolElement.variantSet_id = str(self._variantSetId)
         protocolElement.name = self.getLocalId()
-        protocolElement.analysis = self.getAnalysis()
+        protocolElement.analysis.CopyFrom(self.getAnalysis())
         return protocolElement
 
     def getTranscriptEffectId(self, gaTranscriptEffect):
