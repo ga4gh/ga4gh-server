@@ -112,8 +112,7 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         self._dataset = datasets.Dataset(_datasetName)
         self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
         self._repo.open(datarepo.MODE_READ)
-        self._sequenceOntologyTermMap = self._repo.getOntologyTermMapByName(
-            "sequence_ontology")
+        self._ontology = self._repo.getOntologyByName(paths.ontologyName)
         self._referenceSet = references.AbstractReferenceSet("test_rs")
         featureSetLocalName = featureSetLocalName[:-3]  # remove '.db'
         self._testData = _testDataForFeatureSetName[featureSetLocalName]
@@ -125,7 +124,7 @@ class FeatureSetTests(datadriven.DataDrivenTest):
     def getDataModelInstance(self, localId, dataPath):
         featureSet = sequenceAnnotations.Gff3DbFeatureSet(
             self._dataset, localId)
-        featureSet.setSequenceOntologyTermMap(self._sequenceOntologyTermMap)
+        featureSet.setOntology(self._ontology)
         featureSet.setReferenceSet(self._referenceSet)
         featureSet.populateFromFile(dataPath)
         return featureSet

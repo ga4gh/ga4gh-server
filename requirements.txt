@@ -16,6 +16,7 @@ pycrypto==2.6.1
 Mako==1.0.4
 Beaker==1.8.0
 funcsigs==0.4
+goatools==0.6.4
 alabaster==0.7.7
 cryptography==1.3.1
 idna==2.1
