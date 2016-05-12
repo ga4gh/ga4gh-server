@@ -2110,6 +2110,13 @@ class RepoManager(object):
         runMethod()
 
 
+def getRepoManagerParser():
+    """
+    Used by sphinx.argparse.
+    """
+    return RepoManager.getParser()
+
+
 def repoExitError(message):
     """
     Exits the repo manager with error status.
