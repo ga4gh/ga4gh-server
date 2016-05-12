@@ -13,6 +13,7 @@ import vcf
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -28,6 +29,34 @@ def testVariantSets():
         yield test
 
 
+def convertVCFPhaseset(vcfPhaseset):
+    """
+    Parses the VCF phaseset string
+    """
+    if vcfPhaseset is not None and vcfPhaseset != ".":
+        phaseset = vcfPhaseset
+    else:
+        phaseset = "*"
+    return phaseset
+
+
+def convertVCFGenotype(vcfGenotype):
+    """
+    Parses the VCF genotype
+    """
+    if vcfGenotype is not None:
+        delim = "/"
+        if "|" in vcfGenotype:
+            delim = "|"
+        if "." in vcfGenotype:
+            genotype = [-1]
+        else:
+            genotype = map(int, vcfGenotype.split(delim))
+    else:
+        genotype = [-1]
+    return genotype
+
+
 class VariantSetTest(datadriven.DataDrivenTest):
     """
     Data driven test class for variant sets. Builds an alternative model of
@@ -35,7 +64,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
     built by the variants.VariantSet object.
     """
     def __init__(self, variantSetId, baseDir):
-        self._dataset = datasets.AbstractDataset("ds")
+        self._dataset = datasets.Dataset("ds")
         super(VariantSetTest, self).__init__(variantSetId, baseDir)
         self._variantRecords = []
         self._referenceNames = set()
@@ -62,8 +91,11 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self._variantRecords.append(record)
 
     def getDataModelInstance(self, localId, dataPath):
-        return variants.HtslibVariantSet(
-            self._dataset, localId, dataPath, None)
+        variantSet = variants.HtslibVariantSet(self._dataset, localId)
+        variantSet.populateFromDirectory(dataPath)
+        referenceSet = references.AbstractReferenceSet("test")
+        variantSet.setReferenceSet(referenceSet)
+        return variantSet
 
     def getProtocolClass(self):
         return protocol.VariantSet
@@ -97,15 +129,20 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 self.assertEqual(len(gaObjectInfo[key]), 1)
 
     def _verifyVariantCallEqual(self, gaCall, pyvcfCall):
-        genotype, phaseset = variants.convertVCFGenotype(
-            pyvcfCall.data.GT, pyvcfCall.phased)
+        genotype = convertVCFGenotype(pyvcfCall.data.GT)
         # callSetId information is not available in pyvcf.model._Call
         self.assertEqual(gaCall.callSetName, pyvcfCall.sample)
         self.assertEqual(gaCall.genotype, genotype)
-        phaseset = None
-        if pyvcfCall.phased:
-            phaseset = "*"
-        self.assertEqual(gaCall.phaseset, phaseset)
+        if len(pyvcfCall.data.GT.split("/")) == 1:
+            # corner case when there is only a single genotype pyvcf
+            # and pysam disagree
+            self.assertTrue(gaCall.phaseset)
+        else:
+            # Compare our value for phased with pyvcf
+            phaseset = None
+            if pyvcfCall.phased:
+                phaseset = str(pyvcfCall.phased)
+            self.assertEqual(gaCall.phaseset, phaseset)
         if len(gaCall.genotypeLikelihood) > 0:
             self._compareTwoListFloats(
                 gaCall.genotypeLikelihood, pyvcfCall.data.GL)
@@ -400,7 +437,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 md5 = self._hashVariant(variant)
                 compoundId = datamodel.VariantCompoundId(
                     variantSet.getCompoundId(), referenceName,
-                    variant.start, md5)
+                    str(variant.start), md5)
                 gotVariant = variantSet.getVariant(compoundId)
                 self.assertEqual(str(compoundId), gotVariant.id)
 
@@ -408,7 +445,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 wrongStart = variant.end
                 compoundId = datamodel.VariantCompoundId(
                     variantSet.getCompoundId(), referenceName,
-                    wrongStart, md5)
+                    str(wrongStart), md5)
                 try:
                     gotVariant = variantSet.getVariant(compoundId)
                     self.assertNotEqual(variant.start, gotVariant.start)
@@ -418,14 +455,14 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 # negative test: change reference name
                 compoundId = datamodel.VariantCompoundId(
                     variantSet.getCompoundId(), "wrong reference name",
-                    variant.start, md5)
+                    str(variant.start), md5)
                 with self.assertRaises(exceptions.ObjectNotFoundException):
                     variantSet.getVariant(compoundId)
 
                 # negative test: change hash
                 compoundId = datamodel.VariantCompoundId(
                     variantSet.getCompoundId(), referenceName,
-                    variant.start, "wrong hash")
+                    str(variant.start), "wrong hash")
                 with self.assertRaises(exceptions.ObjectNotFoundException):
                     variantSet.getVariant(compoundId)
 

@@ -5,39 +5,49 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import fnmatch
-import json
-import os
-
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.rna_quantification as rnaQuantification
 
 
-class AbstractDataset(datamodel.DatamodelObject):
+class Dataset(datamodel.DatamodelObject):
     """
     The base class of datasets containing variants and reads
     """
     compoundIdClass = datamodel.DatasetCompoundId
 
     def __init__(self, localId):
-        super(AbstractDataset, self).__init__(None, localId)
+        super(Dataset, self).__init__(None, localId)
+        self._description = None
         self._variantSetIds = []
         self._variantSetIdMap = {}
+        self._variantSetNameMap = {}
         self._featureSetIds = []
         self._featureSetIdMap = {}
+        self._featureSetNameMap = {}
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
-        self._variantAnnotationSetIds = []
-        self._variantAnnotationSetIdMap = {}
-        self._description = None
         self._rnaQuantificationIds = []
         self._rnaQuantificationIdMap = {}
+
+    def populateFromRow(self, row):
+        """
+        Populates the instance variables of this Dataset from the
+        specified database row.
+        """
+        self._description = row[b'description']
+
+    def setDescription(self, description):
+        """
+        Sets the description for this dataset to the specified value.
+        """
+        self._description = description
 
     def addVariantSet(self, variantSet):
         """
@@ -45,15 +55,8 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         id_ = variantSet.getId()
         self._variantSetIdMap[id_] = variantSet
+        self._variantSetNameMap[variantSet.getLocalId()] = variantSet
         self._variantSetIds.append(id_)
-
-    def addVariantAnnotationSet(self, variantAnnotationSet):
-        """
-        Adds the specified variantAnnotationSet to this dataset.
-        """
-        id_ = variantAnnotationSet.getId()
-        self._variantAnnotationSetIdMap[id_] = variantAnnotationSet
-        self._variantAnnotationSetIds.append(id_)
 
     def addFeatureSet(self, featureSet):
         """
@@ -62,6 +65,8 @@ class AbstractDataset(datamodel.DatamodelObject):
         id_ = featureSet.getId()
         self._featureSetIdMap[id_] = featureSet
         self._featureSetIds.append(id_)
+        name = featureSet.getLocalId()
+        self._featureSetNameMap[name] = featureSet
 
     def addReadGroupSet(self, readGroupSet):
         """
@@ -99,27 +104,6 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return len(self._variantSetIds)
 
-    def getVariantAnnotationSets(self):
-        """
-        Returns the list of VariantAnnotationSets in this dataset
-        """
-        return [self._variantAnnotationSetIdMap[id_] for id_ in
-                self._variantAnnotationSetIds]
-
-    def getVariantAnnotationSet(self, id_):
-        """
-        Returns the AnnotationSet in this dataset with the specified 'id'
-        """
-        if id_ not in self._variantAnnotationSetIdMap:
-            raise exceptions.AnnotationSetNotFoundException(id_)
-        return self._variantAnnotationSetIdMap[id_]
-
-    def getNumVariantAnnotationSets(self):
-        """
-        Returns the number of variant annotation sets in this dataset.
-        """
-        return len(self._variantAnnotationSetIds)
-
     def getVariantSet(self, id_):
         """
         Returns the VariantSet with the specified name, or raises a
@@ -135,13 +119,14 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         return self._variantSetIdMap[self._variantSetIds[index]]
 
-    def getVariantAnnotationSetByIndex(self, index):
+    def getVariantSetByName(self, name):
         """
-        Returns the variant annotation set at the specified index in this
-        dataset.
+        Returns a VariantSet with the specified name, or raises a
+        VariantSetNameNotFoundException if it does not exist.
         """
-        return self._variantAnnotationSetIdMap[
-            self._variantAnnotationSetIds[index]]
+        if name not in self._variantSetNameMap:
+            raise exceptions.VariantSetNameNotFoundException(name)
+        return self._variantSetNameMap[name]
 
     def getFeatureSets(self):
         """
@@ -157,12 +142,21 @@ class AbstractDataset(datamodel.DatamodelObject):
 
     def getFeatureSet(self, id_):
         """
-        Returns the FeatureSet with the specified name, or raises a
+        Returns the FeatureSet with the specified id, or raises a
         FeatureSetNotFoundException otherwise.
         """
         if id_ not in self._featureSetIdMap:
             raise exceptions.FeatureSetNotFoundException(id_)
         return self._featureSetIdMap[id_]
+
+    def getFeatureSetByName(self, name):
+        """
+        Returns the FeatureSet with the specified name, or raises
+        an exception otherwise.
+        """
+        if name not in self._featureSetNameMap:
+            raise exceptions.FeatureSetNameNotFoundException(name)
+        return self._featureSetNameMap[name]
 
     def getFeatureSetByIndex(self, index):
         """
@@ -241,7 +235,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         return self._rnaQuantificationIdMap[id_]
 
 
-class SimulatedDataset(AbstractDataset):
+class SimulatedDataset(Dataset):
     """
     A simulated dataset
     """
@@ -252,16 +246,20 @@ class SimulatedDataset(AbstractDataset):
             numAlignments=1, numFeatureSets=1, numRnaQuants=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+        # TODO create a simulated OntologyTermMap
+        sequenceOntology = ontologies.OntologyTermMap("sequence_ontology")
+        # TODO add some terms into the simulated sequence ontology
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)
             seed = randomSeed + i
             variantSet = variants.SimulatedVariantSet(
-                self, localId, seed, numCalls, variantDensity)
+                self, referenceSet, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
-                self, "simVas{}".format(i), variantSet)
-            self.addVariantAnnotationSet(variantAnnotationSet)
+                variantSet, "simVas{}".format(i), seed)
+            variantAnnotationSet.setSequenceOntologyTermMap(sequenceOntology)
+            variantSet.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
             localId = 'simRgs{}'.format(i)
@@ -276,6 +274,7 @@ class SimulatedDataset(AbstractDataset):
             seed = randomSeed + i
             featureSet = sequenceAnnotations.SimulatedFeatureSet(
                 self, localId, seed)
+            featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
         # RnaQuantifications
         for i in range(numRnaQuants):
@@ -283,78 +282,3 @@ class SimulatedDataset(AbstractDataset):
             rnaQuant = rnaQuantification.SimulatedRNASeqResult(
                 self, localId)
             self.addRnaQuantification(rnaQuant)
-
-
-class FileSystemDataset(AbstractDataset):
-    """
-    A dataset based on the file system
-    """
-    variantsDirName = "variants"
-    readsDirName = "reads"
-    featuresDirName = "sequenceAnnotations"
-    rnaDirName = "rnaQuant"
-
-    def __init__(self, localId, dataDir, dataRepository):
-        super(FileSystemDataset, self).__init__(localId)
-        self._dataDir = dataDir
-        self._setMetadata()
-
-        # Variants
-        variantSetDir = os.path.join(dataDir, self.variantsDirName)
-        for localId in os.listdir(variantSetDir):
-            relativePath = os.path.join(variantSetDir, localId)
-            if os.path.isdir(relativePath):
-                variantSet = variants.HtslibVariantSet(
-                    self, localId, relativePath, dataRepository)
-                self.addVariantSet(variantSet)
-            # Variant annotations sets
-                if variantSet.isAnnotated(relativePath):
-                    variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                            self, localId, relativePath, dataRepository,
-                            variantSet)
-                    self.addVariantAnnotationSet(variantAnnotationSet)
-
-        # Reads
-        readGroupSetDir = os.path.join(dataDir, self.readsDirName)
-        for filename in os.listdir(readGroupSetDir):
-            if fnmatch.fnmatch(filename, '*.bam'):
-                localId, _ = os.path.splitext(filename)
-                bamPath = os.path.join(readGroupSetDir, filename)
-                readGroupSet = reads.HtslibReadGroupSet(
-                    self, localId, bamPath, dataRepository)
-                self.addReadGroupSet(readGroupSet)
-
-        # Sequence Annotations
-        featureSetDir = os.path.join(dataDir, self.featuresDirName)
-        for filename in os.listdir(featureSetDir):
-            if fnmatch.fnmatch(filename, '*.db'):
-                localId, _ = os.path.splitext(filename)
-                fullPath = os.path.join(featureSetDir, filename)
-                featureSet = sequenceAnnotations.Gff3DbFeatureSet(
-                    self, localId, fullPath, dataRepository)
-                self.addFeatureSet(featureSet)
-
-        # Rna Quantification
-        rnaQuantDir = os.path.join(dataDir, self.rnaDirName)
-        for filename in os.listdir(rnaQuantDir):
-            if fnmatch.fnmatch(filename, '*.db'):
-                localId, _ = os.path.splitext(filename)
-                rnaPath = os.path.join(rnaQuantDir, filename)
-                with rnaQuantification.SqliteRNABackend(rnaPath) as dataSource:
-                    rnaQuantsInDB = dataSource.searchRnaQuantificationsInDb()
-                for rnaQuantData in rnaQuantsInDB:
-                    localId = rnaQuantData["name"]
-                    rnaQuant = rnaQuantification.RNASeqResult(
-                        self, localId, rnaPath, dataRepository)
-                    self.addRnaQuantification(rnaQuant)
-
-    def _setMetadata(self):
-        metadataFileName = '{}.json'.format(self._dataDir)
-        if os.path.isfile(metadataFileName):
-            with open(metadataFileName) as metadataFile:
-                metadata = json.load(metadataFile)
-                try:
-                    self._description = metadata['description']
-                except KeyError as err:
-                    raise exceptions.MissingDatasetMetadataException(
-                        metadataFileName, str(err))

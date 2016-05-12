@@ -34,12 +34,14 @@ class BaseConfig(object):
 
     FILE_HANDLE_CACHE_MAX_SIZE = 50
 
+    LANDING_MESSAGE_HTML = "landing_message.html"
+
 
 class DevelopmentConfig(BaseConfig):
     """
     Configuration used for development.
     """
-    DATA_SOURCE = "ga4gh-example-data"
+    DATA_SOURCE = "ga4gh-example-data/repo.db"
     DEBUG = True
 
 

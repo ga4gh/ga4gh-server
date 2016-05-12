@@ -159,11 +159,9 @@ class RNASeqResult(AbstractRNAQuantification):
     Class representing a single RnaQuantification in the GA4GH data model.
     """
 
-    def __init__(self, parentContainer, localId, rnaQuantDataPath,
-                 dataRepository):
+    def __init__(self, parentContainer, localId, rnaQuantDataPath):
         super(RNASeqResult, self).__init__(parentContainer, localId)
         self._dbFilePath = rnaQuantDataPath  # the full path of the db file
-        self._dataRepository = dataRepository
         self._db = SqliteRNABackend(self._dbFilePath)
         self.getRnaQuantMetadata()
 

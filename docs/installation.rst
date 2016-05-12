@@ -22,7 +22,7 @@ First, we install some basic pre-requisite packages:
 
 .. code-block:: bash
 
-  $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev libssl-dev
+  $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev libssl-dev libcurl4-openssl-dev
 
 Install Apache and mod_wsgi, and enable mod_wsgi:
 
@@ -55,15 +55,15 @@ Make a virtualenv, and install the ga4gh package:
 
   $ virtualenv ga4gh-server-env
   $ source ga4gh-server-env/bin/activate
-  (ga4gh-server-env) $ pip install --pre ga4gh  # We need the --pre because ga4gh is pre-release
+  (ga4gh-server-env) $ pip install ga4gh
   (ga4gh-server-env) $ deactivate
 
 Download and unpack the example data:
 
 .. code-block:: bash
 
-  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v3.2.tar
-  $ tar -xf ga4gh-example-data-v3.1.tar
+  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.0.tar
+  $ tar -xf ga4gh-example-data-v4.0.tar
 
 Create the WSGI file at ``/srv/ga4gh/application.wsgi`` and write the following
 contents:
@@ -84,13 +84,15 @@ following contents:
 (Many more configuration options are available --- see the :ref:`configuration`
 section for a detailed discussion on the server configuration and input data.)
 
-Configure Apache. Edit the file ``/etc/apache2/sites-enabled/000-default.conf``
+Configure Apache. Note that these instructions are for Apache 2.4 or greater.
+Edit the file ``/etc/apache2/sites-available/000-default.conf``
 and insert the following contents towards the end of the file
 (*within* the ``<VirtualHost:80>...</VirtualHost>`` block):
 
 .. code-block:: apacheconf
 
     WSGIDaemonProcess ga4gh \
+        processes=10 threads=1 \
         python-path=/srv/ga4gh/ga4gh-server-env/lib/python2.7/site-packages \
         python-eggs=/var/cache/apache2/python-egg-cache
     WSGIScriptAlias /ga4gh /srv/ga4gh/application.wsgi
@@ -101,22 +103,53 @@ and insert the following contents towards the end of the file
         Require all granted
     </Directory>
 
-Restart Apache:
+.. warning::
+
+    Be sure to keep the number of threads limited to 1 in the WSGIDaemonProcess
+    setting. Performance tuning should be done using the processes setting.
+
+The instructions for configuring Apache 2.2 (on Ubuntu 14.04) are the same as
+above with thee following exceptions:
+
+You need to edit
+``/etc/apache2/sites-enabled/000-default``
+
+instead of
+``/etc/apache2/sites-enabled/000-default.conf``
+
+And while in that file, you need to set permissions for the directory to
+
+.. code-block:: apacheconf
+
+    Allow from all
+
+instead of
+
+.. code-block:: apacheconf
+
+    Require all granted
+
+
+
+Now restart Apache:
 
 .. code-block:: bash
 
   $ sudo service apache2 restart
 
-Test the installation by pointing a web-browser at the root URL; for example,
-to test on the installation server use:
+We will now test to see the server started properly by requesting the
+landing page.
 
 .. code-block:: bash
 
-    $ links http://localhost/ga4gh
+    $ curl http://localhost/ga4gh/ --silent | grep GA4GH
+    #         <title>GA4GH reference server 0.2.3.dev4+nge0b07f3</title>
+    #    <h2>GA4GH reference server 0.2.3.dev4+nge0b07f3</h2>
+    # Welcome to the GA4GH reference server landing page! This page describes
 
-We can also test the server by running some API commands; the instructions
-in the :ref:`demo` can be easily adapted here to test out the server across
-the network.
+We can also test the server by running some API commands. Please refer to
+the instructions in the :ref:`demo` for how to access data made available
+by this server.
 
 There are any number of different ways in which we can set up a WSGI
 application under Apache, which may be preferable in different installations.
@@ -132,27 +165,16 @@ instructions in the `Flask documentation
 <http://flask.pocoo.org/docs/0.10/deploying/>`_ for more details on
 how to deploy on various other servers.
 
-**TODO**
-
-1. Add more detail on how we can test out the API by making some client
-   queries.
-2. Add links to the Configuration section to give details on how we
-   configure the server.
-
 +++++++++++++++
 Troubleshooting
 +++++++++++++++
 
-If you are encountering difficulties getting the above to work, it is helpful
-to turn on debugging output. Do this by adding the following line to your
-config file:
+Server errors will be output to the web server's error log by default (in Apache on
+Debian/Ubuntu, for example, this is ``/var/log/apache2/error.log``). Each client
+request will be logged to the web server's access log (in Apache on Debian/Ubuntu
+this is ``/var/log/apache2/access.log``). 
 
-.. code-block:: python
-
-    DEBUG = True
-
-When an error occurs, the details of this will then be printed to the web server's
-error log (in Apache on Debian/Ubuntu, for example, this is ``/var/log/apache2/error.log``).
+For more server configuration options see :ref:`Configuration`
 
 --------------------
 Deployment on Docker
@@ -201,7 +223,7 @@ From the client, the server is accessible at ``http://server/``, and the ``/tmp/
 
   #make a development dir and place the example client script in it
   $ mkdir /tmp/mydev
-  $ curl https://raw.githubusercontent.com/ga4gh/server/develop/scripts/demo_example.py > /tmp/mydev/demo_example.py
+  $ curl https://raw.githubusercontent.com/ga4gh/server/master/scripts/demo_example.py > /tmp/mydev/demo_example.py
   $ chmod +x /tmp/mydev/demo_example.py
 
   # start the server daemon
