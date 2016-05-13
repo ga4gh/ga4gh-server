@@ -609,8 +609,6 @@ class SimulatedReadGroup(AbstractReadGroup):
 
         alignment.fragment_name = "{}$simulated{}".format(
             self.getLocalId(), i)
-        alignment.info.clear()
-        alignment.next_mate_position.Clear()
         alignment.number_reads = 0
         alignment.improper_placement = False
         alignment.read_group_id = self.getId()

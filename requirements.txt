@@ -35,6 +35,8 @@ pyjwkest==1.0.1
 # Flask must come after all other requirements that have "flask" as a
 # prefix due to a setuptools bug.
 Flask-Cors==2.0.1
+Flask==0.10.1
+
 coverage==3.7.1
 flake8==2.3.0  # Set due to conflict with pep8 in version 2.4.0
 freezegun==0.3.6
@@ -43,7 +45,7 @@ humanize==0.5.1
 mock==1.0.0
 nose==1.3.7
 pep8==1.6.2
-pysam==0.8.4
+pysam==0.9.0
 PyVCF==0.6.7
 PyYAML==3.11
 requests==2.7.0
