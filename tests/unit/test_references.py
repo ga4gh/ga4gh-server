@@ -21,7 +21,7 @@ class TestAbstractReferenceSet(unittest.TestCase):
     def setUp(self):
         self._backend = backend.Backend(datarepo.AbstractDataRepository())
         self._referenceSet = references.AbstractReferenceSet(
-            self._backend)
+            'refSetId')
 
     def testAddOneReference(self):
         self.assertEqual(self._referenceSet.getNumReferences(), 0)
@@ -82,7 +82,7 @@ class TestAbstractReference(unittest.TestCase):
         self._backend = backend.Backend(
             datarepo.AbstractDataRepository())
         self._referenceSet = references.AbstractReferenceSet(
-            self._backend)
+            'refSetId')
         self._reference = references.AbstractReference(
             self._referenceSet, "ref")
 

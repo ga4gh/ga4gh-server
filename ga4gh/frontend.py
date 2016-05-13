@@ -28,6 +28,8 @@ import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
+import logging
+from logging import StreamHandler
 
 
 MIMETYPE = "application/json"
@@ -83,7 +85,7 @@ class ServerStatus(object):
         # TODO what other config keys are appropriate to export here?
         keys = [
             'DEBUG', 'REQUEST_VALIDATION', 'RESPONSE_VALIDATION',
-            'DEFAULT_PAGE_SIZE', 'MAX_RESPONSE_LENGTH',
+            'DEFAULT_PAGE_SIZE', 'MAX_RESPONSE_LENGTH', 'LANDING_MESSAGE_HTML'
         ]
         return [(k, app.config[k]) for k in keys]
 
@@ -92,6 +94,16 @@ class ServerStatus(object):
         Returns the server precisely.
         """
         return self.startupTime.strftime("%H:%M:%S %d %b %Y")
+
+    def getLandingMessageHtml(self):
+        filePath = app.config.get('LANDING_MESSAGE_HTML')
+        try:
+            htmlFile = open(filePath, 'r')
+            html = htmlFile.read()
+            htmlFile.close()
+        except:
+            html = flask.render_template("landing_message.html")
+        return html
 
     def getNaturalUptime(self):
         """
@@ -156,8 +168,13 @@ class ServerStatus(object):
         """
         Returns the list of ReferenceSets for this server.
         """
-        return app.backend.getDataRepository().getDataset(
-            datasetId).getVariantAnnotationSets()
+        # TODO this should be displayed per-variant set, not per dataset.
+        variantAnnotationSets = []
+        dataset = app.backend.getDataRepository().getDataset(datasetId)
+        for variantSet in dataset.getVariantSets():
+            variantAnnotationSets.extend(
+                variantSet.getVariantAnnotationSets())
+        return variantAnnotationSets
 
     def getRnaQuantifications(self, datasetId):
         """
@@ -182,6 +199,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     TODO Document this critical function! What does it do? What does
     it assume?
     """
+    file_handler = StreamHandler()
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
     configStr = 'ga4gh.serverconfig:{0}'.format(baseConfig)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
@@ -197,7 +217,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.serverStatus = ServerStatus()
     # Allocate the backend
     # We use URLs to specify the backend. Currently we have file:// URLs (or
-    # URLs with no scheme) for the FileSystemBackend, and special empty:// and
+    # URLs with no scheme) for the SqlDataRepository, and special empty:// and
     # simulated:// URLs for empty or simulated data sources.
     dataSource = urlparse.urlparse(app.config["DATA_SOURCE"], "file")
 
@@ -225,8 +245,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        dataRepository = datarepo.FileSystemDataRepository(os.path.join(
-            dataSource.netloc, dataSource.path))
+        path = os.path.join(dataSource.netloc, dataSource.path)
+        dataRepository = datarepo.SqlDataRepository(path)
+        dataRepository.open(datarepo.MODE_READ)
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)
@@ -334,10 +355,10 @@ def handleException(exception):
     Handles an exception that occurs somewhere in the process of handling
     a request.
     """
-    if app.config['DEBUG']:
-        app.log_exception(exception)
     serverException = exception
     if not isinstance(exception, exceptions.BaseServerException):
+        with app.test_request_context():
+            app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
     responseStr = serverException.toProtocolElement().toJsonString()
     return getFlaskResponse(responseStr, serverException.httpStatus)
@@ -462,6 +483,13 @@ class DisplayedRoute(object):
 @app.route('/')
 def index():
     return flask.render_template('index.html', info=app.serverStatus)
+
+
+@app.route('/favicon.ico')
+@app.route('/robots.txt')
+def robots():
+    return flask.send_from_directory(
+        app.static_folder, flask.request.path[1:])
 
 
 @DisplayedRoute('/references/<id>')

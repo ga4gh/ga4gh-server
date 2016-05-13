@@ -69,7 +69,8 @@ class ExpressionLevel(AbstractExpressionLevel):
         self._annotationId = record["annotation_id"]
         self._expression = record["expression"]
         self._quantificationGroupId = record["quantification_group_id"]
-        self._isNormalized = record["is_normalized"]
+        # sqlite stores booleans as int (False = 0, True = 1)
+        self._isNormalized = bool(record["is_normalized"])
         self._rawReadCount = record["raw_read_count"]
         self._score = record["score"]
         self._units = record["units"]
@@ -158,11 +159,9 @@ class RNASeqResult(AbstractRNAQuantification):
     Class representing a single RnaQuantification in the GA4GH data model.
     """
 
-    def __init__(self, parentContainer, localId, rnaQuantDataPath,
-                 dataRepository):
+    def __init__(self, parentContainer, localId, rnaQuantDataPath):
         super(RNASeqResult, self).__init__(parentContainer, localId)
         self._dbFilePath = rnaQuantDataPath  # the full path of the db file
-        self._dataRepository = dataRepository
         self._db = SqliteRNABackend(self._dbFilePath)
         self.getRnaQuantMetadata()
 
