@@ -178,6 +178,7 @@ def main(argv):
     getDataFromHost(rnaDB, url, headers, host, dataType, outputFolder,
                     options.description, options.annotationId, subset,
                     options.readGroupId)
+    rnaDB.batchAddRNAQuantification()
     log("DONE")
 
 
