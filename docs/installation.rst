@@ -325,59 +325,120 @@ This will set the environment variable which is read by config.py
 
 You can then get logs from the docker container by running ``docker logs (container)`` e.g. ``docker logs ga4gh_demo``
 
------------------------
-Deployment on Mac OS X
------------------------
-To deploy on Mac OS X, you need to install libraries and header code for `Python 2.7 <https://www.python.org/download/releases/2.7/>`_. It will be a lot easier if you have `Homebrew <http://brew.sh/index.html>`_, which is called the missing package manager for OS X, installed first. To install Homebrew, please paste the following at a Terminal prompt ($):
+----------------------------------------------
+Installing the development version on Mac OS X
+----------------------------------------------
+
+**Prerequisites**
+
+First install libraries and header code for
+`Python 2.7 <https://www.python.org/download/releases/2.7/>`_.
+It will be a lot easier if you have `Homebrew <http://brew.sh/index.html>`_,
+the "missing package manager" for OS X, installed first.
+To install Homebrew, paste the following at a Terminal prompt ($):
 
 .. code-block:: bash
 
   $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
-1. Now you can use ``brew install`` to install libraries for Python.
+Now use ``brew install`` to install Python if you don't have Python 2.7
+installed and then ``pip install``, which comes with Python, can be used to
+install virtual environment:
 
 .. code-block:: bash
 
-  $ brew install openssl
-  $ pip install virtualenv 
+  $ brew install python
+  $ pip install virtualenv
 
-2. Download source code from GitHub to a target folder, here we create a folder ``/ga4gh/`` under home directory. First of all, you need to `set up github to work <https://help.github.com/articles/set-up-git/>`_ from your command line (Terminal) if you have not done so.
+**Install**
+
+Download source code from GitHub to the project target folder, here assumed to 
+be ``~/ga4gh``: (If you haven't already done so, 
+`set up github <https://help.github.com/articles/set-up-git/>`_ 
+to work from your command line.)
 
 .. code-block:: bash
 
   $ mkdir ~/ga4gh
-  $ cd ~/ga4gh/
+  $ cd ~/ga4gh
   $ git clone https://github.com/ga4gh/server.git
 
-3. Install Python dependencies:
+Before installing Python library dependencies, create a virtualenv sandbox to 
+isolate it from the rest of the system, and then activate it:
 
 .. code-block:: bash
 
-  $ cd server/
-  $ pip install -r dev-requirements.txt 
-  
-One possible error may be "ssl.h not found"; if so, you will have to tell the compiler about the newly downloaded headers using ``export C_INCLUDE_PATH="/usr/local/opt/openssl/include"``.
+  $ cd server
+  $ virtualenv ga4gh-env
+  $ source ga4gh-env/bin/activate
 
-4. Download and extract the example data:
-
-.. code-block:: bash
-
-  $ curl -L -O https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v3.2.tar
-  $ tar -xf ga4gh-example-data-v3.2.tar
-
-5. Start server:
+Install Python dependencies:
 
 .. code-block:: bash
 
-  $ python server-dev.py
+  (ga4gh-env) $ pip install -r dev-requirements.txt
 
-Point a web browser to `http://localhost:8000/ <http://localhost:8000/>`_.
-
-6. Run tests.
+You may encounter the error "ssl.h not found"; if so, you will have to
+``brew install openssl`` after deactivating the virtualenv:
 
 .. code-block:: bash
 
-  $ python scripts/run_tests.py
+  (ga4gh-env) $ deactivate  
+  $ brew install openssl
+
+If the error persists, you need to tell the compiler about the newly 
+downloaded headers by pasting 
+``export C_INCLUDE_PATH="/usr/local/opt/openssl/include"`` into 
+``~/.profile`` file: 
+
+.. code-block:: bash
+
+  $ vim ~/.profile
+
+Click on "i" to switch to INSERT mode, paste
+``export C_INCLUDE_PATH="/usr/local/opt/openssl/include"``, click on "esc", 
+type ``:wq`` and click on "return (enter)" to save and exit. 
+
+``source`` the edited file to notify the compiler of the change and 
+``echo`` it to verify the change:
+
+.. code-block:: bash
+
+  $ source ~/.profile
+  $ echo $C_INCLUDE_PATH
+
+**Test and run**
+
+Run tests to verify the install:
+
+.. code-block:: bash
+
+  (ga4gh-env) $ python scripts/run_tests.py
+
+If you deactivated the virtualenv, ``source ga4gh-env/bin/activate``
+to reactivate the ga4gh-env virtualenv.
+ 
+Download and extract the example data:
+
+.. code-block:: bash
+
+  (ga4gh-env) $ curl -L -O https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.0.tar
+  (ga4gh-env) $ tar -xf ga4gh-example-data-v4.0.tar
+
+Start the server:
+
+.. code-block:: bash
+
+  (ga4gh-env) $ python server-dev.py
+
+Point a web browser to `http://localhost:8000/ <http://localhost:8000/>`_ 
+and enjoy.
+
+To deactivate the virtual environment:
+
+.. code-block:: bash
+
+  (ga4gh-env) $ deactivate
 
 
 
