@@ -144,7 +144,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             if pyvcfCall.phased:
                 phaseset = str(pyvcfCall.phased)
             self.assertEqual(gaCall.phaseset, phaseset)
-        if len(gaCall.genotypeLikelihood) > 0:
+        if len(gaCall.genotype_likelihood) > 0:
             self._compareTwoListFloats(
                 gaCall.genotype_likelihood, pyvcfCall.data.GL)
         else:

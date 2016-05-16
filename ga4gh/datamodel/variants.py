@@ -578,14 +578,14 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 genotypeLikelihood = list(value)
             elif key != 'GT':
                 info[key] = _encodeValue(value)
-        call = protocol.Call(
-            callSetId=callSet.getId(),
-            callSetName=callSet.getSampleName(),
-            sampleId=callSet.getSampleName(),
-            genotype=list(pysamCall.allele_indices),
-            phaseset=phaseset,
-            info=info,
-            genotypeLikelihood=genotypeLikelihood)
+        call = protocol.Call()
+        call.call_set_name = callSet.getSampleName()
+        call.call_set_id = callSet.getId()
+        call.genotype.extend(list(pysamCall.allele_indices))
+        call.phaseset = pb.string(phaseset)
+        call.genotype_likelihood.extend(genotypeLikelihood)
+        for key in info:
+            call.info[key].values.extend(info[key])
         return call
 
     def convertVariant(self, record, callSetIds):
@@ -613,7 +613,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         for callSetId in callSetIds:
             callSet = self.getCallSet(callSetId)
             pysamCall = record.samples[str(callSet.getSampleName())]
-            variant.calls.append(
+            variant.calls.add().CopyFrom(
                 self._convertGaCall(callSet, pysamCall))
         variant.id = self.getVariantId(variant)
         return variant
