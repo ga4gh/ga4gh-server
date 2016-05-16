@@ -195,14 +195,14 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         Returns the GA4GH protocol representation of this ReferenceSet.
         """
         ret = protocol.ReferenceSet()
-        ret.assembly_id = self.getAssemblyId()
-        ret.description = self.getDescription()
+        ret.assembly_id = pb.string(self.getAssemblyId())
+        ret.description = pb.string(self.getDescription())
         ret.id = self.getId()
         ret.is_derived = self.getIsDerived()
         ret.md5checksum = self.getMd5Checksum()
-        ret.ncbi_taxon_id = self.getNcbiTaxonId()
+        ret.ncbi_taxon_id = pb.int(self.getNcbiTaxonId())
         ret.source_accessions.extend(self.getSourceAccessions())
-        ret.source_uri = self.getSourceUri()
+        ret.source_uri = pb.string(self.getSourceUri())
         ret.name = self.getLocalId()
         return ret
 
@@ -224,7 +224,7 @@ class AbstractReference(datamodel.DatamodelObject):
         self._sourceAccessions = []
         self._isDerived = False
         self._sourceDivergence = pb.DEFAULT_INT
-        self._ncbiTaxonId = ""
+        self._ncbiTaxonId = pb.DEFAULT_INT
 
     def setMd5checksum(self, md5checksum):
         """

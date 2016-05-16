@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 
 import datetime
 import json
+import os.path
 import random
 
 import pysam
@@ -276,7 +277,7 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         )
         readGroupSet.name = self.getLocalId()
         readGroupSet.dataset_id = self.getParentContainer().getId()
-        readGroupSet.stats = self.getStats()
+        readGroupSet.stats.CopyFrom(self.getStats())
         return readGroupSet
 
     def getNumAlignedReads(self):
@@ -314,7 +315,6 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         stats = protocol.ReadStats()
         stats.aligned_read_count = self._numAlignedReads
         stats.unaligned_read_count = self._numUnalignedReads
-        stats.baseCount = None
         return stats
 
 
@@ -498,8 +498,8 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         if referenceSet is not None:
             readGroup.reference_set_id = referenceSet.getId()
         readGroup.stats.CopyFrom(self.getStats())
-        readGroup.programs = self.getPrograms()
-        readGroup.description = self.getDescription()
+        readGroup.programs.extend(self.getPrograms())
+        readGroup.description = pb.string(self.getDescription())
         readGroup.experiment.CopyFrom(self.getExperiment())
         return readGroup
 
