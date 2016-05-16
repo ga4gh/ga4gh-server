@@ -15,7 +15,6 @@ import ga4gh.sqliteBackend as sqliteBackend
 import ga4gh.exceptions as exceptions
 import ga4gh.pb as pb
 
-
 # Note to self: There's the Feature ID as understood in a GFF3 file,
 # the Feature ID that is its server-assigned compoundId, and the
 # ID of the feature's row in the DB FEATURE table.
@@ -160,13 +159,25 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
     """
     compoundIdClass = datamodel.FeatureSetCompoundId
 
-    def __init__(
-            self, parentContainer, localId, referenceSetId=""):
+    def __init__(self, parentContainer, localId):
         super(AbstractFeatureSet, self).__init__(parentContainer, localId)
-        self._referenceSetId = referenceSetId
         self._name = localId
         self._sourceUri = ""
+        self._referenceSet = None
         self._attributes = protocol.Attributes()
+
+    def getReferenceSet(self):
+        """
+        Returns the reference set associated with this FeatureSet.
+        """
+        return self._referenceSet
+
+    def setReferenceSet(self, referenceSet):
+        """
+        Sets the reference set associated with this FeatureSet to the
+        specified value.
+        """
+        self._referenceSet = referenceSet
 
     def toProtocolElement(self):
         """
@@ -179,6 +190,7 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         gaFeatureSet.reference_set_id = pb.string(self._referenceSetId)
         gaFeatureSet.name = self._name
         gaFeatureSet.source_uri = self._sourceUri
+        gaFeatureSet.attributes = self._attributes
         return gaFeatureSet
 
     def getCompoundIdForFeatureId(self, featureId):
@@ -203,8 +215,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
     """
     def __init__(self, parentContainer, localId, randomSeed=1):
         self._randomSeed = randomSeed
-        super(SimulatedFeatureSet, self).__init__(
-            parentContainer, localId, None)
+        super(SimulatedFeatureSet, self).__init__(parentContainer, localId)
 
     def _getRandomfeatureType(self, randomNumberGenerator):
         ontologyTuples = [
@@ -304,14 +315,40 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
     Stub class to directly read sequence annotation features from GFF3 files.
     Tests basic access, not to be used in production.
     """
-    def __init__(self, parentContainer, localId, filePath, dataRepository):
-        super(Gff3DbFeatureSet, self).__init__(
-            parentContainer, localId, None)
-        self._sequenceOntology = dataRepository.getOntologyMap(
-            'sequence_ontology')
-        self._dbFilePath = filePath
-        self._dataRepository = dataRepository
+    def __init__(self, parentContainer, localId):
+        super(Gff3DbFeatureSet, self).__init__(parentContainer, localId)
+        self._sequenceOntologyTermMap = None
+        self._dbFilePath = None
+        self._db = None
+
+    def setSequenceOntologyTermMap(self, sequenceOntologyTermMap):
+        """
+        Sets the OntologyTermMap instance used by this FeatureSet to the
+        specified value.
+        """
+        self._sequenceOntologyTermMap = sequenceOntologyTermMap
+
+    def populateFromFile(self, dataUrl):
+        """
+        Populates the instance variables of this FeatureSet from the specified
+        data URL.
+        """
+        self._dbFilePath = dataUrl
         self._db = Gff3DbBackend(self._dbFilePath)
+
+    def populateFromRow(self, row):
+        """
+        Populates the instance variables of this FeatureSet from the specified
+        DB row.
+        """
+        self._dbFilePath = row[b'dataUrl']
+        self._db = Gff3DbBackend(self._dbFilePath)
+
+    def getDataUrl(self):
+        """
+        Returns the URL providing the data source for this FeatureSet.
+        """
+        return self._dbFilePath
 
     def getFeature(self, compoundId):
         """

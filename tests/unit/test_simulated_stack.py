@@ -59,7 +59,7 @@ class TestSimulatedStack(unittest.TestCase):
             self.readGroupSet.getReferenceSet().getReferences()[0]
         self.variantSet = self.dataset.getVariantSets()[0]
         self.variantAnnotationSet = \
-            self.dataset.getVariantAnnotationSets()[0]
+            self.variantSet.getVariantAnnotationSets()[0]
         self.backend.setMaxResponseLength(10000)
 
     def getBadIds(self):
@@ -460,13 +460,13 @@ class TestSimulatedStack(unittest.TestCase):
     def testGetVariantAnnotationSet(self):
         path = "/variantannotationsets"
         for dataset in self.dataRepo.getDatasets():
-            for variantAnnotationSet in dataset.getVariantAnnotationSets():
-                responseObject = self.sendGetObject(
-                    path, variantAnnotationSet.getId(),
-                    protocol.VariantAnnotationSet)
-                self.assertEqual(variantAnnotationSet.getId(),
-                                 responseObject.id,
-                                 "The requested ID should match the returned")
+            for variantSet in dataset.getVariantSets():
+                for vas in variantSet.getVariantAnnotationSets():
+                    responseObject = self.sendGetObject(
+                        path, vas.getId(), protocol.VariantAnnotationSet)
+                    self.assertEqual(
+                        vas.getId(), responseObject.id,
+                        "The requested ID should match the returned")
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
 
@@ -601,11 +601,16 @@ class TestSimulatedStack(unittest.TestCase):
             responseData.toJsonDict()))
         self.assertGreater(len(responseData.variantAnnotationSets), 0,
                            "Expect some results for a known good ID")
+        # TODO check the instance variables; we should be able to match
+        # the values from the protocol object we get back with the values
+        # in the original variantAnnotationSet.
 
     def testVariantAnnotationsSearch(self):
         self.assertIsNotNone(self.variantAnnotationSet)
 
         request = protocol.SearchVariantAnnotationsRequest()
+        # TODO split these into separate tests, and factor out the duplicated
+        # code.
 
         path = '/variantannotations/search'
         request.start = 0
@@ -615,8 +620,9 @@ class TestSimulatedStack(unittest.TestCase):
         request.effects = None
         request.variantAnnotationSetId = self.variantAnnotationSet.getId()
         response = self.sendJsonPostRequest(path, request.toJsonString())
-        responseData = protocol.SearchVariantAnnotationSetsResponse. \
+        responseData = protocol.SearchVariantAnnotationsResponse. \
             fromJsonString(response.data)
+        self.assertGreater(len(responseData.variantAnnotations), 0)
         self.assertIsNotNone(
             responseData.nextPageToken,
             "Expected more than one page of results")

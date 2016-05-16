@@ -168,8 +168,13 @@ class ServerStatus(object):
         """
         Returns the list of ReferenceSets for this server.
         """
-        return app.backend.getDataRepository().getDataset(
-            datasetId).getVariantAnnotationSets()
+        # TODO this should be displayed per-variant set, not per dataset.
+        variantAnnotationSets = []
+        dataset = app.backend.getDataRepository().getDataset(datasetId)
+        for variantSet in dataset.getVariantSets():
+            variantAnnotationSets.extend(
+                variantSet.getVariantAnnotationSets())
+        return variantAnnotationSets
 
 
 def reset():
@@ -205,7 +210,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.serverStatus = ServerStatus()
     # Allocate the backend
     # We use URLs to specify the backend. Currently we have file:// URLs (or
-    # URLs with no scheme) for the FileSystemBackend, and special empty:// and
+    # URLs with no scheme) for the SqlDataRepository, and special empty:// and
     # simulated:// URLs for empty or simulated data sources.
     dataSource = urlparse.urlparse(app.config["DATA_SOURCE"], "file")
 
@@ -233,8 +238,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        dataRepository = datarepo.FileSystemDataRepository(os.path.join(
-            dataSource.netloc, dataSource.path))
+        path = os.path.join(dataSource.netloc, dataSource.path)
+        dataRepository = datarepo.SqlDataRepository(path)
+        dataRepository.open(datarepo.MODE_READ)
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)
@@ -472,6 +478,13 @@ class DisplayedRoute(object):
 @app.route('/')
 def index():
     return flask.render_template('index.html', info=app.serverStatus)
+
+
+@app.route('/favicon.ico')
+@app.route('/robots.txt')
+def robots():
+    return flask.send_from_directory(
+        app.static_folder, flask.request.path[1:])
 
 
 @DisplayedRoute('/references/<id>')

@@ -7,11 +7,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import random
-import hashlib
-import re
-import os
 import glob
+import hashlib
+import json
+import os
+import random
+import re
 
 import dateutil.parser
 import pysam
@@ -25,6 +26,7 @@ import ga4gh.pb as pb
 ANNOTATIONS_VEP_V82 = "VEP_v82"
 ANNOTATIONS_VEP_V77 = "VEP_v77"
 ANNOTATIONS_SNPEFF = "SNPEff"
+
 
 
 def isUnspecified(str):
@@ -209,6 +211,9 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         protocolElement = protocol.VariantSet()
         protocolElement.id = self.getId()
+        protocolElement.datasetId = self.getParentContainer().getId()
+        protocolElement.referenceSetId = self._referenceSet.getId()
+        protocolElement.metadata = self.getMetadata()
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.name = self.getLocalId()
@@ -229,6 +234,11 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         object from this variant set.
         """
         ret = protocol.Variant()
+        ret.created = self._creationTime
+        ret.updated = self._updatedTime
+        ret.variantSetId = self.getId()
+        return ret
+
         if self._creationTime:
             ret.created = self._creationTime
         if self._updatedTime:

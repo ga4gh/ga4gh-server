@@ -1,21 +1,6 @@
 """
 Constructs a data source for the ga4gh server by downloading data from
 authoritative remote servers.
-
-Note: checkpoint algorithm: htslib often crashes, and we use it a lot in
-this script.  To prevent against having to run the entire script again,
-which could take a long time, we checkpoint progress made by leaving a file
-named X.checkpoint in certain directories, where X could be a chromosome,
-etc. that has been successfully processed to completion.  If the script is
-started again after a failed run, it sees the checkpoint files, skips
-processing of that object, and resumes at the point of the crash.  At the
-end of the script, we delete all of the checkpoint files.  (We can not
-simply use the presence of the expected processed file as evidence of
-successfully processing that object since that file, while extant, may be
-corrupted / half-finished.  To the extent that we can, it is also nice
-to be able to not assume anything about how the object is processed, only
-that some processing happens and it either succeeds or fails; this way we
-keep a separation of concerns between checkpointing and processing.)
 """
 from __future__ import division
 from __future__ import print_function
@@ -23,91 +8,24 @@ from __future__ import unicode_literals
 
 import argparse
 import gzip
-import hashlib
-import json
 import os
 import requests
 import shutil
+import subprocess
 import tempfile
 import urllib2
 
 import pysam
 
 import utils
+utils.ga4ghImportGlue()
 
-
-def getCheckpointFileName(objName):
-    """
-    Return the name of a checkpoint file for a given object
-    """
-    return "{}.checkpoint".format(objName)
-
-
-def isCheckpointFileExtant(objName):
-    """
-    Return true if a checkpoint file for an object exists, false otherwise
-    """
-    checkpointFileName = getCheckpointFileName(objName)
-    return os.path.exists(checkpointFileName)
-
-
-def createCheckpointFile(objName):
-    """
-    Create a checkpoint file for the object
-    """
-    open(getCheckpointFileName(objName), 'a').close()
-
-
-def logCheckpoint(objName):
-    """
-    Indicate the object is being skipped because it has been checkpointed
-    """
-    utils.log("Checkpoint found for {} ... skipping ...".format(objName))
-
-
-def mkdirAndChdirList(dirNameList):
-    """
-    For each entry in dirNameList, make a directory if it does not exist and
-    cd into it
-    """
-    for directory in dirNameList:
-        mkdirAndChdir(directory)
-
-
-def mkdirAndChdir(dirName):
-    """
-    Make a directory if it does not exist and cd into it
-    """
-    if not os.path.exists(dirName):
-        os.mkdir(dirName)
-    os.chdir(dirName)
-
-
-def getReferenceChecksum(fastaFile):
-    """
-    Returns the md5 checksum for the reference sequence in the specified
-    FASTA file. This is the MD5 of the upper case sequence letters.
-    """
-    inputFile = pysam.FastaFile(fastaFile)
-    bases = inputFile.fetch(inputFile.references[0])
-    inputFile.close()
-    return hashlib.md5(bases.upper()).hexdigest()
-
-
-def escapeDir(levels):
-    """
-    Walk back through the number of parent directories equal to levels
-    """
-    for _ in range(levels):
-        os.chdir('..')
-
-
-def dumpDictToFileAsJson(data, filename):
-    """
-    Writes a dictionary to a file as a json dump
-    """
-    with open(filename, 'w') as dumpFile:
-        json.dump(data, dumpFile, indent=4)
+# We need to turn off QA because of the import glue
+import ga4gh.datarepo as datarepo  # NOQA
+import ga4gh.datamodel.references as references  # NOQA
+import ga4gh.datamodel.datasets as datasets  # NOQA
+import ga4gh.datamodel.variants as variants  # NOQA
+import ga4gh.datamodel.reads as reads  # NOQA
 
 
 class ChromMinMax(object):
@@ -145,10 +63,10 @@ class ChromMinMax(object):
 
 
 def _fetchSequence(ac, startIndex=None, endIndex=None):
-    """Fetch sequences from NCBI using the eutils interface.
+    """Fetch sequences from NCBI using the eself interface.
 
     An interbase interval may be optionally provided with startIndex and
-    endIndex. NCBI eutils will return just the requested subsequence, which
+    endIndex. NCBI eself will return just the requested subsequence, which
     might greatly reduce payload sizes (especially with chromosome-scale
     sequences). When wrapped is True, return list of sequence lines rather
     than concatenated sequence.
@@ -166,8 +84,9 @@ def _fetchSequence(ac, startIndex=None, endIndex=None):
     'MESRETLSSS'
 
     """
-    urlFmt = ("http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
-              "db=nucleotide&id={ac}&rettype=fasta")
+    urlFmt = (
+        "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?"
+        "db=nucleotide&id={ac}&rettype=fasta&retmode=text")
     if startIndex is None or endIndex is None:
         url = urlFmt.format(ac=ac)
     else:
@@ -194,7 +113,7 @@ class AbstractFileDownloader(object):
         self.tempDir = tempfile.mkdtemp(prefix="ga4gh-download")
         self.numChromosomes = args.num_chromosomes
         self.chromosomes = [str(j + 1) for j in range(self.numChromosomes)]
-        self.dirName = args.dir_name
+        self.dirName = args.destination
         self.datasetName = '1kg-p3-subset'
         self.variantSetName = 'mvncall'
         self.referenceSetName = 'GRCh37-subset'
@@ -228,6 +147,22 @@ class AbstractFileDownloader(object):
             'HG00533': 'CHS',
             'HG00534': 'CHS',
         }
+        self.vcfFilePaths = []
+        self.bamFilePaths = []
+        self.fastaFilePath = None
+        if os.path.exists(self.dirName) and args.force:
+            shutil.rmtree(self.dirName)
+        os.mkdir(self.dirName)
+        self.repoPath = os.path.join(self.dirName, "repo.db")
+
+    def log(self, message):
+        print(message)
+
+    def runCommand(self, command):
+        """
+        Runs the specified command.
+        """
+        subprocess.check_call(command, shell=True)
 
     def getVcfBaseUrl(self):
         return os.path.join(self.getBaseUrl(), 'ftp/release/20130502/')
@@ -242,7 +177,7 @@ class AbstractFileDownloader(object):
             self.chromMinMax.addPos(record.chrom, record.start)
         localIterator = None
         localVariantFile.close()
-        utils.log('chrom: {}, maxPos: {}, minPos: {}'.format(
+        self.log('chrom: {}, maxPos: {}, minPos: {}'.format(
             record.chrom, self.chromMinMax.getMaxPos(record.chrom),
             self.chromMinMax.getMinPos(record.chrom)))
 
@@ -268,40 +203,32 @@ class AbstractFileDownloader(object):
             "ALL.chr{}.phase3_shapeit2_mvncall_integrated_v5a"
             ".20130502.genotypes.vcf.gz").format(chromosome)
         url = os.path.join(self.getVcfBaseUrl(), sourceFileName)
-        utils.log("Downloading '{}'".format(url))
+        self.log("Downloading '{}'".format(url))
         response = urllib2.urlopen(url)
         megabyte = 1024 * 1024
         data = response.read(megabyte)
-        localFileName = "{}.vcf".format(chromosome)
+        localFileName = os.path.join(
+            self.dirName, "chr{}.vcf".format(chromosome))
         localCompressedFileName = "{}.gz".format(localFileName)
         localTempFileName = localFileName + '.unsampled'
-        utils.log("Writing '{}'".format(localTempFileName))
+        self.log("Writing '{}'".format(localTempFileName))
         self._writeVcfTempFile(localTempFileName, data)
-        utils.log("Sampling '{}'".format(localTempFileName))
-        utils.runCommand(
+        self.log("Sampling '{}'".format(localTempFileName))
+        self.runCommand(
             'bcftools view --force-samples -s {} {} -o {}'.format(
                 args.samples, localTempFileName, localFileName))
         os.remove(localTempFileName)
-        utils.log("Compressing '{}'".format(localFileName))
-        utils.runCommand('bgzip -f {}'.format(localFileName))
-        utils.log("Indexing '{}'".format(localCompressedFileName))
-        utils.runCommand('tabix {}'.format(localCompressedFileName))
+        self.log("Compressing '{}'".format(localFileName))
+        self.runCommand('bgzip -f {}'.format(localFileName))
+        self.log("Indexing '{}'".format(localCompressedFileName))
+        self.runCommand('tabix {}'.format(localCompressedFileName))
         self._updatePositions(localCompressedFileName)
+        self.vcfFilePaths.append(
+            (localCompressedFileName, localCompressedFileName + ".tbi"))
 
     def downloadVcfs(self):
-        dirList = [
-            self.dirName, "datasets", self.datasetName, 'variants',
-            self.variantSetName]
-        mkdirAndChdirList(dirList)
         for chromosome in self.chromosomes:
-            if isCheckpointFileExtant(chromosome):
-                logCheckpoint(chromosome)
-                localCompressedFileName = '{}.vcf.gz'.format(chromosome)
-                self._updatePositions(localCompressedFileName)
-            else:
-                self._downloadVcf(chromosome)
-                createCheckpointFile(chromosome)
-        escapeDir(5)
+            self._downloadVcf(chromosome)
 
     def createBamHeader(self, baseHeader):
         """
@@ -330,7 +257,7 @@ class AbstractFileDownloader(object):
         return header
 
     def _downloadIndex(self, indexUrl, localIndexFile):
-        utils.log("Downloading index from {} to {}".format(
+        self.log("Downloading index from {} to {}".format(
             indexUrl, localIndexFile))
         response = urllib2.urlopen(indexUrl)
         with open(localIndexFile, "w") as destFile:
@@ -342,7 +269,8 @@ class AbstractFileDownloader(object):
         sourceFileName = (
             '{}.mapped.ILLUMINA.bwa.{}.'
             'low_coverage.20120522.bam'.format(sample, study))
-        destFileName = "{}.bam".format(sample)
+        destFileName = os.path.join(
+            self.dirName, "{}.bam".format(sample))
         baseUrl = self.getBamBaseUrl()
         sampleUrl = os.path.join(baseUrl, samplePath, sourceFileName)
         indexUrl = sampleUrl + ".bai"
@@ -351,11 +279,11 @@ class AbstractFileDownloader(object):
         remoteFile = pysam.AlignmentFile(
             sampleUrl, filepath_index=localIndexFile)
         header = self.createBamHeader(remoteFile.header)
-        utils.log("Writing '{}'".format(destFileName))
+        self.log("Writing '{}'".format(destFileName))
         localFile = pysam.AlignmentFile(
             destFileName, 'wb', header=header)
         for chromosome in self.chromosomes:
-            utils.log("chromosome {}".format(chromosome))
+            self.log("chromosome {}".format(chromosome))
             iterator = remoteFile.fetch(
                 chromosome.encode('utf-8'),
                 start=self.chromMinMax.getMinPos(chromosome),
@@ -369,88 +297,87 @@ class AbstractFileDownloader(object):
                     if index >= self.maxReads:
                         break
                     localFile.write(record)
-            utils.log("{} records written".format(index))
+            self.log("{} records written".format(index))
         remoteFile.close()
         localFile.close()
-        utils.log("Indexing '{}'".format(destFileName))
+        self.log("Indexing '{}'".format(destFileName))
         pysam.index(destFileName.encode('utf-8'))
+        self.bamFilePaths.append(
+            (destFileName, destFileName + ".bai"))
 
     def downloadBams(self):
-        dirList = [self.dirName, "datasets", self.datasetName, 'reads']
-        mkdirAndChdirList(dirList)
         for sample in self.samples:
-            if isCheckpointFileExtant(sample):
-                logCheckpoint(sample)
-            else:
-                self._downloadBam(sample)
-                createCheckpointFile(sample)
-        escapeDir(4)
+            self._downloadBam(sample)
 
-    def _downloadFasta(self, chromosome):
-        accession = self.accessions[chromosome]
-        fileName = '{}.fa'.format(chromosome)
-        minPos = 0
-        if self.excludeReferenceMin:
-            minPos = self.chromMinMax.getMinPos(chromosome)
-        maxPos = self.chromMinMax.getMaxPos(chromosome)
+    def _downloadFasta(self, chromosomes):
+        fileName = os.path.join(self.dirName, "GRCh37-subset.fa")
         with open(fileName, "w") as outFasta:
-            print(">{}".format(chromosome), file=outFasta)
-            sequence = _fetchSequence(accession, minPos, maxPos)
-            for line in sequence:
-                print(line, file=outFasta)
-        utils.log("Compressing {}".format(fileName))
-        utils.runCommand("bgzip -f {}".format(fileName))
+            for chromosome in chromosomes:
+                accession = self.accessions[chromosome]
+                minPos = 0
+                if self.excludeReferenceMin:
+                    minPos = self.chromMinMax.getMinPos(chromosome)
+                maxPos = self.chromMinMax.getMaxPos(chromosome)
+                print(minPos, maxPos)
+                print(">{}".format(chromosome), file=outFasta)
+                sequence = _fetchSequence(accession, minPos, maxPos)
+                for line in sequence:
+                    print(line, file=outFasta)
+        self.log("Compressing {}".format(fileName))
+        self.runCommand("bgzip -f {}".format(fileName))
         compressedFileName = fileName + '.gz'
-        utils.log("Indexing {}".format(compressedFileName))
-        utils.runCommand("samtools faidx {}".format(compressedFileName))
-        # Assemble the metadata.
-        metadata = {
-            "md5checksum": getReferenceChecksum(compressedFileName),
-            "sourceUri": "TODO",
-            "ncbiTaxonId": 9606,
-            "isDerived": False,
-            "sourceDivergence": 0.0,
-            "sourceAccessions": [accession + ".subset"],
-        }
-        metadataFilename = "{}.json".format(chromosome)
-        dumpDictToFileAsJson(metadata, metadataFilename)
+        self.log("Indexing {}".format(compressedFileName))
+        self.runCommand("samtools faidx {}".format(compressedFileName))
+        self.fastaFilePath = compressedFileName
 
-    def downloadFastas(self):
-        dirList = [self.dirName, 'referenceSets']
-        mkdirAndChdirList(dirList)
-        # Assemble reference set metadata
-        referenceSetMetadata = {
-            "assemblyId": 'TODO',
-            "description": 'TODO',
-            "isDerived": False,
-            "ncbiTaxonId": 9606,
-            "sourceAccessions": [],
-            "sourceUri": 'TODO',
-        }
-        referenceSetMetadataFilename = "{}.json".format(
-            self.referenceSetName)
-        dumpDictToFileAsJson(
-            referenceSetMetadata, referenceSetMetadataFilename)
+    def downloadReference(self):
+        self._downloadFasta(self.chromosomes)
 
-        # Download chromosomes
-        mkdirAndChdirList([self.referenceSetName])
-        for chromosome in self.chromosomes:
-            if isCheckpointFileExtant(chromosome):
-                logCheckpoint(chromosome)
-            else:
-                self._downloadFasta(chromosome)
-                createCheckpointFile(chromosome)
-        escapeDir(3)
+    def createRepo(self):
+        """
+        Creates the repository for all the data we've just downloaded.
+        """
+        repo = datarepo.SqlDataRepository(self.repoPath)
+        repo.open("w")
+        repo.initialise()
 
-    def removeCheckpoints(self):
-        utils.log('Removing checkpoint files')
-        for root, dirs, files in os.walk(self.dirName):
-            for currentFile in files:
-                if currentFile.endswith('.checkpoint'):
-                    os.remove(os.path.join(root, currentFile))
+        referenceSet = references.HtslibReferenceSet("GRCh37-subset")
+        referenceSet.populateFromFile(self.fastaFilePath)
+        referenceSet.setDescription("Subset of GRCh37 used for demonstration")
+        referenceSet.setNcbiTaxonId(9606)
+        for reference in referenceSet.getReferences():
+            reference.setNcbiTaxonId(9606)
+            reference.setSourceAccessions(
+                self.accessions[reference.getName()] + ".subset")
+        repo.insertReferenceSet(referenceSet)
+
+        dataset = datasets.Dataset("1kg-p3-subset")
+        dataset.setDescription("Sample data from 1000 Genomes phase 3")
+        repo.insertDataset(dataset)
+
+        variantSet = variants.HtslibVariantSet(dataset, "mvncall")
+        variantSet.setReferenceSet(referenceSet)
+        dataUrls = [vcfFile for vcfFile, _ in self.vcfFilePaths]
+        indexFiles = [indexFile for _, indexFile in self.vcfFilePaths]
+        variantSet.populateFromFile(dataUrls, indexFiles)
+        variantSet.checkConsistency()
+        repo.insertVariantSet(variantSet)
+
+        for sample, (bamFile, indexFile) in zip(
+                self.samples, self.bamFilePaths):
+            readGroupSet = reads.HtslibReadGroupSet(dataset, sample)
+            readGroupSet.populateFromFile(bamFile, indexFile)
+            readGroupSet.setReferenceSet(referenceSet)
+            repo.insertReadGroupSet(readGroupSet)
+
+        repo.commit()
+        repo.close()
+        self.log("Finished creating the repository; summary:\n")
+        repo.open("r")
+        repo.printSummary()
 
     def cleanup(self):
-        utils.log('Removing temporary files')
+        self.log('Removing temporary files')
         shutil.rmtree(self.tempDir)
 
 
@@ -458,9 +385,6 @@ class NcbiFileDownloader(AbstractFileDownloader):
     """
     Downloads files from NCBI
     """
-    def __init__(self, args):
-        super(NcbiFileDownloader, self).__init__(args)
-
     def getBaseUrl(self):
         return 'ftp://ftp-trace.ncbi.nih.gov/1000genomes'
 
@@ -469,9 +393,6 @@ class EbiFileDownloader(AbstractFileDownloader):
     """
     Downloads files from EBI
     """
-    def __init__(self, args):
-        super(EbiFileDownloader, self).__init__(args)
-
     def getBaseUrl(self):
         return 'ftp://ftp.1000genomes.ebi.ac.uk/vol1'
 
@@ -485,11 +406,14 @@ sources = {
 def parseArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        "destination",
+        help="the name of the directory that the data is downloaded to")
+    parser.add_argument(
+        "-f", "--force", default=False, action="store_true",
+        help="Overwrite an existing directory with the same name")
+    parser.add_argument(
         "--source", default="ncbi", choices=sources.keys(),
         help="the source to download from")
-    parser.add_argument(
-        "--dir-name", default="ga4gh-downloaded-data",
-        help="the name of the directory that the data is downloaded to")
     parser.add_argument(
         "--samples", default='HG00096,HG00533,HG00534',
         help="a comma-seperated list of samples to download")
@@ -511,15 +435,14 @@ def parseArgs():
     return args
 
 
-@utils.Timed()
 def main(args):
     downloaderClass = sources[args.source]
+    downloader = downloaderClass(args)
     try:
-        downloader = downloaderClass(args)
         downloader.downloadVcfs()
+        downloader.downloadReference()
         downloader.downloadBams()
-        downloader.downloadFastas()
-        downloader.removeCheckpoints()
+        downloader.createRepo()
     finally:
         downloader.cleanup()
 
