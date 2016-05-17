@@ -1,0 +1,2460 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "The Genomics API developed by the Global Alliance enables DNA data providers and consumers to better share information and work together on a global scale, advancing genome research and clinical application.",
+        "version": "{{info.info.getServerVersion()}}",
+        "title": "GA4GH Reference Server",
+        "contact": {
+            "email": "ga4gh-server-support@soe.ucsc.edu"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+    "host": "{{ info.host }}",
+    "tags": [
+        {
+            "name": "Variants",
+            "description": "Variant endpoints",
+            "externalDocs": {
+                "description": "Find out more",
+                "url": "https://github.com/ga4gh/schemas"
+            }
+        },
+        {
+            "name": "Reads",
+            "description": "Reads endpoints",
+            "externalDocs": {
+                "description": "Find out more",
+                "url": "https://github.com/ga4gh/schemas"
+            }
+        },
+        {
+            "name": "References",
+            "description": "Reference endpoints",
+            "externalDocs": {
+                "description": "Find out more",
+                "url": "https://github.com/ga4gh/schemas"
+            }
+        },
+        {
+            "name": "Datasets",
+            "description": "Dataset endpoints",
+            "externalDocs": {
+                "description": "Find out more",
+                "url": "https://github.com/ga4gh/schemas"
+            }
+        },
+        {
+            "name": "Sequence Annotation",
+            "description": "Sequence annotation endpoints",
+            "externalDocs": {
+                "description": "Find out more",
+                "url": "https://github.com/ga4gh/schemas"
+            }
+        }
+    ],
+    "schemes": [
+        "http"
+    ],
+    "paths": {
+        "/references/{id}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "description": "Returns references for a given ID",
+                "summary": "Find references by ID",
+                "operationId": "getReference",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "reference response",
+                        "schema": {
+                            "$ref": "#/definitions/Reference"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the reference",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/referencesets/{id}": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "description": "Returns reference sets for a given ID",
+                "summary": "Find reference sets by ID",
+                "operationId": "getReferenceSet",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "reference sets response",
+                        "schema": {
+                            "$ref": "#/definitions/ReferenceSet"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the reference set",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/references/{id}/bases": {
+            "get": {
+                "tags": [
+                    "References"
+                ],
+                "description": "Returns reference bases for a given ID",
+                "summary": "Find reference bases by ID",
+                "operationId": "getReferencebases",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "reference bases response",
+                        "schema": {
+                            "$ref": "#/definitions/ListReferenceBasesResponse"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the reference bases",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/callsets/search": {
+            "post": {
+                "tags": [
+                    "Variants"
+                ],
+                "summary": "Search for callsets",
+                "description": "",
+                "operationId": "searchCallsets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchCallSetsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchCallSetsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Call Set ID was not found"
+                    }
+                }
+            }
+        },
+        "/readgroupsets/search": {
+            "post": {
+                "tags": [
+                    "Reads"
+                ],
+                "summary": "Search for readgroupsets",
+                "description": "",
+                "operationId": "searchReadGroupSets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchReadGroupSetsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchReadGroupSetsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Read Group Set ID was not found"
+                    }
+                }
+            }
+        },
+        "/featuresets/search": {
+            "post": {
+                "tags": [
+                    "Sequence Annotation"
+                ],
+                "summary": "Search for Feature sets",
+                "description": "",
+                "operationId": "searchFeatureSets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchFeatureSetsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchFeatureSetsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Dataset ID was not found"
+                    }
+                }
+            }
+        },
+        "/features/search": {
+            "post": {
+                "tags": [
+                    "Sequence Annotation"
+                ],
+                "summary": "Search for Features",
+                "description": "",
+                "operationId": "searchFeatures",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchFeaturesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchFeaturesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Feature set ID was not found"
+                    }
+                }
+            }
+        },
+        "/featuresets/{id}": {
+            "get": {
+                "tags": [
+                    "Sequence Annotation"
+                ],
+                "description": "Returns a feature set for a given ID",
+                "summary": "Find feature sets by ID",
+                "operationId": "getFeatureSet",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Feature set response",
+                        "schema": {
+                            "$ref": "#/definitions/FeatureSet"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the feature set",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/features/{id}": {
+            "get": {
+                "tags": [
+                    "Sequence Annotation"
+                ],
+                "description": "Returns a feature for a given ID",
+                "summary": "Find feature by ID",
+                "operationId": "getFeature",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Feature response",
+                        "schema": {
+                            "$ref": "#/definitions/Feature"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the feature",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/reads/search": {
+            "post": {
+                "tags": [
+                    "Reads"
+                ],
+                "summary": "Search for reads",
+                "description": "",
+                "operationId": "searchReads",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchReadsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchReadsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Read ID was not found"
+                    }
+                }
+            }
+        },
+        "/referencesets/search": {
+            "post": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Search for referencesets",
+                "description": "",
+                "operationId": "searchReferenceSets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchReferenceSetsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchReferenceSetsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Reference Set ID was not found"
+                    }
+                }
+            }
+        },
+        "/references/search": {
+            "post": {
+                "tags": [
+                    "References"
+                ],
+                "summary": "Search for references",
+                "description": "",
+                "operationId": "searchReferences",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchReferencesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchReferencesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Reference ID was not found"
+                    }
+                }
+            }
+        },
+        "/variantsets/search": {
+            "post": {
+                "tags": [
+                    "Variants"
+                ],
+                "summary": "Search for variantsets",
+                "description": "",
+                "operationId": "searchVariantSets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchVariantSetsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchVariantSetsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Variant Set ID was not found"
+                    }
+                }
+            }
+        },
+        "/variants/{id}": {
+            "get": {
+                "tags": [
+                    "Variants"
+                ],
+                "description": "Returns variant for a given ID",
+                "summary": "Find variants by ID",
+                "operationId": "getVariant",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "variant response",
+                        "schema": {
+                            "$ref": "#/definitions/Variant"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the variant",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/variantsets/{id}": {
+            "get": {
+                "tags": [
+                    "Variants"
+                ],
+                "description": "Returns variantsets for a given ID",
+                "summary": "Find variantsets by ID",
+                "operationId": "getVariantSet",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "variantset response",
+                        "schema": {
+                            "$ref": "#/definitions/VariantSet"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the variantset",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/readgroupsets/{id}": {
+            "get": {
+                "tags": [
+                    "Reads"
+                ],
+                "description": "Returns readgroupset for a given ID",
+                "summary": "Find readgroupset by ID",
+                "operationId": "getReadGroupSet",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "readgroupset response",
+                        "schema": {
+                            "$ref": "#/definitions/ReadGroupSet"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the readgroupset",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/readgroups/{id}": {
+            "get": {
+                "tags": [
+                    "Reads"
+                ],
+                "description": "Returns readgroups for a given ID",
+                "summary": "Find readgroups by ID",
+                "operationId": "getReadGroup",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "readgroup response",
+                        "schema": {
+                            "$ref": "#/definitions/ReadGroup"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the readgroup",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/callsets/{id}": {
+            "get": {
+                "tags": [
+                    "Variants"
+                ],
+                "description": "Returns callset for a given ID",
+                "summary": "Find callsets by ID",
+                "operationId": "getCallSet",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "callset response",
+                        "schema": {
+                            "$ref": "#/definitions/CallSet"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the callset",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/datasets/{id}": {
+            "get": {
+                "tags": [
+                    "Datasets"
+                ],
+                "description": "Returns dataset for a given ID",
+                "summary": "Find datasets by ID",
+                "operationId": "getDataset",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "dataset response",
+                        "schema": {
+                            "$ref": "#/definitions/Dataset"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the dataset",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/variantannotationsets/{id}": {
+            "get": {
+                "tags": [
+                    "Variants"
+                ],
+                "description": "Returns variant annotation set for a given ID",
+                "summary": "Find variant annotation sets by ID",
+                "operationId": "getVariantAnnotationSet",
+                "produces": [
+                    "application/json"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "variant annotation set response",
+                        "schema": {
+                            "$ref": "#/definitions/VariantAnnotationSet"
+                        }
+                    }
+                }
+            },
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "description": "ID of the variant annotation set",
+                    "required": true,
+                    "type": "string"
+                }
+            ]
+        },
+        "/variants/search": {
+            "post": {
+                "tags": [
+                    "Variants"
+                ],
+                "summary": "Search for variants",
+                "description": "",
+                "operationId": "searchVariants",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchVariantsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchVariantsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Variant Set ID was not found"
+                    }
+                }
+            }
+        },
+        "/variantannotationsets/search": {
+            "post": {
+                "tags": [
+                    "Variants"
+                ],
+                "summary": "Search for variantAnnotationSets",
+                "description": "",
+                "operationId": "searchVariantAnnotationSets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchVariantAnnotationSetsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchVariantAnnotationSetsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Variant Annotation Set ID was not found"
+                    }
+                }
+            }
+        },
+        "/variantannotations/search": {
+            "post": {
+                "tags": [
+                    "Variants"
+                ],
+                "summary": "Search for variantannotations",
+                "description": "",
+                "operationId": "searchVariantAnnotations",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchVariantAnnotationsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchVariantAnnotationsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Variant Annotation Set ID was not found"
+                    }
+                }
+            }
+        },
+        "/datasets/search": {
+            "post": {
+                "tags": [
+                    "Datasets"
+                ],
+                "summary": "Search for datasets",
+                "description": "",
+                "operationId": "searchDatasets",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "Search request",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SearchDatasetsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/SearchDatasetsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request"
+                    },
+                    "404": {
+                        "description": "The specified Data Set ID was not found"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "Feature": {
+            "type": "object",
+            "required": [
+                "id",
+                "parentId",
+                "childIds",
+                "featureSetId",
+                "referenceName",
+                "start",
+                "end",
+                "strand",
+                "featureType",
+                "attributes"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "parentId": {
+                    "type": "string"
+                },
+                "childIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "featureSetId": {
+                    "type": "string"
+                },
+                "referenceName": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "integer"
+                },
+                "end": {
+                    "type": "integer"
+                },
+                "strand": {
+                    "$ref": "#/definitions/Strand"
+                },
+                "featureType": {
+                    "$ref": "#/definitions/OntologyTerm"
+                },
+                "attributes": {
+                    "$ref": "#/definitions/Attributes"
+                }
+            }
+        },
+        "Attributes": {
+            "type": "object",
+            "required": [
+                "vals"
+            ],
+            "properties": {
+                "vals": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "FeatureSet": {
+            "type": "object",
+            "required": [
+                "id",
+                "datasetId",
+                "info"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "datasetId": {
+                    "type": "string"
+                },
+                "referenceSetId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sourceURI": {
+                    "type": "string"
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "SearchFeaturesRequest": {
+            "type": "object",
+            "required": [
+                "referenceName",
+                "start",
+                "end",
+                "featureTypes"
+            ],
+            "properties": {
+                "featureSetId": {
+                    "type": "string"
+                },
+                "parentId": {
+                    "type": "string"
+                },
+                "referenceName": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "end": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "featureTypes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchFeaturesResponse": {
+            "type": "object",
+            "required": [
+                "features"
+            ],
+            "properties": {
+                "features": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Feature"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchFeatureSetsRequest": {
+            "type": "object",
+            "required": [
+                "datasetId"
+            ],
+            "properties": {
+                "datasetId": {
+                    "type": "string"
+                },
+                "pageSize": {
+                    "type": "string"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchFeatureSetsResponse": {
+            "type": "object",
+            "required": [
+                "featureSets"
+            ],
+            "properties": {
+                "featureSets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FeatureSet"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "Reference": {
+            "type": "object",
+            "required": [
+                "id",
+                "length",
+                "md5checksum",
+                "name",
+                "sourceURI",
+                "sourceAccessions",
+                "isDerived",
+                "sourceDivergence",
+                "ncbiTaxonId"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "length": {
+                    "type": "integer"
+                },
+                "md5checksum": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sourceURI": {
+                    "type": "string"
+                },
+                "sourceAccessions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "isDerived": {
+                    "type": "boolean"
+                },
+                "sourceDivergence": {
+                    "type": "number"
+                },
+                "ncbiTaxonId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ReferenceSet": {
+            "type": "object",
+            "required": [
+                "id",
+                "name",
+                "md5checksum",
+                "description",
+                "sourceAccessions",
+                "isDerived"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "md5checksum": {
+                    "type": "string"
+                },
+                "ncbiTaxonId": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "assemblyId": {
+                    "type": "string"
+                },
+                "sourceURI": {
+                    "type": "string"
+                },
+                "sourceAccessions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "isDerived": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "ListReferenceBasesResponse": {
+            "type": "object",
+            "required": [
+                "offset",
+                "sequence",
+                "nextPageToken"
+            ],
+            "properties": {
+                "offset": {
+                    "type": "integer"
+                },
+                "sequence": {
+                    "type": "string"
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "CallSet": {
+            "type": "object",
+            "required": [
+                "id",
+                "name",
+                "sampleId",
+                "variantSetIds",
+                "created",
+                "updated",
+                "info"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sampleId": {
+                    "type": "string"
+                },
+                "variantSetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "integer"
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "Experiment": {
+            "type": "object",
+            "required": [
+                "id",
+                "name",
+                "description",
+                "recordCreateTime",
+                "recordUpdatetime",
+                "runTime",
+                "molecule",
+                "strategy",
+                "selection",
+                "library",
+                "libraryLayout",
+                "instrumentModel",
+                "instrumentDataFile",
+                "sequencingCenter",
+                "platformUnit",
+                "info"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "recordCreateTime": {
+                    "type": "string"
+                },
+                "recordUpdatetime": {
+                    "type": "string"
+                },
+                "runTime": {
+                    "type": "string"
+                },
+                "molecule": {
+                    "type": "string"
+                },
+                "strategy": {
+                    "type": "string"
+                },
+                "selection": {
+                    "type": "string"
+                },
+                "library": {
+                    "type": "string"
+                },
+                "libraryLayout": {
+                    "type": "string"
+                },
+                "instrumentModel": {
+                    "type": "string"
+                },
+                "instrumentDataFile": {
+                    "type": "string"
+                },
+                "sequencingCenter": {
+                    "type": "string"
+                },
+                "platformUnit": {
+                    "type": "string"
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "Program": {
+            "type": "object",
+            "required": [
+                "commandLine",
+                "id",
+                "name",
+                "prevProgramId",
+                "version"
+            ],
+            "properties": {
+                "commandLine": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "prevProgramId": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchCallSetsRequest": {
+            "type": "object",
+            "required": [
+                "variantSetId"
+            ],
+            "properties": {
+                "variantSetId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchCallSetsResponse": {
+            "type": "object",
+            "required": [
+                "callSets",
+                "nextPageToken"
+            ],
+            "properties": {
+                "callSets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CallSet"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchReadGroupSetsRequest": {
+            "type": "object",
+            "required": [
+                "datasetId",
+                "name",
+                "pageSize",
+                "pageToken"
+            ],
+            "properties": {
+                "datasetId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchReadGroupSetsResponse": {
+            "type": "object",
+            "required": [
+                "readGroupSets",
+                "nextPageToken"
+            ],
+            "properties": {
+                "readGroupSets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ReadGroupSet"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "ReadStats": {
+            "type": "object",
+            "properties": {
+                "alignedReadCount": {
+                    "type": "integer"
+                },
+                "unalignedReadCount": {
+                    "type": "integer"
+                },
+                "baseCount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ReadGroup": {
+            "type": "object",
+            "required": [
+                "id",
+                "programs",
+                "info"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "datasetId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "sampleId": {
+                    "type": "string"
+                },
+                "experiment": {
+                    "$ref": "#/definitions/Experiment"
+                },
+                "predictedInsertSize": {
+                    "type": "integer"
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "updated": {
+                    "type": "integer"
+                },
+                "stats": {
+                    "$ref": "#/definitions/ReadStats"
+                },
+                "programs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Program"
+                    }
+                },
+                "referenceSetId": {
+                    "type": "string"
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "ReadGroupSet": {
+            "type": "object",
+            "required": [
+                "id",
+                "readGroups"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "datasetId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "stats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ReadStats"
+                    }
+                },
+                "readGroups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ReadGroup"
+                    }
+                }
+            }
+        },
+        "Strand": {
+            "type": "string",
+            "enum": [
+                "NEG_STRAND",
+                "POS_STRAND"
+            ]
+        },
+        "Position": {
+            "type": "object",
+            "required": [
+                "referenceName",
+                "position",
+                "strand"
+            ],
+            "properties": {
+                "referenceName": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "strand": {
+                    "$ref": "#/definitions/Strand"
+                }
+            }
+        },
+        "CigarOperation": {
+            "type": "string",
+            "enum": [
+                "ALIGNMENT_MATCH",
+                "INSERT",
+                "DELETE",
+                "SKIP",
+                "CLIP_SOFT",
+                "CLIP_HARD",
+                "PAD",
+                "SEQUENCE_MATCH",
+                "SEQUENCE_MISMATCH"
+            ]
+        },
+        "CigarUnit": {
+            "type": "object",
+            "required": [
+                "operation",
+                "operationLength"
+            ],
+            "properties": {
+                "operation": {
+                    "$ref": "#/definitions/CigarOperation"
+                },
+                "operationLength": {
+                    "type": "integer"
+                },
+                "referenceSequence": {
+                    "type": "string"
+                }
+            }
+        },
+        "LinearAlignment": {
+            "type": "object",
+            "required": [
+                "position",
+                "cigar"
+            ],
+            "properties": {
+                "position": {
+                    "$ref": "#/definitions/Position"
+                },
+                "mappingQuality": {
+                    "type": "integer"
+                },
+                "cigar": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/CigarUnit"
+                    }
+                }
+            }
+        },
+        "ReadAlignment": {
+            "type": "object",
+            "required": [
+                "readGroupId",
+                "fragmentName",
+                "alignedQuality",
+                "info"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "readGroupId": {
+                    "type": "string"
+                },
+                "fragmentName": {
+                    "type": "string"
+                },
+                "improperPlacement": {
+                    "type": "boolean"
+                },
+                "duplicateFragment": {
+                    "type": "boolean"
+                },
+                "failedVendorQualityChecks": {
+                    "type": "boolean"
+                },
+                "numberReads": {
+                    "type": "integer"
+                },
+                "fragmentLength": {
+                    "type": "integer"
+                },
+                "readNumber": {
+                    "type": "integer"
+                },
+                "alignment": {
+                    "$ref": "#/definitions/LinearAlignment"
+                },
+                "secondaryAlignment": {
+                    "type": "boolean"
+                },
+                "supplementaryAlignment": {
+                    "type": "boolean"
+                },
+                "alignedSequence": {
+                    "type": "string"
+                },
+                "alignedQuality": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "nextMatePosition": {
+                    "$ref": "#/definitions/Position"
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "SearchReadsRequest": {
+            "type": "object",
+            "required": [
+                "readGroupIds"
+            ],
+            "properties": {
+                "readGroupIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "referenceId": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "end": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchReadsResponse": {
+            "type": "object",
+            "required": [
+                "alignments",
+                "nextPageToken"
+            ],
+            "properties": {
+                "alignments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ReadAlignment"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchReferencesRequest": {
+            "type": "object",
+            "required": [
+                "referenceSetId"
+            ],
+            "properties": {
+                "referenceSetId": {
+                    "type": "string"
+                },
+                "md5checksum": {
+                    "type": "string"
+                },
+                "accession": {
+                    "type": "string"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchReferencesResponse": {
+            "type": "object",
+            "required": [
+                "references"
+            ],
+            "properties": {
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Reference"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchReferenceSetsRequest": {
+            "type": "object",
+            "properties": {
+                "md5checksum": {
+                    "type": "string"
+                },
+                "accession": {
+                    "type": "string"
+                },
+                "assemblyId": {
+                    "type": "string"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchReferenceSetsResponse": {
+            "type": "object",
+            "required": [
+                "referenceSets"
+            ],
+            "properties": {
+                "referenceSets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ReferenceSet"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchVariantSetsRequest": {
+            "type": "object",
+            "required": [
+                "datasetId"
+            ],
+            "properties": {
+                "datasetId": {
+                    "type": "string"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchVariantSetsResponse": {
+            "type": "object",
+            "required": [
+                "variantSets"
+            ],
+            "properties": {
+                "variantSets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VariantSet"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchVariantAnnotationsRequest": {
+            "type": "object",
+            "required": [
+                "variantAnnotationSetId",
+                "start",
+                "end"
+            ],
+            "properties": {
+                "variantAnnotationSetId": {
+                    "type": "string"
+                },
+                "referenceName": {
+                    "type": "string"
+                },
+                "referenceId": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "end": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "effects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OntologyTerm"
+                    }
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchVariantAnnotationsResponse": {
+            "type": "object",
+            "required": [
+                "variantAnnotations",
+                "nextPageToken"
+            ],
+            "properties": {
+                "variantAnnotations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VariantAnnotation"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchVariantAnnotationSetsRequest": {
+            "type": "object",
+            "required": [
+                "variantSetId"
+            ],
+            "properties": {
+                "variantSetId": {
+                    "type": "string"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchVariantAnnotationSetsResponse": {
+            "type": "object",
+            "required": [
+                "variantAnnotationSets"
+            ],
+            "properties": {
+                "variantAnnotationSets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VariantAnnotationSet"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchDatasetsRequest": {
+            "type": "object",
+            "properties": {
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchDatasetsResponse": {
+            "type": "object",
+            "required": [
+                "datasets",
+                "nextPageToken"
+            ],
+            "properties": {
+                "datasets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Dataset"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "Dataset": {
+            "type": "object",
+            "required": [
+                "id",
+                "name",
+                "description"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
+        "VariantSetMetadata": {
+            "type": "object",
+            "required": [
+                "key",
+                "value",
+                "id",
+                "type",
+                "number",
+                "description",
+                "info"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "number": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "VariantSet": {
+            "type": "object",
+            "required": [
+                "id",
+                "name",
+                "datasetId",
+                "referenceSetId",
+                "metadata"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "datasetId": {
+                    "type": "string"
+                },
+                "referenceSetId": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VariantSetMetadata"
+                    }
+                }
+            }
+        },
+        "Analysis": {
+            "type": "object",
+            "required": [
+                "id",
+                "updateDateTime",
+                "software",
+                "info"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "createDateTime": {
+                    "type": "string"
+                },
+                "updateDateTime": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "software": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "OntologyTerm": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "term": {
+                    "type": "string"
+                },
+                "sourceName": {
+                    "type": "string"
+                },
+                "sourceVersion": {
+                    "type": "string"
+                }
+            }
+        },
+        "HGVSAnnotation": {
+            "type": "object",
+            "properties": {
+                "genomic": {
+                    "type": "string"
+                },
+                "transcript": {
+                    "type": "string"
+                },
+                "protein": {
+                    "type": "string"
+                }
+            }
+        },
+        "AlleleLocation": {
+            "type": "object",
+            "required": [
+                "start"
+            ],
+            "properties": {
+                "start": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "end": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "referenceSequence": {
+                    "type": "string"
+                },
+                "alternateSequence": {
+                    "type": "string"
+                }
+            }
+        },
+        "AnalysisResult": {
+            "type": "object",
+            "required": [
+                "analysisId"
+            ],
+            "properties": {
+                "analysisId": {
+                    "type": "string"
+                },
+                "result": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "TranscriptEffect": {
+            "type": "object",
+            "required": [
+                "id",
+                "featureId",
+                "effects",
+                "hgvsAnnotation",
+                "analysisResults"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "featureId": {
+                    "type": "string"
+                },
+                "alternateBases": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "effects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OntologyTerm"
+                    }
+                },
+                "hgvsAnnotation": {
+                    "$ref": "#/definitions/HGVSAnnotation"
+                },
+                "cDNALocation": {
+                    "$ref": "#/definitions/AlleleLocation"
+                },
+                "CDSLocation": {
+                    "$ref": "#/definitions/AlleleLocation"
+                },
+                "proteinLocation": {
+                    "$ref": "#/definitions/AlleleLocation"
+                },
+                "analysisResults": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AnalysisResult"
+                    }
+                }
+            }
+        },
+        "VariantAnnotation": {
+            "type": "object",
+            "required": [
+                "id",
+                "variantId",
+                "variantAnnotationSetId",
+                "transcriptEffects",
+                "info"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "variantId": {
+                    "type": "string"
+                },
+                "variantAnnotationSetId": {
+                    "type": "string"
+                },
+                "createDateTime": {
+                    "type": "string"
+                },
+                "transcriptEffects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/TranscriptEffect"
+                    }
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "VariantAnnotationSet": {
+            "type": "object",
+            "required": [
+                "id",
+                "variantSetId",
+                "analysis"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "variantSetId": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "analysis": {
+                    "$ref": "#/definitions/Analysis"
+                }
+            }
+        },
+        "SearchVariantsRequest": {
+            "type": "object",
+            "required": [
+                "variantSetId",
+                "referenceName",
+                "start",
+                "end"
+            ],
+            "properties": {
+                "variantSetId": {
+                    "type": "string"
+                },
+                "callSetIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "referenceName": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "end": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "pageSize": {
+                    "type": "integer"
+                },
+                "pageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "SearchVariantsResponse": {
+            "type": "object",
+            "required": [
+                "variantSets"
+            ],
+            "properties": {
+                "variantSets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VariantSet"
+                    }
+                },
+                "nextPageToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "Variant": {
+            "type": "object",
+            "required": [
+                "id",
+                "variantSetId",
+                "names",
+                "referenceName",
+                "start",
+                "end",
+                "referenceBases",
+                "alternateBases",
+                "info",
+                "calls"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "variantSetId": {
+                    "type": "string"
+                },
+                "names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "created": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "updated": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "referenceName": {
+                    "type": "string"
+                },
+                "start": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "end": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "referenceBases": {
+                    "type": "string"
+                },
+                "alternateBases": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "calls": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Call"
+                    }
+                }
+            }
+        },
+        "Call": {
+            "type": "object",
+            "required": [
+                "genotype",
+                "genotypeLikelihood",
+                "info"
+            ],
+            "properties": {
+                "callSetName": {
+                    "type": "string"
+                },
+                "callSetId": {
+                    "type": "string"
+                },
+                "genotype": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "phaseset": {
+                    "type": "string"
+                },
+                "genotypeLikelihood": {
+                    "type": "array",
+                    "items": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                },
+                "info": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "externalDocs": {
+        "description": "Find out more about GA4GH",
+        "url": "http://ga4gh.org"
+    }
+}

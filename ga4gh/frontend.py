@@ -629,6 +629,19 @@ def getFeature(id):
         id, flask.request, app.backend.runGetFeature)
 
 
+@DisplayedRoute(
+    '/swagger',
+    pathDisplay='/swagger')
+def swaggerDocs():
+    info = {}
+    info['host'] = flask.request.host
+    info['info'] = app.serverStatus
+    return flask.Response(
+        flask.render_template(
+            'swagger.json', info=info),
+        mimetype="application/json")
+
+
 @app.route('/oauth2callback', methods=['GET'])
 def oidcCallback():
     """
