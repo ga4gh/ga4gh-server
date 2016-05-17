@@ -14,7 +14,6 @@ import os
 import random
 import re
 
-import dateutil.parser
 import pysam
 import google.protobuf.struct_pb2 as struct_pb2
 
@@ -26,7 +25,6 @@ import ga4gh.pb as pb
 ANNOTATIONS_VEP_V82 = "VEP_v82"
 ANNOTATIONS_VEP_V77 = "VEP_v77"
 ANNOTATIONS_SNPEFF = "SNPEff"
-
 
 
 def isUnspecified(str):
@@ -211,8 +209,8 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         protocolElement = protocol.VariantSet()
         protocolElement.id = self.getId()
-        protocolElement.datasetId = self.getParentContainer().getId()
-        protocolElement.referenceSetId = self._referenceSet.getId()
+        protocolElement.dataset_id = self.getParentContainer().getId()
+        protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.metadata = self.getMetadata()
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
@@ -872,8 +870,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def _createAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.createDateTime = self._creationTime
-        analysis.updateDateTime = self._updatedTime
+        analysis.create_date_time = self._creationTime
+        analysis.update_date_time = self._updatedTime
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -907,7 +905,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann.variantId = variant.id
         ann.start = variant.start
         ann.end = variant.end
-        ann.createDateTime = self._creationTime
+        ann.create_date_time = self._creationTime
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (0,5)
         ann.transcriptEffects = []
@@ -1030,7 +1028,8 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                 if key not in analysis.info:
                     analysis.info[key].Clear()
                 if value.description is not None:
-                    analysis.info[key].values.add().string_value = value.description
+                    analysis.info[
+                        key].values.add().string_value = value.description
         analysis.create_date_time = self._creationTime
         analysis.update_date_time = self._updatedTime
         for r in header.records:
@@ -1150,7 +1149,8 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         if not isUnspecified(hgvsP):
             protein_location = self.convertLocationHgvsP(hgvsP)
             if protein_location:
-                effect.protein_location.CopyFrom(self.convertLocationHgvsP(hgvsP))
+                effect.protein_location.CopyFrom(
+                    self.convertLocationHgvsP(hgvsP))
         if protein_location is None and self.convertLocation(protPos):
             effect.protein_location.CopyFrom(self.convertLocation(protPos))
 

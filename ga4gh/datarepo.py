@@ -151,7 +151,7 @@ class AbstractDataRepository(object):
         Returns the readgroup set with the specified ID.
         """
         compoundId = datamodel.ReadGroupSetCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataset(compoundId.dataset_id)
         return dataset.getReadGroupSet(id_)
 
     def getVariantSet(self, id_):
