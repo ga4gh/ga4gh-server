@@ -83,8 +83,8 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchVariantAnnotationSets(self):
         request = protocol.SearchVariantAnnotationSetsRequest()
-        request.variantSetId = self.variantSetId
-        request.pageSize = self.pageSize
+        request.variant_set_id = self.variantSetId
+        request.page_size = self.pageSize
         self.httpClient.searchVariantAnnotationSets(self.variantSetId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "variantannotationsets",
@@ -92,11 +92,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchVariantAnnotations(self):
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = self.variantAnnotationSetId
-        request.pageSize = self.pageSize
-        request.referenceName = self.referenceName
-        request.referenceId = self.referenceId
-        request.effects = []
+        request.variant_annotation_set_id = self.variantAnnotationSetId
+        request.page_size = self.pageSize
+        request.reference_name = self.referenceName
+        request.reference_id = self.referenceId
         request.start = self.start
         request.end = self.end
         self.httpClient.searchVariantAnnotations(
@@ -120,8 +119,8 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchFeatureSets(self):
         request = protocol.SearchFeatureSetsRequest()
-        request.datasetId = self.datasetId
-        request.pageSize = self.pageSize
+        request.dataset_id = self.datasetId
+        request.page_size = self.pageSize
         self.httpClient.searchFeatureSets(self.datasetId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "featuresets", protocol.SearchFeatureSetsResponse)

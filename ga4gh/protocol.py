@@ -26,10 +26,9 @@ from ga4gh.references_pb2 import *  # noqa
 from ga4gh.variant_service_pb2 import *  # noqa
 from ga4gh.variants_pb2 import *  # noqa
 from ga4gh.allele_annotations_pb2 import *  # noqa
-from ga4gh.allele_annotations_pb2 import *  # noqa
+from ga4gh.allele_annotation_service_pb2 import *  # noqa
 from ga4gh.sequence_annotations_pb2 import *  # noqa
 from ga4gh.sequence_annotation_service_pb2 import *  # noqa
-
 
 # A map of response objects to the name of the attribute used to
 # store the values returned.

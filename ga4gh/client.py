@@ -287,17 +287,18 @@ class AbstractClient(object):
         conditions from the specified AnnotationSet.
         """
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSetId
-        request.referenceName = referenceName
-        request.referenceId = referenceId
+        request.variant_annotation_set_id = variantAnnotationSetId
+        request.reference_name = referenceName
+        request.reference_id = referenceId
         request.start = start
         request.end = end
-        request.effects = effects
+        for effect in effects:
+            request.effects.add().CopyFrom(protocol.OntologyTerm(**effect))
         for effect in request.effects:
-            if 'id' not in effect:
+            if not effect.id:
                 raise exceptions.BadRequestException(
                     "Each ontology term should have an id set")
-        request.pageSize = self._pageSize
+        request.page_size = self._pageSize
         return self._runSearchRequest(
             request, "variantannotations",
             protocol.SearchVariantAnnotationsResponse)
@@ -370,8 +371,8 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchVariantAnnotationSetsRequest()
-        request.variantSetId = variantSetId
-        request.pageSize = self._pageSize
+        request.variant_set_id = variantSetId
+        request.page_size = self._pageSize
         return self._runSearchRequest(
             request, "variantannotationsets",
             protocol.SearchVariantAnnotationSetsResponse)
@@ -387,8 +388,8 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchFeatureSetsRequest()
-        request.datasetId = datasetId
-        request.pageSize = self._pageSize
+        request.dataset_id = datasetId
+        request.page_size = self._pageSize
         return self._runSearchRequest(
             request, "featuresets", protocol.SearchFeatureSetsResponse)
 

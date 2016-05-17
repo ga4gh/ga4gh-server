@@ -211,7 +211,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement.id = self.getId()
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
-        protocolElement.metadata = self.getMetadata()
+        protocolElement.metadata.extend(self.getMetadata())
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.name = self.getLocalId()
@@ -234,13 +234,6 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         ret = protocol.Variant()
         ret.created = self._creationTime
         ret.updated = self._updatedTime
-        ret.variantSetId = self.getId()
-        return ret
-
-        if self._creationTime:
-            ret.created = self._creationTime
-        if self._updatedTime:
-            ret.updated = self._updatedTime
         ret.variant_set_id = self.getId()
         return ret
 

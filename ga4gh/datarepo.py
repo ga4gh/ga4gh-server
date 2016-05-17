@@ -17,6 +17,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.exceptions as exceptions
+from ga4gh import protocol
 
 MODE_READ = 'r'
 MODE_WRITE = 'w'
@@ -707,8 +708,9 @@ class SqlDataRepository(AbstractDataRepository):
                 (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
         """
         cursor = self._dbConnection.cursor()
-        statsJson = json.dumps(readGroup.getStats().toJsonDict())
-        experimentJson = json.dumps(readGroup.getExperiment().toJsonDict())
+        statsJson = json.dumps(protocol.toJsonDict(readGroup.getStats()))
+        experimentJson = json.dumps(
+            protocol.toJsonDict(readGroup.getExperiment()))
         cursor.execute(sql, (
             readGroup.getId(), readGroup.getParentContainer().getId(),
             readGroup.getLocalId(), readGroup.getPredictedInsertSize(),
@@ -775,8 +777,8 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """
         programsJson = json.dumps(
-            [program.toJsonDict() for program in readGroupSet.getPrograms()])
-        statsJson = json.dumps(readGroupSet.getStats().toJsonDict())
+            [protocol.toJsonDict(program) for program in readGroupSet.getPrograms()])
+        statsJson = json.dumps(protocol.toJsonDict(readGroupSet.getStats()))
         cursor = self._dbConnection.cursor()
         try:
             cursor.execute(sql, (
@@ -843,7 +845,7 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?, ?, ?, ?);
         """
         analysisJson = json.dumps(
-            variantAnnotationSet.getAnalysis().toJsonDict())
+            protocol.toJsonDict(variantAnnotationSet.getAnalysis()))
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             variantAnnotationSet.getId(),
@@ -940,7 +942,7 @@ class SqlDataRepository(AbstractDataRepository):
         # within the table as a JSON dump. These should really be stored in
         # their own table
         metadataJson = json.dumps(
-            [metadata.toJsonDict() for metadata in variantSet.getMetadata()])
+            [protocol.toJsonDict(metadata) for metadata in variantSet.getMetadata()])
         urlMapJson = json.dumps(variantSet.getReferenceToDataUrlIndexMap())
         try:
             cursor.execute(sql, (
