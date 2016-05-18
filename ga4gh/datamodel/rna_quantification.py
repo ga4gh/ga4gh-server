@@ -129,6 +129,7 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         self._description = ""
         self._name = localId
         self._readGroupId = ""
+        self._referenceSet = ""
 
     def toProtocolElement(self):
         """
@@ -153,17 +154,29 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         self._name = fields["name"]
         self._readGroupId = fields["read_group_id"]
 
+    def getReferenceSet(self):
+        """
+        Returns the reference set associated with this RnaQuantification.
+        """
+        return self._referenceSet
+
+    def setReferenceSet(self, referenceSet):
+        """
+        Sets the reference set associated with this RnaQuantification to the
+        specified value.
+        """
+        self._referenceSet = referenceSet
+
 
 class RNASeqResult(AbstractRNAQuantification):
     """
     Class representing a single RnaQuantification in the GA4GH data model.
     """
 
-    def __init__(self, parentContainer, localId, rnaQuantDataPath):
+    def __init__(self, parentContainer, localId, rnaQuantDataPath=None):
         super(RNASeqResult, self).__init__(parentContainer, localId)
-        self._dbFilePath = rnaQuantDataPath  # the full path of the db file
-        self._db = SqliteRNABackend(self._dbFilePath)
-        self.getRnaQuantMetadata()
+        self._dbFilePath = None
+        self._db = None
 
     def getRnaQuantMetadata(self):
         """
@@ -176,6 +189,30 @@ class RNASeqResult(AbstractRNAQuantification):
             rnaQuantReturned = dataSource.getRnaQuantificationById(
                 rnaQuantId)
         self.addRnaQuantMetadata(rnaQuantReturned)
+
+    def populateFromFile(self, dataUrl):
+        """
+        Populates the instance variables of this FeatureSet from the specified
+        data URL.
+        """
+        self._dbFilePath = dataUrl
+        self._db = SqliteRNABackend(self._dbFilePath)
+        self.getRnaQuantMetadata()
+
+    def populateFromRow(self, row):
+        """
+        Populates the instance variables of this FeatureSet from the specified
+        DB row.
+        """
+        self._dbFilePath = row[b'dataUrl']
+        self._db = SqliteRNABackend(self._dbFilePath)
+        self.getRnaQuantMetadata()
+
+    def getDataUrl(self):
+        """
+        Returns the URL providing the data source for this FeatureSet.
+        """
+        return self._dbFilePath
 
     def getExpressionLevels(
             self, rnaQuantID, pageToken=0, pageSize=None, expressionId=None,

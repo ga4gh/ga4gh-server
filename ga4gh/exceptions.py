@@ -409,6 +409,12 @@ class RnaQuantificationNotFoundException(NotFoundException):
             "RnaQuantification with name '{0}' not found".format(name))
 
 
+class RnaQuantificationNameNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "RnaQuantification with name '{0}' not found".format(name))
+
+
 class ExpressionLevelNotFoundException(NotFoundException):
     def __init__(self, name):
         self.message = (
