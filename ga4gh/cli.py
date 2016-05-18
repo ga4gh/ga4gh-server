@@ -2032,19 +2032,6 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeRnaQuantification, rnaQuant)
         self._confirmDelete("RnaQuantification", rnaQuant.getLocalId(), func)
 
-    #TODO: add in ExpressionLevel objects separately?
-    def addExpressionLevel(self):
-        """
-        Adds an Expression Level into this repo
-        """
-        pass
-
-    def removeExpressionLevel(self):
-        """
-        Removes an Expression Level from this repo
-        """
-        pass
-
     #
     # Methods to simplify adding common arguments to the parser.
     #

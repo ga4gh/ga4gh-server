@@ -1054,8 +1054,10 @@ class SqlDataRepository(AbstractDataRepository):
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
-            rnaQuantification.getId(), rnaQuantification.getParentContainer().getId(),
-            rnaQuantification.getReferenceSet().getId(), rnaQuantification.getLocalId(),
+            rnaQuantification.getId(),
+            rnaQuantification.getParentContainer().getId(),
+            rnaQuantification.getReferenceSet().getId(),
+            rnaQuantification.getLocalId(),
             rnaQuantification.getDataUrl()))
 
     def _readRnaQuantificationTable(self, cursor):
