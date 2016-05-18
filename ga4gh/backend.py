@@ -220,11 +220,14 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
 
     @classmethod
     def _getStart(cls, annotation):
-        return annotation.start
+        # LSHIFT
+        # FIXME: variant Annotations don't have 'start' 'end' fields
+        return 0
 
     @classmethod
     def _getEnd(cls, annotation):
-        return annotation.end
+        # FIXME: variant Annotations don't have 'start' 'end' fields
+        return 0
 
     def next(self):
         while True:
@@ -240,11 +243,11 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         """
         # TODO reintroduce feature ID search
         ret = False
-        if len(self._effects) != 0 and not vann.transcriptEffects:
+        if len(self._effects) != 0 and not vann.transcript_effects:
             return False
         elif len(self._effects) == 0:
             return True
-        for teff in vann.transcriptEffects:
+        for teff in vann.transcript_effects:
             if self.filterEffect(teff):
                 ret = True
         return ret
@@ -265,10 +268,10 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         present in an annotation are equal.
         """
         return self._idPresent(requestedEffect) and (
-            effect.id == requestedEffect['id'])
+            effect.id == requestedEffect.id)
 
     def _idPresent(self, requestedEffect):
-        return "id" in requestedEffect
+        return requestedEffect.id != ""
 
     def _matchAnyEffects(self, effect):
         ret = False
@@ -278,16 +281,16 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
 
     def _removeNonMatchingTranscriptEffects(self, ann):
         newTxE = []
-        if self._effects == []:
+        if len(self._effects) == 0:
             return ann
-        for txe in ann.transcriptEffects:
+        for txe in ann.transcript_effects:
             add = False
             for effect in txe.effects:
                 if self._matchAnyEffects(effect):
                     add = True
             if add:
                 newTxE.append(txe)
-        ann.transcriptEffects = newTxE
+        ann.transcript_effects.extend(newTxE)
         return ann
 
 
@@ -489,7 +492,7 @@ class Backend(object):
         pairs defined by the specified request.
         """
         compoundId = datamodel.VariantSetCompoundId.parse(request.variant_set_id)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         variantSet = dataset.getVariantSet(request.variant_set_id)
         return self._topLevelObjectGenerator(
             request, variantSet.getNumVariantAnnotationSets(),
@@ -563,8 +566,8 @@ class Backend(object):
         """
         compoundId = datamodel.VariantAnnotationSetCompoundId.parse(
             request.variant_annotation_set_id)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        variantSet = dataset.getVariantSet(compoundId.variant_set_id)
         variantAnnotationSet = variantSet.getVariantAnnotationSet(
             request.variant_annotation_set_id)
         intervalIterator = VariantAnnotationsIntervalIterator(
@@ -595,7 +598,7 @@ class Backend(object):
                 # compound ID is the same as that of the featureSetId
                 mismatchCheck = (
                     compoundParentId.dataset_id != compoundId.dataset_id or
-                    compoundParentId.featureSetId != compoundId.featureSetId)
+                    compoundParentId.feature_set_id != compoundId.feature_set_id)
                 if mismatchCheck:
                     raise exceptions.ParentIncompatibleWithFeatureSet()
 
@@ -604,7 +607,7 @@ class Backend(object):
 
         dataset = self.getDataRepository().getDataset(
             compoundId.dataset_id)
-        featureSet = dataset.getFeatureSet(compoundId.featureSetId)
+        featureSet = dataset.getFeatureSet(compoundId.feature_set_id)
         return featureSet.getFeatures(
             request.reference_name, request.start, request.end,
             request.page_token, request.page_size,
@@ -753,8 +756,8 @@ class Backend(object):
         the feature compoundID passed in.
         """
         compoundId = datamodel.FeatureCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        featureSet = dataset.getFeatureSet(compoundId.featureSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        featureSet = dataset.getFeatureSet(compoundId.feature_set_id)
         gaFeature = featureSet.getFeature(compoundId)
         jsonString = gaFeature.toJsonString()
         return jsonString
@@ -825,8 +828,8 @@ class Backend(object):
         Runs a getVariantSet request for the specified ID.
         """
         compoundId = datamodel.VariantAnnotationSetCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        variantSet = dataset.getVariantSet(compoundId.variantSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        variantSet = dataset.getVariantSet(compoundId.variant_set_id)
         variantAnnotationSet = variantSet.getVariantAnnotationSet(id_)
         return self.runGetRequest(variantAnnotationSet)
 

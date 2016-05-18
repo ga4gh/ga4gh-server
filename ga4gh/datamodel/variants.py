@@ -897,33 +897,22 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         randomNumberGenerator = random.Random()
         randomNumberGenerator.seed(seed)
         ann = protocol.VariantAnnotation()
-        ann.variantAnnotationSetId = str(self.getCompoundId())
-        ann.variantId = variant.id
-        ann.start = variant.start
-        ann.end = variant.end
+        ann.variant_annotation_set_id = str(self.getCompoundId())
+        ann.variant_id = variant.id
         ann.create_date_time = self._creationTime
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (0,5)
-        ann.transcriptEffects = []
-        for base in variant.alternate_bases * (
-                randomNumberGenerator.randint(0, 5)):
-            ann.transcriptEffects.append(self.generateTranscriptEffect(
-                ann, base, randomNumberGenerator))
+
+        for i in xrange(randomNumberGenerator.randint(0, 5)):
+            for base in variant.alternate_bases:
+                ann.transcript_effects.add().CopyFrom(
+                    self.generateTranscriptEffect(
+                        ann, base, randomNumberGenerator))
         ann.id = self.getVariantAnnotationId(variant, ann)
         return ann
 
     def _addTranscriptEffectLocations(self, effect, ann):
         # TODO Make these valid HGVS values
-        effect.hgvs_annotation = protocol.HGVSAnnotation()
-        effect.hgvs_annotation.genomic = str(ann.start)
-        effect.hgvs_annotation.transcript = str(ann.start)
-        effect.hgvs_annotation.protein = str(ann.start)
-        effect.proteinLocation = self._createGaAlleleLocation()
-        effect.proteinLocation.start = ann.start
-        effect.CDSLocation = self._createGaAlleleLocation()
-        effect.CDSLocation.start = ann.start
-        effect.cDNALocation = self._createGaAlleleLocation()
-        effect.cDNALocation.start = ann.start
         return effect
 
     def _addTranscriptEffectId(self, effect):
@@ -938,25 +927,25 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         term = protocol.OntologyTerm()
         ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
         term.term, term.id = ontologyTuple[0], ontologyTuple[1]
-        term.sourceName = "sequenceOntology"
-        term.sourceVersion = "0"
+        term.source_name = "sequenceOntology"
+        term.source_version = "0"
         return term
 
     def _addTranscriptEffectOntologyTerm(self, effect, randomNumberGenerator):
-        effect.effects.append(
+        effect.effects.add().CopyFrom(
             self._getRandomOntologyTerm(randomNumberGenerator))
         return effect
 
     def _generateAnalysisResult(self, effect, ann, randomNumberGenerator):
         # TODO make these sensible
         analysisResult = protocol.AnalysisResult()
-        analysisResult.analysisId = "analysisId"
+        analysisResult.analysis_id = "analysisId"
         analysisResult.result = "result string"
         analysisResult.score = randomNumberGenerator.randint(0, 100)
         return analysisResult
 
     def _addAnalysisResult(self, effect, ann, randomNumberGenerator):
-        effect.analysisResults.append(
+        effect.analysis_results.add().CopyFrom(
             self._generateAnalysisResult(
                 effect, ann, randomNumberGenerator))
         return effect
@@ -964,8 +953,6 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
     def generateTranscriptEffect(self, ann, alts, randomNumberGenerator):
         effect = self._createGaTranscriptEffect()
         effect.alternate_bases = alts
-        effect.effects = []
-        effect.analysisResults = []
         # TODO how to make these featureIds sensical?
         effect.feature_id = "E4TB33F"
         effect = self._addTranscriptEffectLocations(effect, ann)

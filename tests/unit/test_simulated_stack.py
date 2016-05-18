@@ -178,7 +178,7 @@ class TestSimulatedStack(unittest.TestCase):
     def verifyFeatureSetsEqual(self, gaFeatureSet, featureSet):
         dataset = featureSet.getParentContainer()
         self.assertEqual(gaFeatureSet.id, featureSet.getId())
-        self.assertEqual(gaFeatureSet.datasetId, dataset.getId())
+        self.assertEqual(gaFeatureSet.dataset_id, dataset.getId())
         self.assertEqual(gaFeatureSet.name, featureSet.getLocalId())
 
     def verifyFeaturesEquivalent(self, f1, f2):
@@ -589,8 +589,8 @@ class TestSimulatedStack(unittest.TestCase):
         responseData = protocol.fromJson(response.data,
             protocol.SearchVariantAnnotationSetsResponse)
         self.assertTrue(responseData.validate(responseData.toJsonDict()))
-        self.assertIsNone(responseData.nextPageToken)
-        self.assertEqual([], responseData.variantAnnotationSets,
+        self.assertIsNone(responseData.next_page_token)
+        self.assertEqual([], responseData.variant_annotation_sets,
                          "There should no results for a bad ID")
 
         request.variantSetId = self.variantSet.getId()
@@ -599,7 +599,7 @@ class TestSimulatedStack(unittest.TestCase):
             protocol.SearchVariantAnnotationSetsResponse)
         self.assertTrue(protocol.SearchVariantAnnotationSetsResponse.validate(
             responseData.toJsonDict()))
-        self.assertGreater(len(responseData.variantAnnotationSets), 0,
+        self.assertGreater(len(responseData.variant_annotation_sets), 0,
                            "Expect some results for a known good ID")
         # TODO check the instance variables; we should be able to match
         # the values from the protocol object we get back with the values
@@ -621,9 +621,9 @@ class TestSimulatedStack(unittest.TestCase):
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data,
             protocol.SearchVariantAnnotationsResponse)
-        self.assertGreater(len(responseData.variantAnnotations), 0)
+        self.assertGreater(len(responseData.variant_annotations), 0)
         self.assertIsNotNone(
-            responseData.nextPageToken,
+            responseData.next_page_token,
             "Expected more than one page of results")
 
         request = protocol.SearchVariantAnnotationsRequest()
@@ -631,12 +631,15 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 10
         request.reference_name = "1"
-        request.effects.extend([{"id": "ThisIsNotAnEffect"}])
+
+        request.effects.add().id = "ThisIsNotAnEffect"
+
+        # request.effects.extend([{"id": "ThisIsNotAnEffect"}])
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data,
             protocol.SearchVariantAnnotationsResponse)
         self.assertEquals(
-            len(responseData.variantAnnotations), 0,
+            len(responseData.variant_annotations), 0,
             "There should be no results for a nonsense effect")
 
         request = protocol.SearchVariantAnnotationsRequest()
@@ -647,10 +650,10 @@ class TestSimulatedStack(unittest.TestCase):
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data,
             protocol.SearchVariantAnnotationsResponse)
-        self.assertGreater(len(responseData.variantAnnotations), 0)
-        for ann in responseData.variantAnnotations:
+        self.assertGreater(len(responseData.variant_annotations), 0)
+        for ann in responseData.variant_annotations:
             self.assertGreater(
-                len(ann.transcriptEffects), 0,
+                len(ann.transcript_effects), 0,
                 ("When no effects are requested ensure "
                     "some transcript effects are still present"))
 
@@ -659,20 +662,21 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 5
         request.reference_name = "1"
-        request.effects.extend([{"id": "SO:0001627"}, {"id": "B4DID"}])
+        request.effects.add().id = "SO:0001627"
+        request.effects.add().id = "B4DID"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data,
             protocol.SearchVariantAnnotationsResponse)
-        responseLength = len(responseData.variantAnnotations)
+        responseLength = len(responseData.variant_annotations)
         self.assertGreater(
             responseLength, 0,
             "There should be some results for a known effect")
-        for ann in responseData.variantAnnotations:
+        for ann in responseData.variant_annotations:
             effectPresent = False
-            for effect in ann.transcriptEffects:
+            for effect in ann.transcript_effects:
                 for featureType in effect.effects:
                     if featureType.id in map(
-                            lambda e: e['id'], request.effects):
+                            lambda e: e.id, request.effects):
                         effectPresent = True
             self.assertEquals(
                 True, effectPresent,
@@ -683,20 +687,21 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 5
         request.reference_name = "1"
-        request.effects.extend([{"id": "B4DID"}, {"id": "SO:0001627"}])
+        request.effects.add().id = "B4DID"
+        request.effects.add().id = "SO:0001627"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data,
             protocol.SearchVariantAnnotationsResponse)
         self.assertEqual(
-            len(responseData.variantAnnotations),
+            len(responseData.variant_annotations),
             responseLength,
             "Order shall not affect results")
-        for ann in responseData.variantAnnotations:
+        for ann in responseData.variant_annotations:
             effectPresent = False
-            for effect in ann.transcriptEffects:
+            for effect in ann.transcript_effects:
                 for featureType in effect.effects:
                     if featureType.id in map(
-                            lambda e: e['id'], request.effects):
+                            lambda e: e.id, request.effects):
                         effectPresent = True
             self.assertEquals(
                 True,
@@ -708,18 +713,18 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 5
         request.reference_name = "1"
-        request.effects.extend([{"id": "SO:0001627"}])
+        request.effects.add().id = "SO:0001627"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data,
             protocol.SearchVariantAnnotationsResponse)
-        self.assertGreater(len(responseData.variantAnnotations), 0,
+        self.assertGreater(len(responseData.variant_annotations), 0,
                            "There should be some results for a good effect ID")
-        for ann in responseData.variantAnnotations:
+        for ann in responseData.variant_annotations:
             effectPresent = False
-            for effect in ann.transcriptEffects:
+            for effect in ann.transcript_effects:
                 for featureType in effect.effects:
                     if featureType.id in map(
-                            lambda e: e['id'], request.effects):
+                            lambda e: e.id, request.effects):
                         effectPresent = True
             self.assertEquals(True, effectPresent,
                               "The ontology term should appear at least once")
@@ -729,11 +734,12 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 10
         request.reference_name = "1"
-        request.effects.extend([{"id": "SO:0001627"}, {"id": "SO:0001791"}])
+        request.effects.add().id = "SO:0001627"
+        request.effects.add().id = "SO:0001791"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data,
             protocol.SearchVariantAnnotationsResponse)
-        self.assertGreater(len(responseData.variantAnnotations), 0)
+        self.assertGreater(len(responseData.variant_annotations), 0)
 
     def testGetFeatureSet(self):
         path = "/featuresets"
@@ -759,7 +765,7 @@ class TestSimulatedStack(unittest.TestCase):
                 self.verifyFeatureSetsEqual)
         for badId in self.getBadIds():
             request = protocol.SearchFeatureSetsRequest()
-            request.datasetId = badId
+            request.dataset_id = badId
             self.verifySearchMethodFails(request, path)
 
     def testGetFeature(self):
@@ -798,7 +804,7 @@ class TestSimulatedStack(unittest.TestCase):
         path = '/features/search'
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeaturesResponse)
-        self.assertIsNone(responseData.nextPageToken)
+        self.assertIsNone(responseData.next_page_token)
         self.assertEqual([], responseData.features)
 
         # Larger request window, expect results
