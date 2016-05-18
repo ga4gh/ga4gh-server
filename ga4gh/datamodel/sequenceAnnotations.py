@@ -164,7 +164,7 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         self._name = localId
         self._sourceUri = ""
         self._referenceSet = None
-        self._attributes = protocol.Attributes()
+        self._info = {}
 
     def getReferenceSet(self):
         """
@@ -187,10 +187,11 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         gaFeatureSet = protocol.FeatureSet()
         gaFeatureSet.id = self.getId()
         gaFeatureSet.dataset_id = self.getParentContainer().getId()
-        gaFeatureSet.reference_set_id = pb.string(self._referenceSetId)
+        gaFeatureSet.reference_set_id = pb.string(self._referenceSet.getId())
         gaFeatureSet.name = self._name
         gaFeatureSet.source_uri = self._sourceUri
-        gaFeatureSet.attributes = self._attributes
+        for key in self._info:
+            gaFeatureSet.info[key].values.extend(self._info[key])
         return gaFeatureSet
 
     def getCompoundIdForFeatureId(self, featureId):
@@ -393,7 +394,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
                 self.getCompoundIdForFeatureId,
                 json.loads(feature['child_ids'])))
         gaFeature.feature_type.CopyFrom(
-            self._sequenceOntology.getGaTermByName(feature['type']))
+            self._sequenceOntologyTermMap.getGaTermByName(feature['type']))
         attributes = json.loads(feature['attributes'])
         # TODO: Identify which values are ExternalIdentifiers and OntologyTerms
         for key in attributes:

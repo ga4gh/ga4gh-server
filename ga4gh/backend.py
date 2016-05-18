@@ -216,7 +216,7 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
 
     def _search(self, start, end):
         return self._parentContainer.getVariantAnnotations(
-            self._request.referenceName, start, end)
+            self._request.reference_name, start, end)
 
     @classmethod
     def _getStart(cls, annotation):
@@ -488,9 +488,9 @@ class Backend(object):
         Returns a generator over the (variantAnnotationSet, nextPageToken)
         pairs defined by the specified request.
         """
-        compoundId = datamodel.VariantSetCompoundId.parse(request.variantSetId)
+        compoundId = datamodel.VariantSetCompoundId.parse(request.variant_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
-        variantSet = dataset.getVariantSet(request.variantSetId)
+        variantSet = dataset.getVariantSet(request.variant_set_id)
         return self._topLevelObjectGenerator(
             request, variantSet.getNumVariantAnnotationSets(),
             variantSet.getVariantAnnotationSetByIndex)
@@ -562,11 +562,11 @@ class Backend(object):
         defined by the specified request.
         """
         compoundId = datamodel.VariantAnnotationSetCompoundId.parse(
-            request.variantAnnotationSetId)
+            request.variant_annotation_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         variantSet = dataset.getVariantSet(compoundId.variantSetId)
         variantAnnotationSet = variantSet.getVariantAnnotationSet(
-            request.variantAnnotationSetId)
+            request.variant_annotation_set_id)
         intervalIterator = VariantAnnotationsIntervalIterator(
             request, variantAnnotationSet)
         return intervalIterator
@@ -578,12 +578,12 @@ class Backend(object):
         """
         compoundId = None
         parentId = None
-        if request.featureSetId is not None:
+        if request.feature_set_id is not None:
             compoundId = datamodel.FeatureSetCompoundId.parse(
-                request.featureSetId)
-        if request.parentId is not None and request.parentId != "":
+                request.feature_set_id)
+        if request.parent_id and request.parent_id != "":
             compoundParentId = datamodel.FeatureCompoundId.parse(
-                request.parentId)
+                request.parent_id)
             parentId = compoundParentId.featureId
             # A client can optionally specify JUST the (compound) parentID,
             # and the server needs to derive the dataset & featureSet
@@ -606,9 +606,9 @@ class Backend(object):
             compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(compoundId.featureSetId)
         return featureSet.getFeatures(
-            request.referenceName, request.start, request.end,
-            request.pageToken, request.pageSize,
-            request.featureTypes, parentId)
+            request.reference_name, request.start, request.end,
+            request.page_token, request.page_size,
+            request.feature_types, parentId)
 
     def callSetsGenerator(self, request):
         """

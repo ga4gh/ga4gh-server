@@ -41,6 +41,8 @@ _valueListNameMap = {
     SearchReadGroupSetsResponse: "read_group_sets",
     SearchReadsResponse: "alignments",
     SearchCallSetsResponse: "call_sets",
+    SearchVariantAnnotationSetsResponse: "variant_annotation_sets",
+    SearchVariantAnnotationsResponse: "variant_annotations",
 }
 
 

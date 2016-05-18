@@ -661,7 +661,7 @@ class SimulatedReadGroup(AbstractReadGroup):
         alignment.read_number = -1
         alignment.secondary_alignment = False
         alignment.supplementary_alignment = False
-        alignment.id = self.getReadAlignmentId(alignment)
+        alignment.id = self._parentContainer.getReadAlignmentId(alignment)
         return alignment
 
     def getPrograms(self):

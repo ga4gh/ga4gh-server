@@ -901,7 +901,7 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.row_factory = sqlite3.Row
         cursor.execute("SELECT * FROM CallSet;")
         for row in cursor:
-            variantSet = self.getVariantSet(row[b'variantSetId'])
+            variantSet = self.gqetVariantSet(row[b'variantSetId'])
             callSet = variants.CallSet(variantSet, row[b'name'])
             callSet.populateFromRow(row)
             assert callSet.getId() == row[b'id']
