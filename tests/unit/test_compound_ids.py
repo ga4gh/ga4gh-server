@@ -436,14 +436,14 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.FeatureSetCompoundId,
             dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.featureSet, featureSet.getLocalId())
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.featureSetId, featureSet.getId())
+        self.assertEqual(cid.feature_set, featureSet.getLocalId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(cid.feature_set_id, featureSet.getId())
 
     def testFeatureSetParse(self):
         idStr = '["a","b"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.FeatureSetCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.featureSet, "b")
+        self.assertEqual(cid.feature_set, "b")
         self.verifyParseFailure(idStr, datamodel.FeatureSetCompoundId)

@@ -748,7 +748,7 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         self._experimentDescription = experiment.description
         self._library = experiment.library
         self._platformUnit = experiment.platform_unit
-        self._runTime = experiment.runTime
+        self._runTime = experiment.run_time
 
     def getReadAlignments(self, reference, start=None, end=None):
         """

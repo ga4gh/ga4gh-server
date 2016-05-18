@@ -232,8 +232,10 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         object from this variant set.
         """
         ret = protocol.Variant()
-        ret.created = self._creationTime
-        ret.updated = self._updatedTime
+        if self._creationTime:
+            ret.created = self._creationTime
+        if self._updatedTime:
+            ret.updated = self._updatedTime
         ret.variant_set_id = self.getId()
         return ret
 
@@ -405,7 +407,8 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             self._chromFileMap[key] = tuple(value)
         self._metadata = []
         for jsonDict in json.loads(row[b'metadata']):
-            metadata = protocol.VariantSetMetadata.fromJsonDict(jsonDict)
+            metadata = protocol.fromJson(json.dumps(jsonDict),
+                                         protocol.VariantSetMetadata)
             self._metadata.append(metadata)
 
     def populateFromFile(self, dataUrls, indexFiles):
@@ -995,8 +998,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         Populates this VariantAnnotationSet from the specified DB row.
         """
         self._annotationType = row[b'annotationType']
-        self._analysis = protocol.Analysis.fromJsonDict(
-            json.loads(row[b'analysis']))
+        self._analysis = protocol.fromJson(row[b'analysis'], protocol.Analysis)
 
     def getAnnotationType(self):
         """

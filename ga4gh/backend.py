@@ -594,7 +594,7 @@ class Backend(object):
                 # check that the dataset and featureSet of the parent
                 # compound ID is the same as that of the featureSetId
                 mismatchCheck = (
-                    compoundParentId.datasetId != compoundId.datasetId or
+                    compoundParentId.dataset_id != compoundId.dataset_id or
                     compoundParentId.featureSetId != compoundId.featureSetId)
                 if mismatchCheck:
                     raise exceptions.ParentIncompatibleWithFeatureSet()
@@ -603,7 +603,7 @@ class Backend(object):
             raise exceptions.FeatureSetNotSpecifiedException()
 
         dataset = self.getDataRepository().getDataset(
-            compoundId.datasetId)
+            compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(compoundId.featureSetId)
         return featureSet.getFeatures(
             request.referenceName, request.start, request.end,
@@ -635,7 +635,7 @@ class Backend(object):
         Returns a generator over the (featureSet, nextPageToken) pairs
         defined by the specified request.
         """
-        dataset = self.getDataRepository().getDataset(request.datasetId)
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
         return self._topLevelObjectGenerator(
             request, dataset.getNumFeatureSets(),
             dataset.getFeatureSetByIndex)
@@ -809,7 +809,7 @@ class Backend(object):
         Runs a getFeatureSet request for the specified ID.
         """
         compoundId = datamodel.FeatureSetCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(id_)
         return self.runGetRequest(featureSet)
 

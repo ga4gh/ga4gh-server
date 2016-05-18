@@ -177,7 +177,11 @@ class ImportGraphLayerChecker(object):
                      'ga4gh/reference_service_pb2.py',
                      'ga4gh/references_pb2.py',
                      'ga4gh/variant_service_pb2.py',
-                     'ga4gh/variants_pb2.py'],
+                     'ga4gh/variants_pb2.py',
+                     'ga4gh/allele_annotations_pb2.py',
+                     'ga4gh/allele_annotation_service_pb2.py',
+                     'ga4gh/sequence_annotations_pb2.py',
+                     'ga4gh/sequence_annotation_service_pb2.py'],
         'config': ['ga4gh/serverconfig.py'],
     }
 
