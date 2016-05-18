@@ -1,4 +1,4 @@
 Dockerfile
-.git
 .dockerignore
+./build
 *.swp
