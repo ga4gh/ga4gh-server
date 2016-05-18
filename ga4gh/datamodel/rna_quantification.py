@@ -129,7 +129,7 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         self._description = ""
         self._name = localId
         self._readGroupId = ""
-        self._referenceSet = ""
+        self._referenceSet = None
 
     def toProtocolElement(self):
         """
