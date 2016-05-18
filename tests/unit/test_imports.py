@@ -161,6 +161,7 @@ class ImportGraphLayerChecker(object):
                       'ga4gh/datamodel/variants.py',
                       'ga4gh/datamodel/datasets.py',
                       'ga4gh/datamodel/ontologies.py',
+                      'ga4gh/datamodel/obo_parser.py',
                       'ga4gh/datamodel/sequenceAnnotations.py',
                       'ga4gh/gff3Parser.py',
                       'ga4gh/sqliteBackend.py'],

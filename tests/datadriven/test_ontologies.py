@@ -10,7 +10,7 @@ import os.path
 # TODO it may be a bit circular to use obo_parser as our method of
 # accessing ontology information, since this is the method we use
 # in the main code. However, other libraries have very heavy dependencies.
-import goatools.obo_parser as obo_parser
+import ga4gh.datamodel.obo_parser as obo_parser
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.ontologies as ontologies

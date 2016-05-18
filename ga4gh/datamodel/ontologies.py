@@ -11,7 +11,7 @@ import os.path
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
-import goatools.obo_parser as obo_parser
+import ga4gh.datamodel.obo_parser as obo_parser
 
 SEQUENCE_ONTOLOGY_PREFIX = "SO"
 
