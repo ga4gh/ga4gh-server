@@ -280,8 +280,8 @@ class AbstractClient(object):
             request, "variants", protocol.SearchVariantsResponse)
 
     def searchVariantAnnotations(
-            self, variantAnnotationSetId, referenceName=None, referenceId=None,
-            start=None, end=None, effects=[]):
+            self, variantAnnotationSetId, referenceName="", referenceId="",
+            start=0, end=0, effects=[]):
         """
         Returns an iterator over the Annotations fulfilling the specified
         conditions from the specified AnnotationSet.
@@ -298,7 +298,7 @@ class AbstractClient(object):
             if not effect.id:
                 raise exceptions.BadRequestException(
                     "Each ontology term should have an id set")
-        request.page_size = self._pageSize
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "variantannotations",
             protocol.SearchVariantAnnotationsResponse)
@@ -372,7 +372,7 @@ class AbstractClient(object):
         """
         request = protocol.SearchVariantAnnotationSetsRequest()
         request.variant_set_id = variantSetId
-        request.page_size = self._pageSize
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "variantannotationsets",
             protocol.SearchVariantAnnotationSetsResponse)
@@ -389,7 +389,7 @@ class AbstractClient(object):
         """
         request = protocol.SearchFeatureSetsRequest()
         request.dataset_id = datasetId
-        request.page_size = self._pageSize
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "featuresets", protocol.SearchFeatureSetsResponse)
 

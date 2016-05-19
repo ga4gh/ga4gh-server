@@ -485,11 +485,11 @@ class AnnotationFormatterMixin(object):
         """
         for variantAnnotation in gaObjects:
             print(
-                variantAnnotation.id, variantAnnotation.variantId,
-                variantAnnotation.variantAnnotationSetId,
-                variantAnnotation.createDateTime, sep="\t", end="\t")
-            for effect in variantAnnotation.transcriptEffects:
-                print(effect.alternateBases, sep="|", end="|")
+                variantAnnotation.id, variantAnnotation.variant_id,
+                variantAnnotation.variant_annotation_set_id,
+                variantAnnotation.create_date_time, sep="\t", end="\t")
+            for effect in variantAnnotation.transcript_effects:
+                print(effect.alternate_bases, sep="|", end="|")
                 for so in effect.effects:
                     print(so.term, sep="&", end="|")
                     print(so.id, sep="&", end="|")

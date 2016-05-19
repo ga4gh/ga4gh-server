@@ -55,8 +55,10 @@ class CallSet(datamodel.DatamodelObject):
         """
         variantSet = self.getParentContainer()
         gaCallSet = protocol.CallSet()
-        gaCallSet.created = variantSet.getCreationTime()
-        gaCallSet.updated = variantSet.getUpdatedTime()
+        if variantSet.getCreationTime():
+            gaCallSet.created = variantSet.getCreationTime()
+        if variantSet.getUpdatedTime():
+            gaCallSet.updated = variantSet.getUpdatedTime()
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
         gaCallSet.sample_id = self.getLocalId()
