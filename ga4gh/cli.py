@@ -181,8 +181,8 @@ class AbstractQueryRunner(object):
         # depending on the prefix.
         filePrefix = "file://"
         if args.baseUrl.startswith(filePrefix):
-            repoPath = args.baseUrl[len(filePrefix):]
-            repo = datarepo.SqlDataRepository(repoPath)
+            registryPath = args.baseUrl[len(filePrefix):]
+            repo = datarepo.SqlDataRepository(registryPath)
             repo.open(datarepo.MODE_READ)
             theBackend = backend.Backend(repo)
             self._client = client.LocalClient(theBackend)
@@ -1552,8 +1552,8 @@ class RepoManager(object):
     """
     def __init__(self, args):
         self._args = args
-        self._repoPath = args.repoPath
-        self._repo = datarepo.SqlDataRepository(self._repoPath)
+        self._registryPath = args.registryPath
+        self._repo = datarepo.SqlDataRepository(self._registryPath)
 
     def _confirmDelete(self, objectType, name, func):
         if self._args.force:
@@ -1587,7 +1587,7 @@ class RepoManager(object):
         if not self._repo.exists():
             raise exceptions.RepoManagerException(
                 "Repo '{}' does not exist. Please create a new repo "
-                "using the 'init' command.".format(self._repoPath))
+                "using the 'init' command.".format(self._registryPath))
         self._repo.open(datarepo.MODE_READ)
 
     def init(self):
@@ -1598,7 +1598,7 @@ class RepoManager(object):
                 self._repo.delete()
             else:
                 raise exceptions.RepoManagerException(
-                    forceMessage.format(self._repoPath))
+                    forceMessage.format(self._registryPath))
         self._updateRepo(self._repo.initialise)
 
     def list(self):
@@ -1849,7 +1849,8 @@ class RepoManager(object):
     @classmethod
     def addRepoArgument(cls, subparser):
         subparser.add_argument(
-            "repoPath", help="the file path of the data repository")
+            "registryPath",
+            help="the location of the registry database")
 
     @classmethod
     def addForceOption(cls, subparser):
@@ -1858,10 +1859,11 @@ class RepoManager(object):
             default=False, help="do not prompt for confirmation")
 
     @classmethod
-    def addDescriptionOption(cls, subparser):
+    def addDescriptionOption(cls, subparser, objectType):
         subparser.add_argument(
             "-d", "--description", default="",
-            help="The human-readable description of an object.")
+            help="The human-readable description of the {}.".format(
+                objectType))
 
     @classmethod
     def addDatasetNameArgument(cls, subparser):
@@ -1939,7 +1941,7 @@ class RepoManager(object):
         addDatasetParser.set_defaults(runner="addDataset")
         cls.addRepoArgument(addDatasetParser)
         cls.addDatasetNameArgument(addDatasetParser)
-        cls.addDescriptionOption(addDatasetParser)
+        cls.addDescriptionOption(addDatasetParser, "dataset")
 
         removeDatasetParser = addSubparser(
             subparsers, "remove-dataset",
@@ -1960,12 +1962,12 @@ class RepoManager(object):
             "The path of the FASTA file to use as a reference set. This "
             "file must be bgzipped and indexed.")
         cls.addNameOption(addReferenceSetParser, objectType)
-        cls.addDescriptionOption(addReferenceSetParser)
+        cls.addDescriptionOption(addReferenceSetParser, objectType)
         addReferenceSetParser.add_argument(
             "--ncbiTaxonId", default=None, help="The NCBI Taxon Id")
         addReferenceSetParser.add_argument(
             "--isDerived", default=False, type=bool,
-            help="Indicates if this is a derived object")
+            help="Indicates if this reference set is derived from another")
         addReferenceSetParser.add_argument(
             "--assemblyId", default=None,
             help="The assembly id")
