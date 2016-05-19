@@ -30,10 +30,10 @@ Running the profile:
 Evaluating the profile output:
 ******************************
 
-If you don't use teh -o {output file} option then all output from the profiler
+If you don't use the -o {output file} option then all output from the profiler
 runs to stdout and will be sorted with the function that takes the most
 cumulative time at the top of the list. You can review the text output
-manually, but a beet method is to use the -o option and then review the
+manually, but a beter method is to use the -o option and then review the
 output using a nifty little program we found that interactively browses
 the function list. It provides a way to change the sorting and it also links
 the functions together so that you can follow the called and caller stacks.
