@@ -9,7 +9,6 @@ import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 
@@ -207,9 +206,7 @@ class SimulatedDataset(Dataset):
             numAlignments=1, numFeatureSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
-        # TODO create a simulated OntologyTermMap
-        sequenceOntology = ontologies.OntologyTermMap("sequence_ontology")
-        # TODO add some terms into the simulated sequence ontology
+        # TODO create a simulated Ontology
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)
@@ -219,7 +216,6 @@ class SimulatedDataset(Dataset):
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
                 variantSet, "simVas{}".format(i), seed)
-            variantAnnotationSet.setSequenceOntologyTermMap(sequenceOntology)
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):

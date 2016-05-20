@@ -25,19 +25,19 @@ vcfDirPath = os.path.join(
     testDataDir, 'datasets/dataset1/variants/1kgPhase1')
 vcfDirPath2 = os.path.join(
     testDataDir, 'datasets/dataset1/variants/1kgPhase3')
-vcfPath1 = os.path.join(
-    vcfDirPath, 'chr1.vcf.gz')
+vcfPath1 = os.path.join(vcfDirPath, 'chr1.vcf.gz')
 vcfPath2 = os.path.join(
     vcfDirPath, 'chr2.vcf.gz')
 vcfIndexPath1 = os.path.join(
     vcfDirPath, 'chr1.vcf.gz.tbi')
 vcfIndexPath2 = os.path.join(
     vcfDirPath, 'chr2.vcf.gz.tbi')
+annotatedVcfPath = os.path.join(
+    testDataDir, 'datasets/dataset1/variants/1kg.3.annotations')
 
-
-ontologyName = "sequence_ontology"
-ontologyPath = os.path.join(
-    testDataDir, 'ontologymaps/sequence_ontology/sequence_ontology.txt')
+# Ontologies
+ontologyName = "so-xp-simple"
+ontologyPath = os.path.join(testDataDir, 'ontologies/so-xp-simple.obo')
 
 # reads
 readGroupSetName = 'chr17.1-250'

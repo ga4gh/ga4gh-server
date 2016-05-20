@@ -115,9 +115,11 @@ class AbstractRepoManagerTest(unittest.TestCase):
     def addFeatureSet(self):
         featuresPath = paths.featuresPath
         self._featureSetName = paths.featureSetName
-        cmd = "add-featureset {} {} {} --referenceSetName={}".format(
+        cmd = (
+            "add-featureset {} {} {} --referenceSetName={} "
+            "--ontologyName={}").format(
             self._repoPath, self._datasetName, featuresPath,
-            self._referenceSetName)
+            self._referenceSetName, self._ontologyName)
         self.runCommand(cmd)
 
     def getFeatureSet(self):
@@ -135,9 +137,9 @@ class TestAddFeatureSet(AbstractRepoManagerTest):
         self.addDataset()
         self.addOntology()
         self.addReferenceSet()
-        self.addFeatureSet()
 
     def testAddFeatureSet(self):
+        self.addFeatureSet()
         featureSet = self.getFeatureSet()
         self.assertEqual(featureSet.getLocalId(), self._featureSetName)
         self.assertEqual(
@@ -148,6 +150,41 @@ class TestAddFeatureSet(AbstractRepoManagerTest):
         # TODO not clear these fields get populated now
         # self.assertEqual(featureSet.getInfo(), "TODO")
         # self.assertEqual(featureSet.getSourceUrl(), "TODO")
+
+    def testAddFeatureSetNoReferenceSet(self):
+        featuresPath = paths.featuresPath
+        cmd = "add-featureset {} {} {} --ontologyName={}".format(
+            self._repoPath, self._datasetName, featuresPath,
+            self._ontologyName)
+        self.assertRaises(
+            exceptions.RepoManagerException, self.runCommand, cmd)
+
+    def testAddFeatureSetBadReferenceSet(self):
+        featuresPath = paths.featuresPath
+        cmd = (
+            "add-featureset {} {} {} --referenceSetName=notafefset "
+            "--ontologyName={}").format(
+            self._repoPath, self._datasetName, featuresPath,
+            self._ontologyName)
+        self.assertRaises(
+            exceptions.ReferenceSetNameNotFoundException,
+            self.runCommand, cmd)
+
+    def testAddFeatureSetNoOntology(self):
+        featuresPath = paths.featuresPath
+        cmd = "add-featureset {} {} {} --referenceSetName={} ".format(
+            self._repoPath, self._datasetName, featuresPath,
+            self._referenceSetName)
+        self.assertRaises(
+            exceptions.RepoManagerException, self.runCommand, cmd)
+
+    def testAddFeatureSetBadOntology(self):
+        featuresPath = paths.featuresPath
+        cmd = "add-featureset {} {} {} --referenceSetName={} ".format(
+            self._repoPath, self._datasetName, featuresPath,
+            self._referenceSetName)
+        self.assertRaises(
+            exceptions.RepoManagerException, self.runCommand, cmd)
 
 
 class TestRemoveFeatureSet(AbstractRepoManagerTest):
@@ -240,37 +277,54 @@ class TestAddOntology(AbstractRepoManagerTest):
         self.init()
 
     def testDefaults(self):
-        mapFile = paths.ontologyPath
-        name = os.path.split(mapFile)[1].split(".")[0]
-        self.runCommand("add-ontology {} {}".format(self._repoPath, mapFile))
+        ontologyFile = paths.ontologyPath
+        name = os.path.split(ontologyFile)[1].split(".")[0]
+        self.runCommand("add-ontology {} {}".format(
+            self._repoPath, ontologyFile))
         repo = self.readRepo()
-        ontologyTermMap = repo.getOntologyTermMapByName(name)
-        self.assertEqual(ontologyTermMap.getLocalId(), name)
-        self.assertEqual(ontologyTermMap.getDataUrl(), mapFile)
+        ontology = repo.getOntologyByName(name)
+        self.assertEqual(ontology.getName(), name)
+        self.assertEqual(ontology.getDataUrl(), ontologyFile)
 
     def testWithName(self):
-        mapFile = paths.ontologyPath
+        ontologyFile = paths.ontologyPath
         name = "test_name"
         self.runCommand("add-ontology {} {} --name={}".format(
-            self._repoPath, mapFile, name))
+            self._repoPath, ontologyFile, name))
         repo = self.readRepo()
-        ontologyTermMap = repo.getOntologyTermMapByName(name)
-        self.assertEqual(ontologyTermMap.getLocalId(), name)
-        self.assertEqual(ontologyTermMap.getDataUrl(), mapFile)
+        ontology = repo.getOntologyByName(name)
+        self.assertEqual(ontology.getName(), name)
+        self.assertEqual(ontology.getDataUrl(), ontologyFile)
 
     def testWithSameName(self):
-        mapFile = paths.ontologyPath
+        ontologyFile = paths.ontologyPath
         # Default name
-        cmd = "add-ontology {} {}".format(self._repoPath, mapFile)
+        cmd = "add-ontology {} {}".format(self._repoPath, ontologyFile)
         self.runCommand(cmd)
         self.assertRaises(
             exceptions.RepoManagerException, self.runCommand, cmd)
         # Specified name
         cmd = "add-ontology {} {} --name=testname".format(
-            self._repoPath, mapFile)
+            self._repoPath, ontologyFile)
         self.runCommand(cmd)
         self.assertRaises(
             exceptions.DuplicateNameException, self.runCommand, cmd)
+
+    def testMissingFile(self):
+        cmd = "add-ontology {} {}".format(self._repoPath, "/no/such/file")
+        self.assertRaises(
+            exceptions.FileOpenFailedException, self.runCommand, cmd)
+
+    def testNonOboTextFile(self):
+        cmd = "add-ontology {} {}".format(
+            self._repoPath, paths.landingMessageHtml)
+        self.assertRaises(
+            exceptions.OntologyFileFormatException, self.runCommand, cmd)
+
+    def testNonOboBinaryFile(self):
+        cmd = "add-ontology {} {}".format(self._repoPath, paths.bamPath)
+        self.assertRaises(
+            exceptions.OntologyFileFormatException, self.runCommand, cmd)
 
 
 class TestRemoveDataset(AbstractRepoManagerTest):
@@ -393,7 +447,7 @@ class TestRemoveOntology(AbstractRepoManagerTest):
         repo = self.readRepo()
         self.assertRaises(
             exceptions.OntologyNameNotFoundException,
-            repo.getOntologyTermMapByName, self._ontologyName)
+            repo.getOntologyByName, self._ontologyName)
 
     def testDefaults(self):
         self.runCommand("remove-ontology {} {} -f".format(
@@ -607,6 +661,55 @@ class TestAddVariantSet(AbstractRepoManagerTest):
     # for the dataFiles argument, and other common error cases in the UI.
 
 
+class TestAddAnnotatedVariantSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddAnnotatedVariantSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addOntology()
+        self.vcfDir = paths.annotatedVcfPath
+
+    def testNoAnnotations(self):
+        name = "test_vs_no_annotations"
+        cmd = "add-variantset {} {} {} -R {} -n {}".format(
+            self._repoPath, self._datasetName, self.vcfDir,
+            self._referenceSetName, name)
+        self.runCommand(cmd)
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        variantSet = dataset.getVariantSetByName(name)
+        self.assertEqual(len(variantSet.getVariantAnnotationSets()), 0)
+
+    def testAnnotations(self):
+        name = "test_vs_annotations"
+        cmd = "add-variantset {} {} {} -R {} -n {} -aO {}".format(
+            self._repoPath, self._datasetName, self.vcfDir,
+            self._referenceSetName, name, self._ontologyName)
+        self.runCommand(cmd)
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        variantSet = dataset.getVariantSetByName(name)
+        self.assertEqual(len(variantSet.getVariantAnnotationSets()), 1)
+
+    def testAnnotationsNoOntology(self):
+        name = "test_vs_annotations"
+        cmd = "add-variantset {} {} {} -R {} -n {} -a".format(
+            self._repoPath, self._datasetName, self.vcfDir,
+            self._referenceSetName, name)
+        self.assertRaises(
+            exceptions.RepoManagerException, self.runCommand, cmd)
+
+    def testAnnotationsBadOntology(self):
+        name = "test_vs_annotations"
+        cmd = "add-variantset {} {} {} -R {} -n {} -aO {}".format(
+            self._repoPath, self._datasetName, self.vcfDir,
+            self._referenceSetName, name, "not_an_ontology")
+        self.assertRaises(
+            exceptions.OntologyNameNotFoundException, self.runCommand, cmd)
+
+
 class TestDuplicateNameDelete(AbstractRepoManagerTest):
     """
     If two objects exist with the same name in different datasets,
@@ -667,14 +770,14 @@ class TestDuplicateNameDelete(AbstractRepoManagerTest):
         self.assertEqual(len(self.dataset2.getVariantSets()), 1)
 
     def testFeatureSetDelete(self):
-        cmdString = "add-featureset {} {} {} --referenceSetName={}"
+        cmdString = "add-featureset {} {} {} -R {} -O {}"
         addFeatureSetCmd1 = cmdString.format(
             self._repoPath, self.dataset1Name, paths.featuresPath,
-            self._referenceSetName)
+            self._referenceSetName, self._ontologyName)
         self.runCommand(addFeatureSetCmd1)
         addFeatureSetCmd2 = cmdString.format(
             self._repoPath, self.dataset2Name, paths.featuresPath,
-            self._referenceSetName)
+            self._referenceSetName, self._ontologyName)
         self.runCommand(addFeatureSetCmd2)
         removeCmd = "remove-featureset {} {} {} -f".format(
             self._repoPath, self.dataset1Name, paths.featureSetName)

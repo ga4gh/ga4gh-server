@@ -17,6 +17,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
+import tests.paths as paths
 
 
 def testVariantAnnotationSets():
@@ -116,10 +117,10 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         referenceSet = references.AbstractReferenceSet("rs")
         variantSet.setReferenceSet(referenceSet)
         if variantSet.isAnnotated():
-            sequenceOntology = ontologies.OntologyTermMap(
-                "sequence_ontology")
+            sequenceOntology = ontologies.Ontology(paths.ontologyName)
+            sequenceOntology.populateFromFile(paths.ontologyPath)
             annotationSet = variantSet.getVariantAnnotationSets()[0]
-            annotationSet.setSequenceOntologyTermMap(sequenceOntology)
+            annotationSet.setOntology(sequenceOntology)
             return annotationSet
         else:
             return variantSet

@@ -237,6 +237,11 @@ class ReferenceNotFoundException(ObjectNotFoundException):
         self.message = "referenceId '{}' not found".format(referenceId)
 
 
+class OntologyNotFoundException(ObjectNotFoundException):
+    def __init__(self, ontologyId):
+        self.message = "ontologyId '{}' not found".format(ontologyId)
+
+
 class ObjectWithIdNotFoundException(ObjectNotFoundException):
     def __init__(self, objectId):
         self.message = "No object of this type exists with id '{}'".format(
@@ -405,9 +410,9 @@ class SequenceAnnotationNotFoundException(NotFoundException):
 
 class DataException(BaseServerException):
     """
-    Exceptions thrown during the server startup, and processing faulty VCFs
+    Exceptions thrown during data ingestion.
     """
-    message = "Faulty data found or data file is missing."
+    message = "xs"
 
 
 class RepoNotFoundException(DataException):
@@ -445,9 +450,18 @@ class FileOpenFailedException(DataException):
 class EmptyDirException(DataException):
 
     def __init__(self, dirname, filetype):
-        msg = "Directory '{}' empty, no {} file was found".format(
+        self.message = "Directory '{}' empty, no {} file was found".format(
             dirname, filetype)
-        super(EmptyDirException, self).__init__(msg)
+
+
+class OntologyFileFormatException(DataException):
+    """
+    Exception thrown when an error occurs processing an OBO ontology
+    file.
+    """
+    def __init__(self, filename, message):
+        self.message = "Error processing ontology OBO file '{}': {}".format(
+            filename, message)
 
 
 class MalformedException(DataException):
@@ -539,18 +553,6 @@ class MultipleReferenceSetsInReadGroupSet(MalformedException):
             "The BAM file '{}' contains the referenceSets '{}' and "
             "'{}'; at most one referenceSet per file is allowed.".format(
                 fileName, referenceSetName, otherReferenceSetName))
-
-
-class MissingDatasetMetadataException(MalformedException):
-    """
-    A directory containing datasets is missing some metadata
-    in the corresponding JSON file
-    """
-    def __init__(self, fileName, key):
-        self.message = (
-            "JSON dataset metadata for file {} "
-            "is missing key {}".format(
-                fileName, key))
 
 
 ###############################################################

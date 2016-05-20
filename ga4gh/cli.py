@@ -1590,6 +1590,13 @@ class RepoManager(object):
                 "using the 'init' command.".format(self._registryPath))
         self._repo.open(datarepo.MODE_READ)
 
+    def _checkSequenceOntology(self, ontology):
+        so = ontologies.SEQUENCE_ONTOLOGY_PREFIX
+        if ontology.getOntologyPrefix() != so:
+            raise exceptions.RepoManagerException(
+                "Ontology '{}' does not have ontology prefix '{}'".format(
+                    ontology.getName(), so))
+
     def init(self):
         forceMessage = (
             "Respository '{}' already exists. Use --force to overwrite")
@@ -1625,9 +1632,9 @@ class RepoManager(object):
         name = self._args.name
         if name is None:
             name = getNameFromPath(self._args.filePath)
-        ontologyTermMap = ontologies.OntologyTermMap(name)
-        ontologyTermMap.populateFromFile(self._args.filePath)
-        self._updateRepo(self._repo.insertOntologyTermMap, ontologyTermMap)
+        ontology = ontologies.Ontology(name)
+        ontology.populateFromFile(self._args.filePath)
+        self._updateRepo(self._repo.insertOntology, ontology)
 
     def addDataset(self):
         """
@@ -1749,7 +1756,26 @@ class RepoManager(object):
                 "VariantSet using the --referenceSetName option")
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         variantSet.setReferenceSet(referenceSet)
-        self._updateRepo(self._repo.insertVariantSet, variantSet)
+
+        # Now check for annotations
+        annotationSets = []
+        if variantSet.isAnnotated() and self._args.addAnnotationSets:
+            ontologyName = self._args.ontologyName
+            if ontologyName is None:
+                raise exceptions.RepoManagerException(
+                    "A sequence ontology name must be provided")
+            ontology = self._repo.getOntologyByName(ontologyName)
+            self._checkSequenceOntology(ontology)
+            for annotationSet in variantSet.getVariantAnnotationSets():
+                annotationSet.setOntology(ontology)
+                annotationSets.append(annotationSet)
+
+        # Add the annotation sets and the variant set as an atomic update
+        def updateRepo():
+            self._repo.insertVariantSet(variantSet)
+            for annotationSet in annotationSets:
+                self._repo.insertVariantAnnotationSet(annotationSet)
+        self._updateRepo(updateRepo)
 
     def removeReferenceSet(self):
         """
@@ -1814,6 +1840,13 @@ class RepoManager(object):
                 "A reference set name must be provided")
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         featureSet.setReferenceSet(referenceSet)
+        ontologyName = self._args.ontologyName
+        if ontologyName is None:
+            raise exceptions.RepoManagerException(
+                "A sequence ontology name must be provided")
+        ontology = self._repo.getOntologyByName(ontologyName)
+        self._checkSequenceOntology(ontology)
+        featureSet.setOntology(ontology)
         featureSet.populateFromFile(self._args.filePath)
         self._updateRepo(self._repo.insertFeatureSet, featureSet)
 
@@ -1834,13 +1867,11 @@ class RepoManager(object):
         Removes an ontology from the repo.
         """
         self._openRepo()
-        ontologyTermMap = self._repo.getOntologyTermMapByName(
-            self._args.ontologyName)
+        ontology = self._repo.getOntologyByName(self._args.ontologyName)
 
         def func():
-            self._updateRepo(
-                self._repo.removeOntologyTermMap, ontologyTermMap)
-        self._confirmDelete("Ontology", ontologyTermMap.getLocalId(), func)
+            self._updateRepo(self._repo.removeOntology, ontology)
+        self._confirmDelete("Ontology", ontology.getName(), func)
 
     #
     # Methods to simplify adding common arguments to the parser.
@@ -1877,6 +1908,15 @@ class RepoManager(object):
         ).format(objectType)
         subparser.add_argument(
             "-R", "--referenceSetName", default=None, help=helpText)
+
+    @classmethod
+    def addSequenceOntologyNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the sequence ontology instance used to "
+            "translate ontology term names to IDs in this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "-O", "--ontologyName", default=None, help=helpText)
 
     @classmethod
     def addOntologyNameArgument(cls, subparser):
@@ -2069,6 +2109,12 @@ class RepoManager(object):
                 "same order as the data files."))
         cls.addNameOption(addVariantSetParser, objectType)
         cls.addReferenceSetNameOption(addVariantSetParser, objectType)
+        cls.addSequenceOntologyNameOption(addVariantSetParser, objectType)
+        addVariantSetParser.add_argument(
+            "-a", "--addAnnotationSets", action="store_true",
+            help=(
+                "If the supplied VCF file contains annotations, create the "
+                "corresponding VariantAnnotationSet."))
 
         removeVariantSetParser = addSubparser(
             subparsers, "remove-variantset",
@@ -2089,6 +2135,7 @@ class RepoManager(object):
             "The path to the converted SQLite database containing Feature "
             "data")
         cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
+        cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
 
         removeFeatureSetParser = addSubparser(
             subparsers, "remove-featureset",
