@@ -487,7 +487,7 @@ class AnnotationFormatterMixin(object):
             print(
                 variantAnnotation.id, variantAnnotation.variantId,
                 variantAnnotation.variantAnnotationSetId,
-                variantAnnotation.createDateTime, sep="\t", end="\t")
+                variantAnnotation.created, sep="\t", end="\t")
             for effect in variantAnnotation.transcriptEffects:
                 print(effect.alternateBases, sep="|", end="|")
                 for so in effect.effects:

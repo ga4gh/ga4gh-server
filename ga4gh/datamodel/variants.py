@@ -866,8 +866,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def _createAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.createDateTime = self._creationTime
-        analysis.updateDateTime = self._updatedTime
+        analysis.created = self._creationTime
+        analysis.updated = self._updatedTime
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -901,7 +901,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann.variantId = variant.id
         ann.start = variant.start
         ann.end = variant.end
-        ann.createDateTime = self._creationTime
+        ann.created = self._creationTime
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (0,5)
         ann.transcriptEffects = []
@@ -1025,8 +1025,8 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                     analysis.info[key] = []
                 if value.description is not None:
                     analysis.info[key].append(value.description)
-        analysis.createDateTime = self._creationTime
-        analysis.updateDateTime = self._updatedTime
+        analysis.created = self._creationTime
+        analysis.updated = self._updatedTime
         for r in header.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:
@@ -1035,7 +1035,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                 analysis.info[r.key].append(str(r.value))
             if r.key == "created":
                 # TODO handle more date formats
-                analysis.createDateTime = datetime.datetime.strptime(
+                analysis.created = datetime.datetime.strptime(
                     r.value, "%Y-%m-%d").isoformat() + "Z"
             if r.key == "software":
                 analysis.software.append(r.value)
@@ -1286,7 +1286,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         annotation = self._createGaVariantAnnotation()
         annotation.start = variant.start
         annotation.end = variant.end
-        annotation.createDateTime = self._annotationCreatedDateTime
+        annotation.created = self._annotationCreatedDateTime
         annotation.variantId = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         transcriptEffects = []
