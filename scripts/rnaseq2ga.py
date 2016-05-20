@@ -222,7 +222,7 @@ def writeExpressionTable(writer, data):
         writer.writeExpression(analysisId, quantfile)
 
 
-def rnaseq2ga(dataFolder, controlFile, sqlFilename):
+def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv"):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
@@ -234,9 +234,10 @@ def rnaseq2ga(dataFolder, controlFile, sqlFilename):
     Supports the following quantification output type:
     Cufflinks, kallisto, RSEM
     """
+    controlFilePath = os.path.join(dataFolder, controlFile)
 
     rnaDB = RNASqliteStore(sqlFilename)
-    with open(controlFile, "r") as rnaDatasetsFile:
+    with open(controlFilePath, "r") as rnaDatasetsFile:
         print(rnaDatasetsFile.readline())
         for line in rnaDatasetsFile:
             fields = line.split("\t")
@@ -281,6 +282,5 @@ if __name__ == '__main__':
         default="rna_control_file.tsv")
     parser.add_argument('--verbose', '-v', action='count', default=0)
     args = parser.parse_args()
-    controlFilePath = os.path.join(args.inputDir, args.controlFile)
 
-    rnaseq2ga(args.inputDir, controlFilePath, args.outputFile)
+    rnaseq2ga(args.inputDir, args.outputFile, args.controlFile)

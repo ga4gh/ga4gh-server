@@ -16,9 +16,9 @@ import pysam
 import utils
 import sys
 import generate_gff3_db
+import rnaseq2ga
 import tempfile
 import zipfile
-import subprocess
 
 utils.ga4ghImportGlue()
 
@@ -167,11 +167,10 @@ class ComplianceDataMunger(object):
         self.repo.insertFeatureSet(gencode)
 
         # RNA Quantification
-        subprocess.call(
-            "python scripts/rnaseq2ga.py rna_control_file.tsv {0} {1}/rna.db"
-                .format(self.inputDirectory, self.outputDirectory))
+        rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
+        rnaseq2ga.rnaseq2ga(self.inputDirectory, rnaDbName)
         rnadata = rnaQuantification.SqliteRNABackend(
-            dataset, "{}/rna.db".format(self.outputDirectory))
+            dataset, rnaDbName)
         self.repo.insertRnaQuantification(rnadata)
 
         self.repo.commit()
