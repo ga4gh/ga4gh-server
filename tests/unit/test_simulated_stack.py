@@ -804,16 +804,18 @@ class TestSimulatedStack(unittest.TestCase):
         path = '/features/search'
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeaturesResponse)
-        self.assertIsNone(responseData.next_page_token)
-        self.assertEqual([], responseData.features)
+        self.assertEqual('', responseData.next_page_token)
+        self.assertEqual(0, len(responseData.features))
 
         # Larger request window, expect results
         request.start = 0
         request.end = 2 ** 16
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeaturesResponse)
-        self.assertTrue(protocol.SearchFeaturesResponse.validate(
-            responseData.toJsonDict()))
+
+        raise Exception(dir(responseData))
+        jsonData = protocol.fromJson(responseData.data, protocol.SearchFeaturesResponse)
+        self.assertTrue(protocol.validate(responseData, protocol.SearchFeaturesResponse))
         self.assertGreater(len(responseData.features), 0)
 
         # Verify all results are in the correct range, set and reference

@@ -234,17 +234,18 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         feature.feature_set_id = self.getId()
         feature.start = randomNumberGenerator.randint(1000, 2000)
         feature.end = feature.start + randomNumberGenerator.randint(1, 100)
-        feature.feature_type = self._getRandomfeatureType(
-            randomNumberGenerator)
+        feature.feature_type.CopyFrom(self._getRandomfeatureType(
+            randomNumberGenerator))
         references = ["chr1", "chr2", "chrX"]
         feature.reference_name = randomNumberGenerator.choice(references)
         strands = [protocol.POS_STRAND, protocol.NEG_STRAND]
         feature.strand = randomNumberGenerator.choice(strands)
-        feature.attributes = protocol.Attributes()
-        feature.attributes.vals = {
-            "gene_name": ["Frances", ],
-            "gene_type": ["mRNA", ],
-            "gene_status": ["UNKNOWN", ]}
+        attributes = {
+            "gene_name": "Frances",
+            "gene_type": "mRNA",
+            "gene_status": "UNKNOWN"}
+        for key, value in attributes.items():
+            feature.attributes.vals[key].values.add().string_value = value
         return feature
 
     def getFeature(self, compoundId):
@@ -287,7 +288,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         """
         randomNumberGenerator = random.Random()
         randomNumberGenerator.seed(self._randomSeed)
-        if pageToken is not None:
+        if pageToken:
             nextPageToken = int(pageToken)
         else:
             nextPageToken = 0

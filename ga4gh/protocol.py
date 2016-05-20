@@ -43,6 +43,8 @@ _valueListNameMap = {
     SearchCallSetsResponse: "call_sets",
     SearchVariantAnnotationSetsResponse: "variant_annotation_sets",
     SearchVariantAnnotationsResponse: "variant_annotations",
+    SearchFeatureSetsResponse: "feature_sets",
+    SearchFeaturesResponse: "features",
 }
 
 
