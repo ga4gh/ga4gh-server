@@ -7,8 +7,8 @@ from __future__ import unicode_literals
 
 import os
 import sys
-import optparse
 import sqlite3
+import argparse
 
 
 class RNASqliteStore(object):
@@ -222,7 +222,7 @@ def writeExpressionTable(writer, data):
         writer.writeExpression(analysisId, quantfile)
 
 
-def main(argv):
+def rnaseq2ga(dataFolder, controlFile, sqlFilename):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
@@ -234,14 +234,7 @@ def main(argv):
     Supports the following quantification output type:
     Cufflinks, kallisto, RSEM
     """
-    usage = "Usage: {0} <data_folder> <control_file> <db_file>".format(argv[0])
-    if len(argv) < 4:
-        print(usage)
-        sys.exit(1)
 
-    dataFolder = argv[1]
-    controlFile = os.path.join(dataFolder, argv[2])
-    sqlFilename = argv[3]
     rnaDB = RNASqliteStore(sqlFilename)
     with open(controlFile, "r") as rnaDatasetsFile:
         print(rnaDatasetsFile.readline())
@@ -272,4 +265,22 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    parser = argparse.ArgumentParser(
+        description="Script to generate SQLite database corresponding to "
+        "input RNA Quantification experiment files.")
+    parser.add_argument(
+        "--outputFile", "-o", default="rnaseq.db",
+        help="The file to output the server-ready database to.")
+    parser.add_argument(
+        "--inputDir", "-i",
+        help="Path to input directory containing RNA quant files.",
+        default='.')
+    parser.add_argument(
+        "--controlFile", "-c",
+        help="Name of control file (.tsv format) in the inputDir",
+        default="rna_control_file.tsv")
+    parser.add_argument('--verbose', '-v', action='count', default=0)
+    args = parser.parse_args()
+    controlFilePath = os.path.join(args.inputDir, args.controlFile)
+
+    rnaseq2ga(args.inputDir, controlFilePath, args.outputFile)
