@@ -169,8 +169,9 @@ class ComplianceDataMunger(object):
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
         rnaseq2ga.rnaseq2ga(self.inputDirectory, rnaDbName)
-        rnadata = rnaQuantification.SqliteRNABackend(
-            dataset, rnaDbName)
+        # rnadata = rnaQuantification.SqliteRNABackend(
+        #     dataset, rnaDbName)
+        # Not sure how to get an RNASeqResult based on this store into here...
         self.repo.insertRnaQuantification(rnadata)
 
         self.repo.commit()
