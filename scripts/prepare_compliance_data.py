@@ -18,6 +18,7 @@ import sys
 import generate_gff3_db
 import tempfile
 import zipfile
+import subprocess
 
 utils.ga4ghImportGlue()
 
@@ -29,6 +30,7 @@ import ga4gh.datamodel.variants as variants  # NOQA
 import ga4gh.datamodel.reads as reads  # NOQA
 import ga4gh.datamodel.ontologies as ontologies  # NOQA
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations  # NOQA
+import ga4gh.datamodel.rna_quantification as rnaQuantification # NOQA
 
 
 class ComplianceDataMunger(object):
@@ -153,6 +155,7 @@ class ComplianceDataMunger(object):
              "brca1_WASH7P_annotation.vcf",
              "brca1_OR4F_annotation.vcf"])
 
+        # Sequence annotations
         seqAnnFile = "brca1_gencodev19.gff3"
         seqAnnSrc = os.path.join(self.inputDirectory, seqAnnFile)
         seqAnnDest = os.path.join(self.outputDirectory, "gencodev19.db")
@@ -162,6 +165,14 @@ class ComplianceDataMunger(object):
         gencode.populateFromFile(seqAnnDest)
         gencode.setReferenceSet(referenceSet)
         self.repo.insertFeatureSet(gencode)
+
+        # RNA Quantification
+        subprocess.call(
+            "python scripts/rnaseq2ga.py rna_control_file.tsv {0} {1}/rna.db"
+                .format(self.inputDirectory, self.outputDirectory))
+        rnadata = rnaQuantification.SqliteRNABackend(
+            dataset, "{}/rna.db".format(self.outputDirectory))
+        self.repo.insertRnaQuantification(rnadata)
 
         self.repo.commit()
 

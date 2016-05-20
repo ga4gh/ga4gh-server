@@ -16,25 +16,19 @@ class RNASqliteStore(object):
     Defines a sqlite store for RNA data as well as methods for loading the
     tables.
     """
-    def __init__(self, rnaQuantDataPath, sqliteFileName=None):
+    def __init__(self, sqliteFileName):
         # TODO: check to see if the rnaQuantId is in the db and exit if it is
         # since this is a generator and not an updater
-        if sqliteFileName is not None:
-            sqlFilePath = os.path.join(rnaQuantDataPath, sqliteFileName)
-            if sqliteFileName in os.listdir(rnaQuantDataPath):
-                self._dbConn = sqlite3.connect(sqlFilePath)
-                self._cursor = self._dbConn.cursor()
-            else:
-                self.createNewRepo(sqlFilePath)
-        self._batchSize = 100
-        self._rnaValueList = []
-        self._expressionValueList = []
-
-    def createNewRepo(self, sqlFilePath):
+        sqlFilePath = sqliteFileName
+        print(sqlFilePath)
         self._dbConn = sqlite3.connect(sqlFilePath)
         self._cursor = self._dbConn.cursor()
         self.createTables(self._cursor)
         self._dbConn.commit()
+
+        self._batchSize = 100
+        self._rnaValueList = []
+        self._expressionValueList = []
 
     def createTables(self, cursor):
         # annotationIds is a comma separated list
@@ -228,13 +222,6 @@ def writeExpressionTable(writer, data):
         writer.writeExpression(analysisId, quantfile)
 
 
-def makeParser(usage):
-    parser = optparse.OptionParser(usage=usage)
-    parser.add_option("--rnaFolder", dest="rnaFolder")
-    parser.set_defaults(rnaFolder="rnaQuant")
-    return parser
-
-
 def main(argv):
     """
     Reads RNA Quantification data in one of several formats and stores the data
@@ -247,20 +234,15 @@ def main(argv):
     Supports the following quantification output type:
     Cufflinks, kallisto, RSEM
     """
-    usage = "Usage: {0} <control file> <data-folder> <dbfile>".format(argv[0])
+    usage = "Usage: {0} <data_folder> <control_file> <db_file>".format(argv[0])
     if len(argv) < 4:
         print(usage)
         sys.exit(1)
-    parser = makeParser(usage)
-    (options, args) = parser.parse_args(argv[1:])
 
-    controlFile = argv[1]
-    dataFolder = argv[2]
+    dataFolder = argv[1]
+    controlFile = os.path.join(dataFolder, argv[2])
     sqlFilename = argv[3]
-    rnaFolder = options.rnaFolder
-    outputFolder = os.path.join(dataFolder, rnaFolder)
-    rnaDB = RNASqliteStore(outputFolder, sqlFilename)
-    print("output folder:  {0}".format(outputFolder))
+    rnaDB = RNASqliteStore(sqlFilename)
     with open(controlFile, "r") as rnaDatasetsFile:
         print(rnaDatasetsFile.readline())
         for line in rnaDatasetsFile:
@@ -277,7 +259,7 @@ def main(argv):
                 print("Unknown RNA file type: {}".format(rnaType))
                 sys.exit(1)
             rnaQuantId = fields[0].strip()
-            quantFilename = fields[1].strip()
+            quantFilename = os.path.join(dataFolder, fields[1].strip())
             readGroupId = fields[4].strip()
             description = fields[5].strip()
             writeRnaseqTable(rnaDB, [rnaQuantId], description,
