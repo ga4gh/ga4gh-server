@@ -140,16 +140,15 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         Verifies that the lists of GA4GH variants and pyvcf variants
         are equivalent.
         """
-
         self.assertEqual(len(gaVariantAnnotations), len(pyvcfVariants))
-        for gaVariantAnnotation, pyvcfVariant in zip(
-                gaVariantAnnotations, pyvcfVariants):
+        for pair, pyvcfVariant in zip(gaVariantAnnotations, pyvcfVariants):
+            gaVariant, gaVariantAnnotation = pair
             # TODO parse and compare with analysis.info
             # pyvcfInfo = pyvcfVariant.INFO
             # pyvcf uses 1-based indexing.
-            # LSHIFT
-            # self.assertEqual(gaVariantAnnotation.start, pyvcfVariant.POS - 1)
-            # self.assertEqual(gaVariantAnnotation.end, pyvcfVariant.end)
+            self.assertEqual(gaVariant.id, gaVariantAnnotation.variant_id)
+            self.assertEqual(gaVariant.start, pyvcfVariant.POS - 1)
+            self.assertEqual(gaVariant.end, pyvcfVariant.end)
             # Annotated VCFs contain an ANN field in the record info
             if 'ANN' in pyvcfVariant.INFO:
                 pyvcfAnn = pyvcfVariant.INFO['ANN']
@@ -205,7 +204,7 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         for referenceName in self._referenceNames:
             iterator = self._gaObject.getVariantAnnotations(
                 referenceName, 0, end)
-            for gaVariantAnnotation in iterator:
+            for gaVariant, gaVariantAnnotation in iterator:
                 self.assertValid(protocol.VariantAnnotation,
                                  protocol.toJson(gaVariantAnnotation))
 
@@ -234,8 +233,9 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
 
     def _assertVariantsEqualInRange(
             self, referenceName, startPosition, endPosition):
-        gaVariantAnnotations = list(self._gaObject.getVariantAnnotations(
-            referenceName, startPosition, endPosition))
+        gaVariantAnnotations = list(
+            self._gaObject.getVariantAnnotations(
+                referenceName, startPosition, endPosition))
         pyvcfVariants = self._getPyvcfVariants(
             referenceName, startPosition, endPosition)
         self.assertGreaterEqual(len(gaVariantAnnotations), 0)
@@ -258,18 +258,21 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
             self._assertVariantsEqualInRange(referenceName, seg2, maxi)
 
     def _gaVariantAnnotationEqualsPyvcfVariantAnnotation(
-            self, gaVariant, pyvcfVariant):
-        # LSHIFT
+            self, gaVariant, gaAnnotation, pyvcfVariant):
+        if gaVariant.start != pyvcfVariant.start:
+            return False
+        if gaVariant.end != pyvcfVariant.end:
+            return False
         return True
 
     def _pyvcfVariantAnnotationIsInGaVariantAnnotations(
             self, pyvcfVariant, intervalStart, intervalEnd):
         isIn = False
-        gaVariants = list(self._gaObject.getVariantAnnotations(
+        pairs = list(self._gaObject.getVariantAnnotations(
             pyvcfVariant.CHROM, intervalStart, intervalEnd))
-        for gaVariant in gaVariants:
+        for gaVariant, gaAnnotation in pairs:
             if self._gaVariantAnnotationEqualsPyvcfVariantAnnotation(
-                    gaVariant, pyvcfVariant):
+                    gaVariant, gaAnnotation, pyvcfVariant):
                 isIn = True
                 break
         return isIn

@@ -878,13 +878,12 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         return analysis
 
     def getVariantAnnotation(self, variant, randomNumberGenerator):
-        ann = self.generateVariantAnnotation(
-            variant, randomNumberGenerator)
+        ann = self.generateVariantAnnotation(variant, randomNumberGenerator)
         return ann
 
     def getVariantAnnotations(self, referenceName, start, end):
         for variant in self._variantSet.getVariants(referenceName, start, end):
-            yield self.generateVariantAnnotation(variant)
+            yield variant, self.generateVariantAnnotation(variant)
 
     def generateVariantAnnotation(self, variant):
         """
@@ -909,12 +908,22 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
             for base in variant.alternate_bases:
                 ann.transcript_effects.add().CopyFrom(
                     self.generateTranscriptEffect(
-                        ann, base, randomNumberGenerator))
+                        variant, ann, base, randomNumberGenerator))
         ann.id = self.getVariantAnnotationId(variant, ann)
         return ann
 
-    def _addTranscriptEffectLocations(self, effect, ann):
+    def _addTranscriptEffectLocations(self, effect, ann, variant):
         # TODO Make these valid HGVS values
+        effect.hgvs_annotation = protocol.HGVSAnnotation()
+        effect.hgvs_annotation.genomic = str(variant.start)
+        effect.hgvs_annotation.transcript = str(variant.start)
+        effect.hgvs_annotation.protein = str(variant.start)
+        effect.protein_location = self._createGaAlleleLocation()
+        effect.protein_location.start = variant.start
+        effect.cds_location = self._createGaAlleleLocation()
+        effect.cds_location.start = variant.start
+        effect.cdna_location = self._createGaAlleleLocation()
+        effect.cdna_location.start = variant.start
         return effect
 
     def _addTranscriptEffectId(self, effect):
@@ -952,12 +961,13 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
                 effect, ann, randomNumberGenerator))
         return effect
 
-    def generateTranscriptEffect(self, ann, alts, randomNumberGenerator):
+    def generateTranscriptEffect(
+            self, variant, ann, alts, randomNumberGenerator):
         effect = self._createGaTranscriptEffect()
         effect.alternate_bases = alts
         # TODO how to make these featureIds sensical?
         effect.feature_id = "E4TB33F"
-        effect = self._addTranscriptEffectLocations(effect, ann)
+        effect = self._addTranscriptEffectLocations(effect, ann, variant)
         effect = self._addTranscriptEffectOntologyTerm(
             effect, randomNumberGenerator)
         effect = self._addTranscriptEffectOntologyTerm(
@@ -1290,7 +1300,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                     self.convertTranscriptEffectCSQ(ann, hgvsG))
         annotation.transcript_effects.extend(transcriptEffects)
         annotation.id = self.getVariantAnnotationId(variant, annotation)
-        return annotation
+        return variant, annotation
 
     def _convertAnnotations(
             self, annotations, variant, hgvsG, transcriptConverter):
