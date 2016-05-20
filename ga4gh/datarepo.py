@@ -1073,6 +1073,16 @@ class SqlDataRepository(AbstractDataRepository):
             assert rnaQuantification.getId() == row[b'id']
             dataset.addRnaQuantification(rnaQuantification)
 
+    def removeRnaQuantification(self, rnaQuantification):
+        """
+        Removes the specified rnaQuantification from this repository. This
+        performs a cascading removal of all items within this
+        rnaQuantification.
+        """
+        sql = "DELETE FROM RnaQuantification WHERE id=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (rnaQuantification.getId(),))
+
     def initialise(self):
         """
         Initialise this data repostitory, creating any necessary directories
