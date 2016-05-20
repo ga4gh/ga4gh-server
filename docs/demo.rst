@@ -59,8 +59,8 @@ Now we can download some example data, which we'll use for our demo:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.0.tar
-    (ga4gh-env) $ tar -xvf ga4gh-example-data-v4.0.tar
+    (ga4gh-env) $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.1.tar
+    (ga4gh-env) $ tar -xvf ga4gh-example-data-v4.1.tar
 
 After extracting the data, we can then run the ``ga4gh_server`` application:
 
@@ -231,8 +231,8 @@ Repo administrator CLI
 
 The CLI has methods for adding and removing Feature Sets, Read Group
 Sets, Variant Sets, etc. Before we can begin adding files we must first
-initialize an empty registry database. The directory that this database 
-is in should be readable and writable by the current user, as well as the 
+initialize an empty registry database. The directory that this database
+is in should be readable and writable by the current user, as well as the
 user running the server.
 
 .. code-block:: bash
@@ -299,17 +299,17 @@ Add sequence annotations
 ------------------------
 
 The GENCODE Genes dataset provides annotations for features on the
-reference assembly. The server uses a custom storage format for sequence 
-annotations, you can download a prepared set 
+reference assembly. The server uses a custom storage format for sequence
+annotations, you can download a prepared set
 `here <https://ga4ghstore.blob.core.windows.net/testing/gencode_v24lift37.db>`__.
-It can be added to the registry using the following command. Notice 
-we have told the registry to associate the reference set added above 
+It can be added to the registry using the following command. Notice
+we have told the registry to associate the reference set added above
 with these annotations.
 
 .. code-block:: bash
 
     ga4gh_repo add-featureset registry.db 1kgenomes /full/path/to/gencode.v24lift37.annotation.db --referenceSetName NCBI37
-    
+
 .. todo:: Demonstrate how to generate your own sequence annotations database.
 
 Add the 1000 Genomes VCFs
@@ -325,8 +325,8 @@ release.
     rm release/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
 
 These files are already compressed and indexed. For the server to make use
-of the files in this directory we must move the `wgs` file, since it covers 
-chromosomes that are represented elsewhere and overlapping VCF are not 
+of the files in this directory we must move the `wgs` file, since it covers
+chromosomes that are represented elsewhere and overlapping VCF are not
 currently supported. This file could be added as a separate variant set.
 
 We can now add the directory to the registry using the following command.

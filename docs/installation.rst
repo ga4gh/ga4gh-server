@@ -62,8 +62,8 @@ Download and unpack the example data:
 
 .. code-block:: bash
 
-  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.0.tar
-  $ tar -xf ga4gh-example-data-v4.0.tar
+  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.1.tar
+  $ tar -xf ga4gh-example-data-v4.1.tar
 
 Create the WSGI file at ``/srv/ga4gh/application.wsgi`` and write the following
 contents:
@@ -172,7 +172,7 @@ Troubleshooting
 Server errors will be output to the web server's error log by default (in Apache on
 Debian/Ubuntu, for example, this is ``/var/log/apache2/error.log``). Each client
 request will be logged to the web server's access log (in Apache on Debian/Ubuntu
-this is ``/var/log/apache2/access.log``). 
+this is ``/var/log/apache2/access.log``).
 
 For more server configuration options see :ref:`Configuration`
 
