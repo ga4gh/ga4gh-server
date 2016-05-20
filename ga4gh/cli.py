@@ -2006,7 +2006,10 @@ class RepoManager(object):
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        name = getNameFromPath(self._args.filePath)
+        if self._args.name is None:
+            name = getNameFromPath(self._args.filePath)
+        else:
+            name = self._args.name
         # TODO: is this the right top level to add?
         rnaQuantification = rna_quantification.RNASeqResult(
             dataset, name)
@@ -2293,6 +2296,7 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
+        objectType = "RnaQuantification"
         addRnaQuantificationParser = addSubparser(
             subparsers, "add-rnaquantification",
             "Add an RNA quantification to the data repo")
@@ -2303,7 +2307,8 @@ class RepoManager(object):
             addRnaQuantificationParser,
             "The path to the converted SQLite database containing RNA data")
         cls.addReferenceSetNameOption(
-            addRnaQuantificationParser, "RNA quantification")
+            addRnaQuantificationParser, objectType)
+        cls.addNameOption(addRnaQuantificationParser, objectType)
 
         removeRnaQuantificationParser = addSubparser(
             subparsers, "remove-rnaquantification",
