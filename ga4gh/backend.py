@@ -759,7 +759,7 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(compoundId.feature_set_id)
         gaFeature = featureSet.getFeature(compoundId)
-        jsonString = gaFeature.toJsonString()
+        jsonString = protocol.toJson(gaFeature)
         return jsonString
 
     def runGetReadGroupSet(self, id_):

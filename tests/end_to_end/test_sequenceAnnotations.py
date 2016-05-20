@@ -38,10 +38,10 @@ class TestSequenceAnnotations(unittest.TestCase):
         Sends the specified protocol request instance as JSON, and
         parses the result into an instance of the specified response.
         """
-        response = self.sendJsonPostRequest(path, request.toJsonString())
+        response = self.sendJsonPostRequest(path, protocol.toJson(request))
         self.assertEqual(200, response.status_code)
-        responseData = responseClass.fromJsonString(response.data)
-        self.assertTrue(responseData.validate(responseData.toJsonDict()))
+        responseData = protocol.fromJson(response.data, responseClass)
+        self.assertTrue(protocol.validate(responseData, responseClass))
         return responseData
 
     def getAllDatasets(self):

@@ -493,8 +493,8 @@ class AnnotationFormatterMixin(object):
                 for so in effect.effects:
                     print(so.term, sep="&", end="|")
                     print(so.id, sep="&", end="|")
-                print(effect.hgvsAnnotation.transcript,
-                      effect.hgvsAnnotation.protein, sep="|", end="\t")
+                print(effect.hgvs_annotation.transcript,
+                      effect.hgvs_annotation.protein, sep="|", end="\t")
             print()
 
 

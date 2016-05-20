@@ -185,8 +185,8 @@ class TestSimulatedStack(unittest.TestCase):
         # at least modulo featureId. They can obviously have different
         # start/end/etc parameters if randomly generated from search vs get.
         self.assertEqual(f1.id, f2.id)
-        self.assertEqual(f1.parentId, f2.parentId)
-        self.assertEqual(f1.featureSetId, f2.featureSetId)
+        self.assertEqual(f1.parent_id, f2.parent_id)
+        self.assertEqual(f1.feature_set_id, f2.feature_set_id)
 
     def verifyReferencesEqual(self, gaReference, reference):
         self.assertEqual(gaReference.id, reference.getId())
@@ -813,9 +813,8 @@ class TestSimulatedStack(unittest.TestCase):
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeaturesResponse)
 
-        raise Exception(dir(responseData))
-        jsonData = protocol.fromJson(responseData.data, protocol.SearchFeaturesResponse)
-        self.assertTrue(protocol.validate(responseData, protocol.SearchFeaturesResponse))
+        self.assertTrue(
+            protocol.validate(responseData, protocol.SearchFeaturesResponse))
         self.assertGreater(len(responseData.features), 0)
 
         # Verify all results are in the correct range, set and reference
@@ -952,4 +951,4 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(len(alignments), len(readGroupAlignments))
         for alignment, rgAlignment in zip(alignments, readGroupAlignments):
             self.assertEqual(alignment.id, rgAlignment.id)
-            self.assertEqual(alignment.readGroupId, rgAlignment.readGroupId)
+            self.assertEqual(alignment.readGroupId, rgAlignment.read_group_id)
