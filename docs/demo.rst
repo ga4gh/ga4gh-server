@@ -237,7 +237,7 @@ user running the server.
 
 .. code-block:: bash
 
-    ga4gh_repo init registry.db
+    $ ga4gh_repo init registry.db
 
 This command will create a file ``registry.db`` in the current working
 directory. This file should stay relatively small (a few MB for
@@ -249,7 +249,8 @@ description using the ``--description`` flag.
 
 .. code-block:: bash
 
-    ga4gh_repo add-dataset registry.db 1kgenomes --description "Variants from the 1000 Genomes project and GENCODE genes annotations"
+    $ ga4gh_repo add-dataset registry.db 1kgenomes \
+        --description "Variants from the 1000 Genomes project and GENCODE genes annotations"
 
 Add a Reference Set
 -------------------
@@ -260,7 +261,7 @@ used for the 1000 Genomes VCF.
 
 .. code-block:: bash
 
-    wget ftp://ftp.1000genomes.ebi.ac.uk//vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
+    $ wget ftp://ftp.1000genomes.ebi.ac.uk//vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
 
 This file is provided in ``.gz`` format, which we will decompress, and
 then with samtools installed on the system, recompress it using
@@ -268,15 +269,15 @@ then with samtools installed on the system, recompress it using
 
 .. code-block:: bash
 
-    gunzip hs37d5.fa.gz
-    bgzip hs37d5.fa
+    $ gunzip hs37d5.fa.gz
+    $ bgzip hs37d5.fa
 
 This may take a few minutes depending on your system as this file is
 around 3GB. Next, we will add the reference set.
 
 .. code-block:: bash
 
-    ga4gh_repo add-referenceset registry.db /full/path/to/hs37d5.fa.gz \
+    $ ga4gh_repo add-referenceset registry.db /full/path/to/hs37d5.fa.gz \
       -d “NCBI37 assembly of the human genome” --ncbiTaxonId 9606 --name NCBI37 \
       --sourceUri "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz"
 
@@ -284,16 +285,20 @@ A number of optional command line flags have been added. We will be
 referring to the name of this reference set ``NCBI37`` when we later add
 the variant set.
 
-Add an ontology TODO
---------------------
+Add an ontology
+---------------
 
 Ontologies provide a source for parsing variant annotations, as well as
-organizing feature types into ontology terms. This is a custom format
-created for this server.
+organizing feature types into ontology terms. A `sequence ontology
+<http://www.sequenceontology.org/>`_ instance must be added to the repository
+to translate ontology term names in sequence and variant annotations to IDs.
+Sequence ontology definitions can be downloaded from the `Sequence Ontology
+site <https://github.com/The-Sequence-Ontology/SO-Ontologies>`_.
 
 .. code-block:: bash
 
-    ga4gh_repo add-ontology registry.db /full/path/to/sequence_ontology.txt
+    $ wget https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/so-xp.obo
+    $ ga4gh_repo add-ontology registry.db /full/path/to/so-xp.obo -n so-xp
 
 Add sequence annotations
 ------------------------
@@ -308,7 +313,9 @@ with these annotations.
 
 .. code-block:: bash
 
-    ga4gh_repo add-featureset registry.db 1kgenomes /full/path/to/gencode.v24lift37.annotation.db --referenceSetName NCBI37
+    $ ga4gh_repo add-featureset registry.db 1kgenomes /full/path/to/gencode.v24lift37.annotation.db \
+        --referenceSetName NCBI37 --ontologyName so-xp
+
 
 .. todo:: Demonstrate how to generate your own sequence annotations database.
 
@@ -321,7 +328,7 @@ release.
 
 .. code-block:: bash
 
-    wget -m ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ -nd -P release -l 1
+    $ wget -m ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ -nd -P release -l 1
     rm release/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
 
 These files are already compressed and indexed. For the server to make use
@@ -334,7 +341,8 @@ Again, notice we have referred to the reference set by name.
 
 .. code-block:: bash
 
-    ga4gh_repo add-variantset registry.db 1kgenomes /full/path/to/release/ --name phase3-release --referenceSetName NCBI37
+    $ ga4gh_repo add-variantset registry.db 1kgenomes /full/path/to/release/ \
+        --name phase3-release --referenceSetName NCBI37
 
 Add a BAM as a Read Group Set
 -----------------------------
@@ -345,8 +353,11 @@ We will first download the index and then add it to the registry.
 
 .. code-block:: bash
 
-    wget http://s3.amazonaws.com/1000genomes/phase3/data/HG00096/alignment/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.bai
-    ga4gh_repo add-readgroupset registry.db 1kgenomes "http://s3.amazonaws.com/1000genomes/phase3/data/HG00096/alignment/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam" -I "HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.bai" --referenceSetName NCBI37
+    $ wget http://s3.amazonaws.com/1000genomes/phase3/data/HG00096/alignment/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.bai
+    $ ga4gh_repo add-readgroupset registry.db 1kgenomes \
+        -I HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.bai \
+        --referenceSetName NCBI37 \
+        http://s3.amazonaws.com/1000genomes/phase3/data/HG00096/alignment/HG00096.mapped.ILLUMINA.bwa.GBR.low_coverage.20120522.bam \
 
 This might take a moment as some metadata about the file will be
 retrieved from S3.

@@ -57,6 +57,32 @@ when creating a new GA4GH repository.
     $ ga4gh_repo init registry.db
 
 +++++++
+list
++++++++
+
+The ``list`` command is used to print the contents of a repository
+to the screen. It is an essential tool for administrators to
+understand the structure of the repository that they are managing.
+
+.. note:: The ``list`` command is under development and will
+   be much more sophisticated in the future. In particular, the output
+   of this command should improve considerably in the near future.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: list
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo list registry.db
+
+
++++++++
 verify
 +++++++
 
@@ -85,30 +111,6 @@ well in their repository.
 
     $ ga4gh_repo verify registry.db
 
-+++++++
-list
-+++++++
-
-The ``list`` command is used to print the contents of a repository
-to the screen. It is an essential tool for administrators to
-understand the structure of the repository that they are managing.
-
-.. note:: The ``list`` command is under development and will
-   be much more sophisticated in the future. In particular, the output
-   of this command should improve considerably in the near future.
-
-.. argparse::
-   :module: ga4gh.cli
-   :func: getRepoManagerParser
-   :prog: ga4gh_repo
-   :path: list
-   :nodefault:
-
-**Examples:**
-
-.. code-block:: bash
-
-    $ ga4gh_repo list registry.db
 
 +++++++++++
 add-dataset
@@ -169,7 +171,13 @@ Adds a reference set used in the 1000 Genomes project using the name
 add-ontology
 ++++++++++++++++
 
-.. todo:: add docs for adding ontologies.
+Adds a new ontology to the repository. The ontology supplied must be a text
+file in `OBO format
+<http://owlcollab.github.io/oboformat/doc/obo-syntax.html>`_. If you wish to
+serve sequence or variant annotations from a repository, a sequence ontology
+(SO) instance is required to translate ontology term names held in annotations
+to ontology IDs. Sequence ontology definitions can be downloaded from
+the `Sequence Ontology site <https://github.com/The-Sequence-Ontology/SO-Ontologies>`_.
 
 .. argparse::
    :module: ga4gh.cli
@@ -183,6 +191,9 @@ add-ontology
 .. code-block:: bash
 
     $ ga4gh_repo add-ontology registry.db path/to/so-xp.obo
+
+Adds the sequence ontology ``so-xp.obo`` to the repository using the
+default naming rules.
 
 +++++++++++++++
 add-variantset

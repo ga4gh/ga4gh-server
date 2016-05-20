@@ -2051,18 +2051,16 @@ class RepoManager(object):
 
         addOntologyParser = addSubparser(
             subparsers, "add-ontology",
-            "Adds an ontology to the repo. Currently ontology support "
-            "consists of a map between ontology term IDs and names "
-            "stored in a tab-delimited text file. For example, in "
-            "Sequence Ontology, we map from the term ID 'SO:0000024' "
-            "to the name 'sarcin_like_RNA_motif'. ")
+            "Adds an ontology in OBO format to the repo. Currently, "
+            "a sequence ontology (SO) instance is required to translate "
+            "ontology term names held in annotations to ontology IDs. "
+            "Sequence ontology files can be found at "
+            "https://github.com/The-Sequence-Ontology/SO-Ontologies")
         addOntologyParser.set_defaults(runner="addOntology")
         cls.addRepoArgument(addOntologyParser)
         cls.addFilePathArgument(
             addOntologyParser,
-            "The path to the text file used to define the ontology term "
-            "map to use. This must be a tab-delimited text file consisting "
-            "of ontology term IDs and names.")
+            "The path of the OBO file defining this ontology.")
         cls.addNameOption(addOntologyParser, "ontology")
 
         removeOntologyParser = addSubparser(
