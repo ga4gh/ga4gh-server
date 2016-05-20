@@ -439,7 +439,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
 
         # pagination logic: None if last feature was returned,
         # else 1 + row number being returned (starting at row 0).
-        if pageToken is not None:
+        if pageToken:
             nextPageToken = int(pageToken)
         else:
             nextPageToken = 0

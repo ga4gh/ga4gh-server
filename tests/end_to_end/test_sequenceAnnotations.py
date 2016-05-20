@@ -41,7 +41,7 @@ class TestSequenceAnnotations(unittest.TestCase):
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         self.assertEqual(200, response.status_code)
         responseData = protocol.fromJson(response.data, responseClass)
-        self.assertTrue(protocol.validate(responseData, responseClass))
+        self.assertTrue(protocol.validate(protocol.toJson(responseData), responseClass))
         return responseData
 
     def getAllDatasets(self):
@@ -55,24 +55,21 @@ class TestSequenceAnnotations(unittest.TestCase):
         datasetId = self.getAllDatasets()[0].id
         path = 'featuresets/search'
         request = protocol.SearchFeatureSetsRequest()
-        request.datasetId = datasetId
+        request.dataset_id = datasetId
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeatureSetsResponse)
-        return responseData.featureSets
+        return responseData.feature_sets
 
     def testSearchFeatures(self):
-        datasetId = self.getAllDatasets()[0].id
         featureSets = self.getAllFeatureSets()
         for featureSet in featureSets:
             path = "features/search"
             request = protocol.SearchFeaturesRequest()
-            request.datasetId = datasetId
-            request.featureSetId = featureSet.id
+            request.feature_set_id = featureSet.id
             request.start = 0
             request.end = 2**16
-            request.featureTypes = ["exon"]
-            request.referenceName = "chr1"
-            request.featureSetId = featureSet.id
+            request.feature_types.extend(["exon"])
+            request.reference_name = "chr1"
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
@@ -86,26 +83,22 @@ class TestSequenceAnnotations(unittest.TestCase):
 
             path = "features/search"
             request = protocol.SearchFeaturesRequest()
-            request.datasetId = datasetId
-            request.featureSetId = featureSet.id
+            request.feature_set_id = featureSet.id
             request.start = 0
             request.end = 2**16
-            request.featureTypes = ["gene", "exon"]
-            request.referenceName = "chr1"
-            request.featureSetId = featureSet.id
+            request.feature_types.extend(["gene", "exon"])
+            request.reference_name = "chr1"
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
                 self.assertIn(feature.featureType.term, request.featureTypes)
 
             request = protocol.SearchFeaturesRequest()
-            request.datasetId = datasetId
-            request.featureSetId = featureSet.id
+            request.feature_set_id = featureSet.id
             request.start = 0
             request.end = 2**16
-            request.featureTypes = ["exon"]
-            request.referenceName = "chr1"
-            request.featureSetId = featureSet.id
+            request.feature_types.extend(["exon"])
+            request.reference_name = "chr1"
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:

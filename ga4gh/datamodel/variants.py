@@ -914,15 +914,11 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def _addTranscriptEffectLocations(self, effect, ann, variant):
         # TODO Make these valid HGVS values
-        effect.hgvs_annotation = protocol.HGVSAnnotation()
         effect.hgvs_annotation.genomic = str(variant.start)
         effect.hgvs_annotation.transcript = str(variant.start)
         effect.hgvs_annotation.protein = str(variant.start)
-        effect.protein_location = self._createGaAlleleLocation()
         effect.protein_location.start = variant.start
-        effect.cds_location = self._createGaAlleleLocation()
         effect.cds_location.start = variant.start
-        effect.cdna_location = self._createGaAlleleLocation()
         effect.cdna_location.start = variant.start
         return effect
 
