@@ -777,7 +777,8 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """
         programsJson = json.dumps(
-            [protocol.toJsonDict(program) for program in readGroupSet.getPrograms()])
+            [protocol.toJsonDict(program) for program in
+             readGroupSet.getPrograms()])
         statsJson = json.dumps(protocol.toJsonDict(readGroupSet.getStats()))
         cursor = self._dbConnection.cursor()
         try:
@@ -942,7 +943,8 @@ class SqlDataRepository(AbstractDataRepository):
         # within the table as a JSON dump. These should really be stored in
         # their own table
         metadataJson = json.dumps(
-            [protocol.toJsonDict(metadata) for metadata in variantSet.getMetadata()])
+            [protocol.toJsonDict(metadata) for metadata in
+             variantSet.getMetadata()])
         urlMapJson = json.dumps(variantSet.getReferenceToDataUrlIndexMap())
         try:
             cursor.execute(sql, (

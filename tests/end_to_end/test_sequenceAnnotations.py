@@ -41,7 +41,8 @@ class TestSequenceAnnotations(unittest.TestCase):
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         self.assertEqual(200, response.status_code)
         responseData = protocol.fromJson(response.data, responseClass)
-        self.assertTrue(protocol.validate(protocol.toJson(responseData), responseClass))
+        self.assertTrue(
+            protocol.validate(protocol.toJson(responseData), responseClass))
         return responseData
 
     def getAllDatasets(self):

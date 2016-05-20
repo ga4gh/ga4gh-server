@@ -586,8 +586,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.variant_set_id = "b4d=="
         path = '/variantannotationsets/search'
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationSetsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationSetsResponse)
         self.assertTrue(responseData.validate(responseData.toJsonDict()))
         self.assertIsNone(responseData.next_page_token)
         self.assertEqual([], responseData.variant_annotation_sets,
@@ -595,8 +595,8 @@ class TestSimulatedStack(unittest.TestCase):
 
         request.variantSetId = self.variantSet.getId()
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationSetsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationSetsResponse)
         self.assertTrue(protocol.SearchVariantAnnotationSetsResponse.validate(
             responseData.toJsonDict()))
         self.assertGreater(len(responseData.variant_annotation_sets), 0,
@@ -619,8 +619,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.reference_name = "1"
         request.variant_annotation_set_id = self.variantAnnotationSet.getId()
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationsResponse)
         self.assertGreater(len(responseData.variant_annotations), 0)
         self.assertIsNotNone(
             responseData.next_page_token,
@@ -636,8 +636,8 @@ class TestSimulatedStack(unittest.TestCase):
 
         # request.effects.extend([{"id": "ThisIsNotAnEffect"}])
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationsResponse)
         self.assertEquals(
             len(responseData.variant_annotations), 0,
             "There should be no results for a nonsense effect")
@@ -648,8 +648,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.end = 10
         request.reference_name = "1"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationsResponse)
         self.assertGreater(len(responseData.variant_annotations), 0)
         for ann in responseData.variant_annotations:
             self.assertGreater(
@@ -665,8 +665,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.effects.add().id = "SO:0001627"
         request.effects.add().id = "B4DID"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationsResponse)
         responseLength = len(responseData.variant_annotations)
         self.assertGreater(
             responseLength, 0,
@@ -690,8 +690,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.effects.add().id = "B4DID"
         request.effects.add().id = "SO:0001627"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationsResponse)
         self.assertEqual(
             len(responseData.variant_annotations),
             responseLength,
@@ -715,8 +715,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.reference_name = "1"
         request.effects.add().id = "SO:0001627"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationsResponse)
         self.assertGreater(len(responseData.variant_annotations), 0,
                            "There should be some results for a good effect ID")
         for ann in responseData.variant_annotations:
@@ -737,8 +737,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.effects.add().id = "SO:0001627"
         request.effects.add().id = "SO:0001791"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data,
-            protocol.SearchVariantAnnotationsResponse)
+        responseData = protocol.fromJson(response.data, protocol.
+                                         SearchVariantAnnotationsResponse)
         self.assertGreater(len(responseData.variant_annotations), 0)
 
     def testGetFeatureSet(self):

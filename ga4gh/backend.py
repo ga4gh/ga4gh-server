@@ -500,7 +500,8 @@ class Backend(object):
         Returns a generator over the (variantAnnotationSet, nextPageToken)
         pairs defined by the specified request.
         """
-        compoundId = datamodel.VariantSetCompoundId.parse(request.variant_set_id)
+        compoundId = datamodel.VariantSetCompoundId.parse(
+            request.variant_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         variantSet = dataset.getVariantSet(request.variant_set_id)
         return self._topLevelObjectGenerator(
@@ -607,7 +608,8 @@ class Backend(object):
                 # compound ID is the same as that of the featureSetId
                 mismatchCheck = (
                     compoundParentId.dataset_id != compoundId.dataset_id or
-                    compoundParentId.feature_set_id != compoundId.feature_set_id)
+                    compoundParentId.feature_set_id !=
+                    compoundId.feature_set_id)
                 if mismatchCheck:
                     raise exceptions.ParentIncompatibleWithFeatureSet()
 

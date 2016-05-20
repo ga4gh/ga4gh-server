@@ -20,7 +20,6 @@ def run(*args):
 def main():
     prefix = "tests/data"
     repoFile = os.path.join(prefix, "repo.db")
-    sequenceOntologyName = "so-xp-simple"
     run("init", "-f", repoFile)
 
     pattern = os.path.join(prefix, "referenceSets", "*.fa.gz")
