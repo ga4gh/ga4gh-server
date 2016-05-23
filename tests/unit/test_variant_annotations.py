@@ -92,7 +92,7 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
     def testHashVariantAnnotation(self):
         annotation = protocol.VariantAnnotation()
         variant = protocol.Variant()
-        expected = 'bec63dc7c876bb3c7b71422203b101d1'
+        expected = hashlib.md5('\t()\t[]\t').hexdigest()
         hashed = self._variantAnnotationSet.hashVariantAnnotation(
             variant, annotation)
         self.assertEqual(hashed, expected)
