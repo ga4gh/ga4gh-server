@@ -181,8 +181,8 @@ class AbstractQueryRunner(object):
         # depending on the prefix.
         filePrefix = "file://"
         if args.baseUrl.startswith(filePrefix):
-            repoPath = args.baseUrl[len(filePrefix):]
-            repo = datarepo.SqlDataRepository(repoPath)
+            registryPath = args.baseUrl[len(filePrefix):]
+            repo = datarepo.SqlDataRepository(registryPath)
             repo.open(datarepo.MODE_READ)
             theBackend = backend.Backend(repo)
             self._client = client.LocalClient(theBackend)
@@ -1552,8 +1552,8 @@ class RepoManager(object):
     """
     def __init__(self, args):
         self._args = args
-        self._repoPath = args.repoPath
-        self._repo = datarepo.SqlDataRepository(self._repoPath)
+        self._registryPath = args.registryPath
+        self._repo = datarepo.SqlDataRepository(self._registryPath)
 
     def _confirmDelete(self, objectType, name, func):
         if self._args.force:
@@ -1587,8 +1587,15 @@ class RepoManager(object):
         if not self._repo.exists():
             raise exceptions.RepoManagerException(
                 "Repo '{}' does not exist. Please create a new repo "
-                "using the 'init' command.".format(self._repoPath))
+                "using the 'init' command.".format(self._registryPath))
         self._repo.open(datarepo.MODE_READ)
+
+    def _checkSequenceOntology(self, ontology):
+        so = ontologies.SEQUENCE_ONTOLOGY_PREFIX
+        if ontology.getOntologyPrefix() != so:
+            raise exceptions.RepoManagerException(
+                "Ontology '{}' does not have ontology prefix '{}'".format(
+                    ontology.getName(), so))
 
     def init(self):
         forceMessage = (
@@ -1598,7 +1605,7 @@ class RepoManager(object):
                 self._repo.delete()
             else:
                 raise exceptions.RepoManagerException(
-                    forceMessage.format(self._repoPath))
+                    forceMessage.format(self._registryPath))
         self._updateRepo(self._repo.initialise)
 
     def list(self):
@@ -1625,9 +1632,9 @@ class RepoManager(object):
         name = self._args.name
         if name is None:
             name = getNameFromPath(self._args.filePath)
-        ontologyTermMap = ontologies.OntologyTermMap(name)
-        ontologyTermMap.populateFromFile(self._args.filePath)
-        self._updateRepo(self._repo.insertOntologyTermMap, ontologyTermMap)
+        ontology = ontologies.Ontology(name)
+        ontology.populateFromFile(self._args.filePath)
+        self._updateRepo(self._repo.insertOntology, ontology)
 
     def addDataset(self):
         """
@@ -1749,7 +1756,26 @@ class RepoManager(object):
                 "VariantSet using the --referenceSetName option")
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         variantSet.setReferenceSet(referenceSet)
-        self._updateRepo(self._repo.insertVariantSet, variantSet)
+
+        # Now check for annotations
+        annotationSets = []
+        if variantSet.isAnnotated() and self._args.addAnnotationSets:
+            ontologyName = self._args.ontologyName
+            if ontologyName is None:
+                raise exceptions.RepoManagerException(
+                    "A sequence ontology name must be provided")
+            ontology = self._repo.getOntologyByName(ontologyName)
+            self._checkSequenceOntology(ontology)
+            for annotationSet in variantSet.getVariantAnnotationSets():
+                annotationSet.setOntology(ontology)
+                annotationSets.append(annotationSet)
+
+        # Add the annotation sets and the variant set as an atomic update
+        def updateRepo():
+            self._repo.insertVariantSet(variantSet)
+            for annotationSet in annotationSets:
+                self._repo.insertVariantAnnotationSet(annotationSet)
+        self._updateRepo(updateRepo)
 
     def removeReferenceSet(self):
         """
@@ -1814,6 +1840,13 @@ class RepoManager(object):
                 "A reference set name must be provided")
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         featureSet.setReferenceSet(referenceSet)
+        ontologyName = self._args.ontologyName
+        if ontologyName is None:
+            raise exceptions.RepoManagerException(
+                "A sequence ontology name must be provided")
+        ontology = self._repo.getOntologyByName(ontologyName)
+        self._checkSequenceOntology(ontology)
+        featureSet.setOntology(ontology)
         featureSet.populateFromFile(self._args.filePath)
         self._updateRepo(self._repo.insertFeatureSet, featureSet)
 
@@ -1834,13 +1867,11 @@ class RepoManager(object):
         Removes an ontology from the repo.
         """
         self._openRepo()
-        ontologyTermMap = self._repo.getOntologyTermMapByName(
-            self._args.ontologyName)
+        ontology = self._repo.getOntologyByName(self._args.ontologyName)
 
         def func():
-            self._updateRepo(
-                self._repo.removeOntologyTermMap, ontologyTermMap)
-        self._confirmDelete("Ontology", ontologyTermMap.getLocalId(), func)
+            self._updateRepo(self._repo.removeOntology, ontology)
+        self._confirmDelete("Ontology", ontology.getName(), func)
 
     #
     # Methods to simplify adding common arguments to the parser.
@@ -1849,7 +1880,8 @@ class RepoManager(object):
     @classmethod
     def addRepoArgument(cls, subparser):
         subparser.add_argument(
-            "repoPath", help="the file path of the data repository")
+            "registryPath",
+            help="the location of the registry database")
 
     @classmethod
     def addForceOption(cls, subparser):
@@ -1858,10 +1890,11 @@ class RepoManager(object):
             default=False, help="do not prompt for confirmation")
 
     @classmethod
-    def addDescriptionOption(cls, subparser):
+    def addDescriptionOption(cls, subparser, objectType):
         subparser.add_argument(
             "-d", "--description", default="",
-            help="The human-readable description of an object.")
+            help="The human-readable description of the {}.".format(
+                objectType))
 
     @classmethod
     def addDatasetNameArgument(cls, subparser):
@@ -1875,6 +1908,15 @@ class RepoManager(object):
         ).format(objectType)
         subparser.add_argument(
             "-R", "--referenceSetName", default=None, help=helpText)
+
+    @classmethod
+    def addSequenceOntologyNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the sequence ontology instance used to "
+            "translate ontology term names to IDs in this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "-O", "--ontologyName", default=None, help=helpText)
 
     @classmethod
     def addOntologyNameArgument(cls, subparser):
@@ -1939,7 +1981,7 @@ class RepoManager(object):
         addDatasetParser.set_defaults(runner="addDataset")
         cls.addRepoArgument(addDatasetParser)
         cls.addDatasetNameArgument(addDatasetParser)
-        cls.addDescriptionOption(addDatasetParser)
+        cls.addDescriptionOption(addDatasetParser, "dataset")
 
         removeDatasetParser = addSubparser(
             subparsers, "remove-dataset",
@@ -1960,12 +2002,12 @@ class RepoManager(object):
             "The path of the FASTA file to use as a reference set. This "
             "file must be bgzipped and indexed.")
         cls.addNameOption(addReferenceSetParser, objectType)
-        cls.addDescriptionOption(addReferenceSetParser)
+        cls.addDescriptionOption(addReferenceSetParser, objectType)
         addReferenceSetParser.add_argument(
             "--ncbiTaxonId", default=None, help="The NCBI Taxon Id")
         addReferenceSetParser.add_argument(
             "--isDerived", default=False, type=bool,
-            help="Indicates if this is a derived object")
+            help="Indicates if this reference set is derived from another")
         addReferenceSetParser.add_argument(
             "--assemblyId", default=None,
             help="The assembly id")
@@ -2009,18 +2051,16 @@ class RepoManager(object):
 
         addOntologyParser = addSubparser(
             subparsers, "add-ontology",
-            "Adds an ontology to the repo. Currently ontology support "
-            "consists of a map between ontology term IDs and names "
-            "stored in a tab-delimited text file. For example, in "
-            "Sequence Ontology, we map from the term ID 'SO:0000024' "
-            "to the name 'sarcin_like_RNA_motif'. ")
+            "Adds an ontology in OBO format to the repo. Currently, "
+            "a sequence ontology (SO) instance is required to translate "
+            "ontology term names held in annotations to ontology IDs. "
+            "Sequence ontology files can be found at "
+            "https://github.com/The-Sequence-Ontology/SO-Ontologies")
         addOntologyParser.set_defaults(runner="addOntology")
         cls.addRepoArgument(addOntologyParser)
         cls.addFilePathArgument(
             addOntologyParser,
-            "The path to the text file used to define the ontology term "
-            "map to use. This must be a tab-delimited text file consisting "
-            "of ontology term IDs and names.")
+            "The path of the OBO file defining this ontology.")
         cls.addNameOption(addOntologyParser, "ontology")
 
         removeOntologyParser = addSubparser(
@@ -2067,6 +2107,12 @@ class RepoManager(object):
                 "same order as the data files."))
         cls.addNameOption(addVariantSetParser, objectType)
         cls.addReferenceSetNameOption(addVariantSetParser, objectType)
+        cls.addSequenceOntologyNameOption(addVariantSetParser, objectType)
+        addVariantSetParser.add_argument(
+            "-a", "--addAnnotationSets", action="store_true",
+            help=(
+                "If the supplied VCF file contains annotations, create the "
+                "corresponding VariantAnnotationSet."))
 
         removeVariantSetParser = addSubparser(
             subparsers, "remove-variantset",
@@ -2087,6 +2133,7 @@ class RepoManager(object):
             "The path to the converted SQLite database containing Feature "
             "data")
         cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
+        cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
 
         removeFeatureSetParser = addSubparser(
             subparsers, "remove-featureset",
@@ -2108,6 +2155,13 @@ class RepoManager(object):
         manager = RepoManager(parsedArgs)
         runMethod = getattr(manager, parsedArgs.runner)
         runMethod()
+
+
+def getRepoManagerParser():
+    """
+    Used by sphinx.argparse.
+    """
+    return RepoManager.getParser()
 
 
 def repoExitError(message):

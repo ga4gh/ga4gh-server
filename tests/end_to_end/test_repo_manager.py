@@ -44,16 +44,24 @@ class RepoManagerEndToEndTest(unittest.TestCase):
             '-R', paths.referenceSetName, '-n', paths.readGroupSetName)
         self._runCmd(
             "add-featureset", self.datasetName, paths.featuresPath,
-            '-R', paths.referenceSetName)
+            '-R', paths.referenceSetName, '-O', paths.ontologyName)
         # ensure we can handle trailing slashes
         vcfPath = paths.vcfDirPath + '/'
         self._runCmd(
             "add-variantset", self.datasetName,
             vcfPath, '-R', paths.referenceSetName)
+        variantAnnotationSetName = "vas"
+        self._runCmd(
+            "add-variantset", self.datasetName,
+            paths.annotatedVcfPath, '-R', paths.referenceSetName,
+            "-aO", paths.ontologyName, "-n", variantAnnotationSetName)
+
         self._runCmd("verify")
         self._runCmd("list")
         self._runCmd(
-            "remove-variantset", self.datasetName, paths.variantSetName,
+            "remove-variantset", self.datasetName, paths.variantSetName, "-f")
+        self._runCmd(
+            "remove-variantset", self.datasetName, variantAnnotationSetName,
             "-f")
         self._runCmd(
             "remove-readgroupset", self.datasetName,

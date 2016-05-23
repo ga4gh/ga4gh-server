@@ -20,13 +20,14 @@ def run(*args):
 def main():
     prefix = "tests/data"
     repoFile = os.path.join(prefix, "repo.db")
+    sequenceOntologyName = "so-xp-simple"
     run("init", "-f", repoFile)
 
     pattern = os.path.join(prefix, "referenceSets", "*.fa.gz")
     for dataFile in glob.glob(pattern):
         run("add-referenceset", repoFile, dataFile)
 
-    pattern = os.path.join(prefix, "ontologymaps/sequence_ontology", "*.txt")
+    pattern = os.path.join(prefix, "ontologies", "*.obo")
     for dataFile in glob.glob(pattern):
         run("add-ontology", repoFile, dataFile)
 
@@ -42,13 +43,14 @@ def main():
         name = "vs_{}".format(j)
         run(
             "add-variantset", repoFile, datasetName, dataFile, "-R NCBI37",
-            "-n ", name)
+            "-n ", name, "-aO", sequenceOntologyName)
 
     pattern = os.path.join(
         prefix, "datasets/dataset1/sequenceAnnotations", "*.db")
     for j, dataFile in enumerate(glob.glob(pattern)):
         run(
-            "add-featureset", repoFile, datasetName, dataFile, "-R NCBI37")
+            "add-featureset", repoFile, datasetName, dataFile, "-R NCBI37",
+            "-O", sequenceOntologyName)
 
 
 if __name__ == "__main__":

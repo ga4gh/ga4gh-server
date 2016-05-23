@@ -11,158 +11,431 @@ the `Data repository`_ and the `Configuration file`_.
 Data repository
 ---------------
 
-The repository in the GA4GH reference server defines how your data is organised. The
-repository itself is a SQLite database, which contains information about your
-datasets, reference sets and so on. Bulk data (such as variants and reads)
-is not stored in database, but instead accessed directly from the primary
-data files at run time. The locations of these data files is entirely up
-to the administrator.
+Each GA4GH server represents a repository of information. This repository
+consists of the reference sets, datasets, readgroup sets, variant sets etc. in
+the server's data model and may contain data from many different unrelated
+projects. The server administrator defines and manages this repository using
+the ``ga4gh_repo`` command line interface, which provides commands to manage
+all of the objects represented by a GA4GH server.
 
-The repository manager provides an administration interface to the the data
-repository. It can be accessed via ``ga4gh_repo`` (or ``python repo_dev.py`` if
-developing). Following are descriptions of the commands that the repo manager
-exposes.
+The information about the objects in the GA4GH data model is stored in an SQL
+database, called the "registry DB" or "registry". The registry DB does not
+contain the raw bulk data but rather "registers" the information about where
+the server can find this information and some metadata about the object in
+question. For example, if we have a variant set that is backed by a single VCF
+file, the registry DB will contain the path to this file as well as the name of
+the variant set, the reference set it is defined by, and other information
+necessary to implement the GA4GH protocol. This registry architecture allows us
+a lot of flexibility in the sources of data that we can use.
+
+.. todo:: Architecture diagram showing the registry DB, the server, the
+    data container objects (like HtslibVariantSet, etc), etc.
+
+.. todo:: Explain how the datamodel is structured and how names are
+    used as local identifiers.
 
 +++++++
 init
 +++++++
 
-Initializes a data repository at the path provided.  All of the other
-commands require a data repository file as an argument, so this will likely be
-the first command you run.
+The ``init`` command initialises a new registry DB at a given
+file path. This is the first command that must be issued
+when creating a new GA4GH repository.
+
+.. argparse::
+    :module: ga4gh.cli
+    :func: getRepoManagerParser
+    :prog: ga4gh_repo
+    :path: init
+    :nodefault:
+
+
+**Examples:**
 
 .. code-block:: bash
 
-    $ ga4gh_repo init path/to/repo.db
+    $ ga4gh_repo init registry.db
+
++++++++
+list
++++++++
+
+The ``list`` command is used to print the contents of a repository
+to the screen. It is an essential tool for administrators to
+understand the structure of the repository that they are managing.
+
+.. note:: The ``list`` command is under development and will
+   be much more sophisticated in the future. In particular, the output
+   of this command should improve considerably in the near future.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: list
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo list registry.db
 
 
 +++++++
 verify
 +++++++
 
-Performs some consistency checks on the given data repository to ensure it is
-well-formed.
+The ``verify`` command is used to check that the integrity of the
+data in a repository. The command checks each container object in turn
+and ensures that it can read data from it. Read errors can occur for
+any number of reasons (for example, a VCF file may have been moved
+to another location since it was added to the registry), and the
+``verify`` command allows an administrator to check that all is
+well in their repository.
+
+.. note:: The ``verify`` command is under development and will
+   be much more sophisticated in the future. In particular, the output
+   of this command should improve considerably in the near future.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: verify
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
-    $ ga4gh_repo verify path/to/repo.db
+    $ ga4gh_repo verify registry.db
 
-+++++++
-list
-+++++++
-
-Lists the contents of the given data repository.
-
-.. code-block:: bash
-
-    $ ga4gh_repo list path/to/repo.db
 
 +++++++++++
 add-dataset
 +++++++++++
 
-Creates a dataset in the given repository with a given name.
+Creates a new dataset in a repository. A dataset is an arbitrary collection
+of ReadGroupSets, VariantSets, VariantAnnotationSets and FeatureSets. Each
+dataset has a name, which is used to identify it in the repository manager.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-dataset
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
-    $ ga4gh_repo add-dataset path/to/repo.db aDataset
+    $ ga4gh_repo add-dataset registry.db 1kg -d 'Example dataset using 1000 genomes data'
 
-+++++++++++++++
-remove-dataset
-+++++++++++++++
-
-Destroys a dataset in the given repository with a given name.
-
-.. code-block:: bash
-
-    $ ga4gh_repo remove-dataset path/to/repo.db aDataset
+Adds the dataset with the name ``1kg`` and description
+``'Example dataset using 1000 genomes data'`` to the
+registry database ``registry.db``.
 
 ++++++++++++++++
 add-referenceset
 ++++++++++++++++
 
-Adds a given reference set file to a given data repository.
+Adds a reference set derived from a FASTA file to a repository. Each
+record in the FASTA file will correspond to a Reference in the new
+ReferenceSet. The input FASTA file must be compressed with ``bgzip``
+and indexed using ``samtools faidx``. Each ReferenceSet contains a
+number of metadata values (.e.g. ``ncbiTaxonId``) which can be set
+using command line options.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-referenceset
+   :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
-    $ ga4gh_repo add-referenceset path/to/repo.db path/to/aReferenceSet.fa.gz
+    $ ga4gh_repo add-referenceset registry.db hs37d5.fa.gz \
+        --description "NCBI37 assembly of the human genome" \
+        --ncbiTaxonId 9606 --name NCBI37 \
+        --sourceUri ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz
 
-++++++++++++++++++++
-remove-referenceset
-++++++++++++++++++++
-
-Removes a given reference set from a given data repository.
-
-.. code-block:: bash
-
-    $ ga4gh_repo remove-referenceset path/to/repo.db aReferenceSet
+Adds a reference set used in the 1000 Genomes project using the name
+``NCBI37``, also setting the ``ncbiTaxonId`` to 9606 (human).
 
 ++++++++++++++++
 add-ontology
 ++++++++++++++++
 
-Adds an Ontology Map, which maps identifiers to ontology terms, to
-the repository. Ontology maps are tab delimited files with an
-identifier/term pair per row.
+Adds a new ontology to the repository. The ontology supplied must be a text
+file in `OBO format
+<http://owlcollab.github.io/oboformat/doc/obo-syntax.html>`_. If you wish to
+serve sequence or variant annotations from a repository, a sequence ontology
+(SO) instance is required to translate ontology term names held in annotations
+to ontology IDs. Sequence ontology definitions can be downloaded from
+the `Sequence Ontology site <https://github.com/The-Sequence-Ontology/SO-Ontologies>`_.
 
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-ontology
+   :nodefault:
 
-.. code-block:: bash
-
-    $ ga4gh_repo add-ontology path/to/repo.db path/to/aOntoMap.txt
-
-++++++++++++++++++++
-remove-ontology
-++++++++++++++++++++
-
-Removes a given Ontology Map from a given data repository.
-
-.. code-block:: bash
-
-    $ ga4gh_repo remove-ontology path/to/repo.db aOntoMap
-
-
-+++++++++++++++++
-add-readgroupset
-+++++++++++++++++
-
-Adds a given read group set file to a given data repository and dataset.  The
-file must have the extension ``.bam``.
+**Examples:**
 
 .. code-block:: bash
 
-    $ ga4gh_repo add-readgroupset path/to/repo.db aDataset path/to/aReadGroupSet.bam
+    $ ga4gh_repo add-ontology registry.db path/to/so-xp.obo
 
-++++++++++++++++++++
-remove-readgroupset
-++++++++++++++++++++
-
-Removes a read group set from a given data repository and dataset.
-
-.. code-block:: bash
-
-    $ ga4gh_repo remove-readgroupset path/to/repo.db aDataset aReadGroupSet
+Adds the sequence ontology ``so-xp.obo`` to the repository using the
+default naming rules.
 
 +++++++++++++++
 add-variantset
 +++++++++++++++
 
-Adds a variant set directory to a given data repository and dataset.  The
-directory should contain file(s) with extension ``.vcf.gz``. If a variant set
-is annotated it will be added as both a variant set and a variant annotation set.
+Adds a variant set to a named dataset in a repository. Variant sets are
+currently derived from one or more non-overlapping VCF/BCF files which
+may be either stored locally or come from a remote URL. Multiple VCF
+files can be specified either directly on the command line or by
+providing a single directory argument that contains indexed VCF files.
+If remote URLs are used then index files in the local file system must be
+provided using the ``-I`` option.
+
+.. todo:: Document adding VariantAnnotationSets using the -a option.
+
+.. argparse::
+    :module: ga4gh.cli
+    :func: getRepoManagerParser
+    :prog: ga4gh_repo
+    :path: add-variantset
+    :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
-    $ ga4gh_repo add-variantset path/to/repo.db aDataset path/to/aVariantSet
+    $ ga4gh_repo add-variantset registry.db 1kg 1kgPhase1/ -R NCBI37
+
+Adds a new variant set to the dataset named ``1kg`` in the repository defined
+by the registry database ``registry.db`` using the VCF files contained in the
+directory ``1kgPhase1``. Note that this directory must also contain the
+corresponding indexes for these files. We associate the reference set named
+``NCBI37`` with this new variant set. Because we do not provide a ``--name``
+argument, a name is automatically generated using the default name generation
+rules.
+
+.. todo:: Add a paragraph to the section where we discuss names above
+   where we can define the default name generation rules, and link to
+   that from here.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-variantset registry.db 1kg \
+        1kgPhase1/chr1.vcf.gz 1kg/chr2.vcf.gz -n phase1-subset -R NCBI37
+
+Like the last example, we add a new variant set to the dataset ``1kg``,
+but here we only use the VCFs for chromosomes 1 and 2. We also specify the
+name for this new variant set to be ``phase1-subset``.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-variantset registry.db 1kg \
+        --name phase1-subset-remote -R NCBI37 \
+        --indexFiles ALL.chr1.phase1_release_v3.20101123.snps_indels_svs.genotypes.vcf.gz.tbi ALL.chr2.phase1_release_v3.20101123.snps_indels_svs.genotypes.vcf.gz.tbi \
+        ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/release/20110521/ALL.chr1.phase1_release_v3.20101123.snps_indels_svs.genotypes.vcf.gz \
+        ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/release/20110521/ALL.chr2.phase1_release_v3.20101123.snps_indels_svs.genotypes.vcf.gz
+
+This example performs the same task of creating a subset of the phase1
+VCFs, but this time we use the remote URL directly and do not keep a
+local copy of the VCF file. Because we are using remote URLs to define
+the variant set, we have to download a local copy of the corresponding
+index files and provide them on the command line using the ``--indexFiles``
+option.
+
++++++++++++++++++
+add-readgroupset
++++++++++++++++++
+
+Adds a readgroup set to a named dataset in a repository.  Readgroup sets are
+currently derived from a single indexed BAM file, which can be either
+stored locally or based on a remote URL. If the readgroup set is based on
+a remote URL, then the index file must be stored locally and specified using
+the ``--indexFile`` option.
+
+Each readgroup set must be associated with the reference set that it is aligned
+to. The ``add-readgroupset`` command first examines the headers of the BAM file
+to see if it contains information about references, and then looks for a
+reference set with name equal to the genome assembly identifer defined in the
+header. (Specifically, we read the ``@SQ`` header line and use the value of the
+``AS`` tag as the default reference set name.) If this reference set exists,
+then the readgroup set will be associated with it automatically. If it does not
+(or we cannot find the appropriate information in the header), then the
+``add-readgroupset`` command will fail. In this case, the user must provide the
+name of the reference set using the ``--referenceSetName`` option.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-readgroupset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-readgroupset registry.db 1kg \
+        path/to/HG00114.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
+
+Adds a new readgroup set for an indexed 1000 Genomes BAM file stored on the
+local file system. The index file follows the usual convention and is stored in
+the same directory as the BAM file and has an extra ``.bai`` extension. The
+name of the readgroup set is automatically derived from the file name, and the
+reference set automatically set from the BAM header.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-readgroupset registry.db 1kg ga4gh-example-data/HG00096.bam \
+        -R GRCh37-subset -n HG0096-subset
+
+Adds a new readgroup set based on a subset of the 1000 genomes reads for the
+HG00096 sample from the example data used in the reference server. In this case
+we specify that the reference set name ``GRCh37-subset`` be associated with the
+readgroup set. We also override the default name generation rules and specify
+the name ``HG00096-subset`` for the new readgroup set.
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-readgroupset registry.db 1kg \
+        -n HG00114-remote
+        -I /path/to/HG00114.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam.bai
+        ftp://ftp.ncbi.nlm.nih.gov/1000genomes/ftp/phase3/data/HG00114/alignment/HG00114.chrom11.ILLUMINA.bwa.GBR.low_coverage.20120522.bam
+
+Adds a new readgroups set based on a 1000 genomes BAM directly from the NCBI
+FTP server. Because this readgroup set uses a remote FTP URL, we must specify
+the location of the ``.bai`` index file on the local file system.
+
++++++++++++++++
+remove-dataset
++++++++++++++++
+
+Removes a dataset from the repository and recursively removes all
+objects (ReadGroupSets, VariantSets, etc) within this dataset.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-dataset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-dataset registry.db dataset1
+
+Deletes the dataset with name ``dataset1`` from the repository
+represented by ``registry.db``
+
+++++++++++++++++++++
+remove-referenceset
+++++++++++++++++++++
+
+Removes a reference set from the repository. Attempting
+to remove a reference set that is referenced by other objects in the
+repository will result in an error.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-referenceset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-referenceset registry.db NCBI37
+
+Deletes the reference set with name ``NCBI37`` from the repository
+represented by ``registry.db``
+
+++++++++++++++++++++
+remove-ontology
+++++++++++++++++++++
+
+Removes an ontology from the repository. Attempting
+to remove an ontology that is referenced by other objects in the
+repository will result in an error.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-ontology
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-ontology registry.db so-xp
+
+Deletes the ontology with name ``so-xp`` from the repository
+represented by ``registry.db``
 
 +++++++++++++++++
 remove-variantset
 +++++++++++++++++
 
-Removes a variant set from a given data repository and dataset.
+Removes a variant set from the repository. This also deletes all
+associated call sets and variant annotation sets from the repository.
+
+.. argparse::
+    :module: ga4gh.cli
+    :func: getRepoManagerParser
+    :prog: ga4gh_repo
+    :path: remove-variantset
+    :nodefault:
+
+**Examples:**
 
 .. code-block:: bash
 
-    $ ga4gh_repo remove-variantset path/to/repo.db aDataset aVariantSet
+    $ ga4gh_repo remove-variantset registry.db dataset1 phase3-release
+
+Deletes the variant set named ``phase3-release`` from the dataset
+named ``dataset1`` from the repository represented by ``registry.db``.
+
+++++++++++++++++++++
+remove-readgroupset
+++++++++++++++++++++
+
+Removes a read group set from the repository.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-readgroupset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-readgroupset registry.db dataset1 HG00114
+
+Deletes the readgroup set named ``HG00114`` from the dataset named
+``dataset1`` from the repository represented by ``registry.db``.
 
 ------------------
 Configuration file
@@ -177,7 +450,7 @@ example, we might have
 
 .. code-block:: python
 
-    DATA_SOURCE = "/path/to/repo.db"
+    DATA_SOURCE = "/path/to/registry.db"
 
 For production deployments, we shouldn't need to add any more configuration
 than this, as the other keys have sensible defaults. However,

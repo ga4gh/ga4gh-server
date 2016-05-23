@@ -208,8 +208,13 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         # not throw an error if the index is missing.
         if not os.path.exists(self._indexFile):
             raise exceptions.FileOpenFailedException(self._indexFile)
-        return pysam.AlignmentFile(
-            self._dataUrl, filepath_index=self._indexFile)
+        try:
+            return pysam.AlignmentFile(
+                self._dataUrl, filepath_index=self._indexFile)
+        except IOError as exception:
+            # IOError thrown when the index file passed in is not actually
+            # an index file... may also happen in other cases?
+            raise exceptions.DataException(exception.message)
 
 
 class AbstractReadGroupSet(datamodel.DatamodelObject):

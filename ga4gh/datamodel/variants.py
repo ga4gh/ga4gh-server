@@ -747,20 +747,26 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
     def __init__(self, variantSet, localId):
         super(AbstractVariantAnnotationSet, self).__init__(variantSet, localId)
         self._variantSet = variantSet
-        self._sequenceOntologyTermMap = None
+        self._ontology = None
         self._analysis = None
         # TODO these should be set from the DB, not created on
         # instantiation.
         self._creationTime = datetime.datetime.now().isoformat() + "Z"
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
-    def setSequenceOntologyTermMap(self, sequenceOntologyTermMap):
+    def setOntology(self, ontology):
         """
-        Sets the OntologyTermMap used in this VariantAnnotationSet to
+        Sets the Ontology used in this VariantAnnotationSet to
         translate sequence ontology term names into IDs to the
         specified value.
         """
-        self._sequenceOntologyTermMap = sequenceOntologyTermMap
+        self._ontology = ontology
+
+    def getOntology(self):
+        """
+        Returns the ontology term map used in this VariantAnnotationSet.
+        """
+        return self._ontology
 
     def getAnalysis(self):
         """
@@ -790,15 +796,6 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         object.
         """
         ret = protocol.TranscriptEffect()
-        return ret
-
-    def _createGaOntologyTermSo(self):
-        """
-        Convenience method to set the common fields in a GA OntologyTerm
-        object for Sequence Ontology.
-        """
-        ret = protocol.OntologyTerm()
-        ret.source_name = "Sequence Ontology"
         return ret
 
     def _createGaAlleleLocation(self):
@@ -934,7 +931,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         term = protocol.OntologyTerm()
         ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
         term.term, term.id = ontologyTuple[0], ontologyTuple[1]
-        term.source_name = "sequenceOntology"
+        term.source_name = "ontology"
         term.source_version = "0"
         return term
 
@@ -1262,14 +1259,9 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         :param seqOntStr:
         :return: [protocol.OntologyTerm]
         """
-        seqOntTerms = seqOntStr.split('&')
-        soTerms = []
-        for soName in seqOntTerms:
-            so = self._createGaOntologyTermSo()
-            so.term = soName
-            so.id = self._sequenceOntologyTermMap.getId(soName, "")
-            soTerms.append(so)
-        return soTerms
+        return [
+            self._ontology.getGaTermByName(soName)
+            for soName in seqOntStr.split('&')]
 
     def convertVariantAnnotation(self, record, transcriptConverter):
         """

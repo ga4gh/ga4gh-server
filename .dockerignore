@@ -1,5 +1,5 @@
 Dockerfile
-.git
 .dockerignore
+./build
 *.swp
 ga4gh-env

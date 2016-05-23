@@ -319,16 +319,23 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
     """
     def __init__(self, parentContainer, localId):
         super(Gff3DbFeatureSet, self).__init__(parentContainer, localId)
-        self._sequenceOntologyTermMap = None
+        self._ontology = None
         self._dbFilePath = None
         self._db = None
 
-    def setSequenceOntologyTermMap(self, sequenceOntologyTermMap):
+    def setOntology(self, ontology):
         """
-        Sets the OntologyTermMap instance used by this FeatureSet to the
+        Sets the Ontology instance used by this FeatureSet to the
         specified value.
         """
-        self._sequenceOntologyTermMap = sequenceOntologyTermMap
+        self._ontology = ontology
+
+    def getOntology(self):
+        """
+        Returns the ontology term map used to translate ontology term names
+        to IDs.
+        """
+        return self._ontology
 
     def populateFromFile(self, dataUrl):
         """
@@ -395,7 +402,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
                 self.getCompoundIdForFeatureId,
                 json.loads(feature['child_ids'])))
         gaFeature.feature_type.CopyFrom(
-            self._sequenceOntologyTermMap.getGaTermByName(feature['type']))
+            self._ontology.getGaTermByName(feature['type']))
         attributes = json.loads(feature['attributes'])
         # TODO: Identify which values are ExternalIdentifiers and OntologyTerms
         for key in attributes:

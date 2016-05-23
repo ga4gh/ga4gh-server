@@ -1,21 +1,61 @@
 ############################################################
 ## Dockerfile to build the ga4gh server on mod_wsgi-express
 ## Configurable to use a local dataset
-## Based on mod_wsgi-docker
-## Results of this build are available from Dockerhub as afirth/ga4gh_server_apache:prod
 ############################################################
-FROM grahamdumpleton/mod-wsgi-docker:python-2.7-onbuild
+FROM ubuntu
 
-# File Author / Maintainer
-MAINTAINER Alastair Firth
+# Originally created by Steve Hershman GitHub @hershman
+# previously maintained by Alastair Firth
+# currently maintained by Maciek Smuga-Otto at UCSC Genomics Institute
+MAINTAINER Maciek Smuga-Otto <maciek@soe.ucsc.edu>
 
-# Place the config, if an existing config is not in place
-ADD deploy/config.py /app/ga4gh/docker_config.py
-RUN cp --no-clobber /app/ga4gh/docker_config.py /app/ga4gh/config.py
+# Update the sources list
+RUN apt-get update
 
-# Pass '-e GA4GH_DATA_SOURCE=/container/data/path' and '-v /host/data/path:/container/data/path:ro' to docker run to mount local data
-# See docs for more info
+# Install packages
+RUN apt-get install -y tar git curl wget dialog net-tools build-essential \
+    python python-dev python-distribute python-pip zlib1g-dev \
+    apache2 libapache2-mod-wsgi libxslt1-dev libffi-dev libssl-dev
 
-CMD [ "--working-directory", "ga4gh", \
-      "--log-to-terminal", \
-      "ga4gh/application.wsgi" ]
+# Enable wsgi module
+RUN a2enmod wsgi
+
+# Create cache directories
+RUN mkdir /var/cache/apache2/python-egg-cache && \
+    chown www-data:www-data /var/cache/apache2/python-egg-cache/
+
+# build the GA4GH server
+RUN mkdir -p /srv/ga4gh/server
+WORKDIR /srv/ga4gh/server
+
+# Configure the python requirements
+# Do this as a separate step prior to the build so that changes
+# to the GA4GH Server codebase do not trigger a full rebuild of the
+# pip requirements.
+COPY requirements.txt /srv/ga4gh/server/
+RUN pip install -r requirements.txt
+
+# Install the code
+COPY . /srv/ga4gh/server/
+RUN python setup.py install
+
+# Write new apache config
+COPY deploy/001-ga4gh.conf /etc/apache2/sites-available/001-ga4gh.conf
+
+# Write application.wsgi
+COPY deploy/application.wsgi /srv/ga4gh/application.wsgi
+COPY deploy/config.py /srv/ga4gh/config.py
+
+# Configure apache to serve GA4GH site
+WORKDIR /etc/apache2/sites-enabled
+RUN rm -f 000-default.conf && ln -s /etc/apache2/sites-available/001-ga4gh.conf 001-ga4gh.conf
+
+# Open port 80 for HTTP
+EXPOSE 80
+
+# Prepare container for deployment
+# The directory that the user will land in when executing an interactive shell
+WORKDIR /srv/ga4gh/server
+
+# Default action: Bring up a webserver instance to run as a daemon
+CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
