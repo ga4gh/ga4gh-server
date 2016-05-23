@@ -813,16 +813,14 @@ class TestSimulatedStack(unittest.TestCase):
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeaturesResponse)
 
-        self.assertTrue(
-            protocol.validate(responseData, protocol.SearchFeaturesResponse))
         self.assertGreater(len(responseData.features), 0)
 
         # Verify all results are in the correct range, set and reference
         for feature in responseData.features:
             self.assertGreaterEqual(feature.start, 0)
             self.assertLessEqual(feature.end, 2 ** 16)
-            self.assertEqual(feature.featureSetId, featureSet.getId())
-            self.assertEqual(feature.referenceName, referenceName)
+            self.assertEqual(feature.feature_set_id, featureSet.getId())
+            self.assertEqual(feature.reference_name, referenceName)
 
     def testListReferenceBases(self):
         for referenceSet in self.dataRepo.getReferenceSets():
@@ -951,4 +949,4 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(len(alignments), len(readGroupAlignments))
         for alignment, rgAlignment in zip(alignments, readGroupAlignments):
             self.assertEqual(alignment.id, rgAlignment.id)
-            self.assertEqual(alignment.readGroupId, rgAlignment.read_group_id)
+            self.assertEqual(alignment.read_group_id, rgAlignment.read_group_id)

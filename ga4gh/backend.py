@@ -515,9 +515,9 @@ class Backend(object):
         """
         if not request.reference_id:
             raise exceptions.UnmappedReadsNotSupported()
-        if len(request.read_group_ids) != 1:
-            raise exceptions.NotImplementedException(
-                "Exactly one read group id must be specified")
+        if len(request.read_group_ids) < 1:
+            raise exceptions.BadRequestException(
+                "At least one readGroupId must be specified")
         elif len(request.read_group_ids) == 1:
             return self._readsGeneratorSingle(request)
         else:
@@ -541,7 +541,7 @@ class Backend(object):
     def _readsGeneratorMultiple(self, request):
         compoundId = datamodel.ReadGroupCompoundId.parse(
             request.read_group_ids[0])
-        dataset = self.getDataRepository().getDataset(compoundId.data_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         readGroupSet = dataset.getReadGroupSet(compoundId.read_group_set_id)
         referenceSet = readGroupSet.getReferenceSet()
         if referenceSet is None:
