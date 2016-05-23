@@ -265,7 +265,7 @@ def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv"):
     print("DONE")
 
 
-if __name__ == '__main__':
+def parseArgs():
     parser = argparse.ArgumentParser(
         description="Script to generate SQLite database corresponding to "
         "input RNA Quantification experiment files.")
@@ -282,5 +282,13 @@ if __name__ == '__main__':
         default="rna_control_file.tsv")
     parser.add_argument('--verbose', '-v', action='count', default=0)
     args = parser.parse_args()
+    return (args.inputDir, args.outputFile, args.controlFile)
 
-    rnaseq2ga(args.inputDir, args.outputFile, args.controlFile)
+
+def main():
+    (inputDir, outputFile, controlFile) = parseArgs()
+    rnaseq2ga(inputDir, outputFile, controlFile)
+
+
+if __name__ == '__main__':
+    main()
