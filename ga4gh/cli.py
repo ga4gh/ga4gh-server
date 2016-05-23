@@ -1630,10 +1630,11 @@ class RepoManager(object):
         """
         self._openRepo()
         name = self._args.name
+        filePath = os.path.abspath(self._args.filePath)
         if name is None:
-            name = getNameFromPath(self._args.filePath)
+            name = getNameFromPath(filePath)
         ontology = ontologies.Ontology(name)
-        ontology.populateFromFile(self._args.filePath)
+        ontology.populateFromFile(filePath)
         self._updateRepo(self._repo.insertOntology, ontology)
 
     def addDataset(self):
@@ -1651,10 +1652,11 @@ class RepoManager(object):
         """
         self._openRepo()
         name = self._args.name
+        filePath = os.path.abspath(self._args.filePath)
         if name is None:
             name = getNameFromPath(self._args.filePath)
         referenceSet = references.HtslibReferenceSet(name)
-        referenceSet.populateFromFile(self._args.filePath)
+        referenceSet.populateFromFile(filePath)
         referenceSet.setDescription(self._args.description)
         referenceSet.setNcbiTaxonId(self._args.ncbiTaxonId)
         referenceSet.setIsDerived(self._args.isDerived)
@@ -1683,6 +1685,8 @@ class RepoManager(object):
         else:
             if indexFile is None:
                 indexFile = dataUrl + ".bai"
+            dataUrl = os.path.abspath(self._args.dataFile)
+            indexFile = os.path.abspath(indexFile)
         name = self._args.name
         if self._args.name is None:
             name = getNameFromPath(dataUrl)
@@ -1717,12 +1721,15 @@ class RepoManager(object):
                     raise exceptions.RepoManagerException(
                         "Cannot find any VCF files in the directory "
                         "'{}'.".format(vcfDir))
+                dataUrls[0] = os.path.abspath(dataUrls[0])
         elif self._args.name is None:
             raise exceptions.RepoManagerException(
                 "Cannot infer the intended name of the VariantSet when "
                 "more than one VCF file is provided. Please provide a "
                 "name argument using --name.")
-
+        parsed = urlparse.urlparse(dataUrls[0])
+        if parsed.scheme not in ['http', 'ftp']:
+            dataUrls = map(os.path.abspath, dataUrls)
         # Now, get the index files for the data files that we've now obtained.
         indexFiles = self._args.indexFiles
         if indexFiles is None:
@@ -1741,7 +1748,7 @@ class RepoManager(object):
             indexSuffix = ".tbi"
             # TODO support BCF input properly here by adding .csi
             indexFiles = [filename + indexSuffix for filename in dataUrls]
-
+        indexFiles = map(os.path.abspath, indexFiles)
         variantSet = variants.HtslibVariantSet(dataset, name)
         variantSet.populateFromFile(dataUrls, indexFiles)
         # Get the reference set that is associated with the variant set.
@@ -1831,6 +1838,7 @@ class RepoManager(object):
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
+        filePath = os.path.abspath(self._args.filePath)
         name = getNameFromPath(self._args.filePath)
         featureSet = sequenceAnnotations.Gff3DbFeatureSet(
             dataset, name)
@@ -1847,7 +1855,7 @@ class RepoManager(object):
         ontology = self._repo.getOntologyByName(ontologyName)
         self._checkSequenceOntology(ontology)
         featureSet.setOntology(ontology)
-        featureSet.populateFromFile(self._args.filePath)
+        featureSet.populateFromFile(filePath)
         self._updateRepo(self._repo.insertFeatureSet, featureSet)
 
     def removeFeatureSet(self):
