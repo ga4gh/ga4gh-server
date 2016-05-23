@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import hashlib
 import unittest
 
 import ga4gh.protocol as protocol
@@ -98,6 +99,6 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
 
     def testGetTranscriptEffectId(self):
         effect = protocol.TranscriptEffect()
-        expected = '0e276f9254895cdeab4b0ec462b42117'
+        expected = hashlib.md5("\t\t[]\t").hexdigest()
         hashed = self._variantAnnotationSet.getTranscriptEffectId(effect)
         self.assertEqual(hashed, expected)
