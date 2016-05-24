@@ -184,7 +184,7 @@ class SamLine(object):
                 read.next_mate_position.strand == protocol.NEG_STRAND):
             flag = reads.SamFlags.setFlag(
                 flag, reads.SamFlags.MATE_REVERSE_STRAND)
-        if read.read_number in [None, -1]:
+        if read.read_number == -1:
             pass
         elif read.read_number == 0:
             flag = reads.SamFlags.setFlag(

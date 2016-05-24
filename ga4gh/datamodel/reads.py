@@ -650,11 +650,9 @@ class SimulatedReadGroup(AbstractReadGroup):
             alignment.aligned_quality.append(rng.randint(1, 20))
             alignment.aligned_sequence += rng.choice("ACGT")
 
-        gaLinearAlignment = alignment.alignment
-        gaPosition = gaLinearAlignment.position
-        gaPosition.position = 0
-        gaPosition.reference_name = "NotImplemented"
-        gaPosition.strand = protocol.POS_STRAND
+        alignment.alignment.position.position = 0
+        alignment.alignment.position.reference_name = "NotImplemented"
+        alignment.alignment.position.strand = protocol.POS_STRAND
         alignment.duplicate_fragment = False
         alignment.failed_vendor_quality_checks = False
 

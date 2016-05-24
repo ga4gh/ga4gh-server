@@ -50,7 +50,8 @@ class OntologyTest(datadriven.DataDrivenTest):
         for term in self._oboReader:
             self.assertIn(term.id, ontology.getTermIds(term.name))
             gaTerm = ontology.getGaTermByName(term.name)
-            self.assertTrue(protocol.validate(protocol.toJson(gaTerm), OntologyTerm))
+            self.assertTrue(protocol.validate(protocol.toJson(gaTerm),
+                                              OntologyTerm))
             self.assertEqual(gaTerm.term, term.name)
             self.assertIn(gaTerm.id, ontology.getTermIds(term.name))
             self.assertEqual(

@@ -16,9 +16,6 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as features
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
-from ga4gh.allele_annotation_service_pb2 import \
-    SearchVariantAnnotationSetsResponse
-from ga4gh.common_pb2 import GAException
 
 
 class TestSimulatedStack(unittest.TestCase):
@@ -589,9 +586,9 @@ class TestSimulatedStack(unittest.TestCase):
         request.variant_set_id = "b4d=="
         path = '/variantannotationsets/search'
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data, GAException)
-        self.assertTrue(
-            protocol.validate(protocol.toJson(responseData), GAException))
+        responseData = protocol.fromJson(response.data, protocol.GAException)
+        self.assertTrue(protocol.validate(protocol.toJson(responseData),
+                                          protocol.GAException))
         self.assertEqual(responseData.error_code, 758389611)
         self.assertEqual(responseData.message,
                          'No object of this type exists with id \'b4d==\'')
@@ -600,8 +597,9 @@ class TestSimulatedStack(unittest.TestCase):
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data, protocol.
                                          SearchVariantAnnotationSetsResponse)
-        self.assertTrue(protocol.validate(protocol.toJson(responseData),
-                                          SearchVariantAnnotationSetsResponse))
+        self.assertTrue(protocol.validate(
+            protocol.toJson(responseData),
+            protocol.SearchVariantAnnotationSetsResponse))
         self.assertGreater(len(responseData.variant_annotation_sets), 0,
                            "Expect some results for a known good ID")
         # TODO check the instance variables; we should be able to match
@@ -952,4 +950,5 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(len(alignments), len(readGroupAlignments))
         for alignment, rgAlignment in zip(alignments, readGroupAlignments):
             self.assertEqual(alignment.id, rgAlignment.id)
-            self.assertEqual(alignment.read_group_id, rgAlignment.read_group_id)
+            self.assertEqual(alignment.read_group_id,
+                             rgAlignment.read_group_id)

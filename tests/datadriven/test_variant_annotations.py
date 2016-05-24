@@ -183,7 +183,7 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
                         gaVariantAnnotation.transcript_effects):
                     self.assertEqual(gaEffect.alternate_bases, treff['alt'])
                     self.assertEqual(gaEffect.feature_id, treff['featureId'])
-            # self.assertIsNotNone(gaVariantAnnotation.transcript_effects)
+            self.assertGreater(len(gaVariantAnnotation.transcript_effects), 0)
 
     def _splitCsqEffects(self, annStr):
         (alt, gene, featureId, featureType, effects, cdnaPos,

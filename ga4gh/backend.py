@@ -688,6 +688,8 @@ class Backend(object):
         except protocol.json_format.ParseError:
             raise exceptions.InvalidJsonException(requestStr)
         # TODO How do we detect when the page size is not set?
+        if not request.page_size:
+            request.page_size = self._defaultPageSize
         if request.page_size < 0:
             raise exceptions.BadPageSizeException(request.page_size)
         responseBuilder = protocol.SearchResponseBuilder(

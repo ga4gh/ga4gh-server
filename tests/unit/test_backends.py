@@ -190,7 +190,7 @@ class TestTopLevelObjectGenerator(unittest.TestCase):
                 return self
 
         self.request = FakeRequest()
-        self.request.page_token = None
+        self.request.page_token = ""
         self.num_objects = 3
         self.objects = [FakeTopLevelObject() for j in range(self.num_objects)]
         self.backend = backend.Backend(datarepo.AbstractDataRepository())

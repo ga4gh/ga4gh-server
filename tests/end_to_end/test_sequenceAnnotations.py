@@ -75,11 +75,11 @@ class TestSequenceAnnotations(unittest.TestCase):
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
                 self.assertIn(
-                    feature.featureType.term,
-                    request.featureTypes,
+                    feature.feature_type.term,
+                    request.feature_types,
                     "Term should be present {} {} \n{}\n{}".format(
-                        feature.featureType.term,
-                        request.featureTypes,
+                        feature.feature_type.term,
+                        request.feature_types,
                         feature, request))
 
             path = "features/search"
@@ -92,7 +92,7 @@ class TestSequenceAnnotations(unittest.TestCase):
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
-                self.assertIn(feature.featureType.term, request.featureTypes)
+                self.assertIn(feature.feature_type.term, request.feature_types)
 
             request = protocol.SearchFeaturesRequest()
             request.feature_set_id = featureSet.id
@@ -103,7 +103,7 @@ class TestSequenceAnnotations(unittest.TestCase):
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
-                self.assertIn(feature.featureType.term, request.featureTypes)
+                self.assertIn(feature.feature_type.term, request.feature_types)
 
     def sendJsonPostRequest(self, path, data):
         """
