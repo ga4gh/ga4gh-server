@@ -283,8 +283,26 @@ class AbstractClient(object):
             self, variantAnnotationSetId, referenceName="", referenceId="",
             start=0, end=0, effects=[]):
         """
-        Returns an iterator over the Annotations fulfilling the specified
-        conditions from the specified AnnotationSet.
+        Returns an iterator over the Variant Annotations fulfilling
+        the specified conditions from the specified VariantSet.
+
+        :param str variantAnnotationSetId: The ID of the
+            :class:`ga4gh.protocol.VariantAnnotationSet` of interest.
+        :param int start: Required. The beginning of the window (0-based,
+            inclusive) for which overlapping variants should be returned.
+            Genomic positions are non-negative integers less than reference
+            length. Requests spanning the join of circular genomes are
+            represented as two requests one on each side of the join
+            (position 0).
+        :param int end: Required. The end of the window (0-based, exclusive)
+            for which overlapping variants should be returned.
+        :param str referenceName: The name of the
+            :class:`ga4gh.protocol.Reference` we wish to return variants from.
+
+        :return: An iterator over the
+            :class:`ga4gh.protocol.VariantAnnotation` objects
+            defined by the query parameters.
+        :rtype: iter
         """
         request = protocol.SearchVariantAnnotationsRequest()
         request.variant_annotation_set_id = variantAnnotationSetId
@@ -362,7 +380,7 @@ class AbstractClient(object):
 
     def searchVariantAnnotationSets(self, variantSetId):
         """
-        Returns an iterator over the AnnotationSets fulfilling the specified
+        Returns an iterator over the Annotation Sets fulfilling the specified
         conditions from the specified variant set.
 
         :param str variantSetId: The ID of the

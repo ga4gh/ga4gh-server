@@ -20,6 +20,30 @@ Release Notes
 +++++++++++++
 
 *****
+0.3.0
+*****
+
+Alpha pre-release supporting major feature update. This release is not
+backwards compatible with previous releases, and requires the data files
+be re-imported.
+
+- File locations are now tracked in a repo.db registry such that the
+  files can be located anywhere. The information from the json sidecar
+  files are also included in the database.
+
+- Ontology terms are now imported via an OBO file instead of the old
+  pre-packaged sequence_ontology.txt file. A sample OBO file has been
+  added to the sample data set for the reference server.
+
+- Added a custom landing page option for the main page of the server.
+
+- Performance improvement for variant search when calls are set to an empty
+  string.
+
+- Improved server configuration including Apache configuration and
+  robots.txt file.
+
+*****
 0.2.2
 *****
 
