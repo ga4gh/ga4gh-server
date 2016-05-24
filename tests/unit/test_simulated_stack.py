@@ -16,6 +16,9 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as features
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
+from ga4gh.allele_annotation_service_pb2 import \
+    SearchVariantAnnotationSetsResponse
+from ga4gh.common_pb2 import GAException
 
 
 class TestSimulatedStack(unittest.TestCase):
@@ -586,19 +589,19 @@ class TestSimulatedStack(unittest.TestCase):
         request.variant_set_id = "b4d=="
         path = '/variantannotationsets/search'
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
-        responseData = protocol.fromJson(response.data, protocol.
-                                         SearchVariantAnnotationSetsResponse)
-        self.assertTrue(responseData.validate(responseData.toJsonDict()))
-        self.assertIsNone(responseData.next_page_token)
-        self.assertEqual([], responseData.variant_annotation_sets,
-                         "There should no results for a bad ID")
+        responseData = protocol.fromJson(response.data, GAException)
+        self.assertTrue(
+            protocol.validate(protocol.toJson(responseData), GAException))
+        self.assertEqual(responseData.error_code, 758389611)
+        self.assertEqual(responseData.message,
+                         'No object of this type exists with id \'b4d==\'')
 
-        request.variantSetId = self.variantSet.getId()
+        request.variant_set_id = self.variantSet.getId()
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data, protocol.
                                          SearchVariantAnnotationSetsResponse)
-        self.assertTrue(protocol.SearchVariantAnnotationSetsResponse.validate(
-            responseData.toJsonDict()))
+        self.assertTrue(protocol.validate(protocol.toJson(responseData),
+                                          SearchVariantAnnotationSetsResponse))
         self.assertGreater(len(responseData.variant_annotation_sets), 0,
                            "Expect some results for a known good ID")
         # TODO check the instance variables; we should be able to match
