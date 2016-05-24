@@ -73,6 +73,12 @@ class IntervalIterator(object):
             searchAnchor, objectsToSkip = _parsePageToken(request.pageToken, 2)
             self._pickUpIteration(searchAnchor, objectsToSkip)
 
+    def _extractProtocolObject(self, obj):
+        """
+        Returns the protocol object from the object passed back by iteration.
+        """
+        return obj
+
     def _initialiseIteration(self):
         """
         Starts a new iteration.
@@ -139,7 +145,7 @@ class IntervalIterator(object):
                 self._distanceFromAnchor += 1
             nextPageToken = "{}:{}".format(
                 self._searchAnchor, self._distanceFromAnchor)
-        ret = self._currentObject, nextPageToken
+        ret = self._extractProtocolObject(self._currentObject), nextPageToken
         self._currentObject = self._nextObject
         self._nextObject = next(self._searchIterator, None)
         return ret
@@ -213,13 +219,19 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         return self._parentContainer.getVariantAnnotations(
             self._request.referenceName, start, end)
 
-    @classmethod
-    def _getStart(cls, annotation):
-        return annotation.start
+    def _extractProtocolObject(self, pair):
+        variant, annotation = pair
+        return annotation
 
     @classmethod
-    def _getEnd(cls, annotation):
-        return annotation.end
+    def _getStart(cls, pair):
+        variant, annotation = pair
+        return variant.start
+
+    @classmethod
+    def _getEnd(cls, pair):
+        variant, annotation = pair
+        return variant.end
 
     def next(self):
         while True:

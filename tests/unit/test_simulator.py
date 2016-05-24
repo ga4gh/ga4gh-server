@@ -149,7 +149,7 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
             simulatedVariantSet.toProtocolElement().id,
             simulatedVariantAnnotationSet.toProtocolElement().variantSetId,
             "Variant Set ID should match the annotation's variant set ID")
-        for ann in annotations:
+        for variant, ann in annotations:
             for key in protocol.VariantAnnotation().requiredFields:
                 self.assertEquals(datetime.datetime.strptime(
                     ann.createDateTime, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
@@ -157,6 +157,7 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
                         "Expect time format to be in ISO8601")
                 self.assertTrue(hasattr(ann, key),
                                 "Failed to find required key: " + key)
+                self.assertEqual(variant.id, ann.variantId)
 
 
 class TestSimulatedReadGroupSet(unittest.TestCase):
