@@ -9,9 +9,9 @@ from __future__ import unicode_literals
 import sys
 import zlib
 import inspect
+import json
 
 import ga4gh.protocol as protocol
-import ga4gh.avrotools as avrotools
 
 
 def getExceptionClass(errorCode):
@@ -97,7 +97,7 @@ class RuntimeException(BaseServerException):
         it can be communicated back to the client.
         """
         error = protocol.GAException()
-        error.errorCode = self.getErrorCode()
+        error.error_code = self.getErrorCode()
         error.message = self.getMessage()
         return error
 
@@ -145,6 +145,22 @@ class InvalidJsonException(BadRequestException):
         self.message = "Cannot parse JSON: '{}'".format(jsonString)
 
 
+class Validator(object):
+    """
+    Check that a JSON dictionary is a valid representation of a protocol
+    buffer class
+    """
+
+    def __init__(self, class_):
+        self.class_ = class_
+        self.schema = class_.DESCRIPTOR
+
+    def getInvalidFields(self, jsonDict):
+        # FIXME: get the proper list of fields
+        protocol.fromJson(json.dumps(jsonDict), self.class_)
+        return []
+
+
 class RequestValidationFailureException(BadRequestException):
     """
     A validation of the request data failed
@@ -153,9 +169,11 @@ class RequestValidationFailureException(BadRequestException):
         messageString = (
             "Request '{}' is not a valid instance of {}; "
             "invalid fields: {}")
-        validator = avrotools.Validator(requestClass)
+        validator = Validator(requestClass)
         self.message = messageString.format(
-            jsonDict, requestClass, validator.getInvalidFields(jsonDict))
+            jsonDict, requestClass,
+            validator.getInvalidFields(jsonDict)
+        )
 
 
 class BadReadsSearchRequestBothRefs(BadRequestException):
@@ -575,12 +593,14 @@ class ResponseValidationFailureException(ServerError):
     A validation of the response data failed
     """
     def __init__(self, jsonDict, requestClass):
-        validator = avrotools.Validator(requestClass)
+        validator = Validator(requestClass)
         self.message = (
             "Response '{}' is not a valid instance of {}. "
             "Invalid fields: {} "
             "Please file a bug report.".format(
-                jsonDict, requestClass, validator.getInvalidFields(jsonDict)))
+                jsonDict, requestClass,
+                validator.getInvalidFields(jsonDict)
+            ))
 
 
 #####################################################################

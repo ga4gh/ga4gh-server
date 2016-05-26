@@ -12,7 +12,9 @@ import fnmatch
 import os
 import inspect
 
-import ga4gh.avrotools as avrotools
+import google.protobuf.json_format as json_format
+import ga4gh.pb as pb
+import ga4gh.protocol as protocol
 
 
 def _wrapTestMethod(method):
@@ -56,13 +58,23 @@ class TestCase(object):
     Base class for datadriven test classes.
     Contains assert methods.
     """
+
+    # Protocol Buffers default values are considered "None-like"
+    consideredNone = [None, pb.DEFAULT_STRING, pb.DEFAULT_INT]
+
     def assertEqual(self, a, b):
         """
         Tests if a an b are equal. If not, output an error and raise
         an assertion error.
         """
-        if a != b:
-            raise AssertionError("{} != {}".format(a, b))
+        if a == b:
+            return
+
+        # Protocol Buffers has default string as "", not None
+        if a in TestCase.consideredNone and b in TestCase.consideredNone:
+            return
+
+        raise AssertionError("{} != {}".format(a, b))
 
     def assertNotEqual(self, a, b):
         """
@@ -104,14 +116,14 @@ class TestCase(object):
         """
         Tests that x is None.  If x is not, raise an assertion error.
         """
-        if x is not None:
+        if x not in TestCase.consideredNone:
             raise AssertionError("{} is not None".format(x))
 
     def assertIsNotNone(self, x):
         """
         Tests that x is not None.  If x is None, raise an assertion error.
         """
-        if x is None:
+        if x in TestCase.consideredNone:
             raise AssertionError("{} is None".format(x))
 
     def assertIn(self, a, b):
@@ -265,16 +277,12 @@ class DataDrivenTest(TestCase):
         Asserts that the specified JSON dictionary is a valid instance
         of the specified protocol class.
         """
-        if not protocolClass.validate(jsonDict):
-            validator = avrotools.Validator(protocolClass)
-            invalidFields = validator.getInvalidFields(jsonDict)
-            message = (
-                "{} is not a valid instance of {}. "
-                "Invalid fields = {}".format(
-                    jsonDict, protocolClass, invalidFields))
-            assert False, message
+        try:
+            json_format.Parse(jsonDict, protocolClass())
+        except json_format.ParseError, e:
+            assert False, e.message
 
     def testProtocolElementValid(self):
         self.assertValid(
             self.getProtocolClass(),
-            self._gaObject.toProtocolElement().toJsonDict())
+            protocol.toJson(self._gaObject.toProtocolElement()))

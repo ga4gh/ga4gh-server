@@ -70,65 +70,65 @@ class TestSamCigar(unittest.TestCase):
 
     def testAlignmentMatch(self):
         self.assertEqual(0, reads.SamCigar.ga2int(
-            protocol.CigarOperation.ALIGNMENT_MATCH))
+            protocol.CigarUnit.ALIGNMENT_MATCH))
 
-        self.assertEqual(protocol.CigarOperation.ALIGNMENT_MATCH,
+        self.assertEqual(protocol.CigarUnit.ALIGNMENT_MATCH,
                          reads.SamCigar.int2ga(0))
 
     def testInsertion(self):
         self.assertEqual(1, reads.SamCigar.ga2int(
-            protocol.CigarOperation.INSERT))
+            protocol.CigarUnit.INSERT))
 
-        self.assertEqual(protocol.CigarOperation.INSERT,
+        self.assertEqual(protocol.CigarUnit.INSERT,
                          reads.SamCigar.int2ga(1))
 
     def testDeletion(self):
         self.assertEqual(2, reads.SamCigar.ga2int(
-            protocol.CigarOperation.DELETE))
+            protocol.CigarUnit.DELETE))
 
-        self.assertEqual(protocol.CigarOperation.DELETE,
+        self.assertEqual(protocol.CigarUnit.DELETE,
                          reads.SamCigar.int2ga(2))
 
     def testSkipped(self):
         self.assertEqual(3, reads.SamCigar.ga2int(
-            protocol.CigarOperation.SKIP))
+            protocol.CigarUnit.SKIP))
 
-        self.assertEqual(protocol.CigarOperation.SKIP,
+        self.assertEqual(protocol.CigarUnit.SKIP,
                          reads.SamCigar.int2ga(3))
 
     def testSoftClipping(self):
         self.assertEqual(4, reads.SamCigar.ga2int(
-            protocol.CigarOperation.CLIP_SOFT))
+            protocol.CigarUnit.CLIP_SOFT))
 
-        self.assertEqual(protocol.CigarOperation.CLIP_SOFT,
+        self.assertEqual(protocol.CigarUnit.CLIP_SOFT,
                          reads.SamCigar.int2ga(4))
 
     def testHardClipping(self):
         self.assertEqual(5, reads.SamCigar.ga2int(
-            protocol.CigarOperation.CLIP_HARD))
+            protocol.CigarUnit.CLIP_HARD))
 
-        self.assertEqual(protocol.CigarOperation.CLIP_HARD,
+        self.assertEqual(protocol.CigarUnit.CLIP_HARD,
                          reads.SamCigar.int2ga(5))
 
     def testPadding(self):
         self.assertEqual(6, reads.SamCigar.ga2int(
-            protocol.CigarOperation.PAD))
+            protocol.CigarUnit.PAD))
 
-        self.assertEqual(protocol.CigarOperation.PAD,
+        self.assertEqual(protocol.CigarUnit.PAD,
                          reads.SamCigar.int2ga(6))
 
     def testSequenceMatch(self):
         self.assertEqual(7, reads.SamCigar.ga2int(
-            protocol.CigarOperation.SEQUENCE_MATCH))
+            protocol.CigarUnit.SEQUENCE_MATCH))
 
-        self.assertEqual(protocol.CigarOperation.SEQUENCE_MATCH,
+        self.assertEqual(protocol.CigarUnit.SEQUENCE_MATCH,
                          reads.SamCigar.int2ga(7))
 
     def testSequenceMismatch(self):
         self.assertEqual(8, reads.SamCigar.ga2int(
-            protocol.CigarOperation.SEQUENCE_MISMATCH))
+            protocol.CigarUnit.SEQUENCE_MISMATCH))
 
-        self.assertEqual(protocol.CigarOperation.SEQUENCE_MISMATCH,
+        self.assertEqual(protocol.CigarUnit.SEQUENCE_MISMATCH,
                          reads.SamCigar.int2ga(8))
 
 

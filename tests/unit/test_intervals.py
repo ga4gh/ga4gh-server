@@ -99,7 +99,7 @@ class FakeRequest(object):
     A class to stand in as a Request object.
     """
     def __init__(self, start, end, pageToken):
-        self.pageToken = pageToken
+        self.page_token = pageToken
         self.start = start
         self.end = end
 

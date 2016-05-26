@@ -148,11 +148,18 @@ def runCommandSplits(splits, silent=False):
     """
     Run a shell command given the command's parsed command line
     """
-    if silent:
-        with open(os.devnull, 'w') as devnull:
-            subprocess.check_call(splits, stdout=devnull, stderr=devnull)
-    else:
-        subprocess.check_call(splits)
+    try:
+        if silent:
+            with open(os.devnull, 'w') as devnull:
+                subprocess.check_call(splits, stdout=devnull, stderr=devnull)
+        else:
+            subprocess.check_call(splits)
+    except OSError, e:
+        if e.errno == 2:  # cmd not found
+            raise Exception(
+                "Can't find command while trying to run {}".format(splits))
+        else:
+            raise
 
 
 def runCommand(command, silent=False):

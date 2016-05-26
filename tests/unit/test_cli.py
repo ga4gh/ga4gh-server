@@ -11,6 +11,8 @@ import unittest
 
 import ga4gh.cli as cli
 import ga4gh.protocol as protocol
+import google.protobuf.descriptor as descriptor
+import google.protobuf.internal.python_message as python_message
 
 
 class TestServerArguments(unittest.TestCase):
@@ -446,13 +448,54 @@ class TestOutputFormats(unittest.TestCase):
             self.baseUrl = 'baseUrl'
             self.verbose = 'verbose'
 
-    class FakeObject(protocol.ProtocolElement):
+    class FakeObject(protocol.message.Message):
+        __metaclass__ = python_message.GeneratedProtocolMessageType
 
-        __slots__ = ['id', 'name']
+        FILE = descriptor.FileDescriptor(__file__, "test", "")
+        DESCRIPTOR = descriptor.Descriptor(
+            "FakeObject",
+            "test.FakeObject",
+            filename=__file__,
+            file=FILE,
+            containing_type=None,
+            fields=[
+                descriptor.FieldDescriptor(
+                    name="name",
+                    full_name="test.FakeObject.name",
+                    index=0,
+                    number=1,
+                    type=descriptor.FieldDescriptor.TYPE_STRING,
+                    cpp_type=descriptor.FieldDescriptor.CPPTYPE_STRING,
+                    label=descriptor.FieldDescriptor.LABEL_REQUIRED,
+                    default_value="",
+                    message_type=None,
+                    enum_type=None,
+                    containing_type=None,
+                    is_extension=False,
+                    extension_scope=None
+                ),
+                descriptor.FieldDescriptor(
+                    name="id",
+                    full_name="test.FakeObject.id",
+                    index=1,
+                    number=2,
+                    type=descriptor.FieldDescriptor.TYPE_STRING,
+                    cpp_type=descriptor.FieldDescriptor.CPPTYPE_STRING,
+                    label=descriptor.FieldDescriptor.LABEL_REQUIRED,
+                    default_value="",
+                    message_type=None,
+                    enum_type=None,
+                    containing_type=None,
+                    is_extension=False,
+                    extension_scope=None
+                )
+            ], nested_types=[], enum_types=[], extensions=[])
 
-        def __init__(self):
-            self.id = 'id'
-            self.name = 'name'
+    def makeFakeObject(self):
+        returnObj = self.FakeObject()
+        returnObj.id = 'id'
+        returnObj.name = 'name'
+        return returnObj
 
     def _getRunPrintMethodCalls(self, runner):
         printCalls = []
@@ -478,7 +521,7 @@ class TestOutputFormats(unittest.TestCase):
             returnVal[-50:])  # 50 = 400 % 70
 
     def testTextOutput(self):
-        returnObj = self.FakeObject()
+        returnObj = self.makeFakeObject()
         args = self.FakeArgs()
         runner = cli.AbstractGetRunner(args)
         runner._method = mock.Mock(return_value=returnObj)
@@ -486,7 +529,7 @@ class TestOutputFormats(unittest.TestCase):
         self.assertEqual(printCalls, [((u'id', u'name'), {'sep': u'\t'})])
 
     def testJsonOutput(self):
-        returnObj = self.FakeObject()
+        returnObj = self.makeFakeObject()
         args = self.FakeArgs('json')
         runner = cli.AbstractGetRunner(args)
         runner._method = mock.Mock(return_value=returnObj)

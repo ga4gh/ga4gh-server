@@ -67,7 +67,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self._dataset = datasets.Dataset("ds")
         super(VariantSetTest, self).__init__(variantSetId, baseDir)
         self._variantRecords = []
-        self._referenceNames = set()
+        self._reference_names = set()
         # Read in all the VCF files in datadir and store each variant.
         for vcfFile in glob.glob(os.path.join(self._dataPath, "*.vcf.gz")):
             self._readVcf(vcfFile)
@@ -84,7 +84,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self._formats = vcfReader.formats
         self.vcfSamples = vcfReader.samples
         for record in vcfReader:
-            self._referenceNames.add(record.CHROM)
+            self._reference_names.add(record.CHROM)
             # When an END info tag is present it takes precedence
             if "END" in record.INFO:
                 record.end = record.INFO["END"]
@@ -106,14 +106,15 @@ class VariantSetTest(datadriven.DataDrivenTest):
 
     def _verifyInfoEqual(self, gaObjectInfo, pyvcfInfo):
         def _assertEquivalentGaVCFValues(gaValue, pyvcfValue):
+            compareValue = protocol.getValueFromValue(gaValue)
             if isinstance(pyvcfValue, str):
-                self.assertEqual(gaValue, pyvcfValue)
+                self.assertEqual(compareValue, pyvcfValue)
             elif isinstance(pyvcfValue, (int, bool)):
-                self.assertEqual(gaValue, str(pyvcfValue))
+                self.assertEqual(compareValue, str(pyvcfValue))
             elif isinstance(pyvcfValue, float):
-                self.assertAlmostEqual(float(gaValue), float(pyvcfValue))
+                self.assertAlmostEqual(float(compareValue), float(pyvcfValue))
             elif pyvcfValue is None:
-                self.assertEqual(gaValue, ".")
+                self.assertEqual(compareValue, ".")
             else:
                 raise Exception(key, (
                     " values are inconsistent",
@@ -121,17 +122,17 @@ class VariantSetTest(datadriven.DataDrivenTest):
 
         for key, value in pyvcfInfo.iteritems():
             if isinstance(value, list):
-                self.assertEqual(len(gaObjectInfo[key]), len(value))
+                self.assertEqual(len(gaObjectInfo[key].values), len(value))
                 for gaValue, pyvcfValue in zip(
-                        gaObjectInfo[key], pyvcfInfo[key]):
+                        gaObjectInfo[key].values, pyvcfInfo[key]):
                     _assertEquivalentGaVCFValues(gaValue, pyvcfValue)
             else:
-                self.assertEqual(len(gaObjectInfo[key]), 1)
+                self.assertEqual(len(gaObjectInfo[key].values), 1)
 
     def _verifyVariantCallEqual(self, gaCall, pyvcfCall):
         genotype = convertVCFGenotype(pyvcfCall.data.GT)
         # callSetId information is not available in pyvcf.model._Call
-        self.assertEqual(gaCall.callSetName, pyvcfCall.sample)
+        self.assertEqual(gaCall.call_set_name, pyvcfCall.sample)
         self.assertEqual(gaCall.genotype, genotype)
         if len(pyvcfCall.data.GT.split("/")) == 1:
             # corner case when there is only a single genotype pyvcf
@@ -143,18 +144,18 @@ class VariantSetTest(datadriven.DataDrivenTest):
             if pyvcfCall.phased:
                 phaseset = str(pyvcfCall.phased)
             self.assertEqual(gaCall.phaseset, phaseset)
-        if len(gaCall.genotypeLikelihood) > 0:
+        if len(gaCall.genotype_likelihood) > 0:
             self._compareTwoListFloats(
-                gaCall.genotypeLikelihood, pyvcfCall.data.GL)
+                gaCall.genotype_likelihood, pyvcfCall.data.GL)
         else:
             self.assertNotIn("GL", pyvcfCall.data)
         for key, value in gaCall.info.items():
             if key != "GT" and key != "GL":
-                if isinstance(value[0], (list, tuple)):
-                    self._compareTwoListFloats(value[0], getattr(
+                if isinstance(value.values[0], (list, tuple)):
+                    self._compareTwoListFloats(value.values[0], getattr(
                         pyvcfCall.data, key))
-                elif isinstance(value[0], float):
-                    self._compareTwoFloats(value[0], getattr(
+                elif isinstance(value.values[0], float):
+                    self._compareTwoFloats(value.values[0], getattr(
                         pyvcfCall.data, key))
 
     def _verifyVariantsEqual(self, gaVariants, pyvcfVariants):
@@ -164,16 +165,16 @@ class VariantSetTest(datadriven.DataDrivenTest):
         """
         def _verifyVariantCalls():
             for gaCall in gaVariant.calls:
-                self.assertValid(protocol.Call, gaCall.toJsonDict())
-                self.assertIn(gaCall.callSetName, pyvcfCallMap)
-                pyvcfCall = pyvcfCallMap[gaCall.callSetName]
+                self.assertValid(protocol.Call, protocol.toJson(gaCall))
+                self.assertIn(gaCall.call_set_name, pyvcfCallMap)
+                pyvcfCall = pyvcfCallMap[gaCall.call_set_name]
                 self._verifyVariantCallEqual(gaCall, pyvcfCall)
 
         self.assertEqual(len(gaVariants), len(pyvcfVariants))
         for gaVariant, pyvcfVariant in zip(gaVariants, pyvcfVariants):
             pyvcfInfo = pyvcfVariant.INFO
-            self.assertEqual(gaVariant.referenceName, pyvcfVariant.CHROM)
-            self.assertEqual(gaVariant.referenceBases, pyvcfVariant.REF)
+            self.assertEqual(gaVariant.reference_name, pyvcfVariant.CHROM)
+            self.assertEqual(gaVariant.reference_bases, pyvcfVariant.REF)
             # pyvcf uses 1-based indexing.
             self.assertEqual(gaVariant.start, pyvcfVariant.POS - 1)
             self.assertEqual(gaVariant.end, pyvcfVariant.end)
@@ -184,11 +185,11 @@ class VariantSetTest(datadriven.DataDrivenTest):
             if len(alt) == 1 and alt[0] is None:
                 alt = []
             if pyvcfVariant.is_sv:
-                self.assertEqual(len(alt), len(gaVariant.alternateBases))
-                for alt1, alt2 in zip(alt, gaVariant.alternateBases):
+                self.assertEqual(len(alt), len(gaVariant.alternate_bases))
+                for alt1, alt2 in zip(alt, gaVariant.alternate_bases):
                     self.assertEqual(str(alt1), str(alt2))
             else:
-                self.assertEqual(gaVariant.alternateBases, alt)
+                self.assertEqual(gaVariant.alternate_bases, alt)
 
             pyvcfCallMap = {}
             for call in pyvcfVariant:
@@ -199,25 +200,25 @@ class VariantSetTest(datadriven.DataDrivenTest):
         for variant in gaVariants:
             self.assertEqual(len(variant.calls), len(sampleIds))
             for call in variant.calls:
-                self.assertIn(call.callSetName, sampleIds)
+                self.assertIn(call.call_set_name, sampleIds)
 
     def _verifyVariantsCallSetIds(self, searchsampleIds):
         """
         leaving searchSampleIds will get all samples.
         """
         gaCallSetVariants = []
-        for referenceName in self._referenceNames:
+        for reference_name in self._reference_names:
             end = datamodel.PysamDatamodelMixin.vcfMax
             gaSearchIds = [
                 str(datamodel.CallSetCompoundId(
                     self._gaObject.getCompoundId(), sampleId))
                 for sampleId in searchsampleIds]
             gaVariants = list(self._gaObject.getVariants(
-                referenceName, 0, end, gaSearchIds))
+                reference_name, 0, end, gaSearchIds))
             self._verifyGaVariantsSample(gaVariants, searchsampleIds)
             gaCallSetVariants += gaVariants
             localVariants = filter(
-                lambda v: v.CHROM == referenceName, self._variantRecords)
+                lambda v: v.CHROM == reference_name, self._variantRecords)
             self._verifyVariantsEqual(gaVariants, localVariants)
         self.assertEqual(len(gaCallSetVariants), len(self._variantRecords))
 
@@ -230,14 +231,14 @@ class VariantSetTest(datadriven.DataDrivenTest):
 
     def testVariantsValid(self):
         end = datamodel.PysamDatamodelMixin.vcfMax
-        for referenceName in self._referenceNames:
+        for reference_name in self._reference_names:
             iterator = self._gaObject.getVariants(
-                referenceName, 0, end)
+                reference_name, 0, end)
             for gaVariant in iterator:
-                self.assertValid(protocol.Variant, gaVariant.toJsonDict())
+                self.assertValid(protocol.Variant, protocol.toJson(gaVariant))
 
     def _getPyvcfVariants(
-            self, referenceName, startPosition=0, endPosition=2**30):
+            self, reference_name, startPosition=0, endPosition=2**30):
         """
         variants with in interval [startPosition, endPosition)
         """
@@ -247,41 +248,41 @@ class VariantSetTest(datadriven.DataDrivenTest):
                      variant.end > startPosition)
             case2 = (variant.start > startPosition and
                      variant.start < endPosition)
-            if (variant.CHROM == referenceName) and (case1 or case2):
+            if (variant.CHROM == reference_name) and (case1 or case2):
                 localVariants.append(variant)
         return localVariants
 
-    def _assertEmptyVariant(self, referenceName, startPosition, endPosition):
+    def _assertEmptyVariant(self, reference_name, startPosition, endPosition):
         gaVariants = list(self._gaObject.getVariants(
-            referenceName, startPosition, endPosition, []))
+            reference_name, startPosition, endPosition, []))
         self.assertEqual(len(gaVariants), 0)
         pyvcfVariants = self._getPyvcfVariants(
-            referenceName, startPosition, endPosition)
+            reference_name, startPosition, endPosition)
         self.assertEqual(len(pyvcfVariants), 0)
 
     def _assertVariantsEqualInRange(
-            self, referenceName, startPosition, endPosition):
+            self, reference_name, startPosition, endPosition):
         gaVariants = list(self._gaObject.getVariants(
-            referenceName, startPosition, endPosition, []))
+            reference_name, startPosition, endPosition, []))
         pyvcfVariants = self._getPyvcfVariants(
-            referenceName, startPosition, endPosition)
+            reference_name, startPosition, endPosition)
         self.assertGreaterEqual(len(gaVariants), 0)
         self._verifyVariantsEqual(gaVariants, pyvcfVariants)
 
     def testVariantInSegments(self):
-        for referenceName in self._referenceNames:
-            localVariants = self._getPyvcfVariants(referenceName)
+        for reference_name in self._reference_names:
+            localVariants = self._getPyvcfVariants(reference_name)
             mini = localVariants[0].start
             # NOTE, the end of the last variant may not reflect the END
             maxi = max([v.end for v in localVariants])
             seglen = (maxi-mini) // 3
             seg1 = mini + seglen
             seg2 = seg1 + seglen
-            self._assertEmptyVariant(referenceName, -1, mini)
-            self._assertEmptyVariant(referenceName, maxi, maxi+100)
-            self._assertVariantsEqualInRange(referenceName, mini, seg1)
-            self._assertVariantsEqualInRange(referenceName, seg1, seg2)
-            self._assertVariantsEqualInRange(referenceName, seg2, maxi)
+            self._assertEmptyVariant(reference_name, -1, mini)
+            self._assertEmptyVariant(reference_name, maxi, maxi+100)
+            self._assertVariantsEqualInRange(reference_name, mini, seg1)
+            self._assertVariantsEqualInRange(reference_name, seg1, seg2)
+            self._assertVariantsEqualInRange(reference_name, seg2, maxi)
 
     def _gaVariantEqualsPyvcfVariant(self, gaVariant, pyvcfVariant):
         if gaVariant.start != pyvcfVariant.start:
@@ -291,7 +292,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         alt = pyvcfVariant.ALT
         if len(alt) == 1 and alt[0] is None:
             alt = []
-        if not pyvcfVariant.is_sv and gaVariant.alternateBases != alt:
+        if not pyvcfVariant.is_sv and gaVariant.alternate_bases != alt:
             return False
         self._verifyVariantsEqual([gaVariant], [pyvcfVariant])
         return True
@@ -393,50 +394,50 @@ class VariantSetTest(datadriven.DataDrivenTest):
         variantSet = self._gaObject
         start = 0
         end = datamodel.PysamDatamodelMixin.vcfMax
-        callSetIds = [callSet.getId() for callSet in variantSet.getCallSets()]
-        someCallSetIds = callSetIds[0:3]
-        for callSetId in callSetIds:
-            returnedCallSet = variantSet.getCallSet(callSetId)
-            self.assertEqual(callSetId, returnedCallSet.getId())
-        for referenceName in self._referenceNames:
+        call_set_ids = [cs.getId() for cs in variantSet.getCallSets()]
+        somecall_set_ids = call_set_ids[0:3]
+        for call_set_id in call_set_ids:
+            returnedCallSet = variantSet.getCallSet(call_set_id)
+            self.assertEqual(call_set_id, returnedCallSet.getId())
+        for reference_name in self._reference_names:
             # passing None as the callSetIds argument should be equivalent
             # to passing all of the possible callSetIds as an argument
             noneRecords = list(variantSet.getVariants(
-                referenceName, start, end, None))
+                reference_name, start, end, None))
             allRecords = list(variantSet.getVariants(
-                referenceName, start, end, callSetIds))
+                reference_name, start, end, call_set_ids))
             self.assertEqual(len(noneRecords), len(allRecords))
             for noneRecord, allRecord in zip(noneRecords, allRecords):
                 for noneCall, allCall in zip(
                         noneRecord.calls, allRecord.calls):
                     self.assertEqual(
-                        noneCall.callSetName, allCall.callSetName)
+                        noneCall.call_set_name, allCall.call_set_name)
 
-            # passing an empty list as the callSetIds argument should
+            # passing an empty list as the call_set_ids argument should
             # return no callsets for any variant
-            emptyRecords = variantSet.getVariants(
-                referenceName, start, end, [])
+            emptyRecords = list(variantSet.getVariants(
+                reference_name, start, end, []))
             for record in emptyRecords:
                 self.assertEqual(len(record.calls), 0)
 
-            # passing some callSetIds as the callSetIds argument should
+            # passing some call_set_ids as the call_set_ids argument should
             # return only those calls
             someRecords = list(variantSet.getVariants(
-                referenceName, start, end, someCallSetIds))
+                reference_name, start, end, somecall_set_ids))
             for record in someRecords:
-                self.assertEqual(len(record.calls), len(someCallSetIds))
-                for call, someId in zip(record.calls, someCallSetIds):
-                    self.assertEqual(call.callSetId, someId)
+                self.assertEqual(len(record.calls), len(somecall_set_ids))
+                for call, someId in zip(record.calls, somecall_set_ids):
+                    self.assertEqual(call.call_set_id, someId)
 
     def testGetVariant(self):
         variantSet = self._gaObject
-        for referenceName in self._referenceNames:
-            refnameVariants = self._getPyvcfVariants(referenceName)
+        for reference_name in self._reference_names:
+            refnameVariants = self._getPyvcfVariants(reference_name)
             for variant in refnameVariants:
                 # positive test: get the expected variant
                 md5 = self._hashVariant(variant)
                 compoundId = datamodel.VariantCompoundId(
-                    variantSet.getCompoundId(), referenceName,
+                    variantSet.getCompoundId(), reference_name,
                     str(variant.start), md5)
                 gotVariant = variantSet.getVariant(compoundId)
                 self.assertEqual(str(compoundId), gotVariant.id)
@@ -444,7 +445,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 # negative test: change start position to past variant
                 wrongStart = variant.end
                 compoundId = datamodel.VariantCompoundId(
-                    variantSet.getCompoundId(), referenceName,
+                    variantSet.getCompoundId(), reference_name,
                     str(wrongStart), md5)
                 try:
                     gotVariant = variantSet.getVariant(compoundId)
@@ -461,7 +462,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
 
                 # negative test: change hash
                 compoundId = datamodel.VariantCompoundId(
-                    variantSet.getCompoundId(), referenceName,
+                    variantSet.getCompoundId(), reference_name,
                     str(variant.start), "wrong hash")
                 with self.assertRaises(exceptions.ObjectNotFoundException):
                     variantSet.getVariant(compoundId)
@@ -470,5 +471,6 @@ class VariantSetTest(datadriven.DataDrivenTest):
         if record.ALT[0] is None:
             alts = tuple()
         else:
-            alts = tuple([str(substitution) for substitution in record.ALT])
-        return hashlib.md5(record.REF + str(alts)).hexdigest()
+            alts = tuple([unicode(sub) for sub in record.ALT])
+        hash_str = record.REF + str(alts)
+        return hashlib.md5(hash_str).hexdigest()

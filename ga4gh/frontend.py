@@ -353,7 +353,9 @@ def handleException(exception):
         with app.test_request_context():
             app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
-    responseStr = serverException.toProtocolElement().toJsonString()
+    error = serverException.toProtocolElement()
+    responseStr = protocol.toJson(error)
+
     return getFlaskResponse(responseStr, serverException.httpStatus)
 
 

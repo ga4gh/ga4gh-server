@@ -210,15 +210,15 @@ class TestCompoundIds(unittest.TestCase):
         self.assertRaises(
             ValueError, datamodel.VariantCompoundId, dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.variantSet, localId)
-        self.assertEqual(cid.datasetId, dataset.getId())
+        self.assertEqual(cid.variant_set, localId)
+        self.assertEqual(cid.dataset_id, dataset.getId())
 
     def testVariantSetParse(self):
         idStr = '["a","vs","b"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.VariantSetCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.variantSet, "b")
+        self.assertEqual(cid.variant_set, "b")
         self.verifyParseFailure(idStr, datamodel.VariantSetCompoundId)
 
     def testCallSet(self):
@@ -230,17 +230,17 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.CallSetCompoundId,
             variantSet.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.variantSet, variantSet.getLocalId())
+        self.assertEqual(cid.variant_set, variantSet.getLocalId())
         self.assertEqual(cid.name, name)
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.variantSetId, variantSet.getId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(cid.variant_set_id, variantSet.getId())
 
     def testCallSetParse(self):
         idStr = '["a","vs","b","c"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.CallSetCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.variantSet, "b")
+        self.assertEqual(cid.variant_set, "b")
         self.assertEqual(cid.name, "c")
         self.verifyParseFailure(idStr, datamodel.CallSetCompoundId)
 
@@ -259,20 +259,20 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.VariantCompoundId,
             variantSet.getCompoundId(), referenceName)
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.variantSet, variantSet.getLocalId())
-        self.assertEqual(cid.referenceName, referenceName)
+        self.assertEqual(cid.variant_set, variantSet.getLocalId())
+        self.assertEqual(cid.reference_name, referenceName)
         self.assertEqual(cid.start, start)
         self.assertEqual(cid.md5, md5)
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.variantSetId, variantSet.getId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(cid.variant_set_id, variantSet.getId())
 
     def testVariantParse(self):
         idStr = '["a","vs","b","c","d","e"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.VariantCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.variantSet, "b")
-        self.assertEqual(cid.referenceName, "c")
+        self.assertEqual(cid.variant_set, "b")
+        self.assertEqual(cid.reference_name, "c")
         self.assertEqual(cid.start, "d")
         self.assertEqual(cid.md5, "e")
         self.verifyParseFailure(idStr, datamodel.VariantCompoundId)
@@ -282,13 +282,13 @@ class TestCompoundIds(unittest.TestCase):
         cid = datamodel.ReferenceSetCompoundId(None, localId)
         self.assertRaises(
             ValueError, datamodel.ReferenceSetCompoundId, None)
-        self.assertEqual(cid.referenceSet, localId)
+        self.assertEqual(cid.reference_set, localId)
 
     def testReferenceSetParse(self):
         idStr = '["a"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.ReferenceSetCompoundId.parse(obfuscated)
-        self.assertEqual(cid.referenceSet, "a")
+        self.assertEqual(cid.reference_set, "a")
         self.verifyParseFailure(idStr, datamodel.ReferenceSetCompoundId)
 
     def testReference(self):
@@ -299,15 +299,15 @@ class TestCompoundIds(unittest.TestCase):
         self.assertRaises(
             ValueError, datamodel.ReferenceCompoundId,
             referenceSet.getCompoundId())
-        self.assertEqual(cid.referenceSet, referenceSet.getLocalId())
+        self.assertEqual(cid.reference_set, referenceSet.getLocalId())
         self.assertEqual(cid.reference, localId)
-        self.assertEqual(cid.referenceSetId, referenceSet.getId())
+        self.assertEqual(cid.reference_set_id, referenceSet.getId())
 
     def testReferenceParse(self):
         idStr = '["a","b"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.ReferenceCompoundId.parse(obfuscated)
-        self.assertEqual(cid.referenceSet, "a")
+        self.assertEqual(cid.reference_set, "a")
         self.assertEqual(cid.reference, "b")
         self.verifyParseFailure(idStr, datamodel.ReferenceCompoundId)
 
@@ -320,14 +320,14 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.ReadGroupSetCompoundId,
             dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.readGroupSet, localId)
+        self.assertEqual(cid.read_group_set, localId)
 
     def testReadGroupSetParse(self):
         idStr = '["a","rgs","b"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.ReadGroupSetCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.readGroupSet, "b")
+        self.assertEqual(cid.read_group_set, "b")
         self.verifyParseFailure(idStr, datamodel.ReadGroupSetCompoundId)
 
     def testReadGroup(self):
@@ -340,18 +340,18 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.ReadGroupCompoundId,
             readGroupSet.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.readGroupSet, readGroupSet.getLocalId())
-        self.assertEqual(cid.readGroup, localId)
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.readGroupSetId, readGroupSet.getId())
+        self.assertEqual(cid.read_group_set, readGroupSet.getLocalId())
+        self.assertEqual(cid.read_group, localId)
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(cid.read_group_set_id, readGroupSet.getId())
 
     def testReadGroupParse(self):
         idStr = '["a","rgs","b","c"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.ReadGroupCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.readGroupSet, "b")
-        self.assertEqual(cid.readGroup, "c")
+        self.assertEqual(cid.read_group_set, "b")
+        self.assertEqual(cid.read_group, "c")
         self.verifyParseFailure(idStr, datamodel.ReadGroupCompoundId)
 
     def testReadAlignment(self):
@@ -365,18 +365,18 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.ReadAlignmentCompoundId,
             dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.readGroupSet, readGroupSet.getLocalId())
-        self.assertEqual(cid.readAlignment, localId)
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.readGroupSetId, readGroupSet.getId())
+        self.assertEqual(cid.read_group_set, readGroupSet.getLocalId())
+        self.assertEqual(cid.read_alignment, localId)
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(cid.read_group_set_id, readGroupSet.getId())
 
     def testReadAlignmentParse(self):
         idStr = '["a","rgs","b","c"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.ReadAlignmentCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.readGroupSet, "b")
-        self.assertEqual(cid.readAlignment, "c")
+        self.assertEqual(cid.read_group_set, "b")
+        self.assertEqual(cid.read_alignment, "c")
         self.verifyParseFailure(idStr, datamodel.ReadAlignmentCompoundId)
 
     def testExperiment(self):
@@ -390,8 +390,8 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.ExperimentCompoundId,
             readGroup.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.readGroupSet, readGroupSet.getLocalId())
-        self.assertEqual(cid.readGroup, readGroup.getLocalId())
+        self.assertEqual(cid.read_group_set, readGroupSet.getLocalId())
+        self.assertEqual(cid.read_group, readGroup.getLocalId())
         self.assertEqual(cid.experiment, localId)
 
     def testExperimentParse(self):
@@ -399,8 +399,8 @@ class TestCompoundIds(unittest.TestCase):
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.ExperimentCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.readGroupSet, "b")
-        self.assertEqual(cid.readGroup, "c")
+        self.assertEqual(cid.read_group_set, "b")
+        self.assertEqual(cid.read_group, "c")
         self.assertEqual(cid.experiment, "d")
         self.verifyParseFailure(idStr, datamodel.ExperimentCompoundId)
 
@@ -414,7 +414,7 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.VariantSetMetadataCompoundId,
             varSet.getCompoundId())
         self.assertEqual(cid.dataset, dataSet.getLocalId())
-        self.assertEqual(cid.variantSet, varSet.getLocalId())
+        self.assertEqual(cid.variant_set, varSet.getLocalId())
         self.assertEqual(cid.key, localId)
 
     def testVariantSetMetadataParse(self):
@@ -422,7 +422,7 @@ class TestCompoundIds(unittest.TestCase):
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.VariantSetMetadataCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.variantSet, "b")
+        self.assertEqual(cid.variant_set, "b")
         self.assertEqual(cid.key, "c")
         self.verifyParseFailure(idStr, datamodel.VariantSetMetadataCompoundId)
 
@@ -436,14 +436,14 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.FeatureSetCompoundId,
             dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.featureSet, featureSet.getLocalId())
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.featureSetId, featureSet.getId())
+        self.assertEqual(cid.feature_set, featureSet.getLocalId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(cid.feature_set_id, featureSet.getId())
 
     def testFeatureSetParse(self):
         idStr = '["a","b"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.FeatureSetCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.featureSet, "b")
+        self.assertEqual(cid.feature_set, "b")
         self.verifyParseFailure(idStr, datamodel.FeatureSetCompoundId)

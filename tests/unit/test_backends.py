@@ -190,16 +190,16 @@ class TestTopLevelObjectGenerator(unittest.TestCase):
                 return self
 
         self.request = FakeRequest()
-        self.request.pageToken = None
-        self.numObjects = 3
-        self.objects = [FakeTopLevelObject() for j in range(self.numObjects)]
+        self.request.page_token = ""
+        self.num_objects = 3
+        self.objects = [FakeTopLevelObject() for j in range(self.num_objects)]
         self.backend = backend.Backend(datarepo.AbstractDataRepository())
 
     def getObjectByIndex(self, index):
         return self.objects[index]
 
     def testPageToken(self):
-        self.request.pageToken = "1"
+        self.request.page_token = "1"
         self._assertNumItems(2)
 
     def testPageTokenNone(self):
@@ -207,7 +207,7 @@ class TestTopLevelObjectGenerator(unittest.TestCase):
 
     def _assertNumItems(self, numItems):
         iterator = self.backend._topLevelObjectGenerator(
-            self.request, self.numObjects, self.getObjectByIndex)
+            self.request, self.num_objects, self.getObjectByIndex)
         items = list(iterator)
         self.assertEqual(len(items), numItems)
 

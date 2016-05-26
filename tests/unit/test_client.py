@@ -54,12 +54,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchVariants(self):
         request = protocol.SearchVariantsRequest()
-        request.referenceName = self.referenceName
+        request.reference_name = self.referenceName
         request.start = self.start
         request.end = self.end
-        request.variantSetId = self.variantSetId
-        request.callSetIds = self.callSetIds
-        request.pageSize = self.pageSize
+        request.variant_set_id = self.variantSetId
+        request.call_set_ids.extend(self.callSetIds)
+        request.page_size = self.pageSize
         self.httpClient.searchVariants(
             self.variantSetId, start=self.start, end=self.end,
             referenceName=self.referenceName, callSetIds=self.callSetIds)
@@ -68,23 +68,23 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchDatasets(self):
         request = protocol.SearchDatasetsRequest()
-        request.pageSize = self.pageSize
+        request.page_size = self.pageSize
         self.httpClient.searchDatasets()
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "datasets", protocol.SearchDatasetsResponse)
 
     def testSearchVariantSets(self):
         request = protocol.SearchVariantSetsRequest()
-        request.datasetId = self.datasetId
-        request.pageSize = self.pageSize
+        request.dataset_id = self.datasetId
+        request.page_size = self.pageSize
         self.httpClient.searchVariantSets(self.datasetId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "variantsets", protocol.SearchVariantSetsResponse)
 
     def testSearchVariantAnnotationSets(self):
         request = protocol.SearchVariantAnnotationSetsRequest()
-        request.variantSetId = self.variantSetId
-        request.pageSize = self.pageSize
+        request.variant_set_id = self.variantSetId
+        request.page_size = self.pageSize
         self.httpClient.searchVariantAnnotationSets(self.variantSetId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "variantannotationsets",
@@ -92,11 +92,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchVariantAnnotations(self):
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = self.variantAnnotationSetId
-        request.pageSize = self.pageSize
-        request.referenceName = self.referenceName
-        request.referenceId = self.referenceId
-        request.effects = []
+        request.variant_annotation_set_id = self.variantAnnotationSetId
+        request.page_size = self.pageSize
+        request.reference_name = self.referenceName
+        request.reference_id = self.referenceId
         request.start = self.start
         request.end = self.end
         self.httpClient.searchVariantAnnotations(
@@ -120,18 +119,18 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchFeatureSets(self):
         request = protocol.SearchFeatureSetsRequest()
-        request.datasetId = self.datasetId
-        request.pageSize = self.pageSize
+        request.dataset_id = self.datasetId
+        request.page_size = self.pageSize
         self.httpClient.searchFeatureSets(self.datasetId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "featuresets", protocol.SearchFeatureSetsResponse)
 
     def testSearchReferenceSets(self):
         request = protocol.SearchReferenceSetsRequest()
-        request.pageSize = self.pageSize
+        request.page_size = self.pageSize
         request.accession = self.accession
         request.md5checksum = self.md5checksum
-        request.assemblyId = self.assemblyId
+        request.assembly_id = self.assemblyId
         self.httpClient.searchReferenceSets(
             accession=self.accession, md5checksum=self.md5checksum,
             assemblyId=self.assemblyId)
@@ -140,8 +139,8 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchReferences(self):
         request = protocol.SearchReferencesRequest()
-        request.referenceSetId = self.referenceSetId
-        request.pageSize = self.pageSize
+        request.reference_set_id = self.referenceSetId
+        request.page_size = self.pageSize
         request.accession = self.accession
         request.md5checksum = self.md5checksum
         self.httpClient.searchReferences(
@@ -152,9 +151,9 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchReadGroupSets(self):
         request = protocol.SearchReadGroupSetsRequest()
-        request.datasetId = self.datasetId
+        request.dataset_id = self.datasetId
         request.name = self.objectName
-        request.pageSize = self.pageSize
+        request.page_size = self.pageSize
         self.httpClient.searchReadGroupSets(
             self.datasetId, name=self.objectName)
         self.httpClient._runSearchRequest.assert_called_once_with(
@@ -162,9 +161,9 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchCallSets(self):
         request = protocol.SearchCallSetsRequest()
-        request.variantSetId = self.variantSetId
+        request.variant_set_id = self.variantSetId
         request.name = self.objectName
-        request.pageSize = self.pageSize
+        request.page_size = self.pageSize
         self.httpClient.searchCallSets(
             self.variantSetId, name=self.objectName)
         self.httpClient._runSearchRequest.assert_called_once_with(
@@ -172,11 +171,11 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchReads(self):
         request = protocol.SearchReadsRequest()
-        request.readGroupIds = self.readGroupIds
-        request.referenceId = self.referenceId
+        request.read_group_ids.extend(self.readGroupIds)
+        request.reference_id = self.referenceId
         request.start = self.start
         request.end = self.end
-        request.pageSize = self.pageSize
+        request.page_size = self.pageSize
         self.httpClient.searchReads(
             self.readGroupIds, referenceId=self.referenceId,
             start=self.start, end=self.end)
@@ -304,9 +303,9 @@ class DummyRequestsSession(object):
             # This is all very ugly --- see the comments in the LocalClient
             # for why we need to do this. Definitely needs to be fixed.
             args = dict(params)
-            if args['end'] is None:
+            if args[u'end'] == u'0':
                 del args['end']
-            if args['pageToken'] is None:
+            if args['pageToken'] is "":
                 del args['pageToken']
             result = self._backend.runListReferenceBases(id_, args)
         else:
@@ -436,7 +435,7 @@ class ExhaustiveListingsMixin(object):
                     readGroupSets, datamodelReadGroupSets):
                 datamodelReadGroups = datamodelReadGroupSet.getReadGroups()
                 self.verifyObjectList(
-                    readGroupSet.readGroups, datamodelReadGroups,
+                    readGroupSet.read_groups, datamodelReadGroups,
                     self.client.getReadGroup)
 
     def testAllReads(self):

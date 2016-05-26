@@ -17,6 +17,7 @@ import ga4gh.datamodel.ontologies as ontologies
 
 import tests.datadriven as datadriven
 import tests.paths as paths
+from ga4gh.metadata_pb2 import OntologyTerm
 
 
 def testReferenceSets():
@@ -49,13 +50,13 @@ class OntologyTest(datadriven.DataDrivenTest):
         for term in self._oboReader:
             self.assertIn(term.id, ontology.getTermIds(term.name))
             gaTerm = ontology.getGaTermByName(term.name)
-            self.assertValid(
-                protocol.OntologyTerm, gaTerm.toJsonDict())
+            self.assertTrue(protocol.validate(protocol.toJson(gaTerm),
+                                              OntologyTerm))
             self.assertEqual(gaTerm.term, term.name)
             self.assertIn(gaTerm.id, ontology.getTermIds(term.name))
             self.assertEqual(
-                gaTerm.sourceVersion, ontology.getSourceVersion())
-            self.assertEqual(gaTerm.sourceName, ontology.getName())
+                gaTerm.source_version, ontology.getSourceVersion())
+            self.assertEqual(gaTerm.source_name, ontology.getName())
 
     def testBadMappings(self):
         for badName in ["Not a term", None, 1234]:

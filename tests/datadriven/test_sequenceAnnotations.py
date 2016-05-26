@@ -24,7 +24,7 @@ _discontinuousTestData = {
     "sampleParentId": 4409956112,
     "sampleStart": 820942,
     "sampleEnd": 821379,
-    "sampleStrand": protocol.Strand.POS_STRAND,
+    "sampleStrand": protocol.POS_STRAND,
     "sampleSiblings": 2,
     "region": [0, 2**32],
     "ontologyRestriction": ["gene", ],
@@ -39,7 +39,7 @@ _gencodeV21Set1TestData = {
     "sampleParentId": 4397111312,
     "sampleStart": 804776,
     "sampleEnd": 804832,
-    "sampleStrand": protocol.Strand.POS_STRAND,
+    "sampleStrand": protocol.POS_STRAND,
     "sampleSiblings": 5,
     "region": [0, 2**32],
     "ontologyRestriction": ["gene", ],
@@ -54,7 +54,7 @@ _sacCerTestTestData = {
     "sampleParentId": None,
     "sampleStart": 337,
     "sampleEnd": 801,
-    "sampleStrand": protocol.Strand.NEG_STRAND,
+    "sampleStrand": protocol.NEG_STRAND,
     "sampleSiblings": 20,
     "region": [0, 2**32],
     "ontologyRestriction": ["gene", ],
@@ -69,7 +69,7 @@ _specialCasesTestTestData = {
     "sampleParentId": None,
     "sampleStart": 22229583,
     "sampleEnd": 22229699,
-    "sampleStrand": protocol.Strand.NEG_STRAND,
+    "sampleStrand": protocol.NEG_STRAND,
     "sampleSiblings": 2,
     "region": [0, 2**32],
     "ontologyRestriction": ["gene", ],
@@ -141,12 +141,12 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         if self._testData["sampleParentId"] is not None:
             self.assertEqual(
                 datamodel.FeatureCompoundId.parse(
-                    feature.parentId).featureId,
+                    feature.parent_id).featureId,
                 str(self._testData["sampleParentId"]))
         else:
-            self.assertEqual(feature.parentId, '')
+            self.assertEqual(feature.parent_id, '')
         self.assertEqual(
-            feature.referenceName,
+            feature.reference_name,
             self._testData["referenceName"])
         self.assertEqual(
             feature.start,
