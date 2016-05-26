@@ -294,7 +294,7 @@ class SqlDataRepository(AbstractDataRepository):
         def __str__(self):
             return "{}.{}".format(self.major, self.minor)
 
-    version = SchemaVersion("1.0")
+    version = SchemaVersion("2.0")
     systemKeySchemaVersion = "schemaVersion"
     systemKeyCreationTimeStamp = "creationTimeStamp"
 
