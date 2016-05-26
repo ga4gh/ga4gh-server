@@ -1,0 +1,107 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+import unittest
+
+import ga4gh.protocol as protocol
+
+
+def getValueListName(cls):
+    return [field for field in cls.DESCRIPTOR.fields_by_name
+            if field != 'next_page_token'][0]
+
+
+class SearchResponseBuilderTest(unittest.TestCase):
+    """
+    Tests the SearchResponseBuilder class to ensure that it behaves
+    correctly.
+    """
+
+    def testIntegrity(self):
+        # Verifies that the values we put in are exactly what we get
+        # back across all subclasses of SearchResponse
+        for class_ in [responseClass for _, _, responseClass in
+                       protocol.postMethods]:
+            instance = class_()
+            valueList = getattr(instance, getValueListName(class_))
+            valueList.add()
+            builder = protocol.SearchResponseBuilder(
+                class_, len(valueList), 2 ** 32)
+            for value in valueList:
+                builder.addValue(value)
+            builder.setNextPageToken(instance.next_page_token)
+            otherInstance = protocol.fromJson(
+                builder.getSerializedResponse(), class_)
+            self.assertEqual(instance, otherInstance)
+
+    def testPageSizeOverflow(self):
+        # Verifies that the page size behaviour is correct when we keep
+        # filling after full is True.
+        responseClass = protocol.SearchVariantsResponse
+        valueClass = protocol.Variant
+        for pageSize in range(1, 10):
+            builder = protocol.SearchResponseBuilder(
+                responseClass, pageSize, 2 ** 32)
+            self.assertEqual(builder.getPageSize(), pageSize)
+            self.assertFalse(builder.isFull())
+            for listLength in range(1, 2 * pageSize):
+                builder.addValue(valueClass())
+                instance = protocol.fromJson(
+                    builder.getSerializedResponse(), responseClass)
+
+                valueList = getattr(instance, getValueListName(responseClass))
+                self.assertEqual(len(valueList), listLength)
+                if listLength < pageSize:
+                    self.assertFalse(builder.isFull())
+                else:
+                    self.assertTrue(builder.isFull())
+
+    def testPageSizeExactFill(self):
+        responseClass = protocol.SearchVariantsResponse
+        valueClass = protocol.Variant
+        for pageSize in range(1, 10):
+            builder = protocol.SearchResponseBuilder(
+                responseClass, pageSize, 2 ** 32)
+            self.assertEqual(builder.getPageSize(), pageSize)
+            while not builder.isFull():
+                builder.addValue(valueClass())
+            instance = protocol.fromJson(builder.getSerializedResponse(),
+                                         responseClass)
+            valueList = getattr(instance, getValueListName(responseClass))
+            self.assertEqual(len(valueList), pageSize)
+
+    def testMaxResponseLengthOverridesPageSize(self):
+        responseClass = protocol.SearchVariantsResponse
+        valueClass = protocol.Variant
+        typicalValue = valueClass()
+        typicalValueLength = len(protocol.toJson(typicalValue))
+        for numValues in range(1, 10):
+            maxResponseLength = numValues * typicalValueLength
+            builder = protocol.SearchResponseBuilder(
+                responseClass, 1000, maxResponseLength)
+            self.assertEqual(
+                maxResponseLength, builder.getMaxResponseLength())
+            while not builder.isFull():
+                builder.addValue(typicalValue)
+            instance = protocol.fromJson(builder.getSerializedResponse(),
+                                         responseClass)
+            valueList = getattr(instance, getValueListName(responseClass))
+            self.assertEqual(len(valueList), numValues)
+
+    def testNextPageToken(self):
+        responseClass = protocol.SearchVariantsResponse
+        builder = protocol.SearchResponseBuilder(
+            responseClass, 100, 2 ** 32)
+        # If not set, pageToken should be empty string
+        self.assertIsNone(builder.getNextPageToken())
+        instance = protocol.fromJson(builder.getSerializedResponse(),
+                                     responseClass)
+        self.assertEqual(instance.next_page_token, "")
+        # page tokens can be any string.
+        for nextPageToken in ["", "string"]:
+            builder.setNextPageToken(nextPageToken)
+            self.assertEqual(nextPageToken, builder.getNextPageToken())
+            instance = protocol.fromJson(builder.getSerializedResponse(),
+                                         responseClass)
+            self.assertEqual(nextPageToken, instance.next_page_token)

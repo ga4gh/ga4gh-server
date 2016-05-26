@@ -254,6 +254,24 @@ postMethods = \
      ('/variants/search',
       SearchVariantsRequest,  # noqa
       SearchVariantsResponse),  # noqa
+     ('/datasets/search',
+      SearchDatasetsRequest,  # noqa
+      SearchDatasetsResponse),  # noqa
+     ('/callsets/search',
+      SearchCallSetsRequest,  # noqa
+      SearchCallSetsResponse),  # noqa
+     ('/featuresets/search',
+      SearchFeatureSetsRequest,  # noqa
+      SearchFeatureSetsResponse),  # noqa
+     ('/features/search',
+      SearchFeaturesRequest,  # noqa
+      SearchFeaturesResponse),  # noqa
      ('/variantsets/search',
       SearchVariantSetsRequest,  # noqa
-      SearchVariantSetsResponse)]  # noqa
+      SearchVariantSetsResponse),  # noqa
+     ('/variantannotations/search',
+      SearchVariantAnnotationsRequest,  # noqa
+      SearchVariantAnnotationSetsResponse),  # noqa
+     ('/variantannotationsets/search',
+      SearchVariantAnnotationSetsRequest,  # noqa
+      SearchVariantAnnotationSetsResponse)]  # noqa
