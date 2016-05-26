@@ -28,6 +28,8 @@ import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
+import logging
+from logging import StreamHandler
 
 
 MIMETYPE = "application/json"
@@ -83,7 +85,7 @@ class ServerStatus(object):
         # TODO what other config keys are appropriate to export here?
         keys = [
             'DEBUG', 'REQUEST_VALIDATION', 'RESPONSE_VALIDATION',
-            'DEFAULT_PAGE_SIZE', 'MAX_RESPONSE_LENGTH',
+            'DEFAULT_PAGE_SIZE', 'MAX_RESPONSE_LENGTH', 'LANDING_MESSAGE_HTML'
         ]
         return [(k, app.config[k]) for k in keys]
 
@@ -92,6 +94,16 @@ class ServerStatus(object):
         Returns the server precisely.
         """
         return self.startupTime.strftime("%H:%M:%S %d %b %Y")
+
+    def getLandingMessageHtml(self):
+        filePath = app.config.get('LANDING_MESSAGE_HTML')
+        try:
+            htmlFile = open(filePath, 'r')
+            html = htmlFile.read()
+            htmlFile.close()
+        except:
+            html = flask.render_template("landing_message.html")
+        return html
 
     def getNaturalUptime(self):
         """
@@ -132,6 +144,13 @@ class ServerStatus(object):
         return app.backend.getDataRepository().getDataset(
             datasetId).getVariantSets()
 
+    def getFeatureSets(self, datasetId):
+        """
+        Returns the list of feature sets for the dataset
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getFeatureSets()
+
     def getReadGroupSets(self, datasetId):
         """
         Returns the list of ReadGroupSets for the dataset
@@ -144,6 +163,18 @@ class ServerStatus(object):
         Returns the list of ReferenceSets for this server.
         """
         return app.backend.getDataRepository().getReferenceSets()
+
+    def getVariantAnnotationSets(self, datasetId):
+        """
+        Returns the list of ReferenceSets for this server.
+        """
+        # TODO this should be displayed per-variant set, not per dataset.
+        variantAnnotationSets = []
+        dataset = app.backend.getDataRepository().getDataset(datasetId)
+        for variantSet in dataset.getVariantSets():
+            variantAnnotationSets.extend(
+                variantSet.getVariantAnnotationSets())
+        return variantAnnotationSets
 
 
 def reset():
@@ -161,6 +192,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     TODO Document this critical function! What does it do? What does
     it assume?
     """
+    file_handler = StreamHandler()
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
     configStr = 'ga4gh.serverconfig:{0}'.format(baseConfig)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
@@ -176,7 +210,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.serverStatus = ServerStatus()
     # Allocate the backend
     # We use URLs to specify the backend. Currently we have file:// URLs (or
-    # URLs with no scheme) for the FileSystemBackend, and special empty:// and
+    # URLs with no scheme) for the SqlDataRepository, and special empty:// and
     # simulated:// URLs for empty or simulated data sources.
     dataSource = urlparse.urlparse(app.config["DATA_SOURCE"], "file")
 
@@ -192,18 +226,21 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET"]
         numAlignmentsPerReadGroup = app.config[
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
+        numReadGroupsPerReadGroupSet = app.config[
+            "SIMULATED_BACKEND_NUM_READ_GROUPS_PER_READ_GROUP_SET"]
         dataRepository = datarepo.SimulatedDataRepository(
             randomSeed=randomSeed, numCalls=numCalls,
             variantDensity=variantDensity, numVariantSets=numVariantSets,
             numReferenceSets=numReferenceSets,
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
+            numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
             numAlignments=numAlignmentsPerReadGroup)
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
-        dataRepository = datarepo.FileSystemDataRepository(os.path.join(
-            dataSource.netloc, dataSource.path))
-        dataRepository.checkConsistency()
+        path = os.path.join(dataSource.netloc, dataSource.path)
+        dataRepository = datarepo.SqlDataRepository(path)
+        dataRepository.open(datarepo.MODE_READ)
     else:
         raise exceptions.ConfigurationException(
             "Unsupported data source scheme: " + dataSource.scheme)
@@ -311,10 +348,10 @@ def handleException(exception):
     Handles an exception that occurs somewhere in the process of handling
     a request.
     """
-    if app.config['DEBUG']:
-        app.log_exception(exception)
     serverException = exception
     if not isinstance(exception, exceptions.BaseServerException):
+        with app.test_request_context():
+            app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
     error = serverException.toProtocolElement()
     responseStr = protocol.toJson(error)
@@ -443,6 +480,13 @@ def index():
     return flask.render_template('index.html', info=app.serverStatus)
 
 
+@app.route('/favicon.ico')
+@app.route('/robots.txt')
+def robots():
+    return flask.send_from_directory(
+        app.static_folder, flask.request.path[1:])
+
+
 @DisplayedRoute('/references/<id>')
 def getReference(id):
     return handleFlaskGetRequest(
@@ -503,10 +547,34 @@ def searchVariants():
         flask.request, app.backend.runSearchVariants)
 
 
+@DisplayedRoute('/variantannotationsets/search', postMethod=True)
+def searchVariantAnnotationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchVariantAnnotationSets)
+
+
+@DisplayedRoute('/variantannotations/search', postMethod=True)
+def searchVariantAnnotations():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchVariantAnnotations)
+
+
 @DisplayedRoute('/datasets/search', postMethod=True)
 def searchDatasets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchDatasets)
+
+
+@DisplayedRoute('/featuresets/search', postMethod=True)
+def searchFeatureSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatureSets)
+
+
+@DisplayedRoute('/features/search', postMethod=True)
+def searchFeatures():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatures)
 
 
 @DisplayedRoute(
@@ -545,6 +613,22 @@ def getReadGroup(id):
 def getCallSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetCallSet)
+
+
+@DisplayedRoute(
+    '/featuresets/<no(search):id>',
+    pathDisplay='/featuresets/<id>')
+def getFeatureSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetFeatureSet)
+
+
+@DisplayedRoute(
+    '/features/<no(search):id>',
+    pathDisplay='/features/<id>')
+def getFeature(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetFeature)
 
 
 @app.route('/oauth2callback', methods=['GET'])
@@ -613,6 +697,14 @@ def oidcCallback():
 def getDataset(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetDataset)
+
+
+@DisplayedRoute(
+    '/variantannotationsets/<no(search):id>',
+    pathDisplay='/variantannotationsets/<id>')
+def getVariantAnnotationSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetVariantAnnotationSet)
 
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html

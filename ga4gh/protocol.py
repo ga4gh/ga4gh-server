@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import datetime
 import json
 import inspect
+from sys import modules
 
 import google.protobuf.json_format as json_format
 import google.protobuf.message as message
@@ -25,19 +26,26 @@ from ga4gh.reference_service_pb2 import *  # noqa
 from ga4gh.references_pb2 import *  # noqa
 from ga4gh.variant_service_pb2 import *  # noqa
 from ga4gh.variants_pb2 import *  # noqa
-
+from ga4gh.allele_annotations_pb2 import *  # noqa
+from ga4gh.allele_annotation_service_pb2 import *  # noqa
+from ga4gh.sequence_annotations_pb2 import *  # noqa
+from ga4gh.sequence_annotation_service_pb2 import *  # noqa
 
 # A map of response objects to the name of the attribute used to
 # store the values returned.
 _valueListNameMap = {
-    SearchVariantSetsResponse: "variant_sets",
-    SearchVariantsResponse: "variants",
-    SearchDatasetsResponse: "datasets",
-    SearchReferenceSetsResponse: "reference_sets",
-    SearchReferencesResponse: "references",
-    SearchReadGroupSetsResponse: "read_group_sets",
-    SearchReadsResponse: "alignments",
-    SearchCallSetsResponse: "call_sets",
+    SearchVariantSetsResponse: "variant_sets",  # noqa
+    SearchVariantsResponse: "variants",  # noqa
+    SearchDatasetsResponse: "datasets",  # noqa
+    SearchReferenceSetsResponse: "reference_sets",  # noqa
+    SearchReferencesResponse: "references",  # noqa
+    SearchReadGroupSetsResponse: "read_group_sets",  # noqa
+    SearchReadsResponse: "alignments",  # noqa
+    SearchCallSetsResponse: "call_sets",  # noqa
+    SearchVariantAnnotationSetsResponse: "variant_annotation_sets",  # noqa
+    SearchVariantAnnotationsResponse: "variant_annotations",  # noqa
+    SearchFeatureSetsResponse: "feature_sets",  # noqa
+    SearchFeaturesResponse: "features",  # noqa
 }
 
 
@@ -213,9 +221,8 @@ def getProtocolClasses(superclass=message.Message):
     # We keep a manual list of the superclasses that we define here
     # so we can filter them out when we're getting the protocol
     # classes.
-    superclasses = set([
-        message.Message])
-    thisModule = sys.modules[__name__]
+    superclasses = set([message.Message])
+    thisModule = modules[__name__]
     subclasses = []
     for name, class_ in inspect.getmembers(thisModule):
         if ((inspect.isclass(class_) and
@@ -224,28 +231,47 @@ def getProtocolClasses(superclass=message.Message):
             subclasses.append(class_)
     return subclasses
 
+
 postMethods = \
     [('/callsets/search',
-      SearchCallSetsRequest,
-      SearchCallSetsResponse),
+      SearchCallSetsRequest,  # noqa
+      SearchCallSetsResponse),  # noqa
      ('/datasets/search',
-      SearchDatasetsRequest,
-      SearchDatasetsResponse),
+      SearchDatasetsRequest,  # noqa
+      SearchDatasetsResponse),  # noqa
      ('/readgroupsets/search',
-      SearchReadGroupSetsRequest,
-      SearchReadGroupSetsResponse),
+      SearchReadGroupSetsRequest,  # noqa
+      SearchReadGroupSetsResponse),  # noqa
      ('/reads/search',
-      SearchReadsRequest,
-      SearchReadsResponse),
+      SearchReadsRequest,  # noqa
+      SearchReadsResponse),  # noqa
      ('/references/search',
-      SearchReferencesRequest,
-      SearchReferencesResponse),
+      SearchReferencesRequest,  # noqa
+      SearchReferencesResponse),  # noqa
      ('/referencesets/search',
-      SearchReferenceSetsRequest,
-      SearchReferenceSetsResponse),
+      SearchReferenceSetsRequest,  # noqa
+      SearchReferenceSetsResponse),  # noqa
      ('/variants/search',
-      SearchVariantsRequest,
-      SearchVariantsResponse),
+      SearchVariantsRequest,  # noqa
+      SearchVariantsResponse),  # noqa
+     ('/datasets/search',
+      SearchDatasetsRequest,  # noqa
+      SearchDatasetsResponse),  # noqa
+     ('/callsets/search',
+      SearchCallSetsRequest,  # noqa
+      SearchCallSetsResponse),  # noqa
+     ('/featuresets/search',
+      SearchFeatureSetsRequest,  # noqa
+      SearchFeatureSetsResponse),  # noqa
+     ('/features/search',
+      SearchFeaturesRequest,  # noqa
+      SearchFeaturesResponse),  # noqa
      ('/variantsets/search',
-      SearchVariantSetsRequest,
-      SearchVariantSetsResponse)]
+      SearchVariantSetsRequest,  # noqa
+      SearchVariantSetsResponse),  # noqa
+     ('/variantannotations/search',
+      SearchVariantAnnotationsRequest,  # noqa
+      SearchVariantAnnotationSetsResponse),  # noqa
+     ('/variantannotationsets/search',
+      SearchVariantAnnotationSetsRequest,  # noqa
+      SearchVariantAnnotationSetsResponse)]  # noqa

@@ -6,10 +6,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
 import base64
 import collections
-import glob
-import os
 
 import ga4gh.exceptions as exceptions
 
@@ -99,15 +98,14 @@ fileHandleCache = PysamFileHandleCache()
 
 class CompoundId(object):
     """
-    Base class for an id composed of several different parts, separated
-    by a separator. Each compound ID consists of a set of fields, each
-    of which corresponds to a local ID in the data hierarchy. For example,
-    we might have fields like ["dataset", "variantSet"] for a variantSet.
-    These are available as cid.dataset, and cid.variantSet.  The actual IDs
-    of the containing objects can be obtained using the corresponding
-    like cid.datasetId and cid.variantSetId.
+    Base class for an id composed of several different parts.  Each
+    compound ID consists of a set of fields, each of which corresponds to a
+    local ID in the data hierarchy. For example, we might have fields like
+    ["dataset", "variantSet"] for a variantSet.  These are available as
+    cid.dataset, and cid.variantSet.  The actual IDs of the containing
+    objects can be obtained using the corresponding attributes, e.g.
+    cid.datasetId and cid.variantSetId.
     """
-    separator = ':'
     fields = []
     """
     The fields that the compound ID is composed of. These are parsed and
@@ -119,6 +117,17 @@ class CompoundId(object):
     hierarchy, and successive prefixes provide the IDs for objects
     further up the tree. This list is a set of tuples giving the
     name and length of a given prefix forming an identifier.
+    """
+    differentiator = None
+    """
+    A string used to guarantee unique ids for objects.  A value of None
+    indicates no string is used.  Otherwise, this string will be spliced
+    into the object's id.
+    """
+    differentiatorFieldName = 'differentiator'
+    """
+    The name of the differentiator field in the fields array for CompoundId
+    subclasses.
     """
 
     def __init__(self, parentCompoundId, *localIds):
@@ -134,21 +143,67 @@ class CompoundId(object):
             for field in parentCompoundId.fields:
                 setattr(self, field, getattr(parentCompoundId, field))
                 index += 1
+        if (self.differentiator is not None and
+                self.differentiatorFieldName in self.fields[index:]):
+            # insert a differentiator into the localIds if appropriate
+            # for this class and we haven't advanced beyond it already
+            differentiatorIndex = self.fields[index:].index(
+                self.differentiatorFieldName)
+            localIds = localIds[:differentiatorIndex] + tuple([
+                self.differentiator]) + localIds[differentiatorIndex:]
         for field, localId in zip(self.fields[index:], localIds):
-            setattr(self, field, str(localId))
+            if not isinstance(localId, basestring):
+                raise exceptions.BadIdentifierNotStringException(localId)
+            encodedLocalId = self.encode(localId)
+            setattr(self, field, encodedLocalId)
         if len(localIds) != len(self.fields) - index:
             raise ValueError(
                 "Incorrect number of fields provided to instantiate ID")
         for idFieldName, prefix in self.containerIds:
             values = [getattr(self, f) for f in self.fields[:prefix + 1]]
-            containerId = self.separator.join(values)
+            containerId = self.join(values)
             obfuscated = self.obfuscate(containerId)
             setattr(self, idFieldName, obfuscated)
 
     def __str__(self):
         values = [getattr(self, f) for f in self.fields]
-        compoundIdStr = self.separator.join(values)
+        compoundIdStr = self.join(values)
         return self.obfuscate(compoundIdStr)
+
+    @classmethod
+    def join(cls, splits):
+        """
+        Join an array of ids into a compound id string
+        """
+        segments = []
+        for split in splits:
+            segments.append('"{}",'.format(split))
+        if len(segments) > 0:
+            segments[-1] = segments[-1][:-1]
+        jsonString = '[{}]'.format(''.join(segments))
+        return jsonString
+
+    @classmethod
+    def split(cls, jsonString):
+        """
+        Split a compound id string into an array of ids
+        """
+        splits = json.loads(jsonString)
+        return splits
+
+    @classmethod
+    def encode(cls, idString):
+        """
+        Encode a string by escaping problematic characters
+        """
+        return idString.replace('"', '\\"')
+
+    @classmethod
+    def decode(cls, encodedString):
+        """
+        Decode an encoded string
+        """
+        return encodedString.replace('\\"', '"')
 
     @classmethod
     def parse(cls, compoundIdStr):
@@ -171,12 +226,25 @@ class CompoundId(object):
             # this as an ID not found error.
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
         try:
-            splits = deobfuscated.split(cls.separator)
-        except UnicodeDecodeError:
+            encodedSplits = cls.split(deobfuscated)
+            splits = [cls.decode(split) for split in encodedSplits]
+        except (UnicodeDecodeError, ValueError):
             # Sometimes base64 decoding succeeds but we're left with
             # unicode gibberish. This is also and IdNotFound.
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
-        if len(splits) != len(cls.fields):
+        # pull the differentiator out of the splits before instantiating
+        # the class, if the differentiator exists
+        fieldsLength = len(cls.fields)
+        if cls.differentiator is not None:
+            differentiatorIndex = cls.fields.index(
+                cls.differentiatorFieldName)
+            if differentiatorIndex < len(splits):
+                del splits[differentiatorIndex]
+            else:
+                raise exceptions.ObjectWithIdNotFoundException(
+                    compoundIdStr)
+            fieldsLength -= 1
+        if len(splits) != fieldsLength:
             raise exceptions.ObjectWithIdNotFoundException(compoundIdStr)
         return cls(None, *splits)
 
@@ -187,7 +255,8 @@ class CompoundId(object):
         fashion. This is not intended for security purposes, but rather to
         dissuade users from depending on our internal ID structures.
         """
-        return base64.urlsafe_b64encode(str(idStr)).replace(b'=', b'')
+        return unicode(base64.urlsafe_b64encode(
+            idStr.encode('utf-8')).replace(b'=', b''))
 
     @classmethod
     def deobfuscate(cls, data):
@@ -196,8 +265,19 @@ class CompoundId(object):
         If an identifier arrives without correct base64 padding this
         function will append it to the end.
         """
+        # the str() call is necessary to convert the unicode string
+        # to an ascii string since the urlsafe_b64decode method
+        # sometimes chokes on unicode strings
         return base64.urlsafe_b64decode(str((
             data + b'A=='[(len(data) - 1) % 4:])))
+
+    @classmethod
+    def getInvalidIdString(cls):
+        """
+        Return an id string that is well-formed but probably does not
+        correspond to any existing object; used mostly in testing
+        """
+        return cls.join(['notValid'] * len(cls.fields))
 
 
 class ReferenceSetCompoundId(CompoundId):
@@ -227,8 +307,19 @@ class VariantSetCompoundId(DatasetCompoundId):
     """
     The compound id for a variant set
     """
-    fields = DatasetCompoundId.fields + ['variant_set']
-    containerIds = DatasetCompoundId.containerIds + [('variant_set_id', 1)]
+    fields = DatasetCompoundId.fields + [
+        CompoundId.differentiatorFieldName, 'variant_set']
+    containerIds = DatasetCompoundId.containerIds + [('variant_set_id', 2)]
+    differentiator = 'vs'
+
+
+class VariantAnnotationSetCompoundId(VariantSetCompoundId):
+    """
+    The compound id for a variant annotation set
+    """
+    fields = VariantSetCompoundId.fields + ['variant_annotation_set']
+    containerIds = VariantSetCompoundId.containerIds + [
+        ('variant_annotation_set_id', 3)]
 
 
 class VariantSetMetadataCompoundId(VariantSetCompoundId):
@@ -237,7 +328,7 @@ class VariantSetMetadataCompoundId(VariantSetCompoundId):
     """
     fields = VariantSetCompoundId.fields + ['key']
     containerIds = VariantSetCompoundId.containerIds + [
-        ('variant_set_metadata_id', 1)]
+        ('variant_set_metadata_id', 2)]
 
 
 class VariantCompoundId(VariantSetCompoundId):
@@ -247,6 +338,21 @@ class VariantCompoundId(VariantSetCompoundId):
     fields = VariantSetCompoundId.fields + ['reference_name', 'start', 'md5']
 
 
+class VariantAnnotationCompoundId(VariantAnnotationSetCompoundId):
+    """
+    The compound id for a variant annotaiton
+    """
+    fields = VariantAnnotationSetCompoundId.fields + [
+        'reference_name', 'start', 'md5']
+
+
+class VariantAnnotationSetAnalysisCompoundId(VariantAnnotationSetCompoundId):
+    """
+    The compound id for a variant annotaiton set's Analysis
+    """
+    fields = VariantAnnotationSetCompoundId.fields + ['analysis']
+
+
 class CallSetCompoundId(VariantSetCompoundId):
     """
     The compound id for a callset
@@ -254,12 +360,29 @@ class CallSetCompoundId(VariantSetCompoundId):
     fields = VariantSetCompoundId.fields + ['name']
 
 
+class FeatureSetCompoundId(DatasetCompoundId):
+    """
+    The compound id for a feature set
+    """
+    fields = DatasetCompoundId.fields + ['feature_set']
+    containerIds = DatasetCompoundId.containerIds + [('feature_set_id', 1)]
+
+
+class FeatureCompoundId(FeatureSetCompoundId):
+    """
+    The compound id class for a feature
+    """
+    fields = FeatureSetCompoundId.fields + ['featureId']
+
+
 class ReadGroupSetCompoundId(DatasetCompoundId):
     """
     The compound id for a read group set
     """
-    fields = DatasetCompoundId.fields + ['read_group_set']
-    containerIds = DatasetCompoundId.containerIds + [('read_group_set_id', 1)]
+    fields = DatasetCompoundId.fields + [
+        CompoundId.differentiatorFieldName, 'read_group_set']
+    containerIds = DatasetCompoundId.containerIds + [('read_group_set_id', 2)]
+    differentiator = 'rgs'
 
 
 class ReadGroupCompoundId(ReadGroupSetCompoundId):
@@ -267,7 +390,7 @@ class ReadGroupCompoundId(ReadGroupSetCompoundId):
     The compound id for a read group
     """
     fields = ReadGroupSetCompoundId.fields + ['read_group']
-    containerIds = ReadGroupSetCompoundId.containerIds + [('read_group_id', 2)]
+    containerIds = ReadGroupSetCompoundId.containerIds + [('read_group_id', 3)]
 
 
 class ExperimentCompoundId(ReadGroupCompoundId):
@@ -278,11 +401,13 @@ class ExperimentCompoundId(ReadGroupCompoundId):
     containerIds = ReadGroupCompoundId.containerIds + [('experiment_id', 3)]
 
 
-class ReadAlignmentCompoundId(ReadGroupCompoundId):
+class ReadAlignmentCompoundId(ReadGroupSetCompoundId):
     """
     The compound id for a read alignment
     """
-    fields = ReadGroupCompoundId.fields + ['read_alignment']
+    fields = ReadGroupSetCompoundId.fields + ['read_alignment']
+    containerIds = ReadGroupSetCompoundId.containerIds + \
+        [('read_alignment_id', 2)]
 
 
 class DatamodelObject(object):
@@ -426,31 +551,6 @@ class PysamDatamodelMixin(object):
         if len(attr) > cls.maxStringLength:
             attr = attr[:cls.maxStringLength]
         return attr
-
-    def _setAccessTimes(self, directoryPath):
-        """
-        Sets the creationTime and accessTime for this file system based
-        DatamodelObject. This is derived from the ctime of the specified
-        directoryPath.
-        """
-        ctimeInMillis = int(os.path.getctime(directoryPath) * 1000)
-        self._creationTime = ctimeInMillis
-        self._updatedTime = ctimeInMillis
-
-    def _scanDataFiles(self, dataDir, patterns):
-        """
-        Scans the specified directory for files with the specified globbing
-        pattern and calls self._addDataFile for each. Raises an
-        EmptyDirException if no data files are found.
-        """
-        numDataFiles = 0
-        for pattern in patterns:
-            scanPath = os.path.join(dataDir, pattern)
-            for filename in glob.glob(scanPath):
-                self._addDataFile(filename)
-                numDataFiles += 1
-        if numDataFiles == 0:
-            raise exceptions.EmptyDirException(dataDir, patterns)
 
     def getFileHandle(self, dataFile):
         return fileHandleCache.getFileHandle(dataFile, self.openFile)

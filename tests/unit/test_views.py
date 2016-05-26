@@ -8,6 +8,8 @@ from __future__ import unicode_literals
 import unittest
 import logging
 
+import tests.paths as paths
+
 import ga4gh.datamodel as datamodel
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
@@ -27,6 +29,7 @@ class TestFrontend(unittest.TestCase):
             "SIMULATED_BACKEND_NUM_CALLS": 1,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
             "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
+            "LANDING_MESSAGE_HTML": paths.landingMessageHtml
             # "DEBUG" : True
         }
         frontend.reset()
@@ -310,7 +313,8 @@ class TestFrontend(unittest.TestCase):
         self.assertEqual(200, response.status_code)
 
         # Test Error: 404, ID not found
-        obfuscated = datamodel.CompoundId.obfuscate("notValid")
+        invalidId = datamodel.DatasetCompoundId.getInvalidIdString()
+        obfuscated = datamodel.CompoundId.obfuscate(invalidId)
         compoundId = datamodel.DatasetCompoundId.parse(obfuscated)
         response = self.sendGetDataset(str(compoundId))
         self.assertEqual(404, response.status_code)
@@ -322,7 +326,8 @@ class TestFrontend(unittest.TestCase):
         variantSetId = responseData.variant_sets[0].id
         response = self.sendGetVariantSet(variantSetId)
         self.assertEqual(200, response.status_code)
-        obfuscated = datamodel.CompoundId.obfuscate("notValid:notValid")
+        invalidId = datamodel.VariantSetCompoundId.getInvalidIdString()
+        obfuscated = datamodel.CompoundId.obfuscate(invalidId)
         compoundId = datamodel.VariantSetCompoundId.parse(obfuscated)
         response = self.sendGetVariantSet(str(compoundId))
         self.assertEqual(404, response.status_code)
@@ -386,7 +391,8 @@ class TestFrontend(unittest.TestCase):
                                         referenceId="")
         self.assertEqual(501, response.status_code)
 
-    def testSearchReadsMultipleReadGroupSets(self):
-        response = self.sendReadsSearch(readGroupIds=[self.readGroupId, "42"],
-                                        referenceId=self.referenceId)
-        self.assertEqual(501, response.status_code)
+    def testSearchReadsMultipleReadGroupSetsSetMismatch(self):
+        response = self.sendReadsSearch(
+            readGroupIds=[self.readGroupId, "42"],
+            referenceId=self.referenceId)
+        self.assertEqual(400, response.status_code)

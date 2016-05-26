@@ -7,7 +7,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import unittest
 
 import ga4gh.exceptions as exceptions
@@ -15,6 +14,8 @@ import ga4gh.backend as backend
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
+
+import tests.paths as paths
 
 
 class TestAbstractBackend(unittest.TestCase):
@@ -27,7 +28,7 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testAddOneDataset(self):
         datasetName = "ds"
-        dataset = datasets.AbstractDataset(datasetName)
+        dataset = datasets.Dataset(datasetName)
         self.assertEqual(self._dataRepo.getNumDatasets(), 0)
         self.assertEqual(self._dataRepo.getDatasets(), [])
         self._dataRepo.addDataset(dataset)
@@ -39,9 +40,9 @@ class TestAbstractBackend(unittest.TestCase):
 
     def testAddMultipleDatasets(self):
         firstDatasetName = "ds1"
-        firstDataset = datasets.AbstractDataset(firstDatasetName)
+        firstDataset = datasets.Dataset(firstDatasetName)
         secondDatasetName = "ds2"
-        secondDataset = datasets.AbstractDataset(secondDatasetName)
+        secondDataset = datasets.Dataset(secondDatasetName)
         self.assertEqual(self._dataRepo.getNumDatasets(), 0)
         self.assertEqual(self._dataRepo.getDatasets(), [])
         self._dataRepo.addDataset(firstDataset)
@@ -132,7 +133,7 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertRaises(TypeError, self._dataRepo.getDatasetByIndex, None)
         self.assertRaises(TypeError, self._dataRepo.getDatasetByIndex, "")
         datasetName = "ds"
-        dataset = datasets.AbstractDataset(datasetName)
+        dataset = datasets.Dataset(datasetName)
         self._dataRepo.addDataset(dataset)
         self.assertRaises(IndexError, self._dataRepo.getDatasetByIndex, 1)
 
@@ -147,16 +148,14 @@ class TestAbstractBackend(unittest.TestCase):
         self.assertRaises(IndexError, self._dataRepo.getReferenceSetByIndex, 1)
 
 
-class TestFileSystemBackend(unittest.TestCase):
+class TestSqlRepoTestData(unittest.TestCase):
     """
-    Tests proper initialization of the filesystem backend using indexed
+    Tests proper initialization of the SQL repo based on known
     files in the tests/data directory.
     """
     def setUp(self):
-        self._dataDir = os.path.join("tests", "data")
-        self._backend = backend.Backend(
-            datarepo.FileSystemDataRepository(self._dataDir))
-        self._dataRepo = self._backend.getDataRepository()
+        self._dataRepo = datarepo.SqlDataRepository(paths.testDataRepo)
+        self._dataRepo.open(datarepo.MODE_READ)
 
     def testDatasets(self):
         self.assertEqual(self._dataRepo.getNumDatasets(), 1)
@@ -191,7 +190,7 @@ class TestTopLevelObjectGenerator(unittest.TestCase):
                 return self
 
         self.request = FakeRequest()
-        self.request.page_token = None
+        self.request.page_token = ""
         self.num_objects = 3
         self.objects = [FakeTopLevelObject() for j in range(self.num_objects)]
         self.backend = backend.Backend(datarepo.AbstractDataRepository())

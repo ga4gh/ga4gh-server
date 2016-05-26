@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import mock
 import unittest
 import inspect
 
@@ -17,6 +18,12 @@ class TestExceptionHandler(unittest.TestCase):
     """
     Test that caught exceptions are handled correctly
     """
+    @classmethod
+    def setUpClass(cls):
+        frontend.reset()
+        frontend.configure(baseConfig="TestConfig")
+        frontend.app.log_exception = mock.Mock()
+
     class UnknownException(Exception):
         pass
 
@@ -27,6 +34,7 @@ class TestExceptionHandler(unittest.TestCase):
         exception = exceptions.ObjectNotFoundException()
         response = frontend.handleException(exception)
         self.assertEquals(response.status_code, 404)
+        self.assertFalse(frontend.app.log_exception.called)
 
     def testCallSetNotInVariantSetException(self):
         exception = exceptions.CallSetNotInVariantSetException(
@@ -35,6 +43,7 @@ class TestExceptionHandler(unittest.TestCase):
         self.assertEquals(response.status_code, 404)
         gaException = self.getGa4ghException(response.data)
         self.assertGreater(len(gaException.message), 0)
+        self.assertFalse(frontend.app.log_exception.called)
 
     def testUnknownExceptionBecomesServerError(self):
         exception = self.UnknownException()
@@ -42,6 +51,7 @@ class TestExceptionHandler(unittest.TestCase):
         self.assertEquals(response.status_code, 500)
         gaException = self.getGa4ghException(response.data)
         self.assertEquals(gaException.message, exceptions.ServerError.message)
+        self.assertTrue(frontend.app.log_exception.called)
 
     def testNotImplementedException(self):
         message = "A string unlikely to occur at random."
@@ -50,6 +60,7 @@ class TestExceptionHandler(unittest.TestCase):
         self.assertEquals(response.status_code, 501)
         gaException = self.getGa4ghException(response.data)
         self.assertEquals(gaException.message, message)
+        self.assertFalse(frontend.app.log_exception.called)
 
 
 def isClassAndBaseServerExceptionSubclass(class_):

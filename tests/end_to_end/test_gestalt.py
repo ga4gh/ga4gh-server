@@ -15,23 +15,42 @@ from __future__ import unicode_literals
 import server_test
 import client
 
+import ga4gh.datarepo as datarepo
+
 
 class TestGestalt(server_test.ServerTest):
     """
     An end-to-end test of the client and server
     """
     def testEndToEnd(self):
-        self.simulatedDatasetId = "c2ltdWxhdGVkRGF0YXNldDA"
-        self.simulatedVariantSetId = "c2ltdWxhdGVkRGF0YXNldDA6c2ltVnMw"
-        self.simulatedReadGroupId = "c2ltdWxhdGVkRGF0YXNldDA6c2ltUmdzMDpyZzA"
-        self.simulatedReferenceSetId = "cmVmZXJlbmNlU2V0MA"
-        self.simulatedReferenceId = "cmVmZXJlbmNlU2V0MDpzcnMw"
+        # extract ids from a simulated data repo with the same config
+        repo = datarepo.SimulatedDataRepository()
+        dataset = repo.getDatasets()[0]
+        datasetId = dataset.getId()
+        variantSet = dataset.getVariantSets()[0]
+        variantSetId = variantSet.getId()
+        readGroupSet = dataset.getReadGroupSets()[0]
+        readGroupId = readGroupSet.getReadGroups()[0].getId()
+        referenceSet = repo.getReferenceSets()[0]
+        referenceSetId = referenceSet.getId()
+        referenceId = referenceSet.getReferences()[0].getId()
+        variantAnnotationSetId = \
+            variantSet.getVariantAnnotationSets()[0].getId()
+
+        self.simulatedDatasetId = datasetId
+        self.simulatedVariantSetId = variantSetId
+        self.simulatedReadGroupId = readGroupId
+        self.simulatedReferenceSetId = referenceSetId
+        self.simulatedReferenceId = referenceId
+        self.simulatedVariantAnnotationSetId = variantAnnotationSetId
         self.client = client.ClientForTesting(self.server.getUrl())
         self.runVariantsRequest()
         self.assertLogsWritten()
         self.runReadsRequest()
         self.runReferencesRequest()
         self.runVariantSetsRequestDatasetTwo()
+        self.runVariantAnnotationsRequest()
+        self.runGetVariantAnnotationSetsRequest()
         self.client.cleanup()
 
     def assertLogsWritten(self):
@@ -79,6 +98,19 @@ class TestGestalt(server_test.ServerTest):
             self.client,
             "variants-search",
             "-s 0 -e 2 -V {}".format(self.simulatedVariantSetId))
+
+    def runVariantAnnotationsRequest(self):
+        self.runClientCmd(
+            self.client,
+            "variantannotations-search",
+            "--variantAnnotationSetId {} -s 0 -e 2".format(
+                self.simulatedVariantAnnotationSetId))
+
+    def runGetVariantAnnotationSetsRequest(self):
+        self.runClientCmd(
+            self.client,
+            "variantannotationsets-get",
+            "{}".format(self.simulatedVariantAnnotationSetId))
 
     def runReadsRequest(self):
         args = "--readGroupIds {} --referenceId {}".format(

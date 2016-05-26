@@ -234,117 +234,205 @@ class TestClientArguments(unittest.TestCase):
         self.assertEquals(args.outputFormat, "fasta")
         self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
 
+    def testVariantAnnotationsSearch(self):
+        cliInput = (
+            "variantannotations-search "
+            "--variantAnnotationSetId VARIANTANNOTATIONSETID "
+            "--referenceName REFERENCENAME --start 1 "
+            "--end 2 --effects EFFECTS "
+            "--pageSize 3 BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(
+            args.variantAnnotationSetId, "VARIANTANNOTATIONSETID")
+        self.assertEqual(args.referenceName, "REFERENCENAME")
+        self.assertEqual(args.start, 1)
+        self.assertEqual(args.end, 2)
+        self.assertEqual(args.effects, "EFFECTS")
+        self.assertEqual(args.pageSize, 3)
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchVariantAnnotationsRunner)
+
+    def testVariationAnnotationSetsSearch(self):
+        cliInput = (
+            "variantannotationsets-search "
+            "--pageSize 3 BASEURL VARIANTSETID")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 3)
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.variantSetId, "VARIANTSETID")
+        self.assertEquals(
+            args.runner, cli.SearchVariantAnnotationSetsRunner)
+
+    def testVariationAnnotationSetsGet(self):
+        cliInput = (
+            "variantannotationsets-get "
+            "BASEURL VARIANTANNOTATIONSETID")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.id, "VARIANTANNOTATIONSETID")
+        self.assertEquals(
+            args.runner, cli.GetVariantAnnotationSetRunner)
+
 
 class TestRepoManagerCli(unittest.TestCase):
 
     def setUp(self):
-        self.parser = cli.getRepoParser()
-        self.repoPath = 'a/repo/path'
+        self.parser = cli.RepoManager.getParser()
+        self.registryPath = 'a/repo/path'
         self.datasetName = "datasetName"
         self.filePath = 'a/file/path'
 
     def testInit(self):
-        cliInput = "init {}".format(self.repoPath)
+        cliInput = "init {}".format(self.registryPath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.runner, cli.InitRunner)
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.runner, "init")
 
-    def testCheck(self):
-        cliInput = "check {}".format(self.repoPath)
+    def testVerify(self):
+        cliInput = "verify {}".format(self.registryPath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.runner, cli.CheckRunner)
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.runner, "verify")
 
     def testList(self):
-        cliInput = "list {}".format(self.repoPath)
+        cliInput = "list {}".format(self.registryPath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.runner, cli.ListRunner)
-
-    def testDestroy(self):
-        cliInput = "destroy {} --force".format(self.repoPath)
-        args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
-        self.assertEquals(args.runner, cli.DestroyRunner)
-        self.assertEquals(args.force, True)
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.runner, "list")
 
     def testAddDataset(self):
         cliInput = "add-dataset {} {}".format(
-            self.repoPath, self.datasetName)
+            self.registryPath, self.datasetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.runner, cli.AddDatasetRunner)
+        self.assertEquals(args.runner, "addDataset")
 
     def testRemoveDataset(self):
         cliInput = "remove-dataset {} {} -f".format(
-            self.repoPath, self.datasetName)
+            self.registryPath, self.datasetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.runner, cli.RemoveDatasetRunner)
+        self.assertEquals(args.runner, "removeDataset")
         self.assertEquals(args.force, True)
 
     def testAddReferenceSet(self):
         description = "description"
-        cliInput = "add-referenceset {} {} --description={}".format(
-            self.repoPath, self.filePath, description)
+        cliInput = (
+            "add-referenceset {} {} --description={} "
+            "--ncbiTaxonId NCBITAXONID "
+            "--isDerived True "
+            "--assemblyId ASSEMBLYID "
+            "--sourceAccessions SOURCEACCESSIONS "
+            "--sourceUri SOURCEURI ").format(
+            self.registryPath, self.filePath, description)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.filePath, self.filePath)
         self.assertEquals(args.description, description)
-        self.assertEquals(args.runner, cli.AddReferenceSetRunner)
+        self.assertEquals(args.ncbiTaxonId, "NCBITAXONID")
+        self.assertEquals(args.isDerived, True)
+        self.assertEquals(args.assemblyId, "ASSEMBLYID")
+        self.assertEquals(args.sourceAccessions, "SOURCEACCESSIONS")
+        self.assertEquals(args.sourceUri, "SOURCEURI")
+        self.assertEquals(args.runner, "addReferenceSet")
 
     def testRemoveReferenceSet(self):
         referenceSetName = "referenceSetName"
         cliInput = "remove-referenceset {} {} -f".format(
-            self.repoPath, referenceSetName)
+            self.registryPath, referenceSetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.referenceSetName, referenceSetName)
-        self.assertEquals(args.runner, cli.RemoveReferenceSetRunner)
+        self.assertEquals(args.runner, "removeReferenceSet")
         self.assertEquals(args.force, True)
 
     def testAddReadGroupSet(self):
-        cliInput = "add-readgroupset {} {} {} --moveMode=copy".format(
-            self.repoPath, self.datasetName, self.filePath)
+        cliInput = "add-readgroupset {} {} {} ".format(
+            self.registryPath, self.datasetName, self.filePath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.filePath, self.filePath)
-        self.assertEquals(args.moveMode, "copy")
-        self.assertEquals(args.runner, cli.AddReadGroupSetRunner)
+        self.assertEquals(args.dataFile, self.filePath)
+        self.assertEquals(args.indexFile, None)
+        self.assertEquals(args.runner, "addReadGroupSet")
+
+    def testAddReadGroupSetWithIndexFile(self):
+        indexPath = self.filePath + ".bai"
+        cliInput = "add-readgroupset {} {} {} -I {}".format(
+            self.registryPath, self.datasetName, self.filePath,
+            indexPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.dataFile, self.filePath)
+        self.assertEquals(args.indexFile, indexPath)
+        self.assertEquals(args.runner, "addReadGroupSet")
 
     def testRemoveReadGroupSet(self):
         readGroupSetName = "readGroupSetName"
         cliInput = "remove-readgroupset {} {} {} -f".format(
-            self.repoPath, self.datasetName, readGroupSetName)
+            self.registryPath, self.datasetName, readGroupSetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.readGroupSetName, readGroupSetName)
-        self.assertEquals(args.runner, cli.RemoveReadGroupSetRunner)
+        self.assertEquals(args.runner, "removeReadGroupSet")
         self.assertEquals(args.force, True)
 
     def testAddVariantSet(self):
-        cliInput = "add-variantset {} {} {} --moveMode=move".format(
-            self.repoPath, self.datasetName, self.filePath)
+        cliInput = "add-variantset {} {} {} ".format(
+            self.registryPath, self.datasetName, self.filePath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.filePath, self.filePath)
-        self.assertEquals(args.moveMode, "move")
-        self.assertEquals(args.runner, cli.AddVariantSetRunner)
+        self.assertEquals(args.dataFiles, [self.filePath])
+        self.assertEquals(args.indexFiles, None)
+        self.assertEquals(args.runner, "addVariantSet")
+
+    def testAddVariantSetWithIndexFiles(self):
+        file1 = "file1"
+        file2 = "file2"
+        indexFile1 = file1 + ".tbi"
+        indexFile2 = file2 + ".tbi"
+        cliInput = "add-variantset {} {} {} {} -I {} {}".format(
+            self.registryPath, self.datasetName, file1, file2,
+            indexFile1, indexFile2)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.dataFiles, [file1, file2])
+        self.assertEquals(args.indexFiles, [indexFile1, indexFile2])
+        self.assertEquals(args.runner, "addVariantSet")
 
     def testRemoveVariantSet(self):
         variantSetName = "variantSetName"
         cliInput = "remove-variantset {} {} {}".format(
-            self.repoPath, self.datasetName, variantSetName)
+            self.registryPath, self.datasetName, variantSetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.variantSetName, variantSetName)
-        self.assertEquals(args.runner, cli.RemoveVariantSetRunner)
+        self.assertEquals(args.runner, "removeVariantSet")
+        self.assertEquals(args.force, False)
+
+    def testAddOntology(self):
+        cliInput = "add-ontology {} {}".format(
+            self.registryPath, self.filePath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.filePath, self.filePath)
+        self.assertEquals(args.runner, "addOntology")
+
+    def testRemoveOntology(self):
+        ontologyName = "the_ontology_name"
+        cliInput = "remove-ontology {} {}".format(
+            self.registryPath, ontologyName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.ontologyName, ontologyName)
+        self.assertEquals(args.runner, "removeOntology")
         self.assertEquals(args.force, False)
 
 

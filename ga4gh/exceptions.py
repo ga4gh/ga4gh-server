@@ -133,6 +133,13 @@ class BadIdentifierException(BadRequestException):
             self.message += msg
 
 
+class BadIdentifierNotStringException(BadIdentifierException):
+    def __init__(self, localId):
+        self.message = (
+            "The identifier provided is not a string: '{}'".format(
+                localId))
+
+
 class InvalidJsonException(BadRequestException):
     def __init__(self, jsonString):
         self.message = "Cannot parse JSON: '{}'".format(jsonString)
@@ -180,6 +187,14 @@ class DatamodelValidationException(BadRequestException):
     """
 
 
+class ReadGroupSetNotMappedToReferenceSetException(BadRequestException):
+
+    def __init__(self, readGroupSetId):
+        self.message = (
+            "ReadGroupSet '{}' is not mapped to any referenceSet".format(
+                readGroupSetId))
+
+
 class NotFoundException(RuntimeException):
     """
     The superclass of all exceptions in which some resource was not
@@ -207,6 +222,12 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class AnnotationSetNotFoundException(NotFoundException):
+    def __init__(self, variantAnnotationSetId):
+        self.message = "The requested VariantAnnotationSet '{}'" \
+            "was not found".format(variantAnnotationSetId)
+
+
 class CallSetNotFoundException(NotFoundException):
     def __init__(self, callSetId):
         self.message = "The requested CallSet '{}' was not found".format(
@@ -232,6 +253,11 @@ class ReferenceSetNotFoundException(ObjectNotFoundException):
 class ReferenceNotFoundException(ObjectNotFoundException):
     def __init__(self, referenceId):
         self.message = "referenceId '{}' not found".format(referenceId)
+
+
+class OntologyNotFoundException(ObjectNotFoundException):
+    def __init__(self, ontologyId):
+        self.message = "ontologyId '{}' not found".format(ontologyId)
 
 
 class ObjectWithIdNotFoundException(ObjectNotFoundException):
@@ -314,6 +340,15 @@ class CallSetNameNotFoundException(NotFoundException):
         self.message = "CallSet with name '{0}' not found".format(name)
 
 
+class VariantSetNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for a VariantSet with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "VariantSet with name '{0}' not found".format(name)
+
+
 class ReadGroupSetNameNotFoundException(NotFoundException):
     """
     Indicates a request was made for a ReadGroupSet with a name that
@@ -350,26 +385,101 @@ class DatasetNameNotFoundException(NotFoundException):
         self.message = "Dataset with name '{0}' not found".format(name)
 
 
+class OntologyNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for an Ontology with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "Ontology with name '{0}' not found".format(name)
+
+
+class FeatureSetNotFoundException(NotFoundException):
+    def __init__(self, featureSetId):
+        self.message = (
+            "FeatureSet with id '{0}' not found".format(featureSetId))
+
+
+class FeatureSetNameNotFoundException(NotFoundException):
+    def __init__(self, featureSetId):
+        self.message = (
+            "FeatureSet with name '{0}' not found".format(featureSetId))
+
+
+class ParentIncompatibleWithFeatureSet(BadRequestException):
+    def __init__(self):
+        self.message = (
+            "Parent feature incompatible with requested Feature Set."
+        )
+
+
+class FeatureSetNotSpecifiedException(BadRequestException):
+    def __init__(self):
+        self.message = (
+            "One of featureSetId or parentId must be supplied."
+        )
+
+
+class SequenceAnnotationNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "SequenceAnnotation with name '{0}' not found".format(name))
+
+
 class DataException(BaseServerException):
     """
-    Exceptions thrown during the server startup, and processing faulty VCFs
+    Exceptions thrown during data ingestion.
     """
-    message = "Faulty data found or data file is missing."
+    message = "xs"
+
+
+class RepoNotFoundException(DataException):
+
+    def __init__(self, repoPath):
+        self.message = (
+            "Database file '{}' does not exist.  Either "
+            "change the configuration to point to a valid file or "
+            "create one using the repo manager.".format(repoPath))
+
+
+class RepoInvalidDatabaseException(DataException):
+
+    def __init__(self, repoPath):
+        self.message = (
+            "Database file '{}' is malformed.  Either "
+            "change the configuration to point to a valid file or "
+            "create one using the repo manager.".format(repoPath))
+
+
+class RepoSchemaVersionMismatchException(DataException):
+
+    def __init__(self, repoVersion, expectedVersion):
+        self.message = (
+            "Repository version '{}' does not match expected "
+            "version '{}'".format(repoVersion, expectedVersion))
 
 
 class FileOpenFailedException(DataException):
 
     def __init__(self, filename):
-        msg = "Failed to open file '{}'".format(filename)
-        super(FileOpenFailedException, self).__init__(msg)
+        self.message = "Failed to open file '{}'".format(filename)
 
 
 class EmptyDirException(DataException):
 
     def __init__(self, dirname, filetype):
-        msg = "Directory '{}' empty, no {} file was found".format(
+        self.message = "Directory '{}' empty, no {} file was found".format(
             dirname, filetype)
-        super(EmptyDirException, self).__init__(msg)
+
+
+class OntologyFileFormatException(DataException):
+    """
+    Exception thrown when an error occurs processing an OBO ontology
+    file.
+    """
+    def __init__(self, filename, message):
+        self.message = "Error processing ontology OBO file '{}': {}".format(
+            filename, message)
 
 
 class MalformedException(DataException):
@@ -439,48 +549,6 @@ class InconsistentCallSetIdException(MalformedException):
             " directory.".format(fileName))
 
 
-class NotExactlyOneReferenceException(MalformedException):
-    """
-    A FASTA file has a reference count not equal to one
-    """
-    def __init__(self, fileName, numReferences):
-        self.message = (
-            "FASTA files must have one and only one reference.  "
-            "File {} has {} references.".format(fileName, numReferences))
-
-
-class InconsistentReferenceNameException(MalformedException):
-    """
-    A FASTA file has a reference name not equal to its file name.
-    """
-    def __init__(self, fileName):
-        self.message = (
-            "FASTA file {} has a reference not equal to its "
-            "file name.".format(fileName))
-
-
-class MissingReferenceMetadata(MalformedException):
-    """
-    A FASTA file is missing some metadata in the corresponding JSON file.
-    """
-    def __init__(self, fileName, key):
-        self.message = (
-            "JSON reference metadata for file {} is missing key {}".format(
-                fileName, key))
-
-
-class MissingReferenceSetMetadata(MalformedException):
-    """
-    A directory containing FASTA files is missing some metadata in the
-    corresponding JSON file.
-    """
-    def __init__(self, fileName, key):
-        self.message = (
-            "JSON reference set metadata for file {} "
-            "is missing key {}".format(
-                fileName, key))
-
-
 class ReadGroupReferenceNotFound(MalformedException):
     """
     A BAM file contains reference names that are not in the linked
@@ -503,18 +571,6 @@ class MultipleReferenceSetsInReadGroupSet(MalformedException):
             "The BAM file '{}' contains the referenceSets '{}' and "
             "'{}'; at most one referenceSet per file is allowed.".format(
                 fileName, referenceSetName, otherReferenceSetName))
-
-
-class MissingDatasetMetadataException(MalformedException):
-    """
-    A directory containing datasets is missing some metadata
-    in the corresponding JSON file
-    """
-    def __init__(self, fileName, key):
-        self.message = (
-            "JSON dataset metadata for file {} "
-            "is missing key {}".format(
-                fileName, key))
 
 
 ###############################################################
@@ -583,3 +639,25 @@ class RepoManagerException(Exception):
     """
     Signals something went wrong inside the repo manager
     """
+
+
+class DuplicateNameException(RepoManagerException):
+    """
+    The user has tried to insert an object with the same name as
+    an existing object within a given container.
+    """
+    def __init__(self, objectName, containerName=None):
+        msg = "Name '{}' already exists".format(objectName)
+        if containerName is not None:
+            msg += " in '{}'".format(containerName)
+        super(DuplicateNameException, self).__init__(msg)
+
+
+class MissingIndexException(RepoManagerException):
+    """
+    An index file for a remote BAM/VCF has not been provided.
+    """
+    def __init__(self, dataUrl):
+        msg = "An index file must be provided for remote file '{}'".format(
+            dataUrl)
+        super(MissingIndexException, self).__init__(msg)

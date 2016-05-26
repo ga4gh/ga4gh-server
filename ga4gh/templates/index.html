@@ -12,7 +12,10 @@
             <h3>Protocol version {{ info.getProtocolVersion() }}</h3>
         </div>
         <div>
-            <h3>Session Token {{ session['key']}}</h3>
+            {{ info.getLandingMessageHtml().decode('utf-8') | safe}}
+        </div>
+        <div>
+            <h3>Session Token <span class="session-token">{{ session['key']}}</span></h3>
         </div>
         <div>
             <h3>Operations available</h3>
@@ -81,6 +84,28 @@
                     <tr>
                         <td>{{ variantSet.getLocalId() }}</td>
                         <td>{{ variantSet.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+                <h6>VariantAnnotationSets</h6>
+                <table class="table table-striped">
+                    <th>Name</th>
+                    <th>Id</th>
+                    {% for variantAnnotationSet in info.getVariantAnnotationSets(dataset.getId()) %}
+                    <tr>
+                        <td>{{ variantAnnotationSet.getLocalId() }}</td>
+                        <td>{{ variantAnnotationSet.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+             <h6>FeatureSets</h6>
+                <table class="table table-striped">
+                    <th>Name</th>
+                    <th>Id</th>
+                    {% for featureSet in info.getFeatureSets(dataset.getId()) %}
+                    <tr>
+                        <td>{{ featureSet.getLocalId() }}</td>
+                        <td>{{ featureSet.getId() }}</td>
                     </tr>
                     {% endfor %}
                 </table>

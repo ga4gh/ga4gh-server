@@ -57,6 +57,19 @@ Variants
 .. autoclass:: ga4gh.protocol.Variant
     :members:
 
+++++++++++++++++++++++++
+Variant Annotation
+++++++++++++++++++++++++
+
+.. autoclass:: ga4gh.protocol.VariantAnnotationSet
+    :members:
+
+.. autoclass:: ga4gh.protocol.VariantAnnotation
+    :members:
+
+.. autoclass:: ga4gh.protocol.TranscriptEffect
+    :members:
+
 +++++
 Reads
 +++++
@@ -85,5 +98,6 @@ Client API
         getReadGroupSet, getReadGroup,
         searchDatasets, searchReferenceSets, searchReferences,
         searchVariantSets, searchVariants, searchReadGroupSets,
-        searchReads
+        searchReads, searchVariantAnnotations,
+        searchVariantAnnotationSets
 

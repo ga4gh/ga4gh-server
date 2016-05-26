@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import unittest
+import datetime
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -31,9 +32,10 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.bases = ["A", "C", "G", "T"]
 
     def _getSimulatedVariantSet(self):
-        dataset = datasets.AbstractDataset('dataset1')
+        dataset = datasets.Dataset('dataset1')
+        referenceSet = references.SimulatedReferenceSet("srs1")
         simulatedVariantSet = variants.SimulatedVariantSet(
-            dataset, 'variantSet1', randomSeed=self.randomSeed,
+            dataset, referenceSet, 'variantSet1', randomSeed=self.randomSeed,
             numCalls=self.numCalls, variantDensity=self.variantDensity)
         return simulatedVariantSet
 
@@ -119,12 +121,47 @@ class TestSimulatedVariantSet(unittest.TestCase):
         self.assertEqual(variantListOne, variantListTwo)
 
 
+class TestSimulatedVariantAnnotationSet(unittest.TestCase):
+    def setUp(self):
+        self.randomSeed = 1
+        self.numCalls = 2
+        # ensure variantDensity is >= 1 so we get deterministic behavoir
+        self.variantDensity = 1
+        self.referenceName = 'ref'
+        self.startPosition = 100
+        self.endPosition = 120
+        self.callSetIds = ['unused']
+        self.bases = ["A", "C", "G", "T"]
+
+    def testCreation(self):
+        dataset = datasets.Dataset('dataset1')
+        referenceSet = references.SimulatedReferenceSet("srs1")
+        localId = "variantAnnotationSetId"
+        simulatedVariantSet = variants.SimulatedVariantSet(
+            dataset, referenceSet, 'variantSet1', randomSeed=self.randomSeed,
+            numCalls=self.numCalls, variantDensity=self.variantDensity)
+        simulatedVariantAnnotationSet = variants.SimulatedVariantAnnotationSet(
+            simulatedVariantSet, localId, self.randomSeed)
+        annotations = simulatedVariantAnnotationSet.getVariantAnnotations(
+                    self.referenceName, self.startPosition, self.endPosition)
+        self.assertEquals(
+            simulatedVariantSet.toProtocolElement().id,
+            simulatedVariantAnnotationSet.toProtocolElement().variantSet_id,
+            "Variant Set ID should match the annotation's variant set ID")
+        for variant, ann in annotations:
+            self.assertEquals(datetime.datetime.strptime(
+                ann.create_date_time, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ"), ann.create_date_time,
+                "Expect time format to be in ISO8601")
+            self.assertEqual(variant.id, ann.variant_id)
+
+
 class TestSimulatedReadGroupSet(unittest.TestCase):
     """
     Test properties of the simulated ReadGroupSet
     """
     def testCreation(self):
-        dataset = datasets.AbstractDataset('dataset1')
+        dataset = datasets.Dataset('dataset1')
         localId = "readGroupSetId"
         referenceSet = references.SimulatedReferenceSet("srs1")
         simulatedReadGroupSet = reads.SimulatedReadGroupSet(

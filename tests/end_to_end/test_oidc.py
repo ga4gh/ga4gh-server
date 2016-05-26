@@ -16,6 +16,8 @@ import client
 import server
 import server_test
 
+import ga4gh.datarepo as datarepo
+
 
 def getClientKey(server_url, username, password):
     """
@@ -41,10 +43,12 @@ def getClientKey(server_url, username, password):
     keyPage = session.post(nextUrl, data, verify=False)
     # Extract the key from the page
     keyTree = html.fromstring(keyPage.text)
-    tokenMarker = 'Session Token '  # the token always appears after this text
-    tokenTag = (tag for tag in keyTree.iterdescendants()
-                if tag.text_content().startswith(tokenMarker)).next()
-    return tokenTag.text_content()[len(tokenMarker):]
+    sessionTokenTags = keyTree.find_class("session-token")
+    if len(sessionTokenTags) > 0:
+        sessionKey = keyTree.find_class("session-token")[0].text_content()
+    else:
+        raise StopIteration
+    return sessionKey
 
 
 class TestOidc(server_test.ServerTestClass):
@@ -53,7 +57,13 @@ class TestOidc(server_test.ServerTestClass):
     """
     @classmethod
     def otherSetup(cls):
-        cls.simulatedVariantSetId = "c2ltdWxhdGVkRGF0YXNldDA6c2ltVnMw"
+        # extract ids from a simulated data repo with the same config
+        repo = datarepo.SimulatedDataRepository()
+        dataset = repo.getDatasets()[0]
+        variantSet = dataset.getVariantSets()[0]
+        variantSetId = variantSet.getId()
+
+        cls.simulatedVariantSetId = variantSetId
         requests.packages.urllib3.disable_warnings()
         cls.opServer = server.OidcOpServerForTesting()
         cls.opServer.start()

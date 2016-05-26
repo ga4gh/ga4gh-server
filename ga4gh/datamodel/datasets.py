@@ -5,31 +5,46 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import fnmatch
-import json
-import os
-
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
+import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+from ga4gh import pb
 
 
-class AbstractDataset(datamodel.DatamodelObject):
+class Dataset(datamodel.DatamodelObject):
     """
     The base class of datasets containing variants and reads
     """
     compoundIdClass = datamodel.DatasetCompoundId
 
     def __init__(self, localId):
-        super(AbstractDataset, self).__init__(None, localId)
+        super(Dataset, self).__init__(None, localId)
+        self._description = None
         self._variantSetIds = []
         self._variantSetIdMap = {}
+        self._variantSetNameMap = {}
+        self._featureSetIds = []
+        self._featureSetIdMap = {}
+        self._featureSetNameMap = {}
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
-        self._description = ""
+
+    def populateFromRow(self, row):
+        """
+        Populates the instance variables of this Dataset from the
+        specified database row.
+        """
+        self._description = row[b'description']
+
+    def setDescription(self, description):
+        """
+        Sets the description for this dataset to the specified value.
+        """
+        self._description = description
 
     def addVariantSet(self, variantSet):
         """
@@ -37,7 +52,18 @@ class AbstractDataset(datamodel.DatamodelObject):
         """
         id_ = variantSet.getId()
         self._variantSetIdMap[id_] = variantSet
+        self._variantSetNameMap[variantSet.getLocalId()] = variantSet
         self._variantSetIds.append(id_)
+
+    def addFeatureSet(self, featureSet):
+        """
+        Adds the specified variantSet to this dataset.
+        """
+        id_ = featureSet.getId()
+        self._featureSetIdMap[id_] = featureSet
+        self._featureSetIds.append(id_)
+        name = featureSet.getLocalId()
+        self._featureSetNameMap[name] = featureSet
 
     def addReadGroupSet(self, readGroupSet):
         """
@@ -51,8 +77,8 @@ class AbstractDataset(datamodel.DatamodelObject):
     def toProtocolElement(self):
         dataset = protocol.Dataset()
         dataset.id = self.getId()
-        dataset.name = self.getLocalId()
-        dataset.description = self.getDescription()
+        dataset.name = pb.string(self.getLocalId())
+        dataset.description = pb.string(self.getDescription())
         return dataset
 
     def getVariantSets(self):
@@ -81,6 +107,51 @@ class AbstractDataset(datamodel.DatamodelObject):
         Returns the variant set at the specified index in this dataset.
         """
         return self._variantSetIdMap[self._variantSetIds[index]]
+
+    def getVariantSetByName(self, name):
+        """
+        Returns a VariantSet with the specified name, or raises a
+        VariantSetNameNotFoundException if it does not exist.
+        """
+        if name not in self._variantSetNameMap:
+            raise exceptions.VariantSetNameNotFoundException(name)
+        return self._variantSetNameMap[name]
+
+    def getFeatureSets(self):
+        """
+        Returns the list of FeatureSets in this dataset
+        """
+        return [self._featureSetIdMap[id_] for id_ in self._featureSetIds]
+
+    def getNumFeatureSets(self):
+        """
+        Returns the number of feature sets in this dataset.
+        """
+        return len(self._featureSetIds)
+
+    def getFeatureSet(self, id_):
+        """
+        Returns the FeatureSet with the specified id, or raises a
+        FeatureSetNotFoundException otherwise.
+        """
+        if id_ not in self._featureSetIdMap:
+            raise exceptions.FeatureSetNotFoundException(id_)
+        return self._featureSetIdMap[id_]
+
+    def getFeatureSetByName(self, name):
+        """
+        Returns the FeatureSet with the specified name, or raises
+        an exception otherwise.
+        """
+        if name not in self._featureSetNameMap:
+            raise exceptions.FeatureSetNameNotFoundException(name)
+        return self._featureSetNameMap[name]
+
+    def getFeatureSetByIndex(self, index):
+        """
+        Returns the feature set at the specified index in this dataset.
+        """
+        return self._featureSetIdMap[self._featureSetIds[index]]
 
     def getNumReadGroupSets(self):
         """
@@ -125,7 +196,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         return self._description
 
 
-class SimulatedDataset(AbstractDataset):
+class SimulatedDataset(Dataset):
     """
     A simulated dataset
     """
@@ -133,16 +204,20 @@ class SimulatedDataset(AbstractDataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1):
+            numAlignments=1, numFeatureSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+        # TODO create a simulated Ontology
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)
             seed = randomSeed + i
             variantSet = variants.SimulatedVariantSet(
-                self, localId, seed, numCalls, variantDensity)
+                self, referenceSet, localId, seed, numCalls, variantDensity)
             self.addVariantSet(variantSet)
+            variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
+                variantSet, "simVas{}".format(i), seed)
+            variantSet.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):
             localId = 'simRgs{}'.format(i)
@@ -151,45 +226,11 @@ class SimulatedDataset(AbstractDataset):
                 self, localId, referenceSet, seed,
                 numReadGroupsPerReadGroupSet, numAlignments)
             self.addReadGroupSet(readGroupSet)
-
-
-class FileSystemDataset(AbstractDataset):
-    """
-    A dataset based on the file system
-    """
-    variantsDirName = "variants"
-    readsDirName = "reads"
-
-    def __init__(self, localId, dataDir, dataRepository):
-        super(FileSystemDataset, self).__init__(localId)
-        self._dataDir = dataDir
-        self._setMetadata()
-
-        # Variants
-        variantSetDir = os.path.join(dataDir, self.variantsDirName)
-        for localId in os.listdir(variantSetDir):
-            relativePath = os.path.join(variantSetDir, localId)
-            if os.path.isdir(relativePath):
-                variantSet = variants.HtslibVariantSet(
-                    self, localId, relativePath, dataRepository)
-                self.addVariantSet(variantSet)
-        # Reads
-        readGroupSetDir = os.path.join(dataDir, self.readsDirName)
-        for filename in os.listdir(readGroupSetDir):
-            if fnmatch.fnmatch(filename, '*.bam'):
-                localId, _ = os.path.splitext(filename)
-                bamPath = os.path.join(readGroupSetDir, filename)
-                readGroupSet = reads.HtslibReadGroupSet(
-                    self, localId, bamPath, dataRepository)
-                self.addReadGroupSet(readGroupSet)
-
-    def _setMetadata(self):
-        metadataFileName = '{}.json'.format(self._dataDir)
-        if os.path.isfile(metadataFileName):
-            with open(metadataFileName) as metadataFile:
-                metadata = json.load(metadataFile)
-                try:
-                    self._description = metadata['description']
-                except KeyError as err:
-                    raise exceptions.MissingDatasetMetadataException(
-                        metadataFileName, str(err))
+        # Features
+        for i in range(numFeatureSets):
+            localId = "simFs{}".format(i)
+            seed = randomSeed + i
+            featureSet = sequenceAnnotations.SimulatedFeatureSet(
+                self, localId, seed)
+            featureSet.setReferenceSet(referenceSet)
+            self.addFeatureSet(featureSet)

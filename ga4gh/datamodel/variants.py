@@ -7,47 +7,32 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import random
+import glob
 import hashlib
+import json
+import os
+import random
+import re
 
 import pysam
 import google.protobuf.struct_pb2 as struct_pb2
 
 import ga4gh.protocol as protocol
-import ga4gh.pb as pb
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
+import ga4gh.pb as pb
+
+ANNOTATIONS_VEP_V82 = "VEP_v82"
+ANNOTATIONS_VEP_V77 = "VEP_v77"
+ANNOTATIONS_SNPEFF = "SNPEff"
 
 
-def convertVCFPhaseset(vcfPhaseset):
+def isUnspecified(str):
     """
-    Parses the VCF phaseset string
+    Checks whether a string is None or an
+    empty string. Returns a boolean.
     """
-    if vcfPhaseset is not None and vcfPhaseset != "." \
-            and vcfPhaseset is not "":
-        phaseset = vcfPhaseset
-    else:
-        phaseset = "*"
-    return phaseset
-
-
-def convertVCFGenotype(vcfGenotype, vcfPhaseset):
-    """
-    Parses the VCF genotype and VCF phaseset strings
-    """
-    phaseset = None
-    if vcfGenotype is not None:
-        delim = "/"
-        if "|" in vcfGenotype:
-            delim = "|"
-            phaseset = convertVCFPhaseset(vcfPhaseset)
-        if "." in vcfGenotype:
-            genotype = [-1]
-        else:
-            genotype = map(int, vcfGenotype.split(delim))
-    else:
-        genotype = [-1]
-    return genotype, phaseset
+    return str == "" or str is None
 
 
 class CallSet(datamodel.DatamodelObject):
@@ -57,6 +42,12 @@ class CallSet(datamodel.DatamodelObject):
     """
     compoundIdClass = datamodel.CallSetCompoundId
 
+    def populateFromRow(self, row):
+        """
+        Populates this CallSet from the specified DB row.
+        """
+        # currently a noop
+
     def toProtocolElement(self):
         """
         Returns the representation of this CallSet as the corresponding
@@ -64,8 +55,10 @@ class CallSet(datamodel.DatamodelObject):
         """
         variantSet = self.getParentContainer()
         gaCallSet = protocol.CallSet()
-        gaCallSet.created = variantSet.getCreationTime()
-        gaCallSet.updated = variantSet.getUpdatedTime()
+        if variantSet.getCreationTime():
+            gaCallSet.created = variantSet.getCreationTime()
+        if variantSet.getUpdatedTime():
+            gaCallSet.updated = variantSet.getUpdatedTime()
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
         gaCallSet.sample_id = self.getLocalId()
@@ -90,9 +83,62 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._callSetIdMap = {}
         self._callSetNameMap = {}
         self._callSetIds = []
+        self._callSetIdToIndex = {}
         self._creationTime = None
         self._updatedTime = None
-        self._referenceSetId = ""
+        self._referenceSet = None
+        self._variantAnnotationSetIds = []
+        self._variantAnnotationSetIdMap = {}
+
+    def addVariantAnnotationSet(self, variantAnnotationSet):
+        """
+        Adds the specified variantAnnotationSet to this dataset.
+        """
+        id_ = variantAnnotationSet.getId()
+        self._variantAnnotationSetIdMap[id_] = variantAnnotationSet
+        self._variantAnnotationSetIds.append(id_)
+
+    def getVariantAnnotationSets(self):
+        """
+        Returns the list of VariantAnnotationSets in this dataset
+        """
+        return [
+            self._variantAnnotationSetIdMap[id_] for id_ in
+            self._variantAnnotationSetIds]
+
+    def getVariantAnnotationSet(self, id_):
+        """
+        Returns the AnnotationSet in this dataset with the specified 'id'
+        """
+        if id_ not in self._variantAnnotationSetIdMap:
+            raise exceptions.AnnotationSetNotFoundException(id_)
+        return self._variantAnnotationSetIdMap[id_]
+
+    def getNumVariantAnnotationSets(self):
+        """
+        Returns the number of variant annotation sets in this dataset.
+        """
+        return len(self._variantAnnotationSetIds)
+
+    def getVariantAnnotationSetByIndex(self, index):
+        """
+        Returns the variant annotation set at the specified index in this
+        dataset.
+        """
+        return self._variantAnnotationSetIdMap[
+            self._variantAnnotationSetIds[index]]
+
+    def setReferenceSet(self, referenceSet):
+        """
+        Sets the ReferenceSet for this VariantSet to the specified value.
+        """
+        self._referenceSet = referenceSet
+
+    def getReferenceSet(self):
+        """
+        Returns the reference set associated with this VariantSet.
+        """
+        return self._referenceSet
 
     def getCreationTime(self):
         """
@@ -106,15 +152,22 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         """
         return self._updatedTime
 
-    def addCallSet(self, sampleName):
+    def addCallSet(self, callSet):
+        """
+        Adds the specfied CallSet to this VariantSet.
+        """
+        callSetId = callSet.getId()
+        self._callSetIdMap[callSetId] = callSet
+        self._callSetNameMap[callSet.getLocalId()] = callSet
+        self._callSetIds.append(callSetId)
+        self._callSetIdToIndex[callSet.getId()] = len(self._callSetIds) - 1
+
+    def addCallSetFromName(self, sampleName):
         """
         Adds a CallSet for the specified sample name.
         """
         callSet = CallSet(self, sampleName)
-        callSetId = callSet.getId()
-        self._callSetIdMap[callSetId] = callSet
-        self._callSetNameMap[sampleName] = callSet
-        self._callSetIds.append(callSetId)
+        self.addCallSet(callSet)
 
     def getCallSets(self):
         """
@@ -159,8 +212,11 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement = protocol.VariantSet()
         protocolElement.id = self.getId()
         protocolElement.dataset_id = self.getParentContainer().getId()
+        protocolElement.reference_set_id = self._referenceSet.getId()
+        protocolElement.metadata.extend(self.getMetadata())
+        protocolElement.dataset_id = self.getParentContainer().getId()
+        protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.name = self.getLocalId()
-        protocolElement.reference_set_id = self._referenceSetId
         for metadata in self.getMetadata():
             newValue = protocolElement.metadata.add()
             newValue.CopyFrom(metadata)
@@ -178,8 +234,10 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         object from this variant set.
         """
         ret = protocol.Variant()
-        ret.created = self._creationTime
-        ret.updated = self._updatedTime
+        if self._creationTime:
+            ret.created = self._creationTime
+        if self._updatedTime:
+            ret.updated = self._updatedTime
         ret.variant_set_id = self.getId()
         return ret
 
@@ -191,7 +249,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         md5 = self.hashVariant(gaVariant)
         compoundId = datamodel.VariantCompoundId(
             self.getCompoundId(), gaVariant.reference_name,
-            gaVariant.start, md5)
+            str(gaVariant.start), md5)
         return str(compoundId)
 
     def getCallSetId(self, sampleName):
@@ -206,8 +264,8 @@ class AbstractVariantSet(datamodel.DatamodelObject):
     @classmethod
     def hashVariant(cls, gaVariant):
         """
-        Produces an MD5 hash of the ga variant object to uniquely
-        identify it
+        Produces an MD5 hash of the ga variant object to distinguish
+        it from other variants at the same genomic coordinate.
         """
         hash_str = gaVariant.reference_bases + \
             str(tuple(gaVariant.alternate_bases))
@@ -220,13 +278,14 @@ class SimulatedVariantSet(AbstractVariantSet):
     Used mostly for testing.
     """
     def __init__(
-            self, parentContainer, localId, randomSeed=1, numCalls=1,
-            variantDensity=1):
+            self, parentContainer, referenceSet, localId, randomSeed=1,
+            numCalls=1, variantDensity=1):
         super(SimulatedVariantSet, self).__init__(parentContainer, localId)
+        self._referenceSet = referenceSet
         self._randomSeed = randomSeed
         self._numCalls = numCalls
         for j in range(numCalls):
-            self.addCallSet("simCallSet_{}".format(j))
+            self.addCallSetFromName("simCallSet_{}".format(j))
         self._variantDensity = variantDensity
         now = protocol.convertDatetime(datetime.datetime.now())
         self._creationTime = now
@@ -313,26 +372,186 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
     Class representing a single variant set backed by a directory of indexed
     VCF or BCF files.
     """
-    def __init__(self, parentContainer, localId, dataDir, dataRepository):
+    def __init__(self, parentContainer, localId):
         super(HtslibVariantSet, self).__init__(parentContainer, localId)
-        self._dataDir = dataDir
-        self._setAccessTimes(dataDir)
         self._chromFileMap = {}
         self._metadata = None
-        self._scanDataFiles(dataDir, ['*.bcf', '*.vcf.gz'])
+
+    def isAnnotated(self):
+        """
+        Returns True if there is a VariantAnnotationSet associated with this
+        VariantSet.
+        """
+        return len(self._variantAnnotationSetIdMap) > 0
+
+    def getReferenceToDataUrlIndexMap(self):
+        """
+        Returns the map of Reference names to the (dataUrl, indexFile) pairs.
+        """
+        return self._chromFileMap
+
+    def getDataUrlIndexPairs(self):
+        """
+        Returns the set of (dataUrl, indexFile) pairs.
+        """
+        return set(self._chromFileMap.values())
+
+    def populateFromRow(self, row):
+        """
+        Populates this VariantSet from the specified DB row.
+        """
+        self._created = row[b'created']
+        self._updated = row[b'updated']
+        self._chromFileMap = {}
+        # We can't load directly as we want tuples to be stored
+        # rather than lists.
+        for key, value in json.loads(row[b'dataUrlIndexMap']).items():
+            self._chromFileMap[key] = tuple(value)
+        self._metadata = []
+        for jsonDict in json.loads(row[b'metadata']):
+            metadata = protocol.fromJson(json.dumps(jsonDict),
+                                         protocol.VariantSetMetadata)
+            self._metadata.append(metadata)
+
+    def populateFromFile(self, dataUrls, indexFiles):
+        """
+        Populates this variant set using the specified lists of data
+        files and indexes. These must be in the same order, such that
+        the jth index file corresponds to the jth data file.
+        """
+        assert len(dataUrls) == len(indexFiles)
+        for dataUrl, indexFile in zip(dataUrls, indexFiles):
+            varFile = pysam.VariantFile(dataUrl, index_filename=indexFile)
+            try:
+                self._populateFromVariantFile(varFile, dataUrl, indexFile)
+            finally:
+                varFile.close()
+
+    def populateFromDirectory(self, vcfDirectory):
+        """
+        Populates this VariantSet by examing all the VCF files in the
+        specified directory. This is mainly used for as a convenience
+        for testing purposes.
+        """
+        pattern = os.path.join(vcfDirectory, "*.vcf.gz")
+        dataFiles = []
+        indexFiles = []
+        for vcfFile in glob.glob(pattern):
+            dataFiles.append(vcfFile)
+            indexFiles.append(vcfFile + ".tbi")
+        self.populateFromFile(dataFiles, indexFiles)
+
+    def getVcfHeaderReferenceSetName(self):
+        """
+        Returns the name of the reference set from the VCF header.
+        """
+        # TODO implemenent
+        return None
+
+    def checkConsistency(self):
+        """
+        Perform consistency check on the variant set
+        """
+        for referenceName, (dataUrl, indexFile) in self._chromFileMap.items():
+            varFile = pysam.VariantFile(dataUrl, index_filename=indexFile)
+            try:
+                for chrom in varFile.index:
+                    chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
+                    if not isEmptyIter(varFile.fetch(chrom)):
+                        self._checkMetadata(varFile)
+                        self._checkCallSetIds(varFile)
+            finally:
+                varFile.close()
+
+    def _populateFromVariantFile(self, varFile, dataUrl, indexFile):
+        """
+        Populates the instance variables of this VariantSet from the specified
+        pysam VariantFile object.
+        """
+        if varFile.index is None:
+            raise exceptions.NotIndexedException(dataUrl)
+        for chrom in varFile.index:
+            # Unlike Tabix indices, CSI indices include all contigs defined
+            # in the BCF header.  Thus we must test each one to see if
+            # records exist or else they are likely to trigger spurious
+            # overlapping errors.
+            chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
+            if not isEmptyIter(varFile.fetch(chrom)):
+                if chrom in self._chromFileMap:
+                    raise exceptions.OverlappingVcfException(dataUrl, chrom)
+            self._chromFileMap[chrom] = dataUrl, indexFile
+        self._updateMetadata(varFile)
+        self._updateCallSetIds(varFile)
+        self._updateVariantAnnotationSets(varFile, dataUrl)
+
+    def _updateVariantAnnotationSets(self, variantFile, dataUrl):
+        """
+        Updates the variant annotation set associated with this variant using
+        information in the specified pysam variantFile.
+        """
+        # TODO check the consistency of this between VCF files.
+        if not self.isAnnotated():
+            annotationType = None
+            for record in variantFile.header.records:
+                if record.type == "GENERIC":
+                    if record.key == "SnpEffVersion":
+                        annotationType = ANNOTATIONS_SNPEFF
+                    elif record.key == "VEP":
+                        version = record.value.split()[0]
+                        # TODO we need _much_ more sophisticated processing
+                        # of VEP versions here. When do they become
+                        # incompatible?
+                        if version == "v82":
+                            annotationType = ANNOTATIONS_VEP_V82
+                        elif version == "v77":
+                            annotationType = ANNOTATIONS_VEP_V77
+                        else:
+                            # TODO raise a proper typed exception there with
+                            # the file name as an argument.
+                            raise ValueError(
+                                "Unsupported VEP version {} in '{}'".format(
+                                    version, dataUrl))
+            if annotationType is None:
+                infoKeys = variantFile.header.info.keys()
+                if 'CSQ' in infoKeys or 'ANN' in infoKeys:
+                    # TODO likewise, we want a properly typed exception that
+                    # we can throw back to the repo manager UI and display
+                    # as an import error.
+                    raise ValueError(
+                        "Unsupported annotations in '{}'".format(dataUrl))
+            if annotationType is not None:
+                vas = HtslibVariantAnnotationSet(self, self.getLocalId())
+                vas.populateFromFile(variantFile, annotationType)
+                self.addVariantAnnotationSet(vas)
 
     def _updateMetadata(self, variantFile):
         """
         Updates the metadata for his variant set based on the specified
-        variant file, and ensures that it is consistent with already
-        existing metadata.
+        variant file
         """
         metadata = self._getMetadataFromVcf(variantFile)
         if self._metadata is None:
             self._metadata = metadata
-        else:
-            if self._metadata != metadata:
-                raise exceptions.InconsistentMetaDataException(
+
+    def _checkMetadata(self, variantFile):
+        """
+        Checks that metadata is consistent
+        """
+        metadata = self._getMetadataFromVcf(variantFile)
+        if self._metadata is not None and self._metadata != metadata:
+            raise exceptions.InconsistentMetaDataException(
+                variantFile.filename)
+
+    def _checkCallSetIds(self, variantFile):
+        """
+        Checks callSetIds for consistency
+        """
+        if len(self._callSetIdMap) > 0:
+            callSetIds = set([
+                self.getCallSetId(sample)
+                for sample in variantFile.header.samples])
+            if callSetIds != set(self._callSetIdMap.keys()):
+                raise exceptions.InconsistentCallSetIdException(
                     variantFile.filename)
 
     def getNumVariants(self):
@@ -346,69 +565,34 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         Updates the call set IDs based on the specified variant file.
         """
-        # If this is the first file, we add in the samples. If not, we check
-        # for consistency.
         if len(self._callSetIdMap) == 0:
             for sample in variantFile.header.samples:
-                self.addCallSet(sample)
-        else:
-            callSetIds = set([
-                self.getCallSetId(sample)
-                for sample in variantFile.header.samples])
-            if callSetIds != set(self._callSetIdMap.keys()):
-                raise exceptions.InconsistentCallSetIdException(
-                    variantFile.filename)
+                self.addCallSetFromName(sample)
 
-    def openFile(self, filename):
-        return pysam.VariantFile(filename)
+    def openFile(self, dataUrlIndexFilePair):
+        dataUrl, indexFile = dataUrlIndexFilePair
+        return pysam.VariantFile(dataUrl, index_filename=indexFile)
 
-    def _addDataFile(self, filename):
-        varFile = self.openFile(filename)
-        if varFile.index is None:
-            raise exceptions.NotIndexedException(filename)
-        for chrom in varFile.index:
-            # Unlike Tabix indices, CSI indices include all contigs defined
-            # in the BCF header.  Thus we must test each one to see if
-            # records exist or else they are likely to trigger spurious
-            # overlapping errors.
-            chrom, _, _ = self.sanitizeVariantFileFetch(chrom)
-            if not isEmptyIter(varFile.fetch(chrom)):
-                if chrom in self._chromFileMap:
-                    raise exceptions.OverlappingVcfException(filename, chrom)
-                self._updateMetadata(varFile)
-                self._updateCallSetIds(varFile)
-                self._chromFileMap[chrom] = filename
-        varFile.close()
-
-    def _convertGaCall(self, call, recordId, name, pysamCall, genotypeData):
-        compoundId = self.getCallSetId(name)
-        callSet = self.getCallSet(compoundId)
-        call.call_set_id = callSet.getId()
-        call.call_set_name = callSet.getSampleName()
-        # call.sampleId = callSet.getSampleName()
-        # TODO:
-        # NOTE: THE FOLLOWING THREE LINES IS NOT THE INTENDED IMPLEMENTATION,
-        ###########################################
-        genotype, phaseset = convertVCFGenotype(genotypeData, call.phaseset)
-        call.genotype.extend(genotype)
-        call.phaseset = pb.string(phaseset)
-
-        ###########################################
-
-        # THEY SHOULD BE REPLACED BY THE FOLLOWING, ONCE NEW PYSAM
-        # RELEASE SUPPORTS phaseset. AS WELL AS REMOVING genotypeData
-        # FROM THE FUNCTION CALL
-
-        ###########################################
-        # call.genotype = list(pysamCall.allele_indices)
-        # call.phaseset = pysamCall.phaseset
-        ###########################################
-
+    def _convertGaCall(self, callSet, pysamCall):
+        phaseset = None
+        if pysamCall.phased:
+            phaseset = str(pysamCall.phased)
+        genotypeLikelihood = []
+        info = {}
         for key, value in pysamCall.iteritems():
             if key == 'GL' and value is not None:
-                call.genotype_likelihood.extend(list(value))
+                genotypeLikelihood = list(value)
             elif key != 'GT':
-                call.info[key].values.extend(_encodeValue(value))
+                info[key] = _encodeValue(value)
+        call = protocol.Call()
+        call.call_set_name = callSet.getSampleName()
+        call.call_set_id = callSet.getId()
+        call.genotype.extend(list(pysamCall.allele_indices))
+        call.phaseset = pb.string(phaseset)
+        call.genotype_likelihood.extend(genotypeLikelihood)
+        for key in info:
+            call.info[key].values.extend(info[key])
+        return call
 
     def convertVariant(self, record, callSetIds):
         """
@@ -429,21 +613,14 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         # by GAVariant.
         for key, value in record.info.iteritems():
             if value is not None:
+                if isinstance(value, str):
+                    value = value.split(',')
                 variant.info[key].values.extend(_encodeValue(value))
-
-        # NOTE: THE LABELED LINES SHOULD BE REMOVED ONCE PYSAM SUPPORTS
-        # phaseset
-
-        sampleData = record.__str__().split()[9:]  # REMOVAL
-        sampleIterator = 0  # REMOVAL
-        for name, call in record.samples.iteritems():
-            if self.getCallSetId(name) in callSetIds:
-                genotypeData = sampleData[sampleIterator].split(
-                    ":")[0]  # REMOVAL
-                gaCall = variant.calls.add()
-                self._convertGaCall(
-                    gaCall, record.id, name, call, genotypeData)  # REPLACE
-            sampleIterator += 1  # REMOVAL
+        for callSetId in callSetIds:
+            callSet = self.getCallSet(callSetId)
+            pysamCall = record.samples[str(callSet.getSampleName())]
+            variant.calls.add().CopyFrom(
+                self._convertGaCall(callSet, pysamCall))
         variant.id = self.getVariantId(variant)
         return variant
 
@@ -465,18 +642,13 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 return variant
             elif record.start > start:
                 raise exceptions.ObjectNotFoundException()
-        raise exceptions.ObjectWithIdNotFoundException(compoundId)
+        raise exceptions.ObjectNotFoundException(compoundId)
 
-    def getVariants(self, referenceName, startPosition, endPosition,
-                    callSetIds=[]):
+    def getPysamVariants(self, referenceName, startPosition, endPosition):
         """
-        Returns an iterator over the specified variants. The parameters
-        correspond to the attributes of a GASearchVariantsRequest object.
+        Returns an iterator over the pysam VCF records corresponding to the
+        specified query.
         """
-        for callSetId in callSetIds:
-            if callSetId not in self._callSetIds:
-                raise exceptions.CallSetNotInVariantSetException(
-                    callSetId, self.getId())
         if referenceName in self._chromFileMap:
             varFileName = self._chromFileMap[referenceName]
             referenceName, startPosition, endPosition = \
@@ -485,7 +657,24 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             cursor = self.getFileHandle(varFileName).fetch(
                 referenceName, startPosition, endPosition)
             for record in cursor:
-                yield self.convertVariant(record, callSetIds)
+                yield record
+
+    def getVariants(self, referenceName, startPosition, endPosition,
+                    callSetIds=[]):
+        """
+        Returns an iterator over the specified variants. The parameters
+        correspond to the attributes of a GASearchVariantsRequest object.
+        """
+        if callSetIds is None:
+            callSetIds = self._callSetIds
+        else:
+            for callSetId in callSetIds:
+                if callSetId not in self._callSetIds:
+                    raise exceptions.CallSetNotInVariantSetException(
+                        callSetId, self.getId())
+        for record in self.getPysamVariants(
+                referenceName, startPosition, endPosition):
+            yield self.convertVariant(record, callSetIds)
 
     def getMetadata(self):
         return self._metadata
@@ -540,3 +729,577 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                         number="{}".format(value.number),
                         description=description))
         return ret
+
+#############################################
+
+# Variant Annotations.
+
+#############################################
+
+
+class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
+    """
+    Class representing a variant annotation set derived from an
+    annotated variant set.
+    """
+    compoundIdClass = datamodel.VariantAnnotationSetCompoundId
+
+    def __init__(self, variantSet, localId):
+        super(AbstractVariantAnnotationSet, self).__init__(variantSet, localId)
+        self._variantSet = variantSet
+        self._ontology = None
+        self._analysis = None
+        # TODO these should be set from the DB, not created on
+        # instantiation.
+        self._creationTime = datetime.datetime.now().isoformat() + "Z"
+        self._updatedTime = datetime.datetime.now().isoformat() + "Z"
+
+    def setOntology(self, ontology):
+        """
+        Sets the Ontology used in this VariantAnnotationSet to
+        translate sequence ontology term names into IDs to the
+        specified value.
+        """
+        self._ontology = ontology
+
+    def getOntology(self):
+        """
+        Returns the ontology term map used in this VariantAnnotationSet.
+        """
+        return self._ontology
+
+    def getAnalysis(self):
+        """
+        Returns the Analysis object associated with this VariantAnnotationSet.
+        """
+        return self._analysis
+
+    def getVariantSet(self):
+        """
+        Returns the VariantSet that this VariantAnnotationSet refers to.
+        """
+        return self._variantSet
+
+    def _createGaVariantAnnotation(self):
+        """
+        Convenience method to set the common fields in a GA VariantAnnotation
+        object from this variant set.
+        """
+        ret = protocol.VariantAnnotation()
+        ret.create_date_time = self._creationTime
+        ret.variant_annotation_set_id = self.getId()
+        return ret
+
+    def _createGaTranscriptEffect(self):
+        """
+        Convenience method to set the common fields in a GA TranscriptEffect
+        object.
+        """
+        ret = protocol.TranscriptEffect()
+        return ret
+
+    def _createGaAlleleLocation(self):
+        """
+        Convenience method to set the common fields in a AlleleLocation
+        object.
+        """
+        ret = protocol.AlleleLocation()
+        return ret
+
+    def toProtocolElement(self):
+        """
+        Converts this VariantAnnotationSet into its GA4GH protocol equivalent.
+        """
+        protocolElement = protocol.VariantAnnotationSet()
+        protocolElement.id = self.getId()
+        protocolElement.variantSet_id = self._variantSet.getId()
+        protocolElement.name = self.getLocalId()
+        protocolElement.analysis.CopyFrom(self.getAnalysis())
+        return protocolElement
+
+    def getTranscriptEffectId(self, gaTranscriptEffect):
+        effs = [eff.term for eff in gaTranscriptEffect.effects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t{}".format(
+                gaTranscriptEffect.alternate_bases,
+                gaTranscriptEffect.feature_id,
+                effs, gaTranscriptEffect.hgvs_annotation)
+            ).hexdigest()
+
+    def hashVariantAnnotation(cls, gaVariant, gaVariantAnnotation):
+        """
+        Produces an MD5 hash of the gaVariant and gaVariantAnnotation objects
+        """
+        treffs = [treff.id for treff in gaVariantAnnotation.transcript_effects]
+        return hashlib.md5(
+            "{}\t{}\t{}\t".format(
+                gaVariant.reference_bases, tuple(gaVariant.alternate_bases),
+                treffs)
+            ).hexdigest()
+
+    def getVariantAnnotationId(self, gaVariant, gaAnnotation):
+        """
+        Produces a stringified compoundId representing a variant
+        annotation.
+        :param gaVariant:   protocol.Variant
+        :param gaAnnotation: protocol.VariantAnnotation
+        :return:  compoundId String
+        """
+        md5 = self.hashVariantAnnotation(gaVariant, gaAnnotation)
+        compoundId = datamodel.VariantAnnotationCompoundId(
+            self.getCompoundId(), gaVariant.reference_name,
+            str(gaVariant.start), md5)
+        return str(compoundId)
+
+
+class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
+    """
+    A variant annotation set that doesn't derive from a data store.
+    Used mostly for testing.
+    """
+    def __init__(self, variantSet, localId, randomSeed):
+        super(SimulatedVariantAnnotationSet, self).__init__(
+            variantSet, localId)
+        self._randomSeed = randomSeed
+        self._analysis = self._createAnalysis()
+
+    def _createAnalysis(self):
+        analysis = protocol.Analysis()
+        analysis.create_date_time = self._creationTime
+        analysis.update_date_time = self._updatedTime
+        analysis.software.append("software")
+        analysis.name = "name"
+        analysis.description = "description"
+        analysis.id = str(datamodel.VariantAnnotationSetAnalysisCompoundId(
+            self._compoundId, "analysis"))
+        return analysis
+
+    def getVariantAnnotation(self, variant, randomNumberGenerator):
+        ann = self.generateVariantAnnotation(variant, randomNumberGenerator)
+        return ann
+
+    def getVariantAnnotations(self, referenceName, start, end):
+        for variant in self._variantSet.getVariants(referenceName, start, end):
+            yield variant, self.generateVariantAnnotation(variant)
+
+    def generateVariantAnnotation(self, variant):
+        """
+        Generate a random variant annotation based on a given variant.
+        This generator should be seeded with a value that is unique to the
+        variant so that the same annotation will always be produced regardless
+        of the order it is generated in.
+        """
+        # To make this reproducible, make a seed based on this
+        # specific variant.
+        seed = self._randomSeed + variant.start + variant.end
+        randomNumberGenerator = random.Random()
+        randomNumberGenerator.seed(seed)
+        ann = protocol.VariantAnnotation()
+        ann.variant_annotation_set_id = str(self.getCompoundId())
+        ann.variant_id = variant.id
+        ann.create_date_time = self._creationTime
+        # make a transcript effect for each alternate base element
+        # multiplied by a random integer (0,5)
+
+        for i in xrange(randomNumberGenerator.randint(0, 5)):
+            for base in variant.alternate_bases:
+                ann.transcript_effects.add().CopyFrom(
+                    self.generateTranscriptEffect(
+                        variant, ann, base, randomNumberGenerator))
+        ann.id = self.getVariantAnnotationId(variant, ann)
+        return ann
+
+    def _addTranscriptEffectLocations(self, effect, ann, variant):
+        # TODO Make these valid HGVS values
+        effect.hgvs_annotation.genomic = str(variant.start)
+        effect.hgvs_annotation.transcript = str(variant.start)
+        effect.hgvs_annotation.protein = str(variant.start)
+        effect.protein_location.start = variant.start
+        effect.cds_location.start = variant.start
+        effect.cdna_location.start = variant.start
+        return effect
+
+    def _addTranscriptEffectId(self, effect):
+        effect.id = str(self.getTranscriptEffectId(effect))
+        return effect
+
+    def _getRandomOntologyTerm(self, randomNumberGenerator):
+        # TODO more mock options from simulated seqOnt?
+        ontologyTuples = [
+            ("intron_variant", "SO:0001627"),
+            ("exon_variant", "SO:0001791")]
+        term = protocol.OntologyTerm()
+        ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
+        term.term, term.id = ontologyTuple[0], ontologyTuple[1]
+        term.source_name = "ontology"
+        term.source_version = "0"
+        return term
+
+    def _addTranscriptEffectOntologyTerm(self, effect, randomNumberGenerator):
+        effect.effects.add().CopyFrom(
+            self._getRandomOntologyTerm(randomNumberGenerator))
+        return effect
+
+    def _generateAnalysisResult(self, effect, ann, randomNumberGenerator):
+        # TODO make these sensible
+        analysisResult = protocol.AnalysisResult()
+        analysisResult.analysis_id = "analysisId"
+        analysisResult.result = "result string"
+        analysisResult.score = randomNumberGenerator.randint(0, 100)
+        return analysisResult
+
+    def _addAnalysisResult(self, effect, ann, randomNumberGenerator):
+        effect.analysis_results.add().CopyFrom(
+            self._generateAnalysisResult(
+                effect, ann, randomNumberGenerator))
+        return effect
+
+    def generateTranscriptEffect(
+            self, variant, ann, alts, randomNumberGenerator):
+        effect = self._createGaTranscriptEffect()
+        effect.alternate_bases = alts
+        # TODO how to make these featureIds sensical?
+        effect.feature_id = "E4TB33F"
+        effect = self._addTranscriptEffectLocations(effect, ann, variant)
+        effect = self._addTranscriptEffectOntologyTerm(
+            effect, randomNumberGenerator)
+        effect = self._addTranscriptEffectOntologyTerm(
+            effect, randomNumberGenerator)
+        effect = self._addTranscriptEffectId(effect)
+        effect = self._addAnalysisResult(effect, ann, randomNumberGenerator)
+        return effect
+
+
+class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
+    """
+    Class representing a single variant annotation derived from an
+    annotated variant set.
+    """
+    def __init__(self, variantSet, localId):
+        super(HtslibVariantAnnotationSet, self).__init__(variantSet, localId)
+        self._annotationCreatedDateTime = self._creationTime
+
+    def populateFromFile(self, varFile, annotationType):
+        self._annotationType = annotationType
+        self._analysis = self._getAnnotationAnalysis(varFile)
+        # TODO parse the annotation creation time from the VCF header and
+        # store it in an instance variable.
+
+    def populateFromRow(self, row):
+        """
+        Populates this VariantAnnotationSet from the specified DB row.
+        """
+        self._annotationType = row[b'annotationType']
+        self._analysis = protocol.fromJson(row[b'analysis'], protocol.Analysis)
+
+    def getAnnotationType(self):
+        """
+        Returns the type of variant annotations, allowing us to determine
+        how to interpret the annotations within the VCF file.
+        """
+        return self._annotationType
+
+    def _getAnnotationAnalysis(self, varFile):
+        """
+        Assembles metadata within the VCF header into a GA4GH Analysis object.
+
+        :return: protocol.Analysis
+        """
+        header = varFile.header
+        analysis = protocol.Analysis()
+        formats = header.formats.items()
+        infos = header.info.items()
+        for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
+            for contentKey, value in content:
+                key = "{0}.{1}".format(prefix, value.name)
+                if key not in analysis.info:
+                    analysis.info[key].Clear()
+                if value.description is not None:
+                    analysis.info[
+                        key].values.add().string_value = value.description
+        analysis.create_date_time = self._creationTime
+        analysis.update_date_time = self._updatedTime
+        for r in header.records:
+            # Don't add a key to info if there's nothing in the value
+            if r.value is not None:
+                if r.key not in analysis.info:
+                    analysis.info[r.key].Clear()
+                analysis.info[r.key].values.add().string_value = str(r.value)
+            if r.key == "created":
+                # TODO handle more date formats
+                analysis.create_date_time = datetime.datetime.strptime(
+                    r.value, "%Y-%m-%d").isoformat() + "Z"
+            if r.key == "software":
+                analysis.software.append(r.value)
+            if r.key == "name":
+                analysis.name = r.value
+            if r.key == "description":
+                analysis.description = r.value
+        analysis.id = str(datamodel.VariantAnnotationSetAnalysisCompoundId(
+            self._compoundId, "analysis"))
+        return analysis
+
+    def getVariantAnnotations(self, referenceName, startPosition, endPosition):
+        """
+        Generator for iterating through variant annotations in this
+        variant annotation set.
+        :param referenceName:
+        :param startPosition:
+        :param endPosition:
+        :return: generator of protocol.VariantAnnotation
+        """
+        # TODO Refactor this so that we use the annotationType information
+        # where it makes most sense, and rename the various methods so that
+        # it's clear what program/version combination they operate on.
+        variantIter = self._variantSet.getPysamVariants(
+            referenceName, startPosition, endPosition)
+        if self._annotationType == ANNOTATIONS_SNPEFF:
+            transcriptConverter = self.convertTranscriptEffectSnpEff
+        elif self._annotationType == ANNOTATIONS_VEP_V82:
+            transcriptConverter = self.convertTranscriptEffectVEP
+        else:
+            transcriptConverter = self.convertTranscriptEffectCSQ
+        for record in variantIter:
+            yield self.convertVariantAnnotation(record, transcriptConverter)
+
+    def convertLocation(self, pos):
+        """
+        Accepts a position string (start/length) and returns
+        a GA4GH AlleleLocation with populated fields.
+        :param pos:
+        :return: protocol.AlleleLocation
+        """
+        if isUnspecified(pos):
+            return None
+        coordLen = pos.split('/')
+        if len(coordLen) > 1:
+            allLoc = self._createGaAlleleLocation()
+            allLoc.start = int(coordLen[0]) - 1
+            return allLoc
+        return None
+
+    def convertLocationHgvsC(self, hgvsc):
+        """
+        Accepts an annotation in HGVS notation and returns
+        an AlleleLocation with populated fields.
+        :param hgvsc:
+        :return:
+        """
+        if isUnspecified(hgvsc):
+            return None
+        match = re.match(".*c.(\d+)(\D+)>(\D+)", hgvsc)
+        if match:
+            pos = int(match.group(1))
+            if pos > 0:
+                allLoc = self._createGaAlleleLocation()
+                allLoc.start = pos - 1
+                allLoc.reference_sequence = match.group(2)
+                allLoc.alternate_sequence = match.group(3)
+                return allLoc
+        return None
+
+    def convertLocationHgvsP(self, hgvsp):
+        """
+        Accepts an annotation in HGVS notation and returns
+        an AlleleLocation with populated fields.
+        :param hgvsp:
+        :return: protocol.AlleleLocation
+        """
+        if isUnspecified(hgvsp):
+            return None
+        match = re.match(".*p.(\D+)(\d+)(\D+)", hgvsp, flags=re.UNICODE)
+        if match is not None:
+            allLoc = self._createGaAlleleLocation()
+            allLoc.reference_sequence = match.group(1)
+            allLoc.start = int(match.group(2)) - 1
+            allLoc.alternate_sequence = match.group(3)
+            return allLoc
+        return None
+
+    def addCDSLocation(self, effect, cdnaPos):
+        hgvsC = effect.hgvs_annotation.transcript
+        allele_location = None
+        if not isUnspecified(hgvsC):
+            allele_location = self.convertLocationHgvsC(hgvsC)
+            if allele_location:
+                effect.cds_location.CopyFrom(self.convertLocationHgvsC(hgvsC))
+        if allele_location is None and self.convertLocation(cdnaPos):
+                effect.cds_location.CopyFrom(self.convertLocation(cdnaPos))
+        else:
+            # These are not stored in the VCF
+            effect.cds_location.alternate_sequence = ""
+            effect.cds_location.reference_sequence = ""
+
+    def addProteinLocation(self, effect, protPos):
+        hgvsP = effect.hgvs_annotation.protein
+        protein_location = None
+        if not isUnspecified(hgvsP):
+            protein_location = self.convertLocationHgvsP(hgvsP)
+            if protein_location:
+                effect.protein_location.CopyFrom(
+                    self.convertLocationHgvsP(hgvsP))
+        if protein_location is None and self.convertLocation(protPos):
+            effect.protein_location.CopyFrom(self.convertLocation(protPos))
+
+    def addCDNALocation(self, effect, cdnaPos):
+        hgvsC = effect.hgvs_annotation.transcript
+        if self.convertLocation(cdnaPos):
+            effect.cdna_location.CopyFrom(self.convertLocation(cdnaPos))
+        if self.convertLocationHgvsC(hgvsC):
+            effect.cdna_location.alternate_sequence = \
+                self.convertLocationHgvsC(hgvsC).alternate_sequence
+            effect.cdna_location.reference_sequence = \
+                self.convertLocationHgvsC(hgvsC).reference_sequence
+
+    def addLocations(self, effect, protPos, cdnaPos):
+        """
+        Adds locations to a GA4GH transcript effect object
+        by parsing HGVS annotation fields in concert with
+        and supplied position values.
+        :param effect: protocol.TranscriptEffect
+        :param protPos: String representing protein position from VCF
+        :param cdnaPos: String representing coding DNA location
+        :return: effect protocol.TranscriptEffect
+        """
+        self.addCDSLocation(effect, cdnaPos)
+        self.addCDNALocation(effect, cdnaPos)
+        self.addProteinLocation(effect, protPos)
+        return effect
+
+    def convertTranscriptEffectCSQ(self, annStr, hgvsG):
+        """
+        Takes the consequence string of an annotated VCF using a
+        CSQ field as opposed to ANN and returns an array of
+        transcript effects.
+        :param annStr: String
+        :param hgvsG: String
+        :return: [protocol.TranscriptEffect]
+        """
+        # Allele|Gene|Feature|Feature_type|Consequence|cDNA_position|
+        # CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|
+        # DISTANCE|STRAND|SIFT|PolyPhen|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE
+
+        (alt, gene, featureId, featureType, effects, cdnaPos,
+         cdsPos, protPos, aminos, codons, existingVar, distance,
+         strand, sift, polyPhen, motifName, motifPos,
+         highInfPos, motifScoreChange) = annStr.split('|')
+        terms = effects.split("&")
+        transcriptEffects = []
+        for term in terms:
+            transcriptEffects.append(
+                self._createCsqTranscriptEffect(
+                    alt, term, protPos,
+                    cdnaPos, featureId))
+        return transcriptEffects
+
+    def _createCsqTranscriptEffect(
+            self, alt, term, protPos, cdnaPos, featureId):
+        effect = self._createGaTranscriptEffect()
+        effect.alternate_bases = alt
+        effect.effects.extend(self.convertSeqOntology(term))
+        effect.feature_id = featureId
+        # These are not present in the data
+        self.addLocations(effect, protPos, cdnaPos)
+        effect.id = self.getTranscriptEffectId(effect)
+        return effect
+
+    def convertTranscriptEffectVEP(self, annStr, hgvsG):
+        """
+        Takes the ANN string of a VEP generated VCF, splits it
+        and returns a populated GA4GH transcript effect object.
+        :param annStr: String
+        :param hgvsG: String
+        :return: effect protocol.TranscriptEffect
+        """
+        effect = self._createGaTranscriptEffect()
+        (alt, effects, impact, symbol, geneName, featureType,
+         featureId, trBiotype, exon, intron, hgvsC, hgvsP,
+         cdnaPos, cdsPos, protPos, aminos, codons,
+         existingVar, distance, strand, symbolSource,
+         hgncId, hgvsOffset) = annStr.split('|')
+        effect.alternate_bases = alt
+        effect.effects.extend(self.convertSeqOntology(effects))
+        effect.feature_id = featureId
+        effect.hgvs_annotation.CopyFrom(protocol.HGVSAnnotation())
+        effect.hgvs_annotation.genomic = hgvsG
+        effect.hgvs_annotation.transcript = hgvsC
+        effect.hgvs_annotation.protein = hgvsP
+        self.addLocations(effect, protPos, cdnaPos)
+        effect.id = self.getTranscriptEffectId(effect)
+        return effect
+
+    def convertTranscriptEffectSnpEff(self, annStr, hgvsG):
+        """
+        Takes the ANN string of a SnpEff generated VCF, splits it
+        and returns a populated GA4GH transcript effect object.
+        :param annStr: String
+        :param hgvsG: String
+        :return: effect protocol.TranscriptEffect()
+        """
+        effect = self._createGaTranscriptEffect()
+        # SnpEff and VEP don't agree on this :)
+        (alt, effects, impact, geneName, geneId, featureType,
+            featureId, trBiotype, rank, hgvsC, hgvsP, cdnaPos,
+            cdsPos, protPos, distance, errsWarns) = annStr.split('|')
+        effect.alternate_bases = alt
+        effect.effects.extend(self.convertSeqOntology(effects))
+        effect.feature_id = featureId
+        effect.hgvs_annotation.genomic = hgvsG
+        effect.hgvs_annotation.transcript = hgvsC
+        effect.hgvs_annotation.protein = hgvsP
+        self.addLocations(effect, protPos, cdnaPos)
+        effect.id = self.getTranscriptEffectId(effect)
+        return effect
+
+    def convertSeqOntology(self, seqOntStr):
+        """
+        Splits a string of sequence ontology effects and creates
+        an ontology term record for each, which are built into
+        an array of return soTerms.
+        :param seqOntStr:
+        :return: [protocol.OntologyTerm]
+        """
+        return [
+            self._ontology.getGaTermByName(soName)
+            for soName in seqOntStr.split('&')]
+
+    def convertVariantAnnotation(self, record, transcriptConverter):
+        """
+        Converts the specfied pysam variant record into a GA4GH variant
+        annotation object using the specified function to convert the
+        transcripts.
+        """
+        variant = self._variantSet.convertVariant(record, [])
+        annotation = self._createGaVariantAnnotation()
+        annotation.create_date_time = self._annotationCreatedDateTime
+        annotation.variant_id = variant.id
+        # Convert annotations from INFO field into TranscriptEffect
+        transcriptEffects = []
+        hgvsG = record.info.get(b'HGVS.g')
+        if transcriptConverter != self.convertTranscriptEffectCSQ:
+            annotations = record.info.get(b'ANN')
+            transcriptEffects = self._convertAnnotations(
+                annotations, variant, hgvsG, transcriptConverter)
+        else:
+            annotations = record.info.get('CSQ'.encode())
+            transcriptEffects = []
+            for ann in annotations:
+                transcriptEffects.extend(
+                    self.convertTranscriptEffectCSQ(ann, hgvsG))
+        annotation.transcript_effects.extend(transcriptEffects)
+        annotation.id = self.getVariantAnnotationId(variant, annotation)
+        return variant, annotation
+
+    def _convertAnnotations(
+            self, annotations, variant, hgvsG, transcriptConverter):
+        transcriptEffects = []
+        if annotations is not None:
+            for index, ann in enumerate(annotations):
+                altshgvsG = ""
+                if hgvsG is not None:
+                    # The HGVS.g field contains an element for
+                    # each alternate allele
+                    altshgvsG = hgvsG[index % len(variant.alternate_bases)]
+                transcriptEffects.append(
+                    transcriptConverter(ann, altshgvsG))
+        return transcriptEffects

@@ -14,6 +14,7 @@ import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.datarepo as datarepo
 import tests.utils as utils
+import ga4gh.exceptions as exceptions
 
 
 class TestSearchMethodsCallRunRequest(unittest.TestCase):
@@ -28,6 +29,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.objectName = "objectName"
         self.datasetId = "datasetId"
         self.variantSetId = "variantSetId"
+        self.variantAnnotationSetId = "variantAnnotationSetId"
         self.referenceSetId = "referenceSetId"
         self.referenceId = "referenceId"
         self.readGroupIds = ["readGroupId"]
@@ -78,6 +80,50 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.searchVariantSets(self.datasetId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "variantsets", protocol.SearchVariantSetsResponse)
+
+    def testSearchVariantAnnotationSets(self):
+        request = protocol.SearchVariantAnnotationSetsRequest()
+        request.variant_set_id = self.variantSetId
+        request.page_size = self.pageSize
+        self.httpClient.searchVariantAnnotationSets(self.variantSetId)
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "variantannotationsets",
+            protocol.SearchVariantAnnotationSetsResponse)
+
+    def testSearchVariantAnnotations(self):
+        request = protocol.SearchVariantAnnotationsRequest()
+        request.variant_annotation_set_id = self.variantAnnotationSetId
+        request.page_size = self.pageSize
+        request.reference_name = self.referenceName
+        request.reference_id = self.referenceId
+        request.start = self.start
+        request.end = self.end
+        self.httpClient.searchVariantAnnotations(
+            self.variantAnnotationSetId,
+            referenceName=self.referenceName,
+            start=self.start,
+            end=self.end,
+            effects=[],
+            referenceId=self.referenceId)
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "variantannotations",
+            protocol.SearchVariantAnnotationsResponse)
+        with self.assertRaises(exceptions.BadRequestException):
+            self.httpClient.searchVariantAnnotations(
+                self.variantAnnotationSetId,
+                referenceName=self.referenceName,
+                start=self.start,
+                end=self.end,
+                effects=[{"term": "just a term"}, {"id": "an id"}],
+                referenceId=self.referenceId)
+
+    def testSearchFeatureSets(self):
+        request = protocol.SearchFeatureSetsRequest()
+        request.dataset_id = self.datasetId
+        request.page_size = self.pageSize
+        self.httpClient.searchFeatureSets(self.datasetId)
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "featuresets", protocol.SearchFeatureSetsResponse)
 
     def testSearchReferenceSets(self):
         request = protocol.SearchReferenceSetsRequest()
@@ -140,6 +186,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.getReferenceSet(self.objectId)
         self.httpClient._runGetRequest.assert_called_once_with(
             "referencesets", protocol.ReferenceSet, self.objectId)
+
+    def testGetVariantAnnotationSet(self):
+        self.httpClient.getVariantAnnotationSet(self.objectId)
+        self.httpClient._runGetRequest.assert_called_once_with(
+            "variantannotationsets", protocol.VariantAnnotationSet,
+            self.objectId)
 
     def testGetVariantSet(self):
         self.httpClient.getVariantSet(self.objectId)

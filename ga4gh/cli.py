@@ -8,14 +8,21 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse
+import glob
 import logging
+import operator
+import os
+import sys
+import textwrap
+import traceback
 import unittest
 import unittest.loader
 import unittest.suite
+import urlparse
 
 import requests
 
-import ga4gh.protocol as protocol
+import ga4gh
 import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.converters as converters
@@ -23,7 +30,13 @@ import ga4gh.frontend as frontend
 import ga4gh.configtest as configtest
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
-import ga4gh.repo_manager as repo_manager
+import ga4gh.protocol as protocol
+import ga4gh.datamodel.reads as reads
+import ga4gh.datamodel.variants as variants
+import ga4gh.datamodel.references as references
+import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.ontologies as ontologies
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -41,9 +54,49 @@ AVRO_LONG_MAX = 2**31 - 1
 ##############################################################################
 
 
+class SortedHelpFormatter(argparse.HelpFormatter):
+    """
+    An argparse HelpFormatter that sorts the flags and subcommands
+    in alphabetical order
+    """
+    def add_arguments(self, actions):
+        """
+        Sort the flags alphabetically
+        """
+        actions = sorted(
+            actions, key=operator.attrgetter('option_strings'))
+        super(SortedHelpFormatter, self).add_arguments(actions)
+
+    def _iter_indented_subactions(self, action):
+        """
+        Sort the subcommands alphabetically
+        """
+        try:
+            get_subactions = action._get_subactions
+        except AttributeError:
+            pass
+        else:
+            self._indent()
+            if isinstance(action, argparse._SubParsersAction):
+                for subaction in sorted(
+                        get_subactions(), key=lambda x: x.dest):
+                    yield subaction
+            else:
+                for subaction in get_subactions():
+                    yield subaction
+            self._dedent()
+
+
 def addSubparser(subparsers, subcommand, description):
     parser = subparsers.add_parser(
         subcommand, description=description, help=description)
+    return parser
+
+
+def createArgumentParser(description):
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=SortedHelpFormatter)
     return parser
 
 
@@ -71,12 +124,12 @@ def addServerOptions(parser):
     parser.add_argument(
         "--dont-use-reloader", default=False, action="store_true",
         help="Don't use the flask reloader")
+    addVersionArgument(parser)
     addDisableUrllibWarningsArgument(parser)
 
 
 def getServerParser():
-    parser = argparse.ArgumentParser(
-        description="GA4GH reference server")
+    parser = createArgumentParser("GA4GH reference server")
     addServerOptions(parser)
     return parser
 
@@ -128,9 +181,10 @@ class AbstractQueryRunner(object):
         # depending on the prefix.
         filePrefix = "file://"
         if args.baseUrl.startswith(filePrefix):
-            dataDir = args.baseUrl[len(filePrefix):]
-            theBackend = backend.Backend(
-                datarepo.FileSystemDataRepository(dataDir))
+            registryPath = args.baseUrl[len(filePrefix):]
+            repo = datarepo.SqlDataRepository(registryPath)
+            repo.open(datarepo.MODE_READ)
+            theBackend = backend.Backend(repo)
             self._client = client.LocalClient(theBackend)
         else:
             self._client = client.HttpClient(
@@ -161,7 +215,10 @@ class FormattedOutputRunner(AbstractQueryRunner):
         per line.
         """
         for gaObject in gaObjects:
-            print(gaObject.id, gaObject.name, sep="\t")
+            if hasattr(gaObject, 'name'):
+                print(gaObject.id, gaObject.name, sep="\t")
+            else:
+                print(gaObject.id, sep="\t")
 
 
 class AbstractGetRunner(FormattedOutputRunner):
@@ -201,6 +258,15 @@ class AbstractSearchRunner(FormattedOutputRunner):
             iterator = self._client.searchVariantSets(datasetId=dataset.id)
             for variantSet in iterator:
                 yield variantSet
+
+    def getAllFeatureSets(self):
+        """
+        Returns all feature sets on the server.
+        """
+        for dataset in self.getAllDatasets():
+            iterator = self._client.searchFeatureSets(datasetId=dataset.id)
+            for featureSet in iterator:
+                yield featureSet
 
     def getAllReadGroupSets(self):
         """
@@ -304,6 +370,43 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
             self._run(self._datasetId)
 
 
+class SearchVariantAnnotationSetsRunner(AbstractSearchRunner):
+    """
+    Runner class for the variantannotationsets/search method.
+    """
+    def __init__(self, args):
+        super(SearchVariantAnnotationSetsRunner, self).__init__(args)
+        self._variantSetId = args.variantSetId
+
+    def _run(self, variantSetId):
+        iterator = self._client.searchVariantAnnotationSets(
+            variantSetId=variantSetId)
+        self._output(iterator)
+
+    def run(self):
+        self._run(self._variantSetId)
+
+
+class SearchFeatureSetsRunner(AbstractSearchRunner):
+    """
+    Runner class for the featuresets/search method.
+    """
+    def __init__(self, args):
+        super(SearchFeatureSetsRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+
+    def _run(self, datasetId):
+        iterator = self._client.searchFeatureSets(datasetId=datasetId)
+        self._output(iterator)
+
+    def run(self):
+        if self._datasetId is None:
+            for dataset in self.getAllDatasets():
+                self._run(dataset.id)
+        else:
+            self._run(self._datasetId)
+
+
 class SearchReadGroupSetsRunner(AbstractSearchRunner):
     """
     Runner class for the readgroupsets/search method
@@ -372,6 +475,49 @@ class VariantFormatterMixin(object):
             print()
 
 
+class AnnotationFormatterMixin(object):
+    """
+    Simple mixin to format variant objects.
+    """
+    def _textOutput(self, gaObjects):
+        """
+        Prints out the specified Variant objects in a VCF-like form.
+        """
+        for variantAnnotation in gaObjects:
+            print(
+                variantAnnotation.id, variantAnnotation.variant_id,
+                variantAnnotation.variant_annotation_set_id,
+                variantAnnotation.create_date_time, sep="\t", end="\t")
+            for effect in variantAnnotation.transcript_effects:
+                print(effect.alternate_bases, sep="|", end="|")
+                for so in effect.effects:
+                    print(so.term, sep="&", end="|")
+                    print(so.id, sep="&", end="|")
+                print(effect.hgvs_annotation.transcript,
+                      effect.hgvs_annotation.protein, sep="|", end="\t")
+            print()
+
+
+class FeatureFormatterMixin(object):
+    """
+    Mix-in class to format Feature (Sequence Annotation) objects
+    """
+    def _textOutput(self, gaObjects):
+        for feature in gaObjects:
+            print(
+                feature.id, feature.parentId, feature.featureSetId,
+                feature.referenceName, feature.start, feature.end,
+                feature.strand, sep="\t", end="\t")
+            print(
+                "FeatureType:", feature.featureType.id,
+                feature.featureType.term, end="\t")
+            for attrkey in feature.attributes.vals.keys():
+                print(
+                    attrkey, feature.attributes.vals[attrkey],
+                    sep=":", end="; ")
+            print()
+
+
 class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
     """
     Runner class for the variants/search method.
@@ -402,6 +548,86 @@ class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
                 self._run(variantSet.id)
         else:
             self._run(self._variantSetId)
+
+
+class SearchVariantAnnotationsRunner(
+        AnnotationFormatterMixin, AbstractSearchRunner):
+    """
+    Runner class for the variantannotations/search method.
+    """
+    def __init__(self, args):
+        super(SearchVariantAnnotationsRunner, self).__init__(args)
+        self._referenceName = args.referenceName
+        self._referenceId = args.referenceId
+        self._variantAnnotationSetId = args.variantAnnotationSetId
+        self._start = args.start
+        self._end = args.end
+
+        if args.effects == "":
+            self._effects = []
+        else:
+            self._effects = []
+            for eff in args.effects.split(","):
+                term = protocol.OntologyTerm()
+                term.id = eff
+                self._effects.append(term)
+
+    def _run(self, variantAnnotationSetId):
+        iterator = self._client.searchVariantAnnotations(
+            variantAnnotationSetId=variantAnnotationSetId,
+            referenceName=self._referenceName, referenceId=self._referenceId,
+            start=self._start, end=self._end,
+            effects=self._effects)
+        self._output(iterator)
+
+    def getAllAnnotationSets(self):
+        """
+        Returns all variant annotation sets on the server.
+        """
+        for variantSet in self.getAllVariantSets():
+            iterator = self._client.searchVariantAnnotationSets(
+                variantSetId=variantSet.id)
+            for variantAnnotationSet in iterator:
+                yield variantAnnotationSet
+
+    def run(self):
+        if self._variantAnnotationSetId is None:
+            for annotationSet in self.getAllAnnotationSets():
+                self._run(annotationSet.id)
+        else:
+            self._run(self._variantAnnotationSetId)
+
+
+class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
+    """
+    Runner class for the features/search method.
+    """
+    def __init__(self, args):
+        super(SearchFeaturesRunner, self).__init__(args)
+        self._referenceName = args.referenceName
+        self._featureSetId = args.featureSetId
+        self._parentId = args.parentId
+        self._start = args.start
+        self._end = args.end
+        if args.featureTypes == "":
+            self._featureTypes = []
+        else:
+            self._featureTypes = args.featureTypes.split(",")
+
+    def _run(self, featureSetId):
+        iterator = self._client.searchFeatures(
+            start=self._start, end=self._end,
+            referenceName=self._referenceName,
+            featureSetId=featureSetId, parentId=self._parentId,
+            featureTypes=self._featureTypes)
+        self._output(iterator)
+
+    def run(self):
+        if self._featureSetId is None and self._parentId is None:
+            for featureSet in self.getAllFeatureSets():
+                self._run(featureSet)
+        else:
+            self._run(self._featureSetId)
 
 
 class SearchReadsRunner(AbstractSearchRunner):
@@ -558,10 +784,47 @@ class GetVariantSetRunner(AbstractGetRunner):
         self._method = self._client.getVariantSet
 
 
+class GetVariantAnnotationSetRunner(AbstractGetRunner):
+    """
+    Runner class for the variantannotationsets/{id} method
+    """
+    def __init__(self, args):
+        super(GetVariantAnnotationSetRunner, self).__init__(args)
+        self._method = self._client.getVariantAnnotationSet
+
+
+class GetFeatureRunner(FeatureFormatterMixin, AbstractGetRunner):
+    """
+    Runner class for the features/{id} method
+    """
+    def __init__(self, args):
+        super(GetFeatureRunner, self).__init__(args)
+        self._method = self._client.getFeature
+
+
+class GetFeatureSetRunner(AbstractGetRunner):
+    """
+    Runner class for the featuresets/{id} method
+    """
+    def __init__(self, args):
+        super(GetFeatureSetRunner, self).__init__(args)
+        self._method = self._client.getFeatureSet
+
+
 def addDisableUrllibWarningsArgument(parser):
     parser.add_argument(
         "--disable-urllib-warnings", default=False, action="store_true",
         help="Disable urllib3 warnings")
+
+
+def addVersionArgument(parser):
+    # TODO argparse strips newlines from version output
+    versionString = (
+        "GA4GH Server Version {}\n"
+        "(Protocol Version {})".format(
+            ga4gh.__version__, protocol.version))
+    parser.add_argument(
+        "--version", version=versionString, action="version")
 
 
 def addVariantSearchOptions(parser):
@@ -576,16 +839,64 @@ def addVariantSearchOptions(parser):
     addPageSizeArgument(parser)
 
 
+def addAnnotationsSearchOptions(parser):
+    """
+    Adds common options to a annotation searches command line parser.
+    """
+    addAnnotationSetIdArgument(parser)
+    addReferenceNameArgument(parser)
+    addReferenceIdArgument(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+    addEffectsArgument(parser)
+    addPageSizeArgument(parser)
+
+
+def addFeaturesSearchOptions(parser):
+    """
+    Adds common options to a features search command line parser.
+    """
+    addFeatureSetIdArgument(parser)
+    addReferenceNameArgument(parser)
+    addStartArgument(parser)
+    addEndArgument(parser)
+    addParentFeatureIdArgument(parser)
+    addFeatureTypesArgument(parser)
+
+
 def addVariantSetIdArgument(parser):
     parser.add_argument(
         "--variantSetId", "-V", default=None,
         help="The variant set id to search over")
 
 
+def addVariantSetIdMandatoryArgument(parser):
+    parser.add_argument(
+        "variantSetId", help="The variant set id to search over")
+
+
+def addAnnotationSetIdArgument(parser):
+    parser.add_argument(
+        "--variantAnnotationSetId", "-V", default=None,
+        help="The variant annotation set id to search over")
+
+
+def addFeatureSetIdArgument(parser):
+    parser.add_argument(
+        "--featureSetId", "-F", default=None,
+        help="The feature set id to search over")
+
+
 def addReferenceNameArgument(parser):
     parser.add_argument(
         "--referenceName", "-r", default="1",
         help="Only return variants on this reference.")
+
+
+def addReferenceIdArgument(parser):
+    parser.add_argument(
+        "--referenceId", "-c", default="",
+        help="Only return variants on this reference ID.")
 
 
 def addCallSetIdsArgument(parser):
@@ -595,6 +906,37 @@ def addCallSetIdsArgument(parser):
             with these IDs. Pass in IDs as a comma separated list (no spaces).
             Use '*' to request all call sets (the quotes are important!).
             """)
+
+
+def addFeatureIdsArgument(parser):
+    parser.add_argument(
+        "--featureIds", "-f", default=[],
+        help="""Return annotations on any of the feature IDs.
+            Pass in IDs as a comma separated list (no spaces).
+            """)
+
+
+def addEffectsArgument(parser):
+    parser.add_argument(
+        "--effects", "-effs", default="",
+        help="""Return annotations having any of these effects.
+            Pass in IDs as a comma separated list (no spaces).
+            """)
+
+
+def addFeatureTypesArgument(parser):
+    parser.add_argument(
+        "--featureTypes", "-t", default="",
+        help="""Return features matching any of the supplied
+            feature types (ontology terms).
+            Pass in terms as a comma separated list (no spaces).
+            """)
+
+
+def addParentFeatureIdArgument(parser):
+    parser.add_argument(
+        "--parentId", "-p", default=None,
+        help="Filter features by supplied parent ID")
 
 
 def addStartArgument(parser):
@@ -682,6 +1024,7 @@ def addClientGlobalOptions(parser):
         "--key", "-k", default='invalid',
         help="Auth Key. Found on server index page.")
     addDisableUrllibWarningsArgument(parser)
+    addVersionArgument(parser)
 
 
 def addHelpParser(subparsers):
@@ -712,11 +1055,83 @@ def addVariantSetsSearchParser(subparsers):
     return parser
 
 
+def addVariantAnnotationSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "variantannotations-search",
+        description="Search for variant annotations",
+        help="Search for variant annotations.")
+    parser.set_defaults(runner=SearchVariantAnnotationsRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addAnnotationsSearchOptions(parser)
+    return parser
+
+
+def addVariantAnnotationSetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "variantannotationsets-search",
+        description="Search for variant annotation sets",
+        help="Search for variantAnnotationSets.")
+    parser.set_defaults(runner=SearchVariantAnnotationSetsRunner)
+    addOutputFormatArgument(parser)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addVariantSetIdMandatoryArgument(parser)
+    return parser
+
+
+def addVariantAnnotationSetsGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "variantannotationsets-get", "Get a variantAnnotationSet")
+    parser.set_defaults(runner=GetVariantAnnotationSetRunner)
+    addGetArguments(parser)
+
+
 def addVariantSetsGetParser(subparsers):
     parser = addSubparser(
         subparsers, "variantsets-get", "Get a variantSet")
     parser.set_defaults(runner=GetVariantSetRunner)
     addGetArguments(parser)
+
+
+def addFeaturesGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "features-get", "Get a feature by ID")
+    parser.set_defaults(runner=GetFeatureRunner)
+    addGetArguments(parser)
+
+
+def addFeatureSetsGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "featuresets-get", "Get a featureSet by ID")
+    parser.set_defaults(runner=GetFeatureSetRunner)
+    addGetArguments(parser)
+
+
+def addFeaturesSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "features-search",
+        description="Search for sequence annotation features",
+        help="Search for sequence annotation features.")
+    parser.set_defaults(runner=SearchFeaturesRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addPageSizeArgument(parser)
+    addFeaturesSearchOptions(parser)
+    return parser
+
+
+def addFeatureSetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "featuresets-search",
+        description="Search for sequence annotation feature sets",
+        help="Search for featureSets.")
+    parser.set_defaults(runner=SearchFeatureSetsRunner)
+    addOutputFormatArgument(parser)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addDatasetIdArgument(parser)
+    return parser
 
 
 def addReferenceSetsSearchParser(subparsers):
@@ -869,14 +1284,20 @@ def addReferencesBasesListParser(subparsers):
 
 
 def getClientParser():
-    parser = argparse.ArgumentParser(
-        description="GA4GH reference client")
+    parser = createArgumentParser("GA4GH reference client")
     addClientGlobalOptions(parser)
     subparsers = parser.add_subparsers(title='subcommands',)
     addHelpParser(subparsers)
     addVariantsSearchParser(subparsers)
     addVariantSetsSearchParser(subparsers)
+    addVariantAnnotationSearchParser(subparsers)
+    addVariantAnnotationSetsSearchParser(subparsers)
     addVariantSetsGetParser(subparsers)
+    addVariantAnnotationSetsGetParser(subparsers)
+    addFeaturesSearchParser(subparsers)
+    addFeaturesGetParser(subparsers)
+    addFeatureSetsGetParser(subparsers)
+    addFeatureSetsSearchParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
@@ -946,10 +1367,9 @@ def addOutputFileArgument(parser):
 
 
 def getGa2VcfParser():
-    parser = argparse.ArgumentParser(
-        description=(
-            "GA4GH VCF conversion tool. Converts variant information "
-            "stored in a GA4GH repository into VCF format."))
+    parser = createArgumentParser((
+        "GA4GH VCF conversion tool. Converts variant information "
+        "stored in a GA4GH repository into VCF format."))
     addClientGlobalOptions(parser)
     addOutputFileArgument(parser)
     addUrlArgument(parser)
@@ -1004,8 +1424,7 @@ class Ga2SamRunner(SearchReadsRunner):
 
 
 def getGa2SamParser():
-    parser = argparse.ArgumentParser(
-        description="GA4GH SAM conversion tool")
+    parser = createArgumentParser("GA4GH SAM conversion tool")
     addClientGlobalOptions(parser)
     addUrlArgument(parser)
     parser.add_argument(
@@ -1059,14 +1478,16 @@ class SimplerResult(unittest.TestResult):
 
 def configtest_main(parser=None):
     if parser is None:
-        parser = argparse.ArgumentParser(
-            description="GA4GH server configuration validator")
+        parser = createArgumentParser(
+            "GA4GH server configuration validator")
     parser.add_argument(
         "--config", "-c", default='DevelopmentConfig', type=str,
         help="The configuration to use")
     parser.add_argument(
         "--config-file", "-f", type=str, default=None,
         help="The configuration file to use")
+    addVersionArgument(parser)
+
     args = parser.parse_args()
     configStr = 'ga4gh.serverconfig:{0}'.format(args.config)
 
@@ -1101,351 +1522,681 @@ def configtest_main(parser=None):
 ##############################################################################
 
 
-def getRawInput(displayString):
-    userResponse = raw_input(displayString)
-    return userResponse
+def getNameFromPath(filePath):
+    """
+    Returns the filename of the specified path without its extensions.
+    This is usually how we derive the default name for a given object.
+    """
+    if len(filePath) == 0:
+        raise ValueError("Cannot have empty path for name")
+    fileName = os.path.split(os.path.normpath(filePath))[1]
+    # We need to handle things like .fa.gz, so we can't use
+    # os.path.splitext
+    ret = fileName.split(".")[0]
+    assert ret != ""
+    return ret
 
 
-class AbstractRepoCommandRunner(object):
+def getRawInput(display):
+    """
+    Wrapper around raw_input; put into separate function so that it
+    can be easily mocked for tests.
+    """
+    return raw_input(display)
 
+
+class RepoManager(object):
+    """
+    Class that provide command line functionality to manage a
+    data repository.
+    """
     def __init__(self, args):
-        self.args = args
-        self.repoPath = args.repoPath
-        self.repoManager = repo_manager.RepoManager(self.repoPath)
-        if 'force' in args:
-            self.force = args.force
+        self._args = args
+        self._registryPath = args.registryPath
+        self._repo = datarepo.SqlDataRepository(self._registryPath)
 
-    def confirmRun(self, func, deleteString):
-        if self.force:
+    def _confirmDelete(self, objectType, name, func):
+        if self._args.force:
             func()
         else:
             displayString = (
-                "Are you sure you want to delete data in {}? "
-                "[y|N] ".format(deleteString))
+                "Are you sure you want to delete the {} '{}'? "
+                "[y|N] ".format(objectType, name))
             userResponse = getRawInput(displayString)
             if userResponse.strip() == 'y':
                 func()
             else:
                 print("Aborted")
 
+    def _updateRepo(self, func, *args, **kwargs):
+        """
+        Runs the specified function that updates the repo with the specified
+        arguments. This method ensures that all updates are transactional,
+        so that if any part of the update fails no changes are made to the
+        repo.
+        """
+        # TODO how do we make this properly transactional?
+        self._repo.open(datarepo.MODE_WRITE)
+        try:
+            func(*args, **kwargs)
+            self._repo.commit()
+        finally:
+            self._repo.close()
 
-class AbstractRepoAddCommandRunner(AbstractRepoCommandRunner):
+    def _openRepo(self):
+        if not self._repo.exists():
+            raise exceptions.RepoManagerException(
+                "Repo '{}' does not exist. Please create a new repo "
+                "using the 'init' command.".format(self._registryPath))
+        self._repo.open(datarepo.MODE_READ)
 
-    def __init__(self, args):
-        super(AbstractRepoAddCommandRunner, self).__init__(args)
-        self.filePath = args.filePath
+    def _checkSequenceOntology(self, ontology):
+        so = ontologies.SEQUENCE_ONTOLOGY_PREFIX
+        if ontology.getOntologyPrefix() != so:
+            raise exceptions.RepoManagerException(
+                "Ontology '{}' does not have ontology prefix '{}'".format(
+                    ontology.getName(), so))
 
+    def init(self):
+        forceMessage = (
+            "Respository '{}' already exists. Use --force to overwrite")
+        if self._repo.exists():
+            if self._args.force:
+                self._repo.delete()
+            else:
+                raise exceptions.RepoManagerException(
+                    forceMessage.format(self._registryPath))
+        self._updateRepo(self._repo.initialise)
 
-class AbstractRepoAddMoveCommandRunner(AbstractRepoAddCommandRunner):
+    def list(self):
+        """
+        Lists the contents of this repo.
+        """
+        self._openRepo()
+        # TODO this is _very_ crude. We need much more options and detail here.
+        self._repo.printSummary()
 
-    def __init__(self, args):
-        super(AbstractRepoAddMoveCommandRunner, self).__init__(args)
-        self.moveMode = args.moveMode
+    def verify(self):
+        """
+        Checks that the data pointed to in the repository works and
+        we don't have any broken URLs, missing files, etc.
+        """
+        self._openRepo()
+        self._repo.verify()
 
+    def addOntology(self):
+        """
+        Adds a new Ontology to this repo.
+        """
+        self._openRepo()
+        name = self._args.name
+        if name is None:
+            name = getNameFromPath(self._args.filePath)
+        ontology = ontologies.Ontology(name)
+        ontology.populateFromFile(self._args.filePath)
+        self._updateRepo(self._repo.insertOntology, ontology)
 
-class AbstractRepoDatasetCommandRunner(AbstractRepoCommandRunner):
+    def addDataset(self):
+        """
+        Adds a new dataset into this repo.
+        """
+        self._openRepo()
+        dataset = datasets.Dataset(self._args.datasetName)
+        dataset.setDescription(self._args.description)
+        self._updateRepo(self._repo.insertDataset, dataset)
 
-    def __init__(self, args):
-        super(AbstractRepoDatasetCommandRunner, self).__init__(args)
-        self.datasetName = args.datasetName
+    def addReferenceSet(self):
+        """
+        Adds a new reference set into this repo.
+        """
+        self._openRepo()
+        name = self._args.name
+        if name is None:
+            name = getNameFromPath(self._args.filePath)
+        referenceSet = references.HtslibReferenceSet(name)
+        referenceSet.populateFromFile(self._args.filePath)
+        referenceSet.setDescription(self._args.description)
+        referenceSet.setNcbiTaxonId(self._args.ncbiTaxonId)
+        referenceSet.setIsDerived(self._args.isDerived)
+        referenceSet.setAssemblyId(self._args.assemblyId)
+        sourceAccessions = []
+        if self._args.sourceAccessions is not None:
+            sourceAccessions = self._args.sourceAccessions.split(",")
+        referenceSet.setSourceAccessions(sourceAccessions)
+        referenceSet.setSourceUri(self._args.sourceUri)
+        self._updateRepo(self._repo.insertReferenceSet, referenceSet)
 
+    def addReadGroupSet(self):
+        """
+        Adds a new ReadGroupSet into this repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        dataUrl = self._args.dataFile
+        indexFile = self._args.indexFile
+        parsed = urlparse.urlparse(dataUrl)
+        # TODO, add https support and others when they have been
+        # tested.
+        if parsed.scheme in ['http', 'ftp']:
+            if indexFile is None:
+                raise exceptions.MissingIndexException(dataUrl)
+        else:
+            if indexFile is None:
+                indexFile = dataUrl + ".bai"
+        name = self._args.name
+        if self._args.name is None:
+            name = getNameFromPath(dataUrl)
+        readGroupSet = reads.HtslibReadGroupSet(dataset, name)
+        readGroupSet.populateFromFile(dataUrl, indexFile)
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
+            # Try to find a reference set name from the BAM header.
+            referenceSetName = readGroupSet.getBamHeaderReferenceSetName()
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
+        readGroupSet.setReferenceSet(referenceSet)
+        self._updateRepo(self._repo.insertReadGroupSet, readGroupSet)
 
-class AbstractRepoDatasetFilepathCommandRunner(
-        AbstractRepoDatasetCommandRunner):
+    def addVariantSet(self):
+        """
+        Adds a new VariantSet into this repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        dataUrls = self._args.dataFiles
+        name = self._args.name
+        if len(dataUrls) == 1:
+            if self._args.name is None:
+                name = getNameFromPath(dataUrls[0])
+            if os.path.isdir(dataUrls[0]):
+                # Read in the VCF files from the directory.
+                # TODO support uncompressed VCF and BCF files
+                vcfDir = dataUrls[0]
+                pattern = os.path.join(vcfDir, "*.vcf.gz")
+                dataUrls = glob.glob(pattern)
+                if len(dataUrls) == 0:
+                    raise exceptions.RepoManagerException(
+                        "Cannot find any VCF files in the directory "
+                        "'{}'.".format(vcfDir))
+        elif self._args.name is None:
+            raise exceptions.RepoManagerException(
+                "Cannot infer the intended name of the VariantSet when "
+                "more than one VCF file is provided. Please provide a "
+                "name argument using --name.")
 
-    def __init__(self, args):
-        super(AbstractRepoDatasetFilepathCommandRunner, self).__init__(args)
-        self.filePath = args.filePath
-        self.moveMode = args.moveMode
+        # Now, get the index files for the data files that we've now obtained.
+        indexFiles = self._args.indexFiles
+        if indexFiles is None:
+            # First check if all the paths exist locally, as they must
+            # if we are making a default index path.
+            for dataUrl in dataUrls:
+                if not os.path.exists(dataUrl):
+                    raise exceptions.MissingIndexException(
+                        "Cannot find file '{}'. All variant files must be "
+                        "stored locally if the default index location is "
+                        "used. If you are trying to create a VariantSet "
+                        "based on remote URLs, please download the index "
+                        "files to the local file system and provide them "
+                        "with the --indexFiles argument".format(dataUrl))
+            # We assume that the indexes are made by adding .tbi
+            indexSuffix = ".tbi"
+            # TODO support BCF input properly here by adding .csi
+            indexFiles = [filename + indexSuffix for filename in dataUrls]
 
+        variantSet = variants.HtslibVariantSet(dataset, name)
+        variantSet.populateFromFile(dataUrls, indexFiles)
+        # Get the reference set that is associated with the variant set.
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
+            # Try to find a reference set name from the VCF header.
+            referenceSetName = variantSet.getVcfHeaderReferenceSetName()
+        if referenceSetName is None:
+            raise exceptions.RepoManagerException(
+                "Cannot infer the ReferenceSet from the VCF header. Please "
+                "specify the ReferenceSet to associate with this "
+                "VariantSet using the --referenceSetName option")
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
+        variantSet.setReferenceSet(referenceSet)
 
-class CheckRunner(AbstractRepoCommandRunner):
+        # Now check for annotations
+        annotationSets = []
+        if variantSet.isAnnotated() and self._args.addAnnotationSets:
+            ontologyName = self._args.ontologyName
+            if ontologyName is None:
+                raise exceptions.RepoManagerException(
+                    "A sequence ontology name must be provided")
+            ontology = self._repo.getOntologyByName(ontologyName)
+            self._checkSequenceOntology(ontology)
+            for annotationSet in variantSet.getVariantAnnotationSets():
+                annotationSet.setOntology(ontology)
+                annotationSets.append(annotationSet)
 
-    def __init__(self, args):
-        super(CheckRunner, self).__init__(args)
+        # Add the annotation sets and the variant set as an atomic update
+        def updateRepo():
+            self._repo.insertVariantSet(variantSet)
+            for annotationSet in annotationSets:
+                self._repo.insertVariantAnnotationSet(annotationSet)
+        self._updateRepo(updateRepo)
 
-    def run(self):
-        self.repoManager.check()
+    def removeReferenceSet(self):
+        """
+        Removes a referenceSet from the repo.
+        """
+        self._openRepo()
+        referenceSet = self._repo.getReferenceSetByName(
+            self._args.referenceSetName)
 
-
-class ListRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(ListRunner, self).__init__(args)
-
-    def run(self):
-        self.repoManager.list()
-
-
-class DestroyRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(DestroyRunner, self).__init__(args)
-
-    def run(self):
-        def func(): self.repoManager.destroy()
-        self.confirmRun(func, 'the Data Repository')
-
-
-class InitRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(InitRunner, self).__init__(args)
-
-    def run(self):
-        self.repoManager.init()
-
-
-class AddDatasetRunner(AbstractRepoDatasetCommandRunner):
-
-    def __init__(self, args):
-        super(AddDatasetRunner, self).__init__(args)
-
-    def run(self):
-        self.repoManager.addDataset(self.datasetName)
-
-
-class RemoveDatasetRunner(AbstractRepoDatasetCommandRunner):
-
-    def __init__(self, args):
-        super(RemoveDatasetRunner, self).__init__(args)
-
-    def run(self):
-        def func(): self.repoManager.removeDataset(self.datasetName)
-        self.confirmRun(func, 'dataset {}'.format(self.datasetName))
-
-
-class AddReferenceSetRunner(AbstractRepoAddMoveCommandRunner):
-
-    def __init__(self, args):
-        super(AddReferenceSetRunner, self).__init__(args)
-        self.metadata = {
-            'description': args.description,
-        }
-
-    def run(self):
-        self.repoManager.addReferenceSet(
-            self.filePath, self.moveMode, self.metadata)
-
-
-class RemoveReferenceSetRunner(AbstractRepoCommandRunner):
-
-    def __init__(self, args):
-        super(RemoveReferenceSetRunner, self).__init__(args)
-        self.referenceSetName = args.referenceSetName
-
-    def run(self):
         def func():
-            self.repoManager.removeReferenceSet(self.referenceSetName)
-        self.confirmRun(
-            func, 'reference set {}'.format(self.referenceSetName))
+            self._updateRepo(self._repo.removeReferenceSet, referenceSet)
+        self._confirmDelete("ReferenceSet", referenceSet.getLocalId(), func)
 
+    def removeReadGroupSet(self):
+        """
+        Removes a readGroupSet from the repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        readGroupSet = dataset.getReadGroupSetByName(
+            self._args.readGroupSetName)
 
-class AddReadGroupSetRunner(AbstractRepoDatasetFilepathCommandRunner):
-
-    def __init__(self, args):
-        super(AddReadGroupSetRunner, self).__init__(args)
-
-    def run(self):
-        self.repoManager.addReadGroupSet(
-            self.datasetName, self.filePath, self.moveMode)
-
-
-class RemoveReadGroupSetRunner(AbstractRepoDatasetCommandRunner):
-
-    def __init__(self, args):
-        super(RemoveReadGroupSetRunner, self).__init__(args)
-        self.readGroupSetName = args.readGroupSetName
-
-    def run(self):
         def func():
-            self.repoManager.removeReadGroupSet(
-                self.datasetName, self.readGroupSetName)
-        self.confirmRun(
-            func, 'read group set {}'.format(self.readGroupSetName))
+            self._updateRepo(self._repo.removeReadGroupSet, readGroupSet)
+        self._confirmDelete("ReadGroupSet", readGroupSet.getLocalId(), func)
 
+    def removeVariantSet(self):
+        """
+        Removes a variantSet from the repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        variantSet = dataset.getVariantSetByName(self._args.variantSetName)
 
-class AddVariantSetRunner(AbstractRepoDatasetFilepathCommandRunner):
-
-    def __init__(self, args):
-        super(AddVariantSetRunner, self).__init__(args)
-
-    def run(self):
-        self.repoManager.addVariantSet(
-            self.datasetName, self.filePath, self.moveMode)
-
-
-class RemoveVariantSetRunner(AbstractRepoDatasetCommandRunner):
-
-    def __init__(self, args):
-        super(RemoveVariantSetRunner, self).__init__(args)
-        self.variantSetName = args.variantSetName
-
-    def run(self):
         def func():
-            self.repoManager.removeVariantSet(
-                self.datasetName, self.variantSetName)
-        self.confirmRun(func, 'variant set {}'.format(self.variantSetName))
+            self._updateRepo(self._repo.removeVariantSet, variantSet)
+        self._confirmDelete("VariantSet", variantSet.getLocalId(), func)
+
+    def removeDataset(self):
+        """
+        Removes a dataset from the repo.
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+
+        def func():
+            self._updateRepo(self._repo.removeDataset, dataset)
+        self._confirmDelete("Dataset", dataset.getLocalId(), func)
+
+    def addFeatureSet(self):
+        """
+        Adds a new feature set into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        name = getNameFromPath(self._args.filePath)
+        featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+            dataset, name)
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
+            raise exceptions.RepoManagerException(
+                "A reference set name must be provided")
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
+        featureSet.setReferenceSet(referenceSet)
+        ontologyName = self._args.ontologyName
+        if ontologyName is None:
+            raise exceptions.RepoManagerException(
+                "A sequence ontology name must be provided")
+        ontology = self._repo.getOntologyByName(ontologyName)
+        self._checkSequenceOntology(ontology)
+        featureSet.setOntology(ontology)
+        featureSet.populateFromFile(self._args.filePath)
+        self._updateRepo(self._repo.insertFeatureSet, featureSet)
+
+    def removeFeatureSet(self):
+        """
+        Removes a feature set from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        featureSet = dataset.getFeatureSetByName(self._args.featureSetName)
+
+        def func():
+            self._updateRepo(self._repo.removeFeatureSet, featureSet)
+        self._confirmDelete("FeatureSet", featureSet.getLocalId(), func)
+
+    def removeOntology(self):
+        """
+        Removes an ontology from the repo.
+        """
+        self._openRepo()
+        ontology = self._repo.getOntologyByName(self._args.ontologyName)
+
+        def func():
+            self._updateRepo(self._repo.removeOntology, ontology)
+        self._confirmDelete("Ontology", ontology.getName(), func)
+
+    #
+    # Methods to simplify adding common arguments to the parser.
+    #
+
+    @classmethod
+    def addRepoArgument(cls, subparser):
+        subparser.add_argument(
+            "registryPath",
+            help="the location of the registry database")
+
+    @classmethod
+    def addForceOption(cls, subparser):
+        subparser.add_argument(
+            "-f", "--force", action='store_true',
+            default=False, help="do not prompt for confirmation")
+
+    @classmethod
+    def addDescriptionOption(cls, subparser, objectType):
+        subparser.add_argument(
+            "-d", "--description", default="",
+            help="The human-readable description of the {}.".format(
+                objectType))
+
+    @classmethod
+    def addDatasetNameArgument(cls, subparser):
+        subparser.add_argument(
+            "datasetName", help="the name of the dataset")
+
+    @classmethod
+    def addReferenceSetNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the reference set to associate with this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "-R", "--referenceSetName", default=None, help=helpText)
+
+    @classmethod
+    def addSequenceOntologyNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the sequence ontology instance used to "
+            "translate ontology term names to IDs in this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "-O", "--ontologyName", default=None, help=helpText)
+
+    @classmethod
+    def addOntologyNameArgument(cls, subparser):
+        subparser.add_argument(
+            "ontologyName",
+            help="the name of the ontology")
+
+    @classmethod
+    def addReadGroupSetNameArgument(cls, subparser):
+        subparser.add_argument(
+            "readGroupSetName",
+            help="the name of the read group set")
+
+    @classmethod
+    def addVariantSetNameArgument(cls, subparser):
+        subparser.add_argument(
+            "variantSetName",
+            help="the name of the feature set")
+
+    @classmethod
+    def addFeatureSetNameArgument(cls, subparser):
+        subparser.add_argument(
+            "featureSetName",
+            help="the name of the variant set")
+
+    @classmethod
+    def addFilePathArgument(cls, subparser, helpText):
+        subparser.add_argument("filePath", help=helpText)
+
+    @classmethod
+    def addNameOption(cls, parser, objectType):
+        parser.add_argument(
+            "-n", "--name", default=None,
+            help="The name of the {}".format(objectType))
+
+    @classmethod
+    def getParser(cls):
+        parser = createArgumentParser(
+            "GA4GH data repository management tool")
+        subparsers = parser.add_subparsers(title='subcommands',)
+        addVersionArgument(parser)
+
+        initParser = addSubparser(
+            subparsers, "init", "Initialize a data repository")
+        initParser.set_defaults(runner="init")
+        cls.addRepoArgument(initParser)
+        cls.addForceOption(initParser)
+
+        verifyParser = addSubparser(
+            subparsers, "verify",
+            "Verifies the repository by examing all data files")
+        verifyParser.set_defaults(runner="verify")
+        cls.addRepoArgument(verifyParser)
+
+        listParser = addSubparser(
+            subparsers, "list", "List the contents of the repo")
+        listParser.set_defaults(runner="list")
+        cls.addRepoArgument(listParser)
+
+        addDatasetParser = addSubparser(
+            subparsers, "add-dataset", "Add a dataset to the data repo")
+        addDatasetParser.set_defaults(runner="addDataset")
+        cls.addRepoArgument(addDatasetParser)
+        cls.addDatasetNameArgument(addDatasetParser)
+        cls.addDescriptionOption(addDatasetParser, "dataset")
+
+        removeDatasetParser = addSubparser(
+            subparsers, "remove-dataset",
+            "Remove a dataset from the data repo")
+        removeDatasetParser.set_defaults(runner="removeDataset")
+        cls.addRepoArgument(removeDatasetParser)
+        cls.addDatasetNameArgument(removeDatasetParser)
+        cls.addForceOption(removeDatasetParser)
+
+        objectType = "reference set"
+        addReferenceSetParser = addSubparser(
+            subparsers, "add-referenceset",
+            "Add a reference set to the data repo")
+        addReferenceSetParser.set_defaults(runner="addReferenceSet")
+        cls.addRepoArgument(addReferenceSetParser)
+        cls.addFilePathArgument(
+            addReferenceSetParser,
+            "The path of the FASTA file to use as a reference set. This "
+            "file must be bgzipped and indexed.")
+        cls.addNameOption(addReferenceSetParser, objectType)
+        cls.addDescriptionOption(addReferenceSetParser, objectType)
+        addReferenceSetParser.add_argument(
+            "--ncbiTaxonId", default=None, help="The NCBI Taxon Id")
+        addReferenceSetParser.add_argument(
+            "--isDerived", default=False, type=bool,
+            help="Indicates if this reference set is derived from another")
+        addReferenceSetParser.add_argument(
+            "--assemblyId", default=None,
+            help="The assembly id")
+        addReferenceSetParser.add_argument(
+            "--sourceAccessions", default=None,
+            help="The source accessions (pass as comma-separated list)")
+        addReferenceSetParser.add_argument(
+            "--sourceUri", default=None,
+            help="The source URI")
+
+        removeReferenceSetParser = addSubparser(
+            subparsers, "remove-referenceset",
+            "Remove a reference set from the repo")
+        removeReferenceSetParser.set_defaults(runner="removeReferenceSet")
+        cls.addRepoArgument(removeReferenceSetParser)
+        removeReferenceSetParser.add_argument(
+            "referenceSetName",
+            help="the name of the reference set")
+        cls.addForceOption(removeReferenceSetParser)
+
+        objectType = "ReadGroupSet"
+        addReadGroupSetParser = addSubparser(
+            subparsers, "add-readgroupset",
+            "Add a read group set to the data repo")
+        addReadGroupSetParser.set_defaults(runner="addReadGroupSet")
+        cls.addRepoArgument(addReadGroupSetParser)
+        cls.addDatasetNameArgument(addReadGroupSetParser)
+        cls.addNameOption(addReadGroupSetParser, objectType)
+        cls.addReferenceSetNameOption(addReadGroupSetParser, "ReadGroupSet")
+        addReadGroupSetParser.add_argument(
+            "dataFile",
+            help="The file path or URL of the BAM file for this ReadGroupSet")
+        addReadGroupSetParser.add_argument(
+            "-I", "--indexFile", default=None,
+            help=(
+                "The file path of the BAM index for this ReadGroupSet. "
+                "If the dataFile argument is a local file, this will "
+                "be automatically inferred by appending '.bai' to the "
+                "file name. If the dataFile is a remote URL the path to "
+                "a local file containing the BAM index must be provided"))
+
+        addOntologyParser = addSubparser(
+            subparsers, "add-ontology",
+            "Adds an ontology in OBO format to the repo. Currently, "
+            "a sequence ontology (SO) instance is required to translate "
+            "ontology term names held in annotations to ontology IDs. "
+            "Sequence ontology files can be found at "
+            "https://github.com/The-Sequence-Ontology/SO-Ontologies")
+        addOntologyParser.set_defaults(runner="addOntology")
+        cls.addRepoArgument(addOntologyParser)
+        cls.addFilePathArgument(
+            addOntologyParser,
+            "The path of the OBO file defining this ontology.")
+        cls.addNameOption(addOntologyParser, "ontology")
+
+        removeOntologyParser = addSubparser(
+            subparsers, "remove-ontology",
+            "Remove an ontology from the repo")
+        removeOntologyParser.set_defaults(runner="removeOntology")
+        cls.addRepoArgument(removeOntologyParser)
+        cls.addOntologyNameArgument(removeOntologyParser)
+        cls.addForceOption(removeOntologyParser)
+
+        removeReadGroupSetParser = addSubparser(
+            subparsers, "remove-readgroupset",
+            "Remove a read group set from the repo")
+        removeReadGroupSetParser.set_defaults(runner="removeReadGroupSet")
+        cls.addRepoArgument(removeReadGroupSetParser)
+        cls.addDatasetNameArgument(removeReadGroupSetParser)
+        cls.addReadGroupSetNameArgument(removeReadGroupSetParser)
+        cls.addForceOption(removeReadGroupSetParser)
+
+        objectType = "VariantSet"
+        addVariantSetParser = addSubparser(
+            subparsers, "add-variantset",
+            "Add a variant set to the data repo based on one or "
+            "more VCF files. ")
+        addVariantSetParser.set_defaults(runner="addVariantSet")
+        cls.addRepoArgument(addVariantSetParser)
+        cls.addDatasetNameArgument(addVariantSetParser)
+        addVariantSetParser.add_argument(
+            "dataFiles", nargs="+",
+            help=(
+                "The VCF/BCF files representing the new VariantSet. "
+                "These may be specified either one or more paths "
+                "to local files or remote URLS, or as a path to "
+                "a local directory containing VCF files. Either "
+                "a single directory argument may be passed or a "
+                "list of file paths/URLS, but not a mixture of "
+                "directories and paths.")
+            )
+        addVariantSetParser.add_argument(
+            "-I", "--indexFiles", nargs="+", metavar="indexFiles",
+            help=(
+                "The index files for the VCF/BCF files provided in "
+                "the dataFiles argument. These must be provided in the "
+                "same order as the data files."))
+        cls.addNameOption(addVariantSetParser, objectType)
+        cls.addReferenceSetNameOption(addVariantSetParser, objectType)
+        cls.addSequenceOntologyNameOption(addVariantSetParser, objectType)
+        addVariantSetParser.add_argument(
+            "-a", "--addAnnotationSets", action="store_true",
+            help=(
+                "If the supplied VCF file contains annotations, create the "
+                "corresponding VariantAnnotationSet."))
+
+        removeVariantSetParser = addSubparser(
+            subparsers, "remove-variantset",
+            "Remove a variant set from the repo")
+        removeVariantSetParser.set_defaults(runner="removeVariantSet")
+        cls.addRepoArgument(removeVariantSetParser)
+        cls.addDatasetNameArgument(removeVariantSetParser)
+        cls.addVariantSetNameArgument(removeVariantSetParser)
+        cls.addForceOption(removeVariantSetParser)
+
+        addFeatureSetParser = addSubparser(
+            subparsers, "add-featureset", "Add a feature set to the data repo")
+        addFeatureSetParser.set_defaults(runner="addFeatureSet")
+        cls.addRepoArgument(addFeatureSetParser)
+        cls.addDatasetNameArgument(addFeatureSetParser)
+        cls.addFilePathArgument(
+            addFeatureSetParser,
+            "The path to the converted SQLite database containing Feature "
+            "data")
+        cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
+        cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
+
+        removeFeatureSetParser = addSubparser(
+            subparsers, "remove-featureset",
+            "Remove a feature set from the repo")
+        removeFeatureSetParser.set_defaults(runner="removeFeatureSet")
+        cls.addRepoArgument(removeFeatureSetParser)
+        cls.addDatasetNameArgument(removeFeatureSetParser)
+        cls.addFeatureSetNameArgument(removeFeatureSetParser)
+        cls.addForceOption(removeFeatureSetParser)
+
+        return parser
+
+    @classmethod
+    def runCommand(cls, args):
+        parser = cls.getParser()
+        parsedArgs = parser.parse_args(args)
+        if "runner" not in parsedArgs:
+            parser.print_help()
+        manager = RepoManager(parsedArgs)
+        runMethod = getattr(manager, parsedArgs.runner)
+        runMethod()
 
 
-def addRepoArgument(subparser):
-    subparser.add_argument(
-        "repoPath", help="the file path of the data repository")
+def getRepoManagerParser():
+    """
+    Used by sphinx.argparse.
+    """
+    return RepoManager.getParser()
 
 
-def addForceArgument(subparser):
-    subparser.add_argument(
-        "-f", "--force", action='store_true',
-        default=False, help="do not prompt for confirmation")
-
-
-def addDatasetNameArgument(subparser):
-    subparser.add_argument(
-        "datasetName", help="the name of the dataset to create/modify")
-
-
-def addReadGroupSetNameArgument(subparser):
-    subparser.add_argument(
-        "readGroupSetName",
-        help="the name of the read group set")
-
-
-def addVariantSetNameArgument(subparser):
-    subparser.add_argument(
-        "variantSetName",
-        help="the name of the variant set")
-
-
-def addFilePathArgument(subparser):
-    subparser.add_argument(
-        "filePath", help="the path of the file to be moved into the repo")
-
-
-def addMoveModeArgument(subparser):
-    subparser.add_argument(
-        "--moveMode",
-        help="move, copy or link the target file (default link)",
-        choices=['move', 'copy', 'link'],
-        default='link')
-
-
-def addReferenceSetMetadataArguments(subparser):
-    subparser.add_argument(
-        "--description",
-        help="description of the reference set",
-        default="TODO")
-
-
-def getRepoParser():
-    parser = argparse.ArgumentParser(
-        description="GA4GH data repository management tool")
-    subparsers = parser.add_subparsers(title='subcommands',)
-    parser.add_argument(
-        "--loud", default=False, action="store_true",
-        help="propagate exceptions from RepoManager")
-
-    initParser = addSubparser(
-        subparsers, "init", "Initialize a data repository")
-    initParser.set_defaults(runner=InitRunner)
-    addRepoArgument(initParser)
-
-    checkParser = addSubparser(
-        subparsers, "check", "Check to see if repo is well-formed")
-    checkParser.set_defaults(runner=CheckRunner)
-    addRepoArgument(checkParser)
-
-    listParser = addSubparser(
-        subparsers, "list", "List the contents of the repo")
-    listParser.set_defaults(runner=ListRunner)
-    addRepoArgument(listParser)
-
-    destroyParser = addSubparser(
-        subparsers, "destroy", "Destroy the repo")
-    destroyParser.set_defaults(runner=DestroyRunner)
-    addRepoArgument(destroyParser)
-    addForceArgument(destroyParser)
-
-    addDatasetParser = addSubparser(
-        subparsers, "add-dataset", "Add a dataset to the data repo")
-    addDatasetParser.set_defaults(runner=AddDatasetRunner)
-    addRepoArgument(addDatasetParser)
-    addDatasetNameArgument(addDatasetParser)
-
-    removeDatasetParser = addSubparser(
-        subparsers, "remove-dataset",
-        "Remove a dataset from the data repo")
-    removeDatasetParser.set_defaults(runner=RemoveDatasetRunner)
-    addRepoArgument(removeDatasetParser)
-    addDatasetNameArgument(removeDatasetParser)
-    addForceArgument(removeDatasetParser)
-
-    addReferenceSetParser = addSubparser(
-        subparsers, "add-referenceset",
-        "Add a reference set to the data repo")
-    addReferenceSetParser.set_defaults(runner=AddReferenceSetRunner)
-    addRepoArgument(addReferenceSetParser)
-    addFilePathArgument(addReferenceSetParser)
-    addMoveModeArgument(addReferenceSetParser)
-    addReferenceSetMetadataArguments(addReferenceSetParser)
-
-    removeReferenceSetParser = addSubparser(
-        subparsers, "remove-referenceset",
-        "Remove a reference set from the repo")
-    removeReferenceSetParser.set_defaults(runner=RemoveReferenceSetRunner)
-    addRepoArgument(removeReferenceSetParser)
-    removeReferenceSetParser.add_argument(
-        "referenceSetName",
-        help="the name of the reference set")
-    addForceArgument(removeReferenceSetParser)
-
-    addReadGroupSetParser = addSubparser(
-        subparsers, "add-readgroupset",
-        "Add a read group set to the data repo")
-    addReadGroupSetParser.set_defaults(runner=AddReadGroupSetRunner)
-    addRepoArgument(addReadGroupSetParser)
-    addDatasetNameArgument(addReadGroupSetParser)
-    addFilePathArgument(addReadGroupSetParser)
-    addMoveModeArgument(addReadGroupSetParser)
-
-    removeReadGroupSetParser = addSubparser(
-        subparsers, "remove-readgroupset",
-        "Remove a read group set from the repo")
-    removeReadGroupSetParser.set_defaults(runner=RemoveReadGroupSetRunner)
-    addRepoArgument(removeReadGroupSetParser)
-    addDatasetNameArgument(removeReadGroupSetParser)
-    addReadGroupSetNameArgument(removeReadGroupSetParser)
-    addForceArgument(removeReadGroupSetParser)
-
-    addVariantSetParser = addSubparser(
-        subparsers, "add-variantset", "Add a variant set to the data repo")
-    addVariantSetParser.set_defaults(runner=AddVariantSetRunner)
-    addRepoArgument(addVariantSetParser)
-    addDatasetNameArgument(addVariantSetParser)
-    addFilePathArgument(addVariantSetParser)
-    addMoveModeArgument(addVariantSetParser)
-
-    removeVariantSetParser = addSubparser(
-        subparsers, "remove-variantset",
-        "Remove a variant set from the repo")
-    removeVariantSetParser.set_defaults(runner=RemoveVariantSetRunner)
-    addRepoArgument(removeVariantSetParser)
-    addDatasetNameArgument(removeVariantSetParser)
-    addVariantSetNameArgument(removeVariantSetParser)
-    addForceArgument(removeVariantSetParser)
-
-    return parser
+def repoExitError(message):
+    """
+    Exits the repo manager with error status.
+    """
+    wrapper = textwrap.TextWrapper(
+        break_on_hyphens=False, break_long_words=False)
+    formatted = wrapper.fill("{}: error: {}".format(sys.argv[0], message))
+    sys.exit(formatted)
 
 
 def repo_main(args=None):
-    parser = getRepoParser()
-    parsedArgs = parser.parse_args(args)
-    if "runner" not in parsedArgs:
-        parser.print_help()
-    else:
-        runner = parsedArgs.runner(parsedArgs)
-        try:
-            runner.run()
-        except exceptions.RepoManagerException as exception:
-            print(exception.message)
-            if parsedArgs.loud:
-                raise
+    try:
+        RepoManager.runCommand(args)
+    except exceptions.RepoManagerException as exception:
+        # These are exceptions that happen throughout the CLI, and are
+        # used to communicate back to the user
+        repoExitError(str(exception))
+    except exceptions.NotFoundException as exception:
+        # We expect NotFoundExceptions to occur when we're looking for
+        # datasets, readGroupsets, etc.
+        repoExitError(str(exception))
+    except exceptions.DataException as exception:
+        # We expect DataExceptions to occur when a file open fails,
+        # a URL cannot be reached, etc.
+        repoExitError(str(exception))
+    except Exception as exception:
+        # Uncaught exception: this is a bug
+        message = """
+An internal error has occurred.  Please file a bug report at
+https://github.com/ga4gh/server/issues
+with all the relevant details, and the following stack trace.
+"""
+        print("{}: error:".format(sys.argv[0]), file=sys.stderr)
+        print(message, file=sys.stderr)
+        traceback.print_exception(*sys.exc_info())
+        sys.exit(1)
