@@ -899,9 +899,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann.variant_id = variant.id
         ann.create_date_time = self._creationTime
         # make a transcript effect for each alternate base element
-        # multiplied by a random integer (0,5)
-
-        for i in xrange(randomNumberGenerator.randint(0, 5)):
+        # multiplied by a random integer (1,5)
+        for i in range(randomNumberGenerator.randint(1, 5)):
             for base in variant.alternate_bases:
                 ann.transcript_effects.add().CopyFrom(
                     self.generateTranscriptEffect(

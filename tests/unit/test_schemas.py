@@ -71,17 +71,20 @@ class SearchResponseBuilderTest(unittest.TestCase):
             valueList = getattr(instance, getValueListName(responseClass))
             self.assertEqual(len(valueList), pageSize)
 
-    def testMaxResponseLengthOverridesPageSize(self):
+    def testMaxBufferSizeOverridesPageSize(self):
         responseClass = protocol.SearchVariantsResponse
-        valueClass = protocol.Variant
-        typicalValue = valueClass()
-        typicalValueLength = len(protocol.toJson(typicalValue))
+        typicalValue = protocol.Variant()
+        # We have to put some values in here or it will have zero length.
+        typicalValue.start = 1
+        typicalValue.end = 2
+        typicalValue.reference_bases = "AAAAAAAA"
+        typicalValueLength = typicalValue.ByteSize()
         for numValues in range(1, 10):
-            maxResponseLength = numValues * typicalValueLength
+            maxBufferSize = numValues * typicalValueLength
             builder = protocol.SearchResponseBuilder(
-                responseClass, 1000, maxResponseLength)
+                responseClass, 1000, maxBufferSize)
             self.assertEqual(
-                maxResponseLength, builder.getMaxResponseLength())
+                maxBufferSize, builder.getMaxBufferSize())
             while not builder.isFull():
                 builder.addValue(typicalValue)
             instance = protocol.fromJson(builder.getSerializedResponse(),
