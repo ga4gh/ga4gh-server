@@ -42,6 +42,10 @@ class CallSet(datamodel.DatamodelObject):
     """
     compoundIdClass = datamodel.CallSetCompoundId
 
+    def __init__(self, parentContainer, localId):
+        super(CallSet, self).__init__(parentContainer, localId)
+        self._info = {}
+
     def populateFromRow(self, row):
         """
         Populates this CallSet from the specified DB row.
@@ -63,6 +67,8 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.name = self.getLocalId()
         gaCallSet.sample_id = self.getLocalId()
         gaCallSet.variant_set_ids.append(variantSet.getId())
+        for key in self._info:
+            gaCallSet.info[key].values.extend(_encodeValue(self._info[key]))
         return gaCallSet
 
     def getSampleName(self):
@@ -70,6 +76,12 @@ class CallSet(datamodel.DatamodelObject):
         Returns the sample name for this CallSet.
         """
         return self.getLocalId()
+
+    def getInfo(self):
+        """
+        Returns info map for this CallSet
+        """
+        return self._info
 
 
 class AbstractVariantSet(datamodel.DatamodelObject):
@@ -87,6 +99,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._creationTime = None
         self._updatedTime = None
         self._referenceSet = None
+        self._metadata = []
         self._variantAnnotationSetIds = []
         self._variantAnnotationSetIdMap = {}
 
@@ -205,6 +218,12 @@ class AbstractVariantSet(datamodel.DatamodelObject):
             raise exceptions.CallSetNotFoundException(id_)
         return self._callSetIdMap[id_]
 
+    def getMetadata(self):
+        """
+        Returns Metdata associated with this VariantSet
+        """
+        return self._metadata
+
     def toProtocolElement(self):
         """
         Converts this VariantSet into its GA4GH protocol equivalent.
@@ -217,9 +236,6 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.name = self.getLocalId()
-        for metadata in self.getMetadata():
-            newValue = protocolElement.metadata.add()
-            newValue.CopyFrom(metadata)
         return protocolElement
 
     def getNumVariants(self):
@@ -284,20 +300,51 @@ class SimulatedVariantSet(AbstractVariantSet):
         self._referenceSet = referenceSet
         self._randomSeed = randomSeed
         self._numCalls = numCalls
-        for j in range(numCalls):
-            self.addCallSetFromName("simCallSet_{}".format(j))
+        for i in range(numCalls):
+            callSetName = "simCallSet_{}".format(i)
+            self.addCallSetFromName(callSetName)
+            callSet = self.getCallSetByName(callSetName)
+            # build up infos of increasing size
+            for j in range(i):
+                callSet._info["key_{}".format(j)] = "value_{}".format(j)
         self._variantDensity = variantDensity
+        self._metadata = self._createMetaData()
         now = protocol.convertDatetime(datetime.datetime.now())
         self._creationTime = now
         self._updatedTime = now
 
+    def _createMetaData(self):
+        metadata_1 = protocol.VariantSetMetadata()
+        metadata_1.key = "version"
+        metadata_1.value = "VCFv4.1"
+        metadata_1.type = "String"
+        metadata_1.number = "1"
+        metadata_1.description = ""
+        metadata_1.id = str(datamodel.VariantSetMetadataCompoundId(
+            self.getCompoundId(), 'metadata:' + metadata_1.key))
+
+        metadata_2 = protocol.VariantSetMetadata()
+        metadata_2.key = "INFO.FIELD1"
+        metadata_2.value = ""
+        metadata_2.type = "String"
+        metadata_2.number = ""
+        metadata_2.description = "FIELD1 description"
+        metadata_2.id = str(datamodel.VariantSetMetadataCompoundId(
+            self.getCompoundId(), 'metadata:' + metadata_2.key))
+
+        metadata_3 = protocol.VariantSetMetadata()
+        metadata_3.key = "INFO.FIELD2"
+        metadata_3.value = ""
+        metadata_3.type = "Integer"
+        metadata_3.number = "1"
+        metadata_3.description = "FIELD2 description"
+        metadata_3.id = str(datamodel.VariantSetMetadataCompoundId(
+            self.getCompoundId(), 'metadata:' + metadata_3.key))
+
+        return [metadata_1, metadata_2, metadata_3]
+
     def getNumVariants(self):
         return 0
-
-    def getMetadata(self):
-        ret = []
-        # TODO Add simulated metadata.
-        return ret
 
     def getVariant(self, compoundId):
         randomNumberGenerator = random.Random()
@@ -675,9 +722,6 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         for record in self.getPysamVariants(
                 referenceName, startPosition, endPosition):
             yield self.convertVariant(record, callSetIds)
-
-    def getMetadata(self):
-        return self._metadata
 
     def getMetadataId(self, metadata):
         """
