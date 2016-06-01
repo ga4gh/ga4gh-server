@@ -59,8 +59,8 @@ Now we can download some example data, which we'll use for our demo:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.1.tar
-    (ga4gh-env) $ tar -xvf ga4gh-example-data-v4.1.tar
+    (ga4gh-env) $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.2.tar
+    (ga4gh-env) $ tar -xvf ga4gh-example-data-v4.2.tar
 
 After extracting the data, we can then run the ``ga4gh_server`` application:
 
