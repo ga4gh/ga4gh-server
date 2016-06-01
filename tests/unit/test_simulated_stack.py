@@ -635,7 +635,6 @@ class TestSimulatedStack(unittest.TestCase):
 
         request.effects.add().id = "ThisIsNotAnEffect"
 
-        # request.effects.extend([{"id": "ThisIsNotAnEffect"}])
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data, protocol.
                                          SearchVariantAnnotationsResponse)

@@ -481,12 +481,12 @@ DEFAULT_PAGE_SIZE
     this value is used.
 
 MAX_RESPONSE_LENGTH
-    The approximate maximum size of a response sent to a client in bytes. This
-    is used to control the amount of memory that the server uses when
-    creating responses. When a client makes a search request with a given
+    The approximate maximum size of the server buffer used when creating
+    responses. This is somewhat smaller than the size of the JSON response
+    returned to the client. When a client makes a search request with a given
     page size, the server will process this query and incrementally build
     a response until (a) the number of values in the page list is equal
-    to the page size; (b) the size of the serialised response in bytes
+    to the page size; (b) the size of the internal buffer in bytes
     is >= MAX_RESPONSE_LENGTH; or (c) there are no more results left in the
     query.
 

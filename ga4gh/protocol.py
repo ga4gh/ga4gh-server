@@ -120,21 +120,22 @@ class SearchResponseBuilder(object):
     """
     A class to allow sequential building of SearchResponse objects.
     """
-    def __init__(self, responseClass, pageSize, maxResponseLength):
+    def __init__(self, responseClass, pageSize, maxBufferSize):
         """
         Allocates a new SearchResponseBuilder for the specified
         responseClass, user-requested pageSize and the system mandated
-        maxResponseLength (in bytes). The maxResponseLength is an
+        maxBufferSize (in bytes). The maxBufferSize is an
         approximate limit on the overall length of the serialised
         response.
         """
         self._responseClass = responseClass
         self._pageSize = pageSize
-        self._maxResponseLength = maxResponseLength
+        self._maxBufferSize = maxBufferSize
         self._numElements = 0
         self._nextPageToken = None
         self._protoObject = responseClass()
         self._valueListName = getValueListName(responseClass)
+        self._bufferSize = self._protoObject.ByteSize()
 
     def getPageSize(self):
         """
@@ -144,14 +145,13 @@ class SearchResponseBuilder(object):
         """
         return self._pageSize
 
-    def getMaxResponseLength(self):
+    def getMaxBufferSize(self):
         """
-        Returns the approximate maximum response length. More precisely,
-        this is the total length (in bytes) of the concatenated JSON
-        representations of the values in the value list after which
-        we consider the buffer to be full.
+        Returns the maximum internal buffer size for responses, which
+        corresponds to total length (in bytes) of the serialised protobuf
+        objects. This will always be less than the size of JSON output.
         """
-        return self._maxResponseLength
+        return self._maxBufferSize
 
     def getNextPageToken(self):
         """
@@ -172,34 +172,24 @@ class SearchResponseBuilder(object):
         response.
         """
         self._numElements += 1
+        self._bufferSize += protocolElement.ByteSize()
         attr = getattr(self._protoObject, self._valueListName)
         obj = attr.add()
         obj.CopyFrom(protocolElement)
-
-    def getResponseLength(self):
-        """
-        As the response form is JSON, we need to convert to JSON before getting
-        the length. The length of the _protoObject itself would be incorrect
-        """
-        return len(toJson(self._protoObject))
 
     def isFull(self):
         """
         Returns True if the response buffer is full, and False otherwise.
         The buffer is full if either (1) the number of items in the value
         list is >= pageSize or (2) the total length of the serialised
-        elements in the page is >= maxResponseLength.
+        elements in the page is >= maxBufferSize.
 
         If page_size or max_response_length were not set in the request
         then they're not checked.
         """
-
         return (
             (self._pageSize > 0 and self._numElements >= self._pageSize) or
-            # We check _maxResponseLength first as getResponseLength is
-            # expensive and Python lazy evaluates "and" operations
-            (self._maxResponseLength > 0 and
-             self.getResponseLength() >= self._maxResponseLength)
+            (self._bufferSize >= self._maxBufferSize)
         )
 
     def getSerializedResponse(self):
