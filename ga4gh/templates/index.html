@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
     <head>
         <title>GA4GH reference server {{ info.getServerVersion()}}</title>
@@ -20,8 +21,10 @@
         <div>
             <h3>Operations available</h3>
             <table class="table table-striped">
-                <th>Method</th>
-                <th>Path</th>
+                <tr>
+                    <th>Method</th>
+                    <th>Path</th>
+                </tr>
                 {% for url in info.getUrls() %}
                 <tr>
                     <td>{{ url[0] }}</td>
@@ -37,8 +40,10 @@
         <div>
             <h3>Configuration</h3>
             <table class="table table-striped">
-                <th>Key</th>
-                <th>Value</th>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                </tr>
                 {% for key, value in info.getConfiguration() %}
                 <tr>
                     <td>{{ key }}</td>
@@ -52,10 +57,12 @@
 
             <h4>ReferenceSets</h4>
             <table class="table table-striped">
-                <th>Name</th>
-                <th>Id</th>
-                <th>Reference Name</th>
-                <th>Reference Id</th>
+                <tr>
+                    <th>Name</th>
+                    <th>Id</th>
+                    <th>Reference Name</th>
+                    <th>Reference Id</th>
+                </tr>
                 {% for referenceSet in info.getReferenceSets() %}
                 <tr>
                     <td>{{ referenceSet.getLocalId() }}</td>
@@ -78,8 +85,10 @@
             <h4>Dataset name: {{ dataset.getLocalId() }} id: {{ dataset.getId() }}</h4>
                 <h6>VariantSets</h6>
                 <table class="table table-striped">
-                    <th>Name</th>
-                    <th>Id</th>
+                    <tr>
+                        <th>Name</th>
+                        <th>Id</th>
+                    </tr>
                     {% for variantSet in info.getVariantSets(dataset.getId()) %}
                     <tr>
                         <td>{{ variantSet.getLocalId() }}</td>
@@ -89,8 +98,10 @@
                 </table>
                 <h6>VariantAnnotationSets</h6>
                 <table class="table table-striped">
-                    <th>Name</th>
-                    <th>Id</th>
+                    <tr>
+                        <th>Name</th>
+                        <th>Id</th>
+                    </tr>
                     {% for variantAnnotationSet in info.getVariantAnnotationSets(dataset.getId()) %}
                     <tr>
                         <td>{{ variantAnnotationSet.getLocalId() }}</td>
@@ -100,8 +111,10 @@
                 </table>
              <h6>FeatureSets</h6>
                 <table class="table table-striped">
-                    <th>Name</th>
-                    <th>Id</th>
+                    <tr>
+                        <th>Name</th>
+                        <th>Id</th>
+                    </tr>
                     {% for featureSet in info.getFeatureSets(dataset.getId()) %}
                     <tr>
                         <td>{{ featureSet.getLocalId() }}</td>
@@ -111,10 +124,12 @@
                 </table>
                 <h6>ReadGroupSets</h6>
                 <table class="table table-striped">
-                    <th>Name</th>
-                    <th>Id</th>
-                    <th>ReadGroup Name</th>
-                    <th>ReadGroup Id</th>
+                    <tr>
+                        <th>Name</th>
+                        <th>Id</th>
+                        <th>ReadGroup Name</th>
+                        <th>ReadGroup Id</th>
+                    </tr>
                     {% for readGroupSet in info.getReadGroupSets(dataset.getId())%}
                     <tr>
                         <td>{{ readGroupSet.getLocalId() }}</td>
