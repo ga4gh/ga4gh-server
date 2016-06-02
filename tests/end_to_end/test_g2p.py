@@ -6,6 +6,7 @@ import unittest
 
 import ga4gh.protocol as protocol
 import ga4gh.frontend as frontend
+import tests.paths as paths
 
 
 class TestG2P(unittest.TestCase):
@@ -15,7 +16,7 @@ class TestG2P(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config = {
-            "DATA_SOURCE": "tests/data",
+            "DATA_SOURCE": paths.testDataRepo,
             # "DEBUG": True
         }
         frontend.reset()
