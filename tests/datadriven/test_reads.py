@@ -156,10 +156,10 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             gaReadGroup = readGroup.toProtocolElement()
             self.assertEqual(
                 readGroupInfo.sampleId,
-                gaReadGroup.sampleId)
+                gaReadGroup.sample_id)
             self.assertEqual(
                 readGroupInfo.predictedInsertSize,
-                gaReadGroup.predictedInsertSize)
+                gaReadGroup.predicted_insert_size)
             self.assertEqual(
                 readGroupInfo.description,
                 gaReadGroup.description)
@@ -175,10 +175,10 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 datamodel.CompoundId.deobfuscate(gaReadGroup.experiment.id))
             self.assertEqual(
                 readGroupInfo.instrumentModel,
-                gaReadGroup.experiment.instrumentModel)
+                gaReadGroup.experiment.instrument_model)
             self.assertEqual(
                 readGroupInfo.sequencingCenter,
-                gaReadGroup.experiment.sequencingCenter)
+                gaReadGroup.experiment.sequencing_center)
             self.assertEqual(
                 readGroupInfo.experimentDescription,
                 gaReadGroup.experiment.description)
@@ -187,10 +187,10 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 gaReadGroup.experiment.library)
             self.assertEqual(
                 readGroupInfo.platformUnit,
-                gaReadGroup.experiment.platformUnit)
+                gaReadGroup.experiment.platform_unit)
             self.assertEqual(
                 readGroupInfo.runTime,
-                gaReadGroup.experiment.runTime)
+                gaReadGroup.experiment.run_time)
 
     def testPrograms(self):
         # test that program info is set correctly
@@ -204,11 +204,11 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 self.assertEqual(
                     gaProgram.id, htslibProgram.get('ID'))
                 self.assertEqual(
-                    gaProgram.commandLine, htslibProgram.get('CL', None))
+                    gaProgram.command_line, htslibProgram.get('CL', None))
                 self.assertEqual(
                     gaProgram.name, htslibProgram.get('PN', None))
                 self.assertEqual(
-                    gaProgram.prevProgramId, htslibProgram.get('PP', None))
+                    gaProgram.prev_program_id, htslibProgram.get('PP', None))
                 self.assertEqual(
                     gaProgram.version, htslibProgram.get('VN', None))
 
@@ -224,10 +224,10 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             readGroupSet.getNumUnalignedReads(),
             readGroupSetInfo.numUnalignedReads)
         self.assertEqual(
-            gaReadGroupSet.stats.alignedReadCount,
+            gaReadGroupSet.stats.aligned_read_count,
             readGroupSetInfo.numAlignedReads)
         self.assertEqual(
-            gaReadGroupSet.stats.unalignedReadCount,
+            gaReadGroupSet.stats.unaligned_read_count,
             readGroupSetInfo.numUnalignedReads)
         for readGroup in readGroupSet.getReadGroups():
             gaReadGroup = readGroup.toProtocolElement()
@@ -236,22 +236,20 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self.assertEqual(
                 readGroup.getNumUnalignedReads(), -1)
             self.assertEqual(
-                gaReadGroup.stats.alignedReadCount, -1)
+                gaReadGroup.stats.aligned_read_count, -1)
             self.assertEqual(
-                gaReadGroup.stats.unalignedReadCount, -1)
+                gaReadGroup.stats.unaligned_read_count, -1)
 
     def testValidateObjects(self):
         # test that validation works on read groups and reads
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
-            self.assertValid(
-                protocol.ReadGroup,
-                readGroup.toProtocolElement().toJsonDict())
+            self.assertIsInstance(
+                readGroup.toProtocolElement(), protocol.ReadGroup)
             for reference in self._referenceSet.getReferences():
                 for gaAlignment in readGroup.getReadAlignments(reference):
-                    self.assertValid(
-                        protocol.ReadAlignment,
-                        gaAlignment.toJsonDict())
+                    self.assertIsInstance(
+                        gaAlignment, protocol.ReadAlignment)
 
     def testGetReadAlignmentsRefId(self):
         # test that searching with a reference id succeeds
@@ -314,26 +312,31 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self.assertAlignmentsEqual(
                 gaAlignment, pysamAlignment, readGroupInfo)
 
+    def getDictFromMessageMap(self, messageMap):
+        return dict([
+            (k, [protocol.getValueFromValue(x) for x in v.values])
+            for (k, v) in messageMap._values.items()])
+
     def assertAlignmentsEqual(self, gaAlignment, pysamAlignment,
                               readGroupInfo):
         if pysamAlignment.query_qualities is None:
-            self.assertEqual(gaAlignment.alignedQuality, [])
+            self.assertEqual(gaAlignment.aligned_quality, [])
         else:
             self.assertEqual(
-                gaAlignment.alignedQuality,
+                gaAlignment.aligned_quality,
                 list(pysamAlignment.query_qualities))
         self.assertEqual(
-            gaAlignment.alignedSequence,
+            gaAlignment.aligned_sequence,
             pysamAlignment.query_sequence)
         if reads.SamFlags.isFlagSet(
                 pysamAlignment.flag, reads.SamFlags.READ_UNMAPPED):
-            self.assertIsNone(gaAlignment.alignment)
+            self.assertEqual(0, gaAlignment.alignment.ByteSize())
         else:
             self.assertEqual(
-                gaAlignment.alignment.mappingQuality,
+                gaAlignment.alignment.mapping_quality,
                 pysamAlignment.mapping_quality)
             self.assertEqual(
-                gaAlignment.alignment.position.referenceName,
+                gaAlignment.alignment.position.reference_name,
                 readGroupInfo.samFile.getrname(pysamAlignment.reference_id))
             self.assertEqual(
                 gaAlignment.alignment.position.position,
@@ -344,64 +347,64 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
                 gaAlignment.alignment.cigar,
                 pysamAlignment.cigar)
         self.assertFlag(
-            gaAlignment.duplicateFragment,
+            gaAlignment.duplicate_fragment,
             pysamAlignment, reads.SamFlags.DUPLICATE_READ)
         self.assertFlag(
-            gaAlignment.failedVendorQualityChecks,
+            gaAlignment.failed_vendor_quality_checks,
             pysamAlignment, reads.SamFlags.FAILED_QUALITY_CHECK)
         self.assertEqual(
-            gaAlignment.fragmentLength,
+            gaAlignment.fragment_length,
             pysamAlignment.template_length)
         self.assertEqual(
-            gaAlignment.fragmentName,
+            gaAlignment.fragment_name,
             pysamAlignment.query_name)
         compoundId = datamodel.ReadAlignmentCompoundId(
             self._gaObject.getCompoundId(),
             pysamAlignment.query_name)
         self.assertEqual(gaAlignment.id, str(compoundId))
         self.assertEqual(
-            gaAlignment.info,
+            self.getDictFromMessageMap(gaAlignment.info),
             {key: [str(value)] for key, value in pysamAlignment.tags})
         if reads.SamFlags.isFlagSet(
                 pysamAlignment.flag, reads.SamFlags.MATE_UNMAPPED):
-            self.assertIsNone(gaAlignment.nextMatePosition)
+            self.assertEqual(0, gaAlignment.next_mate_position.ByteSize())
         else:
             self.assertEqual(
-                gaAlignment.nextMatePosition.position,
+                gaAlignment.next_mate_position.position,
                 pysamAlignment.next_reference_start)
             if pysamAlignment.next_reference_id != -1:
                 self.assertEqual(
-                    gaAlignment.nextMatePosition.referenceName,
+                    gaAlignment.next_mate_position.reference_name,
                     readGroupInfo.samFile.getrname(
                         pysamAlignment.next_reference_id))
             else:
                 self.assertEqual(
-                    gaAlignment.nextMatePosition.referenceName, "")
-        if gaAlignment.numberReads == 1:
+                    gaAlignment.next_mate_position.reference_name, "")
+        if gaAlignment.number_reads == 1:
             self.assertFlag(
                 False, pysamAlignment, reads.SamFlags.READ_PAIRED)
-        elif gaAlignment.numberReads == 2:
+        elif gaAlignment.number_reads == 2:
             self.assertFlag(
                 True, pysamAlignment, reads.SamFlags.READ_PAIRED)
         else:
             # we shouldn't be setting numberReads to anything else
             self.assertTrue(False)
-        if gaAlignment.readNumber is None:
+        if gaAlignment.read_number is -1:
             self.assertFlag(
                 False, pysamAlignment, reads.SamFlags.FIRST_IN_PAIR)
             self.assertFlag(
                 False, pysamAlignment, reads.SamFlags.SECOND_IN_PAIR)
-        elif gaAlignment.readNumber == 0:
+        elif gaAlignment.read_number == 0:
             self.assertFlag(
                 True, pysamAlignment, reads.SamFlags.FIRST_IN_PAIR)
             self.assertFlag(
                 False, pysamAlignment, reads.SamFlags.SECOND_IN_PAIR)
-        elif gaAlignment.readNumber == 1:
+        elif gaAlignment.read_number == 1:
             self.assertFlag(
                 False, pysamAlignment, reads.SamFlags.FIRST_IN_PAIR)
             self.assertFlag(
                 True, pysamAlignment, reads.SamFlags.SECOND_IN_PAIR)
-        elif gaAlignment.readNumber == 2:
+        elif gaAlignment.read_number == 2:
             self.assertFlag(
                 True, pysamAlignment, reads.SamFlags.FIRST_IN_PAIR)
             self.assertFlag(
@@ -410,16 +413,16 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             # we shouldn't be setting readNumber to anything else
             self.assertTrue(False)
         self.assertFlag(
-            not gaAlignment.improperPlacement,
+            not gaAlignment.improper_placement,
             pysamAlignment, reads.SamFlags.READ_PROPER_PAIR)
         self.assertEqual(
-            gaAlignment.readGroupId,
+            gaAlignment.read_group_id,
             readGroupInfo.id)
         self.assertFlag(
-            gaAlignment.secondaryAlignment,
+            gaAlignment.secondary_alignment,
             pysamAlignment, reads.SamFlags.SECONDARY_ALIGNMENT)
         self.assertFlag(
-            gaAlignment.supplementaryAlignment,
+            gaAlignment.supplementary_alignment,
             pysamAlignment, reads.SamFlags.SUPPLEMENTARY_ALIGNMENT)
 
     def assertFlag(self, gaAlignmentAttr, pysamAlignment, mask):
@@ -435,4 +438,4 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self.assertEqual(
                 gaCigarUnitOperation, operation)
             self.assertEqual(
-                gaCigarUnit.operationLength, length)
+                gaCigarUnit.operation_length, length)

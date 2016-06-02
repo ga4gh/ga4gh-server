@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import hashlib
 import os
+import unittest
 
 # TODO it may be a bit circular to use pysam as our interface for
 # accessing reference information, since this is the method we use
@@ -51,10 +52,9 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         referenceSet = self._gaObject
         referenceSetPe = referenceSet.toProtocolElement()
         self.assertValid(
-            protocol.ReferenceSet, referenceSetPe.toJsonDict())
-        self.assertGreater(len(referenceSetPe.referenceIds), 0)
+            protocol.ReferenceSet, protocol.toJson(referenceSetPe))
         for gaReference in referenceSet.getReferences():
-            reference = gaReference.toProtocolElement().toJsonDict()
+            reference = protocol.toJson(gaReference.toProtocolElement())
             self.assertValid(protocol.Reference, reference)
 
     def testGetBases(self):
@@ -75,6 +75,7 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         # test searching with start and end succeeds
         self.doRangeTest(2, 5)
 
+    @unittest.skip("We assume that the 0 is unset, as protobuf3 has 0 == None")
     def testGetBasesEmpty(self):
         self.doRangeTest(0, 0)
 

@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import hashlib
 import unittest
 
 import ga4gh.protocol as protocol
@@ -56,8 +57,8 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
     def testConvertLocationHgvsC(self):
         loc = protocol.AlleleLocation()
         loc.start = 430
-        loc.referenceSequence = "T"
-        loc.alternateSequence = "A"
+        loc.reference_sequence = "T"
+        loc.alternate_sequence = "A"
         hgvsC = "NM_001005484.1:c.431T>A"
         testLoc = self._variantAnnotationSet.convertLocationHgvsC(hgvsC)
         self.assertEqual(testLoc, loc)
@@ -65,27 +66,23 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
     def testConvertLocationHgvsP(self):
         loc = protocol.AlleleLocation()
         loc.start = 143
-        loc.alternateSequence = "Asn"
-        loc.referenceSequence = "Ile"
+        loc.alternate_sequence = "Asn"
+        loc.reference_sequence = "Ile"
         hgvsP = "NM_001005484.1:p.Ile144Asn"
         testLoc = self._variantAnnotationSet.convertLocationHgvsP(hgvsP)
         self.assertEqual(testLoc, loc)
 
     def testAddLocations(self):
         effect = protocol.TranscriptEffect()
-        effect.hgvsAnnotation = protocol.HGVSAnnotation()
-        effect.hgvsAnnotation.protein = "NM_001005484.1:p.Ile144Asn"
-        effect.hgvsAnnotation.transcript = "NM_001005484.1:c.431T>A"
-        effect.proteinLocation = protocol.AlleleLocation()
-        effect.cDNALocation = protocol.AlleleLocation()
-        effect.CDSLocation = protocol.AlleleLocation()
-        effect.proteinLocation.alternateSequence = "Asn"
-        effect.proteinLocation.referenceSequence = "Ile"
-        effect.proteinLocation.start = 143
-        effect.CDSLocation.alternateSequence = "A"
-        effect.CDSLocation.referenceSequence = "T"
-        effect.CDSLocation.start = 430
-        effect.cDNALocation.start = 430
+        effect.hgvs_annotation.protein = "NM_001005484.1:p.Ile144Asn"
+        effect.hgvs_annotation.transcript = "NM_001005484.1:c.431T>A"
+        effect.protein_location.alternate_sequence = "Asn"
+        effect.protein_location.reference_sequence = "Ile"
+        effect.protein_location.start = 143
+        effect.cds_location.alternate_sequence = "A"
+        effect.cds_location.reference_sequence = "T"
+        effect.cds_location.start = 430
+        effect.cdna_location.start = 430
         protPos = "144/305"
         cdnaPos = "431/918"
         testEffect = self._variantAnnotationSet.addLocations(
@@ -95,14 +92,13 @@ class TestHtslibVariantAnnotationSet(unittest.TestCase):
     def testHashVariantAnnotation(self):
         annotation = protocol.VariantAnnotation()
         variant = protocol.Variant()
-        expected = 'bec63dc7c876bb3c7b71422203b101d1'
+        expected = hashlib.md5('\t()\t[]\t').hexdigest()
         hashed = self._variantAnnotationSet.hashVariantAnnotation(
             variant, annotation)
         self.assertEqual(hashed, expected)
 
     def testGetTranscriptEffectId(self):
         effect = protocol.TranscriptEffect()
-        effect.effects = []
-        expected = '0e276f9254895cdeab4b0ec462b42117'
+        expected = hashlib.md5("\t\t[]\t").hexdigest()
         hashed = self._variantAnnotationSet.getTranscriptEffectId(effect)
         self.assertEqual(hashed, expected)

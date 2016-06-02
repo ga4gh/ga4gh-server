@@ -13,6 +13,7 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
 import ga4gh.sqliteBackend as sqliteBackend
 import ga4gh.exceptions as exceptions
+import ga4gh.pb as pb
 
 # Note to self: There's the Feature ID as understood in a GFF3 file,
 # the Feature ID that is its server-assigned compoundId, and the
@@ -163,7 +164,7 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         self._name = localId
         self._sourceUri = ""
         self._referenceSet = None
-        self._attributes = protocol.Attributes()
+        self._info = {}
 
     def getReferenceSet(self):
         """
@@ -185,11 +186,12 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         """
         gaFeatureSet = protocol.FeatureSet()
         gaFeatureSet.id = self.getId()
-        gaFeatureSet.datasetId = self.getParentContainer().getId()
-        gaFeatureSet.referenceSetId = self._referenceSet.getId()
+        gaFeatureSet.dataset_id = self.getParentContainer().getId()
+        gaFeatureSet.reference_set_id = pb.string(self._referenceSet.getId())
         gaFeatureSet.name = self._name
-        gaFeatureSet.sourceUri = self._sourceUri
-        gaFeatureSet.attributes = self._attributes
+        gaFeatureSet.source_uri = self._sourceUri
+        for key in self._info:
+            gaFeatureSet.info[key].values.extend(self._info[key])
         return gaFeatureSet
 
     def getCompoundIdForFeatureId(self, featureId):
@@ -223,26 +225,27 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         term = protocol.OntologyTerm()
         ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
         term.term, term.id = ontologyTuple[0], ontologyTuple[1]
-        term.sourceName = "sequenceOntology"
-        term.sourceVersion = "0"
+        term.source_name = "sequenceOntology"
+        term.source_version = "0"
         return term
 
     def _generateSimulatedFeature(self, randomNumberGenerator):
         feature = protocol.Feature()
-        feature.featureSetId = self.getId()
+        feature.feature_set_id = self.getId()
         feature.start = randomNumberGenerator.randint(1000, 2000)
         feature.end = feature.start + randomNumberGenerator.randint(1, 100)
-        feature.featureType = self._getRandomfeatureType(
-            randomNumberGenerator)
+        feature.feature_type.CopyFrom(self._getRandomfeatureType(
+            randomNumberGenerator))
         references = ["chr1", "chr2", "chrX"]
-        feature.referenceName = randomNumberGenerator.choice(references)
-        strands = [protocol.Strand.POS_STRAND, protocol.Strand.NEG_STRAND]
+        feature.reference_name = randomNumberGenerator.choice(references)
+        strands = [protocol.POS_STRAND, protocol.NEG_STRAND]
         feature.strand = randomNumberGenerator.choice(strands)
-        feature.attributes = protocol.Attributes()
-        feature.attributes.vals = {
-            "gene_name": ["Frances", ],
-            "gene_type": ["mRNA", ],
-            "gene_status": ["UNKNOWN", ]}
+        attributes = {
+            "gene_name": "Frances",
+            "gene_type": "mRNA",
+            "gene_status": "UNKNOWN"}
+        for key, value in attributes.items():
+            feature.attributes.vals[key].values.add().string_value = value
         return feature
 
     def getFeature(self, compoundId):
@@ -261,7 +264,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         randomNumberGenerator.seed(self._randomSeed)
         feature = self._generateSimulatedFeature(randomNumberGenerator)
         feature.id = str(compoundId)
-        feature.parentId = ""  # TODO: Test with nonempty parentIDs?
+        feature.parent_id = ""  # TODO: Test with nonempty parentIDs?
         return feature
 
     def getFeatures(
@@ -285,7 +288,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         """
         randomNumberGenerator = random.Random()
         randomNumberGenerator.seed(self._randomSeed)
-        if pageToken is not None:
+        if pageToken:
             nextPageToken = int(pageToken)
         else:
             nextPageToken = 0
@@ -295,11 +298,11 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             match = (
                 gaFeature.start < end and
                 gaFeature.end > start and
-                gaFeature.referenceName == referenceName and (
+                gaFeature.reference_name == referenceName and (
                     featureTypes is None or len(featureTypes) == 0 or
-                    gaFeature.featureType in featureTypes))
+                    gaFeature.feature_type in featureTypes))
             if match:
-                gaFeature.parentId = ""  # TODO: Test nonempty parentIDs?
+                gaFeature.parent_id = ""  # TODO: Test nonempty parentIDs?
                 if nextPageToken < numFeatures - 1:
                     nextPageToken += 1
                 else:
@@ -382,25 +385,29 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         gaFeature = protocol.Feature()
         gaFeature.id = self.getCompoundIdForFeatureId(feature['id'])
         if feature.get('parent_id'):
-            gaFeature.parentId = self.getCompoundIdForFeatureId(
+            gaFeature.parent_id = self.getCompoundIdForFeatureId(
                     feature['parent_id'])
         else:
-            gaFeature.parentId = ""
-        gaFeature.featureSetId = self.getId()
-        gaFeature.referenceName = feature['reference_name']
+            gaFeature.parent_id = ""
+        gaFeature.feature_set_id = self.getId()
+        gaFeature.reference_name = feature['reference_name']
         gaFeature.start = int(feature['start'])
         gaFeature.end = int(feature['end'])
         if feature.get('strand', '') == '-':
-            gaFeature.strand = protocol.Strand.NEG_STRAND
+            gaFeature.strand = protocol.NEG_STRAND
         else:
             # default to positive strand
-            gaFeature.strand = protocol.Strand.POS_STRAND
-        gaFeature.childIds = map(
+            gaFeature.strand = protocol.POS_STRAND
+        gaFeature.child_ids.extend(map(
                 self.getCompoundIdForFeatureId,
-                json.loads(feature['child_ids']))
-        gaFeature.featureType = self._ontology.getGaTermByName(feature['type'])
-        gaFeature.attributes = protocol.Attributes()
-        gaFeature.attributes.vals = json.loads(feature['attributes'])
+                json.loads(feature['child_ids'])))
+        gaFeature.feature_type.CopyFrom(
+            self._ontology.getGaTermByName(feature['type']))
+        attributes = json.loads(feature['attributes'])
+        # TODO: Identify which values are ExternalIdentifiers and OntologyTerms
+        for key in attributes:
+            for v in attributes[key]:
+                gaFeature.attributes.vals[key].values.add().string_value = v
         return gaFeature
 
     def getFeatures(self, referenceName, start, end,
@@ -439,7 +446,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
 
         # pagination logic: None if last feature was returned,
         # else 1 + row number being returned (starting at row 0).
-        if pageToken is not None:
+        if pageToken:
             nextPageToken = int(pageToken)
         else:
             nextPageToken = 0

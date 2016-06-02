@@ -10,6 +10,7 @@ import posixpath
 import logging
 
 import ga4gh.protocol as protocol
+import ga4gh.pb as pb
 import ga4gh.exceptions as exceptions
 
 
@@ -29,11 +30,9 @@ class AbstractClient(object):
     def _deserializeResponse(self, jsonResponseString, protocolResponseClass):
         self._protocolBytesReceived += len(jsonResponseString)
         self._logger.debug("response:{}".format(jsonResponseString))
-        if jsonResponseString == '':
+        if not jsonResponseString:
             raise exceptions.EmptyResponseException()
-        responseObject = protocolResponseClass.fromJsonString(
-            jsonResponseString)
-        return responseObject
+        return protocol.fromJson(jsonResponseString, protocolResponseClass)
 
     def _runSearchPageRequest(
             self, protocolRequest, objectName, protocolResponseClass):
@@ -56,11 +55,12 @@ class AbstractClient(object):
             responseObject = self._runSearchPageRequest(
                 protocolRequest, objectName, protocolResponseClass)
             valueList = getattr(
-                responseObject, protocolResponseClass.getValueListName())
+                responseObject,
+                protocol.getValueListName(protocolResponseClass))
             for extract in valueList:
                 yield extract
-            notDone = responseObject.nextPageToken is not None
-            protocolRequest.pageToken = responseObject.nextPageToken
+            notDone = bool(responseObject.next_page_token)
+            protocolRequest.page_token = responseObject.next_page_token
 
     def _runListReferenceBasesPageRequest(self, id_, protocolRequest):
         """
@@ -77,8 +77,8 @@ class AbstractClient(object):
         differently.
         """
         request = protocol.ListReferenceBasesRequest()
-        request.start = start
-        request.end = end
+        request.start = pb.int(start)
+        request.end = pb.int(end)
         notDone = True
         # TODO We should probably use a StringIO here to make string buffering
         # a bit more efficient.
@@ -86,8 +86,8 @@ class AbstractClient(object):
         while notDone:
             response = self._runListReferenceBasesPageRequest(id_, request)
             basesList.append(response.sequence)
-            notDone = response.nextPageToken is not None
-            request.pageToken = response.nextPageToken
+            notDone = bool(response.next_page_token)
+            request.page_token = response.next_page_token
         return "".join(basesList)
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):
@@ -270,18 +270,18 @@ class AbstractClient(object):
         :rtype: iter
         """
         request = protocol.SearchVariantsRequest()
-        request.referenceName = referenceName
-        request.start = start
-        request.end = end
-        request.variantSetId = variantSetId
-        request.callSetIds = callSetIds
-        request.pageSize = self._pageSize
+        request.reference_name = pb.string(referenceName)
+        request.start = pb.int(start)
+        request.end = pb.int(end)
+        request.variant_set_id = variantSetId
+        request.call_set_ids.extend(pb.string(callSetIds))
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "variants", protocol.SearchVariantsResponse)
 
     def searchVariantAnnotations(
-            self, variantAnnotationSetId, referenceName=None,
-            referenceId=None, start=None, end=None, effects=[]):
+            self, variantAnnotationSetId, referenceName="", referenceId="",
+            start=0, end=0, effects=[]):
         """
         Returns an iterator over the Variant Annotations fulfilling
         the specified conditions from the specified VariantSet.
@@ -305,17 +305,18 @@ class AbstractClient(object):
         :rtype: iter
         """
         request = protocol.SearchVariantAnnotationsRequest()
-        request.variantAnnotationSetId = variantAnnotationSetId
-        request.referenceName = referenceName
-        request.referenceId = referenceId
+        request.variant_annotation_set_id = variantAnnotationSetId
+        request.reference_name = referenceName
+        request.reference_id = referenceId
         request.start = start
         request.end = end
-        request.effects = effects
+        for effect in effects:
+            request.effects.add().CopyFrom(protocol.OntologyTerm(**effect))
         for effect in request.effects:
-            if 'id' not in effect:
+            if not effect.id:
                 raise exceptions.BadRequestException(
                     "Each ontology term should have an id set")
-        request.pageSize = self._pageSize
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "variantannotations",
             protocol.SearchVariantAnnotationsResponse)
@@ -357,7 +358,7 @@ class AbstractClient(object):
             objects on the server.
         """
         request = protocol.SearchDatasetsRequest()
-        request.pageSize = self._pageSize
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "datasets", protocol.SearchDatasetsResponse)
 
@@ -372,8 +373,8 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchVariantSetsRequest()
-        request.datasetId = datasetId
-        request.pageSize = self._pageSize
+        request.dataset_id = datasetId
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "variantsets", protocol.SearchVariantSetsResponse)
 
@@ -388,8 +389,8 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchVariantAnnotationSetsRequest()
-        request.variantSetId = variantSetId
-        request.pageSize = self._pageSize
+        request.variant_set_id = variantSetId
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "variantannotationsets",
             protocol.SearchVariantAnnotationSetsResponse)
@@ -405,8 +406,8 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchFeatureSetsRequest()
-        request.datasetId = datasetId
-        request.pageSize = self._pageSize
+        request.dataset_id = datasetId
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "featuresets", protocol.SearchFeatureSetsResponse)
 
@@ -428,10 +429,10 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchReferenceSetsRequest()
-        request.accession = accession
-        request.md5checksum = md5checksum
-        request.assemblyId = assemblyId
-        request.pageSize = self._pageSize
+        request.accession = pb.string(accession)
+        request.md5checksum = pb.string(md5checksum)
+        request.assembly_id = pb.string(assemblyId)
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "referencesets", protocol.SearchReferenceSetsResponse)
 
@@ -451,10 +452,10 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchReferencesRequest()
-        request.referenceSetId = referenceSetId
-        request.accession = accession
-        request.md5checksum = md5checksum
-        request.pageSize = self._pageSize
+        request.reference_set_id = referenceSetId
+        request.accession = pb.string(accession)
+        request.md5checksum = pb.string(md5checksum)
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "references", protocol.SearchReferencesResponse)
 
@@ -469,9 +470,9 @@ class AbstractClient(object):
             objects defined by the query parameters.
         """
         request = protocol.SearchCallSetsRequest()
-        request.variantSetId = variantSetId
-        request.name = name
-        request.pageSize = self._pageSize
+        request.variant_set_id = variantSetId
+        request.name = pb.string(name)
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "callsets", protocol.SearchCallSetsResponse)
 
@@ -487,9 +488,9 @@ class AbstractClient(object):
         :rtype: iter
         """
         request = protocol.SearchReadGroupSetsRequest()
-        request.datasetId = datasetId
-        request.name = name
-        request.pageSize = self._pageSize
+        request.dataset_id = datasetId
+        request.name = pb.string(name)
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
@@ -518,11 +519,11 @@ class AbstractClient(object):
         :rtype: iter
         """
         request = protocol.SearchReadsRequest()
-        request.readGroupIds = readGroupIds
-        request.referenceId = referenceId
-        request.start = start
-        request.end = end
-        request.pageSize = self._pageSize
+        request.read_group_ids.extend(readGroupIds)
+        request.reference_id = pb.string(referenceId)
+        request.start = pb.int(start)
+        request.end = pb.int(end)
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "reads", protocol.SearchReadsResponse)
 
@@ -584,7 +585,7 @@ class HttpClient(AbstractClient):
     def _runSearchPageRequest(
             self, protocolRequest, objectName, protocolResponseClass):
         url = posixpath.join(self._urlPrefix, objectName + '/search')
-        data = protocolRequest.toJsonString()
+        data = protocol.toJson(protocolRequest)
         self._logger.debug("request:{}".format(data))
         response = self._session.post(
             url, params=self._getHttpParameters(), data=data)
@@ -602,7 +603,7 @@ class HttpClient(AbstractClient):
         urlSuffix = "references/{id}/bases".format(id=id_)
         url = posixpath.join(self._urlPrefix, urlSuffix)
         params = self._getHttpParameters()
-        params.update(request.toJsonDict())
+        params.update(protocol.toJsonDict(request))
         response = self._session.get(url, params=params)
         self._checkResponseStatus(response)
         return self._deserializeResponse(
@@ -651,19 +652,19 @@ class LocalClient(AbstractClient):
     def _runSearchPageRequest(
             self, protocolRequest, objectName, protocolResponseClass):
         searchMethod = self._searchMethodMap[objectName]
-        responseJson = searchMethod(protocolRequest.toJsonString())
+        responseJson = searchMethod(protocol.toJson(protocolRequest))
         return self._deserializeResponse(responseJson, protocolResponseClass)
 
     def _runListReferenceBasesPageRequest(self, id_, request):
-        requestArgs = request.toJsonDict()
+        requestArgs = protocol.toJsonDict(request)
         # We need to remove end from this dict if it's not specified because
         # of the way we're interacting with Flask and HTTP GET params.
         # TODO: This is a really nasty way of doing things; we really
         # should just have a request object and pass that around instead of an
         # arguments dictionary.
-        if request.end is None:
+        if request.end is 0:
             del requestArgs["end"]
-        if request.pageToken is None:
+        if request.page_token == '':
             del requestArgs["pageToken"]
         responseJson = self._backend.runListReferenceBases(id_, requestArgs)
         return self._deserializeResponse(

@@ -2,3 +2,4 @@ Dockerfile
 .dockerignore
 ./build
 *.swp
+ga4gh-env
