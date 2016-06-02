@@ -14,14 +14,14 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel.genotype_phenotype as g2p
 
 
-class AbstractDataset(datamodel.DatamodelObject):
+class Dataset(datamodel.DatamodelObject):
     """
     The base class of datasets containing variants and reads
     """
     compoundIdClass = datamodel.DatasetCompoundId
 
     def __init__(self, localId):
-        super(AbstractDataset, self).__init__(None, localId)
+        super(Dataset, self).__init__(None, localId)
         self._description = None
         self._variantSetIds = []
         self._variantSetIdMap = {}
@@ -292,7 +292,7 @@ class AbstractDataset(datamodel.DatamodelObject):
         return self._description
 
 
-class SimulatedDataset(AbstractDataset):
+class SimulatedDataset(Dataset):
     """
     A simulated dataset
     """
@@ -354,7 +354,7 @@ class SimulatedDataset(AbstractDataset):
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
 
-class FileSystemDataset(AbstractDataset):
+class FileSystemDataset(Dataset):
     """
     A dataset based on the file system
     """

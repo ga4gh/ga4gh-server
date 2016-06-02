@@ -24,7 +24,7 @@ def testG2P():
 
 class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
     def __init__(self, localId, baseDir):
-        self._dataset = datasets.AbstractDataset("ds")
+        self._dataset = datasets.Dataset("ds")
         super(PhenotypeAssociationSetTest, self).__init__(localId, baseDir)
         self.phenotypeAssocationSet = self.getDataModelInstance(localId,
                                                                 baseDir)
