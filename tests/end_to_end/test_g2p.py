@@ -63,6 +63,115 @@ class TestG2P(unittest.TestCase):
             ).fromJsonString(response.data)
         self.assertIsNotNone(response.phenotypeAssociationSets)
 
+    def testFeaturesSearch(self):
+        request = protocol.SearchFeaturesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        # setup the external identifiers query
+        idquery = protocol.ExternalIdentifierQuery()
+        extid = protocol.ExternalIdentifier()
+        extid.identifier = "rs6920220"
+        extid.version = "*"
+        extid.database = "dbSNP"
+        idquery.ids = [extid]
+        # setup the term query
+        termquery = protocol.TermQuery()
+        termquery.term = idquery
+        request.termQueries = [termquery]
+        response = self.sendPostRequest('features/search', request)
+        self.assertEqual(200, response.status_code)
+
+    def testPhenotypesSearch(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        # setup phenotype query
+        phenotypeQuery = protocol.PhenotypeQuery()
+        phenotypeQuery.id = "p12345"
+        request.phenotype = phenotypeQuery
+        postUrl = 'associations/%s/phenotypes/search' % \
+                  request.phenotypeAssociationSetId
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(0, len(response.phenotypes))
+        self.assertEqual("p12345", response.phenotypes[0].id)
+
+    def testPhenotypesSearchOntologyTerm(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        phenotypeQuery = protocol.PhenotypeQuery()
+        ontologyterm = protocol.OntologyTerm()
+        ontologyterm.id = "http://www.ebi.ac.uk/efo/EFO_0003767"
+        phenotypeQuery.type = ontologyterm
+        postUrl = 'associations/%s/phenotypes/search' % \
+                  request.phenotypeAssociationSetId
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(0, response.phenotypes)
+
+    def testPhenotypeSearchQualifiers(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        phenotypeQuery = protocol.PhenotypeQuery()
+        ontologyterm = protocol.OntologyTerm()
+        ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0001899"
+        phenotypeQuery.qualifiers = [ontologyterm]
+        postUrl = 'associations/%s/phenotypes/search' % \
+                  request.phenotypeAssociationSetId
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(0, response.phenotypes)
+
+    def testPhenotypeSearchMultipleQualifiers(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        phenotypeQuery = protocol.PhenotypeQuery()
+        ontologyterm1 = protocol.OntologyTerm()
+        ontologyterm1.id = "http://purl.obolibrary.org/obo/PATO_0000396"
+        ontologyterm2 = protocol.OntologyTerm()
+        ontologyterm2.id = "http://purl.obolibrary.org/obo/PATO_0000460"
+        phenotypeQuery.qualifiers = [ontologyterm1, ontologyterm2]
+        postUrl = 'associations/%s/phenotypes/search' % \
+                  request.phenotypeAssociationSetId
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(0, response.phenotypes)
+
+    def testPhenotypesSearchDescription(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        phenotypeQuery = protocol.PhenotypeQuery()
+        phenotypeQuery.description = "inflammatory bowel disease"
+        postUrl = 'associations/%s/phenotypes/search' % \
+                  request.phenotypeAssociationSetId
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(0, response.phenotypes)
+
+    def testPhenotypesSearchMultipleTerms(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        phenotypeQuery = protocol.PhenotypeQuery()
+        phenotypeQuery.description = "AML"
+        ontologyterm = protocol.OntologyTerm()
+        ontologyterm.id = "http://purl.obolibrary.org/obo/HP_0003581"
+        phenotypeQuery.ageOfOnset = ontologyterm
+        postUrl = 'associations/%s/phenotypes/search' % \
+                  request.phenotypeAssociationSetId
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(0, response.phenotypes)
+
     def testGenotypePhenotypeSearchFeature(self):
         """
         Search for evidence on a genomic feature given feature name
@@ -121,34 +230,24 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(1, len(response.associations[0].features))
 
     def testFindFeatureExternalIdentifier(self):
-        request = protocol.SearchGenotypePhenotypeRequest()
+        request = protocol.SearchFeaturesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-        request.feature = protocol.ExternalIdentifierQuery()
-        id = protocol.ExternalIdentifier()
-        id.database = "http://ohsu.edu/cgd/"
-        id.identifier = "055b872c"
-        id.version = "*"
-        request.feature.ids = [id]
-        response = self.sendPostRequest('/genotypephenotype/search', request)
+        # setup the external identifiers query
+        idquery = protocol.ExternalIdentifierQuery()
+        extid = protocol.ExternalIdentifier()
+        extid.identifier = "rs6920220"
+        extid.version = "*"
+        extid.database = "dbSNP"
+        idquery.ids = [extid]
+        # setup the term query
+        termquery = protocol.TermQuery()
+        termquery.term = idquery
+        request.termQueries = [termquery]
+        response = self.sendPostRequest('features/search', request)
         self.assertEqual(200, response.status_code)
-        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+        response = protocol.SearchFeaturesResponse().fromJsonString(
             response.data)
-        self.assertEqual(1, len(response.associations[0].features))
-
-    def testFindPhenotypeExternalIdentifier(self):
-        request = protocol.SearchGenotypePhenotypeRequest()
-        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-        request.phenotype = protocol.ExternalIdentifierQuery()
-        id = protocol.ExternalIdentifier()
-        id.database = "http://ohsu.edu/cgd/"
-        id.identifier = "032c97e8"
-        id.version = "*"
-        request.phenotype.ids = [id]
-        response = self.sendPostRequest('/genotypephenotype/search', request)
-        self.assertEqual(200, response.status_code)
-        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
-            response.data)
-        self.assertEqual(1, len(response.associations[0].features))
+        self.assertEqual(1, len(response.features))
 
     def testGenotypePhenotypeSearchFeaturePagingOne(self):
         """
