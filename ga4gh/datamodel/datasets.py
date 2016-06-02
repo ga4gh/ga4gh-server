@@ -9,10 +9,10 @@ import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.rna_quantification as rnaQuantification
+from ga4gh import pb
 
 
 class Dataset(datamodel.DatamodelObject):
@@ -88,8 +88,8 @@ class Dataset(datamodel.DatamodelObject):
     def toProtocolElement(self):
         dataset = protocol.Dataset()
         dataset.id = self.getId()
-        dataset.name = self.getLocalId()
-        dataset.description = self.getDescription()
+        dataset.name = pb.string(self.getLocalId())
+        dataset.description = pb.string(self.getDescription())
         return dataset
 
     def getVariantSets(self):
@@ -246,9 +246,7 @@ class SimulatedDataset(Dataset):
             numAlignments=1, numFeatureSets=1, numRnaQuants=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
-        # TODO create a simulated OntologyTermMap
-        sequenceOntology = ontologies.OntologyTermMap("sequence_ontology")
-        # TODO add some terms into the simulated sequence ontology
+        # TODO create a simulated Ontology
         # Variants
         for i in range(numVariantSets):
             localId = "simVs{}".format(i)
@@ -258,7 +256,6 @@ class SimulatedDataset(Dataset):
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
                 variantSet, "simVas{}".format(i), seed)
-            variantAnnotationSet.setSequenceOntologyTermMap(sequenceOntology)
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
         # Reads
         for i in range(numReadGroupSets):

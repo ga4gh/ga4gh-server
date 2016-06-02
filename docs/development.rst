@@ -303,8 +303,10 @@ server against this using::
 
     $ python server_dev.py -c LocalOidConfig
 
+For tips on how to profile the performance of the server see :ref:`ref_server_profiling`
+
 ************
-Organisation
+Organization
 ************
 
 The code for the project is held in the ``ga4gh`` package, which corresponds to

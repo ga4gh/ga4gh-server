@@ -17,6 +17,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.exceptions as exceptions
+from ga4gh import protocol
 
 MODE_READ = 'r'
 MODE_WRITE = 'w'
@@ -34,7 +35,8 @@ class AbstractDataRepository(object):
         self._referenceSetNameMap = {}
         self._referenceSetIds = []
         self._ontologyNameMap = {}
-        self._ontologyNames = []
+        self._ontologyIdMap = {}
+        self._ontologyIds = []
 
     def addDataset(self, dataset):
         """
@@ -54,13 +56,13 @@ class AbstractDataRepository(object):
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
 
-    def addOntologyTermMap(self, ontologyTermMap):
+    def addOntology(self, ontology):
         """
-        Add an ontologyTermMap map to this data repository.
+        Add an ontology map to this data repository.
         """
-        name = ontologyTermMap.getLocalId()
-        self._ontologyNameMap[name] = ontologyTermMap
-        self._ontologyNames.append(name)
+        self._ontologyNameMap[ontology.getName()] = ontology
+        self._ontologyIdMap[ontology.getId()] = ontology
+        self._ontologyIds.append(ontology.getId())
 
     def getDatasets(self):
         """
@@ -109,19 +111,27 @@ class AbstractDataRepository(object):
         """
         return len(self._referenceSetIds)
 
-    def getOntologyTermMapByName(self, name):
+    def getOntology(self, id_):
         """
-        Returns an ontologyTermMap by name
+        Returns the ontology with the specified ID.
+        """
+        if id_ not in self._ontologyIdMap:
+            raise exceptions.OntologyNotFoundException(id_)
+        return self._ontologyIdMap[id_]
+
+    def getOntologyByName(self, name):
+        """
+        Returns an ontology by name
         """
         if name not in self._ontologyNameMap:
             raise exceptions.OntologyNameNotFoundException(name)
         return self._ontologyNameMap[name]
 
-    def getOntologyTermMaps(self):
+    def getOntologys(self):
         """
-        Returns all ontologyTermMaps in the repo
+        Returns all ontologys in the repo
         """
-        return [self._ontologyNameMap[name] for name in self._ontologyNames]
+        return [self._ontologyIdMap[id_] for id_ in self._ontologyIds]
 
     def getReferenceSet(self, id_):
         """
@@ -151,7 +161,7 @@ class AbstractDataRepository(object):
         Returns the readgroup set with the specified ID.
         """
         compoundId = datamodel.ReadGroupSetCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataset(compoundId.dataset_id)
         return dataset.getReadGroupSet(id_)
 
     def getVariantSet(self, id_):
@@ -159,7 +169,7 @@ class AbstractDataRepository(object):
         Returns the readgroup set with the specified ID.
         """
         compoundId = datamodel.VariantSetCompoundId.parse(id_)
-        dataset = self.getDataset(compoundId.datasetId)
+        dataset = self.getDataset(compoundId.dataset_id)
         return dataset.getVariantSet(id_)
 
     def printSummary(self):
@@ -167,9 +177,12 @@ class AbstractDataRepository(object):
         Prints a summary of this data repository to stdout.
         """
         print("Ontologies:")
-        for ontologyTermMap in self.getOntologyTermMaps():
+        for ontology in self.getOntologys():
             print(
-                "", ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl(),
+                "",
+                ontology.getOntologyPrefix(),
+                ontology.getName(),
+                ontology.getDataUrl(),
                 sep="\t")
         print("ReferenceSets:")
         for referenceSet in self.getReferenceSets():
@@ -209,12 +222,14 @@ class AbstractDataRepository(object):
                     for vas in variantSet.getVariantAnnotationSets():
                         print(
                             "\t\t", vas.getLocalId(),
-                            vas.getVariantSet().getLocalId(), sep="\t")
+                            vas.getAnnotationType(),
+                            vas.getOntology().getName(), sep="\t")
             print("\tFeatureSets:")
             for featureSet in dataset.getFeatureSets():
                 print(
                     "\t", featureSet.getLocalId(),
                     featureSet.getReferenceSet().getLocalId(),
+                    featureSet.getOntology().getName(),
                     featureSet.getId(),
                     sep="\t")
 
@@ -279,7 +294,7 @@ class SqlDataRepository(AbstractDataRepository):
         def __str__(self):
             return "{}.{}".format(self.major, self.minor)
 
-    version = SchemaVersion("0.1")
+    version = SchemaVersion("2.0")
     systemKeySchemaVersion = "schemaVersion"
     systemKeyCreationTimeStamp = "creationTimeStamp"
 
@@ -357,10 +372,10 @@ class SqlDataRepository(AbstractDataRepository):
         # have verbosity levels. We should provide a way to configure
         # where we look at various chromosomes and so on. This will be
         # an important debug tool for administrators.
-        for ontologyTermMap in self.getOntologyTermMaps():
+        for ontology in self.getOntologys():
             print(
-                "Verifying OntologyTermMap", ontologyTermMap.getLocalId(),
-                "@", ontologyTermMap.getDataUrl())
+                "Verifying Ontology", ontology.getName(),
+                "@", ontology.getDataUrl())
             # TODO how do we verify this? Check some well-know SO terms?
         for referenceSet in self.getReferenceSets():
             print(
@@ -471,50 +486,52 @@ class SqlDataRepository(AbstractDataRepository):
                 schemaVersion, self.version)
 
     def _createOntologyTable(self, cursor):
-        # Right now we support a crude ontology term name-ID bidirectional
-        # map. However, in the future we will want to have better ontology
-        # support. Therefore we're not making the SQL schema too specific
-        # so that we can make this transition without needing backwards
-        # incompatible schema changes.
         sql = """
             CREATE TABLE Ontology(
-                name TEXT NOT NULL PRIMARY KEY,
-                dataUrl TEXT NOT NULL
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                dataUrl TEXT NOT NULL,
+                ontologyPrefix TEXT NOT NULL,
+                UNIQUE (name)
             );
         """
         cursor.execute(sql)
 
-    def insertOntologyTermMap(self, ontologyTermMap):
+    def insertOntology(self, ontology):
         """
-        Inserts the specified ontologyTermMap into this repository.
+        Inserts the specified ontology into this repository.
         """
         sql = """
-            INSERT INTO Ontology(name, dataUrl)
-            VALUES (?, ?);
+            INSERT INTO Ontology(id, name, dataUrl, ontologyPrefix)
+            VALUES (?, ?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
+        # TODO we need to create a proper ID when we're doing ID generation
+        # for the rest of the container objects.
         try:
             cursor.execute(sql, (
-                ontologyTermMap.getLocalId(), ontologyTermMap.getDataUrl()))
+                ontology.getName(),
+                ontology.getName(),
+                ontology.getDataUrl(),
+                ontology.getOntologyPrefix()))
         except sqlite3.IntegrityError:
-            raise exceptions.DuplicateNameException(
-                ontologyTermMap.getLocalId())
+            raise exceptions.DuplicateNameException(ontology.getName())
 
-    def _readOntologyTermMapTable(self, cursor):
+    def _readOntologyTable(self, cursor):
         cursor.row_factory = sqlite3.Row
         cursor.execute("SELECT * FROM Ontology;")
         for row in cursor:
-            ontologyTermMap = ontologies.OntologyTermMap(row[b'name'])
-            ontologyTermMap.populateFromRow(row)
-            self.addOntologyTermMap(ontologyTermMap)
+            ontology = ontologies.Ontology(row[b'name'])
+            ontology.populateFromRow(row)
+            self.addOntology(ontology)
 
-    def removeOntologyTermMap(self, ontologyTermMap):
+    def removeOntology(self, ontology):
         """
         Removes the specified ontology term map from this repository.
         """
         sql = "DELETE FROM Ontology WHERE name=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (ontologyTermMap.getLocalId(),))
+        cursor.execute(sql, (ontology.getName(),))
 
     def _createReferenceTable(self, cursor):
         sql = """
@@ -707,8 +724,9 @@ class SqlDataRepository(AbstractDataRepository):
                 (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
         """
         cursor = self._dbConnection.cursor()
-        statsJson = json.dumps(readGroup.getStats().toJsonDict())
-        experimentJson = json.dumps(readGroup.getExperiment().toJsonDict())
+        statsJson = json.dumps(protocol.toJsonDict(readGroup.getStats()))
+        experimentJson = json.dumps(
+            protocol.toJsonDict(readGroup.getExperiment()))
         cursor.execute(sql, (
             readGroup.getId(), readGroup.getParentContainer().getId(),
             readGroup.getLocalId(), readGroup.getPredictedInsertSize(),
@@ -775,8 +793,9 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """
         programsJson = json.dumps(
-            [program.toJsonDict() for program in readGroupSet.getPrograms()])
-        statsJson = json.dumps(readGroupSet.getStats().toJsonDict())
+            [protocol.toJsonDict(program) for program in
+             readGroupSet.getPrograms()])
+        statsJson = json.dumps(protocol.toJsonDict(readGroupSet.getStats()))
         cursor = self._dbConnection.cursor()
         try:
             cursor.execute(sql, (
@@ -824,11 +843,13 @@ class SqlDataRepository(AbstractDataRepository):
                 id TEXT NOT NULL PRIMARY KEY,
                 name TEXT NOT NULL,
                 variantSetId TEXT NOT NULL,
+                ontologyId TEXT NOT NULL,
                 analysis TEXT,
                 annotationType TEXT,
                 UNIQUE (variantSetId, name),
                 FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
-                    ON DELETE CASCADE
+                    ON DELETE CASCADE,
+                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
             );
         """
         cursor.execute(sql)
@@ -839,16 +860,18 @@ class SqlDataRepository(AbstractDataRepository):
         """
         sql = """
             INSERT INTO VariantAnnotationSet (
-                id, variantSetId, name, analysis, annotationType)
-            VALUES (?, ?, ?, ?, ?);
+                id, variantSetId, ontologyId, name, analysis, annotationType)
+            VALUES (?, ?, ?, ?, ?, ?);
         """
         analysisJson = json.dumps(
-            variantAnnotationSet.getAnalysis().toJsonDict())
+            protocol.toJsonDict(variantAnnotationSet.getAnalysis()))
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             variantAnnotationSet.getId(),
             variantAnnotationSet.getParentContainer().getId(),
-            variantAnnotationSet.getLocalId(), analysisJson,
+            variantAnnotationSet.getOntology().getId(),
+            variantAnnotationSet.getLocalId(),
+            analysisJson,
             variantAnnotationSet.getAnnotationType()))
 
     def _readVariantAnnotationSetTable(self, cursor):
@@ -856,14 +879,11 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute("SELECT * FROM VariantAnnotationSet;")
         for row in cursor:
             variantSet = self.getVariantSet(row[b'variantSetId'])
+            ontology = self.getOntology(row[b'ontologyId'])
             variantAnnotationSet = variants.HtslibVariantAnnotationSet(
                 variantSet, row[b'name'])
+            variantAnnotationSet.setOntology(ontology)
             variantAnnotationSet.populateFromRow(row)
-            # TODO can we make this relationship more explicit??
-            sequenceOntologyTermMap = self.getOntologyTermMapByName(
-                "sequence_ontology")
-            variantAnnotationSet.setSequenceOntologyTermMap(
-                sequenceOntologyTermMap)
             assert variantAnnotationSet.getId() == row[b'id']
             # Insert the variantAnnotationSet into the memory-based model.
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
@@ -940,7 +960,8 @@ class SqlDataRepository(AbstractDataRepository):
         # within the table as a JSON dump. These should really be stored in
         # their own table
         metadataJson = json.dumps(
-            [metadata.toJsonDict() for metadata in variantSet.getMetadata()])
+            [protocol.toJsonDict(metadata) for metadata in
+             variantSet.getMetadata()])
         urlMapJson = json.dumps(variantSet.getReferenceToDataUrlIndexMap())
         try:
             cursor.execute(sql, (
@@ -953,14 +974,6 @@ class SqlDataRepository(AbstractDataRepository):
                 variantSet.getParentContainer().getLocalId())
         for callSet in variantSet.getCallSets():
             self.insertCallSet(callSet)
-        if variantSet.isAnnotated():
-            # Make sure that we have the Sequence Ontology that we
-            # require. TODO we should make this requirement explicit.
-            # This is a very ugly way of doing this, we need a better
-            # approach.
-            self.getOntologyTermMapByName("sequence_ontology")
-            for annotationSet in variantSet.getVariantAnnotationSets():
-                self.insertVariantAnnotationSet(annotationSet)
 
     def _readVariantSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -982,6 +995,7 @@ class SqlDataRepository(AbstractDataRepository):
                 name TEXT NOT NULL,
                 datasetId TEXT NOT NULL,
                 referenceSetId TEXT NOT NULL,
+                ontologyId TEXT NOT NULL,
                 info TEXT,
                 sourceUri TEXT,
                 dataUrl TEXT NOT NULL,
@@ -989,6 +1003,7 @@ class SqlDataRepository(AbstractDataRepository):
                 FOREIGN KEY(datasetId) REFERENCES Dataset(id)
                     ON DELETE CASCADE,
                 FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
             );
         """
         cursor.execute(sql)
@@ -1000,13 +1015,16 @@ class SqlDataRepository(AbstractDataRepository):
         # TODO add support for info and sourceUri fields.
         sql = """
             INSERT INTO FeatureSet (
-                id, datasetId, referenceSetId, name, dataUrl)
-            VALUES (?, ?, ?, ?, ?)
+                id, datasetId, referenceSetId, ontologyId, name, dataUrl)
+            VALUES (?, ?, ?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
-            featureSet.getId(), featureSet.getParentContainer().getId(),
-            featureSet.getReferenceSet().getId(), featureSet.getLocalId(),
+            featureSet.getId(),
+            featureSet.getParentContainer().getId(),
+            featureSet.getReferenceSet().getId(),
+            featureSet.getOntology().getId(),
+            featureSet.getLocalId(),
             featureSet.getDataUrl()))
 
     def _readFeatureSetTable(self, cursor):
@@ -1014,12 +1032,11 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute("SELECT * FROM FeatureSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
-            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
             featureSet = sequenceAnnotations.Gff3DbFeatureSet(
                 dataset, row[b'name'])
-            featureSet.setReferenceSet(referenceSet)
-            featureSet.setSequenceOntologyTermMap(
-                self.getOntologyTermMapByName('sequence_ontology'))
+            featureSet.setReferenceSet(
+                self.getReferenceSet(row[b'referenceSetId']))
+            featureSet.setOntology(self.getOntology(row[b'ontologyId']))
             featureSet.populateFromRow(row)
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
@@ -1074,7 +1091,7 @@ class SqlDataRepository(AbstractDataRepository):
             except (sqlite3.OperationalError, sqlite3.DatabaseError):
                 raise exceptions.RepoInvalidDatabaseException(
                     self._dbFilename)
-            self._readOntologyTermMapTable(cursor)
+            self._readOntologyTable(cursor)
             self._readReferenceSetTable(cursor)
             self._readReferenceTable(cursor)
             self._readDatasetTable(cursor)

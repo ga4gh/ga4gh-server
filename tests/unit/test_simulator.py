@@ -13,7 +13,6 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
-import ga4gh.protocol as protocol
 
 
 class TestSimulatedVariantSet(unittest.TestCase):
@@ -72,27 +71,27 @@ class TestSimulatedVariantSet(unittest.TestCase):
             variantCompoundId = datamodel.VariantCompoundId.parse(
                 simulatedVariant.id)
             self.assertEqual(
-                variantSetCompoundId.variantSetId,
+                variantSetCompoundId.variant_set_id,
                 self.simulatedVariantSet.getId())
             self.assertEqual(
-                variantSetCompoundId.variantSetId,
-                variantCompoundId.variantSetId)
+                variantSetCompoundId.variant_set_id,
+                variantCompoundId.variant_set_id)
             self.assertEqual(
-                variantCompoundId.referenceName, self.referenceName)
+                variantCompoundId.reference_name, self.referenceName)
             self.assertEqual(
                 variantCompoundId.start, str(simulatedVariant.start))
             self.assertEqual(
-                simulatedVariant.variantSetId,
+                simulatedVariant.variant_set_id,
                 self.simulatedVariantSet.getId())
             self.assertEqual(
-                simulatedVariant.referenceName, self.referenceName)
+                simulatedVariant.reference_name, self.referenceName)
             self.assertEqual(
                 simulatedVariant.created, simulatedVariant.updated)
             self.assertEqual(simulatedVariant.start, start)
             self.assertEqual(simulatedVariant.end, start + 1)
-            self.assertIn(simulatedVariant.referenceBases, self.bases)
+            self.assertIn(simulatedVariant.reference_bases, self.bases)
             self.assertIn(
-                simulatedVariant.alternateBases[0], self.bases)
+                simulatedVariant.alternate_bases[0], self.bases)
             self.assertEqual(len(simulatedVariant.calls), self.numCalls)
 
     def testConsistency(self):
@@ -147,16 +146,14 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
                     self.referenceName, self.startPosition, self.endPosition)
         self.assertEquals(
             simulatedVariantSet.toProtocolElement().id,
-            simulatedVariantAnnotationSet.toProtocolElement().variantSetId,
+            simulatedVariantAnnotationSet.toProtocolElement().variantSet_id,
             "Variant Set ID should match the annotation's variant set ID")
-        for ann in annotations:
-            for key in protocol.VariantAnnotation().requiredFields:
-                self.assertEquals(datetime.datetime.strptime(
-                    ann.createDateTime, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
-                        "%Y-%m-%dT%H:%M:%S.%fZ"), ann.createDateTime,
-                        "Expect time format to be in ISO8601")
-                self.assertTrue(hasattr(ann, key),
-                                "Failed to find required key: " + key)
+        for variant, ann in annotations:
+            self.assertEquals(datetime.datetime.strptime(
+                ann.create_date_time, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ"), ann.create_date_time,
+                "Expect time format to be in ISO8601")
+            self.assertEqual(variant.id, ann.variant_id)
 
 
 class TestSimulatedReadGroupSet(unittest.TestCase):

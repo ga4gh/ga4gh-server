@@ -29,17 +29,20 @@ future==0.15.2
 pyjwkest==1.0.1
 
 ### This section is for the actual libraries ###
-# these libraries are imported in code that can be reached via 
+# these libraries are imported in code that can be reached via
 # an executable that we ship
 
 # Flask must come after all other requirements that have "flask" as a
 # prefix due to a setuptools bug.
 Flask-Cors==2.0.1
 Flask==0.10.1
-avro==1.7.7
+protobuf==3.0.0b3
 humanize==0.5.1
 pysam==0.9.0
 requests==2.7.0
 oic==0.7.6
 pyOpenSSL==0.15.1
 lxml==3.4.4
+
+# We need sphinx-argparse to build on readthedocs.
+sphinx-argparse==0.1.15

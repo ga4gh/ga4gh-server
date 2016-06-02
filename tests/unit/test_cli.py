@@ -11,6 +11,8 @@ import unittest
 
 import ga4gh.cli as cli
 import ga4gh.protocol as protocol
+import google.protobuf.descriptor as descriptor
+import google.protobuf.internal.python_message as python_message
 
 
 class TestServerArguments(unittest.TestCase):
@@ -311,41 +313,41 @@ class TestRepoManagerCli(unittest.TestCase):
 
     def setUp(self):
         self.parser = cli.RepoManager.getParser()
-        self.repoPath = 'a/repo/path'
+        self.registryPath = 'a/repo/path'
         self.datasetName = "datasetName"
         self.filePath = 'a/file/path'
 
     def testInit(self):
-        cliInput = "init {}".format(self.repoPath)
+        cliInput = "init {}".format(self.registryPath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.runner, "init")
 
     def testVerify(self):
-        cliInput = "verify {}".format(self.repoPath)
+        cliInput = "verify {}".format(self.registryPath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.runner, "verify")
 
     def testList(self):
-        cliInput = "list {}".format(self.repoPath)
+        cliInput = "list {}".format(self.registryPath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.runner, "list")
 
     def testAddDataset(self):
         cliInput = "add-dataset {} {}".format(
-            self.repoPath, self.datasetName)
+            self.registryPath, self.datasetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.runner, "addDataset")
 
     def testRemoveDataset(self):
         cliInput = "remove-dataset {} {} -f".format(
-            self.repoPath, self.datasetName)
+            self.registryPath, self.datasetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.runner, "removeDataset")
         self.assertEquals(args.force, True)
@@ -359,9 +361,9 @@ class TestRepoManagerCli(unittest.TestCase):
             "--assemblyId ASSEMBLYID "
             "--sourceAccessions SOURCEACCESSIONS "
             "--sourceUri SOURCEURI ").format(
-            self.repoPath, self.filePath, description)
+            self.registryPath, self.filePath, description)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.filePath, self.filePath)
         self.assertEquals(args.description, description)
         self.assertEquals(args.ncbiTaxonId, "NCBITAXONID")
@@ -374,18 +376,18 @@ class TestRepoManagerCli(unittest.TestCase):
     def testRemoveReferenceSet(self):
         referenceSetName = "referenceSetName"
         cliInput = "remove-referenceset {} {} -f".format(
-            self.repoPath, referenceSetName)
+            self.registryPath, referenceSetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.referenceSetName, referenceSetName)
         self.assertEquals(args.runner, "removeReferenceSet")
         self.assertEquals(args.force, True)
 
     def testAddReadGroupSet(self):
         cliInput = "add-readgroupset {} {} {} ".format(
-            self.repoPath, self.datasetName, self.filePath)
+            self.registryPath, self.datasetName, self.filePath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.dataFile, self.filePath)
         self.assertEquals(args.indexFile, None)
@@ -394,10 +396,10 @@ class TestRepoManagerCli(unittest.TestCase):
     def testAddReadGroupSetWithIndexFile(self):
         indexPath = self.filePath + ".bai"
         cliInput = "add-readgroupset {} {} {} -I {}".format(
-            self.repoPath, self.datasetName, self.filePath,
+            self.registryPath, self.datasetName, self.filePath,
             indexPath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.dataFile, self.filePath)
         self.assertEquals(args.indexFile, indexPath)
@@ -406,9 +408,9 @@ class TestRepoManagerCli(unittest.TestCase):
     def testRemoveReadGroupSet(self):
         readGroupSetName = "readGroupSetName"
         cliInput = "remove-readgroupset {} {} {} -f".format(
-            self.repoPath, self.datasetName, readGroupSetName)
+            self.registryPath, self.datasetName, readGroupSetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.readGroupSetName, readGroupSetName)
         self.assertEquals(args.runner, "removeReadGroupSet")
@@ -416,9 +418,9 @@ class TestRepoManagerCli(unittest.TestCase):
 
     def testAddVariantSet(self):
         cliInput = "add-variantset {} {} {} ".format(
-            self.repoPath, self.datasetName, self.filePath)
+            self.registryPath, self.datasetName, self.filePath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.dataFiles, [self.filePath])
         self.assertEquals(args.indexFiles, None)
@@ -430,10 +432,10 @@ class TestRepoManagerCli(unittest.TestCase):
         indexFile1 = file1 + ".tbi"
         indexFile2 = file2 + ".tbi"
         cliInput = "add-variantset {} {} {} {} -I {} {}".format(
-            self.repoPath, self.datasetName, file1, file2,
+            self.registryPath, self.datasetName, file1, file2,
             indexFile1, indexFile2)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.dataFiles, [file1, file2])
         self.assertEquals(args.indexFiles, [indexFile1, indexFile2])
@@ -442,9 +444,9 @@ class TestRepoManagerCli(unittest.TestCase):
     def testRemoveVariantSet(self):
         variantSetName = "variantSetName"
         cliInput = "remove-variantset {} {} {}".format(
-            self.repoPath, self.datasetName, variantSetName)
+            self.registryPath, self.datasetName, variantSetName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.variantSetName, variantSetName)
         self.assertEquals(args.runner, "removeVariantSet")
@@ -452,17 +454,18 @@ class TestRepoManagerCli(unittest.TestCase):
 
     def testAddOntology(self):
         cliInput = "add-ontology {} {}".format(
-            self.repoPath, self.filePath)
+            self.registryPath, self.filePath)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.filePath, self.filePath)
         self.assertEquals(args.runner, "addOntology")
 
     def testRemoveOntology(self):
         ontologyName = "the_ontology_name"
-        cliInput = "remove-ontology {} {}".format(self.repoPath, ontologyName)
+        cliInput = "remove-ontology {} {}".format(
+            self.registryPath, ontologyName)
         args = self.parser.parse_args(cliInput.split())
-        self.assertEquals(args.repoPath, self.repoPath)
+        self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.ontologyName, ontologyName)
         self.assertEquals(args.runner, "removeOntology")
         self.assertEquals(args.force, False)
@@ -480,13 +483,54 @@ class TestOutputFormats(unittest.TestCase):
             self.baseUrl = 'baseUrl'
             self.verbose = 'verbose'
 
-    class FakeObject(protocol.ProtocolElement):
+    class FakeObject(protocol.message.Message):
+        __metaclass__ = python_message.GeneratedProtocolMessageType
 
-        __slots__ = ['id', 'name']
+        FILE = descriptor.FileDescriptor(__file__, "test", "")
+        DESCRIPTOR = descriptor.Descriptor(
+            "FakeObject",
+            "test.FakeObject",
+            filename=__file__,
+            file=FILE,
+            containing_type=None,
+            fields=[
+                descriptor.FieldDescriptor(
+                    name="name",
+                    full_name="test.FakeObject.name",
+                    index=0,
+                    number=1,
+                    type=descriptor.FieldDescriptor.TYPE_STRING,
+                    cpp_type=descriptor.FieldDescriptor.CPPTYPE_STRING,
+                    label=descriptor.FieldDescriptor.LABEL_REQUIRED,
+                    default_value="",
+                    message_type=None,
+                    enum_type=None,
+                    containing_type=None,
+                    is_extension=False,
+                    extension_scope=None
+                ),
+                descriptor.FieldDescriptor(
+                    name="id",
+                    full_name="test.FakeObject.id",
+                    index=1,
+                    number=2,
+                    type=descriptor.FieldDescriptor.TYPE_STRING,
+                    cpp_type=descriptor.FieldDescriptor.CPPTYPE_STRING,
+                    label=descriptor.FieldDescriptor.LABEL_REQUIRED,
+                    default_value="",
+                    message_type=None,
+                    enum_type=None,
+                    containing_type=None,
+                    is_extension=False,
+                    extension_scope=None
+                )
+            ], nested_types=[], enum_types=[], extensions=[])
 
-        def __init__(self):
-            self.id = 'id'
-            self.name = 'name'
+    def makeFakeObject(self):
+        returnObj = self.FakeObject()
+        returnObj.id = 'id'
+        returnObj.name = 'name'
+        return returnObj
 
     def _getRunPrintMethodCalls(self, runner):
         printCalls = []
@@ -512,7 +556,7 @@ class TestOutputFormats(unittest.TestCase):
             returnVal[-50:])  # 50 = 400 % 70
 
     def testTextOutput(self):
-        returnObj = self.FakeObject()
+        returnObj = self.makeFakeObject()
         args = self.FakeArgs()
         runner = cli.AbstractGetRunner(args)
         runner._method = mock.Mock(return_value=returnObj)
@@ -520,7 +564,7 @@ class TestOutputFormats(unittest.TestCase):
         self.assertEqual(printCalls, [((u'id', u'name'), {'sep': u'\t'})])
 
     def testJsonOutput(self):
-        returnObj = self.FakeObject()
+        returnObj = self.makeFakeObject()
         args = self.FakeArgs('json')
         runner = cli.AbstractGetRunner(args)
         runner._method = mock.Mock(return_value=returnObj)
