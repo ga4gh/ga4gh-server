@@ -65,7 +65,6 @@ class CallSet(datamodel.DatamodelObject):
             gaCallSet.updated = variantSet.getUpdatedTime()
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
-        gaCallSet.sample_id = self.getLocalId()
         gaCallSet.variant_set_ids.append(variantSet.getId())
         for key in self._info:
             gaCallSet.info[key].values.extend(_encodeValue(self._info[key]))
@@ -830,7 +829,7 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         object from this variant set.
         """
         ret = protocol.VariantAnnotation()
-        ret.create_date_time = self._creationTime
+        ret.created = self._creationTime
         ret.variant_annotation_set_id = self.getId()
         return ret
 
@@ -909,8 +908,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def _createAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.create_date_time = self._creationTime
-        analysis.update_date_time = self._updatedTime
+        analysis.created = self._creationTime
+        analysis.updated = self._updatedTime
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -941,7 +940,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann = protocol.VariantAnnotation()
         ann.variant_annotation_set_id = str(self.getCompoundId())
         ann.variant_id = variant.id
-        ann.create_date_time = self._creationTime
+        ann.created = self._creationTime
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (1,5)
         for i in range(randomNumberGenerator.randint(1, 5)):
@@ -1060,8 +1059,8 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                 if value.description is not None:
                     analysis.info[
                         key].values.add().string_value = value.description
-        analysis.create_date_time = self._creationTime
-        analysis.update_date_time = self._updatedTime
+        analysis.created = self._creationTime
+        analysis.updated = self._updatedTime
         for r in header.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:
@@ -1070,7 +1069,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                 analysis.info[r.key].values.add().string_value = str(r.value)
             if r.key == "created":
                 # TODO handle more date formats
-                analysis.create_date_time = datetime.datetime.strptime(
+                analysis.created = datetime.datetime.strptime(
                     r.value, "%Y-%m-%d").isoformat() + "Z"
             if r.key == "software":
                 analysis.software.append(r.value)
@@ -1314,7 +1313,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         """
         variant = self._variantSet.convertVariant(record, [])
         annotation = self._createGaVariantAnnotation()
-        annotation.create_date_time = self._annotationCreatedDateTime
+        annotation.created = self._annotationCreatedDateTime
         annotation.variant_id = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         transcriptEffects = []

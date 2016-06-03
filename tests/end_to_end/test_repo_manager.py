@@ -13,11 +13,24 @@ import unittest
 import ga4gh.cli as cli
 import tests.paths as paths
 
+import json
+import ga4gh.protocol as protocol
+
 
 class RepoManagerEndToEndTest(unittest.TestCase):
 
     datasetName = 'datasetOne'
     metadata = {'description': 'aDescription'}
+    individualName = "test"
+    bioSampleName = "test"
+    individual = protocol.toJson(protocol.Individual(
+        name="test",
+        created="2016-05-19T21:00:19Z",
+        updated="2016-05-19T21:00:19Z"))
+    bioSample = protocol.toJson(protocol.BioSample(
+        name="test",
+        created="2016-05-19T21:00:19Z",
+        updated="2016-05-19T21:00:19Z"))
 
     def setUp(self):
         _, self.repoFile = tempfile.mkstemp(
@@ -39,6 +52,8 @@ class RepoManagerEndToEndTest(unittest.TestCase):
             "add-referenceset", paths.faPath,
             '-n', paths.referenceSetName)
         self._runCmd("add-dataset", self.datasetName)
+        self._runCmd("add-biosample", self.bioSampleName, self.bioSample)
+        self._runCmd("add-individual", self.individual, self.individual)
         self._runCmd(
             "add-readgroupset", self.datasetName, paths.bamPath,
             '-R', paths.referenceSetName, '-n', paths.readGroupSetName)

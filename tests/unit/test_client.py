@@ -34,6 +34,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.referenceId = "referenceId"
         self.readGroupIds = ["readGroupId"]
         self.referenceName = "referenceName"
+        self.bioSampleId = "bioSampleId"
+        self.bioSampleName = "bioSampleName"
+        self.individualName = "individualName"
+        self.individualId = "individualId"
         self.start = 100
         self.end = 101
         self.referenceName = "referenceName"
@@ -182,6 +186,27 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "reads", protocol.SearchReadsResponse)
 
+    def testSearchBioSamples(self):
+        request = protocol.SearchBioSamplesRequest()
+        request.dataset_id = self.datasetId
+        request.name = self.bioSampleName
+        request.individual_id = self.individualId
+        request.page_size = self.pageSize
+        self.httpClient.searchBioSamples(
+            self.datasetId, self.bioSampleName, self.individualId)
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "biosamples", protocol.SearchBioSamplesResponse)
+
+    def testSearchIndividuals(self):
+        request = protocol.SearchIndividualsRequest()
+        request.dataset_id = self.datasetId
+        request.name = self.individualName
+        request.pageSize = self.pageSize
+        self.httpClient.searchIndividuals(
+            self.datasetId, self.individualName)
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "individuals", protocol.SearchIndividualsResponse)
+
     def testGetReferenceSet(self):
         self.httpClient.getReferenceSet(self.objectId)
         self.httpClient._runGetRequest.assert_called_once_with(
@@ -227,6 +252,16 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.getVariant(self.objectId)
         self.httpClient._runGetRequest.assert_called_once_with(
             "variants", protocol.Variant, self.objectId)
+
+    def testGetBioSample(self):
+        self.httpClient.getBioSample(self.objectId)
+        self.httpClient._runGetRequest.assert_called_once_with(
+            "biosamples", protocol.BioSample, self.objectId)
+
+    def testGetIndividual(self):
+        self.httpClient.getIndividual(self.objectId)
+        self.httpClient._runGetRequest.assert_called_once_with(
+            "individuals", protocol.Individual, self.objectId)
 
 
 class DatamodelObjectWrapper(object):

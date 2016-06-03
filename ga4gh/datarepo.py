@@ -699,7 +699,7 @@ class SqlDataRepository(AbstractDataRepository):
                 readGroupSetId TEXT NOT NULL,
                 name TEXT NOT NULL,
                 predictedInsertSize INTEGER,
-                sampleId TEXT,
+                sampleName TEXT,
                 description TEXT,
                 stats TEXT NOT NULL,
                 experiment TEXT NOT NULL,
@@ -719,7 +719,7 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             INSERT INTO ReadGroup (
                 id, readGroupSetId, name, predictedInsertSize,
-                sampleId, description, stats, experiment, created, updated)
+                sampleName, description, stats, experiment, created, updated)
             VALUES
                 (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
         """
@@ -730,7 +730,7 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute(sql, (
             readGroup.getId(), readGroup.getParentContainer().getId(),
             readGroup.getLocalId(), readGroup.getPredictedInsertSize(),
-            readGroup.getSampleId(), readGroup.getDescription(),
+            readGroup.getSampleName(), readGroup.getDescription(),
             statsJson, experimentJson))
 
     def removeReadGroupSet(self, readGroupSet):

@@ -61,7 +61,7 @@ class ReadGroupInfo(object):
         self.programs = []
         if 'PG' in self.samFile.header:
             self.programs = self.samFile.header['PG']
-        self.sampleId = None
+        self.sampleName = None
         self.description = None
         self.predictedInsertSize = None
         self.instrumentModel = None
@@ -74,7 +74,7 @@ class ReadGroupInfo(object):
             readGroupHeader = [
                 rgHeader for rgHeader in self.samFile.header['RG']
                 if rgHeader['ID'] == readGroupName][0]
-            self.sampleId = readGroupHeader.get('SM', None)
+            self.sampleName = readGroupHeader.get('SM', None)
             self.description = readGroupHeader.get('DS', None)
             if 'PI' in readGroupHeader:
                 self.predictedInsertSize = int(readGroupHeader['PI'])
@@ -148,15 +148,15 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
     def getProtocolClass(self):
         return protocol.ReadGroupSet
 
-    def testSampleIdEtc(self):
+    def testSampleNameEtc(self):
         # test that sampleId and other misc fields are set correctly
         readGroupSet = self._gaObject
         for readGroup in readGroupSet.getReadGroups():
             readGroupInfo = self._readGroupInfos[readGroup.getLocalId()]
             gaReadGroup = readGroup.toProtocolElement()
             self.assertEqual(
-                readGroupInfo.sampleId,
-                gaReadGroup.sample_id)
+                readGroupInfo.sampleName,
+                gaReadGroup.sample_name)
             self.assertEqual(
                 readGroupInfo.predictedInsertSize,
                 gaReadGroup.predicted_insert_size)

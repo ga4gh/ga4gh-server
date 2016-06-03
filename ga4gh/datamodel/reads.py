@@ -499,7 +499,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.name = self.getLocalId()
         readGroup.predicted_insert_size = pb.int(self.getPredictedInsertSize())
         referenceSet = self._parentContainer.getReferenceSet()
-        readGroup.sample_id = pb.string(self.getSampleId())
+        readGroup.sample_name = pb.string(self.getSampleName())
         if referenceSet is not None:
             readGroup.reference_set_id = referenceSet.getId()
         readGroup.stats.CopyFrom(self.getStats())
@@ -560,7 +560,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         """
         raise NotImplementedError()
 
-    def getSampleId(self):
+    def getSampleName(self):
         """
         Returns the sample id of the read group
         """
@@ -673,7 +673,7 @@ class SimulatedReadGroup(AbstractReadGroup):
     def getDescription(self):
         return None
 
-    def getSampleId(self):
+    def getSampleName(self):
         return 'sampleId'
 
     def getPredictedInsertSize(self):
@@ -708,7 +708,7 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         self._dataUrl = parentContainer.getDataUrl()
         self._indexFile = parentContainer.getIndexFile()
         self._filterReads = localId != HtslibReadGroupSet.defaultReadGroupName
-        self._sampleId = None
+        self._sampleName = None
         self._description = None
         self._predictedInsertSize = None
         self._instrumentModel = None
@@ -724,7 +724,7 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         """
         Populate the instance variables using the specified SAM header.
         """
-        self._sampleId = readGroupHeader.get('SM', None)
+        self._sampleName = readGroupHeader.get('SM', None)
         self._description = readGroupHeader.get('DS', None)
         if 'PI' in readGroupHeader:
             self._predictedInsertSize = int(readGroupHeader['PI'])
@@ -739,7 +739,7 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         """
         Populate the instance variables using the specified DB row.
         """
-        self._sampleId = row[b'sampleId']
+        self._sampleName = row[b'sampleName']
         self._description = row[b'description']
         self._predictedInsertSize = row[b'predictedInsertSize']
         stats = protocol.fromJson(row[b'stats'], protocol.ReadStats)
@@ -766,8 +766,8 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
     def getDescription(self):
         return self._description
 
-    def getSampleId(self):
-        return self._sampleId
+    def getSampleName(self):
+        return self._sampleName
 
     def getPredictedInsertSize(self):
         return self._predictedInsertSize
