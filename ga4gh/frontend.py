@@ -564,6 +564,10 @@ def searchDatasets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchDatasets)
 
+@DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+def searchPhenotypeAssociationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypeAssociationSets)
 
 @DisplayedRoute('/featuresets/search', postMethod=True)
 def searchFeatureSets():
@@ -571,24 +575,6 @@ def searchFeatureSets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatureSets)
 
-
-
-@DisplayedRoute('/features/search', postMethod=True)
-def searchFeatures():
-    return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchFeatures)
-
-@DisplayedRoute('/genotypephenotype/search', postMethod=True)
-def searchGenotypePhenotype():
-    return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchGenotypePhenotype)
-
-
-@DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
-def searchPhenotypeAssociationSets():
-    return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchPhenotypeAssociationSets)
-        
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
@@ -642,6 +628,42 @@ def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
 
+# G2P API endpoints as proposed in
+# https://github.com/ohsu-computational-biology/schemas/blob/apichanges/doc/source/api/proposed_schema_changes.md#genotypephenotypessearch
+
+@DisplayedRoute(
+    '/datasets/<no(search):datasetId>/features/search',
+    pathDisplay='/features/<datasetId>/features/search')
+def getFeaturesSearch(datasetId):
+    return handleFlaskGetRequest(
+        datasetId, flask.request, app.backend.runSearchFeatures)
+
+@DisplayedRoute(
+    '/associations/<no(search):phenotypeAssociationSetId>/genotypes/search',
+    pathDisplay='/features/<phenotypeAssociationSetId>/genotypes/search')
+def getGenotypesSearch(phenotypeAssociationSetId):
+    return handleFlaskGetRequest(
+        phenotypeAssociationSetId,
+        flask.request,
+        app.backend.runSearchGenotypes)
+
+@DisplayedRoute(
+    '/associations/<no(search):phenotypeAssociationSetId>/phenotypes/search',
+    pathDisplay='/features/<phenotypeAssociationSetId>/phenotypes/search')
+def getPhenotypesSearch(phenotypeAssociationSetId):
+    return handleFlaskGetRequest(
+        phenotypeAssociationSetId,
+        flask.request,
+        app.backend.runSearchPhenotypes)
+
+@DisplayedRoute(
+    '/associations/<no(search):pasId>/genotypephenotypes/search',
+    pathDisplay='/features/<pasId>/genotypephenotypes/search')
+def getGenotypePhenotypesSearch(phenotypeAssociationSetId):
+    return handleFlaskGetRequest(
+        phenotypeAssociationSetId,
+        flask.request,
+        app.backend.runSearchGenotypePhenotypes)
 
 @app.route('/oauth2callback', methods=['GET'])
 def oidcCallback():

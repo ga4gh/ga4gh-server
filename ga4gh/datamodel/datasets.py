@@ -138,6 +138,36 @@ class Dataset(datamodel.DatamodelObject):
             raise exceptions.VariantSetNameNotFoundException(name)
         return self._variantSetNameMap[name]
 
+    def addPhenotypeAssociationSet(self, phenotypeAssociationSet):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        id_ = phenotypeAssociationSet.getId()
+        self._phenotypeAssociationSetIdMap[id_] = phenotypeAssociationSet
+        self._phenotypeAssociationSetNameMap[
+            phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
+        self._phenotypeAssociationSetIds.append(id_)
+
+    def getPhenotypeAssociationSet(self, id_):
+        return self._phenotypeAssociationSetIdMap[id_]
+
+    def getPhenotypeAssociationSetByName(self, name):
+        if name not in self._phenotypeAssociationSetNameMap:
+            # TODO make a new exception
+            # TODO is this codeblock reachable?
+            raise exceptions.DatasetNameNotFoundException(name)
+        return self._phenotypeAssociationSetNameMap[name]
+
+    def getPhenotypeAssociationSetByIndex(self, index):
+        return self._phenotypeAssociationSetIdMap[
+            self._phenotypeAssociationSetIds[index]]
+
+    def getNumPhenotypeAssociationSets(self):
+        """
+        Returns the number of reference sets in this data repository.
+        """
+        return len(self._phenotypeAssociationSetIds)
+
     def getFeatureSets(self):
         """
         Returns the list of FeatureSets in this dataset
