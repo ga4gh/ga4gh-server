@@ -37,6 +37,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
+import ga4gh.datamodel.bio_metadata as biodata
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -1869,6 +1870,50 @@ class RepoManager(object):
         def func():
             self._updateRepo(self._repo.removeFeatureSet, featureSet)
         self._confirmDelete("FeatureSet", featureSet.getLocalId(), func)
+
+    def addBioSample(self):
+        """
+        Adds a new biosample into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        bioSample = biodata.BioSample(dataset, self._args.bioSampleName)
+        bioSample.populateFromJson(self._args.bioSample)
+        self._updateRepo(self._repo.insertBioSample, bioSample)
+
+    def removeBioSample(self):
+        """
+        Removes a biosample from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        bioSample = dataset.getBioSampleByName(self._args.bioSampleName)
+
+        def func():
+            self._updateRepo(self._repo.removeBioSample, bioSample)
+        self._confirmDelete("BioSample", bioSample.getLocalId(), func)
+
+    def addIndividual(self):
+        """
+        Adds a new individual into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        individual = biodata.Individual(dataset, self._args.individual)
+        individual.populateFromJson(self._args.individual)
+        self._updateRepo(self._repo.insertIndividual, individual)
+
+    def removeIndividual(self):
+        """
+        Removes an individual from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        individual = dataset.getIndividualByName(self._args.individualName)
+
+        def func():
+            self._updateRepo(self._repo.removeIndividual, individual)
+        self._confirmDelete("Individual", individual.getLocalId(), func)
 
     def removeOntology(self):
         """

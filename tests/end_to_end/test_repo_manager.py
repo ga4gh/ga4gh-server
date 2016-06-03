@@ -51,8 +51,8 @@ class RepoManagerEndToEndTest(unittest.TestCase):
             "add-referenceset", paths.faPath,
             '-n', paths.referenceSetName)
         self._runCmd("add-dataset", self.datasetName)
-        self._runCmd("add-biosample", self.bioSampleName, self.bioSample)
-        self._runCmd("add-individual", self.individual, self.individual)
+        self._runCmd("add-biosample", self.datasetName, self.bioSampleName, self.bioSample)
+        self._runCmd("add-individual", self.datasetName, self.individualName, self.individual)
         self._runCmd(
             "add-readgroupset", self.datasetName, paths.bamPath,
             '-R', paths.referenceSetName, '-n', paths.readGroupSetName)
