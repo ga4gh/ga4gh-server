@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/bio_metadata.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=b'\n\x18ga4gh/bio_metadata.proto\x12\x05ga4gh\x1a\x1cgoogle/protobuf/struct.proto\x1a\x14ga4gh/metadata.proto\"\x99\x02\n\nIndividual\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x0f\n\x07\x63reated\x18\x04 \x01(\t\x12\x0f\n\x07updated\x18\x05 \x01(\t\x12$\n\x07species\x18\x06 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12 \n\x03sex\x18\x07 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12)\n\x04info\x18\x08 \x03(\x0b\x32\x1b.ga4gh.Individual.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\xf7\x01\n\tBioSample\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x0f\n\x07\x64isease\x18\x04 \x01(\t\x12\x0f\n\x07\x63reated\x18\x05 \x01(\t\x12\x0f\n\x07updated\x18\x06 \x01(\t\x12\x15\n\rindividual_id\x18\x07 \x01(\t\x12(\n\x04info\x18\x08 \x03(\x0b\x32\x1a.ga4gh.BioSample.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3'
+  serialized_pb=b'\n\x18ga4gh/bio_metadata.proto\x12\x05ga4gh\x1a\x1cgoogle/protobuf/struct.proto\x1a\x14ga4gh/metadata.proto\"\x99\x02\n\nIndividual\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12\x0f\n\x07\x63reated\x18\x04 \x01(\t\x12\x0f\n\x07updated\x18\x05 \x01(\t\x12$\n\x07species\x18\x06 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12 \n\x03sex\x18\x07 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12)\n\x04info\x18\x08 \x03(\x0b\x32\x1b.ga4gh.Individual.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\x8c\x02\n\tBioSample\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12$\n\x07\x64isease\x18\x04 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x0f\n\x07\x63reated\x18\x05 \x01(\t\x12\x0f\n\x07updated\x18\x06 \x01(\t\x12\x15\n\rindividual_id\x18\x07 \x01(\t\x12(\n\x04info\x18\x08 \x03(\x0b\x32\x1a.ga4gh.BioSample.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,ga4gh_dot_metadata__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -211,8 +211,8 @@ _BIOSAMPLE = _descriptor.Descriptor(
       options=None),
     _descriptor.FieldDescriptor(
       name='disease', full_name='ga4gh.BioSample.disease', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
+      number=4, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -257,7 +257,7 @@ _BIOSAMPLE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=372,
-  serialized_end=619,
+  serialized_end=640,
 )
 
 _INDIVIDUAL_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
@@ -267,6 +267,7 @@ _INDIVIDUAL.fields_by_name['sex'].message_type = ga4gh_dot_metadata__pb2._ONTOLO
 _INDIVIDUAL.fields_by_name['info'].message_type = _INDIVIDUAL_INFOENTRY
 _BIOSAMPLE_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
 _BIOSAMPLE_INFOENTRY.containing_type = _BIOSAMPLE
+_BIOSAMPLE.fields_by_name['disease'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
 _BIOSAMPLE.fields_by_name['info'].message_type = _BIOSAMPLE_INFOENTRY
 DESCRIPTOR.message_types_by_name['Individual'] = _INDIVIDUAL
 DESCRIPTOR.message_types_by_name['BioSample'] = _BIOSAMPLE
