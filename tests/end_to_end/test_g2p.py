@@ -61,7 +61,10 @@ class TestG2P(unittest.TestCase):
                                         request)
         response = protocol.SearchPhenotypeAssociationSetsResponse(
             ).fromJsonString(response.data)
+        # there should be an array
         self.assertIsNotNone(response.phenotypeAssociationSets)
+        # there should be at least one entry
+        self.assertGreater(len(response.phenotypeAssociationSets),0)
 
     def testFeaturesSearch(self):
         request = protocol.SearchFeaturesRequest()

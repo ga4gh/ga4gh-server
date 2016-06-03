@@ -455,33 +455,16 @@ class Backend(object):
             request, self.getDataRepository().getNumDatasets(),
             self.getDataRepository().getDatasetByIndex)
 
-    def bioSamplesGenerator(self, request):
-        dataset = self.getDataRepository().getDataset(request.dataset_id)
-        results = []
-        for obj in dataset.getBioSamples():
-            include = True
-            if request.name:
-                if request.name != obj.getLocalId():
-                    include = False
-            if request.individual_id:
-                if request.individual_id != obj.getIndividualId():
-                    include = False
-            if include:
-                results.append(obj)
-        return self._objectListGenerator(request, results)
-
-    def individualsGenerator(self, request):
-        dataset = self.getDataRepository().getDataset(request.dataset_id)
-        results = []
-        for obj in dataset.getIndividuals():
-            include = True
-            if request.name:
-                if request.name != obj.getLocalId():
-                    include = False
-            if include:
-                results.append(obj)
-        return self._objectListGenerator(request, results)
-
+    def phenotypeAssociationSetsGenerator(self, request):
+        """
+        Returns a generator over the (phenotypeAssociationSet, nextPageToken)
+        pairs defined by the specified request
+        """
+        dataset = self.getDataRepository().getDataset(request.datasetId)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumPhenotypeAssociationSets(),
+            dataset.getPhenotypeAssociationSetByIndex)
+            
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
@@ -1072,3 +1055,37 @@ class Backend(object):
             request, protocol.SearchFeaturesRequest,
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
+
+    def runSearchGenotypePhenotype(self, request):
+            return self.runSearchRequest(
+                request, protocol.SearchGenotypePhenotypeRequest,
+                protocol.SearchGenotypePhenotypeResponse,
+                self.genotypePhenotypeGenerator)
+
+    def runSearchPhenotypeAssociationSets(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypeAssociationSetsRequest,
+            protocol.SearchPhenotypeAssociationSetsResponse,
+            self.phenotypeAssociationSetsGenerator)
+
+    def genotypePhenotypeGenerator(self, request):
+        # TODO make paging work using SPARQL?
+        if (request.evidence is None and
+                request.phenotype is None and
+                request.feature is None):
+            msg = "Error:One of evidence,phenotype or feature must be non-null"
+            raise exceptions.BadRequestException(msg)
+        # determine offset for paging
+        if request.pageToken is not None:
+            offset, = _parsePageToken(request.pageToken, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotypeAssociationSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request.feature, request.evidence, request.phenotype,
+            request.pageSize, offset)
+        return self._protocolListGenerator(request, annotationList)

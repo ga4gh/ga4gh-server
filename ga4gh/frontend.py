@@ -567,8 +567,10 @@ def searchDatasets():
 
 @DisplayedRoute('/featuresets/search', postMethod=True)
 def searchFeatureSets():
+    print('frontend ...... /featuresets/search')
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatureSets)
+
 
 
 @DisplayedRoute('/features/search', postMethod=True)
@@ -576,35 +578,17 @@ def searchFeatures():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatures)
 
-
-@DisplayedRoute('/biosamples/search', postMethod=True)
-def searchBioSamples():
+@DisplayedRoute('/genotypephenotype/search', postMethod=True)
+def searchGenotypePhenotype():
     return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchBioSamples)
+        flask.request, app.backend.runSearchGenotypePhenotype)
 
 
-@DisplayedRoute('/individuals/search', postMethod=True)
-def searchIndividuals():
+@DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+def searchPhenotypeAssociationSets():
     return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchIndividuals)
-
-
-@DisplayedRoute(
-    '/biosamples/<no(search):id>',
-    pathDisplay='/biosamples/<id>')
-def getBioSample(id):
-    return handleFlaskGetRequest(
-        id, flask.request, app.backend.runGetBioSample)
-
-
-@DisplayedRoute(
-    '/individuals/<no(search):id>',
-    pathDisplay='/individuals/<id>')
-def getIndividual(id):
-    return handleFlaskGetRequest(
-        id, flask.request, app.backend.runGetIndividual)
-
-
+        flask.request, app.backend.runSearchPhenotypeAssociationSets)
+        
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
