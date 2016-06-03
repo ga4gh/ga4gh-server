@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import json
 import mock
 import unittest
+import shlex
 
 import ga4gh.cli as cli
 import ga4gh.protocol as protocol
@@ -480,12 +481,12 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.force, False)
 
     def testAddBioSample(self):
-        cliInput = "add-biosample {} {} {} {}".format(
+        cliInput = "add-biosample {} {} {} '{}'".format(
             self.registryPath,
             self.datasetName,
             self.bioSampleName,
             self.bioSample)
-        args = self.parser.parse_args(cliInput.split())
+        args = self.parser.parse_args(shlex.split(cliInput))
         self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.bioSampleName, self.bioSampleName)
@@ -505,14 +506,15 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.force, False)
 
     def testAddIndividual(self):
-        cliInput = "add-individual {} {} {} {}".format(
+        cliInput = "add-individual {} {} {} '{}'".format(
             self.registryPath,
             self.datasetName,
             self.individualName,
             self.individual)
-        args = self.parser.parse_args(cliInput.split())
+        args = self.parser.parse_args(shlex.split(cliInput))
         self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.individualName, self.individualName)
         self.assertEquals(args.individual, self.individual)
         self.assertEquals(args.runner, "addIndividual")
 

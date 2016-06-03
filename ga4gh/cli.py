@@ -1942,13 +1942,37 @@ class RepoManager(object):
     def addVariantSetNameArgument(cls, subparser):
         subparser.add_argument(
             "variantSetName",
-            help="the name of the feature set")
+            help="the name of the variant set")
 
     @classmethod
     def addFeatureSetNameArgument(cls, subparser):
         subparser.add_argument(
             "featureSetName",
-            help="the name of the variant set")
+            help="the name of the feature set")
+
+    @classmethod
+    def addIndividualNameArgument(cls, subparser):
+        subparser.add_argument(
+            "individualName",
+            help="the name of the individual")
+
+    @classmethod
+    def addBioSampleNameArgument(cls, subparser):
+        subparser.add_argument(
+            "bioSampleName",
+            help="the name of the biosample")
+
+    @classmethod
+    def addBioSampleArgument(cls, subparser):
+        subparser.add_argument(
+            "bioSample",
+            help="the JSON of the biosample")
+
+    @classmethod
+    def addIndividualArgument(cls, subparser):
+        subparser.add_argument(
+            "individual",
+            help="the JSON of the individual")
 
     @classmethod
     def addFilePathArgument(cls, subparser, helpText):
@@ -2152,6 +2176,60 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
+        addFeatureSetParser = addSubparser(
+            subparsers, "add-featureset", "Add a feature set to the data repo")
+        addFeatureSetParser.set_defaults(runner="addFeatureSet")
+        cls.addRepoArgument(addFeatureSetParser)
+        cls.addDatasetNameArgument(addFeatureSetParser)
+        cls.addFilePathArgument(
+            addFeatureSetParser,
+            "The path to the converted SQLite database containing Feature "
+            "data")
+        cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
+        cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
+
+        removeFeatureSetParser = addSubparser(
+            subparsers, "remove-featureset",
+            "Remove a feature set from the repo")
+        removeFeatureSetParser.set_defaults(runner="removeFeatureSet")
+        cls.addRepoArgument(removeFeatureSetParser)
+        cls.addDatasetNameArgument(removeFeatureSetParser)
+        cls.addFeatureSetNameArgument(removeFeatureSetParser)
+        cls.addForceOption(removeFeatureSetParser)
+
+        addBioSampleParser = addSubparser(
+            subparsers, "add-biosample", "Add a BioSample to the dataset")
+        addBioSampleParser.set_defaults(runner="addBioSample")
+        cls.addRepoArgument(addBioSampleParser)
+        cls.addDatasetNameArgument(addBioSampleParser)
+        cls.addBioSampleNameArgument(addBioSampleParser)
+        cls.addBioSampleArgument(addBioSampleParser)
+
+        removeBioSampleParser = addSubparser(
+            subparsers, "remove-biosample",
+            "Remove a BioSample from the repo")
+        removeBioSampleParser.set_defaults(runner="removeBioSample")
+        cls.addRepoArgument(removeBioSampleParser)
+        cls.addDatasetNameArgument(removeBioSampleParser)
+        cls.addBioSampleNameArgument(removeBioSampleParser)
+        cls.addForceOption(removeBioSampleParser)
+
+        addIndividualParser = addSubparser(
+            subparsers, "add-individual", "Add an Individual to the dataset")
+        addIndividualParser.set_defaults(runner="addIndividual")
+        cls.addRepoArgument(addIndividualParser)
+        cls.addDatasetNameArgument(addIndividualParser)
+        cls.addIndividualNameArgument(addIndividualParser)
+        cls.addIndividualArgument(addIndividualParser)
+
+        removeIndividualParser = addSubparser(
+            subparsers, "remove-individual",
+            "Remove an Individual from the repo")
+        removeIndividualParser.set_defaults(runner="removeIndividual")
+        cls.addRepoArgument(removeIndividualParser)
+        cls.addDatasetNameArgument(removeIndividualParser)
+        cls.addIndividualNameArgument(removeIndividualParser)
+        cls.addForceOption(removeIndividualParser)
         return parser
 
     @classmethod

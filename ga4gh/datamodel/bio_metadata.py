@@ -68,7 +68,8 @@ class BioSample(datamodel.DatamodelObject):
         self._created = row[b'created']
         self._updated = row[b'updated']
         self._description = row[b'description']
-        self._disease = protocol.fromJson(row[b'disease'], protocol.OntologyTerm)
+        self._disease = protocol.fromJson(
+            row[b'disease'], protocol.OntologyTerm)
         self._individualId = row[b'individual_id']
         self._info = json.loads(row[b'info'])
         return self
@@ -94,6 +95,7 @@ class BioSample(datamodel.DatamodelObject):
     def getName(self):
         return self._name
 
+
 class Individual(datamodel.DatamodelObject):
     """
     This class represents an abstract Individual object.
@@ -113,9 +115,9 @@ class Individual(datamodel.DatamodelObject):
         self._name = localId
 
     def toProtocolElement(self):
-        gaIndividual=protocol.Individual(
+        gaIndividual = protocol.Individual(
             created=self.getCreated(),
-            updated= self.getUpdated(),
+            updated=self.getUpdated(),
             description=self.getDescription(),
             species=self.getSpecies(),
             sex=self.getSex(),

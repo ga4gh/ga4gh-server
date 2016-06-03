@@ -312,21 +312,23 @@ class VariantSetCompoundId(DatasetCompoundId):
     containerIds = DatasetCompoundId.containerIds + [('variant_set_id', 2)]
     differentiator = 'vs'
 
+
 class IndividualCompoundId(DatasetCompoundId):
     """
-    The compound id for a variant set
-    """
-    fields = DatasetCompoundId.fields + [
-        CompoundId.differentiatorFieldName, 'bio_sample']
-    containerIds = DatasetCompoundId.containerIds + [('bio_sample_id', 2)]
-    differentiator = 'i'
-
-class BioSampleCompoundId(DatasetCompoundId):
-    """
-    The compound id for a variant set
+    The compound id for an individual
     """
     fields = DatasetCompoundId.fields + [
         CompoundId.differentiatorFieldName, 'individual']
+    containerIds = DatasetCompoundId.containerIds + [('individual_id', 2)]
+    differentiator = 'i'
+
+
+class BioSampleCompoundId(DatasetCompoundId):
+    """
+    The compound id for a biosample
+    """
+    fields = DatasetCompoundId.fields + [
+        CompoundId.differentiatorFieldName, 'biosample']
     containerIds = DatasetCompoundId.containerIds + [('bio_sample_id', 2)]
     differentiator = 'b'
 

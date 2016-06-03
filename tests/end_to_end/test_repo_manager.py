@@ -13,7 +13,6 @@ import unittest
 import ga4gh.cli as cli
 import tests.paths as paths
 
-import json
 import ga4gh.protocol as protocol
 
 
