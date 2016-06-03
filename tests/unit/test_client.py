@@ -201,7 +201,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request = protocol.SearchIndividualsRequest()
         request.dataset_id = self.datasetId
         request.name = self.individualName
-        request.pageSize = self.pageSize
+        request.page_size = self.pageSize
         self.httpClient.searchIndividuals(
             self.datasetId, self.individualName)
         self.httpClient._runSearchRequest.assert_called_once_with(
