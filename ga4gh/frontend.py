@@ -633,14 +633,15 @@ def getFeature(id):
 
 @DisplayedRoute(
     '/datasets/<no(search):datasetId>/features/search',
-    pathDisplay='/features/<datasetId>/features/search')
+    pathDisplay='/datasets/<datasetId>/features/search', postMethod=True)
 def getFeaturesSearch(datasetId):
     return handleFlaskGetRequest(
         datasetId, flask.request, app.backend.runSearchFeatures)
 
 @DisplayedRoute(
     '/associations/<no(search):phenotypeAssociationSetId>/genotypes/search',
-    pathDisplay='/features/<phenotypeAssociationSetId>/genotypes/search')
+    pathDisplay='/associations/<phenotypeAssociationSetId>/genotypes/search',
+    postMethod=True)
 def getGenotypesSearch(phenotypeAssociationSetId):
     return handleFlaskGetRequest(
         phenotypeAssociationSetId,
@@ -649,7 +650,8 @@ def getGenotypesSearch(phenotypeAssociationSetId):
 
 @DisplayedRoute(
     '/associations/<no(search):phenotypeAssociationSetId>/phenotypes/search',
-    pathDisplay='/features/<phenotypeAssociationSetId>/phenotypes/search')
+    pathDisplay='/associations/<phenotypeAssociationSetId>/phenotypes/search',
+    postMethod=True)
 def getPhenotypesSearch(phenotypeAssociationSetId):
     return handleFlaskGetRequest(
         phenotypeAssociationSetId,
@@ -658,7 +660,8 @@ def getPhenotypesSearch(phenotypeAssociationSetId):
 
 @DisplayedRoute(
     '/associations/<no(search):pasId>/genotypephenotypes/search',
-    pathDisplay='/features/<pasId>/genotypephenotypes/search')
+    pathDisplay='/associations/<pasId>/genotypephenotypes/search',
+    postMethod=True)
 def getGenotypePhenotypesSearch(phenotypeAssociationSetId):
     return handleFlaskGetRequest(
         phenotypeAssociationSetId,
