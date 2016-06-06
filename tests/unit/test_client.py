@@ -157,9 +157,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request = protocol.SearchReadGroupSetsRequest()
         request.dataset_id = self.datasetId
         request.name = self.objectName
+        request.bio_sample_id = self.bioSampleId
         request.page_size = self.pageSize
         self.httpClient.searchReadGroupSets(
-            self.datasetId, name=self.objectName)
+            self.datasetId,
+            name=self.objectName,
+            bioSampleId=self.bioSampleId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
@@ -167,9 +170,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request = protocol.SearchCallSetsRequest()
         request.variant_set_id = self.variantSetId
         request.name = self.objectName
+        request.bio_sample_id = self.bioSampleId
         request.page_size = self.pageSize
         self.httpClient.searchCallSets(
-            self.variantSetId, name=self.objectName)
+            self.variantSetId,
+            name=self.objectName,
+            bioSampleId=self.bioSampleId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "callsets", protocol.SearchCallSetsResponse)
 

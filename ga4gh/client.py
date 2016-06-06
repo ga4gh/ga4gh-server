@@ -496,7 +496,7 @@ class AbstractClient(object):
         request = protocol.SearchCallSetsRequest()
         request.variant_set_id = variantSetId
         request.name = pb.string(name)
-        request.bio_sample_id = bioSampleId
+        request.bio_sample_id = pb.string(bioSampleId)
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "callsets", protocol.SearchCallSetsResponse)
@@ -516,7 +516,7 @@ class AbstractClient(object):
         """
         request = protocol.SearchBioSamplesRequest()
         request.dataset_id = datasetId
-        request.name = name
+        request.name = pb.string(name)
         request.individual_id = individualId
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
@@ -547,6 +547,8 @@ class AbstractClient(object):
 
         :param str name: Only ReadGroupSets matching the specified name
             will be returned.
+        :param str bioSampleId: Only ReadGroups matching the specified
+            bioSample will be included in the response.
         :return: An iterator over the :class:`ga4gh.protocol.ReadGroupSet`
             objects defined by the query parameters.
         :rtype: iter
@@ -554,7 +556,7 @@ class AbstractClient(object):
         request = protocol.SearchReadGroupSetsRequest()
         request.dataset_id = datasetId
         request.name = pb.string(name)
-        request.bioSampleId = bioSampleId
+        request.bio_sample_id = pb.string(bioSampleId)
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
@@ -692,8 +694,8 @@ class LocalClient(AbstractClient):
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
             "variantannotationsets": self._backend.runGetVariantAnnotationSet,
-            "biosamples": self._backend.runGetBioSample,
-            "individuals": self._backend.runGetIndividual
+            #"biosamples": self._backend.runGetBioSample,
+            #"individuals": self._backend.runGetIndividual
         }
         self._searchMethodMap = {
             "callsets": self._backend.runSearchCallSets,
@@ -709,8 +711,8 @@ class LocalClient(AbstractClient):
             "variantannotations": self._backend.runSearchVariantAnnotations,
             "variantannotationsets":
                 self._backend.runSearchVariantAnnotationSets,
-            "biosamples": self._backend.runSearchBioSamples,
-            "individuals": self._backend.runSearchIndividuals
+            #"biosamples": self._backend.runSearchBioSamples,
+            #"individuals": self._backend.runSearchIndividuals
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):

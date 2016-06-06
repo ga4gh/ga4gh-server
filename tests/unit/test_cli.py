@@ -225,11 +225,11 @@ class TestClientArguments(unittest.TestCase):
 
     def testBioSamplesGetArguments(self):
         self.verifyGetArguments(
-            "biosamples-get", cli.GetBioSamplesRunner)
+            "biosamples-get", cli.GetBioSampleRunner)
 
     def testIndividualsGetArguments(self):
         self.verifyGetArguments(
-            "individuals-get", cli.GetIndividualsRunner)
+            "individuals-get", cli.GetIndividualRunner)
 
     def testReferenceGetArguments(self):
         self.verifyGetArguments(
