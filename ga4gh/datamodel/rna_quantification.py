@@ -10,6 +10,7 @@ import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.sqliteBackend as sqliteBackend
+import ga4gh.pb as pb
 
 
 """
@@ -35,7 +36,6 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(AbstractExpressionLevel, self).__init__(
             parentContainer, localId)
-        self._annotationId = ""
         self._expression = 0.0
         self._quantificationGroupId = ""
         self._isNormalized = ""
@@ -47,15 +47,15 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
 
     def toProtocolElement(self):
         protocolElement = protocol.ExpressionLevel()
-        protocolElement.annotationId = self._annotationId
-        protocolElement.expression = self._expression
-        protocolElement.quantificationGroupId = (self._quantificationGroupId)
         protocolElement.id = self.getId()
-        protocolElement.isNormalized = self._isNormalized
-        protocolElement.rawReadCount = self._rawReadCount
-        protocolElement.score = self._score
+        protocolElement.name = self._name
+        protocolElement.quantification_group_id = (self._quantificationGroupId)
+        protocolElement.raw_read_count = self._rawReadCount
+        protocolElement.expression = self._expression
+        protocolElement.is_normalized = self._isNormalized
         protocolElement.units = self._units
-        protocolElement.confInterval = self._confInterval
+        protocolElement.score = self._score
+        protocolElement.conf_interval = self._confInterval
         return protocolElement
 
 
@@ -66,7 +66,6 @@ class ExpressionLevel(AbstractExpressionLevel):
 
     def __init__(self, parentContainer, record):
         super(ExpressionLevel, self).__init__(parentContainer, record["id"])
-        self._annotationId = record["annotation_id"]
         self._expression = record["expression"]
         self._quantificationGroupId = record["quantification_group_id"]
         # sqlite stores booleans as int (False = 0, True = 1)
@@ -95,12 +94,16 @@ class AbstractQuantificationGroup(datamodel.DatamodelObject):
             parentContainer, localId)
         self._analysisId = ""
         self._name = localId
+        self._description = ""
+        self._info = []
 
     def toProtocolElement(self):
         protocolElement = protocol.QuantificationGroup()
         protocolElement.id = self.getId()
-        protocolElement.analysisId = self._analysisId
+        protocolElement.analysis_id = self._analysisId
         protocolElement.name = self._name
+        protocolElement.description = self._description
+        protocolElement.info = self._info
         return protocolElement
 
 
@@ -130,17 +133,19 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         self._name = localId
         self._readGroupId = ""
         self._referenceSet = None
+        self._programIds = []
 
     def toProtocolElement(self):
         """
         Converts this rnaQuant into its GA4GH protocol equivalent.
         """
         protocolElement = protocol.RnaQuantification()
-        protocolElement.annotationIds = self._annotationIds
-        protocolElement.description = self._description
         protocolElement.id = self.getId()
         protocolElement.name = self._name
-        protocolElement.readGroupId = self._readGroupId
+        protocolElement.description = self._description
+        protocolElement.read_group_id = self._readGroupId
+        protocolElement.program_ids = self._programIds
+        protocolElement.annotation_ids = self._annotationIds
         return protocolElement
 
     def addRnaQuantMetadata(self, fields):

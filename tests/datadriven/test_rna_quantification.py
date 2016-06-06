@@ -30,7 +30,6 @@ _rnaQuantTestData = {
 _expressionTestData = {
     "bad_id": "MWtnLXAzLXN1YnNldDpybmFfZXhhbXBsZV8yOm1tOV9leGFtcGxlXzI=",
     "name": "ENSG00000076984.13",
-    "annotation_id": "Gencodev16",
     "expression": 24.52,
     "quantification_group_id": "ENSG00000076984.13",
     "is_normalized": True,
@@ -111,12 +110,12 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         compoundId = datamodel.RnaQuantificationCompoundId.parse(idString)
         self.assertEqual(gaRnaQuant.id, str(compoundId))
         self.assertEqual(
-            gaRnaQuant.annotationIds, _rnaQuantTestData["annotation_ids"])
+            gaRnaQuant.annotation_ids, _rnaQuantTestData["annotation_ids"])
         self.assertEqual(
             gaRnaQuant.description, _rnaQuantTestData["description"])
         self.assertEqual(gaRnaQuant.name, _rnaQuantTestData["name"])
         self.assertEqual(
-            gaRnaQuant.readGroupId, _rnaQuantTestData["read_group_id"])
+            gaRnaQuant.read_group_id, _rnaQuantTestData["read_group_id"])
 
     def testGetExpressionLevelById(self):
         rnaQuantification = self._gaObject
@@ -137,20 +136,18 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         compoundId = datamodel.ExpressionLevelCompoundId.parse(idString)
         self.assertEqual(gaExpression.id, str(compoundId))
         self.assertEqual(
-            gaExpression.annotationId, testData["annotation_id"])
-        self.assertEqual(
             gaExpression.expression, testData["expression"])
         self.assertEqual(
-            gaExpression.quantificationGroupId,
+            gaExpression.quantification_group_id,
             testData["quantification_group_id"])
         self.assertEqual(
-            gaExpression.isNormalized, testData["is_normalized"])
+            gaExpression.is_normalized, testData["is_normalized"])
         self.assertEqual(
-            gaExpression.rawReadCount, testData["raw_read_count"])
+            gaExpression.raw_read_count, testData["raw_read_count"])
         self.assertEqual(gaExpression.score, testData["score"])
         self.assertEqual(gaExpression.units, testData["units"])
         self.assertEqual(
-            gaExpression.confInterval,
+            gaExpression.conf_interval,
             [testData["conf_low"], testData["conf_hi"]])
 
     def testSearchExpressionLevels(self):
@@ -188,7 +185,7 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         compoundId = datamodel.QuantificationGroupCompoundId.parse(idString)
         self.assertEqual(gaQuantificationGroup.id, str(compoundId))
         self.assertEqual(
-            gaQuantificationGroup.analysisId, testData["analysisId"])
+            gaQuantificationGroup.analysis_id, testData["analysisId"])
         self.assertEqual(gaQuantificationGroup.name, testData["name"])
 
     def testSearchQuantificationGroups(self):
