@@ -414,8 +414,8 @@ class RnaQuantificationCompoundId(DatasetCompoundId):
     """
     The compound id for a rna quantification
     """
-    fields = DatasetCompoundId.fields + ['rnaQuantification']
-    container = [('rnaQuantificationId', 1)]
+    fields = DatasetCompoundId.fields + ['rna_quantification']
+    container = [('rna_quantificationId', 1)]
     containerIds = DatasetCompoundId.containerIds + container
 
 
@@ -423,14 +423,14 @@ class ExpressionLevelCompoundId(RnaQuantificationCompoundId):
     """
     The compound id for a expression level
     """
-    fields = RnaQuantificationCompoundId.fields + ['expressionLevelId']
+    fields = RnaQuantificationCompoundId.fields + ['expression_level_id']
 
 
 class QuantificationGroupCompoundId(RnaQuantificationCompoundId):
     """
     The compound id for a quantification group
     """
-    fields = RnaQuantificationCompoundId.fields + ['quantificationGroupId']
+    fields = RnaQuantificationCompoundId.fields + ['quantification_group_id']
 
 
 class DatamodelObject(object):
