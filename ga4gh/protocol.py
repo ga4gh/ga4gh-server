@@ -30,6 +30,8 @@ from ga4gh.allele_annotations_pb2 import *  # noqa
 from ga4gh.allele_annotation_service_pb2 import *  # noqa
 from ga4gh.sequence_annotations_pb2 import *  # noqa
 from ga4gh.sequence_annotation_service_pb2 import *  # noqa
+from ga4gh.rna_quantification_pb2 import * #noqa
+from ga4gh.rna_quantification_service_pb2 import * #noqa
 
 # A map of response objects to the name of the attribute used to
 # store the values returned.
@@ -46,6 +48,9 @@ _valueListNameMap = {
     SearchVariantAnnotationsResponse: "variant_annotations",  # noqa
     SearchFeatureSetsResponse: "feature_sets",  # noqa
     SearchFeaturesResponse: "features",  # noqa
+    SearchRnaQuantificationsResponse: "rna_quantifications",  # noqa
+    SearchExpressionLevelsResponse: "expression_levels",  # noqa
+    SearchQuantificationGroupsResponse: "quantification_groups",  # noqa
 }
 
 
@@ -264,4 +269,13 @@ postMethods = \
       SearchVariantAnnotationSetsResponse),  # noqa
      ('/variantannotationsets/search',
       SearchVariantAnnotationSetsRequest,  # noqa
-      SearchVariantAnnotationSetsResponse)]  # noqa
+      SearchVariantAnnotationSetsResponse),  #noqa
+     ('/rnaquantifications/search',
+      SearchRnaQuantificationsRequest,  #noqa
+      SearchRnaQuantificationsResponse),  #noqa
+     ('/expressionlevels/search',
+      SearchExpressionLevelsRequest,  #noqa
+      SearchExpressionLevelsResponse),  #noqa
+     ('/quantificationgroups/search',
+      SearchQuantificationGroupsRequest,  #noqa
+      SearchQuantificationGroupsResponse)]  # noqa
