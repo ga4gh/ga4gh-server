@@ -35,6 +35,7 @@ class Dataset(datamodel.DatamodelObject):
         self._readGroupSetNameMap = {}
         self._rnaQuantificationIds = []
         self._rnaQuantificationIdMap = {}
+        self._rnaQuantificationNameMap = {}
 
     def populateFromRow(self, row):
         """
@@ -84,6 +85,8 @@ class Dataset(datamodel.DatamodelObject):
         id_ = rnaQuant.getId()
         self._rnaQuantificationIdMap[id_] = rnaQuant
         self._rnaQuantificationIds.append(id_)
+        name = rnaQuant.getLocalId()
+        self._rnaQuantificationNameMap[name] = rnaQuant
 
     def toProtocolElement(self):
         dataset = protocol.Dataset()
@@ -224,6 +227,15 @@ class Dataset(datamodel.DatamodelObject):
         Returns the rna quantification at the specified index in this dataset.
         """
         return self._rnaQuantificationIdMap[self._rnaQuantificationIds[index]]
+
+    def getRnaQuantificationByName(self, name):
+        """
+        Returns the RnaQuantification with the specified name, or raises
+        an exception otherwise.
+        """
+        if name not in self._rnaQuantificationNameMap:
+            raise exceptions.RnaQuantificationNameNotFoundException(name)
+        return self._rnaQuantificationNameMap[name]
 
     def getRnaQuantification(self, id_):
         """
