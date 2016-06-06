@@ -1422,6 +1422,87 @@ class GAException(ProtocolElement):
         """
 
 
+class GenotypeQuery(ProtocolElement):
+    """
+    No documentation
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"GenotypeQuery", "fields": [{"doc": "", "type": ["null", "string"],
+"name": "name"}, {"type": ["null", "string"], "name": "featureSetId"},
+{"type": ["null", "string"], "name": "referenceName"}, {"type":
+["null", "long"], "name": "start"}, {"type": ["null", "long"], "name":
+"end"}, {"type": ["null", {"symbols": ["NEG_STRAND", "POS_STRAND"],
+"namespace": "org.ga4gh.models", "type": "enum", "name": "Strand",
+"doc": ""}], "name": "strand"}, {"type": ["null", {"namespace":
+"org.ga4gh.models", "type": "record", "name": "OntologyTerm",
+"fields": [{"doc": "", "type": "string", "name": "id"}, {"default":
+null, "doc": "", "type": ["null", "string"], "name": "term"},
+{"default": null, "doc": "", "type": ["null", "string"], "name":
+"sourceName"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceVersion"}], "doc": ""}], "name":
+"featureType"}, {"default": null, "type": ["null", {"items":
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"ExternalIdentifier", "fields": [{"doc": "", "type": "string", "name":
+"database"}, {"doc": "", "type": "string", "name": "identifier"},
+{"doc": "", "type": "string", "name": "version"}], "doc": ""}, "type":
+"array"}], "name": "externalIdentifiers"}]}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "end",
+        "featureSetId",
+        "featureType",
+        "name",
+        "referenceName",
+        "start",
+        "strand",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'featureType': OntologyTerm,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'featureType': OntologyTerm,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'end', 'externalIdentifiers', 'featureSetId', 'featureType',
+        'name', 'referenceName', 'start', 'strand'
+    ]
+
+    def __init__(self, **kwargs):
+        self.end = kwargs.get(
+            'end', None)
+        self.externalIdentifiers = kwargs.get(
+            'externalIdentifiers', None)
+        self.featureSetId = kwargs.get(
+            'featureSetId', None)
+        self.featureType = kwargs.get(
+            'featureType', None)
+        self.name = kwargs.get(
+            'name', None)
+        """
+        This is similar to FeatureQuery  '/features/search' served by
+        Sequence Annotations   But is intended to be served from the
+        G2P knowledgebase
+        """
+        self.referenceName = kwargs.get(
+            'referenceName', None)
+        self.start = kwargs.get(
+            'start', None)
+        self.strand = kwargs.get(
+            'strand', None)
+
+
 class GetEntityGenotypePhenotypeRequest(ProtocolElement):
     """
     No documentation
@@ -1968,6 +2049,66 @@ null, "doc": "", "type": ["null", "OntologyTerm"], "name":
         """
         HPO is recommended
         """
+
+
+class PhenotypeQuery(ProtocolElement):
+    """
+    Query phenotype. See genotypephenotype.avdl for property
+    explanations.
+    """
+    _schemaSource = """
+{"namespace": "org.ga4gh.methods", "type": "record", "name":
+"PhenotypeQuery", "fields": [{"type": ["null", "string"], "name":
+"id"}, {"type": ["null", "string"], "name": "description"},
+{"default": null, "type": ["null", {"namespace": "org.ga4gh.models",
+"type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
+"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "term"}, {"default": null, "doc": "",
+"type": ["null", "string"], "name": "sourceName"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "sourceVersion"}],
+"doc": ""}], "name": "type"}, {"default": null, "type": ["null",
+{"items": "org.ga4gh.models.OntologyTerm", "type": "array"}], "name":
+"qualifiers"}, {"default": null, "type": ["null",
+"org.ga4gh.models.OntologyTerm"], "name": "ageOfOnset"}], "doc": ""}
+"""
+    schema = avro.schema.parse(_schemaSource)
+    requiredFields = set([
+        "description",
+        "id",
+    ])
+
+    @classmethod
+    def isEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'ageOfOnset': OntologyTerm,
+            'type': OntologyTerm,
+        }
+        return fieldName in embeddedTypes
+
+    @classmethod
+    def getEmbeddedType(cls, fieldName):
+        embeddedTypes = {
+            'ageOfOnset': OntologyTerm,
+            'type': OntologyTerm,
+        }
+
+        return embeddedTypes[fieldName]
+
+    __slots__ = [
+        'ageOfOnset', 'description', 'id', 'qualifiers', 'type'
+    ]
+
+    def __init__(self, **kwargs):
+        self.ageOfOnset = kwargs.get(
+            'ageOfOnset', None)
+        self.description = kwargs.get(
+            'description', None)
+        self.id = kwargs.get(
+            'id', None)
+        self.qualifiers = kwargs.get(
+            'qualifiers', None)
+        self.type = kwargs.get(
+            'type', None)
 
 
 class Position(ProtocolElement):
@@ -3374,12 +3515,10 @@ class SearchGenotypePhenotypeRequest(SearchRequest):
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
 "SearchGenotypePhenotypeRequest", "fields": [{"doc": "", "type":
 "string", "name": "phenotypeAssociationSetId"}, {"default": null,
-"doc": "", "type": ["null", {"items": "string", "type": "array"}],
-"name": "featureIds"}, {"default": null, "doc": "", "type": ["null",
-{"items": "string", "type": "array"}], "name": "genotypeIds"},
-{"default": null, "doc": "", "type": ["null", {"items": "string",
-"type": "array"}], "name": "phenotypeIds"}, {"default": null, "doc":
-"", "type": ["null", {"items": {"doc": "", "type": "record", "name":
+"type": ["null", {"items": "string", "type": "array"}], "name":
+"featureIds"}, {"default": null, "type": ["null", {"items": "string",
+"type": "array"}], "name": "phenotypeIds"}, {"default": null, "type":
+["null", {"items": {"doc": "", "type": "record", "name":
 "EvidenceQuery", "fields": [{"default": null, "doc": "", "type":
 ["null", {"namespace": "org.ga4gh.models", "type": "record", "name":
 "OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
@@ -3415,27 +3554,15 @@ class SearchGenotypePhenotypeRequest(SearchRequest):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'evidence', 'featureIds', 'genotypeIds', 'pageSize',
-        'pageToken', 'phenotypeAssociationSetId', 'phenotypeIds'
+        'evidence', 'featureIds', 'pageSize', 'pageToken',
+        'phenotypeAssociationSetId', 'phenotypeIds'
     ]
 
     def __init__(self, **kwargs):
         self.evidence = kwargs.get(
             'evidence', None)
-        """
-        The Evidence types desired
-        """
         self.featureIds = kwargs.get(
             'featureIds', None)
-        """
-        The Features from sequence annotations returned from
-        /features/search
-        """
-        self.genotypeIds = kwargs.get(
-            'genotypeIds', None)
-        """
-        The Genotypes from g2p returned from /genotypes/search
-        """
         self.pageSize = kwargs.get(
             'pageSize', None)
         """
@@ -3457,9 +3584,6 @@ class SearchGenotypePhenotypeRequest(SearchRequest):
         """
         self.phenotypeIds = kwargs.get(
             'phenotypeIds', None)
-        """
-        The Phenotypes from g2p returned from /phenotypes/search
-        """
 
 
 class SearchGenotypePhenotypeResponse(SearchResponse):
@@ -3568,9 +3692,10 @@ class SearchGenotypesRequest(SearchRequest):
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
 "SearchGenotypesRequest", "fields": [{"doc": "", "type": "string",
-"name": "phenotypeAssociationSetId"}, {"doc": "", "type": ["null",
-"string"], "name": "name"}, {"type": ["null", "string"], "name":
-"referenceName"}, {"type": ["null", "long"], "name": "start"},
+"name": "phenotypeAssociationSetId"}, {"type": {"fields": [{"doc": "",
+"type": ["null", "string"], "name": "name"}, {"type": ["null",
+"string"], "name": "featureSetId"}, {"type": ["null", "string"],
+"name": "referenceName"}, {"type": ["null", "long"], "name": "start"},
 {"type": ["null", "long"], "name": "end"}, {"type": ["null",
 {"symbols": ["NEG_STRAND", "POS_STRAND"], "namespace":
 "org.ga4gh.models", "type": "enum", "name": "Strand", "doc": ""}],
@@ -3585,57 +3710,41 @@ class SearchGenotypesRequest(SearchRequest):
 "name": "ExternalIdentifier", "fields": [{"doc": "", "type": "string",
 "name": "database"}, {"doc": "", "type": "string", "name":
 "identifier"}, {"doc": "", "type": "string", "name": "version"}],
-"doc": ""}, "type": "array"}], "name": "externalIdentifiers"},
+"doc": ""}, "type": "array"}], "name": "externalIdentifiers"}],
+"type": "record", "name": "GenotypeQuery"}, "name": "genotype"},
 {"default": null, "doc": "", "type": ["null", "int"], "name":
 "pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
 "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
-        "end",
-        "featureType",
-        "name",
+        "genotype",
         "phenotypeAssociationSetId",
-        "referenceName",
-        "start",
-        "strand",
     ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
         embeddedTypes = {
-            'featureType': OntologyTerm,
+            'genotype': GenotypeQuery,
         }
         return fieldName in embeddedTypes
 
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {
-            'featureType': OntologyTerm,
+            'genotype': GenotypeQuery,
         }
 
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'end', 'externalIdentifiers', 'featureType', 'name',
-        'pageSize', 'pageToken', 'phenotypeAssociationSetId',
-        'referenceName', 'start', 'strand'
+        'genotype', 'pageSize', 'pageToken',
+        'phenotypeAssociationSetId'
     ]
 
     def __init__(self, **kwargs):
-        self.end = kwargs.get(
-            'end', None)
-        self.externalIdentifiers = kwargs.get(
-            'externalIdentifiers', None)
-        self.featureType = kwargs.get(
-            'featureType', None)
-        self.name = kwargs.get(
-            'name', None)
-        """
-        This is similar to FeatureQuery  '/features/search' served by
-        Sequence Annotations   But is intended to be served from the
-        G2P knowledgebase
-        """
+        self.genotype = kwargs.get(
+            'genotype', None)
         self.pageSize = kwargs.get(
             'pageSize', None)
         """
@@ -3655,12 +3764,6 @@ class SearchGenotypesRequest(SearchRequest):
         """
         The PhenotypeAssociationSet to search.
         """
-        self.referenceName = kwargs.get(
-            'referenceName', None)
-        self.start = kwargs.get(
-            'start', None)
-        self.strand = kwargs.get(
-            'strand', None)
 
 
 class SearchGenotypesResponse(SearchResponse):
@@ -3856,7 +3959,8 @@ class SearchPhenotypesRequest(SearchRequest):
     _schemaSource = """
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
 "SearchPhenotypesRequest", "fields": [{"doc": "", "type": "string",
-"name": "phenotypeAssociationSetId"}, {"doc": "", "type": ["null",
+"name": "phenotypeAssociationSetId"}, {"type": {"doc": "", "type":
+"record", "name": "PhenotypeQuery", "fields": [{"type": ["null",
 "string"], "name": "id"}, {"type": ["null", "string"], "name":
 "description"}, {"default": null, "type": ["null", {"namespace":
 "org.ga4gh.models", "type": "record", "name": "OntologyTerm",
@@ -3868,51 +3972,38 @@ null, "doc": "", "type": ["null", "string"], "name": "term"},
 {"default": null, "type": ["null", {"items":
 "org.ga4gh.models.OntologyTerm", "type": "array"}], "name":
 "qualifiers"}, {"default": null, "type": ["null",
-"org.ga4gh.models.OntologyTerm"], "name": "ageOfOnset"}, {"default":
-null, "doc": "", "type": ["null", "int"], "name": "pageSize"},
-{"default": null, "doc": "", "type": ["null", "string"], "name":
-"pageToken"}]}
+"org.ga4gh.models.OntologyTerm"], "name": "ageOfOnset"}]}, "name":
+"phenotype"}, {"default": null, "doc": "", "type": ["null", "int"],
+"name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "pageToken"}]}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
-        "description",
-        "id",
+        "phenotype",
         "phenotypeAssociationSetId",
     ])
 
     @classmethod
     def isEmbeddedType(cls, fieldName):
         embeddedTypes = {
-            'ageOfOnset': OntologyTerm,
-            'type': OntologyTerm,
+            'phenotype': PhenotypeQuery,
         }
         return fieldName in embeddedTypes
 
     @classmethod
     def getEmbeddedType(cls, fieldName):
         embeddedTypes = {
-            'ageOfOnset': OntologyTerm,
-            'type': OntologyTerm,
+            'phenotype': PhenotypeQuery,
         }
 
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'ageOfOnset', 'description', 'id', 'pageSize', 'pageToken',
-        'phenotypeAssociationSetId', 'qualifiers', 'type'
+        'pageSize', 'pageToken', 'phenotype',
+        'phenotypeAssociationSetId'
     ]
 
     def __init__(self, **kwargs):
-        self.ageOfOnset = kwargs.get(
-            'ageOfOnset', None)
-        self.description = kwargs.get(
-            'description', None)
-        self.id = kwargs.get(
-            'id', None)
-        """
-        Query phenotype. See genotypephenotype.avdl for property
-        explanations.
-        """
         self.pageSize = kwargs.get(
             'pageSize', None)
         """
@@ -3927,15 +4018,13 @@ null, "doc": "", "type": ["null", "int"], "name": "pageSize"},
         parameter to the value of   nextPageToken from the previous
         response.
         """
+        self.phenotype = kwargs.get(
+            'phenotype', None)
         self.phenotypeAssociationSetId = kwargs.get(
             'phenotypeAssociationSetId', None)
         """
         The PhenotypeAssociationSet to search.
         """
-        self.qualifiers = kwargs.get(
-            'qualifiers', None)
-        self.type = kwargs.get(
-            'type', None)
 
 
 class SearchPhenotypesResponse(SearchResponse):
@@ -5834,49 +5923,49 @@ class VariantSetMetadata(ProtocolElement):
 postMethods = \
     [('/callsets/search',
       SearchCallSetsRequest,
-      SearchReferenceSetsResponse),
+      SearchVariantAnnotationSetsResponse),
      ('/datasets/search',
       SearchDatasetsRequest,
-      SearchGenotypesResponse),
+      SearchReadsResponse),
      ('/features/search',
       SearchFeaturesRequest,
-      SearchDatasetsResponse),
+      SearchFeatureSetsResponse),
      ('/featuresets/search',
       SearchFeatureSetsRequest,
-      SearchVariantSetsResponse),
+      SearchPhenotypeAssociationSetsResponse),
      ('/genotypephenotype/search',
       SearchGenotypePhenotypeRequest,
-      SearchPhenotypeAssociationSetsResponse),
+      SearchDatasetsResponse),
      ('/genotypes/search',
       SearchGenotypesRequest,
       SearchPhenotypesResponse),
      ('/phenotypeassociationsets/search',
       SearchPhenotypeAssociationSetsRequest,
-      SearchReadGroupSetsResponse),
+      SearchReferencesResponse),
      ('/phenotypes/search',
       SearchPhenotypesRequest,
-      SearchReferencesResponse),
+      SearchVariantSetsResponse),
      ('/readgroupsets/search',
       SearchReadGroupSetsRequest,
-      SearchFeatureSetsResponse),
+      SearchVariantsResponse),
      ('/reads/search',
       SearchReadsRequest,
-      SearchVariantAnnotationsResponse),
+      SearchGenotypePhenotypeResponse),
      ('/references/search',
       SearchReferencesRequest,
-      SearchVariantAnnotationSetsResponse),
+      SearchGenotypesResponse),
      ('/referencesets/search',
       SearchReferenceSetsRequest,
-      SearchVariantsResponse),
+      SearchCallSetsResponse),
      ('/variantannotations/search',
       SearchVariantAnnotationsRequest,
-      SearchReadsResponse),
+      SearchFeaturesResponse),
      ('/variantannotationsets/search',
       SearchVariantAnnotationSetsRequest,
-      SearchCallSetsResponse),
+      SearchVariantAnnotationsResponse),
      ('/variants/search',
       SearchVariantsRequest,
-      SearchFeaturesResponse),
+      SearchReferenceSetsResponse),
      ('/variantsets/search',
       SearchVariantSetsRequest,
-      SearchGenotypePhenotypeResponse)]
+      SearchReadGroupSetsResponse)]
