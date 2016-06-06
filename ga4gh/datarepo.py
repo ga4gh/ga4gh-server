@@ -1213,8 +1213,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createVariantSetTable(cursor)
         self._createVariantAnnotationSetTable(cursor)
         self._createFeatureSetTable(cursor)
-        self._createBioSampleTable(cursor)
-        self._createIndividualTable(cursor)
+        self._createPhenotypeAssociationSetTable(cursor)
 
     def exists(self):
         """
@@ -1257,5 +1256,4 @@ class SqlDataRepository(AbstractDataRepository):
             self._readCallSetTable(cursor)
             self._readVariantAnnotationSetTable(cursor)
             self._readFeatureSetTable(cursor)
-            self._readBioSampleTable(cursor)
-            self._readIndividualTable(cursor)
+            self._readPhenotypeAssociationSetTable(cursor)
