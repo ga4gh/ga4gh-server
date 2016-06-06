@@ -539,7 +539,7 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "reads", protocol.SearchReadsResponse)
 
-    def searchRnaQuantification(self, datasetId, rnaQuantificationId=None):
+    def searchRnaQuantification(self, datasetId, rnaQuantificationId=""):
         """
         Returns an iterator over the RnaQuantification objects from the server
 
@@ -555,8 +555,8 @@ class AbstractClient(object):
             protocol.SearchRnaQuantificationsResponse)
 
     def searchExpressionLevel(
-            self, expressionLevelId=None, quantificationGroupId=None,
-            rnaQuantificationId=None, threshold=0.0):
+            self, expressionLevelId="", quantificationGroupId="",
+            rnaQuantificationId="", threshold=0.0):
         """
         Returns an iterator over the ExpressionLevel objects from the server
 
@@ -579,7 +579,7 @@ class AbstractClient(object):
             protocol.SearchExpressionLevelsResponse)
 
     def searchQuantificationGroup(
-            self, rnaQuantificationId=None, quantificationGroupId=None):
+            self, rnaQuantificationId="", quantificationGroupId=""):
         """
         Returns an iterator over the QuantificationGroup objects from the
         server

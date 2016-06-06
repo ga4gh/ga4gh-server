@@ -98,9 +98,10 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
 
     def testValidateObjects(self):
         rnaQuantification = self._gaObject
-        rnaQuantificationPe = rnaQuantification.toProtocolElement()
+        rnaQuantificationProto = rnaQuantification.toProtocolElement()
+        rnaQuantificationJson = protocol.toJsonDict(rnaQuantificationProto)
         self.assertValid(
-            protocol.RnaQuantification, protocol.toJsonDict(rnaQuantificationPe))
+            protocol.RnaQuantification, rnaQuantificationJson)
 
     def testRnaQuantificationObject(self):
         gaRnaQuant = self._gaObject.toProtocolElement()
