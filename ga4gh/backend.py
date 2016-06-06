@@ -686,7 +686,24 @@ class Backend(object):
         Returns a generator over the (phenotypes, nextPageToken) pairs
         defined by the (JSON string) request
         """
-        return []
+        # TODO make paging work using SPARQL?
+        if (request.phenotype is None):
+            msg = "Error: Phenotype must be non-null"
+            raise exceptions.BadRequestException(msg)
+        # determine offset for paging
+        if request.pageToken is not None:
+            offset, = _parsePageToken(request.pageToken, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotypeAssociationSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            None, None, request.phenotype,
+            request.pageSize, offset)
+        return self._protocolListGenerator(request, annotationList)
 
     def callSetsGenerator(self, request):
         """
@@ -1069,7 +1086,19 @@ class Backend(object):
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
 
+    def runSearchGenotypePhenotype(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypePhenotypeRequest,
+            protocol.SearchGenotypePhenotypeResponse,
+            self.phenotypesGenerator)
+
     def runSearchPhenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypesRequest,
+            protocol.SearchPhenotypesResponse,
+            self.phenotypesGenerator)
+
+    def runSearchPhenotypeAssociationSets(self, request):
         return self.runSearchRequest(
             request, protocol.SearchPhenotypesRequest,
             protocol.SearchPhenotypesResponse,
