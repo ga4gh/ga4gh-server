@@ -415,7 +415,7 @@ class RnaQuantificationCompoundId(DatasetCompoundId):
     The compound id for a rna quantification
     """
     fields = DatasetCompoundId.fields + ['rna_quantification']
-    container = [('rna_quantificationId', 1)]
+    container = [('rna_quantification_id', 1)]
     containerIds = DatasetCompoundId.containerIds + container
 
 

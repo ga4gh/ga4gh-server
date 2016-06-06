@@ -1059,8 +1059,8 @@ class Backend(object):
         SearchRnaQuantificationRequest object.
         """
         return self.runSearchRequest(
-            request, protocol.SearchRnaQuantificationRequest,
-            protocol.SearchRnaQuantificationResponse,
+            request, protocol.SearchRnaQuantificationsRequest,
+            protocol.SearchRnaQuantificationsResponse,
             self.rnaQuantificationGenerator)
 
     def runSearchExpressionLevel(self, request):
@@ -1069,8 +1069,8 @@ class Backend(object):
         SearchExpressionLevelRequest object.
         """
         return self.runSearchRequest(
-            request, protocol.SearchExpressionLevelRequest,
-            protocol.SearchExpressionLevelResponse,
+            request, protocol.SearchExpressionLevelsRequest,
+            protocol.SearchExpressionLevelsResponse,
             self.expressionLevelGenerator)
 
     def runSearchQuantificationGroup(self, request):
@@ -1079,6 +1079,6 @@ class Backend(object):
         SearchQuantificationGroupRequest object.
         """
         return self.runSearchRequest(
-            request, protocol.SearchQuantificationGroupRequest,
-            protocol.SearchQuantificationGroupResponse,
+            request, protocol.SearchQuantificationGroupsRequest,
+            protocol.SearchQuantificationGroupsResponse,
             self.quantificationGroupGenerator)

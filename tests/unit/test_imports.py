@@ -183,7 +183,9 @@ class ImportGraphLayerChecker(object):
                      'ga4gh/allele_annotations_pb2.py',
                      'ga4gh/allele_annotation_service_pb2.py',
                      'ga4gh/sequence_annotations_pb2.py',
-                     'ga4gh/sequence_annotation_service_pb2.py'],
+                     'ga4gh/sequence_annotation_service_pb2.py',
+                     'ga4gh/rna_quantification_pb2.py',
+                     'ga4gh/rna_quantification_service_pb2.py'],
         'config': ['ga4gh/serverconfig.py'],
     }
 
