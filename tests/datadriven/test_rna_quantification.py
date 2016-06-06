@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
+import ga4gh.datamodel.references as references
 import ga4gh.datamodel.rna_quantification as rna_quantification
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
@@ -81,13 +82,17 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self._dataset = datasets.Dataset(_datasetName)
         self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
         self._repo.open(datarepo.MODE_READ)
+        self._referenceSet = references.AbstractReferenceSet("test_rs")
         rnaQuantificationId = rnaQuantificationLocalId[:-3]  # remove '.db'
         super(RnaQuantificationTest, self).__init__(
             rnaQuantificationId, baseDir)
 
     def getDataModelInstance(self, localId, dataPath):
-        return rna_quantification.RNASeqResult(
-            self._dataset, localId, dataPath)
+        rnaQuant = rna_quantification.RNASeqResult(
+            self._dataset, localId)
+        rnaQuant.setReferenceSet(self._referenceSet)
+        rnaQuant.populateFromFile(dataPath)
+        return rnaQuant
 
     def getProtocolClass(self):
         return protocol.RnaQuantification

@@ -37,6 +37,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
+import ga4gh.datamodel.rna_quantification as rna_quantification
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -2030,6 +2031,41 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeOntology, ontology)
         self._confirmDelete("Ontology", ontology.getName(), func)
 
+    def addRnaQuantification(self):
+        """
+        Adds an Rna Quantification into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        if self._args.name is None:
+            name = getNameFromPath(self._args.filePath)
+        else:
+            name = self._args.name
+        # TODO: is this the right top level to add?
+        rnaQuantification = rna_quantification.RNASeqResult(
+            dataset, name)
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
+            raise exceptions.RepoManagerException(
+                "A reference set name must be provided")
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
+        rnaQuantification.setReferenceSet(referenceSet)
+        rnaQuantification.populateFromFile(self._args.filePath)
+        self._updateRepo(self._repo.insertRnaQuantification, rnaQuantification)
+
+    def removeRnaQuantification(self):
+        """
+        Removes an RNA Quantification from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        rnaQuant = dataset.getRnaQuantificationByName(
+            self._args.rnaQuantificationName)
+
+        def func():
+            self._updateRepo(self._repo.removeRnaQuantification, rnaQuant)
+        self._confirmDelete("RnaQuantification", rnaQuant.getLocalId(), func)
+
     #
     # Methods to simplify adding common arguments to the parser.
     #
@@ -2108,6 +2144,12 @@ class RepoManager(object):
         parser.add_argument(
             "-n", "--name", default=None,
             help="The name of the {}".format(objectType))
+
+    @classmethod
+    def addRnaQuantificationNameArgument(cls, subparser):
+        subparser.add_argument(
+            "rnaQuantificationName",
+            help="the name of the RNA Quantification")
 
     @classmethod
     def getParser(cls):
@@ -2300,6 +2342,30 @@ class RepoManager(object):
         cls.addDatasetNameArgument(removeFeatureSetParser)
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
+
+        objectType = "RnaQuantification"
+        addRnaQuantificationParser = addSubparser(
+            subparsers, "add-rnaquantification",
+            "Add an RNA quantification to the data repo")
+        addRnaQuantificationParser.set_defaults(runner="addRnaQuantification")
+        cls.addRepoArgument(addRnaQuantificationParser)
+        cls.addDatasetNameArgument(addRnaQuantificationParser)
+        cls.addFilePathArgument(
+            addRnaQuantificationParser,
+            "The path to the converted SQLite database containing RNA data")
+        cls.addReferenceSetNameOption(
+            addRnaQuantificationParser, objectType)
+        cls.addNameOption(addRnaQuantificationParser, objectType)
+
+        removeRnaQuantificationParser = addSubparser(
+            subparsers, "remove-rnaquantification",
+            "Remove an RNA quantification from the repo")
+        removeRnaQuantificationParser.set_defaults(
+            runner="removeRnaQuantification")
+        cls.addRepoArgument(removeRnaQuantificationParser)
+        cls.addDatasetNameArgument(removeRnaQuantificationParser)
+        cls.addRnaQuantificationNameArgument(removeRnaQuantificationParser)
+        cls.addForceOption(removeRnaQuantificationParser)
 
         return parser
 
