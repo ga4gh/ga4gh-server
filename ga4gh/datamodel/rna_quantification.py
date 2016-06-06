@@ -10,7 +10,6 @@ import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.sqliteBackend as sqliteBackend
-import ga4gh.pb as pb
 
 
 """

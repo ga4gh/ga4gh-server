@@ -471,7 +471,8 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.RnaQuantificationCompoundId,
             dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.rna_quantification, rnaQuantification.getLocalId())
+        self.assertEqual(
+            cid.rna_quantification, rnaQuantification.getLocalId())
         self.assertEqual(cid.dataset_id, dataset.getId())
         self.assertEqual(cid.rna_quantification_id, rnaQuantification.getId())
 
@@ -495,9 +496,11 @@ class TestCompoundIds(unittest.TestCase):
             rnaQuantification.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
         self.assertEqual(cid.dataset_id, dataset.getId())
-        self.assertEqual(cid.rna_quantification, rnaQuantification.getLocalId())
+        self.assertEqual(
+            cid.rna_quantification, rnaQuantification.getLocalId())
         self.assertEqual(cid.rna_quantification_id, rnaQuantification.getId())
-        self.assertEqual(cid.expression_level_id, expressionLevel.getLocalId())
+        self.assertEqual(
+            cid.expression_level_id, expressionLevel.getLocalId())
 
     def testExpressionLevelParse(self):
         idStr = '["a","b","c"]'
@@ -520,7 +523,8 @@ class TestCompoundIds(unittest.TestCase):
             rnaQuantification.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
         self.assertEqual(cid.dataset_id, dataset.getId())
-        self.assertEqual(cid.rna_quantification, rnaQuantification.getLocalId())
+        self.assertEqual(
+            cid.rna_quantification, rnaQuantification.getLocalId())
         self.assertEqual(cid.rna_quantification_id, rnaQuantification.getId())
         self.assertEqual(
             cid.quantification_group_id, quantificationGroup.getLocalId())
@@ -532,4 +536,5 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.dataset, "a")
         self.assertEqual(cid.rna_quantification, "b")
         self.assertEqual(cid.quantification_group_id, "c")
-        self.verifyParseFailure(idStr, datamodel.QuantificationGroupCompoundId)
+        self.verifyParseFailure(
+            idStr, datamodel.QuantificationGroupCompoundId)
