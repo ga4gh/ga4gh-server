@@ -35,7 +35,7 @@ _expressionTestData = {
     "is_normalized": True,
     "raw_read_count": 4317.0,
     "score": 23.34315,
-    "units": "TPM",
+    "units": 2,
     "conf_low": 24.1,
     "conf_hi": 24.6,
     "num_expression_entries": 2,
@@ -100,7 +100,7 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         rnaQuantification = self._gaObject
         rnaQuantificationPe = rnaQuantification.toProtocolElement()
         self.assertValid(
-            protocol.RnaQuantification, rnaQuantificationPe.toJsonDict())
+            protocol.RnaQuantification, protocol.toJsonDict(rnaQuantificationPe))
 
     def testRnaQuantificationObject(self):
         gaRnaQuant = self._gaObject.toProtocolElement()

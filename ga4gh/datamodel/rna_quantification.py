@@ -41,7 +41,7 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         self._isNormalized = ""
         self._rawReadCount = 0.0
         self._score = 0.0
-        self._units = ""
+        self._units = 0
         self._name = localId
         self._confInterval = []
 
@@ -55,7 +55,7 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         protocolElement.is_normalized = self._isNormalized
         protocolElement.units = self._units
         protocolElement.score = self._score
-        protocolElement.conf_interval = self._confInterval
+        protocolElement.conf_interval.extend(self._confInterval)
         return protocolElement
 
 
