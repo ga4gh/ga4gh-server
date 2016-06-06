@@ -16,7 +16,7 @@ import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
-import ga4gh.datamodel.bio_metadata as biodata
+import ga4gh.datamodel.genotype_phenotype as g2p
 import ga4gh.exceptions as exceptions
 from ga4gh import protocol
 
@@ -1153,69 +1153,12 @@ class SqlDataRepository(AbstractDataRepository):
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
 
-    def _createBioSampleTable(self, cursor):
+    def _createPhenotypeAssociationSetTable(self, cursor):
         sql = """
-            CREATE TABLE BioSample (
+            CREATE TABLE PhenotypeAssociationSet (
                 id TEXT NOT NULL PRIMARY KEY,
-                datasetId TEXT NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                disease TEXT,
-                created TEXT,
-                updated TEXT,
-                individualId TEXT,
-                info TEXT,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
-
-    def insertBioSample(self, bioSample):
-        """
-        Inserts the specified BioSample into this repository.
-        """
-        sql = """
-            INSERT INTO BioSample (
-                id, datasetId, name, description, disease,
-                created, updated, individualId, info)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            bioSample.getId(),
-            bioSample.getParentContainer().getId(),
-            bioSample.getLocalId(),
-            bioSample.getDescription(),
-            json.dumps(bioSample.getDisease()),
-            bioSample.getCreated(),
-            bioSample.getUpdated(),
-            bioSample.getIndividualId(),
-            json.dumps(bioSample.getInfo())))
-
-    def _readBioSampleTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM BioSample;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
-            bioSample = biodata.BioSample(
-                dataset, row[b'name'])
-            bioSample.populateFromRow(row)
-            assert bioSample.getId() == row[b'id']
-            dataset.addBioSample(bioSample)
-
-    def _createIndividualTable(self, cursor):
-        sql = """
-            CREATE TABLE Individual (
-                id TEXT NOT NULL PRIMARY KEY,
-                datasetId TEXT NOT NULL,
                 name TEXT,
-                description TEXT,
-                created TEXT NOT NULL,
-                updated TEXT,
-                species TEXT,
-                sex TEXT,
+                datasetId TEXT NOT NULL,
                 info TEXT,
                 UNIQUE (datasetId, name),
                 FOREIGN KEY(datasetId) REFERENCES Dataset(id)
@@ -1224,39 +1167,33 @@ class SqlDataRepository(AbstractDataRepository):
         """
         cursor.execute(sql)
 
-    def insertIndividual(self, individual):
+    def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
         Inserts the specified individual into this repository.
         """
         # TODO add support for info and sourceUri fields.
         sql = """
-            INSERT INTO Individual (
-                id, datasetId, name, description, created,
-                updated, species, sex, info)
+            INSERT INTO PhenotypeAssociationSet (
+                id, name, datasetId, info)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
-            individual.getId(),
-            individual.getParentContainer().getId(),
-            individual.getLocalId(),
-            individual.getDescription(),
-            individual.getCreated(),
-            individual.getUpdated(),
-            json.dumps(individual.getSpecies()),
-            json.dumps(individual.getSex()),
-            json.dumps(individual.getInfo())))
+            phenotypeAssociationSet.getId(),
+            phenotypeAssociationSet.getLocalId(),
+            phenotypeAssociationSet.getParentContainer().getId(),
+            json.dumps(phenotypeAssociationSet.getInfo())))
 
-    def _readIndividualTable(self, cursor):
+    def _readPhenotypeAssociationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Individual;")
+        cursor.execute("SELECT * FROM PhenotypeAssociationSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
-            individual = biodata.Individual(
+            phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
                 dataset, row[b'name'])
-            individual.populateFromRow(row)
-            assert individual.getId() == row[b'id']
-            dataset.addIndividual(individual)
+            phenotypeAssociationSet.populateFromRow(row)
+            assert phenotypeAssociationSet.getId() == row[b'id']
+            dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
     def initialise(self):
         """
