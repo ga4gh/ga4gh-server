@@ -547,9 +547,9 @@ class AbstractClient(object):
             :class:`ga4gh.protocol.RnaQuantification` of interest.
         """
         request = protocol.SearchRnaQuantificationRequest()
-        request.rnaQuantificationId = rnaQuantificationId
+        request.rna_quantification_id = rnaQuantificationId
         request.datasetId = datasetId
-        request.pageSize = self._pageSize
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "rnaquantification",
             protocol.SearchRnaQuantificationResponse)
@@ -569,11 +569,11 @@ class AbstractClient(object):
         :param float threshold: Minimum expression of responses to return.
         """
         request = protocol.SearchExpressionLevelRequest()
-        request.expressionLevelId = expressionLevelId
-        request.quantificationGroupId = quantificationGroupId
-        request.rnaQuantificationId = rnaQuantificationId
+        request.expression_level_id = expressionLevelId
+        request.quantification_group_id = quantificationGroupId
+        request.rna_quantification_id = rnaQuantificationId
         request.threshold = threshold
-        request.pageSize = self._pageSize
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "expressionlevel",
             protocol.SearchExpressionLevelResponse)
@@ -588,9 +588,9 @@ class AbstractClient(object):
             :class:`ga4gh.protocol.QuantificationGroup` of interest.
         """
         request = protocol.SearchQuantificationGroupRequest()
-        request.rnaQuantificationId = rnaQuantificationId
-        request.quantificationGroupId = quantificationGroupId
-        request.pageSize = self._pageSize
+        request.rna_quantification_id = rnaQuantificationId
+        request.quantification_group_id = quantificationGroupId
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "quantificationgroup",
             protocol.SearchQuantificationGroupResponse)
