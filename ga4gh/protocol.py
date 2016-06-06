@@ -49,6 +49,8 @@ _valueListNameMap = {
     SearchVariantAnnotationsResponse: "variant_annotations",  # noqa
     SearchFeatureSetsResponse: "feature_sets",  # noqa
     SearchFeaturesResponse: "features",  # noqa
+    SearchBioSamplesResponse: "biosamples",  # noqa
+    SearchIndividualsResponse: "individuals",  # noqa
 }
 
 

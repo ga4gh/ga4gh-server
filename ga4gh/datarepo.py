@@ -1071,7 +1071,6 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
-        print(bioSample.getDisease())
         cursor.execute(sql, (
             bioSample.getId(),
             bioSample.getParentContainer().getId(),
@@ -1208,3 +1207,5 @@ class SqlDataRepository(AbstractDataRepository):
             self._readCallSetTable(cursor)
             self._readVariantAnnotationSetTable(cursor)
             self._readFeatureSetTable(cursor)
+            self._readBioSampleTable(cursor)
+            self._readIndividualTable(cursor)
