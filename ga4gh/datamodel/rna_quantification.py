@@ -103,7 +103,9 @@ class AbstractQuantificationGroup(datamodel.DatamodelObject):
         protocolElement.analysis_id = self._analysisId
         protocolElement.name = self._name
         protocolElement.description = self._description
-        protocolElement.info = self._info
+        for key in self._info:
+            protocolElement.info[key].values.extend(self._info[key])
+
         return protocolElement
 
 
@@ -144,8 +146,8 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         protocolElement.name = self._name
         protocolElement.description = self._description
         protocolElement.read_group_id = self._readGroupId
-        protocolElement.program_ids = self._programIds
-        protocolElement.annotation_ids = self._annotationIds
+        protocolElement.program_ids.extend(self._programIds)
+        protocolElement.annotation_ids.extend(self._annotationIds)
         return protocolElement
 
     def addRnaQuantMetadata(self, fields):
