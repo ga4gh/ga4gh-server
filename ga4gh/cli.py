@@ -2348,27 +2348,6 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
-        addFeatureSetParser = addSubparser(
-            subparsers, "add-featureset", "Add a feature set to the data repo")
-        addFeatureSetParser.set_defaults(runner="addFeatureSet")
-        cls.addRepoArgument(addFeatureSetParser)
-        cls.addDatasetNameArgument(addFeatureSetParser)
-        cls.addFilePathArgument(
-            addFeatureSetParser,
-            "The path to the converted SQLite database containing Feature "
-            "data")
-        cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
-        cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
-
-        removeFeatureSetParser = addSubparser(
-            subparsers, "remove-featureset",
-            "Remove a feature set from the repo")
-        removeFeatureSetParser.set_defaults(runner="removeFeatureSet")
-        cls.addRepoArgument(removeFeatureSetParser)
-        cls.addDatasetNameArgument(removeFeatureSetParser)
-        cls.addFeatureSetNameArgument(removeFeatureSetParser)
-        cls.addForceOption(removeFeatureSetParser)
-
         addBioSampleParser = addSubparser(
             subparsers, "add-biosample", "Add a BioSample to the dataset")
         addBioSampleParser.set_defaults(runner="addBioSample")

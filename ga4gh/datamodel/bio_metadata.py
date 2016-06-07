@@ -60,7 +60,7 @@ class BioSample(datamodel.DatamodelObject):
                 json.dumps(parsed['disease']),
                 protocol.OntologyTerm)
         if 'individual_id' in parsed:
-            self._sex = parsed['individual_id']
+            self._individualId = parsed['individual_id']
         return self
 
     def populateFromRow(self, row):
@@ -70,7 +70,7 @@ class BioSample(datamodel.DatamodelObject):
         self._description = row[b'description']
         self._disease = protocol.fromJson(
             row[b'disease'], protocol.OntologyTerm)
-        self._individualId = row[b'individual_id']
+        self._individualId = row[b'individualId']
         self._info = json.loads(row[b'info'])
         return self
 

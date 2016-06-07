@@ -31,7 +31,7 @@ class TestSimulatedStack(unittest.TestCase):
         random.seed(1)
         config = {
             "DATA_SOURCE": "simulated://",
-            "SIMULATED_BACKEND_RANDOM_SEED": 1111,
+            "SIMULATED_BACKEND_RANDOM_SEED": 1112,
             "SIMULATED_BACKEND_NUM_CALLS": 5,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
             "SIMULATED_BACKEND_NUM_VARIANT_SETS": 4,

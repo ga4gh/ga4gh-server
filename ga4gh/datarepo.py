@@ -1053,6 +1053,7 @@ class SqlDataRepository(AbstractDataRepository):
                 created TEXT,
                 updated TEXT,
                 individualId TEXT,
+                info TEXT,
                 UNIQUE (datasetId, name),
                 FOREIGN KEY(datasetId) REFERENCES Dataset(id)
                     ON DELETE CASCADE
@@ -1067,8 +1068,8 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             INSERT INTO BioSample (
                 id, datasetId, name, description, disease,
-                created, updated, individualId)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                created, updated, individualId, info)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
@@ -1079,7 +1080,8 @@ class SqlDataRepository(AbstractDataRepository):
             json.dumps(bioSample.getDisease()),
             bioSample.getCreated(),
             bioSample.getUpdated(),
-            bioSample.getIndividualId()))
+            json.dumps(bioSample.getIndividualId()),
+            json.dumps(bioSample.getInfo())))
 
     def _readBioSampleTable(self, cursor):
         cursor.row_factory = sqlite3.Row
