@@ -5,6 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import fnmatch
+import json
+import os
+
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
@@ -147,6 +151,10 @@ class Dataset(datamodel.DatamodelObject):
         self._phenotypeAssociationSetNameMap[
             phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
         self._phenotypeAssociationSetIds.append(id_)
+
+    def getPhenotypeAssociationSets(self):
+        return [self._phenotypeAssociationSetIdMap[id_]
+                for id_ in self._phenotypeAssociationSetIdMap]
 
     def getPhenotypeAssociationSet(self, id_):
         return self._phenotypeAssociationSetIdMap[id_]
@@ -318,35 +326,6 @@ class Dataset(datamodel.DatamodelObject):
         """
         return self._description
 
-    def addPhenotypeAssociationSet(self, phenotypeAssociationSet):
-        """
-        Adds the specified g2p association set to this backend.
-        """
-        id_ = phenotypeAssociationSet.getId()
-        self._phenotypeAssociationSetIdMap[id_] = phenotypeAssociationSet
-        self._phenotypeAssociationSetNameMap[
-            phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
-        self._phenotypeAssociationSetIds.append(id_)
-
-    def getPhenotypeAssociationSet(self, id_):
-        return self._phenotypeAssociationSetIdMap[id_]
-
-    def getPhenotypeAssociationSetByName(self, name):
-        if name not in self._phenotypeAssociationSetNameMap:
-            # TODO make a new exception
-            # TODO is this codeblock reachable?
-            raise exceptions.DatasetNameNotFoundException(name)
-        return self._phenotypeAssociationSetNameMap[name]
-
-    def getPhenotypeAssociationSetByIndex(self, index):
-        return self._phenotypeAssociationSetIdMap[
-            self._phenotypeAssociationSetIds[index]]
-
-    def getNumPhenotypeAssociationSets(self):
-        """
-        Returns the number of reference sets in this data repository.
-        """
-        return len(self._phenotypeAssociationSetIds)
 
 class SimulatedDataset(Dataset):
     """
@@ -417,6 +396,7 @@ class SimulatedDataset(Dataset):
                 self, localId, seed)
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
+
 
 class FileSystemDataset(Dataset):
     """

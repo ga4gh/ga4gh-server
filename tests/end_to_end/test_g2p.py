@@ -64,7 +64,7 @@ class TestG2P(unittest.TestCase):
         # there should be an array
         self.assertIsNotNone(response.phenotypeAssociationSets)
         # there should be at least one entry
-        self.assertGreater(len(response.phenotypeAssociationSets),0)
+        self.assertGreater(len(response.phenotypeAssociationSets), 0)
 
     def testFeaturesSearch(self):
         request = protocol.SearchFeaturesRequest()
@@ -87,17 +87,15 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchPhenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         # setup phenotype query
-        phenotypeQuery = protocol.PhenotypeQuery()
-        phenotypeQuery.id = "p12345"
-        request.phenotype = phenotypeQuery
+        request.id = "http://ohsu.edu/cgd/30ebfd1a"
         postUrl = 'associations/%s/phenotypes/search' % \
                   request.phenotypeAssociationSetId
         response = self.sendPostRequest(postUrl, request)
         self.assertEqual(200, response.status_code)
+        print(response.data)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, len(response.phenotypes))
-        self.assertEqual("p12345", response.phenotypes[0].id)
+        self.assertEqual(request.id, response.phenotypes[0].id)
 
     def testPhenotypesSearchOntologyTerm(self):
         request = protocol.SearchPhenotypesRequest()

@@ -71,6 +71,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         # initialize graph
         self._rdfGraph = rdflib.ConjunctiveGraph()
+        # save the path
+        self._dataUrl = dataDir
+
         try:
             self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
         except AttributeError:
@@ -93,6 +96,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         """
         # query to do search
         query = self._formatFilterQuery(feature, environment, phenotype)
+        print(query)
         associations = self._rdfGraph.query(query)
         # associations is now a dict with rdflib terms with variable and
         # URIrefs or literals
@@ -115,9 +119,11 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 association['environment'] = self._getDetails(
                     association['environment'],
                     associations_details)
+                print("**** phenotype")
                 association['phenotype'] = self._getDetails(
                     association['phenotype'],
                     associations_details)
+                print(association['phenotype'])
                 association['evidence'] = association['phenotype'][HAS_QUALITY]
                 association['id'] = association['association']
                 associationList.append(association)
@@ -191,6 +197,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             if detail['subject'] == uriRef:
                 associationDetail[detail['predicate']] = detail['object']
             associationDetail['id'] = uriRef
+        print("associationDetail")
+        print(associationDetail)
         return associationDetail
 
     def _formatExternalIdentifier(self, element, element_type):
@@ -253,6 +261,13 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         # phenotype
         # ExternalIdentifier
+        #
+        print(phenotype)
+        print(phenotype.id)
+        if phenotype.id:
+            phenotypeClause = "?phenotype = <{}>".format(phenotype.id)
+            filters.append(phenotypeClause)
+
         phenotypeClause = self._formatExternalIdentifier(phenotype,
                                                          'phenotype')
         if phenotypeClause:
@@ -463,6 +478,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 self._getPrefixURL(association['id']))
         })
         phenotypeInstance.description = phenotype[LABEL]
+        phenotypeInstance.id = phenotype['id']
         fpa.phenotype = phenotypeInstance
         fpa.phenotypeAssociationSetId = self.getId()
 
