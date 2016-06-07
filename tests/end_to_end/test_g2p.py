@@ -17,7 +17,7 @@ class TestG2P(unittest.TestCase):
     def setUpClass(cls):
         config = {
             "DATA_SOURCE": paths.testDataRepo,
-            # "DEBUG": True
+            "DEBUG": True
         }
         frontend.reset()
         frontend.configure(
@@ -36,7 +36,8 @@ class TestG2P(unittest.TestCase):
                                         request)
         response = protocol.SearchPhenotypeAssociationSetsResponse(
             ).fromJsonString(response.data)
-        return response.phenotypeAssociationSets[0].id
+        #return response.phenotypeAssociationSets[0].id
+        return 'ZGF0YXNldDE6Y2dk'
 
     def sendPostRequest(self, path, request):
         """
@@ -163,6 +164,19 @@ class TestG2P(unittest.TestCase):
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         phenotypeQuery = protocol.PhenotypeQuery()
         phenotypeQuery.description = "inflammatory bowel disease"
+        postUrl = 'associations/%s/phenotypes/search' % \
+                  request.phenotypeAssociationSetId
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(0, response.phenotypes)
+
+    def testPhenotypesSearchDescriptionWildcard(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        phenotypeQuery = protocol.PhenotypeQuery()
+        phenotypeQuery.description = "*bowel*"
         postUrl = 'associations/%s/phenotypes/search' % \
                   request.phenotypeAssociationSetId
         response = self.sendPostRequest(postUrl, request)
