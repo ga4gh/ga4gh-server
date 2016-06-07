@@ -427,6 +427,33 @@ class Backend(object):
             request, self.getDataRepository().getNumDatasets(),
             self.getDataRepository().getDatasetByIndex)
 
+    def bioSamplesGenerator(self, request):
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        results = []
+        for obj in dataset.getBioSamples():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if request.individual_id:
+                if request.individual_id != obj.getIndividualId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
+
+    def individualsGenerator(self, request):
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        results = []
+        for obj in dataset.getIndividuals():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
+
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
@@ -763,6 +790,24 @@ class Backend(object):
         jsonString = protocol.toJson(gaVariant)
         return jsonString
 
+    def runGetBioSample(self, id_):
+        """
+        Runs a getBioSample request for the specified ID.
+        """
+        compoundId = datamodel.BioSampleCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        bioSample = dataset.getBioSample(id_)
+        return self.runGetRequest(bioSample)
+
+    def runGetIndividual(self, id_):
+        """
+        Runs a getIndividual request for the specified ID.
+        """
+        compoundId = datamodel.BioSampleCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        individual = dataset.getIndividual(id_)
+        return self.runGetRequest(individual)
+
     def runGetFeature(self, id_):
         """
         Returns JSON string of the feature object corresponding to
@@ -856,6 +901,24 @@ class Backend(object):
             request, protocol.SearchReadGroupSetsRequest,
             protocol.SearchReadGroupSetsResponse,
             self.readGroupSetsGenerator)
+
+    def runSearchIndividuals(self, request):
+        """
+        Runs the specified search SearchIndividualsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchIndividualsRequest,
+            protocol.SearchIndividualsResponse,
+            self.individualsGenerator)
+
+    def runSearchBioSamples(self, request):
+        """
+        Runs the specified SearchBioSamplesRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchBioSamplesRequest,
+            protocol.SearchBioSamplesResponse,
+            self.bioSamplesGenerator)
 
     def runSearchReads(self, request):
         """
