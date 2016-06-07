@@ -11,17 +11,20 @@ import pstats
 import argparse
 import cProfile
 
-import ga4gh.backend as backend
-import ga4gh.protocol as protocol
-import ga4gh.datarepo as datarepo
-
 import guppy
+
+import utils
+utils.ga4ghImportGlue()
+import ga4gh.backend as backend  # noqa
+import ga4gh.protocol as protocol  # noqa
+import ga4gh.datarepo as datarepo  # noqa
 
 
 class HeapProfilerBackend(backend.Backend):
-    def __init__(self, dataDir):
-        dataRepository = datarepo.FileSystemDataRepository(dataDir)
-        super(HeapProfilerBackend, self).__init__(dataRepository)
+    def __init__(self, registryDb):
+        repo = datarepo.SqlDataRepository(registryDb)
+        repo.open(datarepo.MODE_READ)
+        super(HeapProfilerBackend, self).__init__(repo)
         self.profiler = guppy.hpy()
 
     def startProfile(self):
@@ -32,9 +35,10 @@ class HeapProfilerBackend(backend.Backend):
 
 
 class CpuProfilerBackend(backend.Backend):
-    def __init__(self, dataDir):
-        dataRepository = datarepo.FileSystemDataRepository(dataDir)
-        super(CpuProfilerBackend, self).__init__(dataRepository)
+    def __init__(self, registryDb):
+        repo = datarepo.SqlDataRepository(registryDb)
+        repo.open(datarepo.MODE_READ)
+        super(CpuProfilerBackend, self).__init__(repo)
         self.profiler = cProfile.Profile()
 
     def startProfile(self):
@@ -50,11 +54,12 @@ def _heavyQuery(variantSetId, callSetIds):
     on chromosome 2 (11 pages, 90 seconds to fetch the entire thing
     on a high-end desktop machine)
     """
-    request = protocol.GASearchVariantsRequest()
-    request.referenceName = '2'
-    request.variantSetIds = [variantSetId]
-    request.callSetIds = callSetIds
-    request.pageSize = 100
+    request = protocol.SearchVariantsRequest()
+    request.reference_name = '2'
+    request.variant_set_id = variantSetId
+    for callSetId in callSetIds:
+        request.call_set_ids.add(callSetId)
+    request.page_size = 100
     request.end = 100000
     return request
 
@@ -64,7 +69,7 @@ def timeOneSearch(queryString):
     Returns (search result as JSON string, time elapsed during search)
     """
     startTime = time.clock()
-    resultString = backend.searchVariants(queryString)
+    resultString = backend.runSearchVariants(queryString)
     endTime = time.clock()
     elapsedTime = endTime - startTime
     return resultString, elapsedTime
@@ -91,7 +96,7 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
     processing to prepare queries or parse responses.
     """
     times = []
-    queryString = request.toJsonString()
+    queryString = protocol.toJson(request)
     for i in range(0, repeatLimit):
         resultString, elapsedTime = timeOneSearch(queryString)
         accruedTime = elapsedTime
@@ -100,8 +105,8 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
         # Iterate to go beyond the first page of results.
         while token is not None and pageCount < pageLimit:
             pageRequest = request
-            pageRequest.pageToken = token
-            pageRequestString = pageRequest.toJsonString()
+            pageRequest.page_token = token
+            pageRequestString = protocol.toJson(pageRequest)
             resultString, elapsedTime = timeOneSearch(pageRequestString)
             accruedTime += elapsedTime
             pageCount = pageCount + 1
@@ -144,16 +149,20 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    dataDir = "ga4gh-example-data"
-    backend = backend.Backend(datarepo.FileSystemDataRepository(dataDir))
+    registryDb = "ga4gh-example-data/repo.db"
+
     if args.profile == 'heap':
         backendClass = HeapProfilerBackend
-        backend = backendClass(dataDir)
+        backend = backendClass(registryDb)
         args.repeatLimit = 1
         args.pageLimit = 1
     elif args.profile == 'cpu':
         backendClass = CpuProfilerBackend
-        backend = backendClass(dataDir)
+        backend = backendClass(registryDb)
+    else:
+        repo = datarepo.SqlDataRepository(registryDb)
+        repo.open(datarepo.MODE_READ)
+        backend = backend.Backend(repo)
     # Get our list of callSetids
     callSetIds = args.callSetIds
     if callSetIds != []:

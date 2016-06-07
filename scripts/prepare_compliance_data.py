@@ -138,22 +138,26 @@ class ComplianceDataMunger(object):
             readGroupSet.setReferenceSet(referenceSet)
             self.repo.insertReadGroupSet(readGroupSet)
 
-        ontologyMapFileName = "sequence_ontology.txt"
+        ontologyMapFileName = "so-xp-simple.obo"
         inputOntologyMap = os.path.join(
             self.inputDirectory, ontologyMapFileName)
         outputOntologyMap = os.path.join(
             self.outputDirectory, ontologyMapFileName)
         shutil.copy(inputOntologyMap, outputOntologyMap)
 
-        sequenceOntology = ontologies.OntologyTermMap("sequence_ontology")
+        sequenceOntology = ontologies.Ontology("so-xp-simple")
         sequenceOntology.populateFromFile(outputOntologyMap)
-        self.repo.insertOntologyTermMap(sequenceOntology)
-        self.repo.addOntologyTermMap(sequenceOntology)
+        sequenceOntology._id = "so-xp-simple"
+        self.repo.insertOntology(sequenceOntology)
+        self.repo.addOntology(sequenceOntology)
 
-        map(lambda x: self.addVariantSet(x, dataset, referenceSet),
-            ["brca1_1kgPhase3_variants.vcf",
-             "brca1_WASH7P_annotation.vcf",
-             "brca1_OR4F_annotation.vcf"])
+        vcfFiles = [
+            "brca1_1kgPhase3_variants.vcf",
+            "brca1_WASH7P_annotation.vcf",
+            "brca1_OR4F_annotation.vcf"]
+        for vcfFile in vcfFiles:
+            self.addVariantSet(
+                vcfFile, dataset, referenceSet, sequenceOntology)
 
         # Sequence annotations
         seqAnnFile = "brca1_gencodev19.gff3"
@@ -162,8 +166,10 @@ class ComplianceDataMunger(object):
         dbgen = generate_gff3_db.Gff32Db(seqAnnSrc, seqAnnDest)
         dbgen.run()
         gencode = sequenceAnnotations.Gff3DbFeatureSet(dataset, "gencodev19")
+        gencode.setOntology(sequenceOntology)
         gencode.populateFromFile(seqAnnDest)
         gencode.setReferenceSet(referenceSet)
+
         self.repo.insertFeatureSet(gencode)
 
         # RNA Quantification
@@ -174,7 +180,7 @@ class ComplianceDataMunger(object):
 
         print("Done converting compliance data.", file=sys.stderr)
 
-    def addVariantSet(self, variantFileName, dataset, referenceSet):
+    def addVariantSet(self, variantFileName, dataset, referenceSet, ontology):
         inputVcf = os.path.join(
             self.inputDirectory, variantFileName)
         outputVcf = os.path.join(
@@ -188,6 +194,9 @@ class ComplianceDataMunger(object):
             [outputVcf + ".gz"], [outputVcf + ".gz.tbi"])
         variantSet.checkConsistency()
         self.repo.insertVariantSet(variantSet)
+        for annotationSet in variantSet.getVariantAnnotationSets():
+            annotationSet.setOntology(ontology)
+            self.repo.insertVariantAnnotationSet(annotationSet)
 
     def cleanup(self):
         if self.tempdir is not None:

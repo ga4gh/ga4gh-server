@@ -360,7 +360,9 @@ def handleException(exception):
         with app.test_request_context():
             app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
-    responseStr = serverException.toProtocolElement().toJsonString()
+    error = serverException.toProtocolElement()
+    responseStr = protocol.toJson(error)
+
     return getFlaskResponse(responseStr, serverException.httpStatus)
 
 
@@ -582,19 +584,19 @@ def searchFeatures():
         flask.request, app.backend.runSearchFeatures)
 
 
-@DisplayedRoute('/rnaquantification/search', postMethod=True)
-def searchRNAQuantification():
+@DisplayedRoute('/rnaquantifications/search', postMethod=True)
+def searchRnaQuantification():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchRnaQuantification)
 
 
-@DisplayedRoute('/expressionlevel/search', postMethod=True)
+@DisplayedRoute('/expressionlevels/search', postMethod=True)
 def searchExpressionLevel():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchExpressionLevel)
 
 
-@DisplayedRoute('/quantificationgroup/search', postMethod=True)
+@DisplayedRoute('/quantificationgroups/search', postMethod=True)
 def searchQuantificationGroup():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchQuantificationGroup)
@@ -655,8 +657,8 @@ def getFeature(id):
 
 
 @DisplayedRoute(
-    '/rnaquantification/<no(search):id>',
-    pathDisplay='/rnaquantification/<id>')
+    '/rnaquantifications/<no(search):id>',
+    pathDisplay='/rnaquantifications/<id>')
 def getRnaQuantification(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetRnaQuantification)

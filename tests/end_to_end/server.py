@@ -95,8 +95,8 @@ class ServerForTesting(object):
         try:
             response = self.ping()
             if response.status_code != self.pingStatusCode:
-                msg = ("Ping of server returned unexpected status code "
-                       "({})").format(response.status_code)
+                msg = ("Ping of server {} returned unexpected status code "
+                       "({})").format(self.serverUrl, response.status_code)
                 assert False, msg
             return True
         except requests.ConnectionError:

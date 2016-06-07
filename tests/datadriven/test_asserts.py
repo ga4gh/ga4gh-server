@@ -51,10 +51,10 @@ class TestAsserts(unittest.TestCase):
     def testAssertIsNone(self):
         self.testCase.assertIsNone(None)
         with self.testCase.assertRaises(AssertionError):
-            self.testCase.assertIsNone(0)
+            self.testCase.assertIsNone(1)
 
     def testAssertIsNotNone(self):
-        self.testCase.assertIsNotNone(0)
+        self.testCase.assertIsNotNone(1)
         with self.testCase.assertRaises(AssertionError):
             self.testCase.assertIsNotNone(None)
 

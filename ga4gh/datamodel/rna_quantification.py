@@ -35,27 +35,26 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(AbstractExpressionLevel, self).__init__(
             parentContainer, localId)
-        self._annotationId = ""
         self._expression = 0.0
         self._quantificationGroupId = ""
         self._isNormalized = ""
         self._rawReadCount = 0.0
         self._score = 0.0
-        self._units = ""
+        self._units = 0
         self._name = localId
         self._confInterval = []
 
     def toProtocolElement(self):
         protocolElement = protocol.ExpressionLevel()
-        protocolElement.annotationId = self._annotationId
-        protocolElement.expression = self._expression
-        protocolElement.quantificationGroupId = (self._quantificationGroupId)
         protocolElement.id = self.getId()
-        protocolElement.isNormalized = self._isNormalized
-        protocolElement.rawReadCount = self._rawReadCount
-        protocolElement.score = self._score
+        protocolElement.name = self._name
+        protocolElement.quantification_group_id = (self._quantificationGroupId)
+        protocolElement.raw_read_count = self._rawReadCount
+        protocolElement.expression = self._expression
+        protocolElement.is_normalized = self._isNormalized
         protocolElement.units = self._units
-        protocolElement.confInterval = self._confInterval
+        protocolElement.score = self._score
+        protocolElement.conf_interval.extend(self._confInterval)
         return protocolElement
 
 
@@ -66,7 +65,6 @@ class ExpressionLevel(AbstractExpressionLevel):
 
     def __init__(self, parentContainer, record):
         super(ExpressionLevel, self).__init__(parentContainer, record["id"])
-        self._annotationId = record["annotation_id"]
         self._expression = record["expression"]
         self._quantificationGroupId = record["quantification_group_id"]
         # sqlite stores booleans as int (False = 0, True = 1)
@@ -95,12 +93,18 @@ class AbstractQuantificationGroup(datamodel.DatamodelObject):
             parentContainer, localId)
         self._analysisId = ""
         self._name = localId
+        self._description = ""
+        self._info = []
 
     def toProtocolElement(self):
         protocolElement = protocol.QuantificationGroup()
         protocolElement.id = self.getId()
-        protocolElement.analysisId = self._analysisId
+        protocolElement.analysis_id = self._analysisId
         protocolElement.name = self._name
+        protocolElement.description = self._description
+        for key in self._info:
+            protocolElement.info[key].values.extend(self._info[key])
+
         return protocolElement
 
 
@@ -130,17 +134,19 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         self._name = localId
         self._readGroupId = ""
         self._referenceSet = None
+        self._programIds = []
 
     def toProtocolElement(self):
         """
         Converts this rnaQuant into its GA4GH protocol equivalent.
         """
         protocolElement = protocol.RnaQuantification()
-        protocolElement.annotationIds = self._annotationIds
-        protocolElement.description = self._description
         protocolElement.id = self.getId()
         protocolElement.name = self._name
-        protocolElement.readGroupId = self._readGroupId
+        protocolElement.description = self._description
+        protocolElement.read_group_id = self._readGroupId
+        protocolElement.program_ids.extend(self._programIds)
+        protocolElement.annotation_ids.extend(self._annotationIds)
         return protocolElement
 
     def addRnaQuantMetadata(self, fields):
@@ -215,18 +221,18 @@ class RNASeqResult(AbstractRNAQuantification):
         return self._dbFilePath
 
     def getExpressionLevels(
-            self, rnaQuantID, pageToken=0, pageSize=None, expressionId=None,
-            quantificationGroupId=None, threshold=0.0):
+            self, rnaQuantID, pageToken=0, pageSize=None, expressionId="",
+            quantificationGroupId="", threshold=0.0):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
-        if expressionId is not None:
+        if len(expressionId) > 0:
             parsedId = datamodel.ExpressionLevelCompoundId.parse(expressionId)
             expressionId = parsedId.expressionLevelId
-        if quantificationGroupId is not None:
+        if len(quantificationGroupId) > 0:
             parsedId = datamodel.QuantificationGroupCompoundId.parse(
                 quantificationGroupId)
-            quantificationGroupId = parsedId.quantificationGroupId
+            quantificationGroupId = parsedId.quantification_group_id
         with self._db as dataSource:
             expressionsReturned = dataSource.searchExpressionLevelsInDb(
                 rnaQuantID, pageToken=pageToken,
@@ -237,7 +243,7 @@ class RNASeqResult(AbstractRNAQuantification):
                 expressionEntry in expressionsReturned]
 
     def getExpressionLevel(self, compoundId):
-        expressionId = compoundId.expressionLevelId
+        expressionId = compoundId.expression_level_id
         with self._db as dataSource:
             expressionReturned = dataSource.getExpressionLevelById(
                 expressionId)
@@ -246,14 +252,14 @@ class RNASeqResult(AbstractRNAQuantification):
 
     def getQuantificationGroups(
             self, rnaQuantID, pageToken=0, pageSize=None,
-            quantificationGroupId=None):
+            quantificationGroupId=""):
         """
         Returns the list of QuantificationGroups in this RNA Quantification.
 
         for now the quantification group data is autogenerated by examining the
         relevant expression data file
         """
-        if quantificationGroupId is not None:
+        if len(quantificationGroupId) > 0:
             parsedId = datamodel.QuantificationGroupCompoundId.parse(
                 quantificationGroupId)
             quantificationGroupId = parsedId.quantificationGroupId
@@ -271,7 +277,7 @@ class RNASeqResult(AbstractRNAQuantification):
         for now the quantification group data is autogenerated by examining the
         relevant expression data file
         """
-        quantificationGroupId = compoundId.quantificationGroupId
+        quantificationGroupId = compoundId.quantification_group_id
         with self._db as dataSource:
             quantificationGroupReturned = \
                 dataSource.getQuantificationGroupById(quantificationGroupId)
@@ -288,7 +294,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         super(SqliteRNABackend, self).__init__(rnaQuantSqlFile)
 
     def searchRnaQuantificationsInDb(
-            self, pageToken=0, pageSize=None, rnaQuantificationId=None):
+            self, pageToken=0, pageSize=None, rnaQuantificationId=""):
         """
         :param pageToken: int representing first record to return
         :param pageSize: int representing number of records to return
@@ -297,7 +303,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         """
         sql = ("SELECT * FROM RNAQUANTIFICATION")
         sql_args = ()
-        if rnaQuantificationId is not None:
+        if len(rnaQuantificationId) > 0:
             sql += " WHERE id = ? "
             sql_args += (rnaQuantificationId,)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
@@ -323,8 +329,8 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
                 rnaQuantificationId)
 
     def searchExpressionLevelsInDb(
-            self, rnaQuantId, pageToken=0, pageSize=None, expressionId=None,
-            quantificationGroupId=None, threshold=0.0):
+            self, rnaQuantId, pageToken=0, pageSize=None, expressionId="",
+            quantificationGroupId="", threshold=0.0):
         """
         :param rnaQuantId: string restrict search by quantification id
         :param pageToken: int representing first record to return
@@ -339,10 +345,10 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
                "rna_quantification_id = ? "
                "AND expression >= ? ")
         sql_args = (rnaQuantId, threshold)
-        if expressionId is not None:
+        if len(expressionId) > 0:
             sql += "AND id = ? "
             sql_args += (expressionId,)
-        if quantificationGroupId is not None:
+        if len(quantificationGroupId) > 0:
             sql += "AND quantification_group_id = ? "
             sql_args += (quantificationGroupId,)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
@@ -369,7 +375,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
 
     def searchQuantificationGroupsInDb(
             self, rnaQuantId, pageToken=0, pageSize=None,
-            quantificationGroupId=None):
+            quantificationGroupId=""):
         """
         :param rnaQuantId: string restrict search by quantification id
         :param pageToken: int representing first record to return
@@ -381,7 +387,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         sql = ("SELECT DISTINCT quantification_group_id,rna_quantification_id "
                "FROM EXPRESSION WHERE rna_quantification_id = ? ")
         sql_args = (rnaQuantId,)
-        if quantificationGroupId is not None:
+        if len(quantificationGroupId) > 0:
             sql += "AND quantification_group_id = ? "
             sql_args += (quantificationGroupId,)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)

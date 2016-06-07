@@ -98,5 +98,6 @@ Client API
         getReadGroupSet, getReadGroup,
         searchDatasets, searchReferenceSets, searchReferences,
         searchVariantSets, searchVariants, searchReadGroupSets,
-        searchReads
+        searchReads, searchVariantAnnotations,
+        searchVariantAnnotationSets
 
