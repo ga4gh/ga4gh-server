@@ -440,6 +440,40 @@ class Backend(object):
         """
         yield (datamodelObject.toProtocolElement(), None)
 
+    def _protocolObjectGenerator(self, request, numObjects, getByIndexMethod):
+        """
+        Yields (object, nextPageToken) pairs according to the request
+        pageToken. The listed objects, unlike _topLevelObjectGenerator
+        have already been coerced to their protocol form.
+        :param request: The request containing an optional page token
+        :param numObjects: The length of the list to take from
+        :param getByIndexMethod: A function for accessing objects by index
+        :return: object, nextPageToken pair
+        """
+        currentIndex = 0
+        if request.pageToken is not None:
+            currentIndex, = _parsePageToken(request.pageToken, 1)
+        while currentIndex < numObjects:
+            object_ = getByIndexMethod(currentIndex)
+            currentIndex += 1
+            nextPageToken = None
+            if currentIndex < numObjects:
+                nextPageToken = str(currentIndex)
+            yield object_, nextPageToken
+
+    def _protocolListGenerator(self, request, objectList):
+        """
+        Convenience function for working with a list of objects that
+        have already been coerced to their protocol equivalent. This
+        may be useful for objects that are not ordered by their
+        genomic position, but by their order in this list.
+        :param request: The request with pagetokens.
+        :param objectList: A list of ga4gh.protocol objects
+        :return: generator for objects in this list
+        """
+        return self._protocolObjectGenerator(
+            request, len(objectList), lambda index: objectList[index])
+
     def _noObjectGenerator(self):
         """
         Returns a generator yielding no results
@@ -687,9 +721,6 @@ class Backend(object):
         defined by the (JSON string) request
         """
         # TODO make paging work using SPARQL?
-        if (request.phenotype is None):
-            msg = "Error: Phenotype must be non-null"
-            raise exceptions.BadRequestException(msg)
         # determine offset for paging
         if request.pageToken is not None:
             offset, = _parsePageToken(request.pageToken, 1)
@@ -701,9 +732,10 @@ class Backend(object):
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
-            None, None, request.phenotype,
+            None, None, request,
             request.pageSize, offset)
-        return self._protocolListGenerator(request, annotationList)
+        return self._protocolListGenerator(request,
+                                           [annotationList[0].phenotype])
 
     def callSetsGenerator(self, request):
         """
@@ -1057,12 +1089,6 @@ class Backend(object):
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
 
-    def runSearchPhenotypeAssociationSets(self, request):
-        return self.runSearchRequest(
-            request, protocol.SearchPhenotypeAssociationSetsRequest,
-            protocol.SearchPhenotypeAssociationSetsResponse,
-            self.phenotypeAssociationSetsGenerator)
-
     def runSearchFeatureSets(self, request):
         """
         Returns a SearchFeatureSetsResponse for the specified
@@ -1100,6 +1126,28 @@ class Backend(object):
 
     def runSearchPhenotypeAssociationSets(self, request):
         return self.runSearchRequest(
-            request, protocol.SearchPhenotypesRequest,
-            protocol.SearchPhenotypesResponse,
-            self.phenotypesGenerator)
+            request, protocol.SearchPhenotypeAssociationSetsRequest,
+            protocol.SearchPhenotypeAssociationSetsResponse,
+            self.phenotypeAssociationSetsGenerator)
+
+    def genotypePhenotypeGenerator(self, request):
+        # TODO make paging work using SPARQL?
+        if (request.evidence is None and
+                request.phenotype is None and
+                request.feature is None):
+            msg = "Error:One of evidence,phenotype or feature must be non-null"
+            raise exceptions.BadRequestException(msg)
+        # determine offset for paging
+        if request.pageToken is not None:
+            offset, = _parsePageToken(request.pageToken, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotypeAssociationSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request.feature, request.evidence, request.phenotype,
+            request.pageSize, offset)
+        return self._objectListGenerator(request, annotationList)

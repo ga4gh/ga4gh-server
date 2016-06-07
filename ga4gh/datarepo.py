@@ -233,6 +233,14 @@ class AbstractDataRepository(object):
                     featureSet.getOntology().getName(),
                     featureSet.getId(),
                     sep="\t")
+            print("\tPhenotypeAssociationSets:")
+            for phenotypeAssociationSet in \
+                    dataset.getPhenotypeAssociationSets():
+                print(
+                    "\t", phenotypeAssociationSet.getLocalId(),
+                    phenotypeAssociationSet.getParentContainer().getId(),
+                    sep="\t")
+                # TODO - gabrielle please improve this listing
 
     def allReferences(self):
         """
@@ -532,6 +540,15 @@ class SqlDataRepository(AbstractDataRepository):
                     print(
                         "\t\t\tRead", i, "annotations from reference",
                         referenceName)
+            for phenotypeAssociationSet \
+                    in dataset.getPhenotypeAssociationSets():
+                print("\t\tVerifying PhenotypeAssociationSet")
+                print(
+                    "\t\t\t", phenotypeAssociationSet.getLocalId(),
+                    phenotypeAssociationSet.getParentContainer().getId(),
+                    sep="\t")
+                # TODO - gabrielle please improve this verification,
+                #        print out number of tuples in graph
 
     def _safeConnect(self):
         try:
@@ -1159,7 +1176,7 @@ class SqlDataRepository(AbstractDataRepository):
                 id TEXT NOT NULL PRIMARY KEY,
                 name TEXT,
                 datasetId TEXT NOT NULL,
-                info TEXT,
+                dataUrl TEXT NOT NULL,
                 UNIQUE (datasetId, name),
                 FOREIGN KEY(datasetId) REFERENCES Dataset(id)
                     ON DELETE CASCADE
@@ -1174,15 +1191,16 @@ class SqlDataRepository(AbstractDataRepository):
         # TODO add support for info and sourceUri fields.
         sql = """
             INSERT INTO PhenotypeAssociationSet (
-                id, name, datasetId, info)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                id, name, datasetId,dataUrl )
+            VALUES (?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             phenotypeAssociationSet.getId(),
             phenotypeAssociationSet.getLocalId(),
             phenotypeAssociationSet.getParentContainer().getId(),
-            json.dumps(phenotypeAssociationSet.getInfo())))
+            phenotypeAssociationSet._dataUrl
+            ))
 
     def _readPhenotypeAssociationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -1190,9 +1208,7 @@ class SqlDataRepository(AbstractDataRepository):
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
-                dataset, row[b'name'])
-            phenotypeAssociationSet.populateFromRow(row)
-            assert phenotypeAssociationSet.getId() == row[b'id']
+                dataset, row[b'name'], row[b'dataUrl'])
             dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
     def initialise(self):
