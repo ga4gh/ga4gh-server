@@ -973,7 +973,7 @@ class TestSimulatedStack(unittest.TestCase):
                     bioSample = self.sendGetObject(
                         'biosamples',
                         rg.bio_sample_id,
-                        protocol.BioSample())
+                        protocol.BioSample)
                     bioSamplesRgs.append((bioSample.id, rgs.id))
                     self.assertNotEqual(
                         None, bioSample,
@@ -991,14 +991,10 @@ class TestSimulatedStack(unittest.TestCase):
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchReadGroupSetsResponse)
             self.assertEquals(
-                len(responseData.readGroupSets), 0,
+                len(responseData.read_group_sets), 0,
                 "A good biosample ID and bad name should return 0")
-            request.name = None
-            responseData = self.sendSearchRequest(
-                path, request, protocol.SearchReadGroupSetsResponse)
-            self.assertIsNone(
-                responseData.next_page_token,
-                "Only one page should be returned")
+            request = protocol.SearchReadGroupSetsRequest()
+            request.dataset_id = dataset.getId()
             for rgs in responseData.read_group_sets:
                 for rg in rgs.readGroups:
                     self.assertEqual(

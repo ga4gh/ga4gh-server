@@ -342,6 +342,7 @@ class SimulatedDataset(Dataset):
                 individual = biodata.Individual(
                     self, rg.getLocalId())
                 bioSample.setIndividualId(individual.getId())
+                rg.setBioSampleId(bioSample.getId())
                 self.addIndividual(individual)
                 self.addBioSample(bioSample)
             self.addReadGroupSet(readGroupSet)

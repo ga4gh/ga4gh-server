@@ -460,16 +460,21 @@ class Backend(object):
         defined by the specified request.
         """
         dataset = self.getDataRepository().getDataset(request.dataset_id)
-        if request.name == "":
-            return self._topLevelObjectGenerator(
-                request, dataset.getNumReadGroupSets(),
-                dataset.getReadGroupSetByIndex)
-        else:
-            try:
-                readGroupSet = dataset.getReadGroupSetByName(request.name)
-            except exceptions.ReadGroupSetNameNotFoundException:
-                return self._noObjectGenerator()
-            return self._singleObjectGenerator(readGroupSet)
+        results = []
+        for obj in dataset.getReadGroupSets():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if request.bio_sample_id:
+                newRg = []
+                for readGroup in obj.getReadGroups():
+                    if request.bio_sample_id != readGroup.getBioSampleId():
+                        newRg.append(readGroup)
+                obj.readGroups = newRg
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
 
     def referenceSetsGenerator(self, request):
         """

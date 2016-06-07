@@ -704,6 +704,7 @@ class SqlDataRepository(AbstractDataRepository):
                 description TEXT,
                 stats TEXT NOT NULL,
                 experiment TEXT NOT NULL,
+                bioSampleId TEXT,
                 created TEXT,
                 updated TEXT,
                 UNIQUE (readGroupSetId, name),
@@ -720,9 +721,10 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             INSERT INTO ReadGroup (
                 id, readGroupSetId, name, predictedInsertSize,
-                sampleName, description, stats, experiment, created, updated)
+                sampleName, description, stats, experiment,
+                bioSampleId, created, updated)
             VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
         """
         cursor = self._dbConnection.cursor()
         statsJson = json.dumps(protocol.toJsonDict(readGroup.getStats()))
@@ -732,7 +734,7 @@ class SqlDataRepository(AbstractDataRepository):
             readGroup.getId(), readGroup.getParentContainer().getId(),
             readGroup.getLocalId(), readGroup.getPredictedInsertSize(),
             readGroup.getSampleName(), readGroup.getDescription(),
-            statsJson, experimentJson))
+            statsJson, experimentJson, readGroup.getBioSampleId()))
 
     def removeReadGroupSet(self, readGroupSet):
         """
@@ -751,6 +753,22 @@ class SqlDataRepository(AbstractDataRepository):
         sql = "DELETE FROM VariantSet WHERE id=?"
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (variantSet.getId(),))
+
+    def removeBioSample(self, bioSample):
+        """
+        Removes the specified bioSample from this repository.
+        """
+        sql = "DELETE FROM BioSample WHERE id=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (bioSample.getId(),))
+
+    def removeIndividual(self, individual):
+        """
+        Removes the specified individual from this repository.
+        """
+        sql = "DELETE FROM Individual WHERE id=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (individual.getId(),))
 
     def _readReadGroupTable(self, cursor):
         cursor.row_factory = sqlite3.Row
