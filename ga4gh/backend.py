@@ -671,7 +671,7 @@ class Backend(object):
                 request.rna_quantification_id)
             try:
                 rnaQuant = dataset.getRnaQuantification(
-                    compoundId.rnaQuantificationId)
+                    compoundId.rna_quantification_id)
             except exceptions.RnaQuantificationNotFoundException:
                 return self._noObjectGenerator()
             return self._singleObjectGenerator(rnaQuant)
@@ -686,7 +686,7 @@ class Backend(object):
         rnaQuantificationId = request.rna_quantification_id
         compoundId = datamodel.RnaQuantificationCompoundId.parse(
             request.rna_quantification_id)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
         expressionLevelId = request.expression_level_id
         if len(expressionLevelId) > 0:
@@ -699,17 +699,12 @@ class Backend(object):
             except exceptions.ExpressionLevelNotFoundException:
                 return self._noObjectGenerator()
         rnaQuantificationId = rnaQuant.getLocalId()
-        quantificationGroupId = request.quantification_group_id
-        if len(quantificationGroupId) > 0:
-            quantificationGroupId = \
-                datamodel.QuantificationGroupCompoundId.parse(
-                    request.quantification_group_id)
         return self._objectListGenerator(
             request,
             rnaQuant.getExpressionLevels(
                 rnaQuantificationId, pageToken=request.page_token,
                 pageSize=request.page_size, expressionId=expressionLevelId,
-                quantificationGroupId=quantificationGroupId,
+                quantificationGroupId=request.quantification_group_id,
                 threshold=request.threshold))
 
     def quantificationGroupGenerator(self, request):
@@ -722,7 +717,7 @@ class Backend(object):
         rnaQuantificationId = request.rna_quantification_id
         compoundId = datamodel.RnaQuantificationCompoundId.parse(
             rnaQuantificationId)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
         quantificationGroupId = request.quantification_group_id
         if len(quantificationGroupId) > 0:

@@ -173,7 +173,7 @@ class RsemWriter(AbstractWriter):
     def __init__(self, annotationId, rnaDB, featureType="gene"):
         super(RsemWriter, self).__init__(annotationId, rnaDB)
         self._isNormalized = True
-        self._units = 1  # TPM
+        self._units = 2  # TPM
         self._expressionLevelCol = 5
         if featureType is "transcript":
             self._idCol = 1
@@ -197,7 +197,7 @@ class KallistoWriter(AbstractWriter):
     def __init__(self, annotationId, rnaDB):
         super(KallistoWriter, self).__init__(annotationId, rnaDB)
         self._isNormalized = True
-        self._units = 1  # TPM
+        self._units = 2  # TPM
         self._expressionLevelCol = 4
         self._idCol = 0
         self._nameCol = 0
