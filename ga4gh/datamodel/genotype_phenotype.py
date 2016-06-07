@@ -238,6 +238,10 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         filters = []
         # feature
         # ExternalIdentifier
+        if feature and feature.id:
+            featureClause = "?feature = <{}>".format(feature.id)
+            filters.append(featureClause)
+
         featureClause = self._formatExternalIdentifier(feature, 'feature')
         if featureClause:
             filters.append(featureClause)
@@ -262,9 +266,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         # phenotype
         # ExternalIdentifier
         #
-        print(phenotype)
-        print(phenotype.id)
-        if phenotype.id:
+        if phenotype and phenotype.id:
             phenotypeClause = "?phenotype = <{}>".format(phenotype.id)
             filters.append(phenotypeClause)
 

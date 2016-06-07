@@ -737,6 +737,28 @@ class Backend(object):
         return self._protocolListGenerator(request,
                                            [annotationList[0].phenotype])
 
+    def genotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        # determine offset for paging
+        if request.pageToken is not None:
+            offset, = _parsePageToken(request.pageToken, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotypeAssociationSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request, None, None,
+            request.pageSize, offset)
+        return self._protocolListGenerator(request,
+                                           [annotationList[0].features[0]])
+
     def callSetsGenerator(self, request):
         """
         Returns a generator over the (callSet, nextPageToken) pairs defined
@@ -1123,6 +1145,12 @@ class Backend(object):
             request, protocol.SearchPhenotypesRequest,
             protocol.SearchPhenotypesResponse,
             self.phenotypesGenerator)
+
+    def runSearchGenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypesRequest,
+            protocol.SearchGenotypesResponse,
+            self.genotypesGenerator)
 
     def runSearchPhenotypeAssociationSets(self, request):
         return self.runSearchRequest(
