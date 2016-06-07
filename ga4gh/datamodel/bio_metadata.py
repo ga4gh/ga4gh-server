@@ -25,11 +25,11 @@ class BioSample(datamodel.DatamodelObject):
         super(BioSample, self).__init__(parentContainer, localId)
         self._created = datetime.datetime.now().isoformat()
         self._updated = datetime.datetime.now().isoformat()
-        self._description = ""
-        self._disease = {}
-        self._info = {}
+        self._description = None
+        self._disease = None
+        self._info = None
         self._name = localId
-        self._individualId = ""
+        self._individualId = None
 
     def toProtocolElement(self):
         bioSample = protocol.BioSample(
@@ -56,11 +56,11 @@ class BioSample(datamodel.DatamodelObject):
         if 'description' in parsed:
             self._description = parsed['description']
         if 'disease' in parsed:
-            self._species = protocol.fromJson(
+            self._disease = protocol.fromJson(
                 json.dumps(parsed['disease']),
                 protocol.OntologyTerm)
-        if 'individual_id' in parsed:
-            self._individualId = parsed['individual_id']
+        if 'individualId' in parsed:
+            self._individualId = parsed['individualId']
         return self
 
     def populateFromRow(self, row):
@@ -68,11 +68,13 @@ class BioSample(datamodel.DatamodelObject):
         self._created = row[b'created']
         self._updated = row[b'updated']
         self._description = row[b'description']
-        self._disease = protocol.fromJson(
-            row[b'disease'], protocol.OntologyTerm)
+        self._disease = json.loads(row[b'disease'])
         self._individualId = row[b'individualId']
         self._info = json.loads(row[b'info'])
         return self
+
+    def setIndividualId(self, individualId):
+        self._individualId = individualId
 
     def getIndividualId(self):
         return self._individualId
@@ -87,7 +89,10 @@ class BioSample(datamodel.DatamodelObject):
         return self._description
 
     def getDisease(self):
-        return self._disease
+        if self._disease is not {}:
+            return self._disease
+        else:
+            return None
 
     def getInfo(self):
         return self._info
@@ -108,10 +113,10 @@ class Individual(datamodel.DatamodelObject):
         super(Individual, self).__init__(parentContainer, localId)
         self._created = datetime.datetime.now().isoformat()
         self._updated = datetime.datetime.now().isoformat()
-        self._description = ""
-        self._species = {}
-        self._sex = {}
-        self._info = {}
+        self._description = None
+        self._species = None
+        self._sex = None
+        self._info = None
         self._name = localId
 
     def toProtocolElement(self):
@@ -128,12 +133,13 @@ class Individual(datamodel.DatamodelObject):
 
     def populateFromRow(self, row):
         # TODO coerce to types
+        self._name = row[b'name']
         self._created = row[b'created']
         self._updated = row[b'updated']
         self._description = row[b'description']
         self._species = json.loads(row[b'species'])
         self._sex = json.loads(row[b'sex'])
-        self._info = row[b'info']
+        self._info = json.loads(row[b'info'])
         return self
 
     def populateFromJson(self, jsonString):

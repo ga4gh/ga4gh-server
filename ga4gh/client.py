@@ -517,7 +517,7 @@ class AbstractClient(object):
         request = protocol.SearchBioSamplesRequest()
         request.dataset_id = datasetId
         request.name = pb.string(name)
-        request.individual_id = individualId
+        request.individual_id = pb.string(individualId)
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "biosamples", protocol.SearchBioSamplesResponse)
@@ -535,7 +535,7 @@ class AbstractClient(object):
         """
         request = protocol.SearchIndividualsRequest()
         request.dataset_id = datasetId
-        request.name = name
+        request.name = pb.string(name)
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "individuals", protocol.SearchIndividualsResponse)
@@ -694,8 +694,8 @@ class LocalClient(AbstractClient):
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
             "variantannotationsets": self._backend.runGetVariantAnnotationSet,
-            #"biosamples": self._backend.runGetBioSample,
-            #"individuals": self._backend.runGetIndividual
+            "biosamples": self._backend.runGetBioSample,
+            "individuals": self._backend.runGetIndividual
         }
         self._searchMethodMap = {
             "callsets": self._backend.runSearchCallSets,
@@ -711,8 +711,8 @@ class LocalClient(AbstractClient):
             "variantannotations": self._backend.runSearchVariantAnnotations,
             "variantannotationsets":
                 self._backend.runSearchVariantAnnotationSets,
-            #"biosamples": self._backend.runSearchBioSamples,
-            #"individuals": self._backend.runSearchIndividuals
+            "biosamples": self._backend.runSearchBioSamples,
+            "individuals": self._backend.runSearchIndividuals
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):

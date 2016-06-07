@@ -379,7 +379,7 @@ class SearchBioSamplesRunner(AbstractSearchRunner):
         super(SearchBioSamplesRunner, self).__init__(args)
         self._datasetId = args.datasetId
         self._individualId = args.individualId
-        self._name = args.bioSampleName
+        self._name = args.name
 
     def _run(self, datasetId):
         iterator = self._client.searchBioSamples(
@@ -403,7 +403,7 @@ class SearchIndividualsRunner(AbstractSearchRunner):
     def __init__(self, args):
         super(SearchIndividualsRunner, self).__init__(args)
         self._datasetId = args.datasetId
-        self._name = args.individualName
+        self._name = args.name
 
     def _run(self, datasetId):
         iterator = self._client.searchBioSamples(
@@ -2026,7 +2026,7 @@ class RepoManager(object):
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        individual = biodata.Individual(dataset, self._args.individual)
+        individual = biodata.Individual(dataset, self._args.individualName)
         individual.populateFromJson(self._args.individual)
         self._updateRepo(self._repo.insertIndividual, individual)
 

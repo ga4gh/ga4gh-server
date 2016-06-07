@@ -1080,7 +1080,7 @@ class SqlDataRepository(AbstractDataRepository):
             json.dumps(bioSample.getDisease()),
             bioSample.getCreated(),
             bioSample.getUpdated(),
-            json.dumps(bioSample.getIndividualId()),
+            bioSample.getIndividualId(),
             json.dumps(bioSample.getInfo())))
 
     def _readBioSampleTable(self, cursor):
@@ -1098,8 +1098,8 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             CREATE TABLE Individual (
                 id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
                 datasetId TEXT NOT NULL,
+                name TEXT,
                 description TEXT,
                 created TEXT NOT NULL,
                 updated TEXT,

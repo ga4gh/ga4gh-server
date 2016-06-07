@@ -964,8 +964,10 @@ class TestSimulatedStack(unittest.TestCase):
             path, request, protocol.SearchReadGroupSetsResponse)
         # go through each read group
         bioSamplesRgs = []
+        ran = False
         for rgs in responseData.read_group_sets:
             for rg in rgs.read_groups:
+                ran = True
                 # request biosample record
                 if rg.bio_sample_id:
                     bioSample = self.sendGetObject(
@@ -976,8 +978,11 @@ class TestSimulatedStack(unittest.TestCase):
                     self.assertNotEqual(
                         None, bioSample,
                         "A BioSample should exist for reach read")
+        self.assertTrue(ran)
         # search reads by biosample
+        ran = False
         for bsId, rgsId in bioSamplesRgs:
+            ran = True
             request = protocol.SearchReadGroupSetsRequest()
             request.dataset_id = dataset.getId()
             request.bio_sample_id = bsId
@@ -992,13 +997,14 @@ class TestSimulatedStack(unittest.TestCase):
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchReadGroupSetsResponse)
             self.assertIsNone(
-                responseData.nextPageToken,
+                responseData.next_page_token,
                 "Only one page should be returned")
-            for rgs in responseData.readGroupSets:
+            for rgs in responseData.read_group_sets:
                 for rg in rgs.readGroups:
                     self.assertEqual(
                         rg.bioSampleId, bsId,
                         "Only read groups matching the BioSample ID")
+        self.assertTrue(ran)
 
     def testBioSamplesFromCallSets(self):
         path = 'callsets/search'
@@ -1036,7 +1042,6 @@ class TestSimulatedStack(unittest.TestCase):
         dataset = self.dataRepo.getDatasets()[0]
         variantSet = dataset.getVariantSets()[0]
         callSet = variantSet.getCallSets()[0]
-        bioSampleId = callSet.toProtocolElement().bio_sample_id
         request = protocol.SearchBioSamplesRequest()
         request.name = "BAD NAME"
         request.dataset_id = dataset.getId()
@@ -1048,7 +1053,6 @@ class TestSimulatedStack(unittest.TestCase):
         request = protocol.SearchBioSamplesRequest()
         request.name = "simCallSet_0"
         request.dataset_id = dataset.getId()
-        request.bio_sample_id = bioSampleId
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchBioSamplesResponse)
         # Currently always returns a singleton
@@ -1091,13 +1095,13 @@ class TestSimulatedStack(unittest.TestCase):
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchBioSamplesResponse)
         self.assertIsNotNone(
-            responseData.nextPageToken,
+            responseData.next_page_token,
             "More than one page should be returned")
-        request.page_token = responseData.nextPageToken
+        request.page_token = responseData.next_page_token
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchBioSamplesResponse)
         self.assertEqual(
-            responseData.biosamples[0].individualId,
+            responseData.biosamples[0].individual_id,
             individualId,
             "Results on the second page should match")
 
@@ -1127,10 +1131,10 @@ class TestSimulatedStack(unittest.TestCase):
             for individual in dataset.getIndividuals():
                 responseObject = self.sendGetObject(
                     path,
-                    individual.id,
+                    individual.getId(),
                     protocol.Individual)
                 self.assertEqual(
-                    responseObject.id, individual.id)
+                    responseObject.id, individual.getId())
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
 
@@ -1140,8 +1144,8 @@ class TestSimulatedStack(unittest.TestCase):
             for bioSample in dataset.getBioSamples():
                 responseObject = self.sendGetObject(
                     path,
-                    bioSample.id,
+                    bioSample.getId(),
                     protocol.BioSample)
-                self.assertEqual(responseObject.id, bioSample.id)
+                self.assertEqual(responseObject.id, bioSample.getId())
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)

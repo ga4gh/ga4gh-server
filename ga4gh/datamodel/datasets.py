@@ -11,6 +11,7 @@ import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.bio_metadata as biodata
 from ga4gh import pb
 
 
@@ -32,6 +33,12 @@ class Dataset(datamodel.DatamodelObject):
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
+        self._bioSampleIds = []
+        self._bioSampleIdMap = {}
+        self._bioSampleNameMap = {}
+        self._individualIds = []
+        self._individualIdMap = {}
+        self._individualNameMap = {}
 
     def populateFromRow(self, row):
         """
@@ -54,6 +61,24 @@ class Dataset(datamodel.DatamodelObject):
         self._variantSetIdMap[id_] = variantSet
         self._variantSetNameMap[variantSet.getLocalId()] = variantSet
         self._variantSetIds.append(id_)
+
+    def addBioSample(self, bioSample):
+        """
+        Adds the specified bioSample to this dataset.
+        """
+        id_ = bioSample.getId()
+        self._bioSampleIdMap[id_] = bioSample
+        self._bioSampleIds.append(id_)
+        self._bioSampleNameMap[bioSample.getName()] = bioSample
+
+    def addIndividual(self, individual):
+        """
+        Adds the specified individual to this dataset.
+        """
+        id_ = individual.getId()
+        self._individualIdMap[id_] = individual
+        self._individualIds.append(id_)
+        self._individualNameMap[individual.getName()] = individual
 
     def addFeatureSet(self, featureSet):
         """
@@ -153,6 +178,78 @@ class Dataset(datamodel.DatamodelObject):
         """
         return self._featureSetIdMap[self._featureSetIds[index]]
 
+    def getNumBioSamples(self):
+        """
+        Returns the number of biosamples sets in this dataset.
+        """
+        return len(self._bioSampleIds)
+
+    def getBioSamples(self):
+        """
+        Returns the list of biosamples in this dataset
+        """
+        return [self._bioSampleIdMap[id_] for id_ in self._bioSampleIds]
+
+    def getBioSampleByName(self, name):
+        """
+        Returns a BioSample with the specified name, or raises a
+        BioSampleNameNotFoundException if it does not exist.
+        """
+        if name not in self._readGroupSetNameMap:
+            raise exceptions.BioSampleNameNotFoundException(name)
+        return self._bioSampleNameMap[name]
+
+    def getBioSampleByIndex(self, index):
+        """
+        Returns the biosample at the specified index in this dataset.
+        """
+        return self._bioSampleIdMap[self._bioSampleIds[index]]
+
+    def getBioSample(self, id_):
+        """
+        Returns the BioSample with the specified id, or raises
+        a BioSampleNotFoundException otherwise.
+        """
+        if id_ not in self._bioSampleIdMap:
+            raise exceptions.BioSampleNotFoundException(id_)
+        return self._bioSampleIdMap[id_]
+
+    def getNumIndividuals(self):
+        """
+        Returns the number of individuals sets in this dataset.
+        """
+        return len(self._individualIds)
+
+    def getIndividuals(self):
+        """
+        Returns the list of individuals in this dataset
+        """
+        return [self._individualIdMap[id_] for id_ in self._individualIds]
+
+    def getIndividualByName(self, name):
+        """
+        Returns an individual with the specified name, or raises a
+        IndividualNameNotFoundException if it does not exist.
+        """
+        if name not in self._individualNameMap:
+            raise exceptions.IndividualNameNotFoundException(name)
+        return self._individualNameMap[name]
+
+    def getIndividualByIndex(self, index):
+        """
+        Returns the individual at the specified index in this dataset.
+        """
+        return self._individualIdMap[self._individualIds[index]]
+
+    def getIndividual(self, id_):
+        """
+        Returns the Individual with the specified id, or raises
+        a IndividualNotFoundException otherwise.
+        """
+        if id_ not in self._individualIdMap:
+            raise exceptions.IndividualNotFoundException(id_)
+        return self._individualIdMap[id_]
+
     def getNumReadGroupSets(self):
         """
         Returns the number of readgroup sets in this dataset.
@@ -214,6 +311,20 @@ class SimulatedDataset(Dataset):
             seed = randomSeed + i
             variantSet = variants.SimulatedVariantSet(
                 self, referenceSet, localId, seed, numCalls, variantDensity)
+            callSets = variantSet.getCallSets()
+            # Add biosamples
+            for callSet in callSets:
+                bioSample = biodata.BioSample(
+                    self, callSet.getLocalId())
+                bioSample2 = biodata.BioSample(
+                    self, callSet.getLocalId() + "2")
+                individual = biodata.Individual(
+                    self, callSet.getLocalId())
+                bioSample.setIndividualId(individual.getId())
+                bioSample2.setIndividualId(individual.getId())
+                self.addIndividual(individual)
+                self.addBioSample(bioSample)
+                self.addBioSample(bioSample2)
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
                 variantSet, "simVas{}".format(i), seed)
@@ -225,6 +336,14 @@ class SimulatedDataset(Dataset):
             readGroupSet = reads.SimulatedReadGroupSet(
                 self, localId, referenceSet, seed,
                 numReadGroupsPerReadGroupSet, numAlignments)
+            for rg in readGroupSet.getReadGroups():
+                bioSample = biodata.BioSample(
+                    self, rg.getLocalId())
+                individual = biodata.Individual(
+                    self, rg.getLocalId())
+                bioSample.setIndividualId(individual.getId())
+                self.addIndividual(individual)
+                self.addBioSample(bioSample)
             self.addReadGroupSet(readGroupSet)
         # Features
         for i in range(numFeatureSets):
