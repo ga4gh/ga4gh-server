@@ -48,7 +48,7 @@ class RNASqliteStore(object):
                        is_normalized boolean,
                        raw_read_count real,
                        score real,
-                       units text,
+                       units integer,
                        conf_low real,
                        conf_hi real)''')
 
@@ -95,7 +95,7 @@ class AbstractWriter(object):
         self._annotationId = annotationId
         self._db = rnaDB
         self._isNormalized = None
-        self._units = ""
+        self._units = 0  # EXPRESSION_UNIT_UNSPECIFIED
         self._expressionLevelCol = None
         self._idCol = None
         self._nameCol = None
@@ -151,7 +151,7 @@ class CufflinksWriter(AbstractWriter):
     def __init__(self, annotationId, rnaDB):
         super(CufflinksWriter, self).__init__(annotationId, rnaDB)
         self._isNormalized = True
-        self._units = "FPKM"
+        self._units = 1  # FPKM
         self._expressionLevelCol = 9
         self._idCol = 0
         self._nameCol = 4
@@ -173,7 +173,7 @@ class RsemWriter(AbstractWriter):
     def __init__(self, annotationId, rnaDB, featureType="gene"):
         super(RsemWriter, self).__init__(annotationId, rnaDB)
         self._isNormalized = True
-        self._units = "TPM"
+        self._units = 1  # TPM
         self._expressionLevelCol = 5
         if featureType is "transcript":
             self._idCol = 1
@@ -197,7 +197,7 @@ class KallistoWriter(AbstractWriter):
     def __init__(self, annotationId, rnaDB):
         super(KallistoWriter, self).__init__(annotationId, rnaDB)
         self._isNormalized = True
-        self._units = "TPM"
+        self._units = 1  # TPM
         self._expressionLevelCol = 4
         self._idCol = 0
         self._nameCol = 0

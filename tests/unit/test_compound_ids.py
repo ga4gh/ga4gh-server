@@ -471,16 +471,17 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.RnaQuantificationCompoundId,
             dataset.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.rnaQuantification, rnaQuantification.getLocalId())
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.rnaQuantificationId, rnaQuantification.getId())
+        self.assertEqual(
+            cid.rna_quantification, rnaQuantification.getLocalId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(cid.rna_quantification_id, rnaQuantification.getId())
 
     def testRnaQuantificationParse(self):
         idStr = '["a","b"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.RnaQuantificationCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.rnaQuantification, "b")
+        self.assertEqual(cid.rna_quantification, "b")
         self.verifyParseFailure(idStr, datamodel.RnaQuantificationCompoundId)
 
     def testExpressionLevel(self):
@@ -494,18 +495,20 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.ExpressionLevelCompoundId,
             rnaQuantification.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.rnaQuantification, rnaQuantification.getLocalId())
-        self.assertEqual(cid.rnaQuantificationId, rnaQuantification.getId())
-        self.assertEqual(cid.expressionLevelId, expressionLevel.getLocalId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(
+            cid.rna_quantification, rnaQuantification.getLocalId())
+        self.assertEqual(cid.rna_quantification_id, rnaQuantification.getId())
+        self.assertEqual(
+            cid.expression_level_id, expressionLevel.getLocalId())
 
     def testExpressionLevelParse(self):
         idStr = '["a","b","c"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.ExpressionLevelCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.rnaQuantification, "b")
-        self.assertEqual(cid.expressionLevelId, "c")
+        self.assertEqual(cid.rna_quantification, "b")
+        self.assertEqual(cid.expression_level_id, "c")
         self.verifyParseFailure(idStr, datamodel.ExpressionLevelCompoundId)
 
     def testQuantificationGroup(self):
@@ -519,17 +522,19 @@ class TestCompoundIds(unittest.TestCase):
             ValueError, datamodel.QuantificationGroupCompoundId,
             rnaQuantification.getCompoundId())
         self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.datasetId, dataset.getId())
-        self.assertEqual(cid.rnaQuantification, rnaQuantification.getLocalId())
-        self.assertEqual(cid.rnaQuantificationId, rnaQuantification.getId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
         self.assertEqual(
-            cid.quantificationGroupId, quantificationGroup.getLocalId())
+            cid.rna_quantification, rnaQuantification.getLocalId())
+        self.assertEqual(cid.rna_quantification_id, rnaQuantification.getId())
+        self.assertEqual(
+            cid.quantification_group_id, quantificationGroup.getLocalId())
 
     def testQuantificationGroupParse(self):
         idStr = '["a","b","c"]'
         obfuscated = datamodel.CompoundId.obfuscate(idStr)
         cid = datamodel.QuantificationGroupCompoundId.parse(obfuscated)
         self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.rnaQuantification, "b")
-        self.assertEqual(cid.quantificationGroupId, "c")
-        self.verifyParseFailure(idStr, datamodel.QuantificationGroupCompoundId)
+        self.assertEqual(cid.rna_quantification, "b")
+        self.assertEqual(cid.quantification_group_id, "c")
+        self.verifyParseFailure(
+            idStr, datamodel.QuantificationGroupCompoundId)

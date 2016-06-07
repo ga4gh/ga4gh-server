@@ -187,40 +187,40 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
             request, "reads", protocol.SearchReadsResponse)
 
     def testSearchExpressionLevel(self):
-        request = protocol.SearchExpressionLevelRequest()
-        request.expressionLevelId = self.expressionLevelId
-        request.quantificationGroupId = self.quantificationGroupId
-        request.rnaQuantificationId = self.rnaQuantificationId
+        request = protocol.SearchExpressionLevelsRequest()
+        request.expression_level_id = self.expressionLevelId
+        request.quantification_group_id = self.quantificationGroupId
+        request.rna_quantification_id = self.rnaQuantificationId
         request.threshold = self.threshold
-        request.pageSize = self.pageSize
+        request.page_size = self.pageSize
         self.httpClient.searchExpressionLevel(
             self.expressionLevelId, self.quantificationGroupId,
             self.rnaQuantificationId, self.threshold)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "expressionlevel",
-            protocol.SearchExpressionLevelResponse)
+            protocol.SearchExpressionLevelsResponse)
 
     def testSearchRnaQuantification(self):
-        request = protocol.SearchRnaQuantificationRequest()
-        request.rnaQuantificationId = self.rnaQuantificationId
-        request.datasetId = self.datasetId
-        request.pageSize = self.pageSize
+        request = protocol.SearchRnaQuantificationsRequest()
+        request.rna_quantification_id = self.rnaQuantificationId
+        request.dataset_id = self.datasetId
+        request.page_size = self.pageSize
         self.httpClient.searchRnaQuantification(
             self.datasetId, self.rnaQuantificationId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "rnaquantification",
-            protocol.SearchRnaQuantificationResponse)
+            protocol.SearchRnaQuantificationsResponse)
 
     def testSearchQuantificationGroup(self):
-        request = protocol.SearchQuantificationGroupRequest()
-        request.rnaQuantificationId = self.rnaQuantificationId
-        request.quantificationGroupId = self.quantificationGroupId
-        request.pageSize = self.pageSize
+        request = protocol.SearchQuantificationGroupsRequest()
+        request.rna_quantification_id = self.rnaQuantificationId
+        request.quantification_group_id = self.quantificationGroupId
+        request.page_size = self.pageSize
         self.httpClient.searchQuantificationGroup(
             self.rnaQuantificationId, self.quantificationGroupId)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "quantificationgroup",
-            protocol.SearchQuantificationGroupResponse)
+            protocol.SearchQuantificationGroupsResponse)
 
     def testGetReferenceSet(self):
         self.httpClient.getReferenceSet(self.objectId)
