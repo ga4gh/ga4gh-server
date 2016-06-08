@@ -66,23 +66,31 @@ class TestG2P(unittest.TestCase):
         # there should be at least one entry
         self.assertGreater(len(response.phenotypeAssociationSets), 0)
 
-    @unittest.skip
-    def testFeaturesSearch(self):
-        request = protocol.SearchFeaturesRequest()
+    def testGenotypesSearchByExternalIdentifier(self):
+        request = protocol.SearchGenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         # setup the external identifiers query
-        idquery = protocol.ExternalIdentifierQuery()
         extid = protocol.ExternalIdentifier()
-        extid.identifier = "rs6920220"
+        # http://www.ncbi.nlm.nih.gov/SNP/121908585
+        extid.identifier = "121908585"
         extid.version = "*"
         extid.database = "dbSNP"
-        idquery.ids = [extid]
-        # setup the term query
-        termquery = protocol.TermQuery()
-        termquery.term = idquery
-        request.termQueries = [termquery]
-        response = self.sendPostRequest('features/search', request)
+        request.externalIdentifiers = [extid]
+        response = self.sendPostRequest('/genotypes/search', request)
+        print(response.data)
         self.assertEqual(200, response.status_code)
+
+    def testPhenotypesSearchById(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        # setup phenotype query
+        request.id = "http://ohsu.edu/cgd/30ebfd1a"
+        postUrl = '/phenotypes/search'
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertEqual(request.id, response.phenotypes[0].id)
 
     def testGenotypesSearchById(self):
         request = protocol.SearchGenotypesRequest()

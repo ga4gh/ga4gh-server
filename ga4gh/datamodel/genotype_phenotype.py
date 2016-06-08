@@ -205,11 +205,15 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         Formats the external identifiers for query
         """
         elementClause = None
-        if isinstance(element, dict) and element.get('ids'):
-            elements = []
-            for _id in element['ids']:
-                elements.append('?{} = <{}{}> '.format(
-                    element_type, _id['database'], _id['identifier']))
+        print("**************** _formatExternalIdentifier ")
+        elements = []
+        if element.externalIdentifiers:
+            for _id in element.externalIdentifiers:
+                term = "{}:{}".format(_id['database'], _id['identifier'])
+                namespaceTerm = self._toNamespaceURL(term)
+                print(namespaceTerm)
+                elements.append('?{} = <{}> '.format(element_type,
+                                                     namespaceTerm))
             elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
@@ -276,6 +280,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 ?phenotype_label
                 (GROUP_CONCAT(?source; separator="|") AS ?sources)
                 ?evidence_type
+                ?external_id
                 WHERE {
                     ?association  a OBAN:association .
                     ?association    OBO:RO_0002558 ?evidence_type .
@@ -286,6 +291,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                     ?environment  rdfs:label ?environment_label  .
                     ?phenotype  rdfs:label ?phenotype_label  .
                     ?feature  rdfs:label ?feature_label  .
+                    OPTIONAL { ?feature owl:sameAs  ?external_id }
                     #%FILTER%
                     }
             GROUP  BY ?association
@@ -356,7 +362,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             filters.append('regex(?feature_label, "{}")'
                            .format(request.referenceName))
 
-        featureClause = self._formatExternalIdentifier(request, 'feature')
+        featureClause = self._formatExternalIdentifier(request, 'external_id')
         if featureClause:
             filters.append(featureClause)
         # OntologyTerms
@@ -373,9 +379,10 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             phenotypeClause = "?phenotype = <{}>".format(request.id)
             filters.append(phenotypeClause)
 
-        phenotypeClause = self._formatExternalIdentifier(request, 'phenotype')
-        if phenotypeClause:
-            filters.append(phenotypeClause)
+        # phenotypeClause =
+        #   self._formatExternalIdentifier(request, 'phenotype')
+        # if phenotypeClause:
+        #     filters.append(phenotypeClause)
         # OntologyTerms
         ontolgytermsClause = self._formatOntologyTerm(request, 'phenotype')
         if ontolgytermsClause:

@@ -752,10 +752,14 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(compoundId.datasetId)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
+
         annotationList = phenotypeAssociationSet.getAssociations(
             request, request.pageSize, offset)
-        return self._protocolListGenerator(request,
-                                           [annotationList[0].features[0]])
+
+        genotypes = []
+        for annotation in annotationList:
+            genotypes.extend(annotation.features)
+        return self._protocolListGenerator(request, genotypes)
 
     def genotypesPhenotypesGenerator(self, request):
         """
