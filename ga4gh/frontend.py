@@ -665,12 +665,12 @@ def getPhenotypesSearch(phenotypeAssociationSetId):
 
 
 @DisplayedRoute(
-    '/associations/<no(search):pasId>/genotypephenotypes/search',
-    pathDisplay='/associations/<pasId>/genotypephenotypes/search',
+    '/genotypephenotypes/search',
     postMethod=True)
-def getGenotypePhenotypesSearch(phenotypeAssociationSetId):
+def getGenotypePhenotypesSearch():
     return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchGenotypePhenotypes)
+        flask.request,
+        app.backend.runSearchGenotypePhenotypes)
 
 
 @app.route('/oauth2callback', methods=['GET'])

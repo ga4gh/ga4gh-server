@@ -231,6 +231,33 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
+    def _formatIds(self, element, element_type):
+        """
+        Formats the external identifiers for query
+        """
+        elementClause = None
+        if isinstance(element, list):
+            elements = []
+            for _id in element:
+                elements.append('?{} = <{}> '.format(
+                    element_type, _id))
+            elementClause = "({})".format(" || ".join(elements))
+        return elementClause
+
+    def _formatRegex(self, element, propertyName, element_type):
+        """
+        Formats the external identifiers for query
+        """
+        elementClause = None
+        if isinstance(element, list):
+            elements = []
+            for e in element:
+                if e[propertyName]:
+                    elements.append('regex(?{}, "{}")'
+                                    .format(element_type, e[propertyName]))
+            elementClause = "({})".format(" || ".join(elements))
+        return elementClause
+
     def _setFilters(self, feature=None, environment=None, phenotype=None):
         """
         Adds filters for query
@@ -238,9 +265,35 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         filters = []
         # feature
         # ExternalIdentifier
-        if feature and feature.id:
-            featureClause = "?feature = <{}>".format(feature.id)
-            filters.append(featureClause)
+        # print(feature.__class__)
+        # print(feature.toJsonDict())
+        if feature and issubclass(feature.__class__,
+                                  protocol.SearchGenotypePhenotypeRequest):
+            g2pRequest = feature
+            if g2pRequest.genotypeIds:
+                featureClause = self._formatIds(g2pRequest.genotypeIds,
+                                                'feature')
+                if featureClause:
+                    filters.append(featureClause)
+            if g2pRequest.evidence:
+                featureClause = self._formatRegex(g2pRequest.evidence,
+                                                  'description',
+                                                  'environment_label')
+                if featureClause:
+                    filters.append(featureClause)
+
+        if feature \
+                and issubclass(feature.__class__,
+                               protocol.SearchGenotypesRequest) \
+                and feature.id:
+            filters.append("?feature = <{}>".format(feature.id))
+
+        if feature \
+                and issubclass(feature.__class__,
+                               protocol.SearchGenotypesRequest) \
+                and feature.referenceName:
+            filters.append('regex(?feature_label, "{}")'
+                           .format(feature.referenceName))
 
         featureClause = self._formatExternalIdentifier(feature, 'feature')
         if featureClause:
@@ -266,8 +319,18 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         # phenotype
         # ExternalIdentifier
         #
-        if phenotype and phenotype.id:
+        if phenotype \
+                and issubclass(phenotype.__class__,
+                               protocol.SearchPhenotypesRequest) \
+                and phenotype.id:
             phenotypeClause = "?phenotype = <{}>".format(phenotype.id)
+            filters.append(phenotypeClause)
+        if phenotype \
+                and issubclass(phenotype.__class__,
+                               protocol.SearchGenotypePhenotypeRequest) \
+                and phenotype.featureIds:
+            phenotypeClause = self._formatIds(phenotype.featureIds,
+                                              'phenotype')
             filters.append(phenotypeClause)
 
         phenotypeClause = self._formatExternalIdentifier(phenotype,
