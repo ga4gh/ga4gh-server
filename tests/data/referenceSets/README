@@ -1,0 +1,14 @@
+This is rag-tag bunch of references generated to match the 
+test read data. The FASTAs were created by hand, and then
+compressed and indexed using (eg.)
+
+bgzip chr17.fa
+samtools faidx chr17.fa.gz
+
+For NCBI37:
+
+Generated using 
+
+python scripts/download_data.py --source=ebi --chromosomes=1,2,3 -V 5 -r0 --exclude-reference-min
+
+the reference set data was then copied in here.
