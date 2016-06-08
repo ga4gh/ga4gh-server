@@ -36,9 +36,9 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             parentContainer, localId)
 
     def getAssociations(
-            self, feature=None, environment=None, phenotype=None,
+            self, request=None,
             pageSize=None, offset=0):
-        if feature or environment or phenotype:
+        if request:
             fpa = protocol.FeaturePhenotypeAssociation()
             fpa.id = "test"
             fpa.features = []
@@ -87,15 +87,14 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
             self._version = o.toPython()
 
-    def getAssociations(self, feature=None, environment=None,
-                        phenotype=None, pageSize=None, offset=0):
+    def getAssociations(self, request=None, pageSize=None, offset=0):
         """
         This query is the main search mechanism.
         It queries the graph for annotations that match the
         AND of [feature,environment,phenotype].
         """
         # query to do search
-        query = self._formatFilterQuery(feature, environment, phenotype)
+        query = self._formatFilterQuery(request)
         print(query)
         associations = self._rdfGraph.query(query)
         # associations is now a dict with rdflib terms with variable and
@@ -258,95 +257,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
-    def _setFilters(self, feature=None, environment=None, phenotype=None):
-        """
-        Adds filters for query
-        """
-        filters = []
-        # feature
-        # ExternalIdentifier
-        # print(feature.__class__)
-        # print(feature.toJsonDict())
-        if feature and issubclass(feature.__class__,
-                                  protocol.SearchGenotypePhenotypeRequest):
-            g2pRequest = feature
-            if g2pRequest.genotypeIds:
-                featureClause = self._formatIds(g2pRequest.genotypeIds,
-                                                'feature')
-                if featureClause:
-                    filters.append(featureClause)
-            if g2pRequest.evidence:
-                featureClause = self._formatRegex(g2pRequest.evidence,
-                                                  'description',
-                                                  'environment_label')
-                if featureClause:
-                    filters.append(featureClause)
-
-        if feature \
-                and issubclass(feature.__class__,
-                               protocol.SearchGenotypesRequest) \
-                and feature.id:
-            filters.append("?feature = <{}>".format(feature.id))
-
-        if feature \
-                and issubclass(feature.__class__,
-                               protocol.SearchGenotypesRequest) \
-                and feature.referenceName:
-            filters.append('regex(?feature_label, "{}")'
-                           .format(feature.referenceName))
-
-        featureClause = self._formatExternalIdentifier(feature, 'feature')
-        if featureClause:
-            filters.append(featureClause)
-        # OntologyTerms
-        featureOntologytermsClause = self._formatOntologyTerm(feature,
-                                                              'feature')
-        if featureOntologytermsClause:
-            filters.append(featureOntologytermsClause)
-
-        # environment
-        # ExternalIdentifier
-        environmentClause = self._formatExternalIdentifier(environment,
-                                                           'environment')
-        if environmentClause:
-            filters.append(environmentClause)
-        # OntologyTerms
-        envOntologytermsClause = self._formatOntologyTerm(environment,
-                                                          'environment')
-        if envOntologytermsClause:
-            filters.append(envOntologytermsClause)
-
-        # phenotype
-        # ExternalIdentifier
-        #
-        if phenotype \
-                and issubclass(phenotype.__class__,
-                               protocol.SearchPhenotypesRequest) \
-                and phenotype.id:
-            phenotypeClause = "?phenotype = <{}>".format(phenotype.id)
-            filters.append(phenotypeClause)
-        if phenotype \
-                and issubclass(phenotype.__class__,
-                               protocol.SearchGenotypePhenotypeRequest) \
-                and phenotype.featureIds:
-            phenotypeClause = self._formatIds(phenotype.featureIds,
-                                              'phenotype')
-            filters.append(phenotypeClause)
-
-        phenotypeClause = self._formatExternalIdentifier(phenotype,
-                                                         'phenotype')
-        if phenotypeClause:
-            filters.append(phenotypeClause)
-        # OntologyTerms
-        phenoOntolgytermsClause = self._formatOntologyTerm(phenotype,
-                                                           'phenotype')
-        if phenoOntolgytermsClause:
-            filters.append(phenoOntolgytermsClause)
-
-        return filters
-
-    def _formatFilterQuery(self, feature=None, environment=None,
-                           phenotype=None):
+    def _formatFilterQuery(self, request=None):
         """
         Generate a formatted sparql query with appropriate filters
         """
@@ -380,28 +291,97 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             GROUP  BY ?association
             ORDER  BY ?association
 """
-        if feature is None and environment is None and phenotype is None:
-            # TODO is this really the exception we want to throw?
-            raise exceptions.NotImplementedException(
-                "At least one of [feature, environment, phenotype] "
-                "must be specified")
+
         filters = []
 
-        # Strings
-        if feature and isinstance(feature, basestring):
-            filters.append('regex(?feature_label, "{}")'.format(feature))
-        if environment and isinstance(environment, basestring):
-            filters.append(
-                'regex(?environment_label, "{}")'.format(environment))
-        if phenotype and isinstance(phenotype, basestring):
-            filters.append('regex(?phenotype_label, "{}")'.format(phenotype))
+        if issubclass(request.__class__,
+                      protocol.SearchGenotypePhenotypeRequest):
+            filters += self._filterSearchGenotypePhenotypeRequest(request)
 
-        filters += self._setFilters(feature, environment, phenotype)
+        if issubclass(request.__class__, protocol.SearchGenotypesRequest):
+            filters += self._filterSearchGenotypesRequest(request)
+
+        if issubclass(request.__class__, protocol.SearchPhenotypesRequest):
+            filters += self._filterSearchPhenotypesRequest(request)
+
+        # if feature is None and environment is None and phenotype is None:
+        #     # TODO is this really the exception we want to throw?
+        #     raise exceptions.NotImplementedException(
+        #         "At least one of [feature, environment, phenotype] "
+        #         "must be specified")
+        #
+        # # Strings
+        # if feature and isinstance(feature, basestring):
+        #     filters.append('regex(?feature_label, "{}")'.format(feature))
+        # if environment and isinstance(environment, basestring):
+        #     filters.append(
+        #         'regex(?environment_label, "{}")'.format(environment))
+        # if phenotype and isinstance(phenotype, basestring):
+        #     filters.append('regex(?phenotype_label, "{}")'.format(phenotype))
+        #
+        # filters += self._setFilters(feature, environment, phenotype)
 
         # apply filters
         filter = "FILTER ({})".format(' && '.join(filters))
         query = query.replace("#%FILTER%", filter)
         return query
+
+    def _filterSearchGenotypePhenotypeRequest(self, request):
+        filters = []
+        if request.genotypeIds:
+            featureClause = self._formatIds(request.genotypeIds,
+                                            'feature')
+            if featureClause:
+                filters.append(featureClause)
+        if request.evidence:
+            featureClause = self._formatRegex(request.evidence,
+                                              'description',
+                                              'environment_label')
+            if featureClause:
+                filters.append(featureClause)
+
+        if request.featureIds:
+            phenotypeClause = self._formatIds(request.featureIds,
+                                              'phenotype')
+            filters.append(phenotypeClause)
+
+        return filters
+
+    def _filterSearchGenotypesRequest(self, request):
+        filters = []
+        if request.id:
+            filters.append("?feature = <{}>".format(request.id))
+
+        if request.referenceName:
+            filters.append('regex(?feature_label, "{}")'
+                           .format(request.referenceName))
+
+        featureClause = self._formatExternalIdentifier(request, 'feature')
+        if featureClause:
+            filters.append(featureClause)
+        # OntologyTerms
+        featureOntologytermsClause = self._formatOntologyTerm(request,
+                                                              'feature')
+        if featureOntologytermsClause:
+            filters.append(featureOntologytermsClause)
+
+        return filters
+
+    def _filterSearchPhenotypesRequest(self, request):
+        filters = []
+        if request.id:
+            phenotypeClause = "?phenotype = <{}>".format(request.id)
+            filters.append(phenotypeClause)
+
+        phenotypeClause = self._formatExternalIdentifier(request, 'phenotype')
+        if phenotypeClause:
+            filters.append(phenotypeClause)
+        # OntologyTerms
+        ontolgytermsClause = self._formatOntologyTerm(request, 'phenotype')
+        if ontolgytermsClause:
+            filters.append(ontolgytermsClause)
+
+        return filters
 
     def _toNamespaceURL(self, term):
         """
