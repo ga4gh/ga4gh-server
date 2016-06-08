@@ -659,7 +659,7 @@ def getGenotypesSearch(phenotypeAssociationSetId):
 @DisplayedRoute(
     '/phenotypes/search',
     postMethod=True)
-def getPhenotypesSearch(phenotypeAssociationSetId):
+def getPhenotypesSearch():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchPhenotypes)
 
