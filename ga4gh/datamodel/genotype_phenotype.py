@@ -243,13 +243,14 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             terms = [terms]
         elements = []
         for term in terms:
-            if term.get('id'):
+            if term.id:
                 elements.append('?{} = <{}> '.format(
-                    element_type, term['id']))
+                    element_type, term.id))
             else:
                 elements.append('?{} = <{}> '.format(
                     element_type, self._toNamespaceURL(term['term'])))
         elementClause = "({})".format(" || ".join(elements))
+        print("\n\nOntologyTerms: ", elementClause)
         return elementClause
 
     def _formatIds(self, element, element_type):
@@ -402,15 +403,18 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         # OntologyTerms
         # TODO: refactor this repetitive code
         if request.type:
-            ontolgytermsClause = self._formatOntologyTerm(request.type, 'phenotype')
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.type, 'phenotype')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
         if request.qualifiers:
-            ontolgytermsClause = self._formatOntologyTerm(request.qualifiers, 'phenotype')
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.qualifiers, 'phenotype')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
         if request.ageOfOnset:
-            ontolgytermsClause = self._formatOntologyTerm(request.ageOfOnset, 'phenotype')
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.ageOfOnset, 'phenotype')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
         return filters
