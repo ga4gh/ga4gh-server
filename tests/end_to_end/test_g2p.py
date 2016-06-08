@@ -123,15 +123,14 @@ class TestG2P(unittest.TestCase):
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         phenotypeQuery = protocol.PhenotypeQuery()
         ontologyterm = protocol.OntologyTerm()
-        ontologyterm.id = "http://www.ebi.ac.uk/efo/EFO_0003767"
-        phenotypeQuery.type = ontologyterm
-        postUrl = 'associations/%s/phenotypes/search' % \
-                  request.phenotypeAssociationSetId
+        ontologyterm.id = "http://ohsu.edu/cgd/5c895709"
+        request.type = ontologyterm
+        postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     @unittest.skip
     def testPhenotypeSearchQualifiers(self):
@@ -147,7 +146,7 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     @unittest.skip
     def testPhenotypeSearchMultipleQualifiers(self):
@@ -165,21 +164,30 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     @unittest.skip
     def testPhenotypesSearchDescription(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-        phenotypeQuery = protocol.PhenotypeQuery()
-        phenotypeQuery.description = "inflammatory bowel disease"
-        postUrl = 'associations/%s/phenotypes/search' % \
-                  request.phenotypeAssociationSetId
+        request.description = "inflammatory bowel disease"
+        postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
+
+    def testPhenotypesSearchDescriptionWildcard(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        request.description = "*bowel*"
+        postUrl = '/phenotypes/search'
+        response = self.sendPostRequest(postUrl, request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(len(response.phenotypes), 0)
 
     @unittest.skip
     def testPhenotypesSearchMultipleTerms(self):
@@ -196,7 +204,7 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     def testGenotypePhenotypeSearchFeature(self):
         """
