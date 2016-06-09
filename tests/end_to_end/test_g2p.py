@@ -176,35 +176,47 @@ class TestG2P(unittest.TestCase):
                            .fromJsonString(response.data)
         self.assertGreater(len(response.phenotypes), 0)
 
-    @unittest.skip
-    def testPhenotypeSearchQualifiers(self):
+
+    def testPhenotypeSearchQualifiersSensitivity(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         phenotypeQuery = protocol.PhenotypeQuery()
         ontologyterm = protocol.OntologyTerm()
-        ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0001899"
-        phenotypeQuery.qualifiers = [ontologyterm]
-        postUrl = 'associations/%s/phenotypes/search' % \
-                  request.phenotypeAssociationSetId
+        ontologyterm.id = "http://ohsu.edu/cgd/sensitivity"
+        request.qualifiers = [ontologyterm]
+        postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
+        print(response.data)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
         self.assertGreater(len(response.phenotypes), 0)
 
-    @unittest.skip
+    def testPhenotypeSearchQualifiersSensitivityPATO_0000396(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        ontologyterm = protocol.OntologyTerm()
+        ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0000396"
+        request.qualifiers = [ontologyterm]
+        postUrl = '/phenotypes/search'
+        response = self.sendPostRequest(postUrl, request)
+        print(response.data)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchPhenotypesResponse() \
+                           .fromJsonString(response.data)
+        self.assertGreater(len(response.phenotypes), 0)
+
     def testPhenotypeSearchMultipleQualifiers(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-        phenotypeQuery = protocol.PhenotypeQuery()
-        ontologyterm1 = protocol.OntologyTerm()
-        ontologyterm1.id = "http://purl.obolibrary.org/obo/PATO_0000396"
+        ontologyterm = protocol.OntologyTerm()
+        ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0000396"
         ontologyterm2 = protocol.OntologyTerm()
-        ontologyterm2.id = "http://purl.obolibrary.org/obo/PATO_0000460"
-        phenotypeQuery.qualifiers = [ontologyterm1, ontologyterm2]
-        postUrl = 'associations/%s/phenotypes/search' % \
-                  request.phenotypeAssociationSetId
+        ontologyterm2.id = "http://purl.obolibrary.org/obo/PATO_0000396"
+        request.qualifiers = [ontologyterm,ontologyterm2]
+        postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
+        print(response.data)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)

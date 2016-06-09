@@ -106,7 +106,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                                         associations))
         # association_details is now a list of {subject,predicate,object}
         # for each of the association detail
-
+        # http://nmrml.org/cv/v1.0.rc1/doc/doc/objectproperties/BFO0000159___-324347567.html
+        # label "has quality at all times" (en)
         HAS_QUALITY = 'http://purl.obolibrary.org/obo/BFO_0000159'
         associationList = []
         for assoc in associations.bindings:
@@ -243,9 +244,11 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             terms = [terms]
         elements = []
         for term in terms:
-            if term.id:
+            if not issubclass(term.__class__, dict):
+                term = term.toJsonDict()
+            if term['id']:
                 elements.append('?{} = <{}> '.format(
-                    element_type, term.id))
+                    element_type, term['id']))
             else:
                 elements.append('?{} = <{}> '.format(
                     element_type, self._toNamespaceURL(term['term'])))
@@ -288,6 +291,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             PREFIX OBO: <http://purl.obolibrary.org/obo/>
             PREFIX dc: <http://purl.org/dc/elements/1.1/>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX BFO: <http://purl.obolibrary.org/obo/BFO_>
             SELECT
                 ?association
                 ?environment
@@ -299,6 +303,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 (GROUP_CONCAT(?source; separator="|") AS ?sources)
                 ?evidence_type
                 ?external_id
+                ?phenotype_quality
                 WHERE {
                     ?association  a OBAN:association .
                     ?association    OBO:RO_0002558 ?evidence_type .
@@ -309,7 +314,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                     ?environment  rdfs:label ?environment_label  .
                     ?phenotype  rdfs:label ?phenotype_label  .
                     ?feature  rdfs:label ?feature_label  .
-                    OPTIONAL { ?feature owl:sameAs  ?external_id }
+                    OPTIONAL { ?feature owl:sameAs  ?external_id } .
+                    OPTIONAL { ?phenotype BFO:0000159 ?phenotype_quality } .
                     #%FILTER%
                     }
             GROUP  BY ?association
@@ -429,7 +435,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 filters.append(ontolgytermsClause)
         if request.qualifiers:
             ontolgytermsClause = self._formatOntologyTermObject(
-                request.qualifiers, 'phenotype')
+                request.qualifiers, 'phenotype_quality')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
         if request.ageOfOnset:
