@@ -665,16 +665,18 @@ class Backend(object):
             request.variant_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         variantSet = dataset.getVariantSet(compoundId.variant_set_id)
-        if request.name == "":
-            return self._topLevelObjectGenerator(
-                request, variantSet.getNumCallSets(),
-                variantSet.getCallSetByIndex)
-        else:
-            try:
-                callSet = variantSet.getCallSetByName(request.name)
-            except exceptions.CallSetNameNotFoundException:
-                return self._noObjectGenerator()
-            return self._singleObjectGenerator(callSet)
+        results = []
+        for obj in variantSet.getCallSets():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if request.bio_sample_id:
+                if request.bio_sample_id != obj.getBioSampleId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
 
     def featureSetsGenerator(self, request):
         """

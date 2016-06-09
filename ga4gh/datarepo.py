@@ -913,6 +913,7 @@ class SqlDataRepository(AbstractDataRepository):
                 id TEXT NOT NULL PRIMARY KEY,
                 name TEXT NOT NULL,
                 variantSetId TEXT NOT NULL,
+                bioSampleId TEXT,
                 UNIQUE (variantSetId, name),
                 FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
                     ON DELETE CASCADE
@@ -926,13 +927,15 @@ class SqlDataRepository(AbstractDataRepository):
         """
         sql = """
             INSERT INTO CallSet (
-                id, variantSetId, name)
-            VALUES (?, ?, ?);
+                id, name, variantSetId, bioSampleId)
+            VALUES (?, ?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
-            callSet.getId(), callSet.getParentContainer().getId(),
-            callSet.getLocalId()))
+            callSet.getId(),
+            callSet.getLocalId(),
+            callSet.getParentContainer().getId(),
+            callSet.getBioSampleId()))
 
     def _readCallSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row

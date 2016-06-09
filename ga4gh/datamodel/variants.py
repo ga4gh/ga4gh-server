@@ -45,6 +45,7 @@ class CallSet(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(CallSet, self).__init__(parentContainer, localId)
         self._info = {}
+        self._bioSampleId = None
 
     def populateFromRow(self, row):
         """
@@ -69,6 +70,18 @@ class CallSet(datamodel.DatamodelObject):
         for key in self._info:
             gaCallSet.info[key].values.extend(_encodeValue(self._info[key]))
         return gaCallSet
+
+    def getBioSampleId(self):
+        """
+        Returns the bioSampleId for this CallSet.
+        """
+        return self._bioSampleId
+
+    def setBioSampleId(self, bioSampleId):
+        """
+        Set the bioSampleId for the current sample.
+        """
+        self._bioSampleId = bioSampleId
 
     def getSampleName(self):
         """

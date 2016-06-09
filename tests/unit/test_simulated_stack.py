@@ -1021,7 +1021,7 @@ class TestSimulatedStack(unittest.TestCase):
             path, request, protocol.SearchCallSetsResponse)
         self.assertGreater(len(responseData.call_sets), 0)
         for cs in responseData.call_sets:
-            self.assertEqual(cs.bioSampleId, request.bio_sample_id)
+            self.assertEqual(cs.bio_sample_id, request.bio_sample_id)
 
         request = protocol.SearchCallSetsRequest()
         request.variant_set_id = variantSet.getId()
@@ -1036,8 +1036,6 @@ class TestSimulatedStack(unittest.TestCase):
     def testBioSamplesSearch(self):
         path = 'biosamples/search'
         dataset = self.dataRepo.getDatasets()[0]
-        variantSet = dataset.getVariantSets()[0]
-        callSet = variantSet.getCallSets()[0]
         request = protocol.SearchBioSamplesRequest()
         request.name = "BAD NAME"
         request.dataset_id = dataset.getId()
