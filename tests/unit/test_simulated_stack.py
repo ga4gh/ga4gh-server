@@ -129,14 +129,15 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(gaVariantSet.id, variantSet.getId())
         self.assertEqual(gaVariantSet.dataset_id, dataset.getId())
         self.assertEqual(gaVariantSet.name, variantSet.getLocalId())
-        # TODO verify the metadata and other attributes.
+        self.assertItemsEqual(gaVariantSet.metadata, variantSet.getMetadata())
 
     def verifyCallSetsEqual(self, gaCallSet, callSet):
         variantSet = callSet.getParentContainer()
         self.assertEqual(gaCallSet.id, callSet.getId())
         self.assertEqual(gaCallSet.name, callSet.getLocalId())
         self.assertEqual(gaCallSet.variant_set_ids, [variantSet.getId()])
-        # TODO add some simulated info and check
+        for key, value in gaCallSet.info.items():
+            self.assertEqual(value[0], callSet.getInfo()[key])
 
     def verifyReadGroupSetsEqual(self, gaReadGroupSet, readGroupSet):
         dataset = readGroupSet.getParentContainer()
