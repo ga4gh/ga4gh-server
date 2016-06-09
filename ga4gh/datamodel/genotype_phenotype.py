@@ -250,7 +250,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 elements.append('?{} = <{}> '.format(
                     element_type, self._toNamespaceURL(term['term'])))
         elementClause = "({})".format(" || ".join(elements))
-        print("\n\nOntologyTerms: ", elementClause)
         return elementClause
 
     def _formatIds(self, element, element_type):
@@ -415,8 +414,12 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             filters.append("?phenotype = <{}>".format(request.id))
 
         if request.description:
+            # Cleanup the description text
+            # NOTE: ugly hack but works for wildcard or partial text
+            # searches
+            description = request.description.replace('*', '')
             filters.append('regex(?phenotype_label, "{}")'
-                           .format(request.description))
+                           .format(description))
         # OntologyTerms
         # TODO: refactor this repetitive code
         if request.type:
