@@ -358,12 +358,29 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                                             'feature')
             if featureClause:
                 filters.append(featureClause)
+
+# /**
+# The Evidence types desired
+# */
+# union {null, array<EvidenceQuery>} evidence = null;
+#
+# /**
+# Evidence for the phenotype association.
+# */
+# record EvidenceQuery {
+#   /** ECO or OBI is recommended */
+#   union { null, org.ga4gh.models.OntologyTerm }  evidenceType = null;
+#   union { null, string } description = null;  /*regex*/
+#   union { null, array<org.ga4gh.models.ExternalIdentifier> }  externalIdentifiers = null; /* new field */
+# }
         if request.evidence:
-            featureClause = self._formatRegex(request.evidence,
-                                              'description',
-                                              'environment_label')
-            if featureClause:
-                filters.append(featureClause)
+            for evidence in request.evidence:
+                if evidence['description']:
+                    featureClause = self._formatRegex(evidence['description'],
+                                                      'description',
+                                                      'environment_label')
+                    if featureClause:
+                        filters.append(featureClause)
 
         if request.featureIds:
             phenotypeClause = self._formatIds(request.featureIds,

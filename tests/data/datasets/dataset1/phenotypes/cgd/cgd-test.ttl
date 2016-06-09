@@ -13,7 +13,6 @@
 @prefix MonarchArchive: <http://archive.monarchinitiative.org/ttl/> .
 @prefix dbSNP: <http://www.ncbi.nlm.nih.gov/SNP/> .
 
-
 MonarchData:cgd.ttl a owl:Ontology ;
     owl:versionIRI MonarchArchive:cgd-2015-12-01-17-34.ttl ;
     owl:versionInfo "cgd-2015-12-01-17-34" .
@@ -483,3 +482,4 @@ MonarchData:cgd.ttl a owl:Ontology ;
             CGD:e901ee1e,
             CGD:f7303413 ;
         rdfs:subClassOf OBO:CHEBI_23888 .
+
