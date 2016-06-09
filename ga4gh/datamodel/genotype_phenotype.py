@@ -420,12 +420,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             filters.append("?phenotype = <{}>".format(request.id))
 
         if request.description:
-            # Cleanup the description text
-            # NOTE: ugly hack but works for wildcard or partial text
-            # searches
-            description = request.description.replace('*', '')
             filters.append('regex(?phenotype_label, "{}")'
-                           .format(description))
+                           .format(request.description))
         # OntologyTerms
         # TODO: refactor this repetitive code
         if request.type:

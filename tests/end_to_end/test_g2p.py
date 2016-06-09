@@ -237,7 +237,7 @@ class TestG2P(unittest.TestCase):
     def testPhenotypesSearchDescriptionWildcard(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-        request.description = "*sensitivity*"
+        request.description = ".*sensitivity.*"
         postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
         self.assertEqual(200, response.status_code)
