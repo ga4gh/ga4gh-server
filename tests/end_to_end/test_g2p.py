@@ -245,11 +245,11 @@ class TestG2P(unittest.TestCase):
                            .fromJsonString(response.data)
         self.assertEquals(7, len(response.phenotypes))
 
-    @unittest.skip
+
     def testPhenotypesSearchMultipleTerms(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-        request.description = "GIST with sensitivity to therapy"
+        request.description = "Melanoma, NOS with response to therapy"
         ontologyterm = protocol.OntologyTerm()
         ontologyterm.id = "http://purl.obolibrary.org/obo/HP_0003581"
         phenotypeQuery.ageOfOnset = ontologyterm

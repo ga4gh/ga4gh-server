@@ -436,7 +436,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 filters.append(ontolgytermsClause)
         if request.ageOfOnset:
             ontolgytermsClause = self._formatOntologyTermObject(
-                request.ageOfOnset, 'phenotype')
+                request.ageOfOnset, 'phenotype_quality')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
         return filters
