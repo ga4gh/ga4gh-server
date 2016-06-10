@@ -982,7 +982,6 @@ class TestSimulatedStack(unittest.TestCase):
         # search reads by biosample
         ran = False
         for bsId, rgsId in bioSamplesRgs:
-            ran = True
             request = protocol.SearchReadGroupSetsRequest()
             request.dataset_id = dataset.getId()
             request.bio_sample_id = bsId
@@ -995,10 +994,14 @@ class TestSimulatedStack(unittest.TestCase):
                 "A good biosample ID and bad name should return 0")
             request = protocol.SearchReadGroupSetsRequest()
             request.dataset_id = dataset.getId()
+            request.bio_sample_id = bsId
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchReadGroupSetsResponse)
             for rgs in responseData.read_group_sets:
-                for rg in rgs.readGroups:
+                for rg in rgs.read_groups:
+                    ran = True
                     self.assertEqual(
-                        rg.bioSampleId, bsId,
+                        rg.bio_sample_id, bsId,
                         "Only read groups matching the BioSample ID")
         self.assertTrue(ran)
 

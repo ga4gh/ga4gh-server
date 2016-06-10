@@ -469,9 +469,13 @@ class Backend(object):
             if request.bio_sample_id:
                 newRg = []
                 for readGroup in obj.getReadGroups():
-                    if request.bio_sample_id != readGroup.getBioSampleId():
+                    if request.bio_sample_id == readGroup.getBioSampleId():
                         newRg.append(readGroup)
                 obj.readGroups = newRg
+                if len(newRg) == 0 and len(obj.getReadGroups()) != 0:
+                    include = False
+                else:
+                    include = True and include
             if include:
                 results.append(obj)
         return self._objectListGenerator(request, results)
@@ -673,7 +677,7 @@ class Backend(object):
                     include = False
             if request.bio_sample_id:
                 if request.bio_sample_id != obj.getBioSampleId():
-                    include = False
+                    include = False and include
             if include:
                 results.append(obj)
         return self._objectListGenerator(request, results)
