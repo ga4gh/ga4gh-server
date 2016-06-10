@@ -422,7 +422,8 @@ MonarchData:cgd.ttl a owl:Ontology ;
         rdfs:label "Melanoma, NOS with response to therapy" ;
         OBO:BFO_0000159 CGD:response ,
                         <http://purl.obolibrary.org/obo/PATO_0000396>,
-                        <http://purl.obolibrary.org/obo/PATO_0000460> .
+                        <http://purl.obolibrary.org/obo/PATO_0000460>,
+                        <http://purl.obolibrary.org/obo/HP_0003581> .
 
     <http://ohsu.edu/cgd/25abbb09> a OBO:OMIM_606764 ;
         rdfs:label "GIST with decreased sensitivity to therapy" ;
