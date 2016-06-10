@@ -18,7 +18,7 @@ def run(*args):
 
 
 def main():
-    prefix = "tests/data"
+    prefix = "./tests/data"
     repoFile = os.path.join(prefix, "repo.db")
     sequenceOntologyName = "so-xp-simple"
     run("init", "-f", repoFile)
