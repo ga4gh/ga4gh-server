@@ -242,6 +242,18 @@ class AbstractClient(object):
         """
         return self._runGetRequest("features", protocol.Feature, compoundId)
 
+    def getRnaQuantificationSet(self, rnaQuantificationSetId):
+        """
+        Returns the RnaQuantificationSet with the specified ID from the server.
+        :param str rnaQuantificationSetId: The ID of the RnaQuantificationSet
+            of interest.
+        :return: The RnaQuantificationSet of interest.
+        :rtype: :class:`ga4gh.protocol.RnaQuantificationSet`
+        """
+        return self._runGetRequest(
+            "rnaquantificationsets", protocol.RnaQuantificationSet,
+            rnaQuantificationSetId)
+
     def getRnaQuantification(self, rnaQuantificationId):
         """
         Returns the RnaQuantification with the specified ID from the server.
@@ -253,6 +265,30 @@ class AbstractClient(object):
         return self._runGetRequest(
             "rnaquantification", protocol.RnaQuantification,
             rnaQuantificationId)
+
+    def getExpressionLevel(self, expressionLevelId):
+        """
+        Returns the ExpressionLevel with the specified ID from the server.
+        :param str expressionLevelId: The ID of the ExpressionLevel of
+            interest.
+        :return: The ExpressionLevel of interest.
+        :rtype: :class:`ga4gh.protocol.ExpressionLevel`
+        """
+        return self._runGetRequest(
+            "expressionlevels", protocol.ExpressionLevel,
+            expressionLevelId)
+
+    def getFeatureGroup(self, featureGroupId):
+        """
+        Returns the FeatureGroup with the specified ID from the server.
+        :param str featureGroupId: The ID of the FeatureGroup of
+            interest.
+        :return: The FeatureGroup of interest.
+        :rtype: :class:`ga4gh.protocol.FeatureGroup`
+        """
+        return self._runGetRequest(
+            "featuregroups", protocol.FeatureGroup,
+            featureGroupId)
 
     def searchVariants(
             self, variantSetId, start=None, end=None, referenceName=None,
@@ -539,24 +575,34 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "reads", protocol.SearchReadsResponse)
 
-    def searchRnaQuantification(self, datasetId, rnaQuantificationId=""):
+    def searchRnaQuantificationSets(self, datasetId):
         """
-        Returns an iterator over the RnaQuantification objects from the server
-
-        :param str rnaQuantificationId: The ID of the
-            :class:`ga4gh.protocol.RnaQuantification` of interest.
+        Returns an iterator over the RnaQuantificationSet objects from the server
         """
-        request = protocol.SearchRnaQuantificationsRequest()
-        request.rna_quantification_id = rnaQuantificationId
+        request = protocol.SearchRnaQuantificationSetsRequest()
         request.dataset_id = datasetId
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
-            request, "rnaquantification",
+            request, "rnaquantificationsets",
+            protocol.SearchRnaQuantificationSetsResponse)
+
+    def searchRnaQuantification(self, datasetId, rnaQuantificationSetId=""):
+        """
+        Returns an iterator over the RnaQuantification objects from the server
+
+        :param str rnaQuantificationSetId: The ID of the
+            :class:`ga4gh.protocol.RnaQuantificationSet` of interest.
+        """
+        request = protocol.SearchRnaQuantificationsRequest()
+        request.rna_quantification_set_id = rnaQuantificationId
+        request.dataset_id = datasetId
+        request.page_size = pb.int(self._pageSize)
+        return self._runSearchRequest(
+            request, "rnaquantifications",
             protocol.SearchRnaQuantificationsResponse)
 
     def searchExpressionLevel(
-            self, expressionLevelId="", quantificationGroupId="",
-            rnaQuantificationId="", threshold=0.0):
+            self, rnaQuantificationId="", featureGroupId="", threshold=0.0):
         """
         Returns an iterator over the ExpressionLevel objects from the server
 
@@ -569,30 +615,24 @@ class AbstractClient(object):
         :param float threshold: Minimum expression of responses to return.
         """
         request = protocol.SearchExpressionLevelsRequest()
-        request.expression_level_id = expressionLevelId
-        request.quantification_group_id = quantificationGroupId
         request.rna_quantification_id = rnaQuantificationId
+        request.feature_group_id = featureGroupId
         request.threshold = threshold
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
-            request, "expressionlevel",
+            request, "expressionlevels",
             protocol.SearchExpressionLevelsResponse)
 
-    def searchQuantificationGroup(
-            self, rnaQuantificationId="", quantificationGroupId=""):
+    def searchFeatureGroup(self, datasetId=""):
         """
-        Returns an iterator over the QuantificationGroup objects from the
+        Returns an iterator over the FeatureGroup objects from the
         server
-
-        :param: str quantificationGroupId: The ID of the
-            :class:`ga4gh.protocol.QuantificationGroup` of interest.
         """
         request = protocol.SearchQuantificationGroupsRequest()
-        request.rna_quantification_id = rnaQuantificationId
-        request.quantification_group_id = quantificationGroupId
+        request.dataset_id = datasetId
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
-            request, "quantificationgroup",
+            request, "featuregroups",
             protocol.SearchQuantificationGroupsResponse)
 
 
@@ -695,7 +735,10 @@ class LocalClient(AbstractClient):
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
             "variantannotationsets": self._backend.runGetVariantAnnotationSet,
-            "rnaquantification": self._backend.runGetRnaQuantification
+            "rnaquantificationsets": self._backend.runGetRnaQuantificationSet,
+            "rnaquantifications": self._backend.runGetRnaQuantification,
+            "expressionlevels": self._backend.runGetExpressionLevel,
+            "featuregroups": self._backend.runGetFeatureGroup
         }
         self._searchMethodMap = {
             "callsets": self._backend.runSearchCallSets,
@@ -711,9 +754,11 @@ class LocalClient(AbstractClient):
             "variantannotations": self._backend.runSearchVariantAnnotations,
             "variantannotationsets":
                 self._backend.runSearchVariantAnnotationSets,
-            "rnaquantification": self._backend.runSearchRnaQuantification,
-            "expressionlevel": self._backend.runSearchExpressionLevel,
-            "quantificationgroup": self._backend.runSearchQuantificationGroup
+            "rnaquantificationsets":
+                self._backend.runSearchRnaQuantificationSets,
+            "rnaquantifications": self._backend.runSearchRnaQuantifications,
+            "expressionlevels": self._backend.runSearchExpressionLevels,
+            "featuregroups": self._backend.runSearchFeatureGroups
         }
 
     def _runGetRequest(self, objectName, protocolResponseClass, id_):

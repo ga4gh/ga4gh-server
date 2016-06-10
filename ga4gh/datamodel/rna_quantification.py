@@ -36,25 +36,30 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         super(AbstractExpressionLevel, self).__init__(
             parentContainer, localId)
         self._expression = 0.0
-        self._quantificationGroupId = ""
+        self._featureId = ""
         self._isNormalized = ""
         self._rawReadCount = 0.0
         self._score = 0.0
         self._units = 0
         self._name = localId
-        self._confInterval = []
+        self._confIntervalLow = 0.0
+        self._confIntervalHigh = 0.0
+        self._featureGroupIds = []
 
     def toProtocolElement(self):
         protocolElement = protocol.ExpressionLevel()
         protocolElement.id = self.getId()
         protocolElement.name = self._name
-        protocolElement.quantification_group_id = (self._quantificationGroupId)
+        protocolElement.feature_id = self._featureId
+        protocolElement.rna_quantification_id = parentContainer.getId()
         protocolElement.raw_read_count = self._rawReadCount
         protocolElement.expression = self._expression
         protocolElement.is_normalized = self._isNormalized
         protocolElement.units = self._units
         protocolElement.score = self._score
-        protocolElement.conf_interval.extend(self._confInterval)
+        protocolElement.conf_interval_low = self._confIntervalLow
+        protocolElement.conf_interval_low = self._confIntervalHigh
+        protocolElement.feature_group_ids.extend(self._featureGroupIds)
         return protocolElement
 
 
@@ -66,58 +71,88 @@ class ExpressionLevel(AbstractExpressionLevel):
     def __init__(self, parentContainer, record):
         super(ExpressionLevel, self).__init__(parentContainer, record["id"])
         self._expression = record["expression"]
-        self._quantificationGroupId = record["quantification_group_id"]
+        self._featureId = record["feature_id"]
         # sqlite stores booleans as int (False = 0, True = 1)
         self._isNormalized = bool(record["is_normalized"])
         self._rawReadCount = record["raw_read_count"]
         self._score = record["score"]
         self._units = record["units"]
         self._name = record["name"]
-        self._confInterval = [record["conf_low"], record["conf_hi"]]
+        self._confIntervalLow = record["conf_low"]
+        self._confIntervalHigh = record["conf_hi"]
+        self._featureGroupIds = record["feature_group_ids"].split(",")
 
     def getName(self):
         return self._name
 
-    def getQuantificationGroup(self):
-        return self._quantificationGroupId
+    def getFeatureGroups(self):
+        return self._featureGroupIds
 
 
-class AbstractQuantificationGroup(datamodel.DatamodelObject):
+class AbstractFeatureGroup(datamodel.DatamodelObject):
     """
-    Class representing a single QuantificationGroup in the GA4GH model.
+    Class representing a single FeatureGroup in the GA4GH model.
     """
-    compoundIdClass = datamodel.QuantificationGroupCompoundId
+    compoundIdClass = datamodel.FeatureGroupCompoundId
 
     def __init__(self, parentContainer, localId):
-        super(AbstractQuantificationGroup, self).__init__(
+        super(AbstractFeatureGroup, self).__init__(
             parentContainer, localId)
-        self._analysisId = ""
         self._name = localId
         self._description = ""
-        self._info = []
+        self._feature_ids = []
 
     def toProtocolElement(self):
         protocolElement = protocol.QuantificationGroup()
         protocolElement.id = self.getId()
-        protocolElement.analysis_id = self._analysisId
         protocolElement.name = self._name
         protocolElement.description = self._description
-        for key in self._info:
-            protocolElement.info[key].values.extend(self._info[key])
+        protocolElement.feature_ids.extend(self._feature_ids)
 
         return protocolElement
 
 
-class QuantificationGroup(AbstractQuantificationGroup):
+class FeatureGroup(AbstractFeatureGroup):
     """
-    Class representing a single QuantificationGroup in the GA4GH model.
+    Class representing a single FeatureGroup in the GA4GH model.
     """
 
     def __init__(self, parentContainer, record):
-        super(QuantificationGroup, self).__init__(
-            parentContainer, record["quantification_group_id"])
-        self._analysisId = record["rna_quantification_id"]
-        self._name = record["quantification_group_id"]
+        super(FeatureGroup, self).__init__(
+            parentContainer, record["name"])
+        self._featureIds = record["feature_ids"].split(",")
+        self._description = record["description"]
+
+
+class AbstractRNAQuantificationSet(datamodel.DatamodelObject):
+    """
+    An abstract base class of a RNA quantification set
+    """
+    compoundIdClass = datamodel.RnaQuantificationSetCompoundId
+
+    def __init__(self, parentContainer, localId):
+        super(AbstractRNAQuantificationSet, self).__init__(
+            parentContainer, localId)
+        self._name = localId
+
+    def toProtocolElement(self):
+        """
+        Converts this rnaQuant into its GA4GH protocol equivalent.
+        """
+        protocolElement = protocol.RnaQuantificationSet()
+        protocolElement.id = self.getId()
+        protocolElement.dataset_id = parentContainer.getId()
+        protocolElement.name = self._name
+
+
+class RnaQuantificationSet(AbstractRNAQuantificationSet):
+    """
+    Class representing a single RnaQuantificationSet in the GA4GH model.
+    """
+
+    def __init__(self, parentContainer, record):
+        super(RnaQuantificationSet, self).__init__(
+            parentContainer, record["name"])
 
 
 class AbstractRNAQuantification(datamodel.DatamodelObject):
@@ -129,12 +164,12 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(AbstractRNAQuantification, self).__init__(
             parentContainer, localId)
-        self._annotationIds = []
+        self._featureSetIds = []
         self._description = ""
         self._name = localId
-        self._readGroupId = ""
+        self._readGroupIds = []
         self._referenceSet = None
-        self._programIds = []
+        self._programs = []
 
     def toProtocolElement(self):
         """
@@ -144,9 +179,10 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         protocolElement.id = self.getId()
         protocolElement.name = self._name
         protocolElement.description = self._description
-        protocolElement.read_group_id = self._readGroupId
-        protocolElement.program_ids.extend(self._programIds)
-        protocolElement.annotation_ids.extend(self._annotationIds)
+        protocolElement.read_group_ids.extend(self._readGroupIds)
+        protocolElement.programs.extend(self._programs)
+        protocolElement.feature_set_ids.extend(self._featureSetIds)
+        protocolElement.rna_quantification_set_id = parentContainer.getId()
         return protocolElement
 
     def addRnaQuantMetadata(self, fields):
@@ -155,10 +191,11 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         Id, annotations, description, name, readGroupId
         where annotations is a comma separated list
         """
-        self._annotationIds = fields["annotation_ids"].split(',')
+        self._annotationIds = fields["feature_set_ids"].split(',')
         self._description = fields["description"]
         self._name = fields["name"]
-        self._readGroupId = fields["read_group_id"]
+        self._readGroupId = fields["read_group_ids"].split(',')
+        self._programs = fields["programs"].split(',')
 
     def getReferenceSet(self):
         """

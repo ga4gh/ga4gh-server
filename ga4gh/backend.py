@@ -704,12 +704,12 @@ class Backend(object):
             rnaQuant.getExpressionLevels(
                 rnaQuantificationId, pageToken=request.page_token,
                 pageSize=request.page_size, expressionId=expressionLevelId,
-                quantificationGroupId=request.quantification_group_id,
+                featureGroupId=request.feature_group_id,
                 threshold=request.threshold))
 
-    def quantificationGroupGenerator(self, request):
+    def featureGroupGenerator(self, request):
         """
-        Returns a generator over the (quantificationGroup, nextPageToken) pairs
+        Returns a generator over the (featureGroup, nextPageToken) pairs
         defined by the specified request.
 
         Currently only supports searching over a specified rnaQuantification
@@ -719,18 +719,18 @@ class Backend(object):
             rnaQuantificationId)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
-        quantificationGroupId = request.quantification_group_id
-        if len(quantificationGroupId) > 0:
-            quantificationGroupCompoundId = \
-                datamodel.QuantificationGroupCompoundId.parse(
-                    request.quantification_group_id)
+        featureGroupId = request.feature_group_id
+        if len(featureGroupId) > 0:
+            featureGroupCompoundId = \
+                datamodel.FeatureGroupCompoundId.parse(
+                    request.feature_group_id)
             return self._singleObjectGenerator(
-                rnaQuant.getQuantificationGroup(quantificationGroupCompoundId))
+                rnaQuant.getFeatureGroup(featureGroupCompoundId))
         return self._objectListGenerator(
-            request, rnaQuant.getQuantificationGroups(
+            request, rnaQuant.getFeatureGroups(
                 rnaQuant.getLocalId(), pageToken=request.page_token,
                 pageSize=request.page_size,
-                quantificationGroupId=quantificationGroupId))
+                featureGroupId=featureGroupId))
 
     ###########################################################
     #
