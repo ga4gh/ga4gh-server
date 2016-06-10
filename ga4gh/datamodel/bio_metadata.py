@@ -27,40 +27,41 @@ class BioSample(datamodel.DatamodelObject):
         self._updated = datetime.datetime.now().isoformat()
         self._description = None
         self._disease = None
-        self._info = None
+        self._info = {}
         self._name = localId
         self._individualId = None
 
     def toProtocolElement(self):
+        disease = None
+        if self.getDisease():
+            disease = protocol.fromJson(
+                json.dumps(self.getDisease()), protocol.OntologyTerm)
         bioSample = protocol.BioSample(
             created=self.getCreated(),
             updated=self.getUpdated(),
             description=self.getDescription(),
-            disease=self.getDisease(),
             id=self.getId(),
             individual_id=self.getIndividualId(),
-            info=self.getInfo(),
-            name=self.getName())
+            name=self.getName(),
+            disease=disease)
+        for key in self.getInfo():
+            for value in self.getInfo()[key]['values']:
+                bioSample.info[key].values.add().string_value = value
         return bioSample
 
     def populateFromJson(self, jsonString):
         try:
-            parsed = json.loads(jsonString)
+            parsed = protocol.fromJson(jsonString, protocol.BioSample)
         except:
             raise exceptions.InvalidJsonException(jsonString)
-        # TODO validate
-        if 'created' in parsed:
-            self._created = parsed['created']
-        if 'updated' in parsed:
-            self._updated = parsed['updated']
-        if 'description' in parsed:
-            self._description = parsed['description']
-        if 'disease' in parsed:
-            self._disease = protocol.fromJson(
-                json.dumps(parsed['disease']),
-                protocol.OntologyTerm)
-        if 'individualId' in parsed:
-            self._individualId = parsed['individualId']
+        self._created = parsed.created
+        self._updated = parsed.updated
+        self._description = parsed.description
+        self._disease = protocol.toJsonDict(parsed.disease)
+        self._individualId = parsed.individual_id
+        self._info = {}
+        for key in parsed.info:
+            self._info[key] = {"values": protocol.toJsonDict(parsed.info[key])}
         return self
 
     def populateFromRow(self, row):
@@ -116,19 +117,30 @@ class Individual(datamodel.DatamodelObject):
         self._description = None
         self._species = None
         self._sex = None
-        self._info = None
+        self._info = {}
         self._name = localId
 
     def toProtocolElement(self):
+        species = None
+        sex = None
+        if self.getSpecies():
+            species = protocol.fromJson(
+                json.dumps(self.getSpecies()), protocol.OntologyTerm)
+        if self.getSex():
+            sex = protocol.fromJson(
+                json.dumps(self.getSex()), protocol.OntologyTerm)
         gaIndividual = protocol.Individual(
             created=self.getCreated(),
             updated=self.getUpdated(),
             description=self.getDescription(),
-            species=self.getSpecies(),
-            sex=self.getSex(),
             id=self.getId(),
-            info=self.getInfo(),
-            name=self.getName())
+            name=self.getName(),
+            species=species,
+            sex=sex)
+        for key in self.getInfo():
+            for value in self.getInfo()[key]['values']:
+                gaIndividual.info[key].values.add().string_value = value
+        print(gaIndividual)
         return gaIndividual
 
     def populateFromRow(self, row):
@@ -145,25 +157,17 @@ class Individual(datamodel.DatamodelObject):
     def populateFromJson(self, jsonString):
         # TODO validate
         try:
-            parsed = json.loads(jsonString)
+            parsed = protocol.fromJson(jsonString, protocol.Individual)
         except:
             raise exceptions.InvalidJsonException(jsonString)
-        if 'created' in parsed:
-            self._created = parsed['created']
-        if 'updated' in parsed:
-            self._updated = parsed['updated']
-        if 'description' in parsed:
-            self._description = parsed['description']
-        if 'species' in parsed:
-            self._species = protocol.fromJson(
-                json.dumps(parsed['species']),
-                protocol.OntologyTerm)
-        if 'sex' in parsed:
-            self._sex = protocol.fromJson(
-                json.dumps(parsed['sex']),
-                protocol.OntologyTerm)
-        if 'info' in parsed:
-            self._info = parsed['info']
+        self._created = parsed.created
+        self._updated = parsed.updated
+        self._description = parsed.description
+        self._species = protocol.toJsonDict(parsed.species)
+        self._sex = protocol.toJsonDict(parsed.sex)
+        self._info = {}
+        for key in parsed.info:
+            self._info[key] = {"values": protocol.toJsonDict(parsed.info[key])}
         return self
 
     def getCreated(self):

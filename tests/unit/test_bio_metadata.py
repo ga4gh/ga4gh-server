@@ -26,11 +26,13 @@ class TestIndividuals(unittest.TestCase):
         term.source_name = "PATO"
         term.source_version = pb.string("2015-11-18")
         # Write out a valid input
+        print(protocol.toJsonDict(term))
         validIndividual = protocol.Individual(
             name="test",
             created="2016-05-19T21:00:19Z",
             updated="2016-05-19T21:00:19Z",
             sex=term)
+        validIndividual.info['test'].values.add().string_value = 'test-info'
         # pass through protocol creation
         individual = bioMetadata.Individual(
             dataset, "test")
@@ -60,6 +62,7 @@ class TestBioSamples(unittest.TestCase):
             name="test",
             created="2016-05-19T21:00:19Z",
             updated="2016-05-19T21:00:19Z")
+        validBioSample.info['test'].values.add().string_value = 'test-info'
         # pass through protocol creation
         bioSample = bioMetadata.BioSample(
             dataset, "test")

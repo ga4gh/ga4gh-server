@@ -52,6 +52,7 @@ class CallSet(datamodel.DatamodelObject):
         Populates this CallSet from the specified DB row.
         """
         # currently a noop
+        self._bioSampleId = row[b'bioSampleId']
 
     def toProtocolElement(self):
         """
@@ -59,7 +60,8 @@ class CallSet(datamodel.DatamodelObject):
         ProtocolElement.
         """
         variantSet = self.getParentContainer()
-        gaCallSet = protocol.CallSet()
+        gaCallSet = protocol.CallSet(
+            bio_sample_id=self.getBioSampleId())
         if variantSet.getCreationTime():
             gaCallSet.created = variantSet.getCreationTime()
         if variantSet.getUpdatedTime():
