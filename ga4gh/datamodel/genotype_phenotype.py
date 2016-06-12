@@ -201,22 +201,32 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         print(associationDetail)
         return associationDetail
 
-    def _formatExternalIdentifier(self, element, element_type):
+    def _formatExternalIdentifiers(self, element, element_type):
         """
         Formats the external identifiers for query
         """
         elementClause = None
-        print("**************** _formatExternalIdentifier ")
         elements = []
-        if element.externalIdentifiers:
-            for _id in element.externalIdentifiers:
-                term = "{}:{}".format(_id['database'], _id['identifier'])
-                namespaceTerm = self._toNamespaceURL(term)
-                print(namespaceTerm)
-                elements.append('?{} = <{}> '.format(element_type,
-                                                     namespaceTerm))
+        if not issubclass(element.__class__, dict):
+            element = element.toJsonDict()
+        if element['externalIdentifiers']:
+            for _id in element['externalIdentifiers']:
+                elements.append(self._formatExternalIdentifier(_id,
+                                                               element_type))
             elementClause = "({})".format(" || ".join(elements))
         return elementClause
+
+    def _formatExternalIdentifier(self, element, element_type):
+        print("_formatExternalIdentifier")
+        print(element)
+        if "http" not in element['database']:
+            term = "{}:{}".format(element['database'], element['identifier'])
+            namespaceTerm = self._toNamespaceURL(term)
+        else:
+            namespaceTerm = "{}{}".format(element['database'],
+                                          element['identifier'])
+        comparison = '?{} = <{}> '.format(element_type, namespaceTerm)
+        return comparison
 
     def _formatOntologyTerm(self, element, element_type):
         """
@@ -292,6 +302,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             PREFIX dc: <http://purl.org/dc/elements/1.1/>
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             PREFIX BFO: <http://purl.obolibrary.org/obo/BFO_>
+            PREFIX owl: <http://www.w3.org/2002/07/owl#>
             SELECT
                 ?association
                 ?environment
@@ -364,28 +375,22 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             if featureClause:
                 filters.append(featureClause)
 
-# /**
-# The Evidence types desired
-# */
-# union {null, array<EvidenceQuery>} evidence = null;
-#
-# /**
-# Evidence for the phenotype association.
-# */
-# record EvidenceQuery {
-#   /** ECO or OBI is recommended */
-#   union { null, org.ga4gh.models.OntologyTerm }  evidenceType = null;
-#   union { null, string } description = null;  /*regex*/
-#   union { null, array<org.ga4gh.models.ExternalIdentifier> }  externalIdentifiers = null; /* new field */
-# }
         if request.evidence:
             for evidence in request.evidence:
+                print('evidence')
+                print(evidence)
                 if evidence['description']:
                     featureClause = self._formatRegex(evidence['description'],
                                                       'description',
                                                       'environment_label')
                     if featureClause:
                         filters.append(featureClause)
+                if evidence['externalIdentifiers']:
+                    for externalIdentifier in evidence['externalIdentifiers']:
+                        featureClause = self._formatExternalIdentifier(
+                                             externalIdentifier, 'environment')
+                        if featureClause:
+                            filters.append(featureClause)
 
         if request.featureIds:
             phenotypeClause = self._formatIds(request.featureIds,
@@ -403,7 +408,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             filters.append('regex(?feature_label, "{}")'
                            .format(request.referenceName))
 
-        featureClause = self._formatExternalIdentifier(request, 'external_id')
+        featureClause = self._formatExternalIdentifiers(request, 'external_id')
         if featureClause:
             filters.append(featureClause)
         # OntologyTerms
