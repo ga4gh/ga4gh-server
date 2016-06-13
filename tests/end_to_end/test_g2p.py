@@ -81,7 +81,6 @@ class TestG2P(unittest.TestCase):
         response = protocol.SearchGenotypesResponse() \
                            .fromJsonString(response.data)
         self.assertEqual(1, len(response.genotypes))
-        print(response.genotypes[0].id)
 
     def testFindFeatureExternalIdentifier(self):
         request = protocol.SearchGenotypesRequest()
@@ -186,7 +185,6 @@ class TestG2P(unittest.TestCase):
         request.qualifiers = [ontologyterm]
         postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
-        print(response.data)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
@@ -200,7 +198,6 @@ class TestG2P(unittest.TestCase):
         request.qualifiers = [ontologyterm]
         postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
-        print(response.data)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
@@ -216,7 +213,6 @@ class TestG2P(unittest.TestCase):
         request.qualifiers = [ontologyterm, ontologyterm2]
         postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
-        print(response.data)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
@@ -315,7 +311,6 @@ class TestG2P(unittest.TestCase):
         request.evidence = [evidenceQuery]
 
         response = self.sendPostRequest('/genotypephenotypes/search', request)
-        print(response.data)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)

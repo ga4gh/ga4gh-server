@@ -95,7 +95,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         """
         # query to do search
         query = self._formatFilterQuery(request)
-        print(query)
         associations = self._rdfGraph.query(query)
         # associations is now a dict with rdflib terms with variable and
         # URIrefs or literals
@@ -119,11 +118,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 association['environment'] = self._getDetails(
                     association['environment'],
                     associations_details)
-                print("**** phenotype")
                 association['phenotype'] = self._getDetails(
                     association['phenotype'],
                     associations_details)
-                print(association['phenotype'])
                 association['evidence'] = association['phenotype'][HAS_QUALITY]
                 association['id'] = association['association']
                 associationList.append(association)
@@ -197,8 +194,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             if detail['subject'] == uriRef:
                 associationDetail[detail['predicate']] = detail['object']
             associationDetail['id'] = uriRef
-        print("associationDetail")
-        print(associationDetail)
         return associationDetail
 
     def _formatExternalIdentifiers(self, element, element_type):
@@ -217,8 +212,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         return elementClause
 
     def _formatExternalIdentifier(self, element, element_type):
-        print("_formatExternalIdentifier")
-        print(element)
         if "http" not in element['database']:
             term = "{}:{}".format(element['database'], element['identifier'])
             namespaceTerm = self._toNamespaceURL(term)
@@ -377,8 +370,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         if request.evidence:
             for evidence in request.evidence:
-                print('evidence')
-                print(evidence)
                 if evidence['description']:
                     featureClause = self._formatRegex(evidence['description'],
                                                       'description',
