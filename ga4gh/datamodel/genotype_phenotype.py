@@ -95,6 +95,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         """
         # query to do search
         query = self._formatFilterQuery(request)
+        print(query)
         associations = self._rdfGraph.query(query)
         # associations is now a dict with rdflib terms with variable and
         # URIrefs or literals
@@ -198,7 +199,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
     def _formatExternalIdentifiers(self, element, element_type):
         """
-        Formats the external identifiers for query
+        Formats several external identifiers for query
         """
         elementClause = None
         elements = []
@@ -212,6 +213,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         return elementClause
 
     def _formatExternalIdentifier(self, element, element_type):
+        """
+        Formats a single external identifier for query
+        """
         if "http" not in element['database']:
             term = "{}:{}".format(element['database'], element['identifier'])
             namespaceTerm = self._toNamespaceURL(term)
@@ -391,6 +395,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         return filters
 
     def _filterSearchGenotypesRequest(self, request):
+        """
+        Filters the request for genotype search requests
+        """
         filters = []
         if request.id:
             filters.append("?feature = <{}>".format(request.id))
@@ -411,6 +418,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         return filters
 
     def _filterSearchPhenotypesRequest(self, request):
+        """
+        Filters request for phenotype search requests
+        """
         filters = []
         if request.id:
             filters.append("?phenotype = <{}>".format(request.id))
@@ -489,6 +499,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         given an association dict,
         return a protocol.FeaturePhenotypeAssociation
         """
+        # TODO: This method needs to broken in several parts. It's
+        # doing too much things
         fpa = None
 
         # The association dict has the keys: environment, environment
