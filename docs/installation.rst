@@ -79,7 +79,7 @@ following contents:
 
 .. code-block:: python
 
-    DATA_SOURCE = "/srv/ga4gh/ga4gh-example-data"
+    DATA_SOURCE = "/srv/ga4gh/ga4gh-example-data/repo.db"
 
 (Many more configuration options are available --- see the :ref:`configuration`
 section for a detailed discussion on the server configuration and input data.)
