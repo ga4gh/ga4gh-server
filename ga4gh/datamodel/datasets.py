@@ -195,7 +195,7 @@ class Dataset(datamodel.DatamodelObject):
         Returns a BioSample with the specified name, or raises a
         BioSampleNameNotFoundException if it does not exist.
         """
-        if name not in self._readGroupSetNameMap:
+        if name not in self._bioSampleNameMap:
             raise exceptions.BioSampleNameNotFoundException(name)
         return self._bioSampleNameMap[name]
 

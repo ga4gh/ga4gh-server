@@ -397,6 +397,34 @@ class Backend(object):
                 nextPageToken = str(currentIndex)
             yield object_.toProtocolElement(), nextPageToken
 
+    def _protocolObjectGenerator(self, request, numObjects, getByIndexMethod):
+        """
+        Returns a generator over the results for the specified request, from
+        a set of protocol objects of the specified size. The objects are
+        returned by call to the specified method, which must take a single
+        integer as an argument. The returned generator yields a sequence of
+        (object, nextPageToken) pairs, which allows this iteration to be picked
+        up at any point.
+        """
+        currentIndex = 0
+        if request.page_token:
+            currentIndex, = _parsePageToken(request.page_token, 1)
+        while currentIndex < numObjects:
+            object_ = getByIndexMethod(currentIndex)
+            currentIndex += 1
+            nextPageToken = None
+            if currentIndex < numObjects:
+                nextPageToken = str(currentIndex)
+            yield object_, nextPageToken
+
+    def _protocolListGenerator(self, request, objectList):
+        """
+        Returns a generator over the objects in the specified list using
+        _protocolObjectGenerator to generate page tokens.
+        """
+        return self._protocolObjectGenerator(
+            request, len(objectList), lambda index: objectList[index])
+
     def _objectListGenerator(self, request, objectList):
         """
         Returns a generator over the objects in the specified list using
@@ -463,22 +491,26 @@ class Backend(object):
         results = []
         for obj in dataset.getReadGroupSets():
             include = True
+            rgsp = obj.toProtocolElement()
             if request.name:
                 if request.name != obj.getLocalId():
                     include = False
             if request.bio_sample_id:
-                newRg = []
+                rgsp.ClearField("read_groups")
                 for readGroup in obj.getReadGroups():
                     if request.bio_sample_id == readGroup.getBioSampleId():
-                        newRg.append(readGroup)
-                obj.readGroups = newRg
-                if len(newRg) == 0 and len(obj.getReadGroups()) != 0:
+                        rgsp.read_groups.extend(
+                            [readGroup.toProtocolElement()])
+                # If none of the biosamples match and the readgroupset
+                # contains reagroups, don't include in the response
+                if len(rgsp.read_groups) == 0 and \
+                        len(obj.getReadGroups()) != 0:
                     include = False
                 else:
                     include = True and include
             if include:
-                results.append(obj)
-        return self._objectListGenerator(request, results)
+                results.append(rgsp)
+        return self._protocolListGenerator(request, results)
 
     def referenceSetsGenerator(self, request):
         """
@@ -677,7 +709,7 @@ class Backend(object):
                     include = False
             if request.bio_sample_id:
                 if request.bio_sample_id != obj.getBioSampleId():
-                    include = False and include
+                    include = False
             if include:
                 results.append(obj)
         return self._objectListGenerator(request, results)
