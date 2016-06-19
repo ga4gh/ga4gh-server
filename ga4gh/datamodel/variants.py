@@ -793,10 +793,8 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         self._variantSet = variantSet
         self._ontology = None
         self._analysis = None
-        # TODO these should be set from the DB, not created on
-        # instantiation.
-        self._creationTime = datetime.datetime.now().isoformat() + "Z"
-        self._updatedTime = datetime.datetime.now().isoformat() + "Z"
+        self._creationTime = ''
+        self._updatedTime = ''
 
     def setOntology(self, ontology):
         """
@@ -805,6 +803,18 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         specified value.
         """
         self._ontology = ontology
+
+    def getCreationTime(self):
+        """
+        Returns the creation time for this VariantAnnotationSet
+        """
+        return self._creationTime
+
+    def getUpdatedTime(self):
+        """
+        Returns the update time for this VariantAnnotationSet
+        """
+        return self._updatedTime
 
     def getOntology(self):
         """
@@ -909,8 +919,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def _createAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.create_date_time = self._creationTime
-        analysis.update_date_time = self._updatedTime
+        analysis.create_date_time = datetime.datetime.now().isoformat() + "Z"
+        analysis.update_date_time = datetime.datetime.now().isoformat() + "Z"
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -941,7 +951,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann = protocol.VariantAnnotation()
         ann.variant_annotation_set_id = str(self.getCompoundId())
         ann.variant_id = variant.id
-        ann.create_date_time = self._creationTime
+        ann.create_date_time = datetime.datetime.now().isoformat() + "Z"
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (1,5)
         for i in range(randomNumberGenerator.randint(1, 5)):
@@ -1020,13 +1030,12 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
     """
     def __init__(self, variantSet, localId):
         super(HtslibVariantAnnotationSet, self).__init__(variantSet, localId)
-        self._annotationCreatedDateTime = self._creationTime
 
     def populateFromFile(self, varFile, annotationType):
         self._annotationType = annotationType
         self._analysis = self._getAnnotationAnalysis(varFile)
-        # TODO parse the annotation creation time from the VCF header and
-        # store it in an instance variable.
+        self._creationTime = self._analysis.create_date_time
+        self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
     def populateFromRow(self, row):
         """
@@ -1034,6 +1043,8 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         """
         self._annotationType = row[b'annotationType']
         self._analysis = protocol.fromJson(row[b'analysis'], protocol.Analysis)
+        self._creationTime = row[b'created']
+        self._updatedTime = row[b'updated']
 
     def getAnnotationType(self):
         """
@@ -1060,18 +1071,27 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                 if value.description is not None:
                     analysis.info[
                         key].values.add().string_value = value.description
-        analysis.create_date_time = self._creationTime
-        analysis.update_date_time = self._updatedTime
+        analysis.create_date_time = datetime.datetime.now().isoformat() + "Z"
+        analysis.update_date_time = datetime.datetime.now().isoformat() + "Z"
         for r in header.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:
                 if r.key not in analysis.info:
                     analysis.info[r.key].Clear()
                 analysis.info[r.key].values.add().string_value = str(r.value)
-            if r.key == "created":
+            if r.key == "created" or r.key == "fileDate":
                 # TODO handle more date formats
-                analysis.create_date_time = datetime.datetime.strptime(
-                    r.value, "%Y-%m-%d").isoformat() + "Z"
+                try:
+                    if '-' in r.value:
+                        fmtStr = "%Y-%m-%d"
+                    else:
+                        fmtStr = "%Y%m%d"
+                    analysis.create_date_time = datetime.datetime.strptime(
+                        r.value, fmtStr).isoformat() + "Z"
+                except ValueError:
+                    # is there a logger we should tell?
+                    # print("INFO: Could not parse variant annotation time")
+                    pass  # analysis.create_date_time remains datetime.now()
             if r.key == "software":
                 analysis.software.append(r.value)
             if r.key == "name":
@@ -1314,7 +1334,6 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         """
         variant = self._variantSet.convertVariant(record, [])
         annotation = self._createGaVariantAnnotation()
-        annotation.create_date_time = self._annotationCreatedDateTime
         annotation.variant_id = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         transcriptEffects = []

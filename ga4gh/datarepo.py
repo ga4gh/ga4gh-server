@@ -846,6 +846,8 @@ class SqlDataRepository(AbstractDataRepository):
                 ontologyId TEXT NOT NULL,
                 analysis TEXT,
                 annotationType TEXT,
+                created TEXT,
+                updated TEXT,
                 UNIQUE (variantSetId, name),
                 FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
                     ON DELETE CASCADE,
@@ -860,8 +862,9 @@ class SqlDataRepository(AbstractDataRepository):
         """
         sql = """
             INSERT INTO VariantAnnotationSet (
-                id, variantSetId, ontologyId, name, analysis, annotationType)
-            VALUES (?, ?, ?, ?, ?, ?);
+                id, variantSetId, ontologyId, name, analysis, annotationType,
+                created, updated)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         """
         analysisJson = json.dumps(
             protocol.toJsonDict(variantAnnotationSet.getAnalysis()))
@@ -872,7 +875,9 @@ class SqlDataRepository(AbstractDataRepository):
             variantAnnotationSet.getOntology().getId(),
             variantAnnotationSet.getLocalId(),
             analysisJson,
-            variantAnnotationSet.getAnnotationType()))
+            variantAnnotationSet.getAnnotationType(),
+            variantAnnotationSet.getCreationTime(),
+            variantAnnotationSet.getUpdatedTime()))
 
     def _readVariantAnnotationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
