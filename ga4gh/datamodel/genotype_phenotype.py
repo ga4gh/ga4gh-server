@@ -7,6 +7,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import json
 import rdflib
 
 import ga4gh.datamodel as datamodel
@@ -516,22 +517,24 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         feature = association['feature']
 
         f = protocol.Feature()
-        f.featureType = protocol.OntologyTerm.fromJsonDict({
+
+        f.feature_type.MergeFrom(protocol.fromJson( json.dumps({
             "term": feature[TYPE],
             "id": feature['id'],
             "sourceVersion": self._version,
             "sourceName": self._getPrefix(
                 self._getPrefixURL(association['id']))
-        })
+        }),protocol.OntologyTerm))
         # TODO connect with real feature Ids
         f.id = feature['id']
-        f.referenceName = feature[LABEL]
+        f.reference_name = feature[LABEL]
         vals = {}
         vals = {key: [feature[key]] for key in feature}
         for key in feature:
-            vals[key] = [feature[key]]
-        f.attributes = protocol.Attributes.fromJsonDict(
-            {"vals":  vals})
+            vals[key] = [{"string_value":feature[key]}]
+        print(json.dumps({"vals":  vals}),protocol.Attributes)
+        f.attributes = protocol.fromJson(json.dumps({"vals":  vals}),
+                                                    protocol.Attributes)
         f.childIds = []
 
         fpa = protocol.FeaturePhenotypeAssociation()

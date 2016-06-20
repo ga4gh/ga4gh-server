@@ -62,6 +62,15 @@ class TestG2P(unittest.TestCase):
         return self.app.post(
             path, headers=headers, data=request.toJsonString())
 
+    def sendJsonPostRequest(self, path, data):
+        """
+        Sends a JSON request to the specified path with the specified data
+        and returns the response.
+        """
+        return self.app.post(
+            path, headers={'Content-type': 'application/json'},
+            data=data)
+
     def testPhenotypeAssociationSetSearch(self):
         request = protocol.SearchDatasetsRequest()
         response = self.sendSearchRequest(
