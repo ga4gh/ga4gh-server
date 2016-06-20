@@ -690,7 +690,7 @@ class Backend(object):
         return featureSet.getFeatures(
             request.reference_name, request.start, request.end,
             request.page_token, request.page_size,
-            request.feature_types, parentId)
+            request.feature_types, parentId, request.name, request.gene_symbol)
 
     def callSetsGenerator(self, request):
         """

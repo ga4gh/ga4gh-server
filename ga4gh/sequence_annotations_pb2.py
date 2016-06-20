@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/sequence_annotations.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n ga4gh/sequence_annotations.proto\x12\x05ga4gh\x1a\x12ga4gh/common.proto\x1a\x14ga4gh/metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xee\x02\n\nAttributes\x12)\n\x04vals\x18\x01 \x03(\x0b\x32\x1b.ga4gh.Attributes.ValsEntry\x1a\x99\x01\n\x0e\x41ttributeValue\x12\x16\n\x0cstring_value\x18\x01 \x01(\tH\x00\x12\x38\n\x13\x65xternal_identifier\x18\x02 \x01(\x0b\x32\x19.ga4gh.ExternalIdentifierH\x00\x12,\n\rontology_term\x18\x03 \x01(\x0b\x32\x13.ga4gh.OntologyTermH\x00\x42\x07\n\x05value\x1a\x46\n\x12\x41ttributeValueList\x12\x30\n\x06values\x18\x01 \x03(\x0b\x32 .ga4gh.Attributes.AttributeValue\x1aQ\n\tValsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x33\n\x05value\x18\x02 \x01(\x0b\x32$.ga4gh.Attributes.AttributeValueList:\x02\x38\x01\"\xf8\x01\n\x07\x46\x65\x61ture\x12\n\n\x02id\x18\x01 \x01(\t\x12\x11\n\tparent_id\x18\x02 \x01(\t\x12\x11\n\tchild_ids\x18\x03 \x03(\t\x12\x16\n\x0e\x66\x65\x61ture_set_id\x18\x04 \x01(\t\x12\x16\n\x0ereference_name\x18\x05 \x01(\t\x12\r\n\x05start\x18\x06 \x01(\x03\x12\x0b\n\x03\x65nd\x18\x07 \x01(\x03\x12\x1d\n\x06strand\x18\x08 \x01(\x0e\x32\r.ga4gh.Strand\x12)\n\x0c\x66\x65\x61ture_type\x18\t \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12%\n\nattributes\x18\n \x01(\x0b\x32\x11.ga4gh.Attributes\"\xdc\x01\n\nFeatureSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\ndataset_id\x18\x02 \x01(\t\x12\x18\n\x10reference_set_id\x18\x03 \x01(\t\x12\x0c\n\x04name\x18\x04 \x01(\t\x12\x12\n\nsource_uri\x18\x05 \x01(\t\x12)\n\x04info\x18\x06 \x03(\x0b\x32\x1b.ga4gh.FeatureSet.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3')
+  serialized_pb=_b('\n ga4gh/sequence_annotations.proto\x12\x05ga4gh\x1a\x12ga4gh/common.proto\x1a\x14ga4gh/metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xee\x02\n\nAttributes\x12)\n\x04vals\x18\x01 \x03(\x0b\x32\x1b.ga4gh.Attributes.ValsEntry\x1a\x99\x01\n\x0e\x41ttributeValue\x12\x16\n\x0cstring_value\x18\x01 \x01(\tH\x00\x12\x38\n\x13\x65xternal_identifier\x18\x02 \x01(\x0b\x32\x19.ga4gh.ExternalIdentifierH\x00\x12,\n\rontology_term\x18\x03 \x01(\x0b\x32\x13.ga4gh.OntologyTermH\x00\x42\x07\n\x05value\x1a\x46\n\x12\x41ttributeValueList\x12\x30\n\x06values\x18\x01 \x03(\x0b\x32 .ga4gh.Attributes.AttributeValue\x1aQ\n\tValsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x33\n\x05value\x18\x02 \x01(\x0b\x32$.ga4gh.Attributes.AttributeValueList:\x02\x38\x01\"\x9b\x02\n\x07\x46\x65\x61ture\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0bgene_symbol\x18\x03 \x01(\t\x12\x11\n\tparent_id\x18\x04 \x01(\t\x12\x11\n\tchild_ids\x18\x05 \x03(\t\x12\x16\n\x0e\x66\x65\x61ture_set_id\x18\x06 \x01(\t\x12\x16\n\x0ereference_name\x18\x07 \x01(\t\x12\r\n\x05start\x18\x08 \x01(\x03\x12\x0b\n\x03\x65nd\x18\t \x01(\x03\x12\x1d\n\x06strand\x18\n \x01(\x0e\x32\r.ga4gh.Strand\x12)\n\x0c\x66\x65\x61ture_type\x18\x0b \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12%\n\nattributes\x18\x0c \x01(\x0b\x32\x11.ga4gh.Attributes\"\xdc\x01\n\nFeatureSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\ndataset_id\x18\x02 \x01(\t\x12\x18\n\x10reference_set_id\x18\x03 \x01(\t\x12\x0c\n\x04name\x18\x04 \x01(\t\x12\x12\n\nsource_uri\x18\x05 \x01(\t\x12)\n\x04info\x18\x06 \x03(\x0b\x32\x1b.ga4gh.FeatureSet.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3')
   ,
   dependencies=[ga4gh_dot_common__pb2.DESCRIPTOR,ga4gh_dot_metadata__pb2.DESCRIPTOR,google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -190,64 +190,78 @@ _FEATURE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='parent_id', full_name='ga4gh.Feature.parent_id', index=1,
+      name='name', full_name='ga4gh.Feature.name', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='child_ids', full_name='ga4gh.Feature.child_ids', index=2,
-      number=3, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
+      name='gene_symbol', full_name='ga4gh.Feature.gene_symbol', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='feature_set_id', full_name='ga4gh.Feature.feature_set_id', index=3,
+      name='parent_id', full_name='ga4gh.Feature.parent_id', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='reference_name', full_name='ga4gh.Feature.reference_name', index=4,
-      number=5, type=9, cpp_type=9, label=1,
+      name='child_ids', full_name='ga4gh.Feature.child_ids', index=4,
+      number=5, type=9, cpp_type=9, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='feature_set_id', full_name='ga4gh.Feature.feature_set_id', index=5,
+      number=6, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='start', full_name='ga4gh.Feature.start', index=5,
-      number=6, type=3, cpp_type=2, label=1,
+      name='reference_name', full_name='ga4gh.Feature.reference_name', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='start', full_name='ga4gh.Feature.start', index=7,
+      number=8, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='end', full_name='ga4gh.Feature.end', index=6,
-      number=7, type=3, cpp_type=2, label=1,
+      name='end', full_name='ga4gh.Feature.end', index=8,
+      number=9, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='strand', full_name='ga4gh.Feature.strand', index=7,
-      number=8, type=14, cpp_type=8, label=1,
+      name='strand', full_name='ga4gh.Feature.strand', index=9,
+      number=10, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='feature_type', full_name='ga4gh.Feature.feature_type', index=8,
-      number=9, type=11, cpp_type=10, label=1,
+      name='feature_type', full_name='ga4gh.Feature.feature_type', index=10,
+      number=11, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='attributes', full_name='ga4gh.Feature.attributes', index=9,
-      number=10, type=11, cpp_type=10, label=1,
+      name='attributes', full_name='ga4gh.Feature.attributes', index=11,
+      number=12, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -265,7 +279,7 @@ _FEATURE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=485,
-  serialized_end=733,
+  serialized_end=768,
 )
 
 
@@ -302,8 +316,8 @@ _FEATURESET_INFOENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=885,
-  serialized_end=956,
+  serialized_start=920,
+  serialized_end=991,
 )
 
 _FEATURESET = _descriptor.Descriptor(
@@ -367,8 +381,8 @@ _FEATURESET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=736,
-  serialized_end=956,
+  serialized_start=771,
+  serialized_end=991,
 )
 
 _ATTRIBUTES_ATTRIBUTEVALUE.fields_by_name['external_identifier'].message_type = ga4gh_dot_common__pb2._EXTERNALIDENTIFIER

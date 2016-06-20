@@ -77,7 +77,8 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
 
     def countFeaturesSearchInDb(
             self, referenceName=None, start=0, end=0,
-            parentId=None, featureTypes=None):
+            parentId=None, featureTypes=None,
+            name=None, geneSymbol=None):
         """
         Same parameters as searchFeaturesInDb,
         except without the pagetoken/size.
@@ -104,7 +105,8 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
     def searchFeaturesInDb(
             self, pageToken=0, pageSize=None,
             referenceName=None, start=0, end=0,
-            parentId=None, featureTypes=None):
+            parentId=None, featureTypes=None,
+            name=None, geneSymbol=None):
         """
         Perform a full features query in database.
 
@@ -412,7 +414,8 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
 
     def getFeatures(self, referenceName, start, end,
                     pageToken, pageSize,
-                    featureTypes=None, parentId=None):
+                    featureTypes=None, parentId=None,
+                    name=None, geneSymbol=None):
         """
         method passed to runSearchRequest to fulfill the request
         :param str referenceName: name of reference (ex: "chr1")
@@ -422,6 +425,8 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         :param pageSize: none or castable to int
         :param featureTypes: array of str
         :param parentId: none or featureID of parent
+        :param name: the name of the feature
+        :param geneSymbol: the symbol for the gene the features are on
         :return: yields a protocol.Feature at a time, together with
             the corresponding nextPageToken (which is null for the last
             feature served out).
@@ -437,12 +442,14 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
             featuresCount = dataSource.countFeaturesSearchInDb(
                 referenceName=referenceName,
                 start=start, end=end,
-                parentId=parentId, featureTypes=featureTypes)
+                parentId=parentId, featureTypes=featureTypes,
+                name=name, geneSymbol=geneSymbol)
             featuresReturned = dataSource.searchFeaturesInDb(
                 pageToken, pageSize,
                 referenceName=referenceName,
                 start=start, end=end,
-                parentId=parentId, featureTypes=featureTypes)
+                parentId=parentId, featureTypes=featureTypes,
+                name=name, geneSymbol=geneSymbol)
 
         # pagination logic: None if last feature was returned,
         # else 1 + row number being returned (starting at row 0).

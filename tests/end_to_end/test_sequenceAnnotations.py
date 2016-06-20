@@ -61,6 +61,43 @@ class TestSequenceAnnotations(unittest.TestCase):
             path, request, protocol.SearchFeatureSetsResponse)
         return responseData.feature_sets
 
+    def testSearchFeaturesByName(self):
+        ran = False
+        featureSets = self.getAllFeatureSets()
+        for featureSet in featureSets:
+            path = "features/search"
+            request = protocol.SearchFeaturesRequest()
+            request.feature_set_id = featureSet.id
+            request.name = "BAD NAME"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchFeaturesResponse)
+            self.assertEqual(0, len(responseData.features))
+            request.name = "ENSG00000012048.15"
+            for feature in responseData.features:
+                ran = True
+                self.assertEqual(feature.name, request.name)
+        self.assertTrue(ran)
+
+    def testSearchFeaturesByGeneSymbol(self):
+        ran = False
+        featureSets = self.getAllFeatureSets()
+        for featureSet in featureSets:
+            path = "features/search"
+            request = protocol.SearchFeaturesRequest()
+            request.feature_set_id = featureSet.id
+            request.gene_symbol = "BRCA1"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchFeaturesResponse)
+            self.assertEqual(0, len(responseData.features))
+            request.name = "ENSG00000012048.15"
+            while responseData.next_page_token:
+                innerResponseData = self.sendSearchRequest(
+                    path, request, protocol.SearchFeaturesResponse)
+                for feature in innerResponseData.features:
+                    ran = True
+                    self.assertEqual(feature.gene, request.name)
+        self.assertTrue(ran)
+
     def testSearchFeatures(self):
         featureSets = self.getAllFeatureSets()
         for featureSet in featureSets:
