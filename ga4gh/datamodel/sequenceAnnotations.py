@@ -76,7 +76,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         self.featureColumnTypes = [f[1] for f in _featureColumns]
 
     def countFeaturesSearchInDb(
-            self, referenceName=None, start=None, end=None,
+            self, referenceName=None, start=0, end=0,
             parentId=None, featureTypes=None,
             name=None, geneSymbol=None):
         """
@@ -133,7 +133,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
 
     def searchFeaturesInDb(
             self, pageToken=0, pageSize=None,
-            referenceName=None, start=None, end=None,
+            referenceName=None, start=0, end=0,
             parentId=None, featureTypes=None,
             name=None, geneSymbol=None):
         """
@@ -437,8 +437,8 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
             gaFeature.gene_symbol = pb.string(attributes['gene_name'][0])
         return gaFeature
 
-    def getFeatures(self, referenceName=None, start=None, end=None,
-                    pageToken=None, pageSize=None,
+    def getFeatures(self, referenceName, start, end,
+                    pageToken, pageSize,
                     featureTypes=None, parentId=None,
                     name=None, geneSymbol=None):
         """
