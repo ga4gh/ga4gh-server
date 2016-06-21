@@ -72,7 +72,9 @@ class TestSequenceAnnotations(unittest.TestCase):
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchFeaturesResponse)
             self.assertEqual(0, len(responseData.features))
-            request.name = "ENSG00000012048.15"
+            request.name = "exon:ENSTR0000507418.3:5"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
                 ran = True
                 self.assertEqual(feature.name, request.name)
@@ -85,17 +87,16 @@ class TestSequenceAnnotations(unittest.TestCase):
             path = "features/search"
             request = protocol.SearchFeaturesRequest()
             request.feature_set_id = featureSet.id
-            request.gene_symbol = "BRCA1"
+            request.gene_symbol = "BAD GENE SYMBOL"
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchFeaturesResponse)
             self.assertEqual(0, len(responseData.features))
-            request.name = "ENSG00000012048.15"
-            while responseData.next_page_token:
-                innerResponseData = self.sendSearchRequest(
-                    path, request, protocol.SearchFeaturesResponse)
-                for feature in innerResponseData.features:
-                    ran = True
-                    self.assertEqual(feature.gene, request.name)
+            request.gene_symbol = "DDX11L16"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchFeaturesResponse)
+            for feature in responseData.features:
+                ran = True
+                self.assertEqual(feature.gene_symbol, request.gene_symbol)
         self.assertTrue(ran)
 
     def testSearchFeatures(self):
@@ -130,7 +131,6 @@ class TestSequenceAnnotations(unittest.TestCase):
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
                 self.assertIn(feature.feature_type.term, request.feature_types)
-
             request = protocol.SearchFeaturesRequest()
             request.feature_set_id = featureSet.id
             request.start = 0

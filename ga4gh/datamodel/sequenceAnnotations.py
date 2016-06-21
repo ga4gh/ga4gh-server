@@ -76,35 +76,63 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         self.featureColumnTypes = [f[1] for f in _featureColumns]
 
     def countFeaturesSearchInDb(
-            self, referenceName=None, start=0, end=0,
+            self, referenceName=None, start=None, end=None,
             parentId=None, featureTypes=None,
             name=None, geneSymbol=None):
         """
         Same parameters as searchFeaturesInDb,
         except without the pagetoken/size.
         """
-        # TODO: Refactor out common bits of this and the below search query.
-        sql = ("SELECT COUNT(*) FROM FEATURE WHERE "
-               "reference_name = ? "
-               "AND end > ? "  # compare this to query start
-               "AND start < ? "  # and this to query end
-               )
-        # TODO: Optimize by refactoring out string concatenation
-        sql_args = (referenceName, start, end)
-        if parentId is not None:
-            sql += "AND parent_id = ? "
-            sql_args += (parentId,)
-        if featureTypes is not None and len(featureTypes) > 0:
-            sql += "AND type IN ("
-            sql += ", ".join(["?", ] * len(featureTypes))
-            sql += ") "
-            sql_args += tuple(featureTypes)
+        _, sql, sql_args = self.featuresQuery(
+            pageToken=None, pageSize=None,
+            referenceName=referenceName, start=start, end=end,
+            parentId=parentId, featureTypes=featureTypes,
+            name=name, geneSymbol=geneSymbol)
         query = self._dbconn.execute(sql, sql_args)
         return (query.fetchone())[0]
 
+    def featuresQuery(self, **kwargs):
+        """
+        Converts a dictionary of keyword arguments into a tuple
+        of SQL select statements, the list of SQL arguments, and
+        a SQL count statement.
+        """
+        # TODO: Optimize by refactoring out string concatenation
+        sql = ""
+        sql_rows = "SELECT * FROM FEATURE WHERE id > 1 "
+        sql_count = "SELECT COUNT(*) FROM FEATURE WHERE id > 1 "
+        sql_args = ()
+        if 'name' in kwargs and kwargs['name']:
+            sql += "AND name = ? "  # compare this to query start
+            sql_args += (kwargs.get('name'),)
+        if 'geneSymbol' in kwargs and kwargs['geneSymbol']:
+            sql += "AND gene_name = ? "  # compare this to query start
+            sql_args += (kwargs.get('geneSymbol'),)
+        if 'start' in kwargs and kwargs['start'] is not None:
+            sql += "AND end > ? "  # compare this to query start
+            sql_args += (kwargs.get('start'),)
+        if 'end' in kwargs and kwargs['end'] is not None:
+            sql += "AND start < ? "  # and this to query end
+            sql_args += (kwargs.get('end'),)
+        if 'referenceName' in kwargs and kwargs['referenceName']:
+            sql += "AND reference_name = ?"
+            sql_args += (kwargs.get('referenceName'),)
+        if 'parentId' in kwargs and kwargs['parentId']:
+            sql += "AND parent_id = ? "
+            sql_args += (kwargs['parentId'],)
+        if kwargs.get('featureTypes') is not None \
+                and len(kwargs['featureTypes']) > 0:
+            sql += "AND type IN ("
+            sql += ", ".join(["?", ] * len(kwargs.get('featureTypes')))
+            sql += ") "
+            sql_args += tuple(kwargs.get('featureTypes'))
+        sql_rows += sql
+        sql_count += sql
+        return sql_rows, sql_count, sql_args
+
     def searchFeaturesInDb(
             self, pageToken=0, pageSize=None,
-            referenceName=None, start=0, end=0,
+            referenceName=None, start=None, end=None,
             parentId=None, featureTypes=None,
             name=None, geneSymbol=None):
         """
@@ -116,25 +144,16 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         :param start: int position on reference to start search
         :param end: int position on reference to end search >= start
         :param parentId: string restrict search by id of parent node.
+        :param name: match features by name
+        :param geneSymbol: match features by gene symbol
         :return an array of dictionaries, representing the returned data.
         """
         # TODO: Refactor out common bits of this and the above count query.
-        sql = (
-            "SELECT * FROM FEATURE WHERE "
-            "reference_name = ? "
-            "AND end > ? "  # compare this to query start
-            "AND start < ? ")  # and this to query end
-        # TODO: Optimize by refactoring out string concatenation
-        sql_args = (referenceName, start, end)
-        if parentId is not None:
-            sql += "AND parent_id = ? "
-            sql_args += (parentId,)
-        if featureTypes is not None and len(featureTypes) > 0:
-            sql += "AND type IN ("
-            sql += ", ".join(["?", ] * len(featureTypes))
-            sql += ") "
-            sql_args += tuple(featureTypes)
-        sql += "ORDER BY reference_name, start, end ASC "
+        sql, _, sql_args = self.featuresQuery(
+            pageToken=pageToken, pageSize=pageSize,
+            referenceName=referenceName, start=start, end=end,
+            parentId=parentId, featureTypes=featureTypes,
+            name=name, geneSymbol=geneSymbol)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
         query = self._dbconn.execute(sql, sql_args)
         return sqliteBackend.sqliteRows2dicts(query.fetchall())
@@ -269,10 +288,10 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         feature.parent_id = ""  # TODO: Test with nonempty parentIDs?
         return feature
 
-    def getFeatures(
-            self, referenceName, start, end,
-            pageToken, pageSize,
-            featureTypes=[], parentId=None, numFeatures=10):
+    def getFeatures(self, referenceName=None, start=None, end=None,
+                    pageToken=None, pageSize=None,
+                    featureTypes=None, parentId=None,
+                    name=None, geneSymbol=None, numFeatures=10):
         """
         Returns a set number of simulated features.
 
@@ -283,6 +302,8 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         :param pageSize: None or int
         :param featureTypes: optional list of ontology terms to limit query
         :param parentId: optional parentId to limit query.
+        :param name: the name of the feature
+        :param geneSymbol: the symbol for the gene the features are on
         :param numFeatures: number of features to generate in the return.
             10 is a reasonable (if arbitrary) default.
         :return: Yields feature, nextPageToken pairs.
@@ -392,9 +413,10 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         else:
             gaFeature.parent_id = ""
         gaFeature.feature_set_id = self.getId()
-        gaFeature.reference_name = feature['reference_name']
-        gaFeature.start = int(feature['start'])
-        gaFeature.end = int(feature['end'])
+        gaFeature.reference_name = pb.string(feature.get('reference_name'))
+        gaFeature.start = pb.int(feature.get('start'))
+        gaFeature.end = pb.int(feature.get('end'))
+        gaFeature.name = pb.string(feature.get('name'))
         if feature.get('strand', '') == '-':
             gaFeature.strand = protocol.NEG_STRAND
         else:
@@ -410,10 +432,12 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         for key in attributes:
             for v in attributes[key]:
                 gaFeature.attributes.vals[key].values.add().string_value = v
+        if 'gene_name' in attributes and len(attributes['gene_name']) > 0:
+            gaFeature.gene_symbol = pb.string(attributes['gene_name'][0])
         return gaFeature
 
-    def getFeatures(self, referenceName, start, end,
-                    pageToken, pageSize,
+    def getFeatures(self, referenceName=None, start=None, end=None,
+                    pageToken=None, pageSize=None,
                     featureTypes=None, parentId=None,
                     name=None, geneSymbol=None):
         """
@@ -431,9 +455,6 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
             the corresponding nextPageToken (which is null for the last
             feature served out).
         """
-        # parse out the various query parameters from the request.
-        start = int(start)
-        end = int(end)
 
         with self._db as dataSource:
             # featuresCount is needed to ensure that once the
@@ -454,7 +475,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         # pagination logic: None if last feature was returned,
         # else 1 + row number being returned (starting at row 0).
         if pageToken:
-            nextPageToken = int(pageToken)
+            nextPageToken = pb.int(pageToken)
         else:
             nextPageToken = 0
         for featureRecord in featuresReturned:
