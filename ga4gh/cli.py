@@ -2106,9 +2106,9 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeOntology, ontology)
         self._confirmDelete("Ontology", ontology.getName(), func)
 
-    def addRnaQuantification(self):
+    def addRnaQuantificationSet(self):
         """
-        Adds an Rna Quantification into this repo
+        Adds an rnaQuantificationSet into this repo
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
@@ -2116,30 +2116,31 @@ class RepoManager(object):
             name = getNameFromPath(self._args.filePath)
         else:
             name = self._args.name
-        # TODO: is this the right top level to add?
-        rnaQuantification = rna_quantification.RNASeqResult(
+        rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
             dataset, name)
         referenceSetName = self._args.referenceSetName
         if referenceSetName is None:
             raise exceptions.RepoManagerException(
                 "A reference set name must be provided")
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
-        rnaQuantification.setReferenceSet(referenceSet)
-        rnaQuantification.populateFromFile(self._args.filePath)
-        self._updateRepo(self._repo.insertRnaQuantification, rnaQuantification)
+        rnaQuantificationSet.setReferenceSet(referenceSet)
+        rnaQuantificationSet.populateFromFile(self._args.filePath)
+        self._updateRepo(
+            self._repo.insertRnaQuantificationSet, rnaQuantificationSet)
 
-    def removeRnaQuantification(self):
+    def removeRnaQuantificationSet(self):
         """
-        Removes an RNA Quantification from this repo
+        Removes an rnaQuantificationSet from this repo
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        rnaQuant = dataset.getRnaQuantificationByName(
-            self._args.rnaQuantificationName)
+        rnaQuantSet = dataset.getRnaQuantificationSetByName(
+            self._args.rnaQuantificationSetName)
 
         def func():
-            self._updateRepo(self._repo.removeRnaQuantification, rnaQuant)
-        self._confirmDelete("RnaQuantification", rnaQuant.getLocalId(), func)
+            self._updateRepo(self._repo.removeRnaQuantification, rnaQuantSet)
+        self._confirmDelete(
+            "RnaQuantificationSet", rnaQuantSet.getLocalId(), func)
 
     #
     # Methods to simplify adding common arguments to the parser.
@@ -2418,29 +2419,30 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
-        objectType = "RnaQuantification"
-        addRnaQuantificationParser = addSubparser(
-            subparsers, "add-rnaquantification",
-            "Add an RNA quantification to the data repo")
-        addRnaQuantificationParser.set_defaults(runner="addRnaQuantification")
-        cls.addRepoArgument(addRnaQuantificationParser)
-        cls.addDatasetNameArgument(addRnaQuantificationParser)
+        objectType = "RnaQuantificationSet"
+        addRnaQuantificationSetParser = addSubparser(
+            subparsers, "add-rnaquantificationset",
+            "Add an RNA quantification set to the data repo")
+        addRnaQuantificationSetParser.set_defaults(
+            runner="addRnaQuantificationSet")
+        cls.addRepoArgument(addRnaQuantificationSetParser)
+        cls.addDatasetNameArgument(addRnaQuantificationSetParser)
         cls.addFilePathArgument(
-            addRnaQuantificationParser,
+            addRnaQuantificationSetParser,
             "The path to the converted SQLite database containing RNA data")
         cls.addReferenceSetNameOption(
-            addRnaQuantificationParser, objectType)
-        cls.addNameOption(addRnaQuantificationParser, objectType)
+            addRnaQuantificationSetParser, objectType)
+        cls.addNameOption(addRnaQuantificationSetParser, objectType)
 
-        removeRnaQuantificationParser = addSubparser(
-            subparsers, "remove-rnaquantification",
-            "Remove an RNA quantification from the repo")
-        removeRnaQuantificationParser.set_defaults(
-            runner="removeRnaQuantification")
-        cls.addRepoArgument(removeRnaQuantificationParser)
-        cls.addDatasetNameArgument(removeRnaQuantificationParser)
-        cls.addRnaQuantificationNameArgument(removeRnaQuantificationParser)
-        cls.addForceOption(removeRnaQuantificationParser)
+        removeRnaQuantificationSetParser = addSubparser(
+            subparsers, "remove-rnaquantificationset",
+            "Remove an RNA quantification set from the repo")
+        removeRnaQuantificationSetParser.set_defaults(
+            runner="removeRnaQuantificationSet")
+        cls.addRepoArgument(removeRnaQuantificationSetParser)
+        cls.addDatasetNameArgument(removeRnaQuantificationSetParser)
+        cls.addRnaQuantificationNameArgument(removeRnaQuantificationSetParser)
+        cls.addForceOption(removeRnaQuantificationSetParser)
 
         return parser
 

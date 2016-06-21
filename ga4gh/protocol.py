@@ -50,7 +50,7 @@ _valueListNameMap = {
     SearchFeaturesResponse: "features",  # noqa
     SearchRnaQuantificationsResponse: "rna_quantifications",  # noqa
     SearchExpressionLevelsResponse: "expression_levels",  # noqa
-    SearchQuantificationGroupsResponse: "quantification_groups",  # noqa
+    SearchFeatureGroupsResponse: "feature_groups",  # noqa
 }
 
 
@@ -276,6 +276,6 @@ postMethods = \
      ('/expressionlevels/search',
       SearchExpressionLevelsRequest,  # noqa
       SearchExpressionLevelsResponse),  # noqa
-     ('/quantificationgroups/search',
-      SearchQuantificationGroupsRequest,  # noqa
-      SearchQuantificationGroupsResponse)]  # noqa
+     ('/featuregroups/search',
+      SearchFeatureGroupsRequest,  # noqa
+      SearchFeatureGroupsResponse)]  # noqa

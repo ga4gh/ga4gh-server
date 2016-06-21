@@ -209,26 +209,26 @@ class Dataset(datamodel.DatamodelObject):
         """
         return self._description
 
-    def getNumRnaQuantifications(self):
+    def getNumRnaQuantificationSets(self):
         """
         Returns the number of rna quantifications in this dataset.
         """
         return len(self._rnaQuantificationIds)
 
-    def getRnaQuantifications(self):
+    def getRnaQuantificationSets(self):
         """
         Returns the list of RnaQuantifications in this dataset
         """
         return [self._rnaQuantificationIdMap[id_] for
                 id_ in self._rnaQuantificationIds]
 
-    def getRnaQuantificationByIndex(self, index):
+    def getRnaQuantificationSetByIndex(self, index):
         """
         Returns the rna quantification at the specified index in this dataset.
         """
         return self._rnaQuantificationIdMap[self._rnaQuantificationIds[index]]
 
-    def getRnaQuantificationByName(self, name):
+    def getRnaQuantificationSetByName(self, name):
         """
         Returns the RnaQuantification with the specified name, or raises
         an exception otherwise.
@@ -237,7 +237,7 @@ class Dataset(datamodel.DatamodelObject):
             raise exceptions.RnaQuantificationNameNotFoundException(name)
         return self._rnaQuantificationNameMap[name]
 
-    def getRnaQuantification(self, id_):
+    def getRnaQuantificationSet(self, id_):
         """
         Returns the RnaQuantification with the specified name, or raises
         a RnaQuantificationNotFoundException otherwise.

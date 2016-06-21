@@ -1042,9 +1042,9 @@ class SqlDataRepository(AbstractDataRepository):
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
 
-    def _createRnaQuantificationTable(self, cursor):
+    def _createRnaQuantificationSetTable(self, cursor):
         sql = """
-            CREATE TABLE RnaQuantification (
+            CREATE TABLE RnaQuantificationSet (
                 id TEXT NOT NULL PRIMARY KEY,
                 name TEXT NOT NULL,
                 datasetId TEXT NOT NULL,
@@ -1059,46 +1059,45 @@ class SqlDataRepository(AbstractDataRepository):
         """
         cursor.execute(sql)
 
-    def insertRnaQuantification(self, rnaQuantification):
+    def insertRnaQuantificationSet(self, rnaQuantificationSet):
         """
-        Inserts a the specified rnaQuantification into this repository.
+        Inserts a the specified rnaQuantificationSet into this repository.
         """
-        # TODO add support for info and sourceUri fields.
         sql = """
-            INSERT INTO RnaQuantification (
+            INSERT INTO RnaQuantificationSet (
                 id, datasetId, referenceSetId, name, dataUrl)
             VALUES (?, ?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
-            rnaQuantification.getId(),
-            rnaQuantification.getParentContainer().getId(),
-            rnaQuantification.getReferenceSet().getId(),
-            rnaQuantification.getLocalId(),
-            rnaQuantification.getDataUrl()))
+            rnaQuantificationSet.getId(),
+            rnaQuantificationSet.getParentContainer().getId(),
+            rnaQuantificationSet.getReferenceSet().getId(),
+            rnaQuantificationSet.getLocalId(),
+            rnaQuantificationSet.getDataUrl()))
 
-    def _readRnaQuantificationTable(self, cursor):
+    def _readRnaQuantificationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM RnaQuantification;")
+        cursor.execute("SELECT * FROM RnaQuantificationSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             referenceSet = self.getReferenceSet(row[b'referenceSetId'])
-            rnaQuantification = rna_quantification.RNASeqResult(
+            rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
                 dataset, row[b'name'])
-            rnaQuantification.setReferenceSet(referenceSet)
-            rnaQuantification.populateFromRow(row)
-            assert rnaQuantification.getId() == row[b'id']
-            dataset.addRnaQuantification(rnaQuantification)
+            rnaQuantificationSet.setReferenceSet(referenceSet)
+            rnaQuantificationSet.populateFromRow(row)
+            assert rnaQuantificationSet.getId() == row[b'id']
+            dataset.addRnaQuantificationSet(rnaQuantificationSet)
 
-    def removeRnaQuantification(self, rnaQuantification):
+    def removeRnaQuantificationSet(self, rnaQuantificationSet):
         """
-        Removes the specified rnaQuantification from this repository. This
+        Removes the specified rnaQuantificationSet from this repository. This
         performs a cascading removal of all items within this
-        rnaQuantification.
+        rnaQuantificationSet.
         """
-        sql = "DELETE FROM RnaQuantification WHERE id=?"
+        sql = "DELETE FROM RnaQuantificationSet WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (rnaQuantification.getId(),))
+        cursor.execute(sql, (rnaQuantificationSet.getId(),))
 
     def initialise(self):
         """

@@ -58,7 +58,7 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         protocolElement.units = self._units
         protocolElement.score = self._score
         protocolElement.conf_interval_low = self._confIntervalLow
-        protocolElement.conf_interval_low = self._confIntervalHigh
+        protocolElement.conf_interval_high = self._confIntervalHigh
         protocolElement.feature_group_ids.extend(self._featureGroupIds)
         return protocolElement
 
@@ -134,6 +134,7 @@ class AbstractRNAQuantificationSet(datamodel.DatamodelObject):
         super(AbstractRNAQuantificationSet, self).__init__(
             parentContainer, localId)
         self._name = localId
+        self._referenceSet = None
 
     def toProtocolElement(self):
         """
@@ -150,9 +151,47 @@ class RnaQuantificationSet(AbstractRNAQuantificationSet):
     Class representing a single RnaQuantificationSet in the GA4GH model.
     """
 
-    def __init__(self, parentContainer, record):
+    def __init__(self, parentContainer, name):
         super(RnaQuantificationSet, self).__init__(
-            parentContainer, record["name"])
+            parentContainer, name)
+        self._dbFilePath = None
+        self._db = None
+
+    def getReferenceSet(self):
+        """
+        Returns the reference set associated with this RnaQuantificationSet.
+        """
+        return self._referenceSet
+
+    def setReferenceSet(self, referenceSet):
+        """
+        Sets the reference set associated with this RnaQuantificationSet to the
+        specified value.
+        """
+        self._referenceSet = referenceSet
+
+    def populateFromFile(self, dataUrl):
+        """
+        Populates the instance variables of this RnaQuantificationSet from the
+        specified data URL.
+        """
+        self._dbFilePath = dataUrl
+        self._db = SqliteRNABackend(self._dbFilePath)
+
+    def populateFromRow(self, row):
+        """
+        Populates the instance variables of this RnaQuantificationSet from the
+        specified DB row.
+        """
+        self._dbFilePath = row[b'dataUrl']
+        self._db = SqliteRNABackend(self._dbFilePath)
+
+    def getDataUrl(self):
+        """
+        Returns the URL providing the data source for this
+        RnaQuantificationSet.
+        """
+        return self._dbFilePath
 
 
 class AbstractRNAQuantification(datamodel.DatamodelObject):
