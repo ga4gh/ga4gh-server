@@ -258,7 +258,7 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
         result = self.phenotypeAssocationSet._toGA4GH(sample_associations)
         self.assertEqual(result.__class__.__name__,
                          'FeaturePhenotypeAssociation')
-        fpa_dict = result.toJsonDict()
+        fpa_dict = protocol.toJsonDict(result)
         description = 'Association: genotype:[RET M918T missense mutation]' \
                       ' phenotype:[Papillary thyroid carcinoma with ' \
                       'sensitivity to therapy] environment:[sunitinib]' \

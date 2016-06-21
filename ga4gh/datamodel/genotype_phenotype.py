@@ -26,8 +26,7 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
         pas = protocol.PhenotypeAssociationSet()
         pas.name = self.getLocalId()
         pas.id = self.getId()
-        pas.datasetId = self.getParentContainer().getId()
-        pas.info = {}
+        pas.dataset_id = self.getParentContainer().getId()
         return pas
 
 
@@ -518,28 +517,24 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         f = protocol.Feature()
 
-        f.feature_type.MergeFrom(protocol.fromJson( json.dumps({
-            "term": feature[TYPE],
-            "id": feature['id'],
-            "sourceVersion": self._version,
-            "sourceName": self._getPrefix(
-                self._getPrefixURL(association['id']))
-        }),protocol.OntologyTerm))
-        # TODO connect with real feature Ids
+        term = protocol.OntologyTerm()
+        term.term = feature[TYPE]
+        term.id = feature['id']
+        term.source_version = self._version
+        term.source_name = self._getPrefix(
+            self._getPrefixURL(association['id']))
+        f.feature_type.MergeFrom(term)
+
+        #
         f.id = feature['id']
         f.reference_name = feature[LABEL]
-        vals = {}
-        vals = {key: [feature[key]] for key in feature}
+        f.attributes.MergeFrom(protocol.Attributes())
         for key in feature:
-            vals[key] = [{"string_value":feature[key]}]
-        print(json.dumps({"vals":  vals}),protocol.Attributes)
-        f.attributes = protocol.fromJson(json.dumps({"vals":  vals}),
-                                                    protocol.Attributes)
-        f.childIds = []
+            f.attributes.vals[key].values.add().string_value = feature[key]
 
         fpa = protocol.FeaturePhenotypeAssociation()
         fpa.id = association['id']
-        fpa.features = [f]
+        fpa.features.extend([f])
         msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' \
               'evidence:[{}] publications:[{}]'
         fpa.description = msg.format(
@@ -551,43 +546,50 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             )
         evidence = protocol.Evidence()
         phenotype = association['phenotype']
-        evidence.evidenceType = protocol.OntologyTerm.fromJsonDict({
-            "term": association['evidence_type'],
-            "id": phenotype['id'],
-            "sourceVersion": self._version,
-            "sourceName": self._getPrefix(
-                self._getPrefixURL(association['id']))
-        })
+
+
+        term = protocol.OntologyTerm()
+        term.term = association['evidence_type']
+        term.id = phenotype['id']
+        term.source_version = self._version
+        term.source_name = self._getPrefix(
+            self._getPrefixURL(association['id']))
+        evidence.evidence_type.MergeFrom(term)
+
+
         evidence.description = self._getIdentifier(association['evidence'])
         # TODO there is nowhere in evidence to place list of sources?
-        fpa.evidence = [evidence]
+        fpa.evidence.extend([evidence])
 
         # map environment (drug)
         environmentalContext = protocol.EnvironmentalContext()
         environment = association['environment']
         environmentalContext.id = environment['id']
         environmentalContext.description = association['environment_label']
-        envType = protocol.OntologyTerm.fromJsonDict({
-            "id": 'http://purl.obolibrary.org/obo/RO_0002606',
-            "term": environment['id'],
-            "sourceVersion": self._version,
-            "sourceName": self._getPrefix(
-                self._getPrefixURL(association['id']))
-        })
-        environmentalContext.environmentType = envType
-        fpa.environmentalContexts = [environmentalContext]
+
+        term = protocol.OntologyTerm()
+        term.term = environment['id']
+        term.id = 'http://purl.obolibrary.org/obo/RO_0002606'
+        term.source_version = self._version
+        term.source_name = self._getPrefix(
+            self._getPrefixURL(association['id']))
+        environmentalContext.environment_type.MergeFrom(term)
+
+        fpa.environmental_contexts.extend([environmentalContext])
 
         phenotypeInstance = protocol.PhenotypeInstance()
-        phenotypeInstance.type = protocol.OntologyTerm.fromJsonDict({
-            "term": phenotype[TYPE],
-            "id": phenotype['id'],
-            "sourceVersion": self._version,
-            "sourceName": self._getPrefix(
-                self._getPrefixURL(association['id']))
-        })
+        term = protocol.OntologyTerm()
+        term.term = phenotype[TYPE]
+        term.id = phenotype['id']
+        term.source_version = self._version
+        term.source_name = self._getPrefix(
+            self._getPrefixURL(association['id']))
+        phenotypeInstance.type.MergeFrom(term)
+
+
         phenotypeInstance.description = phenotype[LABEL]
         phenotypeInstance.id = phenotype['id']
-        fpa.phenotype = phenotypeInstance
-        fpa.phenotypeAssociationSetId = self.getId()
+        fpa.phenotype.MergeFrom(phenotypeInstance)
+        fpa.phenotype_association_set_id = self.getId()
 
         return fpa
