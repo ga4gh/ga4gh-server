@@ -17,7 +17,7 @@ class TestG2P(unittest.TestCase):
     def setUpClass(cls):
         config = {
             "DATA_SOURCE": paths.testDataRepo,
-            "DEBUG": False
+            "DEBUG": True
         }
         frontend.reset()
         frontend.configure(
@@ -47,9 +47,8 @@ class TestG2P(unittest.TestCase):
         request.dataset_id = datasetId
         response = self.sendPostRequest("phenotypeassociationsets/search",
                                         request)
-        response = protocol.SearchPhenotypeAssociationSetsResponse(
-            ).fromJsonString(response.data)
-        return response.phenotypeAssociationSets[0].id
+        response = protocol.fromJson(response.data,protocol.SearchPhenotypeAssociationSetsResponse)
+        return response.phenotype_association_sets[0].id
 
     def sendPostRequest(self, path, request):
         """
@@ -60,7 +59,7 @@ class TestG2P(unittest.TestCase):
             'Origin': self.exampleUrl,
         }
         return self.app.post(
-            path, headers=headers, data=request.toJsonString())
+            path, headers=headers, data=protocol.toJson(request))
 
     def sendJsonPostRequest(self, path, data):
         """
@@ -85,9 +84,9 @@ class TestG2P(unittest.TestCase):
             request,
             protocol.SearchPhenotypeAssociationSetsResponse)
         # there should be an array
-        self.assertIsNotNone(response.phenotypeAssociationSets)
+        self.assertIsNotNone(response.phenotype_association_sets)
         # there should be at least one entry
-        self.assertGreater(len(response.phenotypeAssociationSets), 0)
+        self.assertGreater(len(response.phenotype_association_sets), 0)
 
     def testGenotypesSearchByExternalIdentifier(self):
         request = protocol.SearchGenotypesRequest()
@@ -187,7 +186,7 @@ class TestG2P(unittest.TestCase):
 
     def testPhenotypesSearchOntologyTerm(self):
         request = protocol.SearchPhenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         ontologyterm = protocol.OntologyTerm()
         ontologyterm.id = "http://ohsu.edu/cgd/5c895709"
         request.type = ontologyterm
