@@ -20,6 +20,22 @@ Release Notes
 +++++++++++++
 
 *****
+0.3.1
+*****
+
+Alpha pre-release supporting major feature update. This release is not
+backwards compatible with previous releases due to several changes to 
+the schemas that were required to move to protocol buffers.
+
+- This release includes the code changes necessary for the migration 
+  to protocol buffers from Avro.
+
+- Client applications will need to be rebuilt to the new schemas and 
+  use the protobuf json serialization libraries to be compatible 
+  with this version of the server. 
+
+
+*****
 0.3.0
 *****
 
