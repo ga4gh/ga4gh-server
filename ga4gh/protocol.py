@@ -50,6 +50,9 @@ _valueListNameMap = {
     SearchFeatureSetsResponse: "feature_sets",  # noqa
     SearchFeaturesResponse: "features",  # noqa
     SearchPhenotypeAssociationSetsResponse: "phenotype_association_sets" ,  # noqa
+    SearchPhenotypesResponse: "phenotypes", # noqa
+    SearchGenotypesResponse: "genotypes", #noqa
+    SearchGenotypePhenotypeResponse: "associations", #noqa
 }
 
 
