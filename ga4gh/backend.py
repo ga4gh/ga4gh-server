@@ -722,17 +722,18 @@ class Backend(object):
         """
         # TODO make paging work using SPARQL?
         # determine offset for paging
-        if request.pageToken is not None:
-            offset, = _parsePageToken(request.pageToken, 1)
+        if request.page_token is not None:
+            offset, = _parsePageToken(request.page_token, 1)
         else:
             offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
-            request.phenotypeAssociationSetId)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
-            compoundId.phenotypeAssociationSetId)
+            compoundId.phenotype_association_set_id)
         annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.pageSize, offset)
+            request, request.page_size, offset)
+        phenotypes = [annotation.phenotype for annotation in annotationList]
         return self._protocolListGenerator(request,
                                            [annotationList[0].phenotype])
 
@@ -743,18 +744,18 @@ class Backend(object):
         """
         # TODO make paging work using SPARQL?
         # determine offset for paging
-        if request.pageToken is not None:
-            offset, = _parsePageToken(request.pageToken, 1)
+        if request.page_token is not None:
+            offset, = _parsePageToken(request.page_token, 1)
         else:
             offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
-            request.phenotypeAssociationSetId)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
-            compoundId.phenotypeAssociationSetId)
+            compoundId.phenotype_association_set_id)
 
         annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.pageSize, offset)
+            request, request.page_size, offset)
 
         genotypes = []
         for annotation in annotationList:
@@ -768,17 +769,17 @@ class Backend(object):
         """
         # TODO make paging work using SPARQL?
         # determine offset for paging
-        if request.pageToken is not None:
-            offset, = _parsePageToken(request.pageToken, 1)
+        if request.page_token is not None:
+            offset, = _parsePageToken(request.page_token, 1)
         else:
             offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
-            request.phenotypeAssociationSetId)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
-            compoundId.phenotypeAssociationSetId)
+            compoundId.phenotype_association_set_id)
         annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.pageSize, offset)
+            request, request.page_size, offset)
         return self._protocolListGenerator(request, annotationList)
 
     def callSetsGenerator(self, request):
@@ -1188,15 +1189,15 @@ class Backend(object):
             msg = "Error:One of evidence,phenotype or feature must be non-null"
             raise exceptions.BadRequestException(msg)
         # determine offset for paging
-        if request.pageToken is not None:
-            offset, = _parsePageToken(request.pageToken, 1)
+        if request.page_token is not None:
+            offset, = _parsePageToken(request.page_token, 1)
         else:
             offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
             request.phenotypeAssociationSetId)
-        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.pageSize, offset)
+            request, request.page_size, offset)
         return self._objectListGenerator(request, annotationList)
