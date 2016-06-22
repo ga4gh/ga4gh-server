@@ -17,7 +17,7 @@ class TestG2P(unittest.TestCase):
     def setUpClass(cls):
         config = {
             "DATA_SOURCE": paths.testDataRepo,
-            "DEBUG": True
+            "DEBUG": False
         }
         frontend.reset()
         frontend.configure(
@@ -90,14 +90,14 @@ class TestG2P(unittest.TestCase):
 
     def testGenotypesSearchByExternalIdentifier(self):
         request = protocol.SearchGenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup the external identifiers query
         extid = protocol.ExternalIdentifier()
         # http://www.ncbi.nlm.nih.gov/SNP/121908585
         extid.identifier = "121908585"
         extid.version = "*"
         extid.database = "dbSNP"
-        request.external_identifiers = [extid]
+        request.genotype.external_identifiers.extend([extid])
         response = self.sendSearchRequest(
             '/genotypes/search',
             request,
@@ -113,7 +113,7 @@ class TestG2P(unittest.TestCase):
         extid.identifier = "121908585"
         extid.version = "*"
         extid.database = "dbSNP"
-        request.external_identifiers = [extid]
+        request.genotype.external_identifiers.extend([extid])
         response = self.sendSearchRequest(
             '/genotypes/search',
             request,
@@ -122,7 +122,7 @@ class TestG2P(unittest.TestCase):
         genotypeId = response.genotypes[0].id
 
         request = protocol.SearchGenotypePhenotypeRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         request.genotypeIds = [genotypeId]
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
@@ -132,7 +132,7 @@ class TestG2P(unittest.TestCase):
 
     def testGenotypesSearchById(self):
         request = protocol.SearchGenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
         request.id = \
             "http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=965"
@@ -145,7 +145,7 @@ class TestG2P(unittest.TestCase):
 
     def testGenotypesSearchByReferenceName(self):
         request = protocol.SearchGenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
         request.reference_name = "RET M918T missense mutation"
         postUrl = '/genotypes/search'
@@ -159,7 +159,7 @@ class TestG2P(unittest.TestCase):
 
     def testGenotypesSearchByReferenceNameKIT(self):
         request = protocol.SearchGenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
         request.reference_name = \
             "KIT *wild"
@@ -174,9 +174,9 @@ class TestG2P(unittest.TestCase):
 
     def testPhenotypesSearchById(self):
         request = protocol.SearchPhenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
-        request.id = "http://ohsu.edu/cgd/30ebfd1a"
+        request.phenotype.id = "http://ohsu.edu/cgd/30ebfd1a"
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -187,9 +187,7 @@ class TestG2P(unittest.TestCase):
     def testPhenotypesSearchOntologyTerm(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        ontologyterm = protocol.OntologyTerm()
-        ontologyterm.id = "http://ohsu.edu/cgd/5c895709"
-        request.type = ontologyterm
+        request.phenotype.ontologyterm.id = "http://ohsu.edu/cgd/5c895709"
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -199,10 +197,10 @@ class TestG2P(unittest.TestCase):
 
     def testPhenotypeSearchQualifiersSensitivity(self):
         request = protocol.SearchPhenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         ontologyterm = protocol.OntologyTerm()
         ontologyterm.id = "http://ohsu.edu/cgd/sensitivity"
-        request.qualifiers = [ontologyterm]
+        request.phenotype.qualifiers.extend([ontologyterm])
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -212,10 +210,10 @@ class TestG2P(unittest.TestCase):
 
     def testPhenotypeSearchQualifiersSensitivityPATO_0000396(self):
         request = protocol.SearchPhenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         ontologyterm = protocol.OntologyTerm()
         ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0000396"
-        request.qualifiers = [ontologyterm]
+        request.phenotype.qualifiers.extend([ontologyterm])
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -225,12 +223,12 @@ class TestG2P(unittest.TestCase):
 
     def testPhenotypeSearchMultipleQualifiers(self):
         request = protocol.SearchPhenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         ontologyterm = protocol.OntologyTerm()
         ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0000396"
         ontologyterm2 = protocol.OntologyTerm()
         ontologyterm2.id = "http://purl.obolibrary.org/obo/PATO_0000396"
-        request.qualifiers = [ontologyterm, ontologyterm2]
+        request.phenotype.qualifiers.extend([ontologyterm, ontologyterm2])
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -241,8 +239,8 @@ class TestG2P(unittest.TestCase):
     @unittest.skip
     def testPhenotypesSearchDescription(self):
         request = protocol.SearchPhenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.description = \
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype.description = \
                 "Papillary thyroid carcinoma with sensitivity to therapy"  # noqa
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
@@ -253,8 +251,8 @@ class TestG2P(unittest.TestCase):
 
     def testPhenotypesSearchDescriptionWildcard(self):
         request = protocol.SearchPhenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.description = ".*sensitivity.*"
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype.description = ".*sensitivity.*"
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -264,11 +262,10 @@ class TestG2P(unittest.TestCase):
 
     def testPhenotypesSearchMultipleTerms(self):
         request = protocol.SearchPhenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.description = "Melanoma, NOS with response to therapy"
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype.description = "Melanoma, NOS with response to therapy"
         ontologyterm = protocol.OntologyTerm()
-        ontologyterm.id = "http://purl.obolibrary.org/obo/HP_0003581"
-        request.ageOfOnset = ontologyterm
+        request.ageOfOnset.id = "http://purl.obolibrary.org/obo/HP_0003581"
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -282,8 +279,8 @@ class TestG2P(unittest.TestCase):
         """
         # simple string regexp
         request = protocol.SearchGenotypePhenotypeRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.feature_ids = ["http://ohsu.edu/cgd/27d2169c"]
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.feature_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -295,10 +292,10 @@ class TestG2P(unittest.TestCase):
         Search for associations given an evidence
         """
         request = protocol.SearchGenotypePhenotypeRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         eq = protocol.EvidenceQuery()
         eq.description = "imatinib"
-        request.evidence = [eq]
+        request.evidence.extend([eq])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -310,8 +307,8 @@ class TestG2P(unittest.TestCase):
         Search for associations given a phenotype
         """
         request = protocol.SearchGenotypePhenotypeRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.phenotype_ids = ["http://ohsu.edu/cgd/25abbb09"]
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_ids.extend(["http://ohsu.edu/cgd/25abbb09"])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -320,8 +317,8 @@ class TestG2P(unittest.TestCase):
 
     def testNoFind(self):
         request = protocol.SearchGenotypePhenotypeRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.feature_ids = ["FOOBAR"]
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.feature_ids.extend(["FOOBAR"])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -333,8 +330,8 @@ class TestG2P(unittest.TestCase):
         Ensure evidence level is serialized in responses
         """
         request = protocol.SearchGenotypePhenotypeRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.feature_ids = ["http://ohsu.edu/cgd/27d2169c"]
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.feature_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -345,11 +342,11 @@ class TestG2P(unittest.TestCase):
 
     def testGenotypePhenotypeSearchEnsureEnvironment(self):
         request = protocol.SearchGenotypePhenotypeRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.feature_ids = ["http://ohsu.edu/cgd/27d2169c"]
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.feature_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
         eq = protocol.EvidenceQuery()
         eq.description = "imatinib"
-        request.evidence = [eq]
+        request.evidence.extend([eq])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -365,9 +362,9 @@ class TestG2P(unittest.TestCase):
         If page size is set to 1 only one association should be returned
         """
         request = protocol.SearchGenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
-        request.pageSize = 1
+        request.page_size = 1
         request.referenceName = \
             "KIT *wild"
         postUrl = '/genotypes/search'
@@ -383,9 +380,9 @@ class TestG2P(unittest.TestCase):
         If page size is not set to more than one association should be returned
         """
         request = protocol.SearchGenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
-        request.reference_name = \
+        request.genotype.reference_name = \
             "KIT *wild"
         postUrl = '/genotypes/search'
         response = self.sendSearchRequest(
@@ -400,10 +397,10 @@ class TestG2P(unittest.TestCase):
         Loop through all pages
         """
         request = protocol.SearchGenotypesRequest()
-        requet.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
         request.page_size = 1
-        request.reference_name = \
+        request.genotype.reference_name = \
             "KIT *wild"
         postUrl = '/genotypes/search'
         response = self.sendSearchRequest(
@@ -416,11 +413,11 @@ class TestG2P(unittest.TestCase):
         while response.nextPageToken:
             previous_id = response.genotypes[0].id
             request = protocol.SearchGenotypesRequest()
-            requet.phenotype_association_set_id =\
+            request.phenotype_association_set_id =\
                 self.getPhenotypeAssociationSetId()
             request.page_token = response.next_page_token
             request.page_size = 1
-            request.reference_name = "KIT *wild"
+            request.genotype.reference_name = "KIT *wild"
             response = self.sendSearchRequest(
                 postUrl,
                 request,
