@@ -97,7 +97,7 @@ class TestG2P(unittest.TestCase):
         extid.identifier = "121908585"
         extid.version = "*"
         extid.database = "dbSNP"
-        request.genotype.external_identifiers.extend([extid])
+        request.external_identifiers.extend([extid])
         response = self.sendSearchRequest(
             '/genotypes/search',
             request,
@@ -113,7 +113,7 @@ class TestG2P(unittest.TestCase):
         extid.identifier = "121908585"
         extid.version = "*"
         extid.database = "dbSNP"
-        request.genotype.external_identifiers.extend([extid])
+        request.external_identifiers.extend([extid])
         response = self.sendSearchRequest(
             '/genotypes/search',
             request,
@@ -365,7 +365,7 @@ class TestG2P(unittest.TestCase):
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
         request.page_size = 1
-        request.referenceName = \
+        request.reference_name = \
             "KIT *wild"
         postUrl = '/genotypes/search'
         response = self.sendSearchRequest(
@@ -382,7 +382,7 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchGenotypesRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
-        request.genotype.reference_name = \
+        request.reference_name = \
             "KIT *wild"
         postUrl = '/genotypes/search'
         response = self.sendSearchRequest(
@@ -400,7 +400,7 @@ class TestG2P(unittest.TestCase):
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
         request.page_size = 1
-        request.genotype.reference_name = \
+        request.reference_name = \
             "KIT *wild"
         postUrl = '/genotypes/search'
         response = self.sendSearchRequest(
@@ -417,7 +417,7 @@ class TestG2P(unittest.TestCase):
                 self.getPhenotypeAssociationSetId()
             request.page_token = response.next_page_token
             request.page_size = 1
-            request.genotype.reference_name = "KIT *wild"
+            request.reference_name = "KIT *wild"
             response = self.sendSearchRequest(
                 postUrl,
                 request,
