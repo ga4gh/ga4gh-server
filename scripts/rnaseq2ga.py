@@ -34,17 +34,16 @@ class RNASqliteStore(object):
         # annotationIds is a comma separated list
         cursor.execute('''CREATE TABLE RNAQUANTIFICATION (
                        id text,
-                       annotation_ids text,
+                       feature_set_ids text,
                        description text,
                        name text,
-                       read_group_id text)''')
+                       read_group_ids text,
+                       programs text)''')
         cursor.execute('''CREATE TABLE EXPRESSION (
                        id text,
                        name text,
-                       rna_quantification_id text,
-                       annotation_id text,
                        expression real,
-                       quantification_group_id text,
+                       feature_group_ids text,
                        is_normalized boolean,
                        raw_read_count real,
                        score real,
@@ -56,7 +55,7 @@ class RNASqliteStore(object):
         """
         Adds an RNAQuantification to the db.  Datafields is a tuple in the
         order:
-        id, annotation_ids, description, name, read_group_id
+        id, feature_set_ids, description, name, read_group_ids, programs
         """
         self._rnaValueList.append(datafields)
         if len(self._rnaValueList) >= self._batchSize:
@@ -64,7 +63,7 @@ class RNASqliteStore(object):
 
     def batchAddRNAQuantification(self):
         if len(self._rnaValueList) > 0:
-            sql = "INSERT INTO RNAQUANTIFICATION VALUES (?,?,?,?,?)"
+            sql = "INSERT INTO RNAQUANTIFICATION VALUES (?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._rnaValueList)
             self._dbConn.commit()
             self._rnaValueList = []
@@ -72,8 +71,8 @@ class RNASqliteStore(object):
     def addExpression(self, datafields):
         """
         Adds an Expression to the db.  Datafields is a tuple in the order:
-        id, name, rna_quantification_id, annotation_id, expression,
-        quantification_group_id, is_normalized, raw_read_count, score, units
+        id, name, expression, feature_group_ids, is_normalized, raw_read_count,
+        score, units, conf_low, conf_hi
         """
         self._expressionValueList.append(datafields)
         if len(self._expressionValueList) >= self._batchSize:
@@ -81,7 +80,7 @@ class RNASqliteStore(object):
 
     def batchAddExpression(self):
         if len(self._expressionValueList) > 0:
-            sql = "INSERT INTO EXPRESSION VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
+            sql = "INSERT INTO EXPRESSION VALUES (?,?,?,?,?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._expressionValueList)
             self._dbConn.commit()
             self._expressionValueList = []
@@ -91,8 +90,7 @@ class AbstractWriter(object):
     """
     Base class to use for the rna quantification writers
     """
-    def __init__(self, annotationId, rnaDB):
-        self._annotationId = annotationId
+    def __init__(self, rnaDB):
         self._db = rnaDB
         self._isNormalized = None
         self._units = 0  # EXPRESSION_UNIT_UNSPECIFIED
@@ -104,7 +102,7 @@ class AbstractWriter(object):
         self._confColLow = None
         self._confColHi = None
 
-    def writeExpression(self, analysisId, quantfile):
+    def writeExpression(self, quantfile):
         """
         Reads the quantification results file and adds entries to the
         specified database.
@@ -130,8 +128,7 @@ class AbstractWriter(object):
                 confidenceHi = float(fields[self._confColHi])
                 score = (confidenceLow + confidenceHi)/2
 
-            datafields = (expressionId, name, analysisId,
-                          self._annotationId, expressionLevel,
+            datafields = (expressionId, name, expressionLevel,
                           quantificationGroupId, isNormalized, rawCount,
                           str(score), units, confidenceLow, confidenceHi)
             self._db.addExpression(datafields)
@@ -148,8 +145,8 @@ class CufflinksWriter(AbstractWriter):
         gene_short_name    tss_id    locus    length    coverage    FPKM
         FPKM_conf_lo    FPKM_conf_hi    FPKM_status
     """
-    def __init__(self, annotationId, rnaDB):
-        super(CufflinksWriter, self).__init__(annotationId, rnaDB)
+    def __init__(self, rnaDB):
+        super(CufflinksWriter, self).__init__(rnaDB)
         self._isNormalized = True
         self._units = 1  # FPKM
         self._expressionLevelCol = 9
@@ -170,8 +167,8 @@ class RsemWriter(AbstractWriter):
     TPM FPKM    pme_expected_count  pme_TPM pme_FPKM    TPM_ci_lower_bound
     TPM_ci_upper_bound  FPKM_ci_lower_bound FPKM_ci_upper_bound
     """
-    def __init__(self, annotationId, rnaDB, featureType="gene"):
-        super(RsemWriter, self).__init__(annotationId, rnaDB)
+    def __init__(self, rnaDB, featureType="gene"):
+        super(RsemWriter, self).__init__(rnaDB)
         self._isNormalized = True
         self._units = 2  # TPM
         self._expressionLevelCol = 5
@@ -194,8 +191,8 @@ class KallistoWriter(AbstractWriter):
     kallisto header:
         target_id    length    eff_length    est_counts    tpm
     """
-    def __init__(self, annotationId, rnaDB):
-        super(KallistoWriter, self).__init__(annotationId, rnaDB)
+    def __init__(self, rnaDB):
+        super(KallistoWriter, self).__init__(rnaDB)
         self._isNormalized = True
         self._units = 2  # TPM
         self._expressionLevelCol = 4
@@ -206,12 +203,12 @@ class KallistoWriter(AbstractWriter):
 
 
 def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
-                     readGroupId=None):
+                     readGroupId="", programs=""):
     if readGroupId is None:
         readGroupId = ""
     for analysisId in analysisIds:
         datafields = (analysisId, annotationId, description, analysisId,
-                      readGroupId)
+                      readGroupId, programs)
         rnaDB.addRNAQuantification(datafields)
     rnaDB.batchAddRNAQuantification()
 
@@ -219,7 +216,7 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
 def writeExpressionTable(writer, data):
     for analysisId, quantfile in data:
         print("processing {}".format(analysisId))
-        writer.writeExpression(analysisId, quantfile)
+        writer.writeExpression(quantfile)
 
 
 def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv"):
@@ -229,7 +226,7 @@ def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv"):
 
     Quantifications are specified in a tab delimited control file with columns:
     rna_quant_id    filename        type    annotation_id   read_group_id
-    description
+    description    programs
 
     Supports the following quantification output type:
     Cufflinks, kallisto, RSEM
@@ -244,21 +241,22 @@ def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv"):
             rnaType = fields[2]
             annotationId = fields[3].strip()
             if rnaType == "cufflinks":
-                writer = CufflinksWriter(annotationId, rnaDB)
+                writer = CufflinksWriter(rnaDB)
             elif rnaType == "kallisto":
-                writer = KallistoWriter(annotationId, rnaDB)
+                writer = KallistoWriter(rnaDB)
             elif rnaType == "rsem":
-                writer = RsemWriter(annotationId, rnaDB)
+                writer = RsemWriter(rnaDB)
             else:
                 print("Unknown RNA file type: {}".format(rnaType))
                 sys.exit(1)
             rnaQuantId = fields[0].strip()
             quantFilename = os.path.join(dataFolder, fields[1].strip())
-            readGroupId = fields[4].strip()
+            readGroupIds = fields[4].strip()
             description = fields[5].strip()
+            programs = fields[6].strip()
             writeRnaseqTable(rnaDB, [rnaQuantId], description,
                              annotationId,
-                             readGroupId=readGroupId)
+                             readGroupId=readGroupIds, programs=programs)
             quantFile = open(quantFilename, "r")
             writeExpressionTable(writer, [(rnaQuantId, quantFile)])
 
