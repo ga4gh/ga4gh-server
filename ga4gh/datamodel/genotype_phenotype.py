@@ -245,7 +245,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         Formats the ontology term object for query
         """
         elementClause = None
-        if not isinstance(terms, list):
+        if terms.__class__.__name__ != 'RepeatedCompositeFieldContainer':
             terms = [terms]
         elements = []
         for term in terms:
@@ -333,7 +333,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 """
 
         filters = []
-
         if issubclass(request.__class__,
                       protocol.SearchGenotypePhenotypeRequest):
             filters += self._filterSearchGenotypePhenotypeRequest(request)
@@ -427,7 +426,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 request.type, 'phenotype')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
-        if hasattr(request.qualifiers, 'id') and request.qualifiers.id:
+        if len(request.qualifiers) > 0:
             ontolgytermsClause = self._formatOntologyTermObject(
                 request.qualifiers, 'phenotype_quality')
             if ontolgytermsClause:
