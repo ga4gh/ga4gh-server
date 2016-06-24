@@ -47,7 +47,8 @@ class TestG2P(unittest.TestCase):
         request.dataset_id = datasetId
         response = self.sendPostRequest("phenotypeassociationsets/search",
                                         request)
-        response = protocol.fromJson(response.data,protocol.SearchPhenotypeAssociationSetsResponse)
+        response = protocol.fromJson(
+            response.data,protocol.SearchPhenotypeAssociationSetsResponse)
         return response.phenotype_association_sets[0].id
 
     def sendPostRequest(self, path, request):
@@ -118,12 +119,12 @@ class TestG2P(unittest.TestCase):
             '/genotypes/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.genotypes))
-        genotypeId = response.genotypes[0].id
+        self.assertEqual(1, len(response.associations))
+        genotypeId = response.associations[0].id
 
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.genotypeIds = [genotypeId]
+        request.genotype_ids = [genotypeId]
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -176,7 +177,7 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchPhenotypesRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         # setup phenotype query
-        request.phenotype.id = "http://ohsu.edu/cgd/30ebfd1a"
+        request.id = "http://ohsu.edu/cgd/30ebfd1a"
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -187,7 +188,7 @@ class TestG2P(unittest.TestCase):
     def testPhenotypesSearchOntologyTerm(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.phenotype.ontologyterm.id = "http://ohsu.edu/cgd/5c895709"
+        request.type.id = "http://ohsu.edu/cgd/5c895709"
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -200,7 +201,7 @@ class TestG2P(unittest.TestCase):
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         ontologyterm = protocol.OntologyTerm()
         ontologyterm.id = "http://ohsu.edu/cgd/sensitivity"
-        request.phenotype.qualifiers.extend([ontologyterm])
+        request.qualifiers.extend([ontologyterm])
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -213,7 +214,7 @@ class TestG2P(unittest.TestCase):
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
         ontologyterm = protocol.OntologyTerm()
         ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0000396"
-        request.phenotype.qualifiers.extend([ontologyterm])
+        request.qualifiers.extend([ontologyterm])
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -228,7 +229,7 @@ class TestG2P(unittest.TestCase):
         ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0000396"
         ontologyterm2 = protocol.OntologyTerm()
         ontologyterm2.id = "http://purl.obolibrary.org/obo/PATO_0000396"
-        request.phenotype.qualifiers.extend([ontologyterm, ontologyterm2])
+        request.qualifiers.extend([ontologyterm, ontologyterm2])
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -240,7 +241,7 @@ class TestG2P(unittest.TestCase):
     def testPhenotypesSearchDescription(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.phenotype.description = \
+        request.description = \
                 "Papillary thyroid carcinoma with sensitivity to therapy"  # noqa
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
@@ -252,7 +253,7 @@ class TestG2P(unittest.TestCase):
     def testPhenotypesSearchDescriptionWildcard(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.phenotype.description = ".*sensitivity.*"
+        request.description = ".*sensitivity.*"
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,
@@ -263,7 +264,7 @@ class TestG2P(unittest.TestCase):
     def testPhenotypesSearchMultipleTerms(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.phenotype.description = "Melanoma, NOS with response to therapy"
+        request.description = "Melanoma, NOS with response to therapy"
         ontologyterm = protocol.OntologyTerm()
         request.ageOfOnset.id = "http://purl.obolibrary.org/obo/HP_0003581"
         postUrl = '/phenotypes/search'

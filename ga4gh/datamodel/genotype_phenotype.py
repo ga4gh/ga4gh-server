@@ -133,7 +133,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         # create GA4GH objects
         associations = [self._toGA4GH(assoc) for
                         assoc in associationList]
-
         return associations
 
     def _extractAssociationsDetails(self, associations):
@@ -203,7 +202,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         elementClause = None
         elements = []
         if not issubclass(element.__class__, dict):
-            element = element.toJsonDict()
+            element = protocol.toJsonDict(element)
         if element['externalIdentifiers']:
             for _id in element['externalIdentifiers']:
                 elements.append(self._formatExternalIdentifier(_id,
@@ -251,7 +250,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         elements = []
         for term in terms:
             if not issubclass(term.__class__, dict):
-                term = term.toJsonDict()
+                term = protocol.toJsonDict(term)
             if term['id']:
                 elements.append('?{} = <{}> '.format(
                     element_type, term['id']))
@@ -369,8 +368,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
     def _filterSearchGenotypePhenotypeRequest(self, request):
         filters = []
-        if request.genotypeIds:
-            featureClause = self._formatIds(request.genotypeIds,
+        if request.genotype_ids:
+            featureClause = self._formatIds(request.genotype_ids,
                                             'feature')
             if featureClause:
                 filters.append(featureClause)
@@ -380,8 +379,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             if evidenceClause:
                 filters.append(evidenceClause)
 
-        if request.phenotypeIds:
-            phenotypeClause = self._formatIds(request.phenotypeIds,
+        if request.phenotype_ids:
+            phenotypeClause = self._formatIds(request.phenotype_ids,
                                               'phenotype')
             filters.append(phenotypeClause)
 
@@ -395,9 +394,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         if request.id:
             filters.append("?feature = <{}>".format(request.id))
 
-        if request.referenceName:
+        if request.reference_name:
             filters.append('regex(?feature_label, "{}")'
-                           .format(request.referenceName))
+                           .format(request.reference_name))
 
         featureClause = self._formatExternalIdentifiers(request, 'external_id')
         if featureClause:
@@ -423,19 +422,19 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                            .format(request.description))
         # OntologyTerms
         # TODO: refactor this repetitive code
-        if request.type:
+        if hasattr(request.type, 'id') and request.type.id:
             ontolgytermsClause = self._formatOntologyTermObject(
                 request.type, 'phenotype')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
-        if request.qualifiers:
+        if hasattr(request.qualifiers, 'id') and request.qualifiers.id:
             ontolgytermsClause = self._formatOntologyTermObject(
                 request.qualifiers, 'phenotype_quality')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
-        if request.ageOfOnset:
+        if hasattr(request.age_of_on_set, 'id') and request.age_of_on_set.id:
             ontolgytermsClause = self._formatOntologyTermObject(
-                request.ageOfOnset, 'phenotype_quality')
+                request.age_of_on_set, 'phenotype_quality')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
         return filters
