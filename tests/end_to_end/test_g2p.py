@@ -281,7 +281,7 @@ class TestG2P(unittest.TestCase):
         # simple string regexp
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.feature_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
+        request.genotype_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,

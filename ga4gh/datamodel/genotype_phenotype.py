@@ -265,7 +265,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         Formats the external identifiers for query
         """
         elementClause = None
-        if isinstance(element, list):
+        if element.__class__.__name__ == 'RepeatedScalarFieldContainer':
             elements = []
             for _id in element:
                 elements.append('?{} = <{}> '.format(
