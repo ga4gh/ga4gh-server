@@ -277,10 +277,10 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         elementClause = None
         filters = []
         for evidence in elements:
-            if evidence['description']:
+            if evidence.description:
                 elementClause = 'regex(?{}, "{}")'.format(
-                    'environment_label', evidence['description'])
-            if evidence['externalIdentifiers']:
+                    'environment_label', evidence.description)
+            if hasattr(evidence, 'externalIdentifiers') and evidence.externalIdentifiers:
                 for externalIdentifier in evidence['externalIdentifiers']:
                     exid_clause = self._formatExternalIdentifier(
                         externalIdentifier, 'environment')

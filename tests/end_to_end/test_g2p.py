@@ -319,7 +319,7 @@ class TestG2P(unittest.TestCase):
     def testNoFind(self):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.feature_ids.extend(["FOOBAR"])
+        request.genotype_ids.extend(["FOOBAR"])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -332,7 +332,7 @@ class TestG2P(unittest.TestCase):
         """
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.feature_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
+        request.genotype_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -344,7 +344,7 @@ class TestG2P(unittest.TestCase):
     def testGenotypePhenotypeSearchEnsureEnvironment(self):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.feature_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
+        request.genotype_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
         eq = protocol.EvidenceQuery()
         eq.description = "imatinib"
         request.evidence.extend([eq])
@@ -374,7 +374,7 @@ class TestG2P(unittest.TestCase):
             request,
             protocol.SearchGenotypesResponse)
         self.assertEqual(1, len(response.genotypes))
-        self.assertIsNotNone(response.nextPageToken)
+        self.assertIsNotNone(response.next_page_token)
 
     def testGenotypeSearchFeaturePagingMore(self):
         """
@@ -391,7 +391,7 @@ class TestG2P(unittest.TestCase):
             request,
             protocol.SearchGenotypesResponse)
         self.assertGreater(len(response.genotypes), 1)
-        self.assertIsNone(response.nextPageToken)
+        self.assertEqual(response.next_page_token, '')
 
     def testGenotypeSearchFeaturePagingAll(self):
         """
@@ -411,7 +411,7 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(1, len(response.genotypes))
         self.assertIsNotNone(response.next_page_token)
         pageCount = 1
-        while response.nextPageToken:
+        while response.next_page_token:
             previous_id = response.genotypes[0].id
             request = protocol.SearchGenotypesRequest()
             request.phenotype_association_set_id =\
