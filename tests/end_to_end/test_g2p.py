@@ -118,17 +118,18 @@ class TestG2P(unittest.TestCase):
         response = self.sendSearchRequest(
             '/genotypes/search',
             request,
-            protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.associations))
-        genotypeId = response.associations[0].id
+            protocol.SearchGenotypesResponse)
+        self.assertEqual(1, len(response.genotypes))
+        genotypeId = response.genotypes[0].id
 
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.genotype_ids = [genotypeId]
+        request.genotype_ids.append(genotypeId)
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
+        self.assertEqual(1, len(response.associations))
         self.assertEqual(1, len(response.associations[0].features))
 
     def testGenotypesSearchById(self):
