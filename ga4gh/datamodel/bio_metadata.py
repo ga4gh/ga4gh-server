@@ -30,6 +30,7 @@ class BioSample(datamodel.DatamodelObject):
         self._info = {}
         self._name = localId
         self._individualId = None
+        self._datasetId = parentContainer.getId()
 
     def toProtocolElement(self):
         disease = None
@@ -37,6 +38,7 @@ class BioSample(datamodel.DatamodelObject):
             disease = protocol.fromJson(
                 json.dumps(self.getDisease()), protocol.OntologyTerm)
         bioSample = protocol.BioSample(
+            dataset_id=self._datasetId,
             created=self.getCreated(),
             updated=self.getUpdated(),
             description=self.getDescription(),
@@ -119,6 +121,7 @@ class Individual(datamodel.DatamodelObject):
         self._sex = None
         self._info = {}
         self._name = localId
+        self._datasetId = parentContainer.getId()
 
     def toProtocolElement(self):
         species = None
@@ -130,6 +133,7 @@ class Individual(datamodel.DatamodelObject):
             sex = protocol.fromJson(
                 json.dumps(self.getSex()), protocol.OntologyTerm)
         gaIndividual = protocol.Individual(
+            dataset_id=self._datasetId,
             created=self.getCreated(),
             updated=self.getUpdated(),
             description=self.getDescription(),
@@ -140,7 +144,6 @@ class Individual(datamodel.DatamodelObject):
         for key in self.getInfo():
             for value in self.getInfo()[key]['values']:
                 gaIndividual.info[key].values.add().string_value = value
-        print(gaIndividual)
         return gaIndividual
 
     def populateFromRow(self, row):
