@@ -62,8 +62,8 @@ Download and unpack the example data:
 
 .. code-block:: bash
 
-  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.2.tar
-  $ tar -xf ga4gh-example-data-v4.2.tar
+  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.3.tar
+  $ tar -xf ga4gh-example-data-v4.3.tar
 
 Create the WSGI file at ``/srv/ga4gh/application.wsgi`` and write the following
 contents:
@@ -79,7 +79,7 @@ following contents:
 
 .. code-block:: python
 
-    DATA_SOURCE = "/srv/ga4gh/ga4gh-example-data"
+    DATA_SOURCE = "/srv/ga4gh/ga4gh-example-data/repo.db"
 
 (Many more configuration options are available --- see the :ref:`configuration`
 section for a detailed discussion on the server configuration and input data.)

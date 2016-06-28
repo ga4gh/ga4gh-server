@@ -13,8 +13,8 @@ library are defined by the
 
 .. warning:: This client API should be considered early alpha quality,
           and may change in arbitrary ways. In particular, the current
-          camelCase convention for identifiers may change to snake_case
-          in future.
+          camelCase convention for identifiers is scheduled to change
+          in the near future.
 
 .. todo:: A full description of this API and links to a tutorial on how
        to use it, as well as a quickstart showing the basic usage.
@@ -23,68 +23,7 @@ library are defined by the
 Types
 -----
 
-.. todo:: A short overview of the types and links to the high-level
-        docs.
-
-++++++++++
-References
-++++++++++
-
-.. autoclass:: ga4gh.protocol.ReferenceSet
-    :members:
-
-.. autoclass:: ga4gh.protocol.Reference
-    :members:
-
-
-++++++++
-Datasets
-++++++++
-
-.. autoclass:: ga4gh.protocol.Dataset
-    :members:
-
-++++++++
-Variants
-++++++++
-
-.. autoclass:: ga4gh.protocol.VariantSet
-    :members:
-
-.. autoclass:: ga4gh.protocol.CallSet
-    :members:
-
-.. autoclass:: ga4gh.protocol.Variant
-    :members:
-
-++++++++++++++++++++++++
-Variant Annotation
-++++++++++++++++++++++++
-
-.. autoclass:: ga4gh.protocol.VariantAnnotationSet
-    :members:
-
-.. autoclass:: ga4gh.protocol.VariantAnnotation
-    :members:
-
-.. autoclass:: ga4gh.protocol.TranscriptEffect
-    :members:
-
-+++++
-Reads
-+++++
-
-.. autoclass:: ga4gh.protocol.ReadGroupSet
-    :members:
-
-.. autoclass:: ga4gh.protocol.ReadGroup
-    :members:
-
-.. autoclass:: ga4gh.protocol.ReadAlignment
-    :members:
-
-.. autoclass:: ga4gh.protocol.Position
-    :members:
+.. todo:: Add links to the upstream documentation for the GA4GH types.
 
 
 +++++++++++

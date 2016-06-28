@@ -25,6 +25,7 @@ before_script:
   - mkdir $HOME/.python-eggs
   - chmod og-w $HOME/.python-eggs
   - pip install -r dev-requirements.txt
+  - python scripts/build_test_data.py 
 
 
 # run_tests.py runs everything under the script: tag so only put commands
