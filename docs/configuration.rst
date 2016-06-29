@@ -208,7 +208,7 @@ a JSON document following the GA4GH JSON schema.
 
 .. code-block:: bash
 
-    $ ga4gh_repo add-individual registry.db dataset1 HG00096 '{"individualId": "abc"}'
+    $ ga4gh_repo add-individual registry.db dataset1 HG00096 '{"description": "A description"}'
 
 
 ++++++++++++++++

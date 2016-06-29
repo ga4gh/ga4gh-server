@@ -25,17 +25,6 @@ Types
 
 .. todo:: Add links to the upstream documentation for the GA4GH types.
 
-
-+++++++++++
-BioMetadata
-+++++++++++
-
-.. autoclass:: ga4gh.protocol.BioSample
-    :members:
-
-.. autoclass:: ga4gh.protocol.Individual
-    :members:
-
 ----------
 Client API
 ----------
