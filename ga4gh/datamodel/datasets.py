@@ -306,6 +306,7 @@ class SimulatedDataset(Dataset):
             localId = 'simRqs{}'.format(i)
             rnaQuantSet = rnaQuantification.SimulatedRnaQuantSet(
                 self, localId)
+            rnaQuantSet.setReferenceSet(referenceSet)
             self.addRnaQuantificationSet(rnaQuantSet)
         # FeatureGroups
         for i in range(numFeatureGroups):

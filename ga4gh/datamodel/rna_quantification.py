@@ -172,6 +172,19 @@ class AbstractRNAQuantificationSet(datamodel.DatamodelObject):
         self._name = localId
         self._referenceSet = None
 
+    def getReferenceSet(self):
+        """
+        Returns the reference set associated with this RnaQuantificationSet.
+        """
+        return self._referenceSet
+
+    def setReferenceSet(self, referenceSet):
+        """
+        Sets the reference set associated with this RnaQuantificationSet to the
+        specified value.
+        """
+        self._referenceSet = referenceSet
+
     def toProtocolElement(self):
         """
         Converts this rnaQuant into its GA4GH protocol equivalent.
@@ -196,19 +209,6 @@ class RnaQuantificationSet(AbstractRNAQuantificationSet):
         self._db = None
         self._rnaQuantIdMap = {}
         self._rnaQuantIds = []
-
-    def getReferenceSet(self):
-        """
-        Returns the reference set associated with this RnaQuantificationSet.
-        """
-        return self._referenceSet
-
-    def setReferenceSet(self, referenceSet):
-        """
-        Sets the reference set associated with this RnaQuantificationSet to the
-        specified value.
-        """
-        self._referenceSet = referenceSet
 
     def populateFromFile(self, dataUrl):
         """
