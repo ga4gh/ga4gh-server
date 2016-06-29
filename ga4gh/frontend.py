@@ -176,12 +176,12 @@ class ServerStatus(object):
                 variantSet.getVariantAnnotationSets())
         return variantAnnotationSets
 
-    def getRnaQuantifications(self, datasetId):
+    def getRnaQuantificationSets(self, datasetId):
         """
-        Returns the list of RnaQuantifications for this server.
+        Returns the list of RnaQuantificationSets for this server.
         """
         return app.backend.getDataRepository().getDataset(
-            datasetId).getRnaQuantifications()
+            datasetId).getRnaQuantificationSets()
 
 
 def reset():
