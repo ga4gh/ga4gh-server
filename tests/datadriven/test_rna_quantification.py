@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import unittest
 
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel as datamodel
@@ -19,11 +20,16 @@ import tests.paths as paths
 _datasetName = "ds"
 
 
+_rnaQuantSetTestData = {
+    "name": "ENCFF305LZB"
+}
+
+
 _rnaQuantTestData = {
-    "annotation_ids": ["Gencodev16"],
+    "feature_set_ids": ["Gencodev16"],
     "description": "RNAseq data from ENCODE evaluation",
     "name": "ENCFF305LZB",
-    "read_group_id": ""
+    "read_group_ids": ["test_reads"]
 }
 
 
@@ -36,7 +42,7 @@ _expressionTestData = {
     "feature_id": "ENSG00000076984.13",
     "is_normalized": True,
     "raw_read_count": 4317.0,
-    "score": 23.34315,
+    "score": 24.35,
     "units": 2,
     "conf_interval_low": 24.1,
     "conf_interval_hi": 24.6,
@@ -53,18 +59,29 @@ _featureGroupTestData = {
 }
 
 
-def _getRnaQuantCompoundId(dataSetName, rnaQuant):
-    splits = [dataSetName, rnaQuant]
+def _buildCompoundId(splits):
+    """
+    Returns a compoundId built from an ordered list of localIds.
+    """
     joined = datamodel.CompoundId.join(splits)
     obfuscated = datamodel.CompoundId.obfuscate(joined)
     return obfuscated
 
 
-def _getExpressionCompoundId(dataSetName, rnaQuant, expressionId):
-    splits = [dataSetName, rnaQuant, expressionId]
-    joined = datamodel.CompoundId.join(splits)
-    obfuscated = datamodel.CompoundId.obfuscate(joined)
-    return obfuscated
+def _getRnaQuantCompoundId(dataSetName, quantSetName, rnaQuant):
+    splits = [dataSetName, quantSetName, rnaQuant]
+    return _buildCompoundId(splits)
+
+
+def _getExpressionCompoundId(
+        dataSetName, quantSetName, rnaQuant, expressionId):
+    splits = [dataSetName, quantSetName, rnaQuant, expressionId]
+    return _buildCompoundId(splits)
+
+
+def _getFeatureCompoundId(dataSetName, featureGroupId):
+    splits = [dataSetName, featureGroupId]
+    return _buildCompoundId(splits)
 
 
 def testRnaQuantification():
@@ -90,46 +107,50 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             rnaQuantificationId, baseDir)
 
     def getDataModelInstance(self, localId, dataPath):
-        rnaQuant = rna_quantification.RNASeqResult(
+        rnaQuantSet = rna_quantification.RnaQuantificationSet(
             self._dataset, localId)
-        rnaQuant.setReferenceSet(self._referenceSet)
-        rnaQuant.populateFromFile(dataPath)
-        return rnaQuant
+        rnaQuantSet.setReferenceSet(self._referenceSet)
+        rnaQuantSet.populateFromFile(dataPath)
+        return rnaQuantSet
 
     def getProtocolClass(self):
-        return protocol.RnaQuantification
+        return protocol.RnaQuantificationSet
 
     def testRnaQuantificationObject(self):
-        gaRnaQuant = self._gaObject.toProtocolElement()
-        idString = _getRnaQuantCompoundId(
+        rnaQuant = self._gaObject.getRnaQuantificationByIndex(0)
+        gaRnaQuant = rnaQuant.toProtocolElement()
+        idString = _buildCompoundId([
             _datasetName,
-            _rnaQuantTestData["name"])
+            _rnaQuantSetTestData["name"],
+            _rnaQuantTestData["name"]])
         compoundId = datamodel.RnaQuantificationCompoundId.parse(idString)
         self.assertEqual(gaRnaQuant.id, str(compoundId))
         self.assertEqual(
-            gaRnaQuant.annotation_ids, _rnaQuantTestData["annotation_ids"])
+            gaRnaQuant.feature_set_ids, _rnaQuantTestData["feature_set_ids"])
         self.assertEqual(
             gaRnaQuant.description, _rnaQuantTestData["description"])
         self.assertEqual(gaRnaQuant.name, _rnaQuantTestData["name"])
         self.assertEqual(
-            gaRnaQuant.read_group_id, _rnaQuantTestData["read_group_id"])
+            gaRnaQuant.read_group_ids, _rnaQuantTestData["read_group_ids"])
 
     def testGetExpressionLevelById(self):
-        rnaQuantification = self._gaObject
-        idString = _getExpressionCompoundId(
+        rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
+        idString = _buildCompoundId([
             _datasetName,
+            _rnaQuantSetTestData["name"],
             _rnaQuantTestData["name"],
-            _expressionTestData["name"])
+            _expressionTestData["name"]])
         compoundId = datamodel.ExpressionLevelCompoundId.parse(idString)
         gaExpression = rnaQuantification.getExpressionLevel(compoundId)
         self.assertExpressionEqual(gaExpression, _expressionTestData)
 
     def assertExpressionEqual(self, gaExpressionObj, testData):
         gaExpression = gaExpressionObj.toProtocolElement()
-        idString = _getExpressionCompoundId(
+        idString = _buildCompoundId([
             _datasetName,
+            _rnaQuantSetTestData["name"],
             _rnaQuantTestData["name"],
-            _expressionTestData["name"])
+            _expressionTestData["name"]])
         compoundId = datamodel.ExpressionLevelCompoundId.parse(idString)
         self.assertEqual(gaExpression.id, str(compoundId))
         self.assertEqual(gaExpression.name, testData["name"])
@@ -154,7 +175,7 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             gaExpression.conf_interval_high, testData["conf_interval_hi"])
 
     def testSearchExpressionLevels(self):
-        rnaQuantification = self._gaObject
+        rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
         rnaQuantID = rnaQuantification.getLocalId()
         expressionLevels = rnaQuantification.getExpressionLevels(rnaQuantID)
         self.assertEqual(
@@ -166,24 +187,24 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             _expressionTestData["num_entries_over_threshold"],
             len(overThreshold))
 
+    @unittest.skip("FeatureGroup still being worked on")
     def testGetFeatureGroupById(self):
-        rnaQuantification = self._gaObject
-        idString = _getExpressionCompoundId(
+        rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
+        idString = _buildCompoundId([
             _datasetName,
-            _rnaQuantTestData["name"],
-            _featureGroupTestData["name"])
+            _featureGroupTestData["name"]])
         compoundId = datamodel.FeatureGroupCompoundId.parse(idString)
         gaFeatureGroup = rnaQuantification.getFeatureGroup(
             compoundId)
         self.assertFeatureGroupEqual(
             gaFeatureGroup, _featureGroupTestData)
 
+    @unittest.skip("FeatureGroup still being worked on")
     def assertFeatureGroupEqual(self, gaFeatureGroupObj, testData):
         gaFeatureGroup = gaFeatureGroupObj.toProtocolElement()
-        idString = _getExpressionCompoundId(
+        idString = _buildCompoundId([
             _datasetName,
-            _rnaQuantTestData["name"],
-            _featureGroupTestData["name"])
+            _featureGroupTestData["name"]])
         compoundId = datamodel.FeatureGroupCompoundId.parse(idString)
         self.assertEqual(gaFeatureGroup.id, str(compoundId))
         self.assertEqual(gaFeatureGroup.name, testData["name"])
@@ -191,8 +212,9 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(gaFeatureGroup.name, testData["name"])
         self.assertEqual(gaFeatureGroup.feature_ids, testData["feature_ids"])
 
+    @unittest.skip("FeatureGroup still being worked on")
     def testSearchFeatureGroups(self):
-        rnaQuantification = self._gaObject
+        rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
         rnaQuantID = rnaQuantification.getLocalId()
         featureGroups = rnaQuantification.getFeatureGroups(rnaQuantID)
         self.assertEqual(

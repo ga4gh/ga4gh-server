@@ -224,7 +224,7 @@ class TestClientArguments(unittest.TestCase):
 
     def testRnaQuantificationGetArguments(self):
         self.verifyGetArguments(
-            "rnaquantification-get", cli.GetRnaQuantificationRunner)
+            "rnaquantifications-get", cli.GetRnaQuantificationRunner)
 
     def testReferenceBasesListArguments(self):
         cliInput = (
@@ -279,34 +279,30 @@ class TestClientArguments(unittest.TestCase):
 
     def testRnaQuantificationSearchArguments(self):
         cliInput = (
-            "rnaquantification-search --rnaQuantificationId ID BASEURL")
+            "rnaquantifications-search --rnaQuantificationSetId ID BASEURL")
         args = self.parser.parse_args(cliInput.split())
-        self.assertEqual(args.rnaQuantificationId, "ID")
+        self.assertEqual(args.rnaQuantificationSetId, "ID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEqual(args.runner, cli.SearchRnaQuantificationRunner)
+        self.assertEqual(args.runner, cli.SearchRnaQuantificationsRunner)
 
     def testExpressionLevelSearchArguments(self):
         cliInput = (
-            "expressionlevel-search --expressionLevelId ID "
-            "--rnaQuantificationId rID --quantificationGroupId fID "
-            "--threshold 0.0 BASEURL")
+            "expressionlevels-search --rnaQuantificationId rID "
+            "--featureGroupId fID --threshold 0.0 BASEURL")
         args = self.parser.parse_args(cliInput.split())
-        self.assertEqual(args.expressionLevelId, "ID")
         self.assertEqual(args.rnaQuantificationId, "rID")
-        self.assertEqual(args.quantificationGroupId, "fID")
+        self.assertEqual(args.featureGroupId, "fID")
         self.assertEqual(args.threshold, 0.0)
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEqual(args.runner, cli.SearchExpressionLevelRunner)
+        self.assertEqual(args.runner, cli.SearchExpressionLevelsRunner)
 
-    def testQuantificationGroupSearchArguments(self):
+    def testFeatureGroupSearchArguments(self):
         cliInput = (
-            "quantificationgroup-search --quantificationGroupId ID "
-            "--rnaQuantificationId rID BASEURL")
+            "featuregroups-search --datasetId DATASETID BASEURL")
         args = self.parser.parse_args(cliInput.split())
-        self.assertEqual(args.quantificationGroupId, "ID")
-        self.assertEqual(args.rnaQuantificationId, "rID")
+        self.assertEqual(args.datasetId, "DATASETID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEqual(args.runner, cli.SearchQuantificationGroupRunner)
+        self.assertEqual(args.runner, cli.SearchFeatureGroupsRunner)
 
 
 class TestRepoManagerCli(unittest.TestCase):

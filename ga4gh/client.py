@@ -577,7 +577,8 @@ class AbstractClient(object):
 
     def searchRnaQuantificationSets(self, datasetId):
         """
-        Returns an iterator over the RnaQuantificationSet objects from the server
+        Returns an iterator over the RnaQuantificationSet objects from the
+        server
         """
         request = protocol.SearchRnaQuantificationSetsRequest()
         request.dataset_id = datasetId
@@ -586,7 +587,7 @@ class AbstractClient(object):
             request, "rnaquantificationsets",
             protocol.SearchRnaQuantificationSetsResponse)
 
-    def searchRnaQuantification(self, datasetId, rnaQuantificationSetId=""):
+    def searchRnaQuantifications(self, datasetId, rnaQuantificationSetId=""):
         """
         Returns an iterator over the RnaQuantification objects from the server
 
@@ -594,22 +595,22 @@ class AbstractClient(object):
             :class:`ga4gh.protocol.RnaQuantificationSet` of interest.
         """
         request = protocol.SearchRnaQuantificationsRequest()
-        request.rna_quantification_set_id = rnaQuantificationId
+        request.rna_quantification_set_id = rnaQuantificationSetId
         request.dataset_id = datasetId
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "rnaquantifications",
             protocol.SearchRnaQuantificationsResponse)
 
-    def searchExpressionLevel(
+    def searchExpressionLevels(
             self, rnaQuantificationId="", featureGroupId="", threshold=0.0):
         """
         Returns an iterator over the ExpressionLevel objects from the server
 
         :param str expressionLevelId: The ID of the
             :class:`ga4gh.protocol.ExpressionLevel` of interest.
-        :param str quantificationGroupId: The ID of the
-            :class:`ga4gh.protocol.QuantificationGroup` of interest.
+        :param str featureGroupId: The ID of the
+            :class:`ga4gh.protocol.FeatureGroup` of interest.
         :param str rnaQuantificationIdIDs: The ID of the
             :class:`ga4gh.protocol.RnaQuantification` of interest.
         :param float threshold: Minimum expression of responses to return.
@@ -623,17 +624,17 @@ class AbstractClient(object):
             request, "expressionlevels",
             protocol.SearchExpressionLevelsResponse)
 
-    def searchFeatureGroup(self, datasetId=""):
+    def searchFeatureGroups(self, datasetId=""):
         """
         Returns an iterator over the FeatureGroup objects from the
         server
         """
-        request = protocol.SearchQuantificationGroupsRequest()
+        request = protocol.SearchFeatureGroupsRequest()
         request.dataset_id = datasetId
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "featuregroups",
-            protocol.SearchQuantificationGroupsResponse)
+            protocol.SearchFeatureGroupsResponse)
 
 
 class HttpClient(AbstractClient):

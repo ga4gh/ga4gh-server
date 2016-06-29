@@ -41,6 +41,7 @@ class RNASqliteStore(object):
                        programs text)''')
         cursor.execute('''CREATE TABLE EXPRESSION (
                        id text,
+                       rna_quantification_id text,
                        name text,
                        expression real,
                        feature_group_ids text,
@@ -71,8 +72,8 @@ class RNASqliteStore(object):
     def addExpression(self, datafields):
         """
         Adds an Expression to the db.  Datafields is a tuple in the order:
-        id, name, expression, feature_group_ids, is_normalized, raw_read_count,
-        score, units, conf_low, conf_hi
+        id, rna_quantification_id, name, expression, feature_group_ids,
+        is_normalized, raw_read_count, score, units, conf_low, conf_hi
         """
         self._expressionValueList.append(datafields)
         if len(self._expressionValueList) >= self._batchSize:
@@ -80,7 +81,7 @@ class RNASqliteStore(object):
 
     def batchAddExpression(self):
         if len(self._expressionValueList) > 0:
-            sql = "INSERT INTO EXPRESSION VALUES (?,?,?,?,?,?,?,?,?,?)"
+            sql = "INSERT INTO EXPRESSION VALUES (?,?,?,?,?,?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._expressionValueList)
             self._dbConn.commit()
             self._expressionValueList = []
@@ -102,7 +103,7 @@ class AbstractWriter(object):
         self._confColLow = None
         self._confColHi = None
 
-    def writeExpression(self, quantfile):
+    def writeExpression(self, rnaQuantificationId, quantfile):
         """
         Reads the quantification results file and adds entries to the
         specified database.
@@ -116,7 +117,7 @@ class AbstractWriter(object):
             expressionLevel = fields[self._expressionLevelCol]
             expressionId = fields[self._idCol]
             name = fields[self._nameCol]
-            quantificationGroupId = fields[self._featureCol]
+            featureGroupId = fields[self._featureCol]
             rawCount = 0.0
             if self._countCol is not None:
                 rawCount = fields[self._countCol]
@@ -128,9 +129,9 @@ class AbstractWriter(object):
                 confidenceHi = float(fields[self._confColHi])
                 score = (confidenceLow + confidenceHi)/2
 
-            datafields = (expressionId, name, expressionLevel,
-                          quantificationGroupId, isNormalized, rawCount,
-                          str(score), units, confidenceLow, confidenceHi)
+            datafields = (expressionId, rnaQuantificationId, name,
+                          expressionLevel, featureGroupId, isNormalized,
+                          rawCount, score, units, confidenceLow, confidenceHi)
             self._db.addExpression(datafields)
         self._db.batchAddExpression()
 
@@ -163,9 +164,11 @@ class RsemWriter(AbstractWriter):
     RSEM.
 
     RSEM header:
-    gene_id transcript_id(s)    length  effective_length    expected_count
-    TPM FPKM    pme_expected_count  pme_TPM pme_FPKM    TPM_ci_lower_bound
-    TPM_ci_upper_bound  FPKM_ci_lower_bound FPKM_ci_upper_bound
+    gene_id    transcript_id(s)    length    effective_length    expected_count
+    TPM    FPKM    posterior_mean_count
+    posterior_standard_deviation_of_count    pme_TPM    pme_FPKM
+    TPM_ci_lower_bound    TPM_ci_upper_bound    FPKM_ci_lower_bound
+    FPKM_ci_upper_bound
     """
     def __init__(self, rnaDB, featureType="gene"):
         super(RsemWriter, self).__init__(rnaDB)
@@ -179,8 +182,8 @@ class RsemWriter(AbstractWriter):
         self._nameCol = self._idCol
         self._featureCol = 0
         self._countCol = 4
-        self._confColLow = 10
-        self._confColHi = 11
+        self._confColLow = 11
+        self._confColHi = 12
 
 
 class KallistoWriter(AbstractWriter):
@@ -214,9 +217,9 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
 
 
 def writeExpressionTable(writer, data):
-    for analysisId, quantfile in data:
-        print("processing {}".format(analysisId))
-        writer.writeExpression(quantfile)
+    for rnaQuantId, quantfile in data:
+        print("processing {}".format(rnaQuantId))
+        writer.writeExpression(rnaQuantId, quantfile)
 
 
 def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv"):

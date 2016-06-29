@@ -36,6 +36,9 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetIds = []
         self._rnaQuantificationSetIdMap = {}
         self._rnaQuantificationSetNameMap = {}
+        self._featureGroupIds = []
+        self._featureGroupIdMap = {}
+        self._featureGroupNameMap = {}
 
     def populateFromRow(self, row):
         """
@@ -87,6 +90,16 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetIds.append(id_)
         name = rnaQuantSet.getLocalId()
         self._rnaQuantificationSetNameMap[name] = rnaQuantSet
+
+    def addFeatureGroup(self, featureGroup):
+        """
+        Adds the specified feature group to this dataset.
+        """
+        id_ = featureGroup.getId()
+        self._featureGroupIdMap[id_] = featureGroup
+        self._featureGroupIds.append(id_)
+        name = featureGroup.getLocalId()
+        self._featureGroupNameMap[name] = featureGroup
 
     def toProtocolElement(self):
         dataset = protocol.Dataset()
@@ -224,9 +237,11 @@ class Dataset(datamodel.DatamodelObject):
 
     def getRnaQuantificationSetByIndex(self, index):
         """
-        Returns the rna quantification set at the specified index in this dataset.
+        Returns the rna quantification set at the specified index in this
+        dataset.
         """
-        return self._rnaQuantificationSetIdMap[self._rnaQuantificationSetIds[index]]
+        return self._rnaQuantificationSetIdMap[
+            self._rnaQuantificationSetIds[index]]
 
     def getRnaQuantificationSetByName(self, name):
         """
@@ -255,7 +270,8 @@ class SimulatedDataset(Dataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1, numFeatureSets=1, numRnaQuants=1):
+            numAlignments=1, numFeatureSets=1, numRnaQuantSets=1,
+            numFeatureGroups=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
         # TODO create a simulated Ontology
@@ -285,9 +301,15 @@ class SimulatedDataset(Dataset):
                 self, localId, seed)
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
-        # RnaQuantifications
-        for i in range(numRnaQuants):
-            localId = 'simRq{}'.format(i)
-            rnaQuant = rnaQuantification.SimulatedRNASeqResult(
+        # RnaQuantificationSets
+        for i in range(numRnaQuantSets):
+            localId = 'simRqs{}'.format(i)
+            rnaQuantSet = rnaQuantification.SimulatedRnaQuantSet(
                 self, localId)
-            self.addRnaQuantification(rnaQuant)
+            self.addRnaQuantificationSet(rnaQuantSet)
+        # FeatureGroups
+        for i in range(numFeatureGroups):
+            localId = 'simFg{}'.format(i)
+            featureGroup = rnaQuantification.SimulatedFeatureGroup(
+                self, localId)
+            self.addFeatureGroup(featureGroup)

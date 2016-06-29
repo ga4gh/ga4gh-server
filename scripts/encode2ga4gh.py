@@ -117,9 +117,9 @@ def writeRnaseqTables(rnaDB, analysisIds, description, annotationId,
 
 def writeGeneExpressionTables(writer, data):
     log("Writing gene expression tables")
-    for analysisId, quantfile in data:
-        print("processing {}".format(analysisId))
-        writer.writeExpression(quantfile)
+    for rnaQuantId, quantfile in data:
+        print("processing {}".format(rnaQuantId))
+        writer.writeExpression(rnaQuantId, quantfile)
 
 
 def makeParser(usage):

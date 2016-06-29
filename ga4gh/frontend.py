@@ -663,7 +663,7 @@ def getFeature(id):
 
 
 @DisplayedRoute(
-    '/rnaquantificationsetss/<no(search):id>',
+    '/rnaquantificationsets/<no(search):id>',
     pathDisplay='/rnaquantificationsetss/<id>')
 def getRnaQuantificationSet(id):
     return handleFlaskGetRequest(

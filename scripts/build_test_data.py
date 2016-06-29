@@ -52,6 +52,22 @@ def main():
             "add-featureset", repoFile, datasetName, dataFile, "-R NCBI37",
             "-O", sequenceOntologyName)
 
+    pattern = os.path.join(
+        prefix, "datasets/dataset1/rnaQuant", "*.db")
+    for j, dataFile in enumerate(glob.glob(pattern)):
+        name = "rnaseq_{}".format(j)
+        run(
+            "add-rnaquantificationset", repoFile, datasetName, dataFile,
+            "-R NCBI37", "-n ", name)
+
+    pattern = os.path.join(
+        prefix, "datasets/dataset1/featureGroups", "*.db")
+    for j, dataFile in enumerate(glob.glob(pattern)):
+        name = "fg_{}".format(j)
+        run(
+            "add-featuregroup", repoFile, datasetName, dataFile,
+            "-R NCBI37", "-n ", name)
+
 
 if __name__ == "__main__":
     main()
