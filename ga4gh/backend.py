@@ -397,6 +397,34 @@ class Backend(object):
                 nextPageToken = str(currentIndex)
             yield object_.toProtocolElement(), nextPageToken
 
+    def _protocolObjectGenerator(self, request, numObjects, getByIndexMethod):
+        """
+        Returns a generator over the results for the specified request, from
+        a set of protocol objects of the specified size. The objects are
+        returned by call to the specified method, which must take a single
+        integer as an argument. The returned generator yields a sequence of
+        (object, nextPageToken) pairs, which allows this iteration to be picked
+        up at any point.
+        """
+        currentIndex = 0
+        if request.page_token:
+            currentIndex, = _parsePageToken(request.page_token, 1)
+        while currentIndex < numObjects:
+            object_ = getByIndexMethod(currentIndex)
+            currentIndex += 1
+            nextPageToken = None
+            if currentIndex < numObjects:
+                nextPageToken = str(currentIndex)
+            yield object_, nextPageToken
+
+    def _protocolListGenerator(self, request, objectList):
+        """
+        Returns a generator over the objects in the specified list using
+        _protocolObjectGenerator to generate page tokens.
+        """
+        return self._protocolObjectGenerator(
+            request, len(objectList), lambda index: objectList[index])
+
     def _objectListGenerator(self, request, objectList):
         """
         Returns a generator over the objects in the specified list using
@@ -427,22 +455,62 @@ class Backend(object):
             request, self.getDataRepository().getNumDatasets(),
             self.getDataRepository().getDatasetByIndex)
 
+    def bioSamplesGenerator(self, request):
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        results = []
+        for obj in dataset.getBioSamples():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if request.individual_id:
+                if request.individual_id != obj.getIndividualId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
+
+    def individualsGenerator(self, request):
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        results = []
+        for obj in dataset.getIndividuals():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
+
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
         defined by the specified request.
         """
         dataset = self.getDataRepository().getDataset(request.dataset_id)
-        if request.name == "":
-            return self._topLevelObjectGenerator(
-                request, dataset.getNumReadGroupSets(),
-                dataset.getReadGroupSetByIndex)
-        else:
-            try:
-                readGroupSet = dataset.getReadGroupSetByName(request.name)
-            except exceptions.ReadGroupSetNameNotFoundException:
-                return self._noObjectGenerator()
-            return self._singleObjectGenerator(readGroupSet)
+        results = []
+        for obj in dataset.getReadGroupSets():
+            include = True
+            rgsp = obj.toProtocolElement()
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if request.bio_sample_id:
+                rgsp.ClearField("read_groups")
+                for readGroup in obj.getReadGroups():
+                    if request.bio_sample_id == readGroup.getBioSampleId():
+                        rgsp.read_groups.extend(
+                            [readGroup.toProtocolElement()])
+                # If none of the biosamples match and the readgroupset
+                # contains reagroups, don't include in the response
+                if len(rgsp.read_groups) == 0 and \
+                        len(obj.getReadGroups()) != 0:
+                    include = False
+                else:
+                    include = True and include
+            if include:
+                results.append(rgsp)
+        return self._protocolListGenerator(request, results)
 
     def referenceSetsGenerator(self, request):
         """
@@ -633,16 +701,18 @@ class Backend(object):
             request.variant_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         variantSet = dataset.getVariantSet(compoundId.variant_set_id)
-        if request.name == "":
-            return self._topLevelObjectGenerator(
-                request, variantSet.getNumCallSets(),
-                variantSet.getCallSetByIndex)
-        else:
-            try:
-                callSet = variantSet.getCallSetByName(request.name)
-            except exceptions.CallSetNameNotFoundException:
-                return self._noObjectGenerator()
-            return self._singleObjectGenerator(callSet)
+        results = []
+        for obj in variantSet.getCallSets():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if request.bio_sample_id:
+                if request.bio_sample_id != obj.getBioSampleId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
 
     def featureSetsGenerator(self, request):
         """
@@ -763,6 +833,24 @@ class Backend(object):
         jsonString = protocol.toJson(gaVariant)
         return jsonString
 
+    def runGetBioSample(self, id_):
+        """
+        Runs a getBioSample request for the specified ID.
+        """
+        compoundId = datamodel.BioSampleCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        bioSample = dataset.getBioSample(id_)
+        return self.runGetRequest(bioSample)
+
+    def runGetIndividual(self, id_):
+        """
+        Runs a getIndividual request for the specified ID.
+        """
+        compoundId = datamodel.BioSampleCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        individual = dataset.getIndividual(id_)
+        return self.runGetRequest(individual)
+
     def runGetFeature(self, id_):
         """
         Returns JSON string of the feature object corresponding to
@@ -856,6 +944,24 @@ class Backend(object):
             request, protocol.SearchReadGroupSetsRequest,
             protocol.SearchReadGroupSetsResponse,
             self.readGroupSetsGenerator)
+
+    def runSearchIndividuals(self, request):
+        """
+        Runs the specified search SearchIndividualsRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchIndividualsRequest,
+            protocol.SearchIndividualsResponse,
+            self.individualsGenerator)
+
+    def runSearchBioSamples(self, request):
+        """
+        Runs the specified SearchBioSamplesRequest.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchBioSamplesRequest,
+            protocol.SearchBioSamplesResponse,
+            self.bioSamplesGenerator)
 
     def runSearchReads(self, request):
         """

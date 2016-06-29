@@ -35,8 +35,8 @@ Client API
     :members: getReferenceSet, getReference,
         getDataset, getVariantSet, getVariant,
         getReadGroupSet, getReadGroup,
+        getBioSample, getIndividual,
         searchDatasets, searchReferenceSets, searchReferences,
         searchVariantSets, searchVariants, searchReadGroupSets,
-        searchReads, searchVariantAnnotations,
-        searchVariantAnnotationSets
+        searchReads, searchBioSamples, searchIndividuals
 
