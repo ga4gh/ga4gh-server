@@ -426,6 +426,18 @@ class SequenceAnnotationNotFoundException(NotFoundException):
             "SequenceAnnotation with name '{0}' not found".format(name))
 
 
+class RnaQuantificationSetNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "RnaQuantificationSet with name '{0}' not found".format(name))
+
+
+class RnaQuantificationSetNameNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "RnaQuantificationSet with name '{0}' not found".format(name))
+
+
 class RnaQuantificationNotFoundException(NotFoundException):
     def __init__(self, name):
         self.message = (
@@ -444,10 +456,10 @@ class ExpressionLevelNotFoundException(NotFoundException):
             "ExpressionLevel with name '{0}' not found".format(name))
 
 
-class QuantificationGroupNotFoundException(NotFoundException):
+class FeatureGroupNotFoundException(NotFoundException):
     def __init__(self, name):
         self.message = (
-            "QuantificationGroup with name '{0}' not found".format(name))
+            "FeatureGroup with name '{0}' not found".format(name))
 
 
 class DataException(BaseServerException):

@@ -252,7 +252,7 @@ class SimulatedDataRepository(AbstractDataRepository):
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReferenceSets=1, numReferencesPerReferenceSet=1,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=2, numRnaQuants=1):
+            numAlignments=2, numRnaQuantSets=1):
         super(SimulatedDataRepository, self).__init__()
 
         # References
@@ -274,7 +274,7 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numVariantSets=numVariantSets,
                 numReadGroupSets=numReadGroupSets,
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
-                numAlignments=numAlignments, numRnaQuants=numRnaQuants)
+                numAlignments=numAlignments, numRnaQuantSets=numRnaQuantSets)
             self.addDataset(dataset)
 
 
@@ -1042,9 +1042,9 @@ class SqlDataRepository(AbstractDataRepository):
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
 
-    def _createRnaQuantificationTable(self, cursor):
+    def _createRnaQuantificationSetTable(self, cursor):
         sql = """
-            CREATE TABLE RnaQuantification (
+            CREATE TABLE RnaQuantificationSet (
                 id TEXT NOT NULL PRIMARY KEY,
                 name TEXT NOT NULL,
                 datasetId TEXT NOT NULL,
@@ -1059,46 +1059,102 @@ class SqlDataRepository(AbstractDataRepository):
         """
         cursor.execute(sql)
 
-    def insertRnaQuantification(self, rnaQuantification):
+    def insertRnaQuantificationSet(self, rnaQuantificationSet):
         """
-        Inserts a the specified rnaQuantification into this repository.
+        Inserts a the specified rnaQuantificationSet into this repository.
         """
-        # TODO add support for info and sourceUri fields.
         sql = """
-            INSERT INTO RnaQuantification (
+            INSERT INTO RnaQuantificationSet (
                 id, datasetId, referenceSetId, name, dataUrl)
             VALUES (?, ?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
-            rnaQuantification.getId(),
-            rnaQuantification.getParentContainer().getId(),
-            rnaQuantification.getReferenceSet().getId(),
-            rnaQuantification.getLocalId(),
-            rnaQuantification.getDataUrl()))
+            rnaQuantificationSet.getId(),
+            rnaQuantificationSet.getParentContainer().getId(),
+            rnaQuantificationSet.getReferenceSet().getId(),
+            rnaQuantificationSet.getLocalId(),
+            rnaQuantificationSet.getDataUrl()))
 
-    def _readRnaQuantificationTable(self, cursor):
+    def _readRnaQuantificationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM RnaQuantification;")
+        cursor.execute("SELECT * FROM RnaQuantificationSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             referenceSet = self.getReferenceSet(row[b'referenceSetId'])
-            rnaQuantification = rna_quantification.RNASeqResult(
+            rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
                 dataset, row[b'name'])
-            rnaQuantification.setReferenceSet(referenceSet)
-            rnaQuantification.populateFromRow(row)
-            assert rnaQuantification.getId() == row[b'id']
-            dataset.addRnaQuantification(rnaQuantification)
+            rnaQuantificationSet.setReferenceSet(referenceSet)
+            rnaQuantificationSet.populateFromRow(row)
+            assert rnaQuantificationSet.getId() == row[b'id']
+            dataset.addRnaQuantificationSet(rnaQuantificationSet)
 
-    def removeRnaQuantification(self, rnaQuantification):
+    def removeRnaQuantificationSet(self, rnaQuantificationSet):
         """
-        Removes the specified rnaQuantification from this repository. This
+        Removes the specified rnaQuantificationSet from this repository. This
         performs a cascading removal of all items within this
-        rnaQuantification.
+        rnaQuantificationSet.
         """
-        sql = "DELETE FROM RnaQuantification WHERE id=?"
+        sql = "DELETE FROM RnaQuantificationSet WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (rnaQuantification.getId(),))
+        cursor.execute(sql, (rnaQuantificationSet.getId(),))
+
+    def _createFeatureGroupTable(self, cursor):
+        sql = """
+            CREATE TABLE FeatureGroup (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
+                info TEXT,
+                dataUrl TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+            );
+        """
+        cursor.execute(sql)
+
+    def insertFeatureGroup(self, featureGroup):
+        """
+        Inserts a the specified featureGroup into this repository.
+        """
+        sql = """
+            INSERT INTO FeatureGroup (
+                id, datasetId, referenceSetId, name, dataUrl)
+            VALUES (?, ?, ?, ?, ?)
+        """
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (
+            featureGroup.getId(),
+            featureGroup.getParentContainer().getId(),
+            featureGroup.getReferenceSet().getId(),
+            featureGroup.getLocalId(),
+            featureGroup.getDataUrl()))
+
+    def _readFeatureGroupTable(self, cursor):
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT * FROM FeatureGroup;")
+        for row in cursor:
+            dataset = self.getDataset(row[b'datasetId'])
+            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
+            featureGroup = rna_quantification.FeatureGroup(
+                dataset, row[b'name'])
+            featureGroup.setReferenceSet(referenceSet)
+            featureGroup.populateFromRow(row)
+            assert featureGroup.getId() == row[b'id']
+            dataset.addFeatureGroup(featureGroup)
+
+    def removeFeatureGroup(self, featureGroup):
+        """
+        Removes the specified featureGroup from this repository. This
+        performs a cascading removal of all items within this
+        featureGroup.
+        """
+        sql = "DELETE FROM FeatureGroup WHERE id=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (featureGroup.getId(),))
 
     def initialise(self):
         """
@@ -1118,7 +1174,8 @@ class SqlDataRepository(AbstractDataRepository):
         self._createVariantSetTable(cursor)
         self._createVariantAnnotationSetTable(cursor)
         self._createFeatureSetTable(cursor)
-        self._createRnaQuantificationTable(cursor)
+        self._createRnaQuantificationSetTable(cursor)
+        self._createFeatureGroupTable(cursor)
 
     def exists(self):
         """
@@ -1161,4 +1218,5 @@ class SqlDataRepository(AbstractDataRepository):
             self._readCallSetTable(cursor)
             self._readVariantAnnotationSetTable(cursor)
             self._readFeatureSetTable(cursor)
-            self._readRnaQuantificationTable(cursor)
+            self._readRnaQuantificationSetTable(cursor)
+            self._readFeatureGroupTable(cursor)

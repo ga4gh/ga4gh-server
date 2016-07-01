@@ -656,27 +656,35 @@ class Backend(object):
             request, dataset.getNumFeatureSets(),
             dataset.getFeatureSetByIndex)
 
-    def rnaQuantificationGenerator(self, request):
+    def rnaQuantificationSetsGenerator(self, request):
+        """
+        Returns a generator over the (rnaQuantificationSet, nextPageToken)
+        pairs defined by the specified request.
+        """
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumRnaQuantificationSets(),
+            dataset.getRnaQuantificationSetByIndex)
+
+    def rnaQuantificationsGenerator(self, request):
         """
         Returns a generator over the (rnaQuantification, nextPageToken) pairs
         defined by the specified request.
         """
         dataset = self.getDataRepository().getDataset(request.dataset_id)
-        if len(request.rna_quantification_id) is 0:
-            return self._topLevelObjectGenerator(
-                request, dataset.getNumRnaQuantifications(),
-                dataset.getRnaQuantificationByIndex)
+        # TODO: search over all rnaQuantSets
+        if len(request.rna_quantification_set_id) < 1:
+            return self._noObjectGenerator()
         else:
-            compoundId = datamodel.RnaQuantificationCompoundId.parse(
-                request.rna_quantification_id)
-            try:
-                rnaQuant = dataset.getRnaQuantification(
-                    compoundId.rna_quantification_id)
-            except exceptions.RnaQuantificationNotFoundException:
-                return self._noObjectGenerator()
-            return self._singleObjectGenerator(rnaQuant)
+            compoundId = datamodel.RnaQuantificationSetCompoundId.parse(
+                request.rna_quantification_set_id)
+            rnaQuantSet = dataset.getRnaQuantificationSet(
+                compoundId.rna_quantification_set_id)
+            return self._topLevelObjectGenerator(
+                request, rnaQuantSet.getNumRnaQuantifications(),
+                rnaQuantSet.getRnaQuantificationByIndex)
 
-    def expressionLevelGenerator(self, request):
+    def expressionLevelsGenerator(self, request):
         """
         Returns a generator over the (expressionLevel, nextPageToken) pairs
         defined by the specified request.
@@ -704,33 +712,18 @@ class Backend(object):
             rnaQuant.getExpressionLevels(
                 rnaQuantificationId, pageToken=request.page_token,
                 pageSize=request.page_size, expressionId=expressionLevelId,
-                quantificationGroupId=request.quantification_group_id,
+                featureGroupId=request.feature_group_id,
                 threshold=request.threshold))
 
-    def quantificationGroupGenerator(self, request):
+    def featureGroupsGenerator(self, request):
         """
-        Returns a generator over the (quantificationGroup, nextPageToken) pairs
+        Returns a generator over the (featureGroup, nextPageToken) pairs
         defined by the specified request.
-
-        Currently only supports searching over a specified rnaQuantification
         """
-        rnaQuantificationId = request.rna_quantification_id
-        compoundId = datamodel.RnaQuantificationCompoundId.parse(
-            rnaQuantificationId)
-        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
-        rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
-        quantificationGroupId = request.quantification_group_id
-        if len(quantificationGroupId) > 0:
-            quantificationGroupCompoundId = \
-                datamodel.QuantificationGroupCompoundId.parse(
-                    request.quantification_group_id)
-            return self._singleObjectGenerator(
-                rnaQuant.getQuantificationGroup(quantificationGroupCompoundId))
-        return self._objectListGenerator(
-            request, rnaQuant.getQuantificationGroups(
-                rnaQuant.getLocalId(), pageToken=request.page_token,
-                pageSize=request.page_size,
-                quantificationGroupId=quantificationGroupId))
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumFeatureGroups(),
+            dataset.getFeatureGroupByIndex)
 
     ###########################################################
     #
@@ -930,8 +923,39 @@ class Backend(object):
         """
         compoundId = datamodel.RnaQuantificationCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
-        rnaQuantification = dataset.getRnaQuantification(id_)
+        rnaQuantificationSet = dataset.getRnaQuantificationSet(
+            compoundId.rna_quantification_set_id)
+        rnaQuantification = rnaQuantificationSet.getRnaQuantification(id_)
         return self.runGetRequest(rnaQuantification)
+
+    def runGetRnaQuantificationSet(self, id_):
+        """
+        Runs a getRnaQuantificationSet request for the specified ID.
+        """
+        compoundId = datamodel.RnaQuantificationSetCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        rnaQuantificationSet = dataset.getRnaQuantificationSet(id_)
+        return self.runGetRequest(rnaQuantificationSet)
+
+    def runGetFeatureGroup(self, id_):
+        """
+        Runs a getFeatureGroup request for the specified ID.
+        """
+        compoundId = datamodel.FeatureGroupCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        featureGroup = dataset.getFeatureGroup(id_)
+        return self.runGetRequest(featureGroup)
+
+    def runGetExpressionLevel(self, id_):
+        """
+        Runs a getExpressionLevel request for the specified ID.
+        """
+        compoundId = datamodel.ExpressionLevelCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        rnaQuantificationSet = dataset.getRnaQuantificationSet(
+            compoundId.rna_quantification_set_id)
+        expressionLevel = rnaQuantificationSet.getExpressionLevel(compoundId)
+        return self.runGetRequest(expressionLevel)
 
     # Search requests.
 
@@ -1048,7 +1072,17 @@ class Backend(object):
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
 
-    def runSearchRnaQuantification(self, request):
+    def runSearchRnaQuantificationSets(self, request):
+        """
+        Returns a SearchRnaQuantificationSetsResponse for the specified
+        SearchRnaQuantificationSetsRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchRnaQuantificationSetsRequest,
+            protocol.SearchRnaQuantificationSetsResponse,
+            self.rnaQuantificationSetsGenerator)
+
+    def runSearchRnaQuantifications(self, request):
         """
         Returns a SearchRnaQuantificationResponse for the specified
         SearchRnaQuantificationRequest object.
@@ -1056,9 +1090,9 @@ class Backend(object):
         return self.runSearchRequest(
             request, protocol.SearchRnaQuantificationsRequest,
             protocol.SearchRnaQuantificationsResponse,
-            self.rnaQuantificationGenerator)
+            self.rnaQuantificationsGenerator)
 
-    def runSearchExpressionLevel(self, request):
+    def runSearchExpressionLevels(self, request):
         """
         Returns a SearchExpressionLevelResponse for the specified
         SearchExpressionLevelRequest object.
@@ -1066,14 +1100,14 @@ class Backend(object):
         return self.runSearchRequest(
             request, protocol.SearchExpressionLevelsRequest,
             protocol.SearchExpressionLevelsResponse,
-            self.expressionLevelGenerator)
+            self.expressionLevelsGenerator)
 
-    def runSearchQuantificationGroup(self, request):
+    def runSearchFeatureGroups(self, request):
         """
-        Returns a SearchQuantificationGroupResponse for the specified
-        SearchQuantificationGroupRequest object.
+        Returns a SearchFeatureGroupResponse for the specified
+        SearchFeatureGroupRequest object.
         """
         return self.runSearchRequest(
-            request, protocol.SearchQuantificationGroupsRequest,
-            protocol.SearchQuantificationGroupsResponse,
-            self.quantificationGroupGenerator)
+            request, protocol.SearchFeatureGroupsRequest,
+            protocol.SearchFeatureGroupsResponse,
+            self.featureGroupsGenerator)

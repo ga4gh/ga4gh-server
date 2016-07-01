@@ -48,9 +48,10 @@ _valueListNameMap = {
     SearchVariantAnnotationsResponse: "variant_annotations",  # noqa
     SearchFeatureSetsResponse: "feature_sets",  # noqa
     SearchFeaturesResponse: "features",  # noqa
+    SearchRnaQuantificationSetsResponse: "rna_quantification_sets",  # noqa
     SearchRnaQuantificationsResponse: "rna_quantifications",  # noqa
     SearchExpressionLevelsResponse: "expression_levels",  # noqa
-    SearchQuantificationGroupsResponse: "quantification_groups",  # noqa
+    SearchFeatureGroupsResponse: "feature_groups",  # noqa
 }
 
 
@@ -270,12 +271,15 @@ postMethods = \
      ('/variantannotationsets/search',
       SearchVariantAnnotationSetsRequest,  # noqa
       SearchVariantAnnotationSetsResponse),  # noqa
+     ('/rnaquantificationsets/search',
+      SearchRnaQuantificationSetsRequest,  # noqa
+      SearchRnaQuantificationSetsResponse),  # noqa
      ('/rnaquantifications/search',
       SearchRnaQuantificationsRequest,  # noqa
       SearchRnaQuantificationsResponse),  # noqa
      ('/expressionlevels/search',
       SearchExpressionLevelsRequest,  # noqa
       SearchExpressionLevelsResponse),  # noqa
-     ('/quantificationgroups/search',
-      SearchQuantificationGroupsRequest,  # noqa
-      SearchQuantificationGroupsResponse)]  # noqa
+     ('/featuregroups/search',
+      SearchFeatureGroupsRequest,  # noqa
+      SearchFeatureGroupsResponse)]  # noqa

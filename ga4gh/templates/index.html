@@ -147,14 +147,14 @@
                     {% endfor %}
                     {% endfor %}
                 </table>
-                <h6>RnaQuantifications</h6>
+                <h6>RnaQuantificationSets</h6>
                 <table class="table table-striped">
                     <th>Name</th>
                     <th>Id</th>
-                    {% for rnaQuantification in info.getRnaQuantifications(dataset.getId()) %}
+                    {% for rnaQuantificationSet in info.getRnaQuantificationSets(dataset.getId()) %}
                     <tr>
-                    <td>{{ rnaQuantification.getLocalId() }}</td>
-                    <td>{{ rnaQuantification.getId() }}</td>
+                    <td>{{ rnaQuantificationSet.getLocalId() }}</td>
+                    <td>{{ rnaQuantificationSet.getId() }}</td>
                     </tr>
                     {% endfor %}
                 </table>

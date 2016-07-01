@@ -410,13 +410,22 @@ class ReadAlignmentCompoundId(ReadGroupSetCompoundId):
         [('read_alignment_id', 2)]
 
 
-class RnaQuantificationCompoundId(DatasetCompoundId):
+class RnaQuantificationSetCompoundId(DatasetCompoundId):
     """
     The compound id for a rna quantification
     """
-    fields = DatasetCompoundId.fields + ['rna_quantification']
-    container = [('rna_quantification_id', 1)]
+    fields = DatasetCompoundId.fields + ['rna_quantification_set']
+    container = [('rna_quantification_set_id', 1)]
     containerIds = DatasetCompoundId.containerIds + container
+
+
+class RnaQuantificationCompoundId(RnaQuantificationSetCompoundId):
+    """
+    The compound id for a rna quantification
+    """
+    fields = RnaQuantificationSetCompoundId.fields + ['rna_quantification']
+    container = [('rna_quantification_id', 2)]
+    containerIds = RnaQuantificationSetCompoundId.containerIds + container
 
 
 class ExpressionLevelCompoundId(RnaQuantificationCompoundId):
@@ -426,11 +435,11 @@ class ExpressionLevelCompoundId(RnaQuantificationCompoundId):
     fields = RnaQuantificationCompoundId.fields + ['expression_level_id']
 
 
-class QuantificationGroupCompoundId(RnaQuantificationCompoundId):
+class FeatureGroupCompoundId(DatasetCompoundId):
     """
-    The compound id for a quantification group
+    The compound id for a feature group
     """
-    fields = RnaQuantificationCompoundId.fields + ['quantification_group_id']
+    fields = DatasetCompoundId.fields + ['feature_group_id']
 
 
 class DatamodelObject(object):

@@ -682,46 +682,67 @@ class SearchReadsRunner(AbstractSearchRunner):
             print(read.id)
 
 
-class SearchRnaQuantificationRunner(AbstractSearchRunner):
+class SearchRnaQuantificationSetsRunner(AbstractSearchRunner):
     """
-    Runner class for the rnaquantification/search method
+    Runner class for the rnaquantificationsets/search method
     """
     def __init__(self, args):
-        super(SearchRnaQuantificationRunner, self).__init__(args)
+        super(SearchRnaQuantificationSetsRunner, self).__init__(args)
         self._datasetId = args.datasetId
-        self._rnaQuantificationId = args.rnaQuantificationId
 
     def run(self):
-        iterator = self._client.searchRnaQuantification(
+        iterator = self._client.searchRnaQuantificationSets(
+            self._datasetId)
+        self._output(iterator)
+
+    def _textOutput(self, rnaQuants):
+        for rnaQuant in rnaQuants:
+            print(
+                rnaQuant.id, rnaQuant.dataset_id, rnaQuant.name,
+                sep="\t", end="\t")
+            print()
+
+
+class SearchRnaQuantificationsRunner(AbstractSearchRunner):
+    """
+    Runner class for the rnaquantifications/search method
+    """
+    def __init__(self, args):
+        super(SearchRnaQuantificationsRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+        self._rnaQuantificationSetId = args.rnaQuantificationSetId
+
+    def run(self):
+        iterator = self._client.searchRnaQuantifications(
             self._datasetId,
-            self._rnaQuantificationId)
+            self._rnaQuantificationSetId)
         self._output(iterator)
 
     def _textOutput(self, rnaQuants):
         for rnaQuant in rnaQuants:
             print(
                 rnaQuant.id, rnaQuant.description, rnaQuant.name,
-                rnaQuant.readGroupId, sep="\t", end="\t")
-            for annotation in rnaQuant.annotationIds:
-                print(annotation, sep=",", end="")
+                sep="\t", end="\t")
+            for featureSet in rnaQuant.featureSetIds:
+                print(featureSet, sep=",", end="\t")
+            for readGroup in rnaQuant.readGroupIds:
+                print(readGroup, sep=",", end="")
             print()
 
 
-class SearchExpressionLevelRunner(AbstractSearchRunner):
+class SearchExpressionLevelsRunner(AbstractSearchRunner):
     """
-    Runner class for the ExpressionLevel/search method
+    Runner class for the expressionlevels/search method
     """
     def __init__(self, args):
-        super(SearchExpressionLevelRunner, self).__init__(args)
-        self._expressionLevelId = args.expressionLevelId
-        self._quantificationGroupId = args.quantificationGroupId
+        super(SearchExpressionLevelsRunner, self).__init__(args)
+        self._featureGroupId = args.featureGroupId
         self._rnaQuantificationId = args.rnaQuantificationId
         self.threshold = args.threshold
 
     def run(self):
-        iterator = self._client.searchExpressionLevel(
-            expressionLevelId=self._expressionLevelId,
-            quantificationGroupId=self._quantificationGroupId,
+        iterator = self._client.searchExpressionLevels(
+            featureGroupId=self._featureGroupId,
             rnaQuantificationId=self._rnaQuantificationId,
             threshold=self.threshold)
         self._output(iterator)
@@ -729,36 +750,33 @@ class SearchExpressionLevelRunner(AbstractSearchRunner):
     def _textOutput(self, expressionObjs):
         for expression in expressionObjs:
             print(
-                expression.annotationId, expression.expression,
-                expression.quantificationGroupId, expression.id,
+                expression.id, expression.expression, expression.name,
                 expression.isNormalized, expression.rawReadCount,
                 expression.score, expression.units, sep="\t", end="\t")
+            for featureGroup in expression.featureGroupIds:
+                print(featureGroup, sep=",", end="")
             print()
 
 
-class SearchQuantificationGroupRunner(AbstractSearchRunner):
+class SearchFeatureGroupsRunner(AbstractSearchRunner):
     """
-    Runner class for the quantificationgroup/search method
+    Runner class for the featuregroups/search method
     """
     def __init__(self, args):
-        super(SearchQuantificationGroupRunner, self).__init__(args)
-        self._rnaQuantificationId = args.rnaQuantificationId
-        self._quantificationGroupId = args.quantificationGroupId
-        self._threshold = args.threshold
+        super(SearchFeatureGroupsRunner, self).__init__(args)
+        self._datasetId = args.datasetId
 
     def run(self):
-        iterator = self._client.searchQuantificationGroup(
-            rnaQuantificationId=self._rnaQuantificationId,
-            quantificationGroupId=self._quantificationGroupId,
-            threshold=self._threshold)
+        iterator = self._client.searchFeatureGroups(datasetId=self._datasetId)
         self._output(iterator)
 
-    def _textOutput(self, expressionObjs):
-        for expression in expressionObjs:
+    def _textOutput(self, featureGroupObjs):
+        for featureGroup in featureGroupObjs:
             print(
-                expression.id,
-                expression.analysisId,
-                expression.name, sep="\t", end="\t")
+                featureGroup.id, featureGroup.name, featureGroup.description,
+                sep="\t", end="\t")
+            for featureId in featureGroup.feature_ids:
+                print(featureId, sep=",", end="")
             print()
 
 
@@ -893,11 +911,38 @@ class GetFeatureSetRunner(AbstractGetRunner):
 
 class GetRnaQuantificationRunner(AbstractGetRunner):
     """
-    Runner class for the rnaquantification/{id} method
+    Runner class for the rnaquantifications/{id} method
     """
     def __init__(self, args):
         super(GetRnaQuantificationRunner, self).__init__(args)
         self._method = self._client.getRnaQuantification
+
+
+class GetExpressionLevelRunner(AbstractGetRunner):
+    """
+    Runner class for the expressionlevels/{id} method
+    """
+    def __init__(self, args):
+        super(GetExpressionLevelRunner, self).__init__(args)
+        self._method = self._client.getExpressionLevel
+
+
+class GetRnaQuantificationSetRunner(AbstractGetRunner):
+    """
+    Runner class for the rnaquantificationsets/{id} method
+    """
+    def __init__(self, args):
+        super(GetRnaQuantificationSetRunner, self).__init__(args)
+        self._method = self._client.getRnaQuantificationSet
+
+
+class GetFeatureGroupRunner(AbstractGetRunner):
+    """
+    Runner class for the featureGroups/{id} method
+    """
+    def __init__(self, args):
+        super(GetFeatureGroupRunner, self).__init__(args)
+        self._method = self._client.getFeatureGroup
 
 
 def addDisableUrllibWarningsArgument(parser):
@@ -1356,10 +1401,32 @@ def addVariantsGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addRnaQuantificationSetGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "rnaquantificationsets-get",
+        "Get a rna quantification set")
+    parser.set_defaults(runner=GetRnaQuantificationSetRunner)
+    addGetArguments(parser)
+
+
 def addRnaQuantificationGetParser(subparsers):
     parser = addSubparser(
-        subparsers, "rnaquantification-get", "Get a rna quantification")
+        subparsers, "rnaquantifications-get", "Get a rna quantification")
     parser.set_defaults(runner=GetRnaQuantificationRunner)
+    addGetArguments(parser)
+
+
+def addExpressionLevelGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "expressionlevels-get", "Get a expression level")
+    parser.set_defaults(runner=GetExpressionLevelRunner)
+    addGetArguments(parser)
+
+
+def addFeatureGroupGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "featuregroups-get", "Get a feature group")
+    parser.set_defaults(runner=GetFeatureGroupRunner)
     addGetArguments(parser)
 
 
@@ -1379,39 +1446,49 @@ def addReferencesBasesListParser(subparsers):
     addEndArgument(parser, defaultValue=None)
 
 
-def addRnaQuantificationSearchParser(subparsers):
+def addRnaQuantificationSetsSearchParser(subparsers):
     parser = subparsers.add_parser(
-        "rnaquantification-search",
-        description="Search for rna quantification",
-        help="Search for rna quantification")
-    parser.set_defaults(runner=SearchRnaQuantificationRunner)
+        "rnaquantificationsets-search",
+        description="Search for rna quantification set",
+        help="Search for rna quantification set")
+    parser.set_defaults(runner=SearchRnaQuantificationSetsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
     addDatasetIdArgument(parser)
-    parser.add_argument(
-        "--rnaQuantificationId", default=None,
-        help="The rnaQuantificationId to search over")
     addOutputFormatArgument(parser)
     return parser
 
 
-def addExpressionLevelSearchParser(subparsers):
+def addRnaQuantificationsSearchParser(subparsers):
     parser = subparsers.add_parser(
-        "expressionlevel-search",
-        description="Search for feature expression",
-        help="Search for feature expression")
-    parser.set_defaults(runner=SearchExpressionLevelRunner)
+        "rnaquantifications-search",
+        description="Search for rna quantification",
+        help="Search for rna quantification")
+    parser.set_defaults(runner=SearchRnaQuantificationsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
+    addDatasetIdArgument(parser)
     parser.add_argument(
-        "--expressionLevelId", default=None,
-        help="The expression level Id to search over")
+        "--rnaQuantificationSetId", default=None,
+        help="The rnaQuantification set to search over")
+    addOutputFormatArgument(parser)
+    return parser
+
+
+def addExpressionLevelsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "expressionlevels-search",
+        description="Search for feature expression",
+        help="Search for feature expression")
+    parser.set_defaults(runner=SearchExpressionLevelsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
     parser.add_argument(
         "--rnaQuantificationId", default=None,
         help="The RNA Quantification Id to search over")
     parser.add_argument(
-        "--quantificationGroupId", default=None,
-        help="The quantification group Id to search over")
+        "--featureGroupId", default=None,
+        help="The feature group Id to search over")
     parser.add_argument(
         "--threshold", default=0.0, type=float,
         help="The minimum value for expression results to report.")
@@ -1419,20 +1496,15 @@ def addExpressionLevelSearchParser(subparsers):
     return parser
 
 
-def addQuantificationGroupSearchParser(subparsers):
+def addFeatureGroupsSearchParser(subparsers):
     parser = subparsers.add_parser(
-        "quantificationgroup-search",
-        description="Search for quantification group",
-        help="Search for quantification group")
-    parser.set_defaults(runner=SearchQuantificationGroupRunner)
+        "featuregroups-search",
+        description="Search for feature group",
+        help="Search for feature group")
+    parser.set_defaults(runner=SearchFeatureGroupsRunner)
     addUrlArgument(parser)
     addPageSizeArgument(parser)
-    parser.add_argument(
-        "--rnaQuantificationId", default=None,
-        help="The RNA Quantification Id to search over")
-    parser.add_argument(
-        "--quantificationGroupId", default=None,
-        help="The quantification group Id to search over")
+    addDatasetIdArgument(parser)
     addOutputFormatArgument(parser)
     return parser
 
@@ -1465,11 +1537,15 @@ def getClientParser():
     addCallSetsGetParser(subparsers)
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
+    addRnaQuantificationSetGetParser(subparsers)
     addRnaQuantificationGetParser(subparsers)
+    addExpressionLevelGetParser(subparsers)
+    addFeatureGroupGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
-    addRnaQuantificationSearchParser(subparsers)
-    addExpressionLevelSearchParser(subparsers)
-    addQuantificationGroupSearchParser(subparsers)
+    addRnaQuantificationSetsSearchParser(subparsers)
+    addRnaQuantificationsSearchParser(subparsers)
+    addExpressionLevelsSearchParser(subparsers)
+    addFeatureGroupsSearchParser(subparsers)
     return parser
 
 
@@ -2031,9 +2107,9 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeOntology, ontology)
         self._confirmDelete("Ontology", ontology.getName(), func)
 
-    def addRnaQuantification(self):
+    def addRnaQuantificationSet(self):
         """
-        Adds an Rna Quantification into this repo
+        Adds an rnaQuantificationSet into this repo
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
@@ -2041,30 +2117,67 @@ class RepoManager(object):
             name = getNameFromPath(self._args.filePath)
         else:
             name = self._args.name
-        # TODO: is this the right top level to add?
-        rnaQuantification = rna_quantification.RNASeqResult(
+        rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
             dataset, name)
         referenceSetName = self._args.referenceSetName
         if referenceSetName is None:
             raise exceptions.RepoManagerException(
                 "A reference set name must be provided")
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
-        rnaQuantification.setReferenceSet(referenceSet)
-        rnaQuantification.populateFromFile(self._args.filePath)
-        self._updateRepo(self._repo.insertRnaQuantification, rnaQuantification)
+        rnaQuantificationSet.setReferenceSet(referenceSet)
+        rnaQuantificationSet.populateFromFile(self._args.filePath)
+        self._updateRepo(
+            self._repo.insertRnaQuantificationSet, rnaQuantificationSet)
 
-    def removeRnaQuantification(self):
+    def removeRnaQuantificationSet(self):
         """
-        Removes an RNA Quantification from this repo
+        Removes an rnaQuantificationSet from this repo
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        rnaQuant = dataset.getRnaQuantificationByName(
-            self._args.rnaQuantificationName)
+        rnaQuantSet = dataset.getRnaQuantificationSetByName(
+            self._args.rnaQuantificationSetName)
 
         def func():
-            self._updateRepo(self._repo.removeRnaQuantification, rnaQuant)
-        self._confirmDelete("RnaQuantification", rnaQuant.getLocalId(), func)
+            self._updateRepo(self._repo.removeRnaQuantification, rnaQuantSet)
+        self._confirmDelete(
+            "RnaQuantificationSet", rnaQuantSet.getLocalId(), func)
+
+    def addFeatureGroup(self):
+        """
+        Adds a FeatureGroup into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        if self._args.name is None:
+            name = getNameFromPath(self._args.filePath)
+        else:
+            name = self._args.name
+        featureGroup = rna_quantification.FeatureGroup(
+            dataset, name)
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
+            raise exceptions.RepoManagerException(
+                "A reference set name must be provided")
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
+        featureGroup.setReferenceSet(referenceSet)
+        featureGroup.populateFromFile(self._args.filePath)
+        self._updateRepo(
+            self._repo.insertFeatureGroup, featureGroup)
+
+    def removeFeatureGroup(self):
+        """
+        Removes a FeatureGroup from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        featureGroup = dataset.getFeatureGroupByName(
+            self._args.featureGroupName)
+
+        def func():
+            self._updateRepo(self._repo.removeFeatureGroup, featureGroup)
+        self._confirmDelete(
+            "FeatureGroup", featureGroup.getLocalId(), func)
 
     #
     # Methods to simplify adding common arguments to the parser.
@@ -2150,6 +2263,12 @@ class RepoManager(object):
         subparser.add_argument(
             "rnaQuantificationName",
             help="the name of the RNA Quantification")
+
+    @classmethod
+    def addFeatureGroupNameArgument(cls, subparser):
+        subparser.add_argument(
+            "featureGroupName",
+            help="the name of the feature group")
 
     @classmethod
     def getParser(cls):
@@ -2343,29 +2462,55 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
-        objectType = "RnaQuantification"
-        addRnaQuantificationParser = addSubparser(
-            subparsers, "add-rnaquantification",
-            "Add an RNA quantification to the data repo")
-        addRnaQuantificationParser.set_defaults(runner="addRnaQuantification")
-        cls.addRepoArgument(addRnaQuantificationParser)
-        cls.addDatasetNameArgument(addRnaQuantificationParser)
+        objectType = "RnaQuantificationSet"
+        addRnaQuantificationSetParser = addSubparser(
+            subparsers, "add-rnaquantificationset",
+            "Add an RNA quantification set to the data repo")
+        addRnaQuantificationSetParser.set_defaults(
+            runner="addRnaQuantificationSet")
+        cls.addRepoArgument(addRnaQuantificationSetParser)
+        cls.addDatasetNameArgument(addRnaQuantificationSetParser)
         cls.addFilePathArgument(
-            addRnaQuantificationParser,
+            addRnaQuantificationSetParser,
             "The path to the converted SQLite database containing RNA data")
         cls.addReferenceSetNameOption(
-            addRnaQuantificationParser, objectType)
-        cls.addNameOption(addRnaQuantificationParser, objectType)
+            addRnaQuantificationSetParser, objectType)
+        cls.addNameOption(addRnaQuantificationSetParser, objectType)
 
-        removeRnaQuantificationParser = addSubparser(
-            subparsers, "remove-rnaquantification",
-            "Remove an RNA quantification from the repo")
-        removeRnaQuantificationParser.set_defaults(
-            runner="removeRnaQuantification")
-        cls.addRepoArgument(removeRnaQuantificationParser)
-        cls.addDatasetNameArgument(removeRnaQuantificationParser)
-        cls.addRnaQuantificationNameArgument(removeRnaQuantificationParser)
-        cls.addForceOption(removeRnaQuantificationParser)
+        removeRnaQuantificationSetParser = addSubparser(
+            subparsers, "remove-rnaquantificationset",
+            "Remove an RNA quantification set from the repo")
+        removeRnaQuantificationSetParser.set_defaults(
+            runner="removeRnaQuantificationSet")
+        cls.addRepoArgument(removeRnaQuantificationSetParser)
+        cls.addDatasetNameArgument(removeRnaQuantificationSetParser)
+        cls.addRnaQuantificationNameArgument(removeRnaQuantificationSetParser)
+        cls.addForceOption(removeRnaQuantificationSetParser)
+
+        objectType = "FeatureGroup"
+        addFeatureGroupParser = addSubparser(
+            subparsers, "add-featuregroup",
+            "Add a feature group to the data repo")
+        addFeatureGroupParser.set_defaults(
+            runner="addFeatureGroup")
+        cls.addRepoArgument(addFeatureGroupParser)
+        cls.addDatasetNameArgument(addFeatureGroupParser)
+        cls.addFilePathArgument(
+            addFeatureGroupParser,
+            "The path to the converted SQLite database containing data")
+        cls.addReferenceSetNameOption(
+            addFeatureGroupParser, objectType)
+        cls.addNameOption(addFeatureGroupParser, objectType)
+
+        removeFeatureGroupParser = addSubparser(
+            subparsers, "remove-featuregroup",
+            "Remove a feature group from the repo")
+        removeFeatureGroupParser.set_defaults(
+            runner="removeFeatureGroup")
+        cls.addRepoArgument(removeFeatureGroupParser)
+        cls.addDatasetNameArgument(removeFeatureGroupParser)
+        cls.addFeatureGroupNameArgument(removeFeatureGroupParser)
+        cls.addForceOption(removeFeatureGroupParser)
 
         return parser
 
