@@ -359,13 +359,13 @@ class AbstractClient(object):
             SearchFeaturesResponse object.
         """
         request = protocol.SearchFeaturesRequest()
-        request.featureSetId = featureSetId
-        request.parentId = parentId
-        request.referenceName = referenceName
+        request.feature_set_id = featureSetId
+        request.parent_id = parentId
+        request.reference_name = referenceName
         request.start = start
         request.end = end
-        request.featureTypes = featureTypes
-        request.pageSize = self._pageSize
+        request.feature_types.extend(featureTypes)
+        request.page_size = self._pageSize
         return self._runSearchRequest(
             request, "features",
             protocol.SearchFeaturesResponse)
