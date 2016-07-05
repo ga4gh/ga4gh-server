@@ -30,6 +30,9 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.datasetId = "datasetId"
         self.variantSetId = "variantSetId"
         self.variantAnnotationSetId = "variantAnnotationSetId"
+        self.featureSetId = "featureSetId"
+        self.parentId = "parentId"
+        self.feature = "feature"
         self.referenceSetId = "referenceSetId"
         self.referenceId = "referenceId"
         self.readGroupIds = ["readGroupId"]
@@ -120,6 +123,22 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
                 end=self.end,
                 effects=[{"term": "just a term"}, {"id": "an id"}],
                 referenceId=self.referenceId)
+
+    def testSearchFeatures(self):
+        request = protocol.SearchFeaturesRequest()
+        request.feature_set_id = self.featureSetId
+        request.parent_id = self.parentId
+        request.page_size = self.pageSize
+        request.reference_name = self.referenceName
+        request.start = self.start
+        request.end = self.end
+        request.feature_types.append(self.feature)
+        self.httpClient.searchFeatures(
+            self.featureSetId, parentId=self.parentId,
+            referenceName=self.referenceName, start=self.start,
+            end=self.end, featureTypes=[self.feature])
+        self.httpClient._runSearchRequest.assert_called_once_with(
+            request, "features", protocol.SearchFeaturesResponse)
 
     def testSearchFeatureSets(self):
         request = protocol.SearchFeatureSetsRequest()
