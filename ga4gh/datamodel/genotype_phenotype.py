@@ -13,7 +13,12 @@ import rdflib
 import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.pb as pb
 
+# annotation keys
+TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
+LABEL = 'http://www.w3.org/2000/01/rdf-schema#label'
+HAS_QUALITY = 'http://purl.obolibrary.org/obo/BFO_0000159'
 
 class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
     compoundIdClass = datamodel.PhenotypeAssociationSetCompoundId
@@ -52,88 +57,7 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         else:
             return []
 
-
-class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
-    """
-    An rdf object store.  The cancer genome database
-    [Clinical Genomics Knowledge Base]
-    (http://nif-crawler.neuinfo.org/monarch/ttl/cgd.ttl),
-    published by the Monarch project, was the source of Evidence.
-    """
-
-    def __init__(self, parentContainer, localId, dataDir):
-        super(PhenotypeAssociationSet, self).__init__(parentContainer, localId)
-        """
-        Initialize dataset, using the passed dict of sources
-        [{source,format}] see rdflib.parse() for more
-        If path is set, this backend will load itself
-        """
-
-        # initialize graph
-        self._rdfGraph = rdflib.ConjunctiveGraph()
-        # save the path
-        self._dataUrl = dataDir
-
-        try:
-            self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
-        except AttributeError:
-            pass
-
-        # extract version
-        cgdTTL = rdflib.URIRef("http://data.monarchinitiative.org/ttl/cgd.ttl")
-        versionInfo = rdflib.URIRef(
-            u'http://www.w3.org/2002/07/owl#versionInfo')
-        self._version = None
-        for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
-            self._version = o.toPython()
-
-    def getAssociations(self, request=None, pageSize=None, offset=0):
-        """
-        This query is the main search mechanism.
-        It queries the graph for annotations that match the
-        AND of [feature,environment,phenotype].
-        """
-        # query to do search
-        query = self._formatFilterQuery(request)
-        associations = self._rdfGraph.query(query)
-        # associations is now a dict with rdflib terms with variable and
-        # URIrefs or literals
-
-        # given get the details for the feature,phenotype and environment
-        associations_details = self._detailTuples(
-                                    self._extractAssociationsDetails(
-                                        associations))
-        # association_details is now a list of {subject,predicate,object}
-        # for each of the association detail
-        # http://nmrml.org/cv/v1.0.rc1/doc/doc/objectproperties/BFO0000159___-324347567.html
-        # label "has quality at all times" (en)
-        HAS_QUALITY = 'http://purl.obolibrary.org/obo/BFO_0000159'
-        associationList = []
-        for assoc in associations.bindings:
-            if '?feature' in assoc:
-                association = self._bindingsToDict(assoc)
-                association['feature'] = self._getDetails(
-                    association['feature'],
-                    associations_details)
-                association['environment'] = self._getDetails(
-                    association['environment'],
-                    associations_details)
-                association['phenotype'] = self._getDetails(
-                    association['phenotype'],
-                    associations_details)
-                association['evidence'] = association['phenotype'][HAS_QUALITY]
-                association['id'] = association['association']
-                associationList.append(association)
-
-                # our association list is now a list of dicts with the
-                # elements of an association: environment, evidence,
-                # feature, phenotype and sources, each with their
-                # references (labels or URIrefs)
-
-        # create GA4GH objects
-        associations = [self._toGA4GH(assoc) for
-                        assoc in associationList]
-        return associations
+class  G2PUtility(object):
 
     def _extractAssociationsDetails(self, associations):
         """
@@ -291,11 +215,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         elementClause = "({})".format(" || ".join(filters))
         return elementClause
 
-    def _formatFilterQuery(self, request=None):
-        """
-        Generate a formatted sparql query with appropriate filters
-        """
-        query = """
+    def _baseQuery(self):
+        return """
             PREFIX OBAN: <http://purl.org/oban/>
             PREFIX OBO: <http://purl.obolibrary.org/obo/>
             PREFIX dc: <http://purl.org/dc/elements/1.1/>
@@ -332,111 +253,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             ORDER  BY ?association
 """
 
-        filters = []
-        if issubclass(request.__class__,
-                      protocol.SearchGenotypePhenotypeRequest):
-            filters += self._filterSearchGenotypePhenotypeRequest(request)
 
-        if issubclass(request.__class__, protocol.SearchGenotypesRequest):
-            filters += self._filterSearchGenotypesRequest(request)
-
-        if issubclass(request.__class__, protocol.SearchPhenotypesRequest):
-            filters += self._filterSearchPhenotypesRequest(request)
-
-        # if feature is None and environment is None and phenotype is None:
-        #     # TODO is this really the exception we want to throw?
-        #     raise exceptions.NotImplementedException(
-        #         "At least one of [feature, environment, phenotype] "
-        #         "must be specified")
-        #
-        # # Strings
-        # if feature and isinstance(feature, basestring):
-        #     filters.append('regex(?feature_label, "{}")'.format(feature))
-        # if environment and isinstance(environment, basestring):
-        #     filters.append(
-        #         'regex(?environment_label, "{}")'.format(environment))
-        # if phenotype and isinstance(phenotype, basestring):
-        #     filters.append('regex(?phenotype_label, "{}")'.format(phenotype))
-        #
-        # filters += self._setFilters(feature, environment, phenotype)
-
-        # apply filters
-        filter = "FILTER ({})".format(' && '.join(filters))
-        query = query.replace("#%FILTER%", filter)
-        return query
-
-    def _filterSearchGenotypePhenotypeRequest(self, request):
-        filters = []
-        if request.genotype_ids:
-            featureClause = self._formatIds(request.genotype_ids,
-                                            'feature')
-            if featureClause:
-                filters.append(featureClause)
-
-        if request.evidence:
-            evidenceClause = self._formatEvidence(request.evidence)
-            if evidenceClause:
-                filters.append(evidenceClause)
-
-        if request.phenotype_ids:
-            phenotypeClause = self._formatIds(request.phenotype_ids,
-                                              'phenotype')
-            filters.append(phenotypeClause)
-
-        return filters
-
-    def _filterSearchGenotypesRequest(self, request):
-        """
-        Filters the request for genotype search requests
-        """
-        filters = []
-        if request.id:
-            filters.append("?feature = <{}>".format(request.id))
-
-        if request.reference_name:
-            filters.append('regex(?feature_label, "{}")'
-                           .format(request.reference_name))
-
-        featureClause = self._formatExternalIdentifiers(request, 'external_id')
-        if featureClause:
-            filters.append(featureClause)
-        # OntologyTerms
-        featureOntologytermsClause = self._formatOntologyTerm(request,
-                                                              'feature')
-        if featureOntologytermsClause:
-            filters.append(featureOntologytermsClause)
-
-        return filters
-
-    def _filterSearchPhenotypesRequest(self, request):
-        """
-        Filters request for phenotype search requests
-        """
-        filters = []
-        if request.id:
-            filters.append("?phenotype = <{}>".format(request.id))
-
-        if request.description:
-            filters.append('regex(?phenotype_label, "{}")'
-                           .format(request.description))
-        # OntologyTerms
-        # TODO: refactor this repetitive code
-        if hasattr(request.type, 'id') and request.type.id:
-            ontolgytermsClause = self._formatOntologyTermObject(
-                request.type, 'phenotype')
-            if ontolgytermsClause:
-                filters.append(ontolgytermsClause)
-        if len(request.qualifiers) > 0:
-            ontolgytermsClause = self._formatOntologyTermObject(
-                request.qualifiers, 'phenotype_quality')
-            if ontolgytermsClause:
-                filters.append(ontolgytermsClause)
-        if hasattr(request.age_of_on_set, 'id') and request.age_of_on_set.id:
-            ontolgytermsClause = self._formatOntologyTermObject(
-                request.age_of_on_set, 'phenotype_quality')
-            if ontolgytermsClause:
-                filters.append(ontolgytermsClause)
-        return filters
 
     def _toNamespaceURL(self, term):
         """
@@ -591,3 +408,209 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         fpa.phenotype_association_set_id = self.getId()
 
         return fpa
+
+
+class PhenotypeAssociationSet(G2PUtility,AbstractPhenotypeAssociationSet):
+    """
+    An rdf object store.  The cancer genome database
+    [Clinical Genomics Knowledge Base]
+    (http://nif-crawler.neuinfo.org/monarch/ttl/cgd.ttl),
+    published by the Monarch project, was the source of Evidence.
+    """
+
+    def __init__(self, parentContainer, localId, dataDir):
+        super(PhenotypeAssociationSet, self).__init__(parentContainer, localId)
+        """
+        Initialize dataset, using the passed dict of sources
+        [{source,format}] see rdflib.parse() for more
+        If path is set, this backend will load itself
+        """
+
+        # initialize graph
+        self._rdfGraph = rdflib.ConjunctiveGraph()
+        # save the path
+        self._dataUrl = dataDir
+
+        try:
+            self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
+        except AttributeError:
+            pass
+
+        # extract version
+        cgdTTL = rdflib.URIRef("http://data.monarchinitiative.org/ttl/cgd.ttl")
+        versionInfo = rdflib.URIRef(
+            u'http://www.w3.org/2002/07/owl#versionInfo')
+        self._version = None
+        for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
+            self._version = o.toPython()
+
+
+    def getAssociations(self, request=None, pageSize=None, offset=0,
+                        featureSets=[]):
+        """
+        This query is the main search mechanism.
+        It queries the graph for annotations that match the
+        AND of [feature,environment,phenotype].
+        """
+        # query to do search
+        query = self._formatFilterQuery(request,featureSets)
+        associations = self._rdfGraph.query(query)
+        # associations is now a dict with rdflib terms with variable and
+        # URIrefs or literals
+
+        # given get the details for the feature,phenotype and environment
+        associations_details = self._detailTuples(
+                                    self._extractAssociationsDetails(
+                                        associations))
+
+        # association_details is now a list of {subject,predicate,object}
+        # for each of the association detail
+        # http://nmrml.org/cv/v1.0.rc1/doc/doc/objectproperties/BFO0000159___-324347567.html
+        # label "has quality at all times" (en)
+        associationList = []
+        for assoc in associations.bindings:
+            if '?feature' in assoc:
+                association = self._bindingsToDict(assoc)
+                association['feature'] = self._getDetails(
+                    association['feature'],
+                    associations_details)
+                association['environment'] = self._getDetails(
+                    association['environment'],
+                    associations_details)
+                association['phenotype'] = self._getDetails(
+                    association['phenotype'],
+                    associations_details)
+                association['evidence'] = association['phenotype'][HAS_QUALITY]
+                association['id'] = association['association']
+                associationList.append(association)
+
+                # our association list is now a list of dicts with the
+                # elements of an association: environment, evidence,
+                # feature, phenotype and sources, each with their
+                # references (labels or URIrefs)
+
+        # create GA4GH objects
+        associations = [self._toGA4GH(assoc) for
+                        assoc in associationList]
+        return associations
+
+    def _formatFilterQuery(self, request=None, featureSets=[]):
+        """
+        Generate a formatted sparql query with appropriate filters
+        """
+        query = self._baseQuery()
+
+        filters = []
+
+
+        if issubclass(request.__class__,
+                      protocol.SearchGenotypePhenotypeRequest):
+            filters += self._filterSearchGenotypePhenotypeRequest(request,
+                                                                  featureSets)
+
+        if issubclass(request.__class__, protocol.SearchGenotypesRequest):
+            filters += self._filterSearchGenotypesRequest(request)
+
+        if issubclass(request.__class__, protocol.SearchPhenotypesRequest):
+            filters += self._filterSearchPhenotypesRequest(request)
+
+        # apply filters
+        filter = "FILTER ({})".format(' && '.join(filters))
+        if len(filters) == 0:
+            filter = ""
+        query = query.replace("#%FILTER%", filter)
+
+        print(query) # TODO cleanup
+        return query
+
+
+    def _filterSearchGenotypePhenotypeRequest(self, request, featureSets):
+        filters = []
+        if request.feature_ids:
+            featureFilters = []
+            for featureId in request.feature_ids:
+                for featureSet in featureSets:
+                    compoundId = datamodel.FeatureCompoundId.parse(featureId)
+                    # we have a compoundId, so use it to lookup
+                    # import ipdb; ipdb.set_trace()
+                    if compoundId.feature_set == self.getLocalId():
+                        featureFilters.append(self._formatId(compoundId.featureId,'feature'))
+                        break
+                    else:
+                        feature = featureSet.getFeature(compoundId)
+                        if feature:
+                            featureFilters.append(self._formatFeatureClause(feature))
+                            break
+            if len(featureFilters) > 0 :
+                filters.append("({})".format(" || ".join(featureFilters)))
+
+        if request.genotype_ids:
+            featureClause = self._formatIds(request.genotype_ids,
+                                            'feature')
+            if featureClause:
+                filters.append(featureClause)
+
+        if request.evidence:
+            evidenceClause = self._formatEvidence(request.evidence)
+            if evidenceClause:
+                filters.append(evidenceClause)
+
+        if request.phenotype_ids:
+            phenotypeClause = self._formatIds(request.phenotype_ids,
+                                              'phenotype')
+            filters.append(phenotypeClause)
+
+        return filters
+
+    def _filterSearchGenotypesRequest(self, request):
+        """
+        Filters the request for genotype search requests
+        """
+        filters = []
+        if request.id:
+            filters.append("?feature = <{}>".format(request.id))
+
+        if request.reference_name:
+            filters.append('regex(?feature_label, "{}")'
+                           .format(request.reference_name))
+
+        featureClause = self._formatExternalIdentifiers(request, 'external_id')
+        if featureClause:
+            filters.append(featureClause)
+        # OntologyTerms
+        featureOntologytermsClause = self._formatOntologyTerm(request,
+                                                              'feature')
+        if featureOntologytermsClause:
+            filters.append(featureOntologytermsClause)
+
+        return filters
+
+    def _filterSearchPhenotypesRequest(self, request):
+        """
+        Filters request for phenotype search requests
+        """
+        filters = []
+        if request.id:
+            filters.append("?phenotype = <{}>".format(request.id))
+
+        if request.description:
+            filters.append('regex(?phenotype_label, "{}")'
+                           .format(request.description))
+        # OntologyTerms
+        # TODO: refactor this repetitive code
+        if hasattr(request.type, 'id') and request.type.id:
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.type, 'phenotype')
+            if ontolgytermsClause:
+                filters.append(ontolgytermsClause)
+        if len(request.qualifiers) > 0:
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.qualifiers, 'phenotype_quality')
+            if ontolgytermsClause:
+                filters.append(ontolgytermsClause)
+        if hasattr(request.age_of_on_set, 'id') and request.age_of_on_set.id:
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.age_of_on_set, 'phenotype_quality')
+            if ontolgytermsClause:
+                filters.append(ontolgytermsClause)
+        return filters

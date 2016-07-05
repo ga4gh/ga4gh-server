@@ -17,7 +17,9 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.genotype_phenotype as g2p
+import ga4gh.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.exceptions as exceptions
+
 from ga4gh import protocol
 
 MODE_READ = 'r'
@@ -1161,8 +1163,16 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute("SELECT * FROM FeatureSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
-            featureSet = sequenceAnnotations.Gff3DbFeatureSet(
-                dataset, row[b'name'])
+            # START Load feature set from g2p
+            # TODO perhaps extend the database record to include class_name
+            if row[b'name'] == 'cgd':
+                featureSet = \
+                    g2pFeatureset \
+                    .PhenotypeAssociationFeatureSet(dataset, row[b'name'])
+            else:
+                featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+                    dataset, row[b'name'])
+            # END
             featureSet.setReferenceSet(
                 self.getReferenceSet(row[b'referenceSetId']))
             featureSet.setOntology(self.getOntology(row[b'ontologyId']))

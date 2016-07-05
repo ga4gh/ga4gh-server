@@ -710,6 +710,8 @@ class Backend(object):
         else:
             start = request.start
             end = request.end
+
+        # otherwise use sequence annotations ...
         return featureSet.getFeatures(
             request.reference_name, start, end,
             request.page_token, request.page_size,
@@ -950,6 +952,7 @@ class Backend(object):
         gaFeature = featureSet.getFeature(compoundId)
         jsonString = protocol.toJson(gaFeature)
         return jsonString
+
 
     def runGetReadGroupSet(self, id_):
         """
