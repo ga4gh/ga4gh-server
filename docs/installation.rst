@@ -359,8 +359,6 @@ to work from your command line.)
 
 .. code-block:: bash
 
-  $ mkdir ~/ga4gh
-  $ cd ~/ga4gh
   $ git clone https://github.com/ga4gh/server.git
 
 Before installing Python library dependencies, create a virtualenv sandbox to 
@@ -378,35 +376,6 @@ Install Python dependencies:
 
   (ga4gh-env) $ pip install -r dev-requirements.txt
 
-You may encounter the error "ssl.h not found"; if so, you will have to
-``brew install openssl`` after deactivating the virtualenv:
-
-.. code-block:: bash
-
-  (ga4gh-env) $ deactivate  
-  $ brew install openssl
-
-If the error persists, you need to tell the compiler about the newly 
-downloaded headers by pasting 
-``export C_INCLUDE_PATH="/usr/local/opt/openssl/include"`` into 
-``~/.profile`` file: 
-
-.. code-block:: bash
-
-  $ vim ~/.profile
-
-Click on "i" to switch to INSERT mode, paste
-``export C_INCLUDE_PATH="/usr/local/opt/openssl/include"``, click on "esc", 
-type ``:wq`` and click on "return (enter)" to save and exit. 
-
-``source`` the edited file to notify the compiler of the change and 
-``echo`` it to verify the change:
-
-.. code-block:: bash
-
-  $ source ~/.profile
-  $ echo $C_INCLUDE_PATH
-
 **Test and run**
 
 Run tests to verify the install:
@@ -415,31 +384,6 @@ Run tests to verify the install:
 
   (ga4gh-env) $ python scripts/run_tests.py
 
-If you deactivated the virtualenv, ``source ga4gh-env/bin/activate``
-to reactivate the ga4gh-env virtualenv.
- 
-Download and extract the example data:
+Please refer to the instructions in the :ref:`demo` for how to access
+data made available by this server.
 
-.. code-block:: bash
-
-  (ga4gh-env) $ curl -L -O https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.0.tar
-  (ga4gh-env) $ tar -xf ga4gh-example-data-v4.0.tar
-
-Start the server:
-
-.. code-block:: bash
-
-  (ga4gh-env) $ python server-dev.py
-
-Point a web browser to `http://localhost:8000/ <http://localhost:8000/>`_ 
-and enjoy.
-
-To deactivate the virtual environment:
-
-.. code-block:: bash
-
-  (ga4gh-env) $ deactivate
-
-
-
- 
