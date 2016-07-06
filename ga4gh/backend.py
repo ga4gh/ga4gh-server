@@ -687,10 +687,16 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(
             compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(compoundId.feature_set_id)
+        if request.start == request.end and request.start == 0:
+            start = None
+            end = None
+        else:
+            start = request.start
+            end = request.end
         return featureSet.getFeatures(
-            request.reference_name, request.start, request.end,
+            request.reference_name, start, end,
             request.page_token, request.page_size,
-            request.feature_types, parentId)
+            request.feature_types, parentId, request.name, request.gene_symbol)
 
     def callSetsGenerator(self, request):
         """
