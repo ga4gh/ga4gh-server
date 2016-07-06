@@ -342,8 +342,8 @@ class AbstractClient(object):
             protocol.SearchVariantAnnotationsResponse)
 
     def searchFeatures(
-            self, featureSetId=None, parentId=None, referenceName=None,
-            start=0, end=None, featureTypes=[]):
+            self, featureSetId=None, parentId="", referenceName="",
+            start=0, end=0, featureTypes=[], name="", geneSymbol=""):
         """
         Returns the result of running a searchFeatures method
         on a request with the passed-in parameters.
@@ -355,6 +355,8 @@ class AbstractClient(object):
         :param int start: search start position on reference
         :param int end: end position on reference
         :param featureTypes: array of terms to limit search by (ex: "gene")
+        :param str name: only return features with this name
+        :param str geneSymbol: only return features on this gene
         :return: an iterator over Features as returned in the
             SearchFeaturesResponse object.
         """
@@ -362,10 +364,12 @@ class AbstractClient(object):
         request.feature_set_id = featureSetId
         request.parent_id = parentId
         request.reference_name = referenceName
+        request.name = name
+        request.gene_symbol = geneSymbol
         request.start = start
         request.end = end
         request.feature_types.extend(featureTypes)
-        request.page_size = self._pageSize
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "features",
             protocol.SearchFeaturesResponse)

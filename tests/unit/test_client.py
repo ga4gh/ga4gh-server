@@ -41,6 +41,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.bioSampleName = "bioSampleName"
         self.individualName = "individualName"
         self.individualId = "individualId"
+        self.geneSymbol = "geneSymbol"
         self.start = 100
         self.end = 101
         self.referenceName = "referenceName"
@@ -132,11 +133,14 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.reference_name = self.referenceName
         request.start = self.start
         request.end = self.end
+        request.name = self.objectName
+        request.gene_symbol = self.geneSymbol
         request.feature_types.append(self.feature)
         self.httpClient.searchFeatures(
             self.featureSetId, parentId=self.parentId,
             referenceName=self.referenceName, start=self.start,
-            end=self.end, featureTypes=[self.feature])
+            end=self.end, featureTypes=[self.feature],
+            name=self.objectName, geneSymbol=self.geneSymbol)
         self.httpClient._runSearchRequest.assert_called_once_with(
             request, "features", protocol.SearchFeaturesResponse)
 
