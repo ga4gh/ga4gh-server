@@ -321,6 +321,70 @@ MonarchData:cgd.ttl a owl:Ontology ;
         OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3495.1> ;
         owl:sameAs  <http://www.ncbi.nlm.nih.gov/SNP/121908585> .
 
+    <http://www.monarchinitiative.org/_842842UniProtKB:P16234#P16234-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P16234#P16234-1-842> ;
+        faldo:end <http://www.monarchinitiative.org/_P16234#P16234-1-842> .
+
+    <http://www.monarchinitiative.org/_CCDS:3495.1Region> a faldo:Region ;
+        faldo:begin :_3495.1-2525 ;
+        faldo:end :_3495.1-2525 .
+
+    :_3495.1-2525 a faldo:Position ;
+        faldo:position 2525 ;
+        faldo:reference <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3495.1> .
+
+    :_hg19chr4Region a faldo:Region ;
+        faldo:begin :_hg19chr4-1806099,
+            :_hg19chr4-55152093,
+            :_hg19chr4-55599321,
+            :_hg19chr4-55599332,
+            :_hg19chr4-55599340,
+            :_hg19chr4-55955969 ;
+        faldo:end :_hg19chr4-1806099,
+            :_hg19chr4-55152093,
+            :_hg19chr4-55599321,
+            :_hg19chr4-55599332,
+            :_hg19chr4-55599340,
+            :_hg19chr4-55955969 .
+
+    :_hg19chr4-1806099 a faldo:Position ;
+        faldo:position 1806099 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55152093 a faldo:Position ;
+        faldo:position 55152093 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55599321 a faldo:Position ;
+        faldo:position 55599321 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55599332 a faldo:Position ;
+        faldo:position 55599332 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55599340 a faldo:Position ;
+        faldo:position 55599340 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55955969 a faldo:Position ;
+        faldo:position 55955969 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :MONARCH_hg19chr4 a OBO:CHR_9606chr4,
+            OBO:SO_0000340 ;
+        rdfs:label "chr4 (hg19)" ;
+        OBO:RO_0002350 UCSC:hg19 .
+
+    <http://www.monarchinitiative.org/_842842UniProtKB:P16234#P16234-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P16234#P16234-1-842> ;
+        faldo:end <http://www.monarchinitiative.org/_P16234#P16234-1-842> .
+
+    <http://www.monarchinitiative.org/_P16234#P16234-1-842> a faldo:Position ;
+        faldo:position 842 ;
+        faldo:reference <http://identifiers.org/uniprot/P16234#P16234-1> .
+
+
     <http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=965> a OBO:SO_0001059,
             OBO:SO_0001583,
             <http://www.w3.org/2002/07/owl#NamedIndividual> ;
@@ -340,6 +404,15 @@ MonarchData:cgd.ttl a owl:Ontology ;
             <http://ohsu.edu/cgd/3774b1d2> ;
         OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=7200.1> ;
         owl:sameAs  <http://www.ncbi.nlm.nih.gov/SNP/74799832> .
+
+    <http://www.monarchinitiative.org/_918918UniProtKB:P07949#P07949-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P07949#P07949-1-918> ;
+        faldo:end <http://www.monarchinitiative.org/_P07949#P07949-1-918> .
+    <http://www.monarchinitiative.org/_P07949#P07949-1-918> a faldo:Position ;
+        faldo:position 918 ;
+        faldo:reference <http://identifiers.org/uniprot/P07949#P07949-1> .
+    <http://identifiers.org/uniprot/P07949#P07949-1> a OBO:SO_0000104 ;
+        rdfs:label "P07949-1" .
 
     <http://ohsu.edu/cgd/055b872c> a OBO:SO_0001059 ;
         rdfs:label "PDGFRA  wild type no mutation" ;
@@ -368,6 +441,18 @@ MonarchData:cgd.ttl a owl:Ontology ;
         OBO:RO_0002200 <http://ohsu.edu/cgd/113fa330> ;
         OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3496.1> .
 
+
+    <http://www.monarchinitiative.org/_553553UniProtKB:P10721#P10721-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P10721#P10721-1-553> ;
+        faldo:end <http://www.monarchinitiative.org/_P10721#P10721-1-553> .
+
+    <http://www.monarchinitiative.org/_P10721#P10721-1-553> a faldo:Position ;
+        faldo:position 553 ;
+        faldo:reference <http://identifiers.org/uniprot/P10721#P10721-1> .
+
+    <http://identifiers.org/uniprot/P10721#P10721-1> a OBO:SO_0000104 ;
+        rdfs:label "P10721-1" .
+
     <http://ohsu.edu/cgd/62d638cf> a OBO:SO_0001059 ;
         rdfs:label "RET PTC1 fusion gene" ;
         OBO:RO_0002200 <http://ohsu.edu/cgd/0dc38c55> .
@@ -383,6 +468,17 @@ MonarchData:cgd.ttl a owl:Ontology ;
         OBO:RO_0002200 <http://ohsu.edu/cgd/6461403a> ;
         OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=7200.1> .
 
+    <http://www.monarchinitiative.org/_634634UniProtKB:P07949#P07949-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P07949#P07949-1-634> ;
+        faldo:end <http://www.monarchinitiative.org/_P07949#P07949-1-634> .
+
+    <http://www.monarchinitiative.org/_P07949#P07949-1-634> a faldo:Position ;
+        faldo:position 634 ;
+        faldo:reference <http://identifiers.org/uniprot/P07949#P07949-1> .
+
+    <http://identifiers.org/uniprot/P07949#P07949-1> a OBO:SO_0000104 ;
+        rdfs:label "P07949-1" .
+
     <http://ohsu.edu/cgd/9350d171> a OBO:SO_0001059 ;
         rdfs:label "KIT amplification copy number gain" ;
         OBO:RO_0002200 CGD:c3d9ceb3 .
@@ -397,6 +493,17 @@ MonarchData:cgd.ttl a owl:Ontology ;
         OBO:GENO_results_in_amino_acid_change "Y" ;
         OBO:RO_0002200 CGD:ae494e40 ;
         OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3496.1> .
+
+    <http://www.monarchinitiative.org/_697697UniProtKB:P10721#P10721-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P10721#P10721-1-697> ;
+        faldo:end <http://www.monarchinitiative.org/_P10721#P10721-1-697> .
+
+    <http://www.monarchinitiative.org/_P10721#P10721-1-697> a faldo:Position ;
+        faldo:position 697 ;
+        faldo:reference <http://identifiers.org/uniprot/P10721#P10721-1> .
+
+    <http://identifiers.org/uniprot/P10721#P10721-1> a OBO:SO_0000104 ;
+        rdfs:label "P10721-1" .
 
     CGD:b878c0a3 a OBO:SO_0001059 ;
         rdfs:label "KIT exon 11 p.550-592, exon 13 p.627-664   any mutation  " ;

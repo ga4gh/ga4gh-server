@@ -7,9 +7,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+
+import bisect  # for sorting
 import collections
 import json
 import rdflib
+from rdflib import RDF
 
 import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
@@ -22,7 +25,14 @@ import ga4gh.pb as pb
 TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
 LABEL = 'http://www.w3.org/2000/01/rdf-schema#label'
 HAS_QUALITY = 'http://purl.obolibrary.org/obo/BFO_0000159'
-
+FALDO_LOCATION = "http://biohackathon.org/resource/faldo#location"
+FALDO_BEGIN = "http://biohackathon.org/resource/faldo#begin"
+FALDO_END = "http://biohackathon.org/resource/faldo#end"
+FALDO_POSITION = "http://biohackathon.org/resource/faldo#position"
+FALDO_REFERENCE = "http://biohackathon.org/resource/faldo#reference"
+MEMBER_OF = 'http://purl.obolibrary.org/obo/RO_0002350'
+ASSOCIATION = "http://purl.org/oban/association"
+HAS_SUBJECT = "http://purl.org/oban/association_has_subject"
 
 
 class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
@@ -73,6 +83,10 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         self._version = None
         for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
             self._version = o.toPython()
+
+        # setup location cache
+        self._initializeLocationCache()
+        print(self._locationMap) # TODO cleanup
 
     # mimic featureset
     def getFeature(self, compoundId):
@@ -192,3 +206,93 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
 
         print(query) # TODO cleanup
         return query
+
+    def _initializeLocationCache(self):
+        """
+        CGD uses Faldo ontology for locations,
+        This function sets up an in memory cache of all locations
+        locationMap[build][chromosome][begin][end] = location["_id"]
+        """
+        # cache of locations
+        self._locationMap = {}
+        locationMap = self._locationMap
+        triples = self._rdfGraph.triples
+        Ref = rdflib.URIRef
+
+        associations = []
+        for s, p, o in triples((None, RDF.type, Ref(ASSOCIATION))):
+          associations.append(s.toPython())
+
+        locationIds = []
+        for association in associations:
+          for s, p, o in triples((Ref(association),Ref(HAS_SUBJECT),None)):
+            locationIds.append(o.toPython())
+
+        locations = []
+        for _id in locationIds:
+          location  = {}
+          location["_id"] = _id
+          for s, p, o in triples((Ref(location["_id"]), None, None)):
+            if not p.toPython() in location:
+              location[ p.toPython() ] = []
+            bisect.insort(location[ p.toPython() ], o.toPython())
+          if FALDO_LOCATION in location:
+            locations.append(location)
+
+        for location in locations:
+          for _id in location[FALDO_LOCATION]:
+            # lookup faldo region, ensure positions are sorted
+            faldoLocation = {}
+            faldoLocation["_id"] = _id
+            for s, p, o in triples((Ref(faldoLocation["_id"]), None, None)):
+              if not p.toPython() in faldoLocation:
+                faldoLocation[ p.toPython() ] = []
+              bisect.insort(faldoLocation[ p.toPython() ], o.toPython())
+
+            faldoBegins = []
+
+            if not FALDO_BEGIN in faldoLocation:
+                print(faldoLocation)
+                assert FALDO_BEGIN in faldoLocation
+
+            for _id in faldoLocation[FALDO_BEGIN]:
+              faldoBegin = {}
+              faldoBegin["_id"] = _id
+              for s, p, o in triples((Ref(faldoBegin["_id"]), None, None)):
+                faldoBegin[ p.toPython() ] = o.toPython()
+              faldoBegins.append(faldoBegin)
+
+            faldoReferences = []
+            for _id in faldoLocation[FALDO_BEGIN]:
+              faldoReference = {}
+              faldoReference["_id"] = faldoBegin[FALDO_REFERENCE]
+              for s, p, o in triples((Ref(faldoReference["_id"]), None, None)):
+                faldoReference[ p.toPython() ] = o.toPython()
+              faldoReferences.append(faldoReference)
+
+            faldoEnds = []
+            for _id in faldoLocation[FALDO_END]:
+              faldoEnd = {}
+              faldoEnd["_id"] = _id
+              for s, p, o in triples((Ref(faldoEnd["_id"]), None, None)):
+                faldoEnd[ p.toPython() ] = o.toPython()
+              faldoEnds.append(faldoEnd)
+
+            print(faldoLocation["_id"], len(faldoBegins), len(faldoEnds) , len(faldoReferences) )
+
+
+            for idx, faldoReference in enumerate(faldoReferences):
+              if MEMBER_OF in faldoReference:
+                build = faldoReference[MEMBER_OF].split('/')[-1]
+                chromosome = faldoReference[LABEL].split(' ')[0]
+                begin = faldoBegins[idx][FALDO_POSITION]
+                end = faldoEnds[idx][FALDO_POSITION]
+                if not build in locationMap:
+                  locationMap[build] = {}
+                if not chromosome in locationMap[build]:
+                  locationMap[build][chromosome] = {}
+                if not begin in locationMap[build][chromosome]:
+                  locationMap[build][chromosome][begin] = {}
+                if not end in locationMap[build][chromosome][begin]:
+                  locationMap[build][chromosome][begin][end] = {}
+                locationMap[build][chromosome][begin][end] = location["_id"]
