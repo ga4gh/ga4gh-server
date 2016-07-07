@@ -7,18 +7,18 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import json
+import collections
 import rdflib
 
 import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
-import ga4gh.pb as pb
 
 # annotation keys
 TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
 LABEL = 'http://www.w3.org/2000/01/rdf-schema#label'
 HAS_QUALITY = 'http://purl.obolibrary.org/obo/BFO_0000159'
+
 
 class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
     compoundIdClass = datamodel.PhenotypeAssociationSetCompoundId
@@ -57,18 +57,21 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         else:
             return []
 
-class  G2PUtility(object):
 
-    def _featureTypeLabel(self,featureType):
+class G2PUtility(object):
+
+    def _featureTypeLabel(self, featureType):
         """
         return a label for known types
         """
-        featureTypes = {'http://purl.obolibrary.org/obo/SO_0001059': 'sequence_alteration',
-                        'http://purl.obolibrary.org/obo/SO_0001583': 'missense_variant' ,
+        featureTypes = {'http://purl.obolibrary.org/obo/SO_0001059':
+                        'sequence_alteration',
+                        'http://purl.obolibrary.org/obo/SO_0001583':
+                        'missense_variant',
                         'http://purl.obolibrary.org/obo/SO_0000147': 'exon'}
         if featureType in featureTypes:
             return featureTypes[featureType]
-        return  featureType
+        return featureType
 
     def _extractAssociationsDetails(self, associations):
         """
@@ -180,7 +183,7 @@ class  G2PUtility(object):
         Formats the ontology term object for query
         """
         elementClause = None
-        if terms.__class__.__name__ != 'RepeatedCompositeFieldContainer':
+        if not isinstance(terms, collections.Iterable):
             terms = [terms]
         elements = []
         for term in terms:
@@ -200,7 +203,7 @@ class  G2PUtility(object):
         Formats the external identifiers for query
         """
         elementClause = None
-        if element.__class__.__name__ == 'RepeatedScalarFieldContainer':
+        if isinstance(element, collections.Iterable):
             elements = []
             for _id in element:
                 elements.append('?{} = <{}> '.format(
@@ -215,12 +218,14 @@ class  G2PUtility(object):
             if evidence.description:
                 elementClause = 'regex(?{}, "{}")'.format(
                     'environment_label', evidence.description)
-            if hasattr(evidence, 'externalIdentifiers') and evidence.externalIdentifiers:
+            if hasattr(evidence, 'externalIdentifiers') \
+                    and evidence.externalIdentifiers:
+                # TODO will this pick up > 1 externalIdentifiers ?
                 for externalIdentifier in evidence['externalIdentifiers']:
                     exid_clause = self._formatExternalIdentifier(
                         externalIdentifier, 'environment')
                     # cleanup parens from _formatExternalIdentifier method
-                    elementClause = string[1:-1]
+                    elementClause = exid_clause[1:-1]
             if elementClause:
                 filters.append(elementClause)
         elementClause = "({})".format(" || ".join(filters))
@@ -263,8 +268,6 @@ class  G2PUtility(object):
             GROUP  BY ?association
             ORDER  BY ?association
 """
-
-
 
     def _toNamespaceURL(self, term):
         """
@@ -377,7 +380,6 @@ class  G2PUtility(object):
         evidence = protocol.Evidence()
         phenotype = association['phenotype']
 
-
         term = protocol.OntologyTerm()
         term.term = association['evidence_type']
         term.id = phenotype['id']
@@ -385,7 +387,6 @@ class  G2PUtility(object):
         term.source_name = self._getPrefix(
             self._getPrefixURL(association['id']))
         evidence.evidence_type.MergeFrom(term)
-
 
         evidence.description = self._getIdentifier(association['evidence'])
         # TODO there is nowhere in evidence to place list of sources?
@@ -420,11 +421,10 @@ class  G2PUtility(object):
         phenotypeInstance.id = phenotype['id']
         fpa.phenotype.MergeFrom(phenotypeInstance)
         fpa.phenotype_association_set_id = self.getId()
-
         return fpa
 
 
-class PhenotypeAssociationSet(G2PUtility,AbstractPhenotypeAssociationSet):
+class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
     """
     An rdf object store.  The cancer genome database
     [Clinical Genomics Knowledge Base]
@@ -458,7 +458,6 @@ class PhenotypeAssociationSet(G2PUtility,AbstractPhenotypeAssociationSet):
         for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
             self._version = o.toPython()
 
-
     def getAssociations(self, request=None, pageSize=None, offset=0,
                         featureSets=[]):
         """
@@ -467,7 +466,7 @@ class PhenotypeAssociationSet(G2PUtility,AbstractPhenotypeAssociationSet):
         AND of [feature,environment,phenotype].
         """
         # query to do search
-        query = self._formatFilterQuery(request,featureSets)
+        query = self._formatFilterQuery(request, featureSets)
         associations = self._rdfGraph.query(query)
         # associations is now a dict with rdflib terms with variable and
         # URIrefs or literals
@@ -516,7 +515,6 @@ class PhenotypeAssociationSet(G2PUtility,AbstractPhenotypeAssociationSet):
 
         filters = []
 
-
         if issubclass(request.__class__,
                       protocol.SearchGenotypePhenotypeRequest):
             filters += self._filterSearchGenotypePhenotypeRequest(request,
@@ -536,7 +534,6 @@ class PhenotypeAssociationSet(G2PUtility,AbstractPhenotypeAssociationSet):
 
         return query
 
-
     def _filterSearchGenotypePhenotypeRequest(self, request, featureSets):
         filters = []
         if request.feature_ids:
@@ -547,14 +544,16 @@ class PhenotypeAssociationSet(G2PUtility,AbstractPhenotypeAssociationSet):
                     # we have a compoundId, so use it to lookup
                     # import ipdb; ipdb.set_trace()
                     if compoundId.feature_set == self.getLocalId():
-                        featureFilters.append(self._formatId(compoundId.featureId,'feature'))
+                        featureFilters.append(self._formatId(
+                                              compoundId.featureId, 'feature'))
                         break
                     else:
                         feature = featureSet.getFeature(compoundId)
                         if feature:
-                            featureFilters.append(self._formatFeatureClause(feature))
+                            featureFilters.append(self._formatFeatureClause(
+                                                  feature))
                             break
-            if len(featureFilters) > 0 :
+            if len(featureFilters) > 0:
                 filters.append("({})".format(" || ".join(featureFilters)))
 
         if request.genotype_ids:

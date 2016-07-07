@@ -656,6 +656,7 @@ def getFeaturesSearch(datasetId):
 #         flask.request,
 #         app.backend.runSearchGenotypes)
 
+
 @DisplayedRoute(
     '/phenotypes/search',
     postMethod=True)

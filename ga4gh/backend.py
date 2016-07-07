@@ -440,40 +440,6 @@ class Backend(object):
         """
         yield (datamodelObject.toProtocolElement(), None)
 
-    def _protocolObjectGenerator(self, request, numObjects, getByIndexMethod):
-        """
-        Yields (object, nextPageToken) pairs according to the request
-        pageToken. The listed objects, unlike _topLevelObjectGenerator
-        have already been coerced to their protocol form.
-        :param request: The request containing an optional page token
-        :param numObjects: The length of the list to take from
-        :param getByIndexMethod: A function for accessing objects by index
-        :return: object, nextPageToken pair
-        """
-        currentIndex = 0
-        if request.page_token:
-            currentIndex, = _parsePageToken(request.page_token, 1)
-        while currentIndex < numObjects:
-            object_ = getByIndexMethod(currentIndex)
-            currentIndex += 1
-            nextPageToken = None
-            if currentIndex < numObjects:
-                nextPageToken = str(currentIndex)
-            yield object_, nextPageToken
-
-    def _protocolListGenerator(self, request, objectList):
-        """
-        Convenience function for working with a list of objects that
-        have already been coerced to their protocol equivalent. This
-        may be useful for objects that are not ordered by their
-        genomic position, but by their order in this list.
-        :param request: The request with pagetokens.
-        :param objectList: A list of ga4gh.protocol objects
-        :return: generator for objects in this list
-        """
-        return self._protocolObjectGenerator(
-            request, len(objectList), lambda index: objectList[index])
-
     def _noObjectGenerator(self):
         """
         Returns a generator yielding no results
@@ -777,10 +743,11 @@ class Backend(object):
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
             request.phenotype_association_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.page_size, offset)
+            request, request.page_size, offset, dataset.getFeatureSets())
         return self._protocolListGenerator(request, annotationList)
 
     def callSetsGenerator(self, request):
@@ -953,7 +920,6 @@ class Backend(object):
         gaFeature = featureSet.getFeature(compoundId)
         jsonString = protocol.toJson(gaFeature)
         return jsonString
-
 
     def runGetReadGroupSet(self, id_):
         """

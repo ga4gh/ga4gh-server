@@ -2123,7 +2123,6 @@ class RepoManager(object):
         subparser.add_argument(
             "datasetName", help="the name of the dataset")
 
-
     @classmethod
     def addClassNameOption(cls, subparser, objectType):
         helpText = (
@@ -2131,7 +2130,9 @@ class RepoManager(object):
             "fetch features in this {}"
         ).format(objectType)
         subparser.add_argument(
-            "-C", "--className", default="sequenceAnnotations.Gff3DbFeatureSet", help=helpText)
+            "-C", "--className",
+            default="ga4gh.datamodel.sequenceAnnotations.Gff3DbFeatureSet",
+            help=helpText)
 
     @classmethod
     def addReferenceSetNameOption(cls, subparser, objectType):
@@ -2417,7 +2418,8 @@ class RepoManager(object):
             "The path of the ttl file defining phenotypes.")
         cls.addNameOption(addPhenotypeAssociationSetParser, "g2p")
         cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
-        cls.addNameOption(addPhenotypeAssociationSetParser, "PhenotypeAssociationSet")
+        cls.addNameOption(addPhenotypeAssociationSetParser,
+                          "PhenotypeAssociationSet")
 
         removePhenotypeAssociationSetParser = addSubparser(
             subparsers, "remove-g2p",

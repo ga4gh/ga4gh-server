@@ -8,18 +8,13 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-import bisect  # for sorting
-import collections
-import json
+import bisect
 import rdflib
 from rdflib import RDF
 
-import ga4gh.datamodel as datamodel
-import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.genotype_phenotype as g2p
-import ga4gh.pb as pb
 
 # annotation keys
 TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
@@ -45,7 +40,8 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
     """
 
     def __init__(self, parentContainer, localId):
-        super(PhenotypeAssociationFeatureSet, self).__init__(parentContainer, localId)
+        super(PhenotypeAssociationFeatureSet, self).__init__(parentContainer,
+                                                             localId)
 
     # mimic featureset
     def populateFromRow(self, row):
@@ -97,13 +93,13 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         feature.id = str(compoundId)
         return feature
 
-    def _getFeatureById(self,featureId):
+    def _getFeatureById(self, featureId):
         """
         find a feature and return ga4gh representation, use 'native' id as
         featureId
         """
         featureRef = rdflib.URIRef(featureId)
-        featureDetails =  self._detailTuples([featureRef])
+        featureDetails = self._detailTuples([featureRef])
         feature = {}
         for f in featureDetails:
             feature[f['predicate']] = []
@@ -121,13 +117,12 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                 term.term = self._featureTypeLabel(featureType)
                 term.id = featureType
                 f.feature_type.MergeFrom(term)
-                break ;
-
+                break
 
         f.id = featureId
         # Schema for feature only supports one type of `name` `symbol`
         # here we default to shortest for symbol and longest for name
-        feature[LABEL].sort(key = len)
+        feature[LABEL].sort(key=len)
         f.gene_symbol = feature[LABEL][0]
         f.name = feature[LABEL][-1]
 
@@ -144,7 +139,6 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
 
         return f
 
-
     # mimic featureset
     def getFeatures(self, referenceName=None, start=None, end=None,
                     pageToken=None, pageSize=None,
@@ -152,8 +146,8 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                     name=None, geneSymbol=None, numFeatures=10):
 
         # query to do search
-        query = self._filterSearchFeaturesRequest(referenceName, geneSymbol
-                                                  ,name, start, end )
+        query = self._filterSearchFeaturesRequest(referenceName, geneSymbol,
+                                                  name, start, end)
         featuresResults = self._rdfGraph.query(query)
         featureIds = set()
         for row in featuresResults.bindings:
@@ -171,7 +165,6 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                 continue
             feature = self._getFeatureById(featureId)
             # get _getFeatureById returns native id, cast to compound
-            _feature_id = feature.id
             feature.id = self.getCompoundIdForFeatureId(feature.id)
             if nextPageToken < featuresCount - 1:
                 nextPageToken += 1
@@ -196,7 +189,7 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         }
         """
 
-    def _filterSearchFeaturesRequest(self, reference_name,gene_symbol,name,
+    def _filterSearchFeaturesRequest(self, reference_name, gene_symbol, name,
                                      start, end):
 
         """
@@ -207,7 +200,7 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
 
         filters = []
 
-        location = self._findLocation(reference_name,start,end)
+        location = self._findLocation(reference_name, start, end)
         if location:
             filters.append("?feature = <{}>".format(location))
 
@@ -232,7 +225,7 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         try:
             # TODO - sequenceAnnotations does not have build?
             return self._locationMap['hg19'][reference_name][start][end]
-        except :
+        except:
             return None
 
     def _initializeLocationCache(self):
@@ -250,77 +243,80 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
 
         associations = []
         for s, p, o in triples((None, RDF.type, Ref(ASSOCIATION))):
-          associations.append(s.toPython())
+            associations.append(s.toPython())
 
         locationIds = []
         for association in associations:
-          for s, p, o in triples((Ref(association),Ref(HAS_SUBJECT),None)):
-            locationIds.append(o.toPython())
+            for s, p, o in triples((Ref(association), Ref(HAS_SUBJECT), None)):
+                locationIds.append(o.toPython())
 
         locations = []
         for _id in locationIds:
-          location  = {}
-          location["_id"] = _id
-          for s, p, o in triples((Ref(location["_id"]), None, None)):
-            if not p.toPython() in location:
-              location[ p.toPython() ] = []
-            bisect.insort(location[ p.toPython() ], o.toPython())
-          if FALDO_LOCATION in location:
-            locations.append(location)
+            location = {}
+            location["_id"] = _id
+            for s, p, o in triples((Ref(location["_id"]), None, None)):
+                if not p.toPython() in location:
+                    location[p.toPython()] = []
+                bisect.insort(location[p.toPython()], o.toPython())
+                if FALDO_LOCATION in location:
+                    locations.append(location)
 
         for location in locations:
-          for _id in location[FALDO_LOCATION]:
-            # lookup faldo region, ensure positions are sorted
-            faldoLocation = {}
-            faldoLocation["_id"] = _id
-            for s, p, o in triples((Ref(faldoLocation["_id"]), None, None)):
-              if not p.toPython() in faldoLocation:
-                faldoLocation[ p.toPython() ] = []
-              bisect.insort(faldoLocation[ p.toPython() ], o.toPython())
+            for _id in location[FALDO_LOCATION]:
+                # lookup faldo region, ensure positions are sorted
+                faldoLocation = {}
+                faldoLocation["_id"] = _id
+                for s, p, o in triples((Ref(faldoLocation["_id"]),
+                                       None, None)):
+                    if not p.toPython() in faldoLocation:
+                        faldoLocation[p.toPython()] = []
+                    bisect.insort(faldoLocation[p.toPython()], o.toPython())
 
-            faldoBegins = []
+                faldoBegins = []
 
-            if not FALDO_BEGIN in faldoLocation:
-                assert FALDO_BEGIN in faldoLocation
+                for _id in faldoLocation[FALDO_BEGIN]:
+                    faldoBegin = {}
+                    faldoBegin["_id"] = _id
+                    for s, p, o in triples((Ref(faldoBegin["_id"]),
+                                           None, None)):
+                        faldoBegin[p.toPython()] = o.toPython()
+                    faldoBegins.append(faldoBegin)
 
-            for _id in faldoLocation[FALDO_BEGIN]:
-              faldoBegin = {}
-              faldoBegin["_id"] = _id
-              for s, p, o in triples((Ref(faldoBegin["_id"]), None, None)):
-                faldoBegin[ p.toPython() ] = o.toPython()
-              faldoBegins.append(faldoBegin)
+                faldoReferences = []
+                for _id in faldoLocation[FALDO_BEGIN]:
+                    faldoReference = {}
+                    faldoReference["_id"] = faldoBegin[FALDO_REFERENCE]
+                    for s, p, o in triples((Ref(faldoReference["_id"]),
+                                           None, None)):
+                        faldoReference[p.toPython()] = o.toPython()
+                    faldoReferences.append(faldoReference)
 
-            faldoReferences = []
-            for _id in faldoLocation[FALDO_BEGIN]:
-              faldoReference = {}
-              faldoReference["_id"] = faldoBegin[FALDO_REFERENCE]
-              for s, p, o in triples((Ref(faldoReference["_id"]), None, None)):
-                faldoReference[ p.toPython() ] = o.toPython()
-              faldoReferences.append(faldoReference)
+                faldoEnds = []
+                for _id in faldoLocation[FALDO_END]:
+                    faldoEnd = {}
+                    faldoEnd["_id"] = _id
+                    for s, p, o in triples((Ref(faldoEnd["_id"]), None, None)):
+                        faldoEnd[p.toPython()] = o.toPython()
+                    faldoEnds.append(faldoEnd)
 
-            faldoEnds = []
-            for _id in faldoLocation[FALDO_END]:
-              faldoEnd = {}
-              faldoEnd["_id"] = _id
-              for s, p, o in triples((Ref(faldoEnd["_id"]), None, None)):
-                faldoEnd[ p.toPython() ] = o.toPython()
-              faldoEnds.append(faldoEnd)
-
-            for idx, faldoReference in enumerate(faldoReferences):
-              if MEMBER_OF in faldoReference:
-                build = faldoReference[MEMBER_OF].split('/')[-1]
-                chromosome = faldoReference[LABEL].split(' ')[0]
-                begin = faldoBegins[idx][FALDO_POSITION]
-                end = faldoEnds[idx][FALDO_POSITION]
-                if not build in locationMap:
-                  locationMap[build] = {}
-                if not chromosome in locationMap[build]:
-                  locationMap[build][chromosome] = {}
-                if not begin in locationMap[build][chromosome]:
-                  locationMap[build][chromosome][begin] = {}
-                if not end in locationMap[build][chromosome][begin]:
-                  locationMap[build][chromosome][begin][end] = {}
-                locationMap[build][chromosome][begin][end] = location["_id"]
-                locationMap[location["_id"]] = {"build":build,
-                                                "chromosome": chromosome,
-                                                "begin":begin, "end":end }
+                for idx, faldoReference in enumerate(faldoReferences):
+                    if MEMBER_OF in faldoReference:
+                        build = faldoReference[MEMBER_OF].split('/')[-1]
+                        chromosome = faldoReference[LABEL].split(' ')[0]
+                        begin = faldoBegins[idx][FALDO_POSITION]
+                        end = faldoEnds[idx][FALDO_POSITION]
+                        if build not in locationMap:
+                            locationMap[build] = {}
+                        if chromosome not in locationMap[build]:
+                            locationMap[build][chromosome] = {}
+                        if begin not in locationMap[build][chromosome]:
+                            locationMap[build][chromosome][begin] = {}
+                        if end not in locationMap[build][chromosome][begin]:
+                            locationMap[build][chromosome][begin][end] = {}
+                        locationMap[build][chromosome][begin][end] = \
+                            location["_id"]
+                        locationMap[location["_id"]] = {"build": build,
+                                                        "chromosome":
+                                                        chromosome,
+                                                        "begin": begin,
+                                                        "end": end}
