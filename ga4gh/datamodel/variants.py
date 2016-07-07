@@ -42,11 +42,17 @@ class CallSet(datamodel.DatamodelObject):
     """
     compoundIdClass = datamodel.CallSetCompoundId
 
+    def __init__(self, parentContainer, localId):
+        super(CallSet, self).__init__(parentContainer, localId)
+        self._info = {}
+        self._bioSampleId = None
+
     def populateFromRow(self, row):
         """
         Populates this CallSet from the specified DB row.
         """
         # currently a noop
+        self._bioSampleId = row[b'bioSampleId']
 
     def toProtocolElement(self):
         """
@@ -54,22 +60,42 @@ class CallSet(datamodel.DatamodelObject):
         ProtocolElement.
         """
         variantSet = self.getParentContainer()
-        gaCallSet = protocol.CallSet()
+        gaCallSet = protocol.CallSet(
+            bio_sample_id=self.getBioSampleId())
         if variantSet.getCreationTime():
             gaCallSet.created = variantSet.getCreationTime()
         if variantSet.getUpdatedTime():
             gaCallSet.updated = variantSet.getUpdatedTime()
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
-        gaCallSet.sample_id = self.getLocalId()
         gaCallSet.variant_set_ids.append(variantSet.getId())
+        for key in self._info:
+            gaCallSet.info[key].values.extend(_encodeValue(self._info[key]))
         return gaCallSet
+
+    def getBioSampleId(self):
+        """
+        Returns the bioSampleId for this CallSet.
+        """
+        return self._bioSampleId
+
+    def setBioSampleId(self, bioSampleId):
+        """
+        Set the bioSampleId for the current sample.
+        """
+        self._bioSampleId = bioSampleId
 
     def getSampleName(self):
         """
         Returns the sample name for this CallSet.
         """
         return self.getLocalId()
+
+    def getInfo(self):
+        """
+        Returns info map for this CallSet
+        """
+        return self._info
 
 
 class AbstractVariantSet(datamodel.DatamodelObject):
@@ -87,6 +113,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         self._creationTime = None
         self._updatedTime = None
         self._referenceSet = None
+        self._metadata = []
         self._variantAnnotationSetIds = []
         self._variantAnnotationSetIdMap = {}
 
@@ -205,6 +232,12 @@ class AbstractVariantSet(datamodel.DatamodelObject):
             raise exceptions.CallSetNotFoundException(id_)
         return self._callSetIdMap[id_]
 
+    def getMetadata(self):
+        """
+        Returns Metdata associated with this VariantSet
+        """
+        return self._metadata
+
     def toProtocolElement(self):
         """
         Converts this VariantSet into its GA4GH protocol equivalent.
@@ -217,9 +250,6 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.name = self.getLocalId()
-        for metadata in self.getMetadata():
-            newValue = protocolElement.metadata.add()
-            newValue.CopyFrom(metadata)
         return protocolElement
 
     def getNumVariants(self):
@@ -284,20 +314,51 @@ class SimulatedVariantSet(AbstractVariantSet):
         self._referenceSet = referenceSet
         self._randomSeed = randomSeed
         self._numCalls = numCalls
-        for j in range(numCalls):
-            self.addCallSetFromName("simCallSet_{}".format(j))
+        for i in range(numCalls):
+            callSetName = "simCallSet_{}".format(i)
+            self.addCallSetFromName(callSetName)
+            callSet = self.getCallSetByName(callSetName)
+            # build up infos of increasing size
+            for j in range(i):
+                callSet._info["key_{}".format(j)] = "value_{}".format(j)
         self._variantDensity = variantDensity
+        self._metadata = self._createMetaData()
         now = protocol.convertDatetime(datetime.datetime.now())
         self._creationTime = now
         self._updatedTime = now
 
+    def _createMetaData(self):
+        metadata_1 = protocol.VariantSetMetadata()
+        metadata_1.key = "version"
+        metadata_1.value = "VCFv4.1"
+        metadata_1.type = "String"
+        metadata_1.number = "1"
+        metadata_1.description = ""
+        metadata_1.id = str(datamodel.VariantSetMetadataCompoundId(
+            self.getCompoundId(), 'metadata:' + metadata_1.key))
+
+        metadata_2 = protocol.VariantSetMetadata()
+        metadata_2.key = "INFO.FIELD1"
+        metadata_2.value = ""
+        metadata_2.type = "String"
+        metadata_2.number = ""
+        metadata_2.description = "FIELD1 description"
+        metadata_2.id = str(datamodel.VariantSetMetadataCompoundId(
+            self.getCompoundId(), 'metadata:' + metadata_2.key))
+
+        metadata_3 = protocol.VariantSetMetadata()
+        metadata_3.key = "INFO.FIELD2"
+        metadata_3.value = ""
+        metadata_3.type = "Integer"
+        metadata_3.number = "1"
+        metadata_3.description = "FIELD2 description"
+        metadata_3.id = str(datamodel.VariantSetMetadataCompoundId(
+            self.getCompoundId(), 'metadata:' + metadata_3.key))
+
+        return [metadata_1, metadata_2, metadata_3]
+
     def getNumVariants(self):
         return 0
-
-    def getMetadata(self):
-        ret = []
-        # TODO Add simulated metadata.
-        return ret
 
     def getVariant(self, compoundId):
         randomNumberGenerator = random.Random()
@@ -676,9 +737,6 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 referenceName, startPosition, endPosition):
             yield self.convertVariant(record, callSetIds)
 
-    def getMetadata(self):
-        return self._metadata
-
     def getMetadataId(self, metadata):
         """
         Returns the id of a metadata
@@ -749,10 +807,8 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         self._variantSet = variantSet
         self._ontology = None
         self._analysis = None
-        # TODO these should be set from the DB, not created on
-        # instantiation.
-        self._creationTime = datetime.datetime.now().isoformat() + "Z"
-        self._updatedTime = datetime.datetime.now().isoformat() + "Z"
+        self._creationTime = ''
+        self._updatedTime = ''
 
     def setOntology(self, ontology):
         """
@@ -761,6 +817,18 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         specified value.
         """
         self._ontology = ontology
+
+    def getCreationTime(self):
+        """
+        Returns the creation time for this VariantAnnotationSet
+        """
+        return self._creationTime
+
+    def getUpdatedTime(self):
+        """
+        Returns the update time for this VariantAnnotationSet
+        """
+        return self._updatedTime
 
     def getOntology(self):
         """
@@ -786,7 +854,7 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         object from this variant set.
         """
         ret = protocol.VariantAnnotation()
-        ret.create_date_time = self._creationTime
+        ret.created = self._creationTime
         ret.variant_annotation_set_id = self.getId()
         return ret
 
@@ -865,8 +933,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def _createAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.create_date_time = self._creationTime
-        analysis.update_date_time = self._updatedTime
+        analysis.created = datetime.datetime.now().isoformat() + "Z"
+        analysis.updated = datetime.datetime.now().isoformat() + "Z"
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -897,7 +965,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann = protocol.VariantAnnotation()
         ann.variant_annotation_set_id = str(self.getCompoundId())
         ann.variant_id = variant.id
-        ann.create_date_time = self._creationTime
+        ann.created = datetime.datetime.now().isoformat() + "Z"
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (1,5)
         for i in range(randomNumberGenerator.randint(1, 5)):
@@ -976,13 +1044,12 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
     """
     def __init__(self, variantSet, localId):
         super(HtslibVariantAnnotationSet, self).__init__(variantSet, localId)
-        self._annotationCreatedDateTime = self._creationTime
 
     def populateFromFile(self, varFile, annotationType):
         self._annotationType = annotationType
         self._analysis = self._getAnnotationAnalysis(varFile)
-        # TODO parse the annotation creation time from the VCF header and
-        # store it in an instance variable.
+        self._creationTime = self._analysis.created
+        self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
     def populateFromRow(self, row):
         """
@@ -990,6 +1057,8 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         """
         self._annotationType = row[b'annotationType']
         self._analysis = protocol.fromJson(row[b'analysis'], protocol.Analysis)
+        self._creationTime = row[b'created']
+        self._updatedTime = row[b'updated']
 
     def getAnnotationType(self):
         """
@@ -1016,18 +1085,27 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                 if value.description is not None:
                     analysis.info[
                         key].values.add().string_value = value.description
-        analysis.create_date_time = self._creationTime
-        analysis.update_date_time = self._updatedTime
+        analysis.created = self._creationTime
+        analysis.updated = self._updatedTime
         for r in header.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:
                 if r.key not in analysis.info:
                     analysis.info[r.key].Clear()
                 analysis.info[r.key].values.add().string_value = str(r.value)
-            if r.key == "created":
+            if r.key == "created" or r.key == "fileDate":
                 # TODO handle more date formats
-                analysis.create_date_time = datetime.datetime.strptime(
-                    r.value, "%Y-%m-%d").isoformat() + "Z"
+                try:
+                    if '-' in r.value:
+                        fmtStr = "%Y-%m-%d"
+                    else:
+                        fmtStr = "%Y%m%d"
+                    analysis.created = datetime.datetime.strptime(
+                        r.value, fmtStr).isoformat() + "Z"
+                except ValueError:
+                    # is there a logger we should tell?
+                    # print("INFO: Could not parse variant annotation time")
+                    pass  # analysis.create_date_time remains datetime.now()
             if r.key == "software":
                 analysis.software.append(r.value)
             if r.key == "name":
@@ -1270,7 +1348,6 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         """
         variant = self._variantSet.convertVariant(record, [])
         annotation = self._createGaVariantAnnotation()
-        annotation.create_date_time = self._annotationCreatedDateTime
         annotation.variant_id = variant.id
         # Convert annotations from INFO field into TranscriptEffect
         transcriptEffects = []

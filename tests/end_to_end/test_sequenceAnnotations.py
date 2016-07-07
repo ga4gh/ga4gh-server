@@ -61,6 +61,44 @@ class TestSequenceAnnotations(unittest.TestCase):
             path, request, protocol.SearchFeatureSetsResponse)
         return responseData.feature_sets
 
+    def testSearchFeaturesByName(self):
+        ran = False
+        featureSets = self.getAllFeatureSets()
+        for featureSet in featureSets:
+            path = "features/search"
+            request = protocol.SearchFeaturesRequest()
+            request.feature_set_id = featureSet.id
+            request.name = "BAD NAME"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchFeaturesResponse)
+            self.assertEqual(0, len(responseData.features))
+            request.name = "exon:ENSTR0000507418.3:5"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchFeaturesResponse)
+            for feature in responseData.features:
+                ran = True
+                self.assertEqual(feature.name, request.name)
+        self.assertTrue(ran)
+
+    def testSearchFeaturesByGeneSymbol(self):
+        ran = False
+        featureSets = self.getAllFeatureSets()
+        for featureSet in featureSets:
+            path = "features/search"
+            request = protocol.SearchFeaturesRequest()
+            request.feature_set_id = featureSet.id
+            request.gene_symbol = "BAD GENE SYMBOL"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchFeaturesResponse)
+            self.assertEqual(0, len(responseData.features))
+            request.gene_symbol = "DDX11L16"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchFeaturesResponse)
+            for feature in responseData.features:
+                ran = True
+                self.assertEqual(feature.gene_symbol, request.gene_symbol)
+        self.assertTrue(ran)
+
     def testSearchFeatures(self):
         featureSets = self.getAllFeatureSets()
         for featureSet in featureSets:
@@ -93,7 +131,6 @@ class TestSequenceAnnotations(unittest.TestCase):
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
                 self.assertIn(feature.feature_type.term, request.feature_types)
-
             request = protocol.SearchFeaturesRequest()
             request.feature_set_id = featureSet.id
             request.start = 0

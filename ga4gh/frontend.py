@@ -584,6 +584,34 @@ def searchFeatures():
         flask.request, app.backend.runSearchFeatures)
 
 
+@DisplayedRoute('/biosamples/search', postMethod=True)
+def searchBioSamples():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchBioSamples)
+
+
+@DisplayedRoute('/individuals/search', postMethod=True)
+def searchIndividuals():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchIndividuals)
+
+
+@DisplayedRoute(
+    '/biosamples/<no(search):id>',
+    pathDisplay='/biosamples/<id>')
+def getBioSample(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetBioSample)
+
+
+@DisplayedRoute(
+    '/individuals/<no(search):id>',
+    pathDisplay='/individuals/<id>')
+def getIndividual(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetIndividual)
+
+
 @DisplayedRoute('/rnaquantificationsets/search', postMethod=True)
 def searchRnaQuantificationSets():
     return handleFlaskPostRequest(

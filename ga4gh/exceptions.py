@@ -222,6 +222,18 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class BioSampleNotFoundException(NotFoundException):
+    def __init__(self, bioSampleId):
+        self.message = "The requested BioSample '{}' was not found".format(
+            bioSampleId)
+
+
+class IndividualNotFoundException(NotFoundException):
+    def __init__(self, individualId):
+        self.message = "The requested Individual '{}' was not found".format(
+            individualId)
+
+
 class AnnotationSetNotFoundException(NotFoundException):
     def __init__(self, variantAnnotationSetId):
         self.message = "The requested VariantAnnotationSet '{}'" \
@@ -365,6 +377,24 @@ class ReferenceNameNotFoundException(NotFoundException):
     """
     def __init__(self, name):
         self.message = "Reference with name '{0}' not found".format(name)
+
+
+class BioSampleNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for a BioSample with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "BioSample with name '{0}' not found".format(name)
+
+
+class IndividualNameNotFoundException(NotFoundException):
+    """
+    Indicates a request was made for an Individual with a name that
+    does not exist.
+    """
+    def __init__(self, name):
+        self.message = "Individual with name '{0}' not found".format(name)
 
 
 class ReferenceSetNameNotFoundException(NotFoundException):

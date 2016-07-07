@@ -150,8 +150,8 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
             "Variant Set ID should match the annotation's variant set ID")
         for variant, ann in annotations:
             self.assertEquals(datetime.datetime.strptime(
-                ann.create_date_time, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
-                "%Y-%m-%dT%H:%M:%S.%fZ"), ann.create_date_time,
+                ann.created, "%Y-%m-%dT%H:%M:%S.%fZ").strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ"), ann.created,
                 "Expect time format to be in ISO8601")
             self.assertEqual(variant.id, ann.variant_id)
 

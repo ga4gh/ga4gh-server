@@ -98,6 +98,26 @@ class AbstractClient(object):
         """
         raise NotImplemented()
 
+    def getBioSample(self, bioSampleId):
+        """
+        Perform a get request for the given BioSample.
+        :param bioSampleId:
+        :return: The requested BioSample.
+        :rtype: :class: `ga4gh.protocol.BioSample`
+        """
+        return self._runGetRequest(
+            "biosamples", protocol.BioSample, bioSampleId)
+
+    def getIndividual(self, individualId):
+        """
+        Perform a get request for the given Individual.
+        :param individualId:
+        :return: The requested Individual.
+        :rtype: :class: `ga4gh.protocol.Individual`
+        """
+        return self._runGetRequest(
+            "individuals", protocol.Individual, individualId)
+
     def getPageSize(self):
         """
         Returns the suggested maximum size of pages of results returned by
@@ -370,8 +390,8 @@ class AbstractClient(object):
             protocol.SearchVariantAnnotationsResponse)
 
     def searchFeatures(
-            self, featureSetId=None, parentId=None, referenceName=None,
-            start=0, end=None, featureTypes=[]):
+            self, featureSetId=None, parentId="", referenceName="",
+            start=0, end=0, featureTypes=[], name="", geneSymbol=""):
         """
         Returns the result of running a searchFeatures method
         on a request with the passed-in parameters.
@@ -383,17 +403,21 @@ class AbstractClient(object):
         :param int start: search start position on reference
         :param int end: end position on reference
         :param featureTypes: array of terms to limit search by (ex: "gene")
+        :param str name: only return features with this name
+        :param str geneSymbol: only return features on this gene
         :return: an iterator over Features as returned in the
             SearchFeaturesResponse object.
         """
         request = protocol.SearchFeaturesRequest()
-        request.featureSetId = featureSetId
-        request.parentId = parentId
-        request.referenceName = referenceName
+        request.feature_set_id = featureSetId
+        request.parent_id = parentId
+        request.reference_name = referenceName
+        request.name = name
+        request.gene_symbol = geneSymbol
         request.start = start
         request.end = end
-        request.featureTypes = featureTypes
-        request.pageSize = self._pageSize
+        request.feature_types.extend(featureTypes)
+        request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "features",
             protocol.SearchFeaturesResponse)
@@ -507,12 +531,16 @@ class AbstractClient(object):
         return self._runSearchRequest(
             request, "references", protocol.SearchReferencesResponse)
 
-    def searchCallSets(self, variantSetId, name=None):
+    def searchCallSets(self, variantSetId, name=None, bioSampleId=None):
         """
         Returns an iterator over the CallSets fulfilling the specified
         conditions from the specified VariantSet.
 
+        :param str variantSetId: Find callsets belonging to the
+            provided variant set.
         :param str name: Only CallSets matching the specified name will
+            be returned.
+        :param str bioSampleId: Only CallSets matching this id will
             be returned.
         :return: An iterator over the :class:`ga4gh.protocol.CallSet`
             objects defined by the query parameters.
@@ -520,17 +548,59 @@ class AbstractClient(object):
         request = protocol.SearchCallSetsRequest()
         request.variant_set_id = variantSetId
         request.name = pb.string(name)
+        request.bio_sample_id = pb.string(bioSampleId)
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "callsets", protocol.SearchCallSetsResponse)
 
-    def searchReadGroupSets(self, datasetId, name=None):
+    def searchBioSamples(self, datasetId, name=None, individualId=None):
+        """
+        Returns an iterator over the BioSamples fulfilling the specified
+        conditions.
+
+        :param str datasetId: The dataset to search within.
+        :param str name: Only BioSamples matching the specified name will
+            be returned.
+        :param str individualId: Only BioSamples matching matching this
+            id will be returned.
+        :return: An iterator over the :class:`ga4gh.protocol.BioSample`
+            objects defined by the query parameters.
+        """
+        request = protocol.SearchBioSamplesRequest()
+        request.dataset_id = datasetId
+        request.name = pb.string(name)
+        request.individual_id = pb.string(individualId)
+        request.page_size = pb.int(self._pageSize)
+        return self._runSearchRequest(
+            request, "biosamples", protocol.SearchBioSamplesResponse)
+
+    def searchIndividuals(self, datasetId, name=None):
+        """
+        Returns an iterator over the Individuals fulfilling the specified
+        conditions.
+
+        :param str datasetId: The dataset to search within.
+        :param str name: Only Individuals matching the specified name will
+            be returned.
+        :return: An iterator over the :class:`ga4gh.protocol.BioSample`
+            objects defined by the query parameters.
+        """
+        request = protocol.SearchIndividualsRequest()
+        request.dataset_id = datasetId
+        request.name = pb.string(name)
+        request.page_size = pb.int(self._pageSize)
+        return self._runSearchRequest(
+            request, "individuals", protocol.SearchIndividualsResponse)
+
+    def searchReadGroupSets(self, datasetId, name=None, bioSampleId=None):
         """
         Returns an iterator over the ReadGroupSets fulfilling the specified
         conditions from the specified Dataset.
 
         :param str name: Only ReadGroupSets matching the specified name
             will be returned.
+        :param str bioSampleId: Only ReadGroups matching the specified
+            bioSample will be included in the response.
         :return: An iterator over the :class:`ga4gh.protocol.ReadGroupSet`
             objects defined by the query parameters.
         :rtype: iter
@@ -538,6 +608,7 @@ class AbstractClient(object):
         request = protocol.SearchReadGroupSetsRequest()
         request.dataset_id = datasetId
         request.name = pb.string(name)
+        request.bio_sample_id = pb.string(bioSampleId)
         request.page_size = pb.int(self._pageSize)
         return self._runSearchRequest(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
@@ -736,6 +807,8 @@ class LocalClient(AbstractClient):
             "readgroupsets": self._backend.runGetReadGroupSet,
             "readgroups": self._backend.runGetReadGroup,
             "variantannotationsets": self._backend.runGetVariantAnnotationSet,
+            "biosamples": self._backend.runGetBioSample,
+            "individuals": self._backend.runGetIndividual,
             "rnaquantificationsets": self._backend.runGetRnaQuantificationSet,
             "rnaquantifications": self._backend.runGetRnaQuantification,
             "expressionlevels": self._backend.runGetExpressionLevel,
@@ -755,6 +828,8 @@ class LocalClient(AbstractClient):
             "variantannotations": self._backend.runSearchVariantAnnotations,
             "variantannotationsets":
                 self._backend.runSearchVariantAnnotationSets,
+            "biosamples": self._backend.runSearchBioSamples,
+            "individuals": self._backend.runSearchIndividuals,
             "rnaquantificationsets":
                 self._backend.runSearchRnaQuantificationSets,
             "rnaquantifications": self._backend.runSearchRnaQuantifications,
