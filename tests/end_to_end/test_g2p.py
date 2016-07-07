@@ -202,8 +202,7 @@ class TestG2P(unittest.TestCase):
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(1, len(response.associations))
-        self.assertEqual(1, len(response.associations[0].featureIds))
-
+        self.assertEqual(1, len(response.associations[0].feature_ids))
 
     def testFeaturesSearchById(self):
         (datasetName,featureSet) = self.getCGDDataSetFeatureSet()
@@ -215,10 +214,14 @@ class TestG2P(unittest.TestCase):
             '/features/{}'.format(obfuscated))
 
         feature = protocol.fromJson(response.data, protocol.Feature)
-
         self.assertIsNotNone(feature)
         self.assertEqual(request.feature_id , feature.id)
-
+        self.assertIsNotNone(feature.feature_type)
+        self.assertEqual(feature.feature_type.id , "http://purl.obolibrary.org/obo/SO_0001583")
+        self.assertEqual(feature.reference_name,  "chr10")
+        self.assertEqual(feature.start,  43617416)
+        self.assertEqual(feature.end,  43617416)
+        
     def testGenotypesSearchByName(self):
         # setup phenotype query
         request = protocol.SearchFeaturesRequest()
@@ -368,7 +371,7 @@ class TestG2P(unittest.TestCase):
             '/genotypephenotypes/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.associations[0].featureIds))
+        self.assertEqual(1, len(response.associations[0].feature_ids))
 
     def testGenotypePhenotypeSearchEvidence(self):
         """
@@ -383,7 +386,7 @@ class TestG2P(unittest.TestCase):
             '/genotypephenotypes/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.associations[0].featureIds))
+        self.assertEqual(1, len(response.associations[0].feature_ids))
 
     def testGenotypePhenotypeSearchPhenotype(self):
         """
@@ -396,7 +399,7 @@ class TestG2P(unittest.TestCase):
             '/genotypephenotypes/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.associations[0].featureIds))
+        self.assertEqual(1, len(response.associations[0].feature_ids))
 
     def testNoFind(self):
         request = protocol.SearchGenotypePhenotypeRequest()

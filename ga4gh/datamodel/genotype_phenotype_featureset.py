@@ -93,7 +93,6 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         find a feature and return ga4gh representation, use compoundId as
         featureId
         """
-        print("getFeature.... {}".format(compoundId.featureId))
         feature = self._getFeatureById(compoundId.featureId)
         feature.id = str(compoundId)
         return feature
@@ -120,7 +119,7 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         for featureType in feature[TYPE]:
             if "obolibrary" in featureType:
                 term.term = self._featureTypeLabel(featureType)
-                term.id = self._getPrefixURL(featureType)
+                term.id = featureType
                 f.feature_type.MergeFrom(term)
                 break ;
 
@@ -136,6 +135,12 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         for key in feature:
             for val in feature[key]:
                 f.attributes.vals[key].values.add().string_value = val
+
+        if featureId in self._locationMap:
+            location = self._locationMap[featureId]
+            f.reference_name = location["chromosome"]
+            f.start = location["begin"]
+            f.end = location["end"]
 
         return f
 
@@ -218,7 +223,6 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         if len(filters) == 0:
             filter = ""
         query = query.replace("#%FILTER%", filter)
-        print(query)
         return query
 
     def _findLocation(self, reference_name, start, end):
@@ -277,7 +281,6 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
             faldoBegins = []
 
             if not FALDO_BEGIN in faldoLocation:
-                print(faldoLocation)
                 assert FALDO_BEGIN in faldoLocation
 
             for _id in faldoLocation[FALDO_BEGIN]:
@@ -318,3 +321,6 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                 if not end in locationMap[build][chromosome][begin]:
                   locationMap[build][chromosome][begin][end] = {}
                 locationMap[build][chromosome][begin][end] = location["_id"]
+                locationMap[location["_id"]] = {"build":build,
+                                                "chromosome": chromosome,
+                                                "begin":begin, "end":end }

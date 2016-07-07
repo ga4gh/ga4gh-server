@@ -363,7 +363,7 @@ class  G2PUtility(object):
         fpa = protocol.FeaturePhenotypeAssociation()
         fpa.id = association['id']
         # fpa.features.extend([f])
-        fpa.featureIds.extend([feature['id']])
+        fpa.feature_ids.extend([feature['id']])
 
         msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' \
               'evidence:[{}] publications:[{}]'
@@ -534,7 +534,6 @@ class PhenotypeAssociationSet(G2PUtility,AbstractPhenotypeAssociationSet):
             filter = ""
         query = query.replace("#%FILTER%", filter)
 
-        print(query) # TODO cleanup
         return query
 
 
