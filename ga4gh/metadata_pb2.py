@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/metadata.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x14ga4gh/metadata.proto\x12\x05ga4gh\"U\n\x0cOntologyTerm\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04term\x18\x02 \x01(\t\x12\x13\n\x0bsource_name\x18\x03 \x01(\t\x12\x16\n\x0esource_version\x18\x04 \x01(\t\"8\n\x07\x44\x61taset\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\tb\x06proto3')
+  serialized_pb=_b('\n\x14ga4gh/metadata.proto\x12\x05ga4gh\"U\n\x0cOntologyTerm\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04term\x18\x02 \x01(\t\x12\x13\n\x0bsource_name\x18\x03 \x01(\t\x12\x16\n\x0esource_version\x18\x04 \x01(\t\"8\n\x07\x44\x61taset\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\"c\n\x07Program\x12\x14\n\x0c\x63ommand_line\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x17\n\x0fprev_program_id\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\tb\x06proto3')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -122,8 +122,68 @@ _DATASET = _descriptor.Descriptor(
   serialized_end=174,
 )
 
+
+_PROGRAM = _descriptor.Descriptor(
+  name='Program',
+  full_name='ga4gh.Program',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='command_line', full_name='ga4gh.Program.command_line', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='id', full_name='ga4gh.Program.id', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='name', full_name='ga4gh.Program.name', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='prev_program_id', full_name='ga4gh.Program.prev_program_id', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='version', full_name='ga4gh.Program.version', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=176,
+  serialized_end=275,
+)
+
 DESCRIPTOR.message_types_by_name['OntologyTerm'] = _ONTOLOGYTERM
 DESCRIPTOR.message_types_by_name['Dataset'] = _DATASET
+DESCRIPTOR.message_types_by_name['Program'] = _PROGRAM
 
 OntologyTerm = _reflection.GeneratedProtocolMessageType('OntologyTerm', (_message.Message,), dict(
   DESCRIPTOR = _ONTOLOGYTERM,
@@ -138,6 +198,13 @@ Dataset = _reflection.GeneratedProtocolMessageType('Dataset', (_message.Message,
   # @@protoc_insertion_point(class_scope:ga4gh.Dataset)
   ))
 _sym_db.RegisterMessage(Dataset)
+
+Program = _reflection.GeneratedProtocolMessageType('Program', (_message.Message,), dict(
+  DESCRIPTOR = _PROGRAM,
+  __module__ = 'ga4gh.metadata_pb2'
+  # @@protoc_insertion_point(class_scope:ga4gh.Program)
+  ))
+_sym_db.RegisterMessage(Program)
 
 
 # @@protoc_insertion_point(module_scope)
