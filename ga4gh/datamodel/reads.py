@@ -389,7 +389,7 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
         self._programs = []
         for jsonDict in json.loads(row[b'programs']):
             program = protocol.fromJson(json.dumps(jsonDict),
-                                        protocol.ReadGroup.Program)
+                                        protocol.Program)
             self._programs.append(program)
         stats = protocol.fromJson(row[b'stats'], protocol.ReadStats)
         self._numAlignedReads = stats.aligned_read_count
@@ -441,7 +441,7 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
         if 'PG' in samFile.header:
             htslibPrograms = samFile.header['PG']
             for htslibProgram in htslibPrograms:
-                program = protocol.ReadGroup.Program()
+                program = protocol.Program()
                 program.id = htslibProgram['ID']
                 program.command_line = htslibProgram.get(
                     'CL', pb.DEFAULT_STRING)

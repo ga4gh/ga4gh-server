@@ -229,7 +229,8 @@ class ComplianceDataMunger(object):
 
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
-        rnaseq2ga.rnaseq2ga(self.inputDirectory, rnaDbName)
+        rnaseq2ga.rnaseq2ga(
+            self.inputDirectory, rnaDbName, featureType="transcript")
 
         self.repo.commit()
 
