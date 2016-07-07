@@ -37,7 +37,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
-# TODO David pluralize ?
+# TODO  pluralize ?
 import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 
 
@@ -2004,14 +2004,6 @@ class RepoManager(object):
         filePath = self._getFilePath(self._args.filePath,
                                      self._args.relativePath)
         name = getNameFromPath(self._args.filePath)
-        # print("addFeatureSet name={}".format(name))
-        # if name == 'cgd':
-        #     # parentContainer, localId, dataDir
-        #     print("Using PhenotypeAssociationSet as featureSet ")
-        #     featureSet = \
-        #         g2pFeatureset \
-        #         .PhenotypeAssociationFeatureSet(dataset, name)
-        # else:
         featureSet = sequenceAnnotations.Gff3DbFeatureSet(
             dataset, name)
         referenceSetName = self._args.referenceSetName
@@ -2130,6 +2122,16 @@ class RepoManager(object):
     def addDatasetNameArgument(cls, subparser):
         subparser.add_argument(
             "datasetName", help="the name of the dataset")
+
+
+    @classmethod
+    def addClassNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the class used to "
+            "fetch features in this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "-C", "--className", default="sequenceAnnotations.Gff3DbFeatureSet", help=helpText)
 
     @classmethod
     def addReferenceSetNameOption(cls, subparser, objectType):
@@ -2393,6 +2395,7 @@ class RepoManager(object):
             "data")
         cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
         cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
+        cls.addClassNameOption(addFeatureSetParser, "feature set")
 
         removeFeatureSetParser = addSubparser(
             subparsers, "remove-featureset",
