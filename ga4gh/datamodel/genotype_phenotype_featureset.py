@@ -153,10 +153,25 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         featureIds = set()
         for row in featuresResults.bindings:
             featureIds.add(row['feature'].toPython())
-        nextPageToken = None
-        for featureId in featureIds:
+
+        featuresCount = len(featureIds)
+        # else 1 + row number being returned (starting at row 0).
+        if pageToken:
+            # nextPageToken = pb.int(pageToken) # TODO pb.int returns string?
+            nextPageToken = int(pageToken)      # TODO int works
+        else:
+            nextPageToken = 0
+        for idx, featureId in enumerate(featureIds):
+            if idx < nextPageToken:
+                continue
             feature = self._getFeatureById(featureId)
+            # get _getFeatureById returns native id, cast to compound
+            _feature_id = feature.id
             feature.id = self.getCompoundIdForFeatureId(feature.id)
+            if nextPageToken < featuresCount - 1:
+                nextPageToken += 1
+            else:
+                nextPageToken = None
             yield feature, (
                 str(nextPageToken)
                 if nextPageToken is not None else None)

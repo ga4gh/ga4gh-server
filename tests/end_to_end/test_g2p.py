@@ -458,54 +458,55 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(1, len(response.features))
         self.assertIsNotNone(response.next_page_token)
 
-    # def testGenotypeSearchFeaturePagingMore(self):
-    #     """
-    #     If page size is not set to more than one association should be returned
-    #     """
-    #     request = protocol.SearchGenotypesRequest()
-    #     request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-    #     # setup phenotype query
-    #     request.reference_name = \
-    #         "KIT *wild"
-    #     postUrl = '/genotypes/search'
-    #     response = self.sendSearchRequest(
-    #         postUrl,
-    #         request,
-    #         protocol.SearchGenotypesResponse)
-    #     self.assertGreater(len(response.genotypes), 1)
-    #     self.assertEqual(response.next_page_token, '')
+    def testGenotypeSearchFeaturePagingMore(self):
+        """
+        If page size is not set to more than one association should be returned
+        """
+        request = protocol.SearchFeaturesRequest()
+        (datasetName,featureSet) = self.getCGDDataSetFeatureSet()
+        request.feature_set_id = featureSet.id
+        request.name = \
+            "KIT *wild"
+        postUrl = "features/search"
+        response = self.sendSearchRequest(
+            postUrl,
+            request,
+            protocol.SearchFeaturesResponse)
+        self.assertGreater(len(response.features), 1)
+        self.assertEqual(response.next_page_token, '')
 
-    # def testGenotypeSearchFeaturePagingAll(self):
-    #     """
-    #     Loop through all pages
-    #     """
-    #     request = protocol.SearchGenotypesRequest()
-    #     request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-    #     # setup phenotype query
-    #     request.page_size = 1
-    #     request.reference_name = \
-    #         "KIT *wild"
-    #     postUrl = '/genotypes/search'
-    #     response = self.sendSearchRequest(
-    #         postUrl,
-    #         request,
-    #         protocol.SearchGenotypesResponse)
-    #     self.assertEqual(1, len(response.genotypes))
-    #     self.assertIsNotNone(response.next_page_token)
-    #     pageCount = 1
-    #     while response.next_page_token:
-    #         previous_id = response.genotypes[0].id
-    #         request = protocol.SearchGenotypesRequest()
-    #         request.phenotype_association_set_id =\
-    #             self.getPhenotypeAssociationSetId()
-    #         request.page_token = response.next_page_token
-    #         request.page_size = 1
-    #         request.reference_name = "KIT *wild"
-    #         response = self.sendSearchRequest(
-    #             postUrl,
-    #             request,
-    #             protocol.SearchGenotypesResponse)
-    #         self.assertEqual(1, len(response.genotypes))
-    #         self.assertNotEqual(previous_id, response.genotypes[0].id)
-    #         pageCount += 1
-    #     self.assertEqual(3, pageCount)
+    def testGenotypeSearchFeaturePagingAll(self):
+        """
+        Loop through all pages
+        """
+        request = protocol.SearchFeaturesRequest()
+        (datasetName,featureSet) = self.getCGDDataSetFeatureSet()
+        request.feature_set_id = featureSet.id
+        request.page_size = 1
+        request.name = \
+            "KIT *wild"
+        postUrl = "features/search"
+        response = self.sendSearchRequest(
+            postUrl,
+            request,
+            protocol.SearchFeaturesResponse)
+
+        self.assertEqual(1, len(response.features))
+        self.assertIsNotNone(response.next_page_token)
+        pageCount = 1
+        # import pdb; pdb.set_trace()
+        while response.next_page_token:
+            previous_id = response.features[0].id
+            request = protocol.SearchFeaturesRequest()
+            request.feature_set_id = featureSet.id
+            request.page_size = 1
+            request.page_token = response.next_page_token
+            request.name = "KIT *wild"
+            response = self.sendSearchRequest(
+                postUrl,
+                request,
+                protocol.SearchFeaturesResponse)
+            self.assertEqual(1, len(response.features))
+            self.assertNotEqual(previous_id, response.features[0].id)
+            pageCount += 1
+        self.assertEqual(3, pageCount)
