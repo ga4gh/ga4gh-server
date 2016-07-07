@@ -345,24 +345,6 @@ class G2PUtility(object):
 
         feature = association['feature']
 
-        # f = protocol.Feature()
-        #
-        # term = protocol.OntologyTerm()
-        # term.term = self._featureTypeLabel(feature[TYPE])
-        # term.id = feature['id']
-        # term.source_version = self._version
-        # term.source_name = self._getPrefix(
-        #     self._getPrefixURL(association['id']))
-        # f.feature_type.MergeFrom(term)
-        #
-        # #
-        # f.id = feature['id']
-        # f.gene_symbol = feature[LABEL]
-        # f.name = feature[LABEL]
-        # f.attributes.MergeFrom(protocol.Attributes())
-        # for key in feature:
-        #     f.attributes.vals[key].values.add().string_value = feature[key]
-
         fpa = protocol.FeaturePhenotypeAssociation()
         fpa.id = association['id']
         # fpa.features.extend([f])
@@ -540,27 +522,34 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
             featureFilters = []
             for featureId in request.feature_ids:
                 for featureSet in featureSets:
-                    compoundId = datamodel.FeatureCompoundId.parse(featureId)
-                    # we have a compoundId, so use it to lookup
-                    # import ipdb; ipdb.set_trace()
-                    if compoundId.feature_set == self.getLocalId():
-                        featureFilters.append(self._formatId(
-                                              compoundId.featureId, 'feature'))
-                        break
-                    else:
-                        feature = featureSet.getFeature(compoundId)
-                        if feature:
-                            featureFilters.append(self._formatFeatureClause(
-                                                  feature))
+                    try:
+                        compoundId = datamodel.FeatureCompoundId. \
+                                                parse(featureId)
+                        # we have a compoundId, so use it to lookup
+                        # import ipdb; ipdb.set_trace()
+                        if compoundId.feature_set == self.getLocalId():
+                            featureFilters.append(self._formatId(
+                                                  compoundId.featureId,
+                                                  'feature'))
                             break
+                        else:
+                            feature = featureSet.getFeature(compoundId)
+                            if feature:
+                                featureFilters.append(self.
+                                                      _formatFeatureClause(
+                                                        feature))
+                                break
+                    except Exception as e:
+                        featureFilters.append(self._formatId(
+                                              "NO-FIND", 'feature'))
             if len(featureFilters) > 0:
                 filters.append("({})".format(" || ".join(featureFilters)))
 
-        if request.genotype_ids:
-            featureClause = self._formatIds(request.genotype_ids,
-                                            'feature')
-            if featureClause:
-                filters.append(featureClause)
+        # if request.genotype_ids:
+        #     featureClause = self._formatIds(request.genotype_ids,
+        #                                     'feature')
+        #     if featureClause:
+        #         filters.append(featureClause)
 
         if request.evidence:
             evidenceClause = self._formatEvidence(request.evidence)
