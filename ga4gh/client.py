@@ -101,9 +101,10 @@ class AbstractClient(object):
     def getBioSample(self, bioSampleId):
         """
         Perform a get request for the given BioSample.
-        :param bioSampleId:
+
+        :param str bioSampleId: The ID of the BioSample
         :return: The requested BioSample.
-        :rtype: :class: `ga4gh.protocol.BioSample`
+        :rtype: :class:`ga4gh.protocol.BioSample`
         """
         return self._runGetRequest(
             "biosamples", protocol.BioSample, bioSampleId)
@@ -111,9 +112,10 @@ class AbstractClient(object):
     def getIndividual(self, individualId):
         """
         Perform a get request for the given Individual.
-        :param individualId:
+
+        :param str individualId: The ID of the Individual
         :return: The requested Individual.
-        :rtype: :class: `ga4gh.protocol.Individual`
+        :rtype: :class:`ga4gh.protocol.Individual`
         """
         return self._runGetRequest(
             "individuals", protocol.Individual, individualId)
