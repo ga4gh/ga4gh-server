@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/genotype_phenotype.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x1ega4gh/genotype_phenotype.proto\x12\x05ga4gh\x1a\x14ga4gh/metadata.proto\x1a ga4gh/sequence_annotations.proto\"U\n\x17PhenotypeAssociationSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x12\n\ndataset_id\x18\x03 \x01(\t\x12\x0c\n\x04info\x18\x04 \x03(\t\"f\n\x14\x45nvironmentalContext\x12\n\n\x02id\x18\x01 \x01(\t\x12-\n\x10\x65nvironment_type\x18\x02 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\"\xb9\x01\n\x11PhenotypeInstance\x12\n\n\x02id\x18\x01 \x01(\t\x12!\n\x04type\x18\x02 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12&\n\tqualifier\x18\x03 \x03(\x0b\x32\x13.ga4gh.OntologyTerm\x12*\n\rage_of_on_set\x18\x04 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12\x0c\n\x04info\x18\x06 \x03(\t\"Y\n\x08\x45vidence\x12*\n\revidence_type\x18\x01 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x0c\n\x04info\x18\x03 \x03(\t\"\x93\x02\n\x1b\x46\x65\x61turePhenotypeAssociation\x12\n\n\x02id\x18\x01 \x01(\t\x12$\n\x1cphenotype_association_set_id\x18\x02 \x01(\t\x12 \n\x08\x66\x65\x61tures\x18\x03 \x03(\x0b\x32\x0e.ga4gh.Feature\x12!\n\x08\x65vidence\x18\x04 \x03(\x0b\x32\x0f.ga4gh.Evidence\x12+\n\tphenotype\x18\x05 \x01(\x0b\x32\x18.ga4gh.PhenotypeInstance\x12\x13\n\x0b\x64\x65scription\x18\x06 \x01(\t\x12;\n\x16\x65nvironmental_contexts\x18\x07 \x03(\x0b\x32\x1b.ga4gh.EnvironmentalContextb\x06proto3')
+  serialized_pb=_b('\n\x1ega4gh/genotype_phenotype.proto\x12\x05ga4gh\x1a\x14ga4gh/metadata.proto\x1a ga4gh/sequence_annotations.proto\"U\n\x17PhenotypeAssociationSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x12\n\ndataset_id\x18\x03 \x01(\t\x12\x0c\n\x04info\x18\x04 \x03(\t\"f\n\x14\x45nvironmentalContext\x12\n\n\x02id\x18\x01 \x01(\t\x12-\n\x10\x65nvironment_type\x18\x02 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\"\xb9\x01\n\x11PhenotypeInstance\x12\n\n\x02id\x18\x01 \x01(\t\x12!\n\x04type\x18\x02 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12&\n\tqualifier\x18\x03 \x03(\x0b\x32\x13.ga4gh.OntologyTerm\x12*\n\rage_of_on_set\x18\x04 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12\x0c\n\x04info\x18\x06 \x03(\t\"Y\n\x08\x45vidence\x12*\n\revidence_type\x18\x01 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\x0c\n\x04info\x18\x03 \x03(\t\"\x85\x02\n\x1b\x46\x65\x61turePhenotypeAssociation\x12\n\n\x02id\x18\x01 \x01(\t\x12$\n\x1cphenotype_association_set_id\x18\x02 \x01(\t\x12\x12\n\nfeatureIds\x18\x03 \x03(\t\x12!\n\x08\x65vidence\x18\x04 \x03(\x0b\x32\x0f.ga4gh.Evidence\x12+\n\tphenotype\x18\x05 \x01(\x0b\x32\x18.ga4gh.PhenotypeInstance\x12\x13\n\x0b\x64\x65scription\x18\x06 \x01(\t\x12;\n\x16\x65nvironmental_contexts\x18\x07 \x03(\x0b\x32\x1b.ga4gh.EnvironmentalContextb\x06proto3')
   ,
   dependencies=[ga4gh_dot_metadata__pb2.DESCRIPTOR,ga4gh_dot_sequence__annotations__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -259,8 +259,8 @@ _FEATUREPHENOTYPEASSOCIATION = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='features', full_name='ga4gh.FeaturePhenotypeAssociation.features', index=2,
-      number=3, type=11, cpp_type=10, label=3,
+      name='featureIds', full_name='ga4gh.FeaturePhenotypeAssociation.featureIds', index=2,
+      number=3, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -306,7 +306,7 @@ _FEATUREPHENOTYPEASSOCIATION = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=568,
-  serialized_end=843,
+  serialized_end=829,
 )
 
 _ENVIRONMENTALCONTEXT.fields_by_name['environment_type'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
@@ -314,7 +314,6 @@ _PHENOTYPEINSTANCE.fields_by_name['type'].message_type = ga4gh_dot_metadata__pb2
 _PHENOTYPEINSTANCE.fields_by_name['qualifier'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
 _PHENOTYPEINSTANCE.fields_by_name['age_of_on_set'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
 _EVIDENCE.fields_by_name['evidence_type'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
-_FEATUREPHENOTYPEASSOCIATION.fields_by_name['features'].message_type = ga4gh_dot_sequence__annotations__pb2._FEATURE
 _FEATUREPHENOTYPEASSOCIATION.fields_by_name['evidence'].message_type = _EVIDENCE
 _FEATUREPHENOTYPEASSOCIATION.fields_by_name['phenotype'].message_type = _PHENOTYPEINSTANCE
 _FEATUREPHENOTYPEASSOCIATION.fields_by_name['environmental_contexts'].message_type = _ENVIRONMENTALCONTEXT

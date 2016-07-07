@@ -90,10 +90,20 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
     # mimic featureset
     def getFeature(self, compoundId):
         """
-        find a feature and return ga4gh representation
+        find a feature and return ga4gh representation, use compoundId as
+        featureId
         """
         print("getFeature.... {}".format(compoundId.featureId))
-        featureRef = rdflib.URIRef(compoundId.featureId)
+        feature = self._getFeatureById(compoundId.featureId)
+        feature.id = str(compoundId)
+        return feature
+
+    def _getFeatureById(self,featureId):
+        """
+        find a feature and return ga4gh representation, use 'native' id as
+        featureId
+        """
+        featureRef = rdflib.URIRef(featureId)
         featureDetails =  self._detailTuples([featureRef])
         feature = {}
         for f in featureDetails:
@@ -109,13 +119,13 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         # here we default to first OBO defined
         for featureType in feature[TYPE]:
             if "obolibrary" in featureType:
-                term.term = featureType
+                term.term = self._featureTypeLabel(featureType)
                 term.id = self._getPrefixURL(featureType)
                 f.feature_type.MergeFrom(term)
                 break ;
 
 
-        f.id = str(compoundId)
+        f.id = featureId
         # Schema for feature only supports one type of `name` `symbol`
         # here we default to shortest for symbol and longest for name
         feature[LABEL].sort(key = len)
@@ -137,48 +147,34 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                     name=None, geneSymbol=None, numFeatures=10):
 
         # query to do search
-        query = self._filterSearchFeaturesRequest(referenceName,geneSymbol,name
-                                                  ,start,end )
-        associations = self._rdfGraph.query(query)
-        # associations is now a dict with rdflib terms with variable and
-        # URIrefs or literals
-
-        # given get the details for the feature,phenotype and environment
-        associations_details = self._detailTuples(
-                                    self._extractAssociationsDetails(
-                                        associations))
-
-        # association_details is now a list of {subject,predicate,object}
-        # for each of the association detail
-        # http://nmrml.org/cv/v1.0.rc1/doc/doc/objectproperties/BFO0000159___-324347567.html
-        # label "has quality at all times" (en)
-        associationList = []
-        for assoc in associations.bindings:
-            if '?feature' in assoc:
-                association = self._bindingsToDict(assoc)
-                association['feature'] = self._getDetails(
-                    association['feature'],
-                    associations_details)
-                association['environment'] = self._getDetails(
-                    association['environment'],
-                    associations_details)
-                association['phenotype'] = self._getDetails(
-                    association['phenotype'],
-                    associations_details)
-                association['evidence'] = association['phenotype'][HAS_QUALITY]
-                association['id'] = association['association']
-                associationList.append(association)
-
-        # create GA4GH objects
-        associations = [self._toGA4GH(assoc) for
-                        assoc in associationList]
-        features = []
+        query = self._filterSearchFeaturesRequest(referenceName, geneSymbol
+                                                  ,name, start, end )
+        featuresResults = self._rdfGraph.query(query)
+        featureIds = set()
+        for row in featuresResults.bindings:
+            featureIds.add(row['feature'].toPython())
         nextPageToken = None
-        for annotation in associations:
-            for feature in annotation.features:
-                yield feature, (
-                    str(nextPageToken)
-                    if nextPageToken is not None else None)
+        for featureId in featureIds:
+            feature = self._getFeatureById(featureId)
+            feature.id = self.getCompoundIdForFeatureId(feature.id)
+            yield feature, (
+                str(nextPageToken)
+                if nextPageToken is not None else None)
+
+    def _baseQuery(self):
+        return """
+        PREFIX OBAN: <http://purl.org/oban/>
+        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+        SELECT DISTINCT
+                        ?feature
+                        ?feature_label
+        WHERE {
+                   ?association  a OBAN:association .
+                   ?association    OBAN:association_has_subject ?feature .
+                   ?feature  rdfs:label ?feature_label  .
+                   #%FILTER%
+        }
+        """
 
     def _filterSearchFeaturesRequest(self, reference_name,gene_symbol,name,
                                      start, end):
@@ -207,8 +203,7 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         if len(filters) == 0:
             filter = ""
         query = query.replace("#%FILTER%", filter)
-
-        print(query) # TODO cleanup
+        print(query)
         return query
 
     def _findLocation(self, reference_name, start, end):
@@ -216,14 +211,16 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         return a location key form the locationMap
         """
         try:
+            # TODO - sequenceAnnotations does not have build?
             return self._locationMap['hg19'][reference_name][start][end]
         except :
             return None
 
     def _initializeLocationCache(self):
         """
-        CGD uses Faldo ontology for locations,
-        This function sets up an in memory cache of all locations
+        CGD uses Faldo ontology for locations, it's a bit complicated.
+        This function sets up an in memory cache of all locations, which
+        can be queried via:
         locationMap[build][chromosome][begin][end] = location["_id"]
         """
         # cache of locations

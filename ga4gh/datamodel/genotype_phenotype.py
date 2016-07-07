@@ -59,6 +59,17 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
 class  G2PUtility(object):
 
+    def _featureTypeLabel(self,featureType):
+        """
+        return a label for known types
+        """
+        featureTypes = {'http://purl.obolibrary.org/obo/SO_0001059': 'sequence_alteration',
+                        'http://purl.obolibrary.org/obo/SO_0001583': 'missense_variant' ,
+                        'http://purl.obolibrary.org/obo/SO_0000147': 'exon'}
+        if featureType in featureTypes:
+            return featureTypes[featureType]
+        return  featureType
+
     def _extractAssociationsDetails(self, associations):
         """
         given a set of results from our search query, return a
@@ -331,26 +342,29 @@ class  G2PUtility(object):
 
         feature = association['feature']
 
-        f = protocol.Feature()
-
-        term = protocol.OntologyTerm()
-        term.term = feature[TYPE]
-        term.id = feature['id']
-        term.source_version = self._version
-        term.source_name = self._getPrefix(
-            self._getPrefixURL(association['id']))
-        f.feature_type.MergeFrom(term)
-
+        # f = protocol.Feature()
         #
-        f.id = feature['id']
-        f.reference_name = feature[LABEL]
-        f.attributes.MergeFrom(protocol.Attributes())
-        for key in feature:
-            f.attributes.vals[key].values.add().string_value = feature[key]
+        # term = protocol.OntologyTerm()
+        # term.term = self._featureTypeLabel(feature[TYPE])
+        # term.id = feature['id']
+        # term.source_version = self._version
+        # term.source_name = self._getPrefix(
+        #     self._getPrefixURL(association['id']))
+        # f.feature_type.MergeFrom(term)
+        #
+        # #
+        # f.id = feature['id']
+        # f.gene_symbol = feature[LABEL]
+        # f.name = feature[LABEL]
+        # f.attributes.MergeFrom(protocol.Attributes())
+        # for key in feature:
+        #     f.attributes.vals[key].values.add().string_value = feature[key]
 
         fpa = protocol.FeaturePhenotypeAssociation()
         fpa.id = association['id']
-        fpa.features.extend([f])
+        # fpa.features.extend([f])
+        fpa.featureIds.extend([feature['id']])
+
         msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' \
               'evidence:[{}] publications:[{}]'
         fpa.description = msg.format(

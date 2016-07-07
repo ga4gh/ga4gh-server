@@ -652,7 +652,7 @@ MonarchData:cgd.ttl a owl:Ontology ;
     OBAN:association_has_object_property OBO:RO_0002200 ;
     OBAN:association_has_subject <http://ohsu.edu/cgd/test-location-3> .
 
-<http://ohsu.edu/cgd/test-location-3> a OBO:SO_0001059 ;
+<http://ohsu.edu/cgd/test-location-3> a OBO:SO_0000147;
     rdfs:label "foo" ;
     OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> ;
     faldo:location <http://www.monarchinitiative.org/_hg19chr1TestRegion> .

@@ -739,28 +739,29 @@ class Backend(object):
         return self._protocolListGenerator(request,
                                            phenotypes)
 
-    def genotypesGenerator(self, request):
-        """
-        Returns a generator over the (phenotypes, nextPageToken) pairs
-        defined by the (JSON string) request
-        """
-        # TODO make paging work using SPARQL?
-        # determine offset for paging
-        if request.page_token:
-            offset = _parsePageToken(request.page_token, 1)
-        else:
-            offset = 0
-        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
-            request.phenotype_association_set_id)
-        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
-        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
-            compoundId.phenotypeAssociationSetId)
-        annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.page_size, offset)
-        genotypes = []
-        for annotation in annotationList:
-            genotypes.extend(annotation.features)
-        return self._protocolListGenerator(request, genotypes)
+# TODO Remove
+    # def genotypesGenerator(self, request):
+    #     """
+    #     Returns a generator over the (phenotypes, nextPageToken) pairs
+    #     defined by the (JSON string) request
+    #     """
+    #     # TODO make paging work using SPARQL?
+    #     # determine offset for paging
+    #     if request.page_token:
+    #         offset = _parsePageToken(request.page_token, 1)
+    #     else:
+    #         offset = 0
+    #     compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+    #         request.phenotype_association_set_id)
+    #     dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+    #     phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+    #         compoundId.phenotypeAssociationSetId)
+    #     annotationList = phenotypeAssociationSet.getAssociations(
+    #         request, request.page_size, offset)
+    #     genotypes = []
+    #     for annotation in annotationList:
+    #         genotypes.extend(annotation.features)
+    #     return self._protocolListGenerator(request, genotypes)
 
     def genotypesPhenotypesGenerator(self, request):
         """
@@ -1170,11 +1171,12 @@ class Backend(object):
             protocol.SearchPhenotypesResponse,
             self.phenotypesGenerator)
 
-    def runSearchGenotypes(self, request):
-        return self.runSearchRequest(
-            request, protocol.SearchGenotypesRequest,
-            protocol.SearchGenotypesResponse,
-            self.genotypesGenerator)
+# TODO Remove
+    # def runSearchGenotypes(self, request):
+    #     return self.runSearchRequest(
+    #         request, protocol.SearchGenotypesRequest,
+    #         protocol.SearchGenotypesResponse,
+    #         self.genotypesGenerator)
 
     def runSearchPhenotypeAssociationSets(self, request):
         return self.runSearchRequest(

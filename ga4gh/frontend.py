@@ -647,14 +647,14 @@ def getFeaturesSearch(datasetId):
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatures)
 
-
-@DisplayedRoute(
-    '/genotypes/search',
-    postMethod=True)
-def getGenotypesSearch(phenotypeAssociationSetId):
-    return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchGenotypes)
-
+# TODO Remove
+# @DisplayedRoute(
+#     '/genotypes/search',
+#     postMethod=True)
+# def getGenotypesSearch():
+#     return handleFlaskPostRequest(
+#         flask.request,
+#         app.backend.runSearchGenotypes)
 
 @DisplayedRoute(
     '/phenotypes/search',
