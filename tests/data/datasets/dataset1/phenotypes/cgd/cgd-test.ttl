@@ -1,3 +1,4 @@
+@prefix : <http://www.monarchinitiative.org/> .
 @prefix OBAN: <http://purl.org/oban/> .
 @prefix OBO: <http://purl.obolibrary.org/obo/> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
@@ -12,6 +13,7 @@
 @prefix MonarchData: <http://data.monarchinitiative.org/ttl/> .
 @prefix MonarchArchive: <http://archive.monarchinitiative.org/ttl/> .
 @prefix dbSNP: <http://www.ncbi.nlm.nih.gov/SNP/> .
+@prefix UCSC: <ftp://hgdownload.cse.ucsc.edu/goldenPath/> .
 
 MonarchData:cgd.ttl a owl:Ontology ;
     owl:versionIRI MonarchArchive:cgd-2015-12-01-17-34.ttl ;
@@ -405,6 +407,28 @@ MonarchData:cgd.ttl a owl:Ontology ;
         OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=7200.1> ;
         owl:sameAs  <http://www.ncbi.nlm.nih.gov/SNP/74799832> .
 
+:_hg19chr10Region a faldo:Region ;
+    faldo:begin :_hg19chr10-43617416 ;
+    faldo:end :_hg19chr10-43617416 .
+
+:_hg19chr10-43617416 a faldo:Position ;
+    faldo:position 43617416 ;
+    faldo:reference :MONARCH_hg19chr10 .
+
+:MONARCH_hg19chr10 a OBO:CHR_9606chr10,
+        OBO:SO_0000340 ;
+    rdfs:label "chr10 (hg19)" ;
+    OBO:RO_0002350 UCSC:hg19 .
+
+
+<http://www.monarchinitiative.org/_CCDS:7200.1Region> a faldo:Region ;
+    faldo:begin :_7200.1-2753 ;
+    faldo:end :_7200.1-2753 .
+
+:_7200.1-2753 a faldo:Position ;
+    faldo:position 2753 ;
+    faldo:reference <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=7200.1> .
+
     <http://www.monarchinitiative.org/_918918UniProtKB:P07949#P07949-1Region> a faldo:Region ;
         faldo:begin <http://www.monarchinitiative.org/_P07949#P07949-1-918> ;
         faldo:end <http://www.monarchinitiative.org/_P07949#P07949-1-918> .
@@ -592,3 +616,60 @@ MonarchData:cgd.ttl a owl:Ontology ;
             CGD:e901ee1e,
             CGD:f7303413 ;
         rdfs:subClassOf OBO:CHEBI_23888 .
+
+
+<http://ohsu.edu/cgd/test-assoc-1> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/87795e43> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/test-location-1> .
+
+<http://ohsu.edu/cgd/test-location-1> a OBO:SO_0001059 ;
+    rdfs:label "DDX11L16" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> .
+
+
+<http://ohsu.edu/cgd/test-assoc-2> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/87795e43> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/test-location-2> .
+
+<http://ohsu.edu/cgd/test-location-2> a OBO:SO_0001059 ;
+    rdfs:label "exon:ENSTR0000507418.3:5" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> .
+
+
+<http://ohsu.edu/cgd/test-assoc-3> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/87795e43> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/test-location-3> .
+
+<http://ohsu.edu/cgd/test-location-3> a OBO:SO_0001059 ;
+    rdfs:label "foo" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> ;
+    faldo:location <http://www.monarchinitiative.org/_hg19chr1TestRegion> .
+
+:_hg19chr1TestRegion a faldo:Region ;
+    faldo:begin :_hg19chr1-0 ;
+    faldo:end :_hg19chr1-65536 .
+
+:_hg19chr1-0 a faldo:Position ;
+    faldo:position 0 ;
+    faldo:reference :MONARCH_hg19chr1 .
+
+:_hg19chr1-65536 a faldo:Position ;
+    faldo:position 65536 ;
+    faldo:reference :MONARCH_hg19chr1 .
+
+:MONARCH_hg19chr1 a OBO:CHR_9606chr1,
+        OBO:SO_0000340 ;
+    rdfs:label "chr1 (hg19)" ;
+    OBO:RO_0002350 UCSC:hg19 .

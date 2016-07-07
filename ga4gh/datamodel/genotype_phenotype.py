@@ -327,6 +327,7 @@ class  G2PUtility(object):
         # SO_0001059 sequence_alteration
         # BFO_0000159 has quality
         # OMIM_606764
+        # OBO:SO_0000147 exon
 
         feature = association['feature']
 
@@ -400,7 +401,6 @@ class  G2PUtility(object):
         term.source_name = self._getPrefix(
             self._getPrefixURL(association['id']))
         phenotypeInstance.type.MergeFrom(term)
-
 
         phenotypeInstance.description = phenotype[LABEL]
         phenotypeInstance.id = phenotype['id']

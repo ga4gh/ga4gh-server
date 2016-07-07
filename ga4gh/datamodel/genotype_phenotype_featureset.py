@@ -86,7 +86,6 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
 
         # setup location cache
         self._initializeLocationCache()
-        print(self._locationMap) # TODO cleanup
 
     # mimic featureset
     def getFeature(self, compoundId):
@@ -138,7 +137,8 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                     name=None, geneSymbol=None, numFeatures=10):
 
         # query to do search
-        query = self._filterSearchFeaturesRequest(referenceName,geneSymbol,name)
+        query = self._filterSearchFeaturesRequest(referenceName,geneSymbol,name
+                                                  ,start,end )
         associations = self._rdfGraph.query(query)
         # associations is now a dict with rdflib terms with variable and
         # URIrefs or literals
@@ -180,16 +180,20 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                     str(nextPageToken)
                     if nextPageToken is not None else None)
 
-    def _filterSearchFeaturesRequest(self, reference_name,gene_symbol,name):
+    def _filterSearchFeaturesRequest(self, reference_name,gene_symbol,name,
+                                     start, end):
 
+        """
+        formulate a sparql query string based on parameters
+        """
         filters = []
         query = self._baseQuery()
 
         filters = []
 
-        if reference_name:
-            filters.append('regex(?feature_label, "{}")'
-                           .format("NOT SUPPORTED"))
+        location = self._findLocation(reference_name,start,end)
+        if location:
+            filters.append("?feature = <{}>".format(location))
 
         if gene_symbol:
             filters.append('regex(?feature_label, "{}")'
@@ -206,6 +210,15 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
 
         print(query) # TODO cleanup
         return query
+
+    def _findLocation(self, reference_name, start, end):
+        """
+        return a location key form the locationMap
+        """
+        try:
+            return self._locationMap['hg19'][reference_name][start][end]
+        except :
+            return None
 
     def _initializeLocationCache(self):
         """
@@ -277,9 +290,6 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
               for s, p, o in triples((Ref(faldoEnd["_id"]), None, None)):
                 faldoEnd[ p.toPython() ] = o.toPython()
               faldoEnds.append(faldoEnd)
-
-            print(faldoLocation["_id"], len(faldoBegins), len(faldoEnds) , len(faldoReferences) )
-
 
             for idx, faldoReference in enumerate(faldoReferences):
               if MEMBER_OF in faldoReference:
