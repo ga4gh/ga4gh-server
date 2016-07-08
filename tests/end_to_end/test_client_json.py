@@ -179,6 +179,18 @@ class TestClientJson(TestClientOutput):
                 self.verifyParsedOutputsEqual(
                     iterator, "callsets-search", args)
 
+    def testGetBioSamples(self):
+        for dataset in self._client.searchDatasets():
+            for bioSample in self._client.searchBioSamples(dataset.id):
+                self.verifyParsedOutputsEqual(
+                    [bioSample], "biosamples-get", bioSample.id)
+
+    def testGetIndividuals(self):
+        for dataset in self._client.searchDatasets():
+            for individual in self._client.searchIndividuals(dataset.id):
+                self.verifyParsedOutputsEqual(
+                    [individual], "individuals-get", individual.id)
+
     def testSearchDatasets(self):
         iterator = self._client.searchDatasets()
         self.verifyParsedOutputsEqual(iterator, "datasets-search")
@@ -189,6 +201,17 @@ class TestClientJson(TestClientOutput):
             self.verifyParsedOutputsEqual(
                 iterator, "readgroupsets-search",
                 "--datasetId {}".format(dataset.id))
+            for readGroupSet in iterator:
+                bioIterator = self._client.searchReadGroupSets(
+                    dataset.id,
+                    name=readGroupSet.name,
+                    bioSampleId=readGroupSet.bioSampleId)
+                self.verifyParsedOutputsEqual(
+                    bioIterator, "readgroupsets-search",
+                    "--datasetId {} --name {} --bioSampleId {}".format(
+                        dataset.id,
+                        readGroupSet.name,
+                        readGroupSet.bioSampleId))
 
     def testSearchReads(self):
         test_executed = 0
@@ -241,6 +264,42 @@ class TestClientJson(TestClientOutput):
                 test_executed += self.verifyParsedOutputsEqual(
                     iterator, "variants-search", args)
         self.assertGreater(test_executed, 0)
+
+    def testSearchBioSamples(self):
+        for dataset in self._client.searchDatasets():
+            iterator = self._client.searchBioSamples(dataset.id)
+            self.verifyParsedOutputsEqual(iterator, "biosamples-search")
+        for dataset in self._client.searchDatasets():
+            for bioSample in self._client.searchBioSamples(dataset.id):
+                iterator = self._client.searchBioSamples(
+                    dataset.id, bioSample.name)
+                self.verifyParsedOutputsEqual(
+                    iterator,
+                    "biosamples-search",
+                    "--datasetId {} --name {}".format(
+                        dataset.id,
+                        bioSample.name))
+                if bioSample.individualId:
+                    iterator = self._client.searchBioSamples(
+                        dataset.id, individualId=bioSample.individualId)
+                    self.verifyParsedOutputsEqual(
+                        iterator,
+                        "biosamples-search",
+                        "--datasetId {} --individualId {}".format(
+                            dataset.id,
+                            bioSample.individualId))
+
+    def testSearchIndividuals(self):
+        for dataset in self._client.searchDatasets():
+            iterator = self._client.searchIndividuals(dataset.id)
+            self.verifyParsedOutputsEqual(iterator, "individuals-search")
+        for dataset in self._client.searchDatasets():
+            for individual in self._client.searchIndividuals(dataset.id):
+                iterator = self._client.searchIndividuals(
+                    dataset.id, individual.name)
+                self.verifyParsedOutputsEqual(
+                    iterator, "individuals-search", "--name {}".format(
+                        individual.name))
 
     def testSearchVariantAnnotationSets(self):
         for dataset in self._client.searchDatasets():

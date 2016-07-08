@@ -30,7 +30,7 @@ import ga4gh.datamodel.variants as variants  # NOQA
 import ga4gh.datamodel.reads as reads  # NOQA
 import ga4gh.datamodel.ontologies as ontologies  # NOQA
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations  # NOQA
-# import ga4gh.datamodel.rna_quantification as rnaQuantification  # NOQA
+import ga4gh.datamodel.bio_metadata as biodata  # NOQA
 
 
 class ComplianceDataMunger(object):
@@ -113,6 +113,52 @@ class ComplianceDataMunger(object):
         dataset = datasets.Dataset("brca1")
         self.repo.insertDataset(dataset)
 
+        hg00096Individual = biodata.Individual(dataset, "HG00096")
+        with open(
+                os.path.join(
+                    self.inputDirectory,
+                    "individual_HG00096.json")) as jsonString:
+            hg00096Individual.populateFromJson(jsonString.read())
+        self.repo.insertIndividual(hg00096Individual)
+        hg00096BioSample = biodata.BioSample(dataset, "HG00096")
+        with open(
+                os.path.join(
+                    self.inputDirectory,
+                    "bioSample_HG00096.json")) as jsonString:
+            hg00096BioSample.populateFromJson(jsonString.read())
+        hg00096BioSample.setIndividualId(hg00096Individual.getId())
+        self.repo.insertBioSample(hg00096BioSample)
+        hg00099Individual = biodata.Individual(dataset, "HG00099")
+        with open(
+                os.path.join(
+                    self.inputDirectory,
+                    "individual_HG00099.json")) as jsonString:
+            hg00099Individual.populateFromJson(jsonString.read())
+        self.repo.insertIndividual(hg00099Individual)
+        hg00099BioSample = biodata.BioSample(dataset, "HG00099")
+        with open(
+                os.path.join(
+                    self.inputDirectory,
+                    "bioSample_HG00099.json")) as jsonString:
+            hg00099BioSample.populateFromJson(jsonString.read())
+        hg00099BioSample.setIndividualId(hg00099Individual.getId())
+        self.repo.insertBioSample(hg00099BioSample)
+        hg00101Individual = biodata.Individual(dataset, "HG00101")
+        with open(
+                os.path.join(
+                    self.inputDirectory,
+                    "individual_HG00101.json")) as jsonString:
+            hg00101Individual.populateFromJson(jsonString.read())
+        self.repo.insertIndividual(hg00101Individual)
+        hg00101BioSample = biodata.BioSample(dataset, "HG00101")
+        with open(
+                os.path.join(
+                    self.inputDirectory,
+                    "bioSample_HG00101.json")) as jsonString:
+            hg00101BioSample.populateFromJson(jsonString.read())
+        hg00101BioSample.setIndividualId(hg00101Individual.getId())
+        self.repo.insertBioSample(hg00101BioSample)
+
         readFiles = [
             "brca1_HG00096.sam",
             "brca1_HG00099.sam",
@@ -136,6 +182,11 @@ class ComplianceDataMunger(object):
             readGroupSet = reads.HtslibReadGroupSet(dataset, name)
             readGroupSet.populateFromFile(destFilePath, destFilePath + ".bai")
             readGroupSet.setReferenceSet(referenceSet)
+            bioSamples = [hg00096BioSample, hg00099BioSample, hg00101BioSample]
+            for readGroup in readGroupSet.getReadGroups():
+                for bioSample in bioSamples:
+                    if bioSample.getLocalId() == readGroup.getSampleName():
+                        readGroup.setBioSampleId(bioSample.getId())
             self.repo.insertReadGroupSet(readGroupSet)
 
         ontologyMapFileName = "so-xp-simple.obo"
@@ -157,7 +208,11 @@ class ComplianceDataMunger(object):
             "brca1_OR4F_annotation.vcf"]
         for vcfFile in vcfFiles:
             self.addVariantSet(
-                vcfFile, dataset, referenceSet, sequenceOntology)
+                vcfFile,
+                dataset,
+                referenceSet,
+                sequenceOntology,
+                bioSamples)
 
         # Sequence annotations
         seqAnnFile = "brca1_gencodev19.gff3"
@@ -174,13 +229,16 @@ class ComplianceDataMunger(object):
 
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
-        rnaseq2ga.rnaseq2ga(self.inputDirectory, rnaDbName)
+        rnaseq2ga.rnaseq2ga(
+            self.inputDirectory, rnaDbName, featureType="transcript")
 
         self.repo.commit()
 
         print("Done converting compliance data.", file=sys.stderr)
 
-    def addVariantSet(self, variantFileName, dataset, referenceSet, ontology):
+    def addVariantSet(self,
+                      variantFileName,
+                      dataset, referenceSet, ontology, bioSamples):
         inputVcf = os.path.join(
             self.inputDirectory, variantFileName)
         outputVcf = os.path.join(
@@ -193,6 +251,10 @@ class ComplianceDataMunger(object):
         variantSet.populateFromFile(
             [outputVcf + ".gz"], [outputVcf + ".gz.tbi"])
         variantSet.checkConsistency()
+        for callSet in variantSet.getCallSets():
+            for bioSample in bioSamples:
+                if bioSample.getLocalId() == callSet.getLocalId():
+                    callSet.setBioSampleId(bioSample.getId())
         self.repo.insertVariantSet(variantSet)
         for annotationSet in variantSet.getVariantAnnotationSets():
             annotationSet.setOntology(ontology)

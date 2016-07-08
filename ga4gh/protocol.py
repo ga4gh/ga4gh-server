@@ -18,6 +18,7 @@ import ga4gh.pb as pb
 
 from ga4gh._protocol_version import version  # noqa
 from ga4gh.common_pb2 import *  # noqa
+from ga4gh.assay_metadata_pb2 import *  # noqa
 from ga4gh.metadata_pb2 import *  # noqa
 from ga4gh.metadata_service_pb2 import *  # noqa
 from ga4gh.read_service_pb2 import *  # noqa
@@ -30,8 +31,11 @@ from ga4gh.allele_annotations_pb2 import *  # noqa
 from ga4gh.allele_annotation_service_pb2 import *  # noqa
 from ga4gh.sequence_annotations_pb2 import *  # noqa
 from ga4gh.sequence_annotation_service_pb2 import *  # noqa
+from ga4gh.bio_metadata_pb2 import *  # noqa
+from ga4gh.bio_metadata_service_pb2 import *  # noqa
 from ga4gh.rna_quantification_pb2 import *  # noqa
 from ga4gh.rna_quantification_service_pb2 import *  # noqa
+
 
 # A map of response objects to the name of the attribute used to
 # store the values returned.
@@ -48,6 +52,8 @@ _valueListNameMap = {
     SearchVariantAnnotationsResponse: "variant_annotations",  # noqa
     SearchFeatureSetsResponse: "feature_sets",  # noqa
     SearchFeaturesResponse: "features",  # noqa
+    SearchBioSamplesResponse: "biosamples",  # noqa
+    SearchIndividualsResponse: "individuals",  # noqa
     SearchRnaQuantificationSetsResponse: "rna_quantification_sets",  # noqa
     SearchRnaQuantificationsResponse: "rna_quantifications",  # noqa
     SearchExpressionLevelsResponse: "expression_levels",  # noqa

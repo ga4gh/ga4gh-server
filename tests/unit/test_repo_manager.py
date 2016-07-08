@@ -241,7 +241,7 @@ class TestAddReferenceSet(AbstractRepoManagerTest):
         repo = self.readRepo()
         referenceSet = repo.getReferenceSetByName(name)
         self.assertEqual(referenceSet.getLocalId(), name)
-        self.assertEqual(referenceSet.getDataUrl(), fastaFile)
+        self.assertEqual(referenceSet.getDataUrl(), os.path.abspath(fastaFile))
         # TODO check that the default values for all fields are set correctly.
 
     def testWithName(self):
@@ -253,7 +253,7 @@ class TestAddReferenceSet(AbstractRepoManagerTest):
         repo = self.readRepo()
         referenceSet = repo.getReferenceSetByName(name)
         self.assertEqual(referenceSet.getLocalId(), name)
-        self.assertEqual(referenceSet.getDataUrl(), fastaFile)
+        self.assertEqual(referenceSet.getDataUrl(), os.path.abspath(fastaFile))
 
     def testWithSameName(self):
         fastaFile = paths.ncbi37FaPath
@@ -284,7 +284,7 @@ class TestAddOntology(AbstractRepoManagerTest):
         repo = self.readRepo()
         ontology = repo.getOntologyByName(name)
         self.assertEqual(ontology.getName(), name)
-        self.assertEqual(ontology.getDataUrl(), ontologyFile)
+        self.assertEqual(ontology.getDataUrl(), os.path.abspath(ontologyFile))
 
     def testWithName(self):
         ontologyFile = paths.ontologyPath
@@ -294,7 +294,7 @@ class TestAddOntology(AbstractRepoManagerTest):
         repo = self.readRepo()
         ontology = repo.getOntologyByName(name)
         self.assertEqual(ontology.getName(), name)
-        self.assertEqual(ontology.getDataUrl(), ontologyFile)
+        self.assertEqual(ontology.getDataUrl(), os.path.abspath(ontologyFile))
 
     def testWithSameName(self):
         ontologyFile = paths.ontologyPath
@@ -470,8 +470,9 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
         readGroupSet = dataset.getReadGroupSetByName(name)
         self.assertEqual(readGroupSet.getLocalId(), name)
         self.assertEqual(readGroupSet.getReferenceSet(), referenceSet)
-        self.assertEqual(readGroupSet.getDataUrl(), dataUrl)
-        self.assertEqual(readGroupSet.getIndexFile(), indexFile)
+        self.assertEqual(readGroupSet.getDataUrl(), os.path.abspath(dataUrl))
+        self.assertEqual(
+            readGroupSet.getIndexFile(), os.path.abspath(indexFile))
 
     def testDefaultsLocalFile(self):
         bamFile = paths.bamPath
@@ -571,6 +572,8 @@ class TestAddVariantSet(AbstractRepoManagerTest):
         variantSet = dataset.getVariantSetByName(name)
         self.assertEqual(variantSet.getLocalId(), name)
         self.assertEqual(variantSet.getReferenceSet(), referenceSet)
+        dataUrls = map(lambda x: os.path.abspath(x), dataUrls)
+        indexFiles = map(lambda x: os.path.abspath(x), indexFiles)
         pairs = sorted(zip(dataUrls, indexFiles))
         self.assertEqual(pairs, sorted(variantSet.getDataUrlIndexPairs()))
 

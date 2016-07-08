@@ -168,6 +168,50 @@ Adds a reference set used in the 1000 Genomes project using the name
 ``NCBI37``, also setting the ``ncbiTaxonId`` to 9606 (human).
 
 ++++++++++++++++
+add-biosample
+++++++++++++++++
+
+Adds a new biosample to the repository. The biosample argument is 
+a JSON document according to the GA4GH JSON schema.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-biosample
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-biosample registry.db dataset1 HG00096 '{"individualId": "abc"}'
+
+Adds the biosample named HG00096 to the repository with the individual ID
+"abc".
+
+++++++++++++++++
+add-individual
+++++++++++++++++
+
+Adds a new individual to the repository. The individual argument is 
+a JSON document following the GA4GH JSON schema.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-individual
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-individual registry.db dataset1 HG00096 '{"description": "A description"}'
+
+
+++++++++++++++++
 add-ontology
 ++++++++++++++++
 
@@ -367,6 +411,50 @@ repository will result in an error.
 
 Deletes the reference set with name ``NCBI37`` from the repository
 represented by ``registry.db``
+
+++++++++++++++++
+remove-biosample
+++++++++++++++++
+
+Removes a biosample from the repository.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-biosample
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-biosample registry.db dataset1 HG00096
+
+Deletes the biosample with name ``HG00096`` in the dataset 
+``dataset1`` from the repository represented by ``registry.db``
+
++++++++++++++++++
+remove-individual
++++++++++++++++++
+
+Removes an individual from the repository.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-individual
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-individual registry.db dataset1 HG00096
+
+Deletes the individual with name ``HG00096`` in the dataset 
+``dataset1`` from the repository represented by ``registry.db``
 
 ++++++++++++++++++++
 remove-ontology
