@@ -15,7 +15,7 @@ import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.datamodel.bio_metadata as biodata
 import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.datamodel.genotype_phenotype_featureset as g2pFeatureset
@@ -1232,7 +1232,7 @@ class SqlDataRepository(AbstractDataRepository):
                     g2pFeatureset \
                     .PhenotypeAssociationFeatureSet(dataset, row[b'name'])
             else:
-                featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+                featureSet = sequence_annotations.Gff3DbFeatureSet(
                     dataset, row[b'name'])
             featureSet.setReferenceSet(
                 self.getReferenceSet(row[b'referenceSetId']))

@@ -11,7 +11,7 @@ import random
 
 import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
-import ga4gh.sqliteBackend as sqliteBackend
+import ga4gh.sqlite_backend as sqlite_backend
 import ga4gh.exceptions as exceptions
 import ga4gh.pb as pb
 
@@ -58,7 +58,7 @@ _featureColumns = [
     ('attributes', 'TEXT')]  # JSON encoding of attributes dict
 
 
-class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
+class Gff3DbBackend(sqlite_backend.SqliteBackedDataSource):
     """
     Notes about the current implementation:
     For this implementation, `featureSetId` is required, while `parentId`
@@ -136,9 +136,9 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
             referenceName=referenceName, start=start, end=end,
             parentId=parentId, featureTypes=featureTypes,
             name=name, geneSymbol=geneSymbol)
-        sql += sqliteBackend.limitsSql(startIndex, maxResults)
+        sql += sqlite_backend.limitsSql(startIndex, maxResults)
         query = self._dbconn.execute(sql, sql_args)
-        return sqliteBackend.sqliteRowsToDicts(query.fetchall())
+        return sqlite_backend.sqliteRowsToDicts(query.fetchall())
 
     def getFeatureById(self, featureId):
         """
@@ -153,7 +153,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         ret = query.fetchone()
         if ret is None:
             return None
-        return sqliteBackend.sqliteRowToDict(ret)
+        return sqlite_backend.sqliteRowToDict(ret)
 
 
 class AbstractFeatureSet(datamodel.DatamodelObject):

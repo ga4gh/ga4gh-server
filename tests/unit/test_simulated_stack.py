@@ -13,7 +13,7 @@ import random
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.sequenceAnnotations as features
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 
@@ -753,7 +753,8 @@ class TestSimulatedStack(unittest.TestCase):
                     path, featureSet.getId(), protocol.FeatureSet)
                 self.verifyFeatureSetsEqual(responseObject, featureSet)
             for badId in self.getBadIds():
-                featureSet = features.AbstractFeatureSet(dataset, badId)
+                featureSet = sequence_annotations.AbstractFeatureSet(
+                    dataset, badId)
                 self.verifyGetMethodFails(path, featureSet.getId())
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)

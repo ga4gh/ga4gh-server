@@ -11,7 +11,7 @@ import rdflib
 from rdflib import RDF
 
 import ga4gh.protocol as protocol
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.datamodel.genotype_phenotype as g2p
 
 # annotation keys
@@ -29,7 +29,7 @@ HAS_SUBJECT = "http://purl.org/oban/association_has_subject"
 
 
 class PhenotypeAssociationFeatureSet(
-        g2p.G2PUtility, sequenceAnnotations.Gff3DbFeatureSet):
+        g2p.G2PUtility, sequence_annotations.Gff3DbFeatureSet):
     """
     An rdf object store.  The cancer genome database
     [Clinical Genomics Knowledge Base]
@@ -201,7 +201,7 @@ class PhenotypeAssociationFeatureSet(
         return a location key form the locationMap
         """
         try:
-            # TODO - sequenceAnnotations does not have build?
+            # TODO - sequence_annotations does not have build?
             return self._locationMap['hg19'][reference_name][start][end]
         except:
             return None

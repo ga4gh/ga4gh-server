@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
@@ -475,7 +475,7 @@ class SimulatedDataset(Dataset):
         for i in range(numFeatureSets):
             localId = "simFs{}".format(i)
             seed = randomSeed + i
-            featureSet = sequenceAnnotations.SimulatedFeatureSet(
+            featureSet = sequence_annotations.SimulatedFeatureSet(
                 self, localId, seed)
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)

@@ -15,8 +15,8 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.rna_quantification as rna_quantification
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 
 
 class ExampleCompoundId(datamodel.CompoundId):
@@ -187,7 +187,7 @@ class TestCompoundIds(unittest.TestCase):
         return reads.AbstractReadGroup(self.getReadGroupSet(), "readGroup")
 
     def getFeatureSet(self):
-        return sequenceAnnotations.AbstractFeatureSet(
+        return sequence_annotations.AbstractFeatureSet(
             self.getDataset(), "featureSet")
 
     def getRnaQuantificationSet(self):
