@@ -40,7 +40,7 @@ class TestInterfacingLayer(unittest.TestCase):
         numRepoObjs = len(repoObjs)
         pageSizes = self._getPageSizes(numRepoObjs)
         for pageSize in pageSizes:
-            self._client.setPageSize(pageSize)
+            self._client.set_page_size(pageSize)
             clientObjs = list(clientSearchMethod())
             for repoObj, clientObj in utils.zipLists(repoObjs, clientObjs):
                 self._assertEqual(repoObj, clientObj)
@@ -54,7 +54,7 @@ class TestInterfacingLayer(unittest.TestCase):
             numRepoObjs = len(repoObjs)
             pageSizes = self._getPageSizes(numRepoObjs)
             for pageSize in pageSizes:
-                self._client.setPageSize(pageSize)
+                self._client.set_page_size(pageSize)
                 clientObjs = list(clientSearchMethod(containerId))
                 for repoObj, clientObj in utils.zipLists(
                         repoObjs, clientObjs):
@@ -68,27 +68,27 @@ class TestInterfacingLayer(unittest.TestCase):
 
     def testGetBioSample(self):
         self._testGetMethod(
-            self._repo.allBioSamples, self._client.getBioSample)
+            self._repo.allBioSamples, self._client.get_bio_sample)
 
     def testGetIndividual(self):
         self._testGetMethod(
-            self._repo.allIndividuals, self._client.getIndividual)
+            self._repo.allIndividuals, self._client.get_individual)
 
     def testGetDataset(self):
         self._testGetMethod(
-            self._repo.getDatasets, self._client.getDataset)
+            self._repo.getDatasets, self._client.get_dataset)
 
     def testGetReadGroupSet(self):
         self._testGetMethod(
-            self._repo.allReadGroupSets, self._client.getReadGroupSet)
+            self._repo.allReadGroupSets, self._client.get_read_group_set)
 
     def testGetReadGroup(self):
         self._testGetMethod(
-            self._repo.allReadGroups, self._client.getReadGroup)
+            self._repo.allReadGroups, self._client.get_read_group)
 
     def testGetCallSet(self):
         self._testGetMethod(
-            self._repo.allCallSets, self._client.getCallSet)
+            self._repo.allCallSets, self._client.get_call_set)
 
     def testGetVariant(self):
         repoVariantSets = self._repo.allVariantSets()
@@ -98,37 +98,37 @@ class TestInterfacingLayer(unittest.TestCase):
             repoVariants = variantSet.getVariants(referenceName, 0, 2**32)
             for repoVariant in repoVariants:
                 variantId = repoVariant.getId()
-                variant = self._client.getVariant(variantId)
+                variant = self._client.get_variant(variantId)
                 self._assertEqual(repoVariant, variant)
 
     def testGetVariantSet(self):
         self._testGetMethod(
-            self._repo.allVariantSets, self._client.getVariantSet)
+            self._repo.allVariantSets, self._client.get_variant_set)
 
     def testGetVariantAnnotationSet(self):
         self._testGetMethod(
             self._repo.allVariantAnnotationSets,
-            self._client.getVariantAnnotationSet)
+            self._client.get_variant_annotation_set)
 
     def testGetFeatureSet(self):
         self._testGetMethod(
-            self._repo.allFeatureSets, self._client.getFeatureSet)
+            self._repo.allFeatureSets, self._client.get_feature_set)
 
     def testGetFeature(self):
         repoFeatures = self._repo.allFeatures()
         for repoFeature in repoFeatures:
             repoFeature = repoFeature[0]
             featureId = repoFeature.id
-            feature = self._client.getFeature(featureId)
+            feature = self._client.get_feature(featureId)
             self.assertEqual(repoFeature, feature)
 
     def testGetReferenceSet(self):
         self._testGetMethod(
-            self._repo.getReferenceSets, self._client.getReferenceSet)
+            self._repo.getReferenceSets, self._client.get_reference_set)
 
     def testGetReference(self):
         self._testGetMethod(
-            self._repo.allReferences, self._client.getReference)
+            self._repo.allReferences, self._client.get_reference)
 
     def testSearchVariants(self):
         for variantSet in self._repo.allVariantSets():
@@ -140,8 +140,8 @@ class TestInterfacingLayer(unittest.TestCase):
             numRepoVariants = len(repoVariants)
             pageSizes = self._getPageSizes(numRepoVariants)
             for pageSize in pageSizes:
-                self._client.setPageSize(pageSize)
-                variants = self._client.searchVariants(variantSetId)
+                self._client.set_page_size(pageSize)
+                variants = self._client.search_variants(variantSetId)
                 for repoVariant, variant in utils.zipLists(
                         repoVariants, variants):
                     self._assertEqual(repoVariant, variant)
@@ -158,8 +158,8 @@ class TestInterfacingLayer(unittest.TestCase):
             numRepoVariantAnnotations = len(repoVariantAnnotations)
             pageSizes = self._getPageSizes(numRepoVariantAnnotations)
             for pageSize in pageSizes:
-                self._client.setPageSize(pageSize)
-                variantAnnotations = self._client.searchVariantAnnotations(
+                self._client.set_page_size(pageSize)
+                variantAnnotations = self._client.search_variant_annotations(
                     variantAnnotationSetId, referenceName=referenceName)
                 for repoVa, va in utils.zipLists(
                         repoVariantAnnotations, variantAnnotations):
@@ -177,7 +177,7 @@ class TestInterfacingLayer(unittest.TestCase):
             featureSetId = repoFeatureSet.getId()
             pageSizes = self._getPageSizes(numFeatures)
             for pageSize in pageSizes:
-                features = list(self._client.searchFeatures(featureSetId))
+                features = list(self._client.search_features(featureSetId))
                 for repoFeature, feature in utils.zipLists(
                         repoFeatures, features):
                     repoFeature = repoFeature[0]
@@ -186,48 +186,48 @@ class TestInterfacingLayer(unittest.TestCase):
 
     def testSearchDatasets(self):
         self._testSearchMethod(
-            self._repo.getDatasets, self._client.searchDatasets)
+            self._repo.getDatasets, self._client.search_datasets)
 
     def testSearchVariantSets(self):
         self._testSearchMethodInContainer(
             'getVariantSets',
-            self._client.searchVariantSets,
+            self._client.search_variant_sets,
             self._repo.getDatasets())
 
     def testSearchVariantAnnotationSets(self):
         self._testSearchMethodInContainer(
             'getVariantAnnotationSets',
-            self._client.searchVariantAnnotationSets,
+            self._client.search_variant_annotation_sets,
             self._repo.allVariantSets())
 
     def testSearchFeatureSets(self):
         self._testSearchMethodInContainer(
             'getFeatureSets',
-            self._client.searchFeatureSets,
+            self._client.search_feature_sets,
             self._repo.getDatasets())
 
     def testSearchCallSets(self):
         self._testSearchMethodInContainer(
             'getCallSets',
-            self._client.searchCallSets,
+            self._client.search_call_sets,
             self._repo.allVariantSets())
 
     def testSearchBioSamples(self):
         self._testSearchMethodInContainer(
             'getBioSamples',
-            self._client.searchBioSamples,
+            self._client.search_bio_samples,
             self._repo.getDatasets())
 
     def testSearchIndividuals(self):
         self._testSearchMethodInContainer(
             'getIndividuals',
-            self._client.searchIndividuals,
+            self._client.search_individuals,
             self._repo.getDatasets())
 
     def testSearchReadGroupSets(self):
         self._testSearchMethodInContainer(
             'getReadGroupSets',
-            self._client.searchReadGroupSets,
+            self._client.search_read_group_sets,
             self._repo.getDatasets())
 
     def testSearchReads(self):
@@ -242,8 +242,8 @@ class TestInterfacingLayer(unittest.TestCase):
                 numRepoReads = len(repoReads)
                 pageSizes = self._getPageSizes(numRepoReads)
                 for pageSize in pageSizes:
-                    self._client.setPageSize(pageSize)
-                    reads = list(self._client.searchReads(
+                    self._client.set_page_size(pageSize)
+                    reads = list(self._client.search_reads(
                         [readGroupId], referenceId))
                     for repoRead, read in utils.zipLists(
                             repoReads, reads):
@@ -251,7 +251,7 @@ class TestInterfacingLayer(unittest.TestCase):
 
     def testSearchReferenceSets(self):
         self._testSearchMethod(
-            self._repo.getReferenceSets, self._client.searchReferenceSets)
+            self._repo.getReferenceSets, self._client.search_reference_sets)
 
     def testSearchReferences(self):
         repoReferenceSets = self._repo.getReferenceSets()
@@ -261,9 +261,9 @@ class TestInterfacingLayer(unittest.TestCase):
             numRefs = len(repoReferences)
             pageSizes = self._getPageSizes(numRefs)
             for pageSize in pageSizes:
-                self._client.setPageSize(pageSize)
+                self._client.set_page_size(pageSize)
                 references = list(
-                    self._client.searchReferences(referenceSetId))
+                    self._client.search_references(referenceSetId))
                 for repoReference, reference in utils.zipLists(
                         repoReferences, references):
                     self._assertEqual(repoReference, reference)

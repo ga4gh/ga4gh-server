@@ -306,6 +306,16 @@ class TestClientArguments(unittest.TestCase):
         self.assertEquals(
             args.runner, cli.GetVariantAnnotationSetRunner)
 
+    # def testVariantSetsGet(self):  # TODO
+
+    # def testFeaturesGet(self):  # TODO
+
+    # def testFeaturesSearch(self):  # TODO
+
+    # def testFeatureSetsGet(self):  # TODO
+
+    # def testFeatureSetsSearch(self):  # TODO
+
 
 class TestRepoManagerCli(unittest.TestCase):
 
@@ -606,7 +616,7 @@ class TestOutputFormats(unittest.TestCase):
         args.end = 100
         returnVal = 'AGCT' * 100  # 400 bases
         runner = cli.ListReferenceBasesRunner(args)
-        runner._client.listReferenceBases = mock.Mock(
+        runner._client.list_reference_bases = mock.Mock(
             return_value=returnVal)
         printCalls = self._getRunPrintMethodCalls(runner)
         self.assertEqual(printCalls[0][0][0], '>id:1-100')

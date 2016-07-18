@@ -243,20 +243,21 @@ class AbstractSearchRunner(FormattedOutputRunner):
     def __init__(self, args):
         super(AbstractSearchRunner, self).__init__(args)
         self._pageSize = args.pageSize
-        self._client.setPageSize(self._pageSize)
+        self._client.set_page_size(self._pageSize)
 
     def getAllDatasets(self):
         """
         Returns all datasets on the server.
         """
-        return self._client.searchDatasets()
+        return self._client.search_datasets()
 
     def getAllVariantSets(self):
         """
         Returns all variant sets on the server.
         """
         for dataset in self.getAllDatasets():
-            iterator = self._client.searchVariantSets(datasetId=dataset.id)
+            iterator = self._client.search_variant_sets(
+                dataset_id=dataset.id)
             for variantSet in iterator:
                 yield variantSet
 
@@ -265,7 +266,8 @@ class AbstractSearchRunner(FormattedOutputRunner):
         Returns all feature sets on the server.
         """
         for dataset in self.getAllDatasets():
-            iterator = self._client.searchFeatureSets(datasetId=dataset.id)
+            iterator = self._client.search_feature_sets(
+                dataset_id=dataset.id)
             for featureSet in iterator:
                 yield featureSet
 
@@ -274,8 +276,8 @@ class AbstractSearchRunner(FormattedOutputRunner):
         Returns all readgroup sets on the server.
         """
         for dataset in self.getAllDatasets():
-            iterator = self._client.searchReadGroupSets(
-                datasetId=dataset.id)
+            iterator = self._client.search_read_group_sets(
+                dataset_id=dataset.id)
             for readGroupSet in iterator:
                 yield readGroupSet
 
@@ -284,10 +286,11 @@ class AbstractSearchRunner(FormattedOutputRunner):
         Get all read groups in a read group set
         """
         for dataset in self.getAllDatasets():
-            iterator = self._client.searchReadGroupSets(
-                datasetId=dataset.id)
+            iterator = self._client.search_read_group_sets(
+                dataset_id=dataset.id)
             for readGroupSet in iterator:
-                readGroupSet = self._client.getReadGroupSet(readGroupSet.id)
+                readGroupSet = self._client.get_read_group_set(
+                    readGroupSet.id)
                 for readGroup in readGroupSet.read_groups:
                     yield readGroup.id
 
@@ -295,7 +298,7 @@ class AbstractSearchRunner(FormattedOutputRunner):
         """
         Returns all reference sets on the server.
         """
-        return self._client.searchReferenceSets()
+        return self._client.search_reference_sets()
 
 
 # Runners for the various search methods
@@ -308,7 +311,7 @@ class SearchDatasetsRunner(AbstractSearchRunner):
         super(SearchDatasetsRunner, self).__init__(args)
 
     def run(self):
-        iterator = self._client.searchDatasets()
+        iterator = self._client.search_datasets()
         self._output(iterator)
 
 
@@ -322,7 +325,7 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
         self._md5checksum = args.md5checksum
 
     def run(self):
-        iterator = self._client.searchReferenceSets(
+        iterator = self._client.search_reference_sets(
             accession=self._accession, md5checksum=self._md5checksum)
         self._output(iterator)
 
@@ -338,9 +341,9 @@ class SearchReferencesRunner(AbstractSearchRunner):
         self._md5checksum = args.md5checksum
 
     def _run(self, referenceSetId):
-        iterator = self._client.searchReferences(
+        iterator = self._client.search_references(
             accession=self._accession, md5checksum=self._md5checksum,
-            referenceSetId=referenceSetId)
+            reference_set_id=referenceSetId)
         self._output(iterator)
 
     def run(self):
@@ -360,7 +363,7 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
         self._datasetId = args.datasetId
 
     def _run(self, datasetId):
-        iterator = self._client.searchVariantSets(datasetId=datasetId)
+        iterator = self._client.search_variant_sets(dataset_id=datasetId)
         self._output(iterator)
 
     def run(self):
@@ -382,10 +385,10 @@ class SearchBioSamplesRunner(AbstractSearchRunner):
         self._name = args.name
 
     def _run(self, datasetId):
-        iterator = self._client.searchBioSamples(
+        iterator = self._client.search_bio_samples(
             datasetId,
             name=self._name,
-            individualId=self._individualId)
+            individual_id=self._individualId)
         self._output(iterator)
 
     def run(self):
@@ -406,7 +409,7 @@ class SearchIndividualsRunner(AbstractSearchRunner):
         self._name = args.name
 
     def _run(self, datasetId):
-        iterator = self._client.searchBioSamples(
+        iterator = self._client.search_bio_samples(
             datasetId,
             name=self._name)
         self._output(iterator)
@@ -428,8 +431,8 @@ class SearchVariantAnnotationSetsRunner(AbstractSearchRunner):
         self._variantSetId = args.variantSetId
 
     def _run(self, variantSetId):
-        iterator = self._client.searchVariantAnnotationSets(
-            variantSetId=variantSetId)
+        iterator = self._client.search_variant_annotation_sets(
+            variant_set_id=variantSetId)
         self._output(iterator)
 
     def run(self):
@@ -445,7 +448,7 @@ class SearchFeatureSetsRunner(AbstractSearchRunner):
         self._datasetId = args.datasetId
 
     def _run(self, datasetId):
-        iterator = self._client.searchFeatureSets(datasetId=datasetId)
+        iterator = self._client.search_feature_sets(dataset_id=datasetId)
         self._output(iterator)
 
     def run(self):
@@ -466,8 +469,8 @@ class SearchReadGroupSetsRunner(AbstractSearchRunner):
         self._name = args.name
 
     def _run(self, datasetId):
-        iterator = self._client.searchReadGroupSets(
-            datasetId=datasetId, name=self._name)
+        iterator = self._client.search_read_group_sets(
+            dataset_id=datasetId, name=self._name)
         self._output(iterator)
 
     def run(self):
@@ -488,8 +491,8 @@ class SearchCallSetsRunner(AbstractSearchRunner):
         self._name = args.name
 
     def _run(self, variantSetId):
-        iterator = self._client.searchCallSets(
-            variantSetId=variantSetId, name=self._name)
+        iterator = self._client.search_call_sets(
+            variant_set_id=variantSetId, name=self._name)
         self._output(iterator)
 
     def run(self):
@@ -586,10 +589,11 @@ class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
             self._callSetIds = args.callSetIds.split(",")
 
     def _run(self, variantSetId):
-        iterator = self._client.searchVariants(
+        iterator = self._client.search_variants(
             start=self._start, end=self._end,
-            referenceName=self._referenceName,
-            variantSetId=variantSetId, callSetIds=self._callSetIds)
+            reference_name=self._referenceName,
+            variant_set_id=variantSetId,
+            call_set_ids=self._callSetIds)
         self._output(iterator)
 
     def run(self):
@@ -623,9 +627,10 @@ class SearchVariantAnnotationsRunner(
                 self._effects.append(term)
 
     def _run(self, variantAnnotationSetId):
-        iterator = self._client.searchVariantAnnotations(
-            variantAnnotationSetId=variantAnnotationSetId,
-            referenceName=self._referenceName, referenceId=self._referenceId,
+        iterator = self._client.search_variant_annotations(
+            variant_annotation_set_id=variantAnnotationSetId,
+            reference_name=self._referenceName,
+            reference_id=self._referenceId,
             start=self._start, end=self._end,
             effects=self._effects)
         self._output(iterator)
@@ -635,8 +640,8 @@ class SearchVariantAnnotationsRunner(
         Returns all variant annotation sets on the server.
         """
         for variantSet in self.getAllVariantSets():
-            iterator = self._client.searchVariantAnnotationSets(
-                variantSetId=variantSet.id)
+            iterator = self._client.search_variant_annotation_sets(
+                variant_set_id=variantSet.id)
             for variantAnnotationSet in iterator:
                 yield variantAnnotationSet
 
@@ -665,11 +670,11 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
             self._featureTypes = args.featureTypes.split(",")
 
     def _run(self, featureSetId):
-        iterator = self._client.searchFeatures(
+        iterator = self._client.search_features(
             start=self._start, end=self._end,
-            referenceName=self._referenceName,
-            featureSetId=featureSetId, parentId=self._parentId,
-            featureTypes=self._featureTypes)
+            reference_name=self._referenceName,
+            feature_set_id=featureSetId, parent_id=self._parentId,
+            feature_types=self._featureTypes)
         self._output(iterator)
 
     def run(self):
@@ -701,13 +706,15 @@ class SearchReadsRunner(AbstractSearchRunner):
         if referenceId is None:
             referenceId = self._referenceId
         if referenceId is None:
-            rg = self._client.getReadGroup(readGroupId=referenceGroupId)
-            iterator = self._client.searchReferences(rg.reference_set_id)
+            rg = self._client.get_read_group(
+                read_group_id=referenceGroupId)
+            iterator = self._client.search_references(rg.reference_set_id)
             for reference in iterator:
                 self._run(referenceGroupId, reference.id)
         else:
-            iterator = self._client.searchReads(
-                readGroupIds=[referenceGroupId], referenceId=referenceId,
+            iterator = self._client.search_reads(
+                read_group_ids=[referenceGroupId],
+                reference_id=referenceId,
                 start=self._start, end=self._end)
             self._output(iterator)
 
@@ -746,7 +753,7 @@ class ListReferenceBasesRunner(AbstractQueryRunner):
         self._outputFormat = args.outputFormat
 
     def run(self):
-        sequence = self._client.listReferenceBases(
+        sequence = self._client.list_reference_bases(
             self._referenceId, self._start, self._end)
         if self._outputFormat == "text":
             print(sequence)
@@ -768,7 +775,7 @@ class GetReferenceSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReferenceSetRunner, self).__init__(args)
-        self._method = self._client.getReferenceSet
+        self._method = self._client.get_reference_set
 
 
 class GetReferenceRunner(AbstractGetRunner):
@@ -777,7 +784,7 @@ class GetReferenceRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReferenceRunner, self).__init__(args)
-        self._method = self._client.getReference
+        self._method = self._client.get_reference
 
 
 class GetReadGroupSetRunner(AbstractGetRunner):
@@ -786,7 +793,7 @@ class GetReadGroupSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReadGroupSetRunner, self).__init__(args)
-        self._method = self._client.getReadGroupSet
+        self._method = self._client.get_read_group_set
 
 
 class GetReadGroupRunner(AbstractGetRunner):
@@ -795,7 +802,7 @@ class GetReadGroupRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReadGroupRunner, self).__init__(args)
-        self._method = self._client.getReadGroup
+        self._method = self._client.get_read_group
 
 
 class GetBioSampleRunner(AbstractGetRunner):
@@ -813,7 +820,7 @@ class GetIndividualRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetIndividualRunner, self).__init__(args)
-        self._method = self._client.getIndividual
+        self._method = self._client.get_individual
 
 
 class GetCallSetRunner(AbstractGetRunner):
@@ -822,7 +829,7 @@ class GetCallSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetCallSetRunner, self).__init__(args)
-        self._method = self._client.getCallSet
+        self._method = self._client.get_call_set
 
 
 class GetDatasetRunner(AbstractGetRunner):
@@ -831,7 +838,7 @@ class GetDatasetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetDatasetRunner, self).__init__(args)
-        self._method = self._client.getDataset
+        self._method = self._client.get_dataset
 
 
 class GetVariantRunner(VariantFormatterMixin, AbstractGetRunner):
@@ -840,7 +847,7 @@ class GetVariantRunner(VariantFormatterMixin, AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetVariantRunner, self).__init__(args)
-        self._method = self._client.getVariant
+        self._method = self._client.get_variant
 
 
 class GetVariantSetRunner(AbstractGetRunner):
@@ -849,7 +856,7 @@ class GetVariantSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetVariantSetRunner, self).__init__(args)
-        self._method = self._client.getVariantSet
+        self._method = self._client.get_variant_set
 
 
 class GetVariantAnnotationSetRunner(AbstractGetRunner):
@@ -858,7 +865,7 @@ class GetVariantAnnotationSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetVariantAnnotationSetRunner, self).__init__(args)
-        self._method = self._client.getVariantAnnotationSet
+        self._method = self._client.get_variant_annotation_set
 
 
 class GetFeatureRunner(FeatureFormatterMixin, AbstractGetRunner):
@@ -867,7 +874,7 @@ class GetFeatureRunner(FeatureFormatterMixin, AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetFeatureRunner, self).__init__(args)
-        self._method = self._client.getFeature
+        self._method = self._client.get_feature
 
 
 class GetFeatureSetRunner(AbstractGetRunner):
@@ -876,7 +883,7 @@ class GetFeatureSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetFeatureSetRunner, self).__init__(args)
-        self._method = self._client.getFeatureSet
+        self._method = self._client.get_feature_set
 
 
 def addDisableUrllibWarningsArgument(parser):
@@ -1477,12 +1484,12 @@ class Ga2VcfRunner(SearchVariantsRunner):
             self._binaryOutput = True
 
     def run(self):
-        variantSet = self._client.getVariantSet(self._variantSetId)
-        iterator = self._client.searchVariants(
+        variantSet = self._client.get_variant_set(self._variantSetId)
+        iterator = self._client.search_variants(
             start=self._start, end=self._end,
-            referenceName=self._referenceName,
-            variantSetId=self._variantSetId,
-            callSetIds=self._callSetIds)
+            reference_name=self._referenceName,
+            variant_set_id=self._variantSetId,
+            call_set_ids=self._callSetIds)
         # do conversion
         vcfConverter = converters.VcfConverter(
             variantSet, iterator, self._outputFile, self._binaryOutput)
