@@ -14,13 +14,11 @@ import tests.paths as paths
 
 
 class TestSequenceAnnotations(unittest.TestCase):
-    exampleUrl = 'www.example.com'
-    datasetId = "YnJjYTE"
 
     @classmethod
     def setUpClass(cls):
         config = {
-            "DATA_SOURCE": paths.testDataRepo,
+            "DATA_SOURCE": paths.testDataRepoUrl,
             "DEBUG": False
         }
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
@@ -101,6 +99,7 @@ class TestSequenceAnnotations(unittest.TestCase):
 
     def testSearchFeatures(self):
         featureSets = self.getAllFeatureSets()
+        ran = False
         for featureSet in featureSets:
             path = "features/search"
             request = protocol.SearchFeaturesRequest()
@@ -112,6 +111,7 @@ class TestSequenceAnnotations(unittest.TestCase):
             responseData = self.sendSearchRequest(
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
+                ran = True
                 self.assertIn(
                     feature.feature_type.term,
                     request.feature_types,
@@ -119,7 +119,10 @@ class TestSequenceAnnotations(unittest.TestCase):
                         feature.feature_type.term,
                         request.feature_types,
                         feature, request))
+        self.assertTrue(ran)
 
+        ran = False
+        for featureSet in featureSets:
             path = "features/search"
             request = protocol.SearchFeaturesRequest()
             request.feature_set_id = featureSet.id
@@ -131,6 +134,11 @@ class TestSequenceAnnotations(unittest.TestCase):
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
                 self.assertIn(feature.feature_type.term, request.feature_types)
+                ran = True
+        self.assertTrue(ran)
+
+        ran = False
+        for featureSet in featureSets:
             request = protocol.SearchFeaturesRequest()
             request.feature_set_id = featureSet.id
             request.start = 0
@@ -141,6 +149,8 @@ class TestSequenceAnnotations(unittest.TestCase):
                 path, request, protocol.SearchFeaturesResponse)
             for feature in responseData.features:
                 self.assertIn(feature.feature_type.term, request.feature_types)
+                ran = True
+        self.assertTrue(ran)
 
     def sendJsonPostRequest(self, path, data):
         """

@@ -27,6 +27,7 @@ pycparser==2.14
 Jinja2==2.7.3
 future==0.15.2
 pyjwkest==1.0.1
+sqlalchemy==1.0.13
 
 ### This section is for the actual libraries ###
 # these libraries are imported in code that can be reached via

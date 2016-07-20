@@ -54,6 +54,26 @@ _valueListNameMap = {
 }
 
 
+def datetime_to_milliseconds(t):
+    """
+    Converts the specified datetime object into the number of milliseconds
+    since the epoch.
+    """
+    # TODO test.
+    epoch = datetime.datetime.utcfromtimestamp(0)
+    delta = t - epoch
+    millis = delta.total_seconds() * 1000
+    return int(millis)
+
+
+def datetime_to_iso8601(t):
+    """
+    Converts the specified datetime object into ISO8601 format.
+    """
+    # TODO test.
+    return t.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def getValueListName(protocolResponseClass):
     """
     Returns the name of the attribute in the specified protocol class

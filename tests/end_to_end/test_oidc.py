@@ -16,8 +16,6 @@ import client
 import server
 import server_test
 
-import ga4gh.datarepo as datarepo
-
 
 def getClientKey(server_url, username, password):
     """
@@ -57,13 +55,6 @@ class TestOidc(server_test.ServerTestClass):
     """
     @classmethod
     def otherSetup(cls):
-        # extract ids from a simulated data repo with the same config
-        repo = datarepo.SimulatedDataRepository()
-        dataset = repo.getDatasets()[0]
-        variantSet = dataset.getVariantSets()[0]
-        variantSetId = variantSet.getId()
-
-        cls.simulatedVariantSetId = variantSetId
         requests.packages.urllib3.disable_warnings()
         cls.opServer = server.OidcOpServerForTesting()
         cls.opServer.start()
@@ -81,7 +72,7 @@ class TestOidc(server_test.ServerTestClass):
         key = getClientKey(serverUrl, 'diana', 'krall')
         test_client = client.ClientForTesting(
             serverUrl, flags="--key {}".format(key))
-        self.runVariantsRequest(test_client)
+        self.runVariantSetsRequest(test_client)
         test_client.cleanup()
 
     def testOidcBadLoginPassword(self):
@@ -95,9 +86,7 @@ class TestOidc(server_test.ServerTestClass):
             serverUrl, flags="--key {}".format('ABC'))
         with self.assertRaises(subprocess.CalledProcessError):
             test_client.runCommand(
-                "variants-search",
-                "-s 0 -e 2 -V {}".format(self.simulatedVariantSetId),
-                debugOnFail=False)
+                "variants-search", "-s 0 -e 2", debugOnFail=False)
         test_client.cleanup()
 
     def testMultipleOidcClients(self):
@@ -108,13 +97,10 @@ class TestOidc(server_test.ServerTestClass):
             serverUrl, flags="--key {}".format(key))
         client2 = client.ClientForTesting(
             serverUrl, flags="--key {}".format(key2))
-        self.runVariantsRequest(client1)
-        self.runVariantsRequest(client2)
+        self.runVariantSetsRequest(client1)
+        self.runVariantSetsRequest(client2)
         client1.cleanup()
         client2.cleanup()
 
-    def runVariantsRequest(self, client):
-        self.runClientCmd(
-            client,
-            "variants-search -s 0 -e 2 -V {}".format(
-                self.simulatedVariantSetId))
+    def runVariantSetsRequest(self, client):
+        self.runClientCmd(client, "variantsets-search")

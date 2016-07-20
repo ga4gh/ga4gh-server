@@ -11,11 +11,9 @@ import hashlib
 
 import vcf
 
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.variants as variants
 import ga4gh.protocol as protocol
+import ga4gh.registry as registry
+import ga4gh.datasource.htslib as htslib
 import ga4gh.exceptions as exceptions
 import tests.datadriven as datadriven
 import tests.utils as utils
@@ -64,7 +62,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
     built by the variants.VariantSet object.
     """
     def __init__(self, variantSetId, baseDir):
-        self._dataset = datasets.Dataset("ds")
+        self._registry_db = registry.RegistryDb(paths.testDataRepoUrl)
+        self._registry_db.open()
         super(VariantSetTest, self).__init__(variantSetId, baseDir)
         self._variantRecords = []
         self._reference_names = set()
@@ -91,11 +90,10 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self._variantRecords.append(record)
 
     def getDataModelInstance(self, localId, dataPath):
-        variantSet = variants.HtslibVariantSet(self._dataset, localId)
-        variantSet.populateFromDirectory(dataPath)
-        referenceSet = references.AbstractReferenceSet("test")
-        variantSet.setReferenceSet(referenceSet)
-        return variantSet
+        variant_set = self._registry_db.get_variant_set_by_name(
+            "dataset1", localId)
+        assert variant_set.name == localId
+        return variant_set
 
     def getProtocolClass(self):
         return protocol.VariantSet
@@ -203,17 +201,13 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 self.assertIn(call.call_set_name, sampleIds)
 
     def _verifyVariantsCallSetIds(self, searchsampleIds):
-        """
-        leaving searchSampleIds will get all samples.
-        """
         gaCallSetVariants = []
         for reference_name in self._reference_names:
-            end = datamodel.PysamDatamodelMixin.vcfMax
+            end = htslib.PysamMixin.vcfMax
             gaSearchIds = [
-                str(datamodel.CallSetCompoundId(
-                    self._gaObject.getCompoundId(), sampleId))
-                for sampleId in searchsampleIds]
-            gaVariants = list(self._gaObject.getVariants(
+                str(call_set.id) for call_set in self._gaObject.call_sets
+                if call_set.name in searchsampleIds]
+            gaVariants = list(self._gaObject.get_variants(
                 reference_name, 0, end, gaSearchIds))
             self._verifyGaVariantsSample(gaVariants, searchsampleIds)
             gaCallSetVariants += gaVariants
@@ -230,9 +224,9 @@ class VariantSetTest(datadriven.DataDrivenTest):
             self._verifyVariantsCallSetIds(list(sampleIds))
 
     def testVariantsValid(self):
-        end = datamodel.PysamDatamodelMixin.vcfMax
+        end = htslib.PysamMixin.vcfMax
         for reference_name in self._reference_names:
-            iterator = self._gaObject.getVariants(
+            iterator = self._gaObject.get_variants(
                 reference_name, 0, end)
             for gaVariant in iterator:
                 self.assertValid(protocol.Variant, protocol.toJson(gaVariant))
@@ -253,7 +247,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         return localVariants
 
     def _assertEmptyVariant(self, reference_name, startPosition, endPosition):
-        gaVariants = list(self._gaObject.getVariants(
+        gaVariants = list(self._gaObject.get_variants(
             reference_name, startPosition, endPosition, []))
         self.assertEqual(len(gaVariants), 0)
         pyvcfVariants = self._getPyvcfVariants(
@@ -262,11 +256,10 @@ class VariantSetTest(datadriven.DataDrivenTest):
 
     def _assertVariantsEqualInRange(
             self, reference_name, startPosition, endPosition):
-        gaVariants = list(self._gaObject.getVariants(
+        gaVariants = list(self._gaObject.get_variants(
             reference_name, startPosition, endPosition, []))
         pyvcfVariants = self._getPyvcfVariants(
             reference_name, startPosition, endPosition)
-        self.assertGreaterEqual(len(gaVariants), 0)
         self._verifyVariantsEqual(gaVariants, pyvcfVariants)
 
     def testVariantInSegments(self):
@@ -300,7 +293,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
     def _pyvcfVariantIsInGaVariants(
             self, pyvcfVariant, intervalStart, intervalEnd):
         isIn = False
-        gaVariants = list(self._gaObject.getVariants(
+        gaVariants = list(self._gaObject.get_variants(
             pyvcfVariant.CHROM, intervalStart, intervalEnd, []))
         for gaVariant in gaVariants:
             if self._gaVariantEqualsPyvcfVariant(gaVariant, pyvcfVariant):
@@ -362,13 +355,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
             return ret
 
         keyMap = {}
-        for metadata in self._gaObject.getMetadata():
+        for metadata in self._gaObject.variant_set_metadata:
             keyMap[metadata.key] = metadata
-            # Check that ID is present and has the right 'structure'
-            deobfuscatedId = datamodel.CompoundId.deobfuscate(metadata.id)
-            splits = datamodel.CompoundId.split(deobfuscatedId)
-            self.assertTrue(splits[-1].endswith(metadata.key))
-
         metadata = keyMap["version"]
         self.assertEqual(metadata.value, self._vcfVersion)
 
@@ -385,7 +373,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
                     self.assertEqual(keyMap[key].number, convertPyvcfNumber(
                         content[contentKey].num))
                     self.assertEqual(
-                        keyMap[key].description, content[contentKey].desc)
+                        keyMap[key].description.strip(),
+                        content[contentKey].desc.strip())
         testMetaLength = (
             1 + len(self._formats) + len(self._infos) - gtCounter)
         self.assertEqual(len(keyMap), testMetaLength)
@@ -393,36 +382,20 @@ class VariantSetTest(datadriven.DataDrivenTest):
     def testGetVariantsCallSets(self):
         variantSet = self._gaObject
         start = 0
-        end = datamodel.PysamDatamodelMixin.vcfMax
-        call_set_ids = [cs.getId() for cs in variantSet.getCallSets()]
+        end = htslib.PysamMixin.vcfMax
+        call_set_ids = [str(cs.id) for cs in variantSet.call_sets]
         somecall_set_ids = call_set_ids[0:3]
-        for call_set_id in call_set_ids:
-            returnedCallSet = variantSet.getCallSet(call_set_id)
-            self.assertEqual(call_set_id, returnedCallSet.getId())
         for reference_name in self._reference_names:
-            # passing None as the callSetIds argument should be equivalent
-            # to passing all of the possible callSetIds as an argument
-            noneRecords = list(variantSet.getVariants(
-                reference_name, start, end, None))
-            allRecords = list(variantSet.getVariants(
-                reference_name, start, end, call_set_ids))
-            self.assertEqual(len(noneRecords), len(allRecords))
-            for noneRecord, allRecord in zip(noneRecords, allRecords):
-                for noneCall, allCall in zip(
-                        noneRecord.calls, allRecord.calls):
-                    self.assertEqual(
-                        noneCall.call_set_name, allCall.call_set_name)
-
             # passing an empty list as the call_set_ids argument should
             # return no callsets for any variant
-            emptyRecords = list(variantSet.getVariants(
+            emptyRecords = list(variantSet.get_variants(
                 reference_name, start, end, []))
             for record in emptyRecords:
                 self.assertEqual(len(record.calls), 0)
 
             # passing some call_set_ids as the call_set_ids argument should
             # return only those calls
-            someRecords = list(variantSet.getVariants(
+            someRecords = list(variantSet.get_variants(
                 reference_name, start, end, somecall_set_ids))
             for record in someRecords:
                 self.assertEqual(len(record.calls), len(somecall_set_ids))
@@ -436,36 +409,36 @@ class VariantSetTest(datadriven.DataDrivenTest):
             for variant in refnameVariants:
                 # positive test: get the expected variant
                 md5 = self._hashVariant(variant)
-                compoundId = datamodel.VariantCompoundId(
-                    variantSet.getCompoundId(), reference_name,
+                compoundId = htslib.HtslibVariantCompoundId(
+                    None, str(variantSet.id), reference_name,
                     str(variant.start), md5)
-                gotVariant = variantSet.getVariant(compoundId)
+                gotVariant = variantSet.run_get_variant(compoundId)
                 self.assertEqual(str(compoundId), gotVariant.id)
 
                 # negative test: change start position to past variant
                 wrongStart = variant.end
-                compoundId = datamodel.VariantCompoundId(
-                    variantSet.getCompoundId(), reference_name,
+                compoundId = htslib.HtslibVariantCompoundId(
+                    None, str(variantSet.id), reference_name,
                     str(wrongStart), md5)
                 try:
-                    gotVariant = variantSet.getVariant(compoundId)
+                    gotVariant = variantSet.run_get_variant(compoundId)
                     self.assertNotEqual(variant.start, gotVariant.start)
                 except exceptions.ObjectNotFoundException:
                     pass
 
                 # negative test: change reference name
-                compoundId = datamodel.VariantCompoundId(
-                    variantSet.getCompoundId(), "wrong reference name",
+                compoundId = htslib.HtslibVariantCompoundId(
+                    None, str(variantSet.id), "wrong reference name",
                     str(variant.start), md5)
                 with self.assertRaises(exceptions.ObjectNotFoundException):
-                    variantSet.getVariant(compoundId)
+                    variantSet.run_get_variant(compoundId)
 
                 # negative test: change hash
-                compoundId = datamodel.VariantCompoundId(
-                    variantSet.getCompoundId(), reference_name,
+                compoundId = htslib.HtslibVariantCompoundId(
+                    None, str(variantSet.id), reference_name,
                     str(variant.start), "wrong hash")
                 with self.assertRaises(exceptions.ObjectNotFoundException):
-                    variantSet.getVariant(compoundId)
+                    variantSet.run_get_variant(compoundId)
 
     def _hashVariant(self, record):
         if record.ALT[0] is None:

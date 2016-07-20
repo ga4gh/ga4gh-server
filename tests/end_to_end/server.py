@@ -6,10 +6,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import logging
-import tempfile
+import os
 import shlex
-import subprocess
 import socket
+import subprocess
+import tempfile
 
 import requests
 
@@ -167,14 +168,25 @@ class Ga4ghServerForTesting(ServerForTesting):
         super(Ga4ghServerForTesting, self).__init__(ga4ghPort, protocol)
         self.configFile = None
         self.useOidc = useOidc
+        # Create the simulated registry DB
+        fd, self.db_file = tempfile.mkstemp(
+            prefix="ga4gh_test_server", suffix=".db")
+        os.close(fd)
+        self.db_url = "sqlite:///" + self.db_file
+        registry_db = utils.create_simulated_registry_db(
+            db_url=self.db_url, random_seed=1, num_datasets=1,
+            num_variant_sets=10, num_calls=1)
+        registry_db.close()
+
+    def getDbUrl(self):
+        return self.db_url
 
     def getConfig(self):
         config = """
-SIMULATED_BACKEND_NUM_VARIANT_SETS = 10
-SIMULATED_BACKEND_VARIANT_DENSITY = 1
-DATA_SOURCE = "simulated://"
+DATA_SOURCE = "{}"
 DEBUG = True
-"""
+""".format(self.db_url)
+
         if self.useOidc:
             config += """
 TESTING = True
@@ -203,6 +215,7 @@ python server_dev.py
         super(Ga4ghServerForTesting, self).shutdown()
         if self.configFile is not None:
             self.configFile.close()
+        os.unlink(self.db_file)
 
     def printDebugInfo(self):
         super(Ga4ghServerForTesting, self).printDebugInfo()

@@ -1,3 +1,5 @@
+# flake8: noqa
+# disable flake8 tests until this code is ported.
 """
 Data-driven tests for variants.
 """
@@ -10,11 +12,9 @@ import glob
 
 import vcf
 
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.ontologies as ontologies
+import ga4gh.registry as registry
+import ga4gh.datasource.htslib as htslib
+import ga4gh.datasource.obo as obo  # noqa
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
@@ -111,19 +111,14 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         return dict(zip(fields, values))
 
     def getDataModelInstance(self, localId, dataPath):
-        dataset = datasets.Dataset("ds")
-        variantSet = variants.HtslibVariantSet(dataset, localId)
-        variantSet.populateFromDirectory(dataPath)
-        referenceSet = references.AbstractReferenceSet("rs")
-        variantSet.setReferenceSet(referenceSet)
-        if variantSet.isAnnotated():
-            sequenceOntology = ontologies.Ontology(paths.ontologyName)
-            sequenceOntology.populateFromFile(paths.ontologyPath)
-            annotationSet = variantSet.getVariantAnnotationSets()[0]
-            annotationSet.setOntology(sequenceOntology)
-            return annotationSet
+        self._registry_db = registry.RegistryDb(paths.testDataRepoUrl)
+        self._registry_db.open()
+        variant_set = self._registry_db.get_variant_set_by_name(
+            "dataset1", localId)
+        if variant_set.is_annotated():
+            return variant_set.variant_annotation_sets[0]
         else:
-            return variantSet
+            return variant_set
 
     def getProtocolClass(self):
         if self._isAnnotated():
@@ -201,7 +196,7 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
         return treffs
 
     def testVariantsValid(self):
-        end = datamodel.PysamDatamodelMixin.vcfMax
+        end = htslib.PysamMixin.vcfMax
         for referenceName in self._referenceNames:
             iterator = self._gaObject.getVariantAnnotations(
                 referenceName, 0, end)

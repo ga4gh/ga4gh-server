@@ -20,7 +20,7 @@ class BaseConfig(object):
     REQUEST_VALIDATION = True
     RESPONSE_VALIDATION = False
     DEFAULT_PAGE_SIZE = 100
-    DATA_SOURCE = "empty://"
+    DATA_SOURCE = None
 
     # Options for the simulated backend.
     SIMULATED_BACKEND_RANDOM_SEED = 0
@@ -41,7 +41,7 @@ class DevelopmentConfig(BaseConfig):
     """
     Configuration used for development.
     """
-    DATA_SOURCE = "ga4gh-example-data/repo.db"
+    DATA_SOURCE = "sqlite:///ga4gh-example-data/repo.db"
     DEBUG = True
 
 
@@ -52,24 +52,11 @@ class LocalOidConfig(DevelopmentConfig):
     OIDC_PROVIDER = "https://localhost:8443"
 
 
-class SimulatedConfig(BaseConfig):
-    """
-    A configuration that uses simulated backing for testing.
-    """
-    DATA_SOURCE = "simulated://"
-    DEBUG = True
-    REQUEST_VALIDATION = True
-    RESPONSE_VALIDATION = True
-
-
 class ProductionConfig(BaseConfig):
     """
     Configuration that is a good basis for production deployments.
     """
     REQUEST_VALIDATION = True
-    # We should complain loudly if data source is not set, rather than
-    # mysteriously serve no data.
-    DATA_SOURCE = None
 
 
 class GoogleOidcConfig(ProductionConfig):
@@ -90,6 +77,7 @@ class TestConfig(BaseConfig):
     TESTING = True
     REQUEST_VALIDATION = True
     RESPONSE_VALIDATION = True
+    DATA_SOURCE = "sqlite:///:memory:"
 
 
 class TestOidcConfig(TestConfig):

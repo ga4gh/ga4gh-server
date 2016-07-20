@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 
 import hashlib
 import os
-import unittest
 
 # TODO it may be a bit circular to use pysam as our interface for
 # accessing reference information, since this is the method we use
@@ -15,7 +14,7 @@ import unittest
 # a different library here --- perhaps BioPython?
 import pysam
 
-import ga4gh.datamodel.references as references
+import ga4gh.datasource.htslib as htslib
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import tests.datadriven as datadriven
@@ -40,8 +39,7 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         self._fastaFile = pysam.FastaFile(fastaFile)
 
     def getDataModelInstance(self, localId, dataPath):
-        referenceSet = references.HtslibReferenceSet(localId)
-        referenceSet.populateFromFile(dataPath)
+        referenceSet = htslib.HtslibReferenceSet(localId, dataPath)
         return referenceSet
 
     def getProtocolClass(self):
@@ -50,17 +48,17 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
     def testValidateObjects(self):
         # test that validation works on reference sets and references
         referenceSet = self._gaObject
-        referenceSetPe = referenceSet.toProtocolElement()
+        referenceSetPe = referenceSet.get_protobuf()
         self.assertValid(
             protocol.ReferenceSet, protocol.toJson(referenceSetPe))
-        for gaReference in referenceSet.getReferences():
-            reference = protocol.toJson(gaReference.toProtocolElement())
+        for gaReference in referenceSet.references:
+            reference = protocol.toJson(gaReference.get_protobuf())
             self.assertValid(protocol.Reference, reference)
 
     def testGetBases(self):
         # test searching with no arguments succeeds
         referenceSet = self._gaObject
-        for gaReference in referenceSet.getReferences():
+        for gaReference in referenceSet.references:
             self.assertReferencesEqual(gaReference)
 
     def testGetBasesStart(self):
@@ -75,14 +73,13 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
         # test searching with start and end succeeds
         self.doRangeTest(2, 5)
 
-    @unittest.skip("We assume that the 0 is unset, as protobuf3 has 0 == None")
     def testGetBasesEmpty(self):
-        self.doRangeTest(0, 0)
+        self.doRangeTest(1, 1)
 
     def testOutOfBounds(self):
         referenceSet = self._gaObject
-        for reference in referenceSet.getReferences():
-            length = reference.getLength()
+        for reference in referenceSet.references:
+            length = reference.length
             badRanges = [
                 (-1, 1), (0, length + 1), (0, 2**34), (-2**32, 1),
                 (1, 0), (length, length - 1),
@@ -90,32 +87,32 @@ class ReferenceSetTest(datadriven.DataDrivenTest):
             for start, end in badRanges:
                 self.assertRaises(
                     exceptions.ReferenceRangeErrorException,
-                    reference.getBases, start, end)
+                    reference.run_get_bases, start, end)
 
     def testMd5checksums(self):
         referenceSet = self._gaObject
         referenceMd5s = []
-        for gaReference in referenceSet.getReferences():
-            bases = self._fastaFile.fetch(gaReference.getLocalId())
+        for gaReference in referenceSet.references:
+            bases = self._fastaFile.fetch(gaReference.name)
             basesChecksum = hashlib.md5(bases).hexdigest()
-            self.assertEqual(basesChecksum, gaReference.getMd5Checksum())
-            referenceMd5s.append(gaReference.getMd5Checksum())
+            self.assertEqual(basesChecksum, gaReference.md5checksum)
+            referenceMd5s.append(gaReference.md5checksum)
         referenceMd5s.sort()
         checksumsString = ''.join(referenceMd5s)
         md5checksum = hashlib.md5(checksumsString).hexdigest()
-        referenceSetMd5 = referenceSet.getMd5Checksum()
+        referenceSetMd5 = referenceSet.md5checksum
         self.assertEqual(md5checksum, referenceSetMd5)
 
     def doRangeTest(self, start=None, end=None):
         referenceSet = self._gaObject
-        for gaReference in referenceSet.getReferences():
+        for gaReference in referenceSet.references:
             self.assertReferencesEqual(gaReference, start, end)
 
     def assertReferencesEqual(
             self, gaReference, start=None, end=None):
         theStart = 0 if start is None else start
-        bases = self._fastaFile.fetch(gaReference.getLocalId())
+        bases = self._fastaFile.fetch(gaReference.name)
         theEnd = len(bases) if end is None else end
-        gaBases = gaReference.getBases(theStart, theEnd)
+        gaBases = gaReference.run_get_bases(theStart, theEnd)
         pysamBases = bases[theStart:theEnd]
         self.assertEqual(gaBases, pysamBases)

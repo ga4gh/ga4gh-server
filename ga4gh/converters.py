@@ -10,8 +10,8 @@ import collections
 
 import pysam
 
-import ga4gh.datamodel.reads as reads
 import ga4gh.protocol as protocol
+import ga4gh.datasource.htslib as htslib
 
 
 class AbstractConverter(object):
@@ -164,51 +164,51 @@ class SamLine(object):
         # blob/master/docs/source/migrating_tips.rst
         flag = 0
         if read.number_reads == 2:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.READ_PAIRED)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.READ_PAIRED)
         if not read.improper_placement:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.READ_PROPER_PAIR)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.READ_PROPER_PAIR)
         if read.alignment is None:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.READ_UNMAPPED)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.READ_UNMAPPED)
         if read.next_mate_position.ByteSize() == 0:  # cleared
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.MATE_UNMAPPED)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.MATE_UNMAPPED)
         if (read.alignment is not None and
                 read.alignment.position.strand ==
                 protocol.NEG_STRAND):
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.READ_REVERSE_STRAND)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.READ_REVERSE_STRAND)
         if (read.next_mate_position is not None and
                 read.next_mate_position.strand == protocol.NEG_STRAND):
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.MATE_REVERSE_STRAND)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.MATE_REVERSE_STRAND)
         if read.read_number == -1:
             pass
         elif read.read_number == 0:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.FIRST_IN_PAIR)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.FIRST_IN_PAIR)
         elif read.read_number == 1:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.SECOND_IN_PAIR)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.SECOND_IN_PAIR)
         else:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.FIRST_IN_PAIR)
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.SECOND_IN_PAIR)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.FIRST_IN_PAIR)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.SECOND_IN_PAIR)
         if read.secondary_alignment:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.SECONDARY_ALIGNMENT)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.SECONDARY_ALIGNMENT)
         if read.failed_vendor_quality_checks:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.FAILED_QUALITY_CHECK)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.FAILED_QUALITY_CHECK)
         if read.duplicate_fragment:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.DUPLICATE_READ)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.DUPLICATE_READ)
         if read.supplementary_alignment:
-            flag = reads.SamFlags.setFlag(
-                flag, reads.SamFlags.SUPPLEMENTARY_ALIGNMENT)
+            flag = htslib.SamFlags.setFlag(
+                flag, htslib.SamFlags.SUPPLEMENTARY_ALIGNMENT)
         return flag
 
     @classmethod
@@ -216,7 +216,7 @@ class SamLine(object):
         cigarTuples = []
         if read.alignment is not None:
             for gaCigarUnit in read.alignment.cigar:
-                operation = reads.SamCigar.ga2int(gaCigarUnit.operation)
+                operation = htslib.SamCigar.ga2int(gaCigarUnit.operation)
                 length = int(gaCigarUnit.operation_length)
                 cigarTuple = (operation, length)
                 cigarTuples.append(cigarTuple)

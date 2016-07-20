@@ -10,10 +10,13 @@ import functools
 import humanize
 import itertools
 import os
+import random
 import signal
 import sys
 import time
 
+import ga4gh.registry as registry
+import ga4gh.datasource.simulator as simulator
 
 packageName = 'ga4gh'
 
@@ -153,3 +156,68 @@ class Timeout(object):
                 signal.alarm(0)
             return result
         return wrapper
+
+
+def create_simulated_registry_db(
+        db_url="sqlite:///:memory:", random_seed=1, num_datasets=3,
+        num_reference_sets=3, num_references_per_reference_set=3,
+        num_variant_sets=3, num_calls=3, num_variant_annotation_sets=3,
+        num_read_group_sets=3, num_read_groups_per_read_group_set=3,
+        num_feature_sets=3):
+    """
+    Creates an in-memory registry DB, and populates it with random data
+    according to the specified parameters.
+    """
+    registry_db = registry.RegistryDb(db_url)
+    registry_db.open()
+    registry_db.initialise()
+    rng = random.Random()
+    rng.seed(random_seed)
+    reference_sets = []
+    for j in range(num_reference_sets):
+        reference_set = simulator.SimulatedReferenceSet(
+            "sim_ref_set_{}".format(j), random_seed=random.randint(0, 2**31),
+            num_references=num_references_per_reference_set)
+        registry_db.add_reference_set(reference_set)
+        reference_sets.append(reference_set)
+    for j in range(num_datasets):
+        dataset = registry.Dataset("sim_ds_{}".format(j))
+        registry_db.add_dataset(dataset)
+        for k in range(num_calls):
+            individual = registry.Individual("sim_ind_{}".format(k))
+            individual.dataset = dataset
+            registry_db.add(individual)
+            bio_sample = registry.BioSample("sim_bio_sample_{}".format(k))
+            bio_sample.dataset = dataset
+            bio_sample.individual = individual
+            registry_db.add(bio_sample)
+        bio_samples = list(dataset.bio_samples)
+        for k in range(num_variant_sets):
+            variant_set = simulator.SimulatedVariantSet(
+                "sim_var_set_{}".format(k),
+                random_seed=random.randint(0, 2**31),
+                bio_samples=bio_samples)
+            variant_set.dataset = dataset
+            variant_set.reference_set = random.choice(reference_sets)
+            for l in range(num_variant_annotation_sets):
+                annotation_set = simulator.SimulatedVariantAnnotationSet(
+                    "sim_vas_{}".format(l),
+                    random_seed=random.randint(0, 2**31))
+                variant_set.variant_annotation_sets.append(annotation_set)
+            registry_db.add_variant_set(variant_set)
+        for k in range(num_read_group_sets):
+            read_group_set = simulator.SimulatedReadGroupSet(
+                "sim_rg_set_{}".format(k), bio_samples,
+                random_seed=random.randint(0, 2**31),
+                num_read_groups=num_read_groups_per_read_group_set)
+            read_group_set.dataset = dataset
+            read_group_set.reference_set = random.choice(reference_sets)
+            registry_db.add_read_group_set(read_group_set)
+        for k in range(num_feature_sets):
+            feature_set = simulator.SimulatedFeatureSet(
+                "sim_feature_set_{}".format(k),
+                random_seed=random.randint(0, 2**31))
+            feature_set.dataset = dataset
+            feature_set.reference_set = random.choice(reference_sets)
+            registry_db.add_feature_set(feature_set)
+    return registry_db

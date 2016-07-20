@@ -5,13 +5,24 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import glob
 import os
 import unittest
 
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.datasource.htslib as htslib
+
+
+def getVariantSetFromDirectory(name, directory):
+    """
+    Returns a variant set populated with the VCF files in the specified
+    directory. Convenience method.
+    """
+    pattern = os.path.join(directory, "*.vcf.gz")
+    files = glob.glob(pattern)
+    indexes = [vcf + ".tbi" for vcf in files]
+    return htslib.HtslibVariantSet(name, files, indexes)
 
 
 class FaultyVariantDataTest(unittest.TestCase):
@@ -20,7 +31,7 @@ class FaultyVariantDataTest(unittest.TestCase):
     """
     def setUp(self):
         self.testDataDir = "tests/faultydata/variants"
-        self.dataset = datasets.Dataset('dataset1')
+        # self.dataset = datasets.Dataset('dataset1')
 
     def getFullPath(self, localId):
         return os.path.join(self.testDataDir, localId)
@@ -32,33 +43,30 @@ class TestVariantSetNoIndexedVcf(FaultyVariantDataTest):
     def testInstantiation(self):
         for localId in self.localIds:
             path = self.getFullPath(localId)
-            variantSet = variants.HtslibVariantSet(self.dataset, localId)
             with self.assertRaises(exceptions.NotIndexedException):
-                variantSet.populateFromDirectory(path)
+                getVariantSetFromDirectory(localId, path)
 
 
+@unittest.skip("FIX VCF import consistencty check")
 class TestInconsistentMetaData(FaultyVariantDataTest):
     localIds = ["inconsist_meta"]
 
     def testInstantiation(self):
         for localId in self.localIds:
             path = self.getFullPath(localId)
-            variantSet = variants.HtslibVariantSet(self.dataset, localId)
-            variantSet.populateFromDirectory(path)
             with self.assertRaises(exceptions.InconsistentMetaDataException):
-                variantSet.checkConsistency()
+                getVariantSetFromDirectory(localId, path)
 
 
+@unittest.skip("FIX VCF import consistencty check")
 class TestInconsistentCallSetId(FaultyVariantDataTest):
     localIds = ["inconsist_sampleid", "inconsist_sampleid2"]
 
     def testInstantiation(self):
         for localId in self.localIds:
             path = self.getFullPath(localId)
-            variantSet = variants.HtslibVariantSet(self.dataset, localId)
-            variantSet.populateFromDirectory(path)
             with self.assertRaises(exceptions.InconsistentCallSetIdException):
-                variantSet.checkConsistency()
+                getVariantSetFromDirectory(localId, path)
 
 
 class TestOverlappingVcfVariants(FaultyVariantDataTest):
@@ -67,9 +75,18 @@ class TestOverlappingVcfVariants(FaultyVariantDataTest):
     def testInstantiation(self):
         for localId in self.localIds:
             path = self.getFullPath(localId)
-            variantSet = variants.HtslibVariantSet(self.dataset, localId)
             with self.assertRaises(exceptions.OverlappingVcfException):
-                variantSet.populateFromDirectory(path)
+                getVariantSetFromDirectory(localId, path)
+
+
+class TestEmptyDirException(FaultyVariantDataTest):
+    localIds = ["empty_dir"]
+
+    def testInstantiation(self):
+        for localId in self.localIds:
+            path = self.getFullPath(localId)
+            with self.assertRaises(exceptions.EmptyVariantSetException):
+                getVariantSetFromDirectory(localId, path)
 
 
 class TestDuplicateCallSetId(FaultyVariantDataTest):
@@ -91,15 +108,5 @@ class TestDuplicateCallSetId(FaultyVariantDataTest):
     def testInstantiation(self):
         for localId in self.localIds:
             path = self.getFullPath(localId)
-            variantSet = variants.HtslibVariantSet(self.dataset, localId)
             with self.assertRaises(exceptions.DuplicateCallSetIdException):
-                variantSet.populateFromDirectory(path)
-
-
-class FaultyReferenceDataTest(unittest.TestCase):
-    """
-    Superclass of faulty reference data tests
-    """
-    def getFullPath(self, localId):
-        testDataDir = "tests/faultydata/references"
-        return os.path.join(testDataDir, localId)
+                getVariantSetFromDirectory(localId, path)

@@ -20,7 +20,7 @@ def run(*args):
 
 def main(args):
     prefix = args.data_directory
-    repoFile = os.path.join(prefix, "repo.db")
+    repoFile = "sqlite:///" + os.path.join(prefix, "repo.db")
     sequenceOntologyName = "so-xp-simple"
     useRelativePath = '-r' if args.relativePaths else ''
     run("init", "-f", repoFile)
@@ -38,15 +38,18 @@ def main(args):
 
     pattern = os.path.join(prefix, "datasets/dataset1/reads", "*.bam")
     for dataFile in glob.glob(pattern):
+        referenceSetName = "Default"
+        name = os.path.split(dataFile)[-1]
+        if name.startswith("HG"):
+            referenceSetName = "NCBI37"
         run("add-readgroupset", repoFile, datasetName, useRelativePath,
-            dataFile)
+            dataFile, "-R", referenceSetName)
 
     pattern = os.path.join(prefix, "datasets/dataset1/variants", "*")
     for j, dataFile in enumerate(glob.glob(pattern)):
-        name = "vs_{}".format(j)
         run(
             "add-variantset", repoFile, datasetName, useRelativePath,
-            dataFile, "-R NCBI37", "-n ", name, "-aO", sequenceOntologyName)
+            dataFile, "-R NCBI37", "-aO", sequenceOntologyName)
 
     pattern = os.path.join(
         prefix, "datasets/dataset1/sequenceAnnotations", "*.db")

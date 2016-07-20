@@ -234,7 +234,7 @@ class IndividualNotFoundException(NotFoundException):
             individualId)
 
 
-class AnnotationSetNotFoundException(NotFoundException):
+class VariantAnnotationSetNotFoundException(NotFoundException):
     def __init__(self, variantAnnotationSetId):
         self.message = "The requested VariantAnnotationSet '{}'" \
             "was not found".format(variantAnnotationSetId)
@@ -250,6 +250,11 @@ class DatasetNotFoundException(NotFoundException):
     def __init__(self, datasetId):
         self.message = "The requested dataset '{}' was not found".format(
             datasetId)
+
+
+class ReadGroupSetNotFoundException(ObjectNotFoundException):
+    def __init__(self, readGroupId):
+        self.message = "readGroupSetId '{}' not found".format(readGroupId)
 
 
 class ReadGroupNotFoundException(ObjectNotFoundException):
@@ -399,7 +404,7 @@ class IndividualNameNotFoundException(NotFoundException):
 
 class ReferenceSetNameNotFoundException(NotFoundException):
     """
-    Indicates a request was made for a ReferenceSetSet with a name that
+    Indicates a request was made for a ReferenceSet with a name that
     does not exist.
     """
     def __init__(self, name):
@@ -495,11 +500,10 @@ class FileOpenFailedException(DataException):
         self.message = "Failed to open file '{}'".format(filename)
 
 
-class EmptyDirException(DataException):
+class EmptyVariantSetException(DataException):
 
-    def __init__(self, dirname, filetype):
-        self.message = "Directory '{}' empty, no {} file was found".format(
-            dirname, filetype)
+    def __init__(self):
+        self.message = "No files provided for VariantSet."
 
 
 class OntologyFileFormatException(DataException):
@@ -584,11 +588,11 @@ class ReadGroupReferenceNotFound(MalformedException):
     A BAM file contains reference names that are not in the linked
     ReadGroupSet.
     """
-    def __init__(self, fileName, referenceName, referenceSetName):
+    def __init__(self, fileName, missingReferences, referenceSetName):
         self.message = (
-            "The BAM file '{}' contains the reference '{}' which "
-            "is not present in the ReferenceSet  '{}'".format(
-                fileName, referenceName, referenceSetName))
+            "The ReferenceSet {} contains the references {} which do "
+            "are not present in the BAM file '{}'".format(
+                referenceSetName, missingReferences, fileName))
 
 
 class MultipleReferenceSetsInReadGroupSet(MalformedException):

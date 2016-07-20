@@ -12,6 +12,7 @@ import datetime
 import socket
 import urlparse
 import functools
+import logging
 
 import flask
 import flask.ext.cors as cors
@@ -24,12 +25,10 @@ import requests
 
 import ga4gh
 import ga4gh.backend as backend
-import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
-import ga4gh.datarepo as datarepo
-import logging
-from logging import StreamHandler
+import ga4gh.registry as registry
+import ga4gh.datasource.htslib as htslib
 
 
 MIMETYPE = "application/json"
@@ -135,46 +134,52 @@ class ServerStatus(object):
         """
         Returns the list of datasetIds for this backend
         """
-        return app.backend.getDataRepository().getDatasets()
+        # return app.backend.getDataRepository().getDatasets()
+        return []
 
     def getVariantSets(self, datasetId):
         """
         Returns the list of variant sets for the dataset
         """
-        return app.backend.getDataRepository().getDataset(
-            datasetId).getVariantSets()
+        return []
+        # return app.backend.getDataRepository().getDataset(
+        #     datasetId).getVariantSets()
 
     def getFeatureSets(self, datasetId):
         """
         Returns the list of feature sets for the dataset
         """
-        return app.backend.getDataRepository().getDataset(
-            datasetId).getFeatureSets()
+        return []
+        # return app.backend.getDataRepository().getDataset(
+        #     datasetId).getFeatureSets()
 
     def getReadGroupSets(self, datasetId):
         """
         Returns the list of ReadGroupSets for the dataset
         """
-        return app.backend.getDataRepository().getDataset(
-            datasetId).getReadGroupSets()
+        return []
+        # return app.backend.getDataRepository().getDataset(
+        #     datasetId).getReadGroupSets()
 
     def getReferenceSets(self):
         """
         Returns the list of ReferenceSets for this server.
         """
-        return app.backend.getDataRepository().getReferenceSets()
+        return []
+        # return app.backend.getDataRepository().getReferenceSets()
 
     def getVariantAnnotationSets(self, datasetId):
         """
         Returns the list of ReferenceSets for this server.
         """
         # TODO this should be displayed per-variant set, not per dataset.
-        variantAnnotationSets = []
-        dataset = app.backend.getDataRepository().getDataset(datasetId)
-        for variantSet in dataset.getVariantSets():
-            variantAnnotationSets.extend(
-                variantSet.getVariantAnnotationSets())
-        return variantAnnotationSets
+        # variantAnnotationSets = []
+        # dataset = app.backend.getDataRepository().getDataset(datasetId)
+        # for variantSet in dataset.getVariantSets():
+        #     variantAnnotationSets.extend(
+        #         variantSet.getVariantAnnotationSets())
+        # return variantAnnotationSets
+        return []
 
 
 def reset():
@@ -192,7 +197,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     TODO Document this critical function! What does it do? What does
     it assume?
     """
-    file_handler = StreamHandler()
+    file_handler = logging.StreamHandler()
     file_handler.setLevel(logging.WARNING)
     app.logger.addHandler(file_handler)
     configStr = 'ga4gh.serverconfig:{0}'.format(baseConfig)
@@ -203,53 +208,21 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         app.config.from_pyfile(configFile)
     app.config.update(extraConfig.items())
     # Setup file handle cache max size
-    datamodel.fileHandleCache.setMaxCacheSize(
+    htslib.file_handle_cache.setMaxCacheSize(
         app.config["FILE_HANDLE_CACHE_MAX_SIZE"])
     # Setup CORS
     cors.CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
-    # Allocate the backend
-    # We use URLs to specify the backend. Currently we have file:// URLs (or
-    # URLs with no scheme) for the SqlDataRepository, and special empty:// and
-    # simulated:// URLs for empty or simulated data sources.
-    dataSource = urlparse.urlparse(app.config["DATA_SOURCE"], "file")
-
-    if dataSource.scheme == "simulated":
-        # Ignore the query string
-        randomSeed = app.config["SIMULATED_BACKEND_RANDOM_SEED"]
-        numCalls = app.config["SIMULATED_BACKEND_NUM_CALLS"]
-        variantDensity = app.config["SIMULATED_BACKEND_VARIANT_DENSITY"]
-        numVariantSets = app.config["SIMULATED_BACKEND_NUM_VARIANT_SETS"]
-        numReferenceSets = app.config[
-            "SIMULATED_BACKEND_NUM_REFERENCE_SETS"]
-        numReferencesPerReferenceSet = app.config[
-            "SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET"]
-        numAlignmentsPerReadGroup = app.config[
-            "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
-        numReadGroupsPerReadGroupSet = app.config[
-            "SIMULATED_BACKEND_NUM_READ_GROUPS_PER_READ_GROUP_SET"]
-        dataRepository = datarepo.SimulatedDataRepository(
-            randomSeed=randomSeed, numCalls=numCalls,
-            variantDensity=variantDensity, numVariantSets=numVariantSets,
-            numReferenceSets=numReferenceSets,
-            numReferencesPerReferenceSet=numReferencesPerReferenceSet,
-            numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
-            numAlignments=numAlignmentsPerReadGroup)
-    elif dataSource.scheme == "empty":
-        dataRepository = datarepo.EmptyDataRepository()
-    elif dataSource.scheme == "file":
-        path = os.path.join(dataSource.netloc, dataSource.path)
-        dataRepository = datarepo.SqlDataRepository(path)
-        dataRepository.open(datarepo.MODE_READ)
-    else:
-        raise exceptions.ConfigurationException(
-            "Unsupported data source scheme: " + dataSource.scheme)
+    dataSource = app.config["DATA_SOURCE"]
+    dataRepository = registry.RegistryDb(dataSource)
+    dataRepository.open()
     theBackend = backend.Backend(dataRepository)
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])
     theBackend.setMaxResponseLength(app.config["MAX_RESPONSE_LENGTH"])
     app.backend = theBackend
+
     app.secret_key = os.urandom(SECRET_KEY_LENGTH)
     app.oidcClient = None
     app.tokenMap = None

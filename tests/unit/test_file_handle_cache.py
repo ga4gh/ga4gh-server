@@ -12,10 +12,10 @@ import tempfile
 import unittest
 import uuid
 
-import ga4gh.datamodel as datamodel
+import ga4gh.datasource.htslib as htslib
 
 
-class TestFileHandleCache(datamodel.PysamFileHandleCache, unittest.TestCase):
+class TestFileHandleCache(htslib.PysamFileHandleCache, unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(TestFileHandleCache, self).__init__()
         unittest.TestCase.__init__(self, *args, **kwargs)
@@ -27,7 +27,7 @@ class TestFileHandleCache(datamodel.PysamFileHandleCache, unittest.TestCase):
     def _getFileHandle(self, dataFile):
         def openMethod(dataFile):
             return open(dataFile, 'w')
-        return self.getFileHandle(dataFile, openMethod)
+        return self.get_file_handle(dataFile, openMethod, dataFile)
 
     def testGetFileHandle(self):
         def genFileName(x):

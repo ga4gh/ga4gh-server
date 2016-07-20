@@ -29,15 +29,20 @@ import ga4gh.converters as converters
 import ga4gh.frontend as frontend
 import ga4gh.configtest as configtest
 import ga4gh.exceptions as exceptions
-import ga4gh.datarepo as datarepo
 import ga4gh.protocol as protocol
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.ontologies as ontologies
-import ga4gh.datamodel.bio_metadata as biodata
+
+import ga4gh.registry as registry
+import ga4gh.datasource.htslib as htslib
+import ga4gh.datasource.sql as sql
+import ga4gh.datasource.obo as obo
+
+# import ga4gh.datamodel.reads as reads
+# import ga4gh.datamodel.variants as variants
+# import ga4gh.datamodel.references as references
+# import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+# import ga4gh.datamodel.datasets as datasets
+# import ga4gh.datamodel.bio_metadata as biodata
+# import ga4gh.datamodel.ontologies as ontologies
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -180,12 +185,14 @@ class AbstractQueryRunner(object):
         # the backend instantiation into the client, and letting the
         # client be a factory, instantiating the correct Client class
         # depending on the prefix.
-        filePrefix = "file://"
-        if args.baseUrl.startswith(filePrefix):
-            registryPath = args.baseUrl[len(filePrefix):]
-            repo = datarepo.SqlDataRepository(registryPath)
-            repo.open(datarepo.MODE_READ)
-            theBackend = backend.Backend(repo)
+        # TODO should be generalise this so sqlalchemy does this parsing?
+        sqlite_prefix = "sqlite://"
+        postgres_prefix = "postgres://"
+        url = args.baseUrl
+        if url.startswith(sqlite_prefix) or url.startswith(postgres_prefix):
+            registry_db = registry.RegistryDb(url)
+            registry_db.open()
+            theBackend = backend.Backend(registry_db)
             self._client = client.LocalClient(theBackend)
         else:
             self._client = client.HttpClient(
@@ -323,6 +330,7 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
         super(SearchReferenceSetsRunner, self).__init__(args)
         self._accession = args.accession
         self._md5checksum = args.md5checksum
+        self._assemblyId = args.assemblyId
 
     def run(self):
         iterator = self._client.search_reference_sets(
@@ -558,16 +566,16 @@ class FeatureFormatterMixin(object):
     def _textOutput(self, gaObjects):
         for feature in gaObjects:
             print(
-                feature.id, feature.parentId, feature.featureSetId,
-                feature.referenceName, feature.start, feature.end,
+                feature.id, feature.parent_id, feature.feature_set_id,
+                feature.reference_name, feature.start, feature.end,
                 feature.strand, sep="\t", end="\t")
-            print(
-                "FeatureType:", feature.featureType.id,
-                feature.featureType.term, end="\t")
-            for attrkey in feature.attributes.vals.keys():
-                print(
-                    attrkey, feature.attributes.vals[attrkey],
-                    sep=":", end="; ")
+            # print(
+            #     "FeatureType:", feature.feature_type.id,
+            #     feature.feature_type.term, end="\t")
+            # for attrkey in feature.attributes.vals.keys():
+            #     print(
+            #         attrkey, feature.attributes.vals[attrkey],
+            #         sep=":", end="; ")
             print()
 
 
@@ -664,6 +672,7 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
         self._parentId = args.parentId
         self._start = args.start
         self._end = args.end
+
         if args.featureTypes == "":
             self._featureTypes = []
         else:
@@ -698,36 +707,31 @@ class SearchReadsRunner(AbstractSearchRunner):
         if args.readGroupIds is not None:
             self._readGroupIds = args.readGroupIds.split(",")
 
-    def _run(self, referenceGroupId, referenceId=None):
-        """
-        automatically guess reference id if not passed
-        """
-        # check if we can get reference id from rg
-        if referenceId is None:
-            referenceId = self._referenceId
-        if referenceId is None:
-            rg = self._client.get_read_group(
-                read_group_id=referenceGroupId)
-            iterator = self._client.search_references(rg.reference_set_id)
-            for reference in iterator:
-                self._run(referenceGroupId, reference.id)
-        else:
-            iterator = self._client.search_reads(
-                read_group_ids=[referenceGroupId],
-                reference_id=referenceId,
-                start=self._start, end=self._end)
-            self._output(iterator)
+    def _run(self, read_group_ids, reference_id):
+        iterator = self._client.search_reads(
+            read_group_ids=read_group_ids, reference_id=reference_id,
+            start=self._start, end=self._end)
+        self._output(iterator)
 
     def run(self):
         """
         Iterate passed read group ids, or go through all available read groups
         """
-        if not self._readGroupIds:
-            for referenceGroupId in self.getAllReadGroups():
-                self._run(referenceGroupId)
-        else:
-            for referenceGroupId in self._readGroupIds:
-                self._run(referenceGroupId)
+        # TODO FIXUP this interface!!
+        # if self._readGroupIds is None:
+        #     for read_group_set in self.getAllReadGroupSets():
+        #         read_group_ids = [rg.id for rg in read_group_set.read_groups]
+        #         self._run(read_group_ids)
+        # else:
+        self._run(self._readGroupIds, self._referenceId)
+
+        # referenceId = self._referenceId
+        # if referenceId is None:
+        #     rg = self._client.getReadGroup(readGroupId=read_group_ids[0])
+        #     iterator = self._client.searchReferences(rg.reference_set_id)
+        #     for reference in iterator:
+        # self._run(referenceGroupId, reference.id)
+        # else:
 
     def _textOutput(self, gaObjects):
         """
@@ -735,7 +739,11 @@ class SearchReadsRunner(AbstractSearchRunner):
         """
         for read in gaObjects:
             # TODO add in some more useful output here.
-            print(read.id)
+            print(
+                read.id, read.read_group_id,
+                read.alignment.position.reference_name,
+                read.alignment.position.position,
+                read.fragment_length, sep="\t")
 
 
 # ListReferenceBases is an oddball, and doesn't fit either get or
@@ -1066,7 +1074,7 @@ def addMd5ChecksumArgument(parser):
 
 def addPageSizeArgument(parser):
     parser.add_argument(
-        "--pageSize", "-m", default=None, type=int,
+        "--pageSize", "-m", default=0, type=int,
         help=(
             "The maximum number of results returned in one page. "
             "The default is to let the server decide how many "
@@ -1688,8 +1696,8 @@ class RepoManager(object):
     """
     def __init__(self, args):
         self._args = args
-        self._registryPath = args.registryPath
-        self._repo = datarepo.SqlDataRepository(self._registryPath)
+        self._registry_url = args.registry_url
+        self._registry = registry.RegistryDb(self._registry_url)
 
     def _confirmDelete(self, objectType, name, func):
         if self._args.force:
@@ -1704,34 +1712,19 @@ class RepoManager(object):
             else:
                 print("Aborted")
 
-    def _updateRepo(self, func, *args, **kwargs):
-        """
-        Runs the specified function that updates the repo with the specified
-        arguments. This method ensures that all updates are transactional,
-        so that if any part of the update fails no changes are made to the
-        repo.
-        """
-        # TODO how do we make this properly transactional?
-        self._repo.open(datarepo.MODE_WRITE)
-        try:
-            func(*args, **kwargs)
-            self._repo.commit()
-        finally:
-            self._repo.close()
-
     def _openRepo(self):
-        if not self._repo.exists():
+        if not self._registry.exists():
             raise exceptions.RepoManagerException(
                 "Repo '{}' does not exist. Please create a new repo "
-                "using the 'init' command.".format(self._registryPath))
-        self._repo.open(datarepo.MODE_READ)
+                "using the 'init' command.".format(self._registry_url))
+        self._registry.open()
 
     def _checkSequenceOntology(self, ontology):
-        so = ontologies.SEQUENCE_ONTOLOGY_PREFIX
-        if ontology.getOntologyPrefix() != so:
+        so = obo.SEQUENCE_ONTOLOGY_PREFIX
+        if ontology.ontology_prefix != so:
             raise exceptions.RepoManagerException(
                 "Ontology '{}' does not have ontology prefix '{}'".format(
-                    ontology.getName(), so))
+                    ontology.name, so))
 
     def _getFilePath(self, filePath, useRelativePath):
         return filePath if useRelativePath else os.path.abspath(filePath)
@@ -1739,13 +1732,15 @@ class RepoManager(object):
     def init(self):
         forceMessage = (
             "Respository '{}' already exists. Use --force to overwrite")
-        if self._repo.exists():
+        if self._registry.exists():
             if self._args.force:
-                self._repo.delete()
+                self._registry.delete()
             else:
                 raise exceptions.RepoManagerException(
-                    forceMessage.format(self._registryPath))
-        self._updateRepo(self._repo.initialise)
+                    forceMessage.format(self._registry_url))
+        self._registry.open()
+        self._registry.initialise()
+        self._registry.close()
 
     def list(self):
         """
@@ -1753,7 +1748,7 @@ class RepoManager(object):
         """
         self._openRepo()
         # TODO this is _very_ crude. We need much more options and detail here.
-        self._repo.printSummary()
+        self._registry.print_summary()
 
     def verify(self):
         """
@@ -1761,7 +1756,7 @@ class RepoManager(object):
         we don't have any broken URLs, missing files, etc.
         """
         self._openRepo()
-        self._repo.verify()
+        self._registry.verify()
 
     def addOntology(self):
         """
@@ -1769,22 +1764,22 @@ class RepoManager(object):
         """
         self._openRepo()
         name = self._args.name
-        filePath = self._getFilePath(self._args.filePath,
-                                     self._args.relativePath)
+        filePath = self._getFilePath(
+            self._args.filePath, self._args.relativePath)
         if name is None:
             name = getNameFromPath(filePath)
-        ontology = ontologies.Ontology(name)
-        ontology.populateFromFile(filePath)
-        self._updateRepo(self._repo.insertOntology, ontology)
+        ontology = obo.OboOntology(name, filePath)
+        self._registry.add_ontology(ontology)
 
     def addDataset(self):
         """
         Adds a new dataset into this repo.
         """
         self._openRepo()
-        dataset = datasets.Dataset(self._args.datasetName)
-        dataset.setDescription(self._args.description)
-        self._updateRepo(self._repo.insertDataset, dataset)
+        dataset = registry.Dataset(self._args.datasetName)
+        dataset.description = self._args.description
+        self._registry.add_dataset(dataset)
+        self._registry.close()
 
     def addReferenceSet(self):
         """
@@ -1792,29 +1787,28 @@ class RepoManager(object):
         """
         self._openRepo()
         name = self._args.name
-        filePath = self._getFilePath(self._args.filePath,
-                                     self._args.relativePath)
+        file_path = self._getFilePath(
+            self._args.filePath, self._args.relativePath)
         if name is None:
             name = getNameFromPath(self._args.filePath)
-        referenceSet = references.HtslibReferenceSet(name)
-        referenceSet.populateFromFile(filePath)
-        referenceSet.setDescription(self._args.description)
-        referenceSet.setNcbiTaxonId(self._args.ncbiTaxonId)
-        referenceSet.setIsDerived(self._args.isDerived)
-        referenceSet.setAssemblyId(self._args.assemblyId)
-        sourceAccessions = []
-        if self._args.sourceAccessions is not None:
-            sourceAccessions = self._args.sourceAccessions.split(",")
-        referenceSet.setSourceAccessions(sourceAccessions)
-        referenceSet.setSourceUri(self._args.sourceUri)
-        self._updateRepo(self._repo.insertReferenceSet, referenceSet)
+        reference_set = htslib.HtslibReferenceSet(name, file_path)
+        reference_set.description = self._args.description
+        reference_set.ncbi_taxon_id = self._args.ncbiTaxonId
+        reference_set.is_derived = self._args.isDerived
+        reference_set.assembly_id = self._args.assemblyId
+        # sourceAccessions = []
+        # if self._args.sourceAccessions is not None:
+        #     sourceAccessions = self._args.sourceAccessions.split(",")
+        # referenceSet.setSourceAccessions(sourceAccessions)
+        reference_set.source_uri = self._args.sourceUri
+        self._registry.add_reference_set(reference_set)
 
     def addReadGroupSet(self):
         """
         Adds a new ReadGroupSet into this repo.
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        dataset = self._registry.get_dataset_by_name(self._args.datasetName)
         dataUrl = self._args.dataFile
         indexFile = self._args.indexFile
         parsed = urlparse.urlparse(dataUrl)
@@ -1832,22 +1826,24 @@ class RepoManager(object):
         name = self._args.name
         if self._args.name is None:
             name = getNameFromPath(dataUrl)
-        readGroupSet = reads.HtslibReadGroupSet(dataset, name)
-        readGroupSet.populateFromFile(dataUrl, indexFile)
+        readGroupSet = htslib.HtslibReadGroupSet(name, dataUrl, indexFile)
         referenceSetName = self._args.referenceSetName
         if referenceSetName is None:
             # Try to find a reference set name from the BAM header.
-            referenceSetName = readGroupSet.getBamHeaderReferenceSetName()
-        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
-        readGroupSet.setReferenceSet(referenceSet)
-        self._updateRepo(self._repo.insertReadGroupSet, readGroupSet)
+            referenceSetName = readGroupSet.assembly_identifier
+        referenceSet = self._registry.get_reference_set_by_name(
+            referenceSetName)
+        readGroupSet.check_references(referenceSet)
+        readGroupSet.reference_set = referenceSet
+        readGroupSet.dataset = dataset
+        self._registry.add_read_group_set(readGroupSet)
 
     def addVariantSet(self):
         """
         Adds a new VariantSet into this repo.
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        dataset = self._registry.get_dataset_by_name(self._args.datasetName)
         dataUrls = self._args.dataFiles
         name = self._args.name
         if len(dataUrls) == 1:
@@ -1894,137 +1890,125 @@ class RepoManager(object):
             indexFiles = [filename + indexSuffix for filename in dataUrls]
         indexFiles = map(lambda url: self._getFilePath(
             url, self._args.relativePath), indexFiles)
-        variantSet = variants.HtslibVariantSet(dataset, name)
-        variantSet.populateFromFile(dataUrls, indexFiles)
+        variant_set = htslib.HtslibVariantSet(name, dataUrls, indexFiles)
         # Get the reference set that is associated with the variant set.
         referenceSetName = self._args.referenceSetName
-        if referenceSetName is None:
-            # Try to find a reference set name from the VCF header.
-            referenceSetName = variantSet.getVcfHeaderReferenceSetName()
+        if self._args.addAnnotationSets:
+            ontologyName = self._args.ontologyName
+            if ontologyName is None:
+                raise exceptions.RepoManagerException(
+                    "A sequence ontology name must be provided")
+            ontology = self._registry.get_ontology_by_name(ontologyName)
+            self._checkSequenceOntology(ontology)
+            variant_set.create_annotation_sets(ontology)
+        # TODO read the reference set name from the VCF header.
         if referenceSetName is None:
             raise exceptions.RepoManagerException(
                 "Cannot infer the ReferenceSet from the VCF header. Please "
                 "specify the ReferenceSet to associate with this "
                 "VariantSet using the --referenceSetName option")
-        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
-        variantSet.setReferenceSet(referenceSet)
-
-        # Now check for annotations
-        annotationSets = []
-        if variantSet.isAnnotated() and self._args.addAnnotationSets:
-            ontologyName = self._args.ontologyName
-            if ontologyName is None:
-                raise exceptions.RepoManagerException(
-                    "A sequence ontology name must be provided")
-            ontology = self._repo.getOntologyByName(ontologyName)
-            self._checkSequenceOntology(ontology)
-            for annotationSet in variantSet.getVariantAnnotationSets():
-                annotationSet.setOntology(ontology)
-                annotationSets.append(annotationSet)
-
-        # Add the annotation sets and the variant set as an atomic update
-        def updateRepo():
-            self._repo.insertVariantSet(variantSet)
-            for annotationSet in annotationSets:
-                self._repo.insertVariantAnnotationSet(annotationSet)
-        self._updateRepo(updateRepo)
+        reference_set = self._registry.get_reference_set_by_name(
+            referenceSetName)
+        variant_set.reference_set = reference_set
+        variant_set.dataset = dataset
+        self._registry.add_variant_set(variant_set)
 
     def removeReferenceSet(self):
         """
         Removes a referenceSet from the repo.
         """
         self._openRepo()
-        referenceSet = self._repo.getReferenceSetByName(
+        referenceSet = self._registry.get_reference_set_by_name(
             self._args.referenceSetName)
 
         def func():
-            self._updateRepo(self._repo.removeReferenceSet, referenceSet)
-        self._confirmDelete("ReferenceSet", referenceSet.getLocalId(), func)
+            self._registry.remove(referenceSet)
+        self._confirmDelete("ReferenceSet", referenceSet.name, func)
 
     def removeReadGroupSet(self):
         """
         Removes a readGroupSet from the repo.
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
-        readGroupSet = dataset.getReadGroupSetByName(
-            self._args.readGroupSetName)
+        readGroupSet = self._registry.get_read_group_set_by_name(
+            self._args.datasetName, self._args.readGroupSetName)
 
         def func():
-            self._updateRepo(self._repo.removeReadGroupSet, readGroupSet)
-        self._confirmDelete("ReadGroupSet", readGroupSet.getLocalId(), func)
+            self._registry.remove(readGroupSet)
+        self._confirmDelete("ReadGroupSet", readGroupSet.name, func)
 
     def removeVariantSet(self):
         """
         Removes a variantSet from the repo.
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
-        variantSet = dataset.getVariantSetByName(self._args.variantSetName)
+        variantSet = self._registry.get_variant_set_by_name(
+                self._args.datasetName, self._args.variantSetName)
 
         def func():
-            self._updateRepo(self._repo.removeVariantSet, variantSet)
-        self._confirmDelete("VariantSet", variantSet.getLocalId(), func)
+            self._registry.remove(variantSet)
+        self._confirmDelete("VariantSet", variantSet.name, func)
 
     def removeDataset(self):
         """
         Removes a dataset from the repo.
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        dataset = self._registry.get_dataset_by_name(self._args.datasetName)
 
         def func():
-            self._updateRepo(self._repo.removeDataset, dataset)
-        self._confirmDelete("Dataset", dataset.getLocalId(), func)
+            self._registry.remove(dataset)
+        self._confirmDelete("Dataset", dataset.name, func)
 
     def addFeatureSet(self):
         """
         Adds a new feature set into this repo
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
-        filePath = self._getFilePath(self._args.filePath,
-                                     self._args.relativePath)
+        dataset = self._registry.get_dataset_by_name(self._args.datasetName)
+        filePath = self._getFilePath(
+            self._args.filePath, self._args.relativePath)
         name = getNameFromPath(self._args.filePath)
-        featureSet = sequenceAnnotations.Gff3DbFeatureSet(
-            dataset, name)
-        referenceSetName = self._args.referenceSetName
-        if referenceSetName is None:
+        reference_set_name = self._args.referenceSetName
+        if reference_set_name is None:
             raise exceptions.RepoManagerException(
                 "A reference set name must be provided")
-        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
-        featureSet.setReferenceSet(referenceSet)
-        ontologyName = self._args.ontologyName
-        if ontologyName is None:
+        reference_set = self._registry.get_reference_set_by_name(
+            reference_set_name)
+        ontology_name = self._args.ontologyName
+        if ontology_name is None:
             raise exceptions.RepoManagerException(
                 "A sequence ontology name must be provided")
-        ontology = self._repo.getOntologyByName(ontologyName)
+        ontology = self._registry.get_ontology_by_name(ontology_name)
         self._checkSequenceOntology(ontology)
-        featureSet.setOntology(ontology)
-        featureSet.populateFromFile(filePath)
-        self._updateRepo(self._repo.insertFeatureSet, featureSet)
+        feature_set = sql.Gff3DbFeatureSet(name, filePath)
+        feature_set.dataset = dataset
+        feature_set.reference_set = reference_set
+        feature_set.ontology = ontology
+        self._registry.add_feature_set(feature_set)
 
     def removeFeatureSet(self):
         """
         Removes a feature set from this repo
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
-        featureSet = dataset.getFeatureSetByName(self._args.featureSetName)
+        feature_set = self._registry.get_feature_set_by_name(
+            self._args.datasetName, self._args.featureSetName)
 
         def func():
-            self._updateRepo(self._repo.removeFeatureSet, featureSet)
-        self._confirmDelete("FeatureSet", featureSet.getLocalId(), func)
+            self._registry.remove(feature_set)
+        self._confirmDelete("FeatureSet", feature_set.name, func)
 
     def addBioSample(self):
         """
         Adds a new biosample into this repo
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
-        bioSample = biodata.BioSample(dataset, self._args.bioSampleName)
-        bioSample.populateFromJson(self._args.bioSample)
-        self._updateRepo(self._repo.insertBioSample, bioSample)
+        print("TODO BioSample")
+        # dataset = self._repo.getDatasetByName(self._args.datasetName)
+        # bioSample = biodata.BioSample(dataset, self._args.bioSampleName)
+        # bioSample.populateFromJson(self._args.bioSample)
+        # self._updateRepo(self._repo.insertBioSample, bioSample)
 
     def removeBioSample(self):
         """
@@ -2043,10 +2027,11 @@ class RepoManager(object):
         Adds a new individual into this repo
         """
         self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
-        individual = biodata.Individual(dataset, self._args.individualName)
-        individual.populateFromJson(self._args.individual)
-        self._updateRepo(self._repo.insertIndividual, individual)
+        print("TODO Individual")
+        # dataset = self._repo.getDatasetByName(self._args.datasetName)
+        # individual = biodata.Individual(dataset, self._args.individualName)
+        # individual.populateFromJson(self._args.individual)
+        # self._updateRepo(self._repo.insertIndividual, individual)
 
     def removeIndividual(self):
         """
@@ -2065,12 +2050,11 @@ class RepoManager(object):
         Removes an ontology from the repo.
         """
         self._openRepo()
-        ontology = self._repo.getOntologyByName(self._args.ontologyName)
+        ontology = self._registry.get_ontology_by_name(self._args.ontologyName)
 
         def func():
-            self._updateRepo(self._repo.removeOntology, ontology)
-        self._confirmDelete("Ontology", ontology.getName(), func)
-
+            self._registry.remove(ontology)
+        self._confirmDelete("Ontology", ontology.name, func)
     #
     # Methods to simplify adding common arguments to the parser.
     #
@@ -2078,8 +2062,8 @@ class RepoManager(object):
     @classmethod
     def addRepoArgument(cls, subparser):
         subparser.add_argument(
-            "registryPath",
-            help="the location of the registry database")
+            "registry_url",
+            help="The URL of the registry database.")
 
     @classmethod
     def addForceOption(cls, subparser):
@@ -2233,18 +2217,18 @@ class RepoManager(object):
         cls.addNameOption(addReferenceSetParser, objectType)
         cls.addDescriptionOption(addReferenceSetParser, objectType)
         addReferenceSetParser.add_argument(
-            "--ncbiTaxonId", default=None, help="The NCBI Taxon Id")
+            "--ncbiTaxonId", type=int, default=0, help="The NCBI Taxon Id")
         addReferenceSetParser.add_argument(
             "--isDerived", default=False, type=bool,
             help="Indicates if this reference set is derived from another")
         addReferenceSetParser.add_argument(
-            "--assemblyId", default=None,
+            "--assemblyId", default="",
             help="The assembly id")
         addReferenceSetParser.add_argument(
             "--sourceAccessions", default=None,
             help="The source accessions (pass as comma-separated list)")
         addReferenceSetParser.add_argument(
-            "--sourceUri", default=None,
+            "--sourceUri", default="",
             help="The source URI")
 
         removeReferenceSetParser = addSubparser(
