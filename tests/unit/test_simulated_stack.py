@@ -722,6 +722,9 @@ class TestSimulatedStack(unittest.TestCase):
                            "There should be some results for a good effect ID")
         for ann in responseData.variant_annotations:
             effectPresent = False
+            txIds = map(lambda t: t.id, ann.transcript_effects)
+            self.assertEqual(len(txIds), len(set(txIds)),
+                             "Transcript effects should be unique")
             for effect in ann.transcript_effects:
                 for featureType in effect.effects:
                     if featureType.id in map(
