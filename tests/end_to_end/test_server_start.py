@@ -18,7 +18,7 @@ import tests.paths as paths
 class TestServerStart(unittest.TestCase):
 
     def testServerStart(self):
-        app = server.Ga4ghServerForTestingDataSource(paths.testDataRepo)
+        app = server.Ga4ghServerForTestingDataSource(paths.testDataRepoUrl)
         try:
             app.start()
         finally:

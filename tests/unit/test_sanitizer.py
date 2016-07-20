@@ -7,11 +7,11 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.datamodel as datamodel
+import ga4gh.datasource.htslib as htslib
 import ga4gh.exceptions as exceptions
 
 
-class TestPysamSanitizer(datamodel.PysamDatamodelMixin, unittest.TestCase):
+class TestPysamSanitizer(htslib.PysamMixin, unittest.TestCase):
     """
     Test the pysam sanitizer
     """

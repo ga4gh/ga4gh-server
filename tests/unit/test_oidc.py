@@ -5,12 +5,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import unittest
-import socket
-import mock
-import urlparse
 import logging
 import mimetypes
+import mock
+import os
+import socket
+import tempfile
+import unittest
+import urlparse
 
 import oic
 import oic.oic.message as message
@@ -99,12 +101,16 @@ class TestFrontendOidc(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        fd, cls.db_file = tempfile.mkstemp(prefix="ga4gh_test_oidc")
+        os.close(fd)
+        db_url = "sqlite:///" + cls.db_file
+        registry_db = utils.create_simulated_registry_db(
+            db_url=db_url, random_seed=1111, num_calls=5, num_variant_sets=4,
+            num_reference_sets=3, num_references_per_reference_set=4,
+            num_read_group_sets=3, num_read_groups_per_read_group_set=2)
+        registry_db.close()
         config = {
-            "SIMULATED_BACKEND_RANDOM_SEED": 1111,
-            "SIMULATED_BACKEND_NUM_CALLS": 1,
-            "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
-            "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
-            "DATA_SOURCE": "simulated://",
+            "DATA_SOURCE": db_url,
             "OIDC_CLIENT_ID": "123",
             "OIDC_CLIENT_SECRET": RANDSTR,
             "OIDC_PROVIDER": "http://auth.com"
@@ -136,10 +142,8 @@ class TestFrontendOidc(unittest.TestCase):
     @mock.patch('oic.oic.Client.do_authorization_request',
                 mockAuthorizationRequest)
     def testAuthorizationRequest(self):
-        """
-        Test that when the index is referenced, we get a redirect to the
-        authorization provider, of the correct form.
-        """
+        # Test that when the index is referenced, we get a redirect to the
+        # authorization provider, of the correct form.
         response = self.app.get('/')
         scheme, netloc, path, params, query, fragment = urlparse.urlparse(
             response.location)
@@ -156,10 +160,8 @@ class TestFrontendOidc(unittest.TestCase):
     @mock.patch('oic.oic.Client.do_access_token_request',
                 mockAccessTokenRequest)
     def testOidcCallbackSucceeds(self):
-        """
-        Test that when the authorization provider calls back to us, we can
-        handle the reply correctly. This test is the 'succeeds' case.
-        """
+        # Test that when the authorization provider calls back to us, we can
+        # handle the reply correctly. This test is the 'succeeds' case.
         url = '/oauth2callback?scope=openid+profile&state={0}&code={1}'.format(
             oic.oauth2.rndstr(0), OICCODE
         )
@@ -172,10 +174,8 @@ class TestFrontendOidc(unittest.TestCase):
             socket.gethostname()))
 
     def testSessionKeyAllowsIndex(self):
-        """
-        Test that if we have a valid session in play, we retrieve the index
-        page
-        """
+        # Test that if we have a valid session in play, we retrieve the index
+        # page
         with self.app as app:
             with app.session_transaction() as sess:
                 sess['key'] = 'xxx'
@@ -186,10 +186,8 @@ class TestFrontendOidc(unittest.TestCase):
             self.assertGreater(len(result.data), 0)
 
     def testKeyParamAllowsIndex(self):
-        """
-        Test that if we have a valid key in play, we retrieve the index
-        page
-        """
+        # Test that if we have a valid key in play, we retrieve the index
+        # page
         with self.app as app:
             app.application.tokenMap['xxx'] = RANDSTR
             result = app.get('/?key=xxx')
@@ -201,9 +199,7 @@ class TestFrontendOidc(unittest.TestCase):
     @mock.patch('oic.oic.Client.do_authorization_request',
                 mockAuthorizationRequest)
     def testInvalidSessionKeyRedirects(self):
-        """
-        Test that if we have an invalid session in play, we redirected to OP
-        """
+        # Test that if we have an invalid session in play, we redirected to OP
         with self.app as app:
             with app.session_transaction() as sess:
                 sess['key'] = 'xxx'
@@ -221,9 +217,7 @@ class TestFrontendOidc(unittest.TestCase):
     @mock.patch('oic.oic.Client.do_authorization_request',
                 mockAuthorizationRequest)
     def testInvalidKeyParamIsUnauthorized(self):
-        """
-        Test that if we have an invalid key in play, we get an exception
-        """
+        # Test that if we have an invalid key in play, we get an exception
         result = self.app.get('/?key=xxx')
         self.assertEqual(result.status_code, 403)
 
@@ -233,11 +227,9 @@ class TestFrontendOidc(unittest.TestCase):
     @mock.patch('oic.oic.Client.do_access_token_request',
                 mockAccessTokenRequest)
     def testOidcCallbackBadNonce(self):
-        """
-        Test that when the authorization provider calls back to us, we can
-        handle the reply correctly.
-        In this case, the nonce returned does not match that in the session.
-        """
+        # Test that when the authorization provider calls back to us, we can
+        # handle the reply correctly.
+        # In this case, the nonce returned does not match that in the session.
         url = '/oauth2callback?scope=openid+profile&state={0}&code={1}'.format(
             oic.oauth2.rndstr(0), OICCODE
         )
@@ -254,11 +246,9 @@ class TestFrontendOidc(unittest.TestCase):
     @mock.patch('oic.oic.Client.do_access_token_request',
                 mockAccessTokenRequest)
     def testOidcCallbackBadState(self):
-        """
-        Test that when the authorization provider calls back to us, we can
-        handle the reply correctly.
-        In this case, the state returned does not match that in the session.
-        """
+        # Test that when the authorization provider calls back to us, we can
+        # handle the reply correctly.
+        # In this case, the state returned does not match that in the session.
         url = '/oauth2callback?scope=openid+profile&state={0}&code={1}'.format(
             oic.oauth2.rndstr(0), OICCODE
         )
@@ -275,11 +265,9 @@ class TestFrontendOidc(unittest.TestCase):
     @mock.patch('oic.oic.Client.do_access_token_request',
                 mockAccessTokenRequestError)
     def testOidcCallbackBadTokenResponse(self):
-        """
-        Test that when the authorization provider calls back to us, we can
-        handle the reply correctly.
-        In this case, the access token request returns an invalid response.
-        """
+        # Test that when the authorization provider calls back to us, we can
+        # handle the reply correctly.
+        # In this case, the access token request returns an invalid response.
         url = '/oauth2callback?scope=openid+profile&state={0}&code={1}'.format(
             oic.oauth2.rndstr(0), OICCODE
         )
@@ -291,13 +279,11 @@ class TestFrontendOidc(unittest.TestCase):
             self.assertEqual(result.status_code, 403)
 
     def testMimetype(self):
-        """
-        The  `oidc-provider` relies on mimetypes.guess_type(full_path)
-        `mimetypes` in turn relies on the host OS configuration,
-        typically ["/etc/mime.types","/etc/httpd/conf/mime.types",...]
-        If this test fails, see the results of `mimetypes.knownfiles`
-        on your host and ensure configuration set up
-        see https://github.com/ga4gh/server/issues/501
-        """
+        # The  `oidc-provider` relies on mimetypes.guess_type(full_path)
+        # `mimetypes` in turn relies on the host OS configuration,
+        # typically ["/etc/mime.types","/etc/httpd/conf/mime.types",...]
+        # If this test fails, see the results of `mimetypes.knownfiles`
+        # on your host and ensure configuration set up
+        # see https://github.com/ga4gh/server/issues/501
         content_type, encoding = mimetypes.guess_type("foo.json")
         self.assertEqual(content_type, "application/json")

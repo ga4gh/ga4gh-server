@@ -285,4 +285,4 @@ class DataDrivenTest(TestCase):
     def testProtocolElementValid(self):
         self.assertValid(
             self.getProtocolClass(),
-            protocol.toJson(self._gaObject.toProtocolElement()))
+            protocol.toJson(self._gaObject.get_protobuf()))

@@ -12,9 +12,9 @@ import tempfile
 import unittest
 
 import ga4gh.exceptions as exceptions
-import ga4gh.datarepo as datarepo
+import ga4gh.registry as registry
+import ga4gh.datasource.htslib as htslib
 import ga4gh.cli as cli
-import ga4gh.datamodel as datamodel
 import tests.paths as paths
 
 
@@ -56,22 +56,23 @@ class AbstractRepoManagerTest(unittest.TestCase):
     Base class for repo manager tests
     """
     def setUp(self):
-        fd, self._repoPath = tempfile.mkstemp(prefix="ga4gh_repoman_test")
-        os.unlink(self._repoPath)
+        fd, path = tempfile.mkstemp(prefix="ga4gh_repoman_test")
+        self._repoPath = "sqlite:///" + path
+        self._repoFile = path
 
     def runCommand(self, cmd):
         cli.RepoManager.runCommand(cmd.split())
 
     def tearDown(self):
-        os.unlink(self._repoPath)
+        os.unlink(self._repoFile)
 
     def readRepo(self):
-        repo = datarepo.SqlDataRepository(self._repoPath)
-        repo.open(datarepo.MODE_READ)
+        repo = registry.RegistryDb(self._repoPath)
+        repo.open()
         return repo
 
     def init(self):
-        self.runCommand("init {}".format(self._repoPath))
+        self.runCommand("init {} -f".format(self._repoPath))
 
     def addOntology(self):
         # Add the sequence ontology
@@ -124,9 +125,9 @@ class AbstractRepoManagerTest(unittest.TestCase):
 
     def getFeatureSet(self):
         repo = self.readRepo()
-        dataset = repo.getDatasetByName(self._datasetName)
-        featureSet = dataset.getFeatureSetByName(self._featureSetName)
-        return featureSet
+        feature_set = repo.get_feature_set_by_name(
+            self._datasetName, self._featureSetName)
+        return feature_set
 
 
 class TestAddFeatureSet(AbstractRepoManagerTest):
@@ -141,12 +142,10 @@ class TestAddFeatureSet(AbstractRepoManagerTest):
     def testAddFeatureSet(self):
         self.addFeatureSet()
         featureSet = self.getFeatureSet()
-        self.assertEqual(featureSet.getLocalId(), self._featureSetName)
+        self.assertEqual(featureSet.name, self._featureSetName)
+        self.assertEqual(featureSet.dataset.name, self._datasetName)
         self.assertEqual(
-            featureSet._parentContainer.getLocalId(), self._datasetName)
-        self.assertEqual(
-            featureSet.getReferenceSet().getLocalId(),
-            self._referenceSetName)
+            featureSet.reference_set.name, self._referenceSetName)
         # TODO not clear these fields get populated now
         # self.assertEqual(featureSet.getInfo(), "TODO")
         # self.assertEqual(featureSet.getSourceUrl(), "TODO")
@@ -200,7 +199,7 @@ class TestRemoveFeatureSet(AbstractRepoManagerTest):
     def testRemoveFeatureSet(self):
         featureSet = self.getFeatureSet()
         cmd = "remove-featureset {} {} {} -f".format(
-            self._repoPath, self._datasetName, featureSet.getLocalId())
+            self._repoPath, self._datasetName, featureSet.name)
         self.runCommand(cmd)
         with self.assertRaises(exceptions.FeatureSetNameNotFoundException):
             self.getFeatureSet()
@@ -216,8 +215,8 @@ class TestAddDataset(AbstractRepoManagerTest):
         name = "test_dataset"
         self.runCommand("add-dataset {} {}".format(self._repoPath, name))
         repo = self.readRepo()
-        dataset = repo.getDatasetByName(name)
-        self.assertEqual(dataset.getLocalId(), name)
+        dataset = repo.get_dataset_by_name(name)
+        self.assertEqual(dataset.name, name)
 
     def testSameName(self):
         name = "test_dataset"
@@ -234,26 +233,28 @@ class TestAddReferenceSet(AbstractRepoManagerTest):
         self.init()
 
     def testDefaults(self):
-        fastaFile = paths.ncbi37FaPath
-        name = os.path.split(fastaFile)[1].split(".")[0]
+        fasta_file = paths.ncbi37FaPath
+        name = os.path.split(fasta_file)[1].split(".")[0]
         self.runCommand("add-referenceset {} {}".format(
-            self._repoPath, fastaFile))
+            self._repoPath, fasta_file))
         repo = self.readRepo()
-        referenceSet = repo.getReferenceSetByName(name)
-        self.assertEqual(referenceSet.getLocalId(), name)
-        self.assertEqual(referenceSet.getDataUrl(), os.path.abspath(fastaFile))
+        reference_set = repo.get_reference_set_by_name(name)
+        self.assertEqual(reference_set.name, name)
+        for reference in reference_set.references:
+            self.assertEqual(reference.fasta_url, os.path.abspath(fasta_file))
         # TODO check that the default values for all fields are set correctly.
 
     def testWithName(self):
         name = "test_reference_set"
-        fastaFile = paths.ncbi37FaPath
+        fasta_file = paths.ncbi37FaPath
         cmd = "add-referenceset {} {} --name={}".format(
-            self._repoPath, fastaFile, name)
+            self._repoPath, fasta_file, name)
         self.runCommand(cmd)
         repo = self.readRepo()
-        referenceSet = repo.getReferenceSetByName(name)
-        self.assertEqual(referenceSet.getLocalId(), name)
-        self.assertEqual(referenceSet.getDataUrl(), os.path.abspath(fastaFile))
+        reference_set = repo.get_reference_set_by_name(name)
+        self.assertEqual(reference_set.name, name)
+        for reference in reference_set.references:
+            self.assertEqual(reference.fasta_url, os.path.abspath(fasta_file))
 
     def testWithSameName(self):
         fastaFile = paths.ncbi37FaPath
@@ -282,9 +283,9 @@ class TestAddOntology(AbstractRepoManagerTest):
         self.runCommand("add-ontology {} {}".format(
             self._repoPath, ontologyFile))
         repo = self.readRepo()
-        ontology = repo.getOntologyByName(name)
-        self.assertEqual(ontology.getName(), name)
-        self.assertEqual(ontology.getDataUrl(), os.path.abspath(ontologyFile))
+        ontology = repo.get_ontology_by_name(name)
+        self.assertEqual(ontology.name, name)
+        self.assertEqual(ontology.data_url, os.path.abspath(ontologyFile))
 
     def testWithName(self):
         ontologyFile = paths.ontologyPath
@@ -292,9 +293,9 @@ class TestAddOntology(AbstractRepoManagerTest):
         self.runCommand("add-ontology {} {} --name={}".format(
             self._repoPath, ontologyFile, name))
         repo = self.readRepo()
-        ontology = repo.getOntologyByName(name)
-        self.assertEqual(ontology.getName(), name)
-        self.assertEqual(ontology.getDataUrl(), os.path.abspath(ontologyFile))
+        ontology = repo.get_ontology_by_name(name)
+        self.assertEqual(ontology.name, name)
+        self.assertEqual(ontology.data_url, os.path.abspath(ontologyFile))
 
     def testWithSameName(self):
         ontologyFile = paths.ontologyPath
@@ -339,7 +340,7 @@ class TestRemoveDataset(AbstractRepoManagerTest):
         repo = self.readRepo()
         self.assertRaises(
             exceptions.DatasetNameNotFoundException,
-            repo.getDatasetByName, self._datasetName)
+            repo.get_dataset_by_name, self._datasetName)
 
     def testEmptyDatasetForce(self):
         self.runCommand("remove-dataset {} {} -f".format(
@@ -364,10 +365,10 @@ class TestRemoveReadGroupSet(AbstractRepoManagerTest):
 
     def assertReadGroupSetRemoved(self):
         repo = self.readRepo()
-        dataset = repo.getDatasetByName(self._datasetName)
         self.assertRaises(
             exceptions.ReadGroupSetNameNotFoundException,
-            dataset.getReadGroupSetByName, self._readGroupSetName)
+            repo.get_read_group_set_by_name, self._datasetName,
+            self._readGroupSetName)
 
     def testWithForce(self):
         self.runCommand("remove-readgroupset {} {} {} -f".format(
@@ -386,10 +387,10 @@ class TestRemoveVariantSet(AbstractRepoManagerTest):
 
     def assertVariantSetRemoved(self):
         repo = self.readRepo()
-        dataset = repo.getDatasetByName(self._datasetName)
         self.assertRaises(
             exceptions.VariantSetNameNotFoundException,
-            dataset.getVariantSetByName, self._variantSetName)
+            repo.get_variant_set_by_name, self._datasetName,
+            self._variantSetName)
 
     def testWithForce(self):
         self.runCommand("remove-variantset {} {} {} -f".format(
@@ -411,7 +412,7 @@ class TestRemoveReferenceSet(AbstractRepoManagerTest):
         repo = self.readRepo()
         self.assertRaises(
             exceptions.ReferenceSetNameNotFoundException,
-            repo.getReferenceSetByName, self._referenceSetName)
+            repo.get_reference_set_by_name, self._referenceSetName)
 
     def testDefaults(self):
         self.runCommand("remove-referenceset {} {} -f".format(
@@ -447,7 +448,7 @@ class TestRemoveOntology(AbstractRepoManagerTest):
         repo = self.readRepo()
         self.assertRaises(
             exceptions.OntologyNameNotFoundException,
-            repo.getOntologyByName, self._ontologyName)
+            repo.get_ontology_by_name, self._ontologyName)
 
     def testDefaults(self):
         self.runCommand("remove-ontology {} {} -f".format(
@@ -465,14 +466,13 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
 
     def verifyReadGroupSet(self, name, dataUrl, indexFile):
         repo = self.readRepo()
-        dataset = repo.getDatasetByName(self._datasetName)
-        referenceSet = repo.getReferenceSetByName(self._referenceSetName)
-        readGroupSet = dataset.getReadGroupSetByName(name)
-        self.assertEqual(readGroupSet.getLocalId(), name)
-        self.assertEqual(readGroupSet.getReferenceSet(), referenceSet)
-        self.assertEqual(readGroupSet.getDataUrl(), os.path.abspath(dataUrl))
+        referenceSet = repo.get_reference_set_by_name(self._referenceSetName)
+        readGroupSet = repo.get_read_group_set_by_name(self._datasetName, name)
+        self.assertEqual(readGroupSet.name, name)
+        self.assertEqual(readGroupSet.reference_set, referenceSet)
+        self.assertEqual(readGroupSet.data_url, os.path.abspath(dataUrl))
         self.assertEqual(
-            readGroupSet.getIndexFile(), os.path.abspath(indexFile))
+            readGroupSet.index_url, os.path.abspath(indexFile))
 
     def testDefaultsLocalFile(self):
         bamFile = paths.bamPath
@@ -565,17 +565,19 @@ class TestAddVariantSet(AbstractRepoManagerTest):
         self.vcfFiles = glob.glob(os.path.join(paths.vcfDirPath, "*.vcf.gz"))
         self.indexFiles = [vcfFile + ".tbi" for vcfFile in self.vcfFiles]
 
-    def verifyVariantSet(self, name, dataUrls, indexFiles):
+    def verifyVariantSet(self, name, data_urls, index_files):
         repo = self.readRepo()
-        dataset = repo.getDatasetByName(self._datasetName)
-        referenceSet = repo.getReferenceSetByName(self._referenceSetName)
-        variantSet = dataset.getVariantSetByName(name)
-        self.assertEqual(variantSet.getLocalId(), name)
-        self.assertEqual(variantSet.getReferenceSet(), referenceSet)
-        dataUrls = map(lambda x: os.path.abspath(x), dataUrls)
-        indexFiles = map(lambda x: os.path.abspath(x), indexFiles)
-        pairs = sorted(zip(dataUrls, indexFiles))
-        self.assertEqual(pairs, sorted(variantSet.getDataUrlIndexPairs()))
+        reference_set = repo.get_reference_set_by_name(self._referenceSetName)
+        variant_set = repo.get_variant_set_by_name(self._datasetName, name)
+        self.assertEqual(variant_set.name, name)
+        self.assertEqual(variant_set.reference_set, reference_set)
+        data_urls = map(lambda x: os.path.abspath(x), data_urls)
+        index_files = map(lambda x: os.path.abspath(x), index_files)
+        pairs = sorted(zip(data_urls, index_files))
+        other_pairs = sorted(
+            (vcf_file.data_url, vcf_file.index_url)
+            for vcf_file in variant_set.vcf_files)
+        self.assertEqual(pairs, other_pairs)
 
     def testDefaultsLocalFiles(self):
         dataFiles = self.vcfFiles
@@ -681,9 +683,8 @@ class TestAddAnnotatedVariantSet(AbstractRepoManagerTest):
             self._referenceSetName, name)
         self.runCommand(cmd)
         repo = self.readRepo()
-        dataset = repo.getDatasetByName(self._datasetName)
-        variantSet = dataset.getVariantSetByName(name)
-        self.assertEqual(len(variantSet.getVariantAnnotationSets()), 0)
+        variantSet = repo.get_variant_set_by_name(self._datasetName, name)
+        self.assertEqual(len(variantSet.variant_annotation_sets), 0)
 
     def testAnnotations(self):
         name = "test_vs_annotations"
@@ -692,9 +693,8 @@ class TestAddAnnotatedVariantSet(AbstractRepoManagerTest):
             self._referenceSetName, name, self._ontologyName)
         self.runCommand(cmd)
         repo = self.readRepo()
-        dataset = repo.getDatasetByName(self._datasetName)
-        variantSet = dataset.getVariantSetByName(name)
-        self.assertEqual(len(variantSet.getVariantAnnotationSets()), 1)
+        variantSet = repo.get_variant_set_by_name(self._datasetName, name)
+        self.assertEqual(len(variantSet.variant_annotation_sets), 1)
 
     def testAnnotationsNoOntology(self):
         name = "test_vs_annotations"
@@ -730,8 +730,8 @@ class TestDuplicateNameDelete(AbstractRepoManagerTest):
 
     def readDatasets(self):
         repo = self.readRepo()
-        self.dataset1 = repo.getDatasetByName(self.dataset1Name)
-        self.dataset2 = repo.getDatasetByName(self.dataset2Name)
+        self.dataset1 = repo.get_dataset_by_name(self.dataset1Name)
+        self.dataset2 = repo.get_dataset_by_name(self.dataset2Name)
 
     def testReadGroupSetDelete(self):
         readGroupSetName = "test_rgs"
@@ -750,8 +750,8 @@ class TestDuplicateNameDelete(AbstractRepoManagerTest):
             self._repoPath, self.dataset1Name, readGroupSetName)
         self.runCommand(removeCmd)
         self.readDatasets()
-        self.assertEqual(len(self.dataset1.getReadGroupSets()), 0)
-        self.assertEqual(len(self.dataset2.getReadGroupSets()), 1)
+        self.assertEqual(len(list(self.dataset1.read_group_sets)), 0)
+        self.assertEqual(len(list(self.dataset2.read_group_sets)), 1)
 
     def testVariantSetDelete(self):
         vcfDir = paths.vcfDirPath
@@ -769,8 +769,8 @@ class TestDuplicateNameDelete(AbstractRepoManagerTest):
             self._repoPath, self.dataset1Name, variantSetName)
         self.runCommand(removeCmd)
         self.readDatasets()
-        self.assertEqual(len(self.dataset1.getVariantSets()), 0)
-        self.assertEqual(len(self.dataset2.getVariantSets()), 1)
+        self.assertEqual(len(list(self.dataset1.variant_sets)), 0)
+        self.assertEqual(len(list(self.dataset2.variant_sets)), 1)
 
     def testFeatureSetDelete(self):
         cmdString = "add-featureset {} {} {} -R {} -O {}"
@@ -786,8 +786,8 @@ class TestDuplicateNameDelete(AbstractRepoManagerTest):
             self._repoPath, self.dataset1Name, paths.featureSetName)
         self.runCommand(removeCmd)
         self.readDatasets()
-        self.assertEqual(len(self.dataset1.getFeatureSets()), 0)
-        self.assertEqual(len(self.dataset2.getFeatureSets()), 1)
+        self.assertEqual(len(list(self.dataset1.feature_sets)), 0)
+        self.assertEqual(len(list(self.dataset2.feature_sets)), 1)
 
 
 class TestInvalidVariantIndexFile(AbstractRepoManagerTest):
@@ -835,7 +835,7 @@ class TestInvalidReadGroupSetIndexFile(AbstractRepoManagerTest):
         # index will not be opened during the test; without this line
         # the below tests will succeed when the test class is run but
         # fail when the file's tests are run
-        datamodel.fileHandleCache = datamodel.PysamFileHandleCache()
+        htslib.fileHandleCache = htslib.PysamFileHandleCache()
 
     def setUp(self):
         super(TestInvalidReadGroupSetIndexFile, self).setUp()

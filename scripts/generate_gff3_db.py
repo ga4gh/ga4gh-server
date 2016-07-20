@@ -18,7 +18,7 @@ import sqlite3
 
 import utils
 utils.ga4ghImportGlue()
-import ga4gh.gff3Parser as gff3  # NOQA
+import ga4gh.parsers.gff3 as gff3  # NOQA
 
 # TODO: Shift this to use the Gff3DbBackend class.
 

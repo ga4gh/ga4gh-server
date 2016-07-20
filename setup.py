@@ -26,7 +26,7 @@ setup(
     description="A reference implementation of the ga4gh API",
     license='Apache License 2.0',
     long_description=long_description,
-    packages=["ga4gh", "ga4gh.datamodel", "ga4gh.templates"],
+    packages=["ga4gh", "ga4gh.datasource", "ga4gh.parser", "ga4gh.templates"],
     include_package_data=True,
     zip_safe=False,
     author="Global Alliance for Genomics and Health",

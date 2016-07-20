@@ -11,6 +11,7 @@ import os
 testDir = 'tests'
 testDataDir = os.path.join(testDir, 'data')
 testDataRepo = os.path.join(testDataDir, 'repo.db')
+testDataRepoUrl = "sqlite:///" + testDataRepo
 
 # references
 referenceSetName = 'chr17'
@@ -33,7 +34,7 @@ vcfIndexPath1 = os.path.join(
 vcfIndexPath2 = os.path.join(
     vcfDirPath, 'chr2.vcf.gz.tbi')
 annotatedVcfPath = os.path.join(
-    testDataDir, 'datasets/dataset1/variants/1kg.3.annotations')
+    testDataDir, 'datasets/dataset1/variants/1kg_3_annotations')
 
 # Ontologies
 ontologyName = "so-xp-simple"

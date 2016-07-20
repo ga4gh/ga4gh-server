@@ -13,7 +13,7 @@ import pysam
 import ga4gh.backend as backend
 import ga4gh.client as client
 import ga4gh.converters as converters
-import ga4gh.datarepo as datarepo
+import ga4gh.registry as registry
 import tests.paths as paths
 
 
@@ -22,9 +22,9 @@ class TestSamConverter(unittest.TestCase):
     Tests for the GA4GH reads API -> SAM conversion.
     """
     def setUp(self):
-        dataRepository = datarepo.SqlDataRepository(paths.testDataRepo)
-        dataRepository.open(datarepo.MODE_READ)
-        self._backend = backend.Backend(dataRepository)
+        self._registry_db = registry.RegistryDb(paths.testDataRepoUrl)
+        self._registry_db.open()
+        self._backend = backend.Backend(self._registry_db)
         self._client = client.LocalClient(self._backend)
 
     def verifySamRecordsEqual(self, sourceReads, convertedReads):
@@ -73,7 +73,7 @@ class TestSamConverter(unittest.TestCase):
         """
         with tempfile.NamedTemporaryFile() as fileHandle:
             converter = converters.SamConverter(
-                self._client, readGroup.getId(), reference.getId(),
+                self._client, str(readGroup.id), str(reference.id),
                 outputFileName=fileHandle.name)
             converter.convert()
             samFile = pysam.AlignmentFile(fileHandle.name, "r")
@@ -81,11 +81,11 @@ class TestSamConverter(unittest.TestCase):
                 convertedReads = list(samFile.fetch())
             finally:
                 samFile.close()
-            samFile = pysam.AlignmentFile(readGroupSet.getDataUrl(), "rb")
+            samFile = pysam.AlignmentFile(readGroupSet.data_url, "rb")
             try:
                 sourceReads = []
-                referenceName = reference.getName().encode()
-                readGroupName = readGroup.getLocalId().encode()
+                referenceName = reference.name.encode()
+                readGroupName = readGroup.name.encode()
                 for readAlignment in samFile.fetch(referenceName):
                     tags = dict(readAlignment.tags)
                     if 'RG' in tags and tags['RG'] == readGroupName:
@@ -95,12 +95,10 @@ class TestSamConverter(unittest.TestCase):
             self.verifySamRecordsEqual(sourceReads, convertedReads)
 
     def testSamConversion(self):
-        datasets = self._backend.getDataRepository().getDatasets()
-        for dataset in datasets:
-            readGroupSets = dataset.getReadGroupSets()
-            for readGroupSet in readGroupSets:
-                referenceSet = readGroupSet.getReferenceSet()
-                for reference in referenceSet.getReferences():
-                    for readGroup in readGroupSet.getReadGroups():
+        for dataset in self._registry_db.get_datasets():
+            for read_group_set in dataset.read_group_sets:
+                reference_set = read_group_set.reference_set
+                for reference in reference_set.references:
+                    for read_group in read_group_set.read_groups:
                         self.verifyFullConversion(
-                            readGroupSet, readGroup, reference)
+                            read_group_set, read_group, reference)
