@@ -324,3 +324,66 @@ To enable DEBUG on your docker server, call docker run with ``-e GA4GH_DEBUG=Tru
 This will set the environment variable which is read by config.py
 
 You can then get logs from the docker container by running ``docker logs (container)`` e.g. ``docker logs ga4gh_demo``
+
+----------------------------------------------
+Installing the development version on Mac OS X
+----------------------------------------------
+
+**Prerequisites**
+
+First install libraries and header code for
+`Python 2.7 <https://www.python.org/download/releases/2.7/>`_.
+It will be a lot easier if you have `Homebrew <http://brew.sh/index.html>`_,
+the "missing package manager" for OS X, installed first.
+To install Homebrew, paste the following at a Terminal prompt ($):
+
+.. code-block:: bash
+
+  $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+Now use ``brew install`` to install Python if you don't have Python 2.7
+installed and then ``pip install``, which comes with Python, can be used to
+install virtual environment:
+
+.. code-block:: bash
+
+  $ brew install python
+  $ pip install virtualenv
+
+**Install**
+
+Download source code from GitHub to the project target folder, here assumed to 
+be ``~/ga4gh``: (If you haven't already done so, 
+`set up github <https://help.github.com/articles/set-up-git/>`_ 
+to work from your command line.)
+
+.. code-block:: bash
+
+  $ git clone https://github.com/ga4gh/server.git
+
+Before installing Python library dependencies, create a virtualenv sandbox to 
+isolate it from the rest of the system, and then activate it:
+
+.. code-block:: bash
+
+  $ cd server
+  $ virtualenv ga4gh-env
+  $ source ga4gh-env/bin/activate
+
+Install Python dependencies:
+
+.. code-block:: bash
+
+  (ga4gh-env) $ pip install -r dev-requirements.txt
+
+**Test and run**
+
+Run tests to verify the install:
+
+.. code-block:: bash
+
+  (ga4gh-env) $ python scripts/run_tests.py
+
+Please refer to the instructions in the :ref:`demo` for how to access
+data made available by this server.
+

@@ -25,7 +25,7 @@ class ProtobufGenerator(object):
     def run(self, args):
         script_path = os.path.dirname(os.path.realpath(__file__))
         server = os.path.realpath(os.path.join(script_path, ".."))
-        schemas = os.path.join(server, args.schema_path)
+        schemas = os.path.realpath(args.schemapath)
 
         if not os.path.exists(schemas):
             raise Exception(
@@ -106,8 +106,8 @@ def main():
     parser.add_argument(
         "version", help="Version number of the schema we're compiling")
     parser.add_argument(
-        "--schema-path", default="../schemas",
-        help="Path to schemas. Default is ../schemas")
+        "schemapath",
+        help="Path to schemas.")
     args = parser.parse_args()
     pb = ProtobufGenerator(args.version)
     pb.run(args)

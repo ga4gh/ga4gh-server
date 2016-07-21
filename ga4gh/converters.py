@@ -45,8 +45,8 @@ class SamConverter(object):
             self, client, readGroupId=None, referenceId=None,
             start=None, end=None, outputFileName=None, binaryOutput=False):
         self._client = client
-        self._readGroup = self._client.getReadGroup(readGroupId)
-        self._reference = self._client.getReference(referenceId)
+        self._readGroup = self._client.get_read_group(readGroupId)
+        self._reference = self._client.get_reference(referenceId)
         self._start = start
         self._end = end
         self._outputFileName = outputFileName
@@ -65,7 +65,7 @@ class SamConverter(object):
         if self._outputFileName is not None:
             fileString = self._outputFileName
         alignmentFile = pysam.AlignmentFile(fileString, flags, header=header)
-        iterator = self._client.searchReads(
+        iterator = self._client.search_reads(
             [self._readGroup.id], self._reference.id, self._start, self._end)
         for read in iterator:
             alignedSegment = SamLine.toAlignedSegment(read, targetIds)

@@ -41,7 +41,7 @@ class TestVariantsGenerator(unittest.TestCase):
         self.backend = backend.Backend(datarepo.SimulatedDataRepository())
         self.dataset = self.backend.getDataRepository().getDatasets()[0]
 
-    def testNonexistantVariantSet(self):
+    def testNonexistentVariantSet(self):
         # a request for a variant set that doesn't exist should throw an error
         variantSet = variants.AbstractVariantSet(
             self.dataset, 'notFound')
@@ -123,7 +123,7 @@ class TestReadsGenerator(unittest.TestCase):
         with self.assertRaises(exceptions.BadRequestException):
             self.backend.readsGenerator(self.request)
 
-    def testNonexistantReadGroup(self):
+    def testNonexistentReadGroup(self):
         # a request for a readGroup that doesn't exist should throw an error
         readGroup = reads.AbstractReadGroup(self.readGroupSet, 'notFound')
         self.request.read_group_ids.extend([readGroup.getId()])

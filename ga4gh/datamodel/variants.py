@@ -45,12 +45,14 @@ class CallSet(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(CallSet, self).__init__(parentContainer, localId)
         self._info = {}
+        self._bioSampleId = None
 
     def populateFromRow(self, row):
         """
         Populates this CallSet from the specified DB row.
         """
         # currently a noop
+        self._bioSampleId = row[b'bioSampleId']
 
     def toProtocolElement(self):
         """
@@ -58,18 +60,30 @@ class CallSet(datamodel.DatamodelObject):
         ProtocolElement.
         """
         variantSet = self.getParentContainer()
-        gaCallSet = protocol.CallSet()
+        gaCallSet = protocol.CallSet(
+            bio_sample_id=self.getBioSampleId())
         if variantSet.getCreationTime():
             gaCallSet.created = variantSet.getCreationTime()
         if variantSet.getUpdatedTime():
             gaCallSet.updated = variantSet.getUpdatedTime()
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
-        gaCallSet.sample_id = self.getLocalId()
         gaCallSet.variant_set_ids.append(variantSet.getId())
         for key in self._info:
             gaCallSet.info[key].values.extend(_encodeValue(self._info[key]))
         return gaCallSet
+
+    def getBioSampleId(self):
+        """
+        Returns the bioSampleId for this CallSet.
+        """
+        return self._bioSampleId
+
+    def setBioSampleId(self, bioSampleId):
+        """
+        Set the bioSampleId for the current sample.
+        """
+        self._bioSampleId = bioSampleId
 
     def getSampleName(self):
         """
@@ -840,7 +854,7 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         object from this variant set.
         """
         ret = protocol.VariantAnnotation()
-        ret.create_date_time = self._creationTime
+        ret.created = self._creationTime
         ret.variant_annotation_set_id = self.getId()
         return ret
 
@@ -919,8 +933,8 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
 
     def _createAnalysis(self):
         analysis = protocol.Analysis()
-        analysis.create_date_time = datetime.datetime.now().isoformat() + "Z"
-        analysis.update_date_time = datetime.datetime.now().isoformat() + "Z"
+        analysis.created = datetime.datetime.now().isoformat() + "Z"
+        analysis.updated = datetime.datetime.now().isoformat() + "Z"
         analysis.software.append("software")
         analysis.name = "name"
         analysis.description = "description"
@@ -951,7 +965,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann = protocol.VariantAnnotation()
         ann.variant_annotation_set_id = str(self.getCompoundId())
         ann.variant_id = variant.id
-        ann.create_date_time = datetime.datetime.now().isoformat() + "Z"
+        ann.created = datetime.datetime.now().isoformat() + "Z"
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (1,5)
         for i in range(randomNumberGenerator.randint(1, 5)):
@@ -1034,7 +1048,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
     def populateFromFile(self, varFile, annotationType):
         self._annotationType = annotationType
         self._analysis = self._getAnnotationAnalysis(varFile)
-        self._creationTime = self._analysis.create_date_time
+        self._creationTime = self._analysis.created
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
     def populateFromRow(self, row):
@@ -1071,8 +1085,8 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                 if value.description is not None:
                     analysis.info[
                         key].values.add().string_value = value.description
-        analysis.create_date_time = datetime.datetime.now().isoformat() + "Z"
-        analysis.update_date_time = datetime.datetime.now().isoformat() + "Z"
+        analysis.created = self._creationTime
+        analysis.updated = self._updatedTime
         for r in header.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:
@@ -1086,7 +1100,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
                         fmtStr = "%Y-%m-%d"
                     else:
                         fmtStr = "%Y%m%d"
-                    analysis.create_date_time = datetime.datetime.strptime(
+                    analysis.created = datetime.datetime.strptime(
                         r.value, fmtStr).isoformat() + "Z"
                 except ValueError:
                     # is there a logger we should tell?

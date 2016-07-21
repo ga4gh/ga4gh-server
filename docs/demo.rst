@@ -91,8 +91,8 @@ server using `cURL <http://curl.haxx.se/>`_:
     http://localhost:8000/datasets/search | jq .
 
 
-In this example, we used the `searchDatasets
-<http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.searchDatasets>`_
+In this example, we used the `search_datasets
+<http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.search_datasets>`_
 method to ask the server for all the Datasets on the server. It responded
 by sending back some JSON, which we piped into the `jq <https://stedolan.github.io/jq/>`_
 JSON processor to make it easier to read. We get the following result:
@@ -148,11 +148,11 @@ This format is quite useful for larger queries, and can be piped into jq
 to extract fields of interest, pretty printing and so on.
 
 We can perform similar queries for variant data using the
-`searchVariants
-<http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.searchVariants>`_
+`search_variants
+<http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.search_variants>`_
 API call. First, we find the IDs of the VariantSets on the server using the
-`searchVariantSets
-<http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.searchVariantSets>`_
+`search_variant_sets
+<http://ga4gh.org/documentation/api/v0.5.1/ga4gh_api.html#/schema/org.ga4gh.search_variant_sets>`_
 method:
 
 .. code-block:: bash
@@ -189,19 +189,19 @@ performed above, we can use the following code:
 
     httpClient = client.HttpClient("http://localhost:8000")
     # Get the datasets on the server.
-    datasets = list(httpClient.searchDatasets())
+    datasets = list(httpClient.search_datasets())
     # Get the variantSets in the first dataset.
-    variantSets = list(httpClient.searchVariantSets(
-        datasetId=datasets[0].id))
+    variantSets = list(httpClient.search_variant_sets(
+        dataset_id=datasets[0].id))
     # Now get the variants in the interval [45000, 50000) on chromosome 1
     # in the first variantSet.
-    iterator = httpClient.searchVariants(
-        variantSetId=variantSets[0].id,
-        referenceName="1", start=45000, end=50000)
+    iterator = httpClient.search_variants(
+        variant_set_id=variantSets[0].id,
+        reference_name="1", start=45000, end=50000)
     for variant in iterator:
         print(
-            variant.referenceName, variant.start, variant.end,
-            variant.referenceBases, variant.alternateBases, sep="\t")
+            variant.reference_name, variant.start, variant.end,
+            variant.reference_bases, variant.alternate_bases, sep="\t")
 
 
 If we save this script as ``ga4gh-demo.py`` we can then run it

@@ -55,7 +55,7 @@ _sacCerTestTestData = {
     "sampleStart": 337,
     "sampleEnd": 801,
     "sampleStrand": protocol.NEG_STRAND,
-    "sampleSiblings": 20,
+    "sampleSiblings": 33,
     "region": [0, 2**32],
     "ontologyRestriction": ["gene", ],
     "featuresWithOntology": 11
@@ -70,7 +70,7 @@ _specialCasesTestTestData = {
     "sampleStart": 22229583,
     "sampleEnd": 22229699,
     "sampleStrand": protocol.NEG_STRAND,
-    "sampleSiblings": 2,
+    "sampleSiblings": 4,
     "region": [0, 2**32],
     "ontologyRestriction": ["gene", ],
     "featuresWithOntology": 0

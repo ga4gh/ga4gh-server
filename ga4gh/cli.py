@@ -37,6 +37,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
+import ga4gh.datamodel.bio_metadata as biodata
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -242,20 +243,21 @@ class AbstractSearchRunner(FormattedOutputRunner):
     def __init__(self, args):
         super(AbstractSearchRunner, self).__init__(args)
         self._pageSize = args.pageSize
-        self._client.setPageSize(self._pageSize)
+        self._client.set_page_size(self._pageSize)
 
     def getAllDatasets(self):
         """
         Returns all datasets on the server.
         """
-        return self._client.searchDatasets()
+        return self._client.search_datasets()
 
     def getAllVariantSets(self):
         """
         Returns all variant sets on the server.
         """
         for dataset in self.getAllDatasets():
-            iterator = self._client.searchVariantSets(datasetId=dataset.id)
+            iterator = self._client.search_variant_sets(
+                dataset_id=dataset.id)
             for variantSet in iterator:
                 yield variantSet
 
@@ -264,7 +266,8 @@ class AbstractSearchRunner(FormattedOutputRunner):
         Returns all feature sets on the server.
         """
         for dataset in self.getAllDatasets():
-            iterator = self._client.searchFeatureSets(datasetId=dataset.id)
+            iterator = self._client.search_feature_sets(
+                dataset_id=dataset.id)
             for featureSet in iterator:
                 yield featureSet
 
@@ -273,8 +276,8 @@ class AbstractSearchRunner(FormattedOutputRunner):
         Returns all readgroup sets on the server.
         """
         for dataset in self.getAllDatasets():
-            iterator = self._client.searchReadGroupSets(
-                datasetId=dataset.id)
+            iterator = self._client.search_read_group_sets(
+                dataset_id=dataset.id)
             for readGroupSet in iterator:
                 yield readGroupSet
 
@@ -283,10 +286,11 @@ class AbstractSearchRunner(FormattedOutputRunner):
         Get all read groups in a read group set
         """
         for dataset in self.getAllDatasets():
-            iterator = self._client.searchReadGroupSets(
-                datasetId=dataset.id)
+            iterator = self._client.search_read_group_sets(
+                dataset_id=dataset.id)
             for readGroupSet in iterator:
-                readGroupSet = self._client.getReadGroupSet(readGroupSet.id)
+                readGroupSet = self._client.get_read_group_set(
+                    readGroupSet.id)
                 for readGroup in readGroupSet.read_groups:
                     yield readGroup.id
 
@@ -294,7 +298,7 @@ class AbstractSearchRunner(FormattedOutputRunner):
         """
         Returns all reference sets on the server.
         """
-        return self._client.searchReferenceSets()
+        return self._client.search_reference_sets()
 
 
 # Runners for the various search methods
@@ -307,7 +311,7 @@ class SearchDatasetsRunner(AbstractSearchRunner):
         super(SearchDatasetsRunner, self).__init__(args)
 
     def run(self):
-        iterator = self._client.searchDatasets()
+        iterator = self._client.search_datasets()
         self._output(iterator)
 
 
@@ -321,7 +325,7 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
         self._md5checksum = args.md5checksum
 
     def run(self):
-        iterator = self._client.searchReferenceSets(
+        iterator = self._client.search_reference_sets(
             accession=self._accession, md5checksum=self._md5checksum)
         self._output(iterator)
 
@@ -337,9 +341,9 @@ class SearchReferencesRunner(AbstractSearchRunner):
         self._md5checksum = args.md5checksum
 
     def _run(self, referenceSetId):
-        iterator = self._client.searchReferences(
+        iterator = self._client.search_references(
             accession=self._accession, md5checksum=self._md5checksum,
-            referenceSetId=referenceSetId)
+            reference_set_id=referenceSetId)
         self._output(iterator)
 
     def run(self):
@@ -359,7 +363,55 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
         self._datasetId = args.datasetId
 
     def _run(self, datasetId):
-        iterator = self._client.searchVariantSets(datasetId=datasetId)
+        iterator = self._client.search_variant_sets(dataset_id=datasetId)
+        self._output(iterator)
+
+    def run(self):
+        if self._datasetId is None:
+            for dataset in self.getAllDatasets():
+                self._run(dataset.id)
+        else:
+            self._run(self._datasetId)
+
+
+class SearchBioSamplesRunner(AbstractSearchRunner):
+    """
+    Runner class for the biosamples/search method.
+    """
+    def __init__(self, args):
+        super(SearchBioSamplesRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+        self._individualId = args.individualId
+        self._name = args.name
+
+    def _run(self, datasetId):
+        iterator = self._client.search_bio_samples(
+            datasetId,
+            name=self._name,
+            individual_id=self._individualId)
+        self._output(iterator)
+
+    def run(self):
+        if self._datasetId is None:
+            for dataset in self.getAllDatasets():
+                self._run(dataset.id)
+        else:
+            self._run(self._datasetId)
+
+
+class SearchIndividualsRunner(AbstractSearchRunner):
+    """
+    Runner class for the individuals/search method.
+    """
+    def __init__(self, args):
+        super(SearchIndividualsRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+        self._name = args.name
+
+    def _run(self, datasetId):
+        iterator = self._client.search_bio_samples(
+            datasetId,
+            name=self._name)
         self._output(iterator)
 
     def run(self):
@@ -379,8 +431,8 @@ class SearchVariantAnnotationSetsRunner(AbstractSearchRunner):
         self._variantSetId = args.variantSetId
 
     def _run(self, variantSetId):
-        iterator = self._client.searchVariantAnnotationSets(
-            variantSetId=variantSetId)
+        iterator = self._client.search_variant_annotation_sets(
+            variant_set_id=variantSetId)
         self._output(iterator)
 
     def run(self):
@@ -396,7 +448,7 @@ class SearchFeatureSetsRunner(AbstractSearchRunner):
         self._datasetId = args.datasetId
 
     def _run(self, datasetId):
-        iterator = self._client.searchFeatureSets(datasetId=datasetId)
+        iterator = self._client.search_feature_sets(dataset_id=datasetId)
         self._output(iterator)
 
     def run(self):
@@ -417,8 +469,8 @@ class SearchReadGroupSetsRunner(AbstractSearchRunner):
         self._name = args.name
 
     def _run(self, datasetId):
-        iterator = self._client.searchReadGroupSets(
-            datasetId=datasetId, name=self._name)
+        iterator = self._client.search_read_group_sets(
+            dataset_id=datasetId, name=self._name)
         self._output(iterator)
 
     def run(self):
@@ -439,8 +491,8 @@ class SearchCallSetsRunner(AbstractSearchRunner):
         self._name = args.name
 
     def _run(self, variantSetId):
-        iterator = self._client.searchCallSets(
-            variantSetId=variantSetId, name=self._name)
+        iterator = self._client.search_call_sets(
+            variant_set_id=variantSetId, name=self._name)
         self._output(iterator)
 
     def run(self):
@@ -466,7 +518,8 @@ class VariantFormatterMixin(object):
                 variant.reference_bases, variant.alternate_bases,
                 sep="\t", end="\t")
             for key, value in variant.info.items():
-                print(key, value, sep="=", end=";")
+                val = value.values[0].string_value
+                print(key, val, sep="=", end=";")
             print("\t", end="")
             for c in variant.calls:
                 print(
@@ -487,7 +540,7 @@ class AnnotationFormatterMixin(object):
             print(
                 variantAnnotation.id, variantAnnotation.variant_id,
                 variantAnnotation.variant_annotation_set_id,
-                variantAnnotation.create_date_time, sep="\t", end="\t")
+                variantAnnotation.created, sep="\t", end="\t")
             for effect in variantAnnotation.transcript_effects:
                 print(effect.alternate_bases, sep="|", end="|")
                 for so in effect.effects:
@@ -536,10 +589,11 @@ class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
             self._callSetIds = args.callSetIds.split(",")
 
     def _run(self, variantSetId):
-        iterator = self._client.searchVariants(
+        iterator = self._client.search_variants(
             start=self._start, end=self._end,
-            referenceName=self._referenceName,
-            variantSetId=variantSetId, callSetIds=self._callSetIds)
+            reference_name=self._referenceName,
+            variant_set_id=variantSetId,
+            call_set_ids=self._callSetIds)
         self._output(iterator)
 
     def run(self):
@@ -573,9 +627,10 @@ class SearchVariantAnnotationsRunner(
                 self._effects.append(term)
 
     def _run(self, variantAnnotationSetId):
-        iterator = self._client.searchVariantAnnotations(
-            variantAnnotationSetId=variantAnnotationSetId,
-            referenceName=self._referenceName, referenceId=self._referenceId,
+        iterator = self._client.search_variant_annotations(
+            variant_annotation_set_id=variantAnnotationSetId,
+            reference_name=self._referenceName,
+            reference_id=self._referenceId,
             start=self._start, end=self._end,
             effects=self._effects)
         self._output(iterator)
@@ -585,8 +640,8 @@ class SearchVariantAnnotationsRunner(
         Returns all variant annotation sets on the server.
         """
         for variantSet in self.getAllVariantSets():
-            iterator = self._client.searchVariantAnnotationSets(
-                variantSetId=variantSet.id)
+            iterator = self._client.search_variant_annotation_sets(
+                variant_set_id=variantSet.id)
             for variantAnnotationSet in iterator:
                 yield variantAnnotationSet
 
@@ -615,11 +670,11 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
             self._featureTypes = args.featureTypes.split(",")
 
     def _run(self, featureSetId):
-        iterator = self._client.searchFeatures(
+        iterator = self._client.search_features(
             start=self._start, end=self._end,
-            referenceName=self._referenceName,
-            featureSetId=featureSetId, parentId=self._parentId,
-            featureTypes=self._featureTypes)
+            reference_name=self._referenceName,
+            feature_set_id=featureSetId, parent_id=self._parentId,
+            feature_types=self._featureTypes)
         self._output(iterator)
 
     def run(self):
@@ -651,13 +706,15 @@ class SearchReadsRunner(AbstractSearchRunner):
         if referenceId is None:
             referenceId = self._referenceId
         if referenceId is None:
-            rg = self._client.getReadGroup(readGroupId=referenceGroupId)
-            iterator = self._client.searchReferences(rg.reference_set_id)
+            rg = self._client.get_read_group(
+                read_group_id=referenceGroupId)
+            iterator = self._client.search_references(rg.reference_set_id)
             for reference in iterator:
                 self._run(referenceGroupId, reference.id)
         else:
-            iterator = self._client.searchReads(
-                readGroupIds=[referenceGroupId], referenceId=referenceId,
+            iterator = self._client.search_reads(
+                read_group_ids=[referenceGroupId],
+                reference_id=referenceId,
                 start=self._start, end=self._end)
             self._output(iterator)
 
@@ -696,7 +753,7 @@ class ListReferenceBasesRunner(AbstractQueryRunner):
         self._outputFormat = args.outputFormat
 
     def run(self):
-        sequence = self._client.listReferenceBases(
+        sequence = self._client.list_reference_bases(
             self._referenceId, self._start, self._end)
         if self._outputFormat == "text":
             print(sequence)
@@ -718,7 +775,7 @@ class GetReferenceSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReferenceSetRunner, self).__init__(args)
-        self._method = self._client.getReferenceSet
+        self._method = self._client.get_reference_set
 
 
 class GetReferenceRunner(AbstractGetRunner):
@@ -727,7 +784,7 @@ class GetReferenceRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReferenceRunner, self).__init__(args)
-        self._method = self._client.getReference
+        self._method = self._client.get_reference
 
 
 class GetReadGroupSetRunner(AbstractGetRunner):
@@ -736,7 +793,7 @@ class GetReadGroupSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReadGroupSetRunner, self).__init__(args)
-        self._method = self._client.getReadGroupSet
+        self._method = self._client.get_read_group_set
 
 
 class GetReadGroupRunner(AbstractGetRunner):
@@ -745,7 +802,25 @@ class GetReadGroupRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetReadGroupRunner, self).__init__(args)
-        self._method = self._client.getReadGroup
+        self._method = self._client.get_read_group
+
+
+class GetBioSampleRunner(AbstractGetRunner):
+    """
+    Runner class for the references/{id} method
+    """
+    def __init__(self, args):
+        super(GetBioSampleRunner, self).__init__(args)
+        self._method = self._client.getBioSample
+
+
+class GetIndividualRunner(AbstractGetRunner):
+    """
+    Runner class for the references/{id} method
+    """
+    def __init__(self, args):
+        super(GetIndividualRunner, self).__init__(args)
+        self._method = self._client.get_individual
 
 
 class GetCallSetRunner(AbstractGetRunner):
@@ -754,7 +829,7 @@ class GetCallSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetCallSetRunner, self).__init__(args)
-        self._method = self._client.getCallSet
+        self._method = self._client.get_call_set
 
 
 class GetDatasetRunner(AbstractGetRunner):
@@ -763,7 +838,7 @@ class GetDatasetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetDatasetRunner, self).__init__(args)
-        self._method = self._client.getDataset
+        self._method = self._client.get_dataset
 
 
 class GetVariantRunner(VariantFormatterMixin, AbstractGetRunner):
@@ -772,7 +847,7 @@ class GetVariantRunner(VariantFormatterMixin, AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetVariantRunner, self).__init__(args)
-        self._method = self._client.getVariant
+        self._method = self._client.get_variant
 
 
 class GetVariantSetRunner(AbstractGetRunner):
@@ -781,7 +856,7 @@ class GetVariantSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetVariantSetRunner, self).__init__(args)
-        self._method = self._client.getVariantSet
+        self._method = self._client.get_variant_set
 
 
 class GetVariantAnnotationSetRunner(AbstractGetRunner):
@@ -790,7 +865,7 @@ class GetVariantAnnotationSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetVariantAnnotationSetRunner, self).__init__(args)
-        self._method = self._client.getVariantAnnotationSet
+        self._method = self._client.get_variant_annotation_set
 
 
 class GetFeatureRunner(FeatureFormatterMixin, AbstractGetRunner):
@@ -799,7 +874,7 @@ class GetFeatureRunner(FeatureFormatterMixin, AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetFeatureRunner, self).__init__(args)
-        self._method = self._client.getFeature
+        self._method = self._client.get_feature
 
 
 class GetFeatureSetRunner(AbstractGetRunner):
@@ -808,7 +883,7 @@ class GetFeatureSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetFeatureSetRunner, self).__init__(args)
-        self._method = self._client.getFeatureSet
+        self._method = self._client.get_feature_set
 
 
 def addDisableUrllibWarningsArgument(parser):
@@ -1016,6 +1091,18 @@ def addNameArgument(parser):
         help="The name to search over")
 
 
+def addIndividualIdArgument(parser):
+    parser.add_argument(
+        "--individualId", default=None,
+        help="The ID of the individual")
+
+
+def addBioSampleIdArgument(parser):
+    parser.add_argument(
+        "--bioSampleId", default=None,
+        help="The ID of the biosample")
+
+
 def addClientGlobalOptions(parser):
     parser.add_argument(
         '--verbose', '-v', action='count', default=0,
@@ -1108,6 +1195,49 @@ def addFeatureSetsGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addBioSamplesGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "biosamples-get", "Get a biosample by ID")
+    parser.set_defaults(runner=GetBioSampleRunner)
+    addGetArguments(parser)
+
+
+def addIndividualsGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "individuals-get", "Get a individual by ID")
+    parser.set_defaults(runner=GetIndividualRunner)
+    addGetArguments(parser)
+
+
+def addBioSamplesSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "biosamples-search",
+        description="Search for biosamples",
+        help="Search for biosamples.")
+    parser.set_defaults(runner=SearchBioSamplesRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addPageSizeArgument(parser)
+    addDatasetIdArgument(parser)
+    addNameArgument(parser)
+    addIndividualIdArgument(parser)
+    return parser
+
+
+def addIndividualsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "individuals-search",
+        description="Search for individuals",
+        help="Search for individuals.")
+    parser.set_defaults(runner=SearchIndividualsRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addDatasetIdArgument(parser)
+    addPageSizeArgument(parser)
+    addNameArgument(parser)
+    return parser
+
+
 def addFeaturesSearchParser(subparsers):
     parser = subparsers.add_parser(
         "features-search",
@@ -1168,6 +1298,7 @@ def addReadGroupSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
+    addBioSampleIdArgument(parser)
     addPageSizeArgument(parser)
     addDatasetIdArgument(parser)
     addNameArgument(parser)
@@ -1180,6 +1311,7 @@ def addCallSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchCallSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
+    addBioSampleIdArgument(parser)
     addPageSizeArgument(parser)
     addNameArgument(parser)
     addVariantSetIdArgument(parser)
@@ -1298,6 +1430,10 @@ def getClientParser():
     addFeaturesGetParser(subparsers)
     addFeatureSetsGetParser(subparsers)
     addFeatureSetsSearchParser(subparsers)
+    addBioSamplesSearchParser(subparsers)
+    addBioSamplesGetParser(subparsers)
+    addIndividualsSearchParser(subparsers)
+    addIndividualsGetParser(subparsers)
     addReferenceSetsSearchParser(subparsers)
     addReferencesSearchParser(subparsers)
     addReadGroupSetsSearchParser(subparsers)
@@ -1348,12 +1484,12 @@ class Ga2VcfRunner(SearchVariantsRunner):
             self._binaryOutput = True
 
     def run(self):
-        variantSet = self._client.getVariantSet(self._variantSetId)
-        iterator = self._client.searchVariants(
+        variantSet = self._client.get_variant_set(self._variantSetId)
+        iterator = self._client.search_variants(
             start=self._start, end=self._end,
-            referenceName=self._referenceName,
-            variantSetId=self._variantSetId,
-            callSetIds=self._callSetIds)
+            reference_name=self._referenceName,
+            variant_set_id=self._variantSetId,
+            call_set_ids=self._callSetIds)
         # do conversion
         vcfConverter = converters.VcfConverter(
             variantSet, iterator, self._outputFile, self._binaryOutput)
@@ -1880,6 +2016,50 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeFeatureSet, featureSet)
         self._confirmDelete("FeatureSet", featureSet.getLocalId(), func)
 
+    def addBioSample(self):
+        """
+        Adds a new biosample into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        bioSample = biodata.BioSample(dataset, self._args.bioSampleName)
+        bioSample.populateFromJson(self._args.bioSample)
+        self._updateRepo(self._repo.insertBioSample, bioSample)
+
+    def removeBioSample(self):
+        """
+        Removes a biosample from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        bioSample = dataset.getBioSampleByName(self._args.bioSampleName)
+
+        def func():
+            self._updateRepo(self._repo.removeBioSample, bioSample)
+        self._confirmDelete("BioSample", bioSample.getLocalId(), func)
+
+    def addIndividual(self):
+        """
+        Adds a new individual into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        individual = biodata.Individual(dataset, self._args.individualName)
+        individual.populateFromJson(self._args.individual)
+        self._updateRepo(self._repo.insertIndividual, individual)
+
+    def removeIndividual(self):
+        """
+        Removes an individual from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        individual = dataset.getIndividualByName(self._args.individualName)
+
+        def func():
+            self._updateRepo(self._repo.removeIndividual, individual)
+        self._confirmDelete("Individual", individual.getLocalId(), func)
+
     def removeOntology(self):
         """
         Removes an ontology from the repo.
@@ -1958,13 +2138,37 @@ class RepoManager(object):
     def addVariantSetNameArgument(cls, subparser):
         subparser.add_argument(
             "variantSetName",
-            help="the name of the feature set")
+            help="the name of the variant set")
 
     @classmethod
     def addFeatureSetNameArgument(cls, subparser):
         subparser.add_argument(
             "featureSetName",
-            help="the name of the variant set")
+            help="the name of the feature set")
+
+    @classmethod
+    def addIndividualNameArgument(cls, subparser):
+        subparser.add_argument(
+            "individualName",
+            help="the name of the individual")
+
+    @classmethod
+    def addBioSampleNameArgument(cls, subparser):
+        subparser.add_argument(
+            "bioSampleName",
+            help="the name of the biosample")
+
+    @classmethod
+    def addBioSampleArgument(cls, subparser):
+        subparser.add_argument(
+            "bioSample",
+            help="the JSON of the biosample")
+
+    @classmethod
+    def addIndividualArgument(cls, subparser):
+        subparser.add_argument(
+            "individual",
+            help="the JSON of the individual")
 
     @classmethod
     def addFilePathArgument(cls, subparser, helpText):
@@ -2173,6 +2377,39 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
+        addBioSampleParser = addSubparser(
+            subparsers, "add-biosample", "Add a BioSample to the dataset")
+        addBioSampleParser.set_defaults(runner="addBioSample")
+        cls.addRepoArgument(addBioSampleParser)
+        cls.addDatasetNameArgument(addBioSampleParser)
+        cls.addBioSampleNameArgument(addBioSampleParser)
+        cls.addBioSampleArgument(addBioSampleParser)
+
+        removeBioSampleParser = addSubparser(
+            subparsers, "remove-biosample",
+            "Remove a BioSample from the repo")
+        removeBioSampleParser.set_defaults(runner="removeBioSample")
+        cls.addRepoArgument(removeBioSampleParser)
+        cls.addDatasetNameArgument(removeBioSampleParser)
+        cls.addBioSampleNameArgument(removeBioSampleParser)
+        cls.addForceOption(removeBioSampleParser)
+
+        addIndividualParser = addSubparser(
+            subparsers, "add-individual", "Add an Individual to the dataset")
+        addIndividualParser.set_defaults(runner="addIndividual")
+        cls.addRepoArgument(addIndividualParser)
+        cls.addDatasetNameArgument(addIndividualParser)
+        cls.addIndividualNameArgument(addIndividualParser)
+        cls.addIndividualArgument(addIndividualParser)
+
+        removeIndividualParser = addSubparser(
+            subparsers, "remove-individual",
+            "Remove an Individual from the repo")
+        removeIndividualParser.set_defaults(runner="removeIndividual")
+        cls.addRepoArgument(removeIndividualParser)
+        cls.addDatasetNameArgument(removeIndividualParser)
+        cls.addIndividualNameArgument(removeIndividualParser)
+        cls.addForceOption(removeIndividualParser)
         return parser
 
     @classmethod

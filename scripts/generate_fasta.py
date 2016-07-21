@@ -94,7 +94,10 @@ class FastaGenerator(object):
         self.indexFasta()
 
 
+@utils.Timed()
 def main():
+    requiredExecutables = ['bgzip', 'samtools']
+    utils.requireExecutables(requiredExecutables)
     parser = argparse.ArgumentParser(
         description="Generate random FASTA files and metadata")
     parser.add_argument(
