@@ -236,9 +236,9 @@ class ComplianceDataMunger(object):
         featuresetG2P.populateFromFile(g2pPath)
         self.repo.insertFeatureSet(featuresetG2P)
 
-        # add g2p addPhenotypeAssociationSet
+        # add g2p phenotypeAssociationSet
         phenotypeAssociationSet = g2p_associationset\
-            .PhenotypeAssociationSet(dataset, 'cgd', g2pPath)
+            .PhenotypeAssociationSet(dataset, "cgd", g2pPath)
         self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
 
         self.repo.commit()
