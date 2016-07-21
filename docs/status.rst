@@ -20,6 +20,20 @@ Release Notes
 +++++++++++++
 
 *****
+0.3.2
+*****
+
+Alpha pre-release supporting major feature update.
+
+- Metadata functionality added to support biodata and individual metadata
+  capabilities.
+
+- Now support searching features by 'name' and 'gene_symbol'. These fields
+  have been promoted to facilitate the future integration of the RNA and
+  G2P modules.
+
+
+*****
 0.3.1
 *****
 
