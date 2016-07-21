@@ -25,7 +25,7 @@ Release Notes
 
 Alpha pre-release supporting major feature update.
 
-- Metadata functionality added to support biodata and individual metadata
+- Metadata functionality added to support biosample and individual metadata
   capabilities.
 
 - Now support searching features by 'name' and 'gene_symbol'. These fields
