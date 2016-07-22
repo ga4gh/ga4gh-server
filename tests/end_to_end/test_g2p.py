@@ -4,6 +4,7 @@ G2P testing on the test data
 
 import unittest
 
+import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.frontend as frontend
 import tests.paths as paths
@@ -35,6 +36,12 @@ class TestG2P(unittest.TestCase):
         self.assertTrue(
             protocol.validate(protocol.toJson(responseData), responseClass))
         return responseData
+
+    def sendGetRequest(self, path):
+        """
+        Sends a get request to the specified URL and returns the response.
+        """
+        return self.app.get(path)
 
     def getPhenotypeAssociationSetId(self):
         request = protocol.SearchDatasetsRequest()
@@ -268,7 +275,6 @@ class TestG2P(unittest.TestCase):
             postUrl,
             request,
             protocol.SearchFeaturesResponse)
-        print(response.features)
         self.assertEqual(3, len(response.features))
 
     def testPhenotypesSearchById(self):
@@ -331,7 +337,7 @@ class TestG2P(unittest.TestCase):
         ontologyterm = protocol.OntologyTerm()
         ontologyterm.id = "http://purl.obolibrary.org/obo/PATO_0000396"
         ontologyterm2 = protocol.OntologyTerm()
-        ontologyterm2.id = "http://purl.obolibrary.org/obo/PATO_0000396"
+        ontologyterm2.id = "http://purl.obolibrary.org/obo/PATO_0000460"
         request.qualifiers.extend([ontologyterm, ontologyterm2])
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
@@ -383,7 +389,7 @@ class TestG2P(unittest.TestCase):
         """
         Search for associations given a feature
         """
-        # simple string regexp
+        # simulate user interacting with sequenceAnnotations
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
@@ -393,6 +399,7 @@ class TestG2P(unittest.TestCase):
         obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
                                                          featureSet.name,
                                                          featureId)
+        # use the feature to look up associations
         request.feature_ids.extend([obfuscated])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
@@ -456,6 +463,7 @@ class TestG2P(unittest.TestCase):
         obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
                                                          featureSet.name,
                                                          featureId)
+        print(obfuscated)
         request.feature_ids.extend([obfuscated])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',

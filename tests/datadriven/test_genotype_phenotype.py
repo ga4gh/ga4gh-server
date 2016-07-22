@@ -267,9 +267,9 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
                       'http://www.ncbi.nlm.nih.gov/pubmed/21470995]'
 
         self.assertEqual(fpa_dict['description'], description)
-        self.assertIn('features', fpa_dict.keys())
+        self.assertIn('featureIds', fpa_dict.keys())
         self.assertIn('evidence', fpa_dict.keys())
         self.assertIn('environmentalContexts', fpa_dict.keys())
-        self.assertEqual(len(fpa_dict['features']), 1)
+        self.assertEqual(len(fpa_dict['featureIds']), 1)
         self.assertEqual(len(fpa_dict['evidence']), 1)
         self.assertEqual(len(fpa_dict['environmentalContexts']), 1)

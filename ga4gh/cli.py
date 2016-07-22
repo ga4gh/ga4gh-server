@@ -37,9 +37,8 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
-# TODO  pluralize ?
+import ga4gh.datamodel.bio_metadata as biodata
 import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
-
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -2407,6 +2406,40 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
+        addBioSampleParser = addSubparser(
+            subparsers, "add-biosample", "Add a BioSample to the dataset")
+        addBioSampleParser.set_defaults(runner="addBioSample")
+        cls.addRepoArgument(addBioSampleParser)
+        cls.addDatasetNameArgument(addBioSampleParser)
+        cls.addBioSampleNameArgument(addBioSampleParser)
+        cls.addBioSampleArgument(addBioSampleParser)
+
+        removeBioSampleParser = addSubparser(
+            subparsers, "remove-biosample",
+            "Remove a BioSample from the repo")
+        removeBioSampleParser.set_defaults(runner="removeBioSample")
+        cls.addRepoArgument(removeBioSampleParser)
+        cls.addDatasetNameArgument(removeBioSampleParser)
+        cls.addBioSampleNameArgument(removeBioSampleParser)
+        cls.addForceOption(removeBioSampleParser)
+
+        addIndividualParser = addSubparser(
+            subparsers, "add-individual", "Add an Individual to the dataset")
+        addIndividualParser.set_defaults(runner="addIndividual")
+        cls.addRepoArgument(addIndividualParser)
+        cls.addDatasetNameArgument(addIndividualParser)
+        cls.addIndividualNameArgument(addIndividualParser)
+        cls.addIndividualArgument(addIndividualParser)
+
+        removeIndividualParser = addSubparser(
+            subparsers, "remove-individual",
+            "Remove an Individual from the repo")
+        removeIndividualParser.set_defaults(runner="removeIndividual")
+        cls.addRepoArgument(removeIndividualParser)
+        cls.addDatasetNameArgument(removeIndividualParser)
+        cls.addIndividualNameArgument(removeIndividualParser)
+        cls.addForceOption(removeIndividualParser)
+                        
         addPhenotypeAssociationSetParser = addSubparser(
             subparsers, "add-g2p",
             "Adds phenotypes in ttl format to the repo.")
@@ -2416,7 +2449,7 @@ class RepoManager(object):
         cls.addFilePathArgument(
             addPhenotypeAssociationSetParser,
             "The path of the ttl file defining phenotypes.")
-        cls.addNameOption(addPhenotypeAssociationSetParser, "g2p")
+        # cls.addNameOption(addPhenotypeAssociationSetParser, "g2p")
         cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
         cls.addNameOption(addPhenotypeAssociationSetParser,
                           "PhenotypeAssociationSet")

@@ -127,6 +127,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
             sql += ") "
             sql_args += tuple(kwargs.get('featureTypes'))
         sql_rows += sql
+        sql_rows += "ORDER BY reference_name, start, end ASC "
         sql_count += sql
         return sql_rows, sql_count, sql_args
 

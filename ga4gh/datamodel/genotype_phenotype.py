@@ -198,9 +198,22 @@ class G2PUtility(object):
         elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
+    def _formatFeatureClause(self, feature):
+        """
+        Format a feature for lookup by gene_symbol
+        """
+        return 'regex(?feature_label, "{}")'.format(feature.gene_symbol)
+
+    def _formatId(self, element, element_type):
+        """
+        Formats an identifiers for query
+        """
+        return '?{} = <{}> '.format(
+            element_type, element)
+
     def _formatIds(self, element, element_type):
         """
-        Formats the external identifiers for query
+        Formats a set of identifiers for query
         """
         elementClause = None
         if isinstance(element, collections.Iterable):
@@ -239,6 +252,7 @@ class G2PUtility(object):
             PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             PREFIX BFO: <http://purl.obolibrary.org/obo/BFO_>
             PREFIX owl: <http://www.w3.org/2002/07/owl#>
+            PREFIX faldo: <http://biohackathon.org/resource/faldo#>
             SELECT
                 ?association
                 ?environment
@@ -330,9 +344,6 @@ class G2PUtility(object):
         # key's value is a dict with the RDF predicates as keys and
         # subject as values
 
-        # annotation keys
-        TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
-        LABEL = 'http://www.w3.org/2000/01/rdf-schema#label'
         # useful
         # ECO_0000033 traceable author statement
         # RO_0002558 has evidence

@@ -455,6 +455,33 @@ class Backend(object):
             request, self.getDataRepository().getNumDatasets(),
             self.getDataRepository().getDatasetByIndex)
 
+    def bioSamplesGenerator(self, request):
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        results = []
+        for obj in dataset.getBioSamples():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if request.individual_id:
+                if request.individual_id != obj.getIndividualId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
+
+    def individualsGenerator(self, request):
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        results = []
+        for obj in dataset.getIndividuals():
+            include = True
+            if request.name:
+                if request.name != obj.getLocalId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
+
     def phenotypeAssociationSetsGenerator(self, request):
         """
         Returns a generator over the (phenotypeAssociationSet, nextPageToken)
@@ -676,12 +703,10 @@ class Backend(object):
         else:
             start = request.start
             end = request.end
-
-        # otherwise use sequence annotations ...
         return featureSet.getFeatures(
             request.reference_name, start, end,
             request.page_token, request.page_size,
-            request.feature_types, parentId)
+            request.feature_types, parentId, request.name, request.gene_symbol)
 
     def phenotypesGenerator(self, request):
         """
@@ -814,6 +839,7 @@ class Backend(object):
         try:
             request = protocol.fromJson(requestStr, requestClass)
         except protocol.json_format.ParseError:
+            print("cannot parse for class {} request {}".format(requestClass, requestStr))
             raise exceptions.InvalidJsonException(requestStr)
         # TODO How do we detect when the page size is not set?
         if not request.page_size:
@@ -845,8 +871,8 @@ class Backend(object):
         end = _parseIntegerArgument(requestArgs, 'end', reference.getLength())
         if end == 0:  # assume meant "get all"
             end = reference.getLength()
-        if 'page_token' in requestArgs:
-            pageTokenStr = requestArgs['page_token']
+        if 'pageToken' in requestArgs:
+            pageTokenStr = requestArgs['pageToken']
             if pageTokenStr != "":
                 start = _parsePageToken(pageTokenStr, 1)[0]
 
