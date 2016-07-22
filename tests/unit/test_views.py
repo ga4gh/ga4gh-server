@@ -254,7 +254,7 @@ class TestFrontend(unittest.TestCase):
             'Origin': self.exampleUrl,
         }
         data = protocol.toJsonDict(request)
-        response = self.app.get(path, data=data, headers=headers)
+        response = self.app.post(path, data=data, headers=headers)
         return response
 
     def sendReferenceBasesList(self, id_=None):
@@ -330,15 +330,17 @@ class TestFrontend(unittest.TestCase):
 
     def testRouteReferences(self):
         referenceId = self.referenceId
-        paths = ['/references/{}', '/references/{}/bases']
-        for path in paths:
-            path = path.format(referenceId)
-            self.assertEqual(200, self.app.get(path).status_code)
+        path = '/references/{}'
+        path = path.format(referenceId)
+        self.assertEqual(200, self.app.get(path).status_code)
+        path = 'references/{}/bases'
+        path = path.format(referenceId)
+        self.assertEqual(200, self.app.post(path).status_code)
         referenceSetId = self.referenceSetId
-        paths = ['/referencesets/{}']
-        for path in paths:
-            path = path.format(referenceSetId)
-            self.assertEqual(200, self.app.get(path).status_code)
+        path = '/referencesets/{}'
+        path = path.format(referenceSetId)
+        self.assertEqual(200, self.app.get(path).status_code)
+        path = 'references/{}'
         self.verifySearchRouting('/referencesets/search', True)
         self.verifySearchRouting('/references/search', True)
 

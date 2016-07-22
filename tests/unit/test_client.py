@@ -466,7 +466,21 @@ class DummyRequestsSession(object):
         self.checkSessionParameters()
         assert url.startswith(self._urlPrefix)
         suffix = url[len(self._urlPrefix):]
+        splits = suffix.split("/")
+        assert len(splits) == 3
+        assert splits[0] == ''
+        datatype, id_ = splits[1:]
+        assert datatype in self._getMethodMap
+        method = self._getMethodMap[datatype]
+        result = method(id_)
+        return DummyResponse(result)
+
+    def post(self, url, params=None, data=None):
+        self.checkSessionParameters()
+        assert url.startswith(self._urlPrefix)
+        suffix = url[len(self._urlPrefix):]
         basesSuffix = "/bases"
+        searchSuffix = "/search"
         splits = suffix.split("/")
         if suffix.endswith(basesSuffix):
             # ListReferenceBases is an oddball and needs to be treated
@@ -475,34 +489,18 @@ class DummyRequestsSession(object):
             assert splits[1] == 'references'
             id_ = splits[2]
             assert splits[3] == 'bases'
-            # This is all very ugly --- see the comments in the LocalClient
-            # for why we need to do this. Definitely needs to be fixed.
-            args = dict(params)
-            if args[u'end'] == u'0':
-                del args['end']
-            if args['pageToken'] is "":
-                del args['pageToken']
-            result = self._backend.runListReferenceBases(id_, args)
-        else:
-            assert len(splits) == 3
-            assert splits[0] == ''
-            datatype, id_ = splits[1:]
-            assert datatype in self._getMethodMap
-            method = self._getMethodMap[datatype]
-            result = method(id_)
-        return DummyResponse(result)
-
-    def post(self, url, params=None, data=None):
-        self.checkSessionParameters()
-        assert url.startswith(self._urlPrefix)
-        suffix = url[len(self._urlPrefix):]
-        searchSuffix = "/search"
-        assert suffix.startswith("/")
-        assert suffix.endswith(searchSuffix)
-        datatype = suffix[1:-len(searchSuffix)]
-        assert datatype in self._searchMethodMap
-        method = self._searchMethodMap[datatype]
-        result = method(data)
+            args = protocol.ListReferenceBasesRequest()
+            args.reference_id = id_
+            args.start = int(params.get('start', 0))
+            args.end = int(params.get('end', 0))
+            args.page_token = params.get('pageToken', "")
+            result = self._backend.runListReferenceBases(
+                id_, protocol.toJson(args))
+        elif suffix.endswith(searchSuffix):
+            datatype = suffix[1:-len(searchSuffix)]
+            assert datatype in self._searchMethodMap
+            method = self._searchMethodMap[datatype]
+            result = method(data)
         return DummyResponse(result)
 
 

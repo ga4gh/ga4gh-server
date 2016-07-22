@@ -344,7 +344,7 @@ def handleList(id_, endpoint, request):
     """
     Handles the specified HTTP GET request, mapping to a list request
     """
-    responseStr = endpoint(id_, request.args)
+    responseStr = endpoint(id_, request.get_data())
     return getFlaskResponse(responseStr)
 
 
@@ -449,10 +449,8 @@ def handleFlaskListRequest(id_, flaskRequest, endpoint):
     Handles the specified flask list request for one of the GET URLs.
     Invokes the specified endpoint to generate a response.
     """
-    if flaskRequest.method == "GET":
-        return handleList(id_, endpoint, flaskRequest)
-    else:
-        raise exceptions.MethodNotAllowedException()
+
+    return handleList(id_, endpoint, flaskRequest)
 
 
 def handleFlaskPostRequest(flaskRequest, endpoint):
@@ -523,7 +521,7 @@ def getReferenceSet(id):
         id, flask.request, app.backend.runGetReferenceSet)
 
 
-@DisplayedRoute('/references/<id>/bases')
+@DisplayedRoute('/references/<id>/bases', postMethod=True)
 def listReferenceBases(id):
     return handleFlaskListRequest(
         id, flask.request, app.backend.runListReferenceBases)

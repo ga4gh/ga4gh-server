@@ -116,8 +116,7 @@ class TestSimulatedStack(unittest.TestCase):
         ListReferenceBasesResponse.
         """
         path = '/references/{}/bases'.format(id_)
-        response = self.app.get(
-            path, query_string=protocol.toJsonDict(request))
+        response = self.sendJsonPostRequest(path, protocol.toJson(request))
         self.assertEqual(response.status_code, 200)
         obj = protocol.fromJson(
             response.data, protocol.ListReferenceBasesResponse)
@@ -849,13 +848,14 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testListReferenceBasesErrors(self):
         referenceSet = self.dataRepo.getReferenceSets()[0]
+        args = protocol.ListReferenceBasesRequest()
         for badId in self.getBadIds():
             path = '/references/{}/bases'.format(badId)
-            response = self.app.get(path)
+            response = self.sendJsonPostRequest(path, protocol.toJson(args))
             self.assertEqual(response.status_code, 404)
             reference = references.AbstractReference(referenceSet, badId)
             path = '/references/{}/bases'.format(reference.getId())
-            response = self.app.get(path)
+            response = self.sendJsonPostRequest(path, protocol.toJson(args))
             self.assertEqual(response.status_code, 404)
         path = '/references/{}/bases'.format(self.reference.getId())
         length = self.reference.getLength()
@@ -863,8 +863,7 @@ class TestSimulatedStack(unittest.TestCase):
         for start, end in badRanges:
             args = protocol.ListReferenceBasesRequest()
             args.start, args.end = start, end
-            response = self.app.get(
-                path, query_string=protocol.toJsonDict(args))
+            response = self.sendJsonPostRequest(path, protocol.toJson(args))
             self.assertEqual(response.status_code, 416)
 
     def testListReferenceBasesPaging(self):
@@ -881,7 +880,7 @@ class TestSimulatedStack(unittest.TestCase):
                 self.assertEqual(response.sequence, sequence[:pageSize])
                 self.assertEqual(response.offset, start)
                 sequenceFragments = [response.sequence]
-                while response.next_page_token is not "":
+                while response.next_page_token:
                     args = protocol.ListReferenceBasesRequest()
                     args.page_token = response.next_page_token
                     args.start, args.end = start, end

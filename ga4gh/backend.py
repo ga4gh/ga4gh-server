@@ -923,23 +923,34 @@ class Backend(object):
         self.endProfile()
         return responseString
 
-    def runListReferenceBases(self, id_, requestArgs):
+    def runListReferenceBases(self, id_, requestJson):
         """
         Runs a listReferenceBases request for the specified ID and
         request arguments.
         """
-        compoundId = datamodel.ReferenceCompoundId.parse(id_)
+        # In the case when an empty post request is made to the endpoint
+        # we instantiate an empty ListReferenceBasesRequest.
+        if not requestJson:
+            request = protocol.ListReferenceBasesRequest()
+        else:
+            try:
+                request = protocol.fromJson(
+                    requestJson,
+                    protocol.ListReferenceBasesRequest)
+            except protocol.json_format.ParseError:
+                raise exceptions.InvalidJsonException(requestJson)
+        request.reference_id = id_
+        compoundId = datamodel.ReferenceCompoundId.parse(request.reference_id)
         referenceSet = self.getDataRepository().getReferenceSet(
             compoundId.reference_set_id)
-        reference = referenceSet.getReference(id_)
-        start = _parseIntegerArgument(requestArgs, 'start', 0)
-        end = _parseIntegerArgument(requestArgs, 'end', reference.getLength())
+        reference = referenceSet.getReference(request.reference_id)
+        start = request.start
+        end = request.end
         if end == 0:  # assume meant "get all"
             end = reference.getLength()
-        if 'pageToken' in requestArgs:
-            pageTokenStr = requestArgs['pageToken']
-            if pageTokenStr != "":
-                start = _parsePageToken(pageTokenStr, 1)[0]
+        if request.page_token:
+            pageTokenStr = request.page_token
+            start = _parsePageToken(pageTokenStr, 1)[0]
 
         chunkSize = self._maxResponseLength
         nextPageToken = None
@@ -952,7 +963,7 @@ class Backend(object):
         response = protocol.ListReferenceBasesResponse()
         response.offset = start
         response.sequence = sequence
-        if nextPageToken is not None:
+        if nextPageToken:
             response.next_page_token = nextPageToken
         return protocol.toJson(response)
 
