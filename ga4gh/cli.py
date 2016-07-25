@@ -323,10 +323,13 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
         super(SearchReferenceSetsRunner, self).__init__(args)
         self._accession = args.accession
         self._md5checksum = args.md5checksum
+        self._assemblyId = args.assemblyId
 
     def run(self):
         iterator = self._client.search_reference_sets(
-            accession=self._accession, md5checksum=self._md5checksum)
+            accession=self._accession,
+            md5checksum=self._md5checksum,
+            assembly_id=self._assemblyId)
         self._output(iterator)
 
 
