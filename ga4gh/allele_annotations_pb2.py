@@ -14,6 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 from ga4gh import metadata_pb2 as ga4gh_dot_metadata__pb2
+from ga4gh import assay_metadata_pb2 as ga4gh_dot_assay__metadata__pb2
 from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
 
@@ -21,9 +22,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/allele_annotations.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x1ega4gh/allele_annotations.proto\x12\x05ga4gh\x1a\x14ga4gh/metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"D\n\x0e\x41nalysisResult\x12\x13\n\x0b\x61nalysis_id\x18\x01 \x01(\t\x12\x0e\n\x06result\x18\x02 \x01(\t\x12\r\n\x05score\x18\x03 \x01(\x05\"d\n\x0e\x41lleleLocation\x12\r\n\x05start\x18\x01 \x01(\x05\x12\x0b\n\x03\x65nd\x18\x02 \x01(\x05\x12\x1a\n\x12reference_sequence\x18\x03 \x01(\t\x12\x1a\n\x12\x61lternate_sequence\x18\x04 \x01(\t\"j\n\x14VariantAnnotationSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x15\n\rvariantSet_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12!\n\x08\x61nalysis\x18\x04 \x01(\x0b\x32\x0f.ga4gh.Analysis\"F\n\x0eHGVSAnnotation\x12\x0f\n\x07genomic\x18\x01 \x01(\t\x12\x12\n\ntranscript\x18\x02 \x01(\t\x12\x0f\n\x07protein\x18\x03 \x01(\t\"\xde\x02\n\x10TranscriptEffect\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nfeature_id\x18\x02 \x01(\t\x12\x17\n\x0f\x61lternate_bases\x18\x03 \x01(\t\x12$\n\x07\x65\x66\x66\x65\x63ts\x18\x04 \x03(\x0b\x32\x13.ga4gh.OntologyTerm\x12.\n\x0fhgvs_annotation\x18\x05 \x01(\x0b\x32\x15.ga4gh.HGVSAnnotation\x12,\n\rcdna_location\x18\x06 \x01(\x0b\x32\x15.ga4gh.AlleleLocation\x12+\n\x0c\x63\x64s_location\x18\x07 \x01(\x0b\x32\x15.ga4gh.AlleleLocation\x12/\n\x10protein_location\x18\x08 \x01(\x0b\x32\x15.ga4gh.AlleleLocation\x12/\n\x10\x61nalysis_results\x18\t \x03(\x0b\x32\x15.ga4gh.AnalysisResult\"\xa0\x02\n\x11VariantAnnotation\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nvariant_id\x18\x02 \x01(\t\x12!\n\x19variant_annotation_set_id\x18\x03 \x01(\t\x12\x18\n\x10\x63reate_date_time\x18\x04 \x01(\t\x12\x33\n\x12transcript_effects\x18\x05 \x03(\x0b\x32\x17.ga4gh.TranscriptEffect\x12\x30\n\x04info\x18\x06 \x03(\x0b\x32\".ga4gh.VariantAnnotation.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x1ega4gh/allele_annotations.proto\x12\x05ga4gh\x1a\x14ga4gh/metadata.proto\x1a\x1aga4gh/assay_metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"D\n\x0e\x41nalysisResult\x12\x13\n\x0b\x61nalysis_id\x18\x01 \x01(\t\x12\x0e\n\x06result\x18\x02 \x01(\t\x12\r\n\x05score\x18\x03 \x01(\x05\"d\n\x0e\x41lleleLocation\x12\r\n\x05start\x18\x01 \x01(\x05\x12\x0b\n\x03\x65nd\x18\x02 \x01(\x05\x12\x1a\n\x12reference_sequence\x18\x03 \x01(\t\x12\x1a\n\x12\x61lternate_sequence\x18\x04 \x01(\t\"j\n\x14VariantAnnotationSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x15\n\rvariantSet_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12!\n\x08\x61nalysis\x18\x04 \x01(\x0b\x32\x0f.ga4gh.Analysis\"F\n\x0eHGVSAnnotation\x12\x0f\n\x07genomic\x18\x01 \x01(\t\x12\x12\n\ntranscript\x18\x02 \x01(\t\x12\x0f\n\x07protein\x18\x03 \x01(\t\"\xde\x02\n\x10TranscriptEffect\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nfeature_id\x18\x02 \x01(\t\x12\x17\n\x0f\x61lternate_bases\x18\x03 \x01(\t\x12$\n\x07\x65\x66\x66\x65\x63ts\x18\x04 \x03(\x0b\x32\x13.ga4gh.OntologyTerm\x12.\n\x0fhgvs_annotation\x18\x05 \x01(\x0b\x32\x15.ga4gh.HGVSAnnotation\x12,\n\rcdna_location\x18\x06 \x01(\x0b\x32\x15.ga4gh.AlleleLocation\x12+\n\x0c\x63\x64s_location\x18\x07 \x01(\x0b\x32\x15.ga4gh.AlleleLocation\x12/\n\x10protein_location\x18\x08 \x01(\x0b\x32\x15.ga4gh.AlleleLocation\x12/\n\x10\x61nalysis_results\x18\t \x03(\x0b\x32\x15.ga4gh.AnalysisResult\"\x97\x02\n\x11VariantAnnotation\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\nvariant_id\x18\x02 \x01(\t\x12!\n\x19variant_annotation_set_id\x18\x03 \x01(\t\x12\x0f\n\x07\x63reated\x18\x04 \x01(\t\x12\x33\n\x12transcript_effects\x18\x05 \x03(\x0b\x32\x17.ga4gh.TranscriptEffect\x12\x30\n\x04info\x18\x06 \x03(\x0b\x32\".ga4gh.VariantAnnotation.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3')
   ,
-  dependencies=[ga4gh_dot_metadata__pb2.DESCRIPTOR,google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
+  dependencies=[ga4gh_dot_metadata__pb2.DESCRIPTOR,ga4gh_dot_assay__metadata__pb2.DESCRIPTOR,google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
@@ -69,8 +70,8 @@ _ANALYSISRESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=93,
-  serialized_end=161,
+  serialized_start=121,
+  serialized_end=189,
 )
 
 
@@ -121,8 +122,8 @@ _ALLELELOCATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=163,
-  serialized_end=263,
+  serialized_start=191,
+  serialized_end=291,
 )
 
 
@@ -173,8 +174,8 @@ _VARIANTANNOTATIONSET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=265,
-  serialized_end=371,
+  serialized_start=293,
+  serialized_end=399,
 )
 
 
@@ -218,8 +219,8 @@ _HGVSANNOTATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=373,
-  serialized_end=443,
+  serialized_start=401,
+  serialized_end=471,
 )
 
 
@@ -305,8 +306,8 @@ _TRANSCRIPTEFFECT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=446,
-  serialized_end=796,
+  serialized_start=474,
+  serialized_end=824,
 )
 
 
@@ -343,8 +344,8 @@ _VARIANTANNOTATION_INFOENTRY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1016,
-  serialized_end=1087,
+  serialized_start=1035,
+  serialized_end=1106,
 )
 
 _VARIANTANNOTATION = _descriptor.Descriptor(
@@ -376,7 +377,7 @@ _VARIANTANNOTATION = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='create_date_time', full_name='ga4gh.VariantAnnotation.create_date_time', index=3,
+      name='created', full_name='ga4gh.VariantAnnotation.created', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -408,11 +409,11 @@ _VARIANTANNOTATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=799,
-  serialized_end=1087,
+  serialized_start=827,
+  serialized_end=1106,
 )
 
-_VARIANTANNOTATIONSET.fields_by_name['analysis'].message_type = ga4gh_dot_metadata__pb2._ANALYSIS
+_VARIANTANNOTATIONSET.fields_by_name['analysis'].message_type = ga4gh_dot_assay__metadata__pb2._ANALYSIS
 _TRANSCRIPTEFFECT.fields_by_name['effects'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
 _TRANSCRIPTEFFECT.fields_by_name['hgvs_annotation'].message_type = _HGVSANNOTATION
 _TRANSCRIPTEFFECT.fields_by_name['cdna_location'].message_type = _ALLELELOCATION
