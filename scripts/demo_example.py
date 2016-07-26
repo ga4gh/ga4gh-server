@@ -14,7 +14,7 @@ import ga4gh.client as client  # NOQA
 def runDemo():
 
     httpClient = client.HttpClient("http://localhost:8000")
-    iterator = httpClient.searchVariants(
+    iterator = httpClient.search_variants(
         variantSetId="MWtnLXAzLXN1YnNldDptdm5jYWxs",
         referenceName="1", start=45000, end=50000)
     for variant in iterator:

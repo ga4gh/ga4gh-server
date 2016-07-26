@@ -435,7 +435,10 @@ def parseArgs():
     return args
 
 
+@utils.Timed()
 def main(args):
+    requiredExecutables = ['bcftools', 'tabix', 'bgzip', 'samtools']
+    utils.requireExecutables(requiredExecutables)
     downloaderClass = sources[args.source]
     downloader = downloaderClass(args)
     try:

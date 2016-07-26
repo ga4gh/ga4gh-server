@@ -18,11 +18,16 @@ def run(*args):
     utils.runCommand(cmd)
 
 
-def main(args):
-    prefix = args.data_directory
+def buildTestData(dataDirectory='tests/data', relativePaths=False):
+    prefix = dataDirectory
     repoFile = os.path.join(prefix, "repo.db")
+    if os.path.exists(repoFile):
+        print("'{}' already exists".format(repoFile))
+        return
+    else:
+        print("building repo at '{}'".format(repoFile))
     sequenceOntologyName = "so-xp-simple"
-    useRelativePath = '-r' if args.relativePaths else ''
+    useRelativePath = '-r' if relativePaths else ''
     run("init", "-f", repoFile)
 
     pattern = os.path.join(prefix, "referenceSets", "*.fa.gz")
@@ -83,6 +88,12 @@ def parseArgs():
     args = parser.parse_args()
     return args
 
-if __name__ == "__main__":
+
+@utils.Timed()
+def main():
     args = parseArgs()
-    main(args)
+    buildTestData(args.data_directory, args.relativePaths)
+
+
+if __name__ == "__main__":
+    main()
