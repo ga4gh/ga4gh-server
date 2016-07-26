@@ -226,9 +226,9 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.rna_quantification_id = self.rnaQuantificationId
         request.threshold = self.threshold
         request.page_size = self.pageSize
-        self.httpClient.searchExpressionLevels(
+        self.httpClient.search_expression_levels(
             self.rnaQuantificationId, self.featureGroupId, self.threshold)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "expressionlevels",
             protocol.SearchExpressionLevelsResponse)
 
@@ -236,8 +236,8 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request = protocol.SearchRnaQuantificationSetsRequest()
         request.dataset_id = self.datasetId
         request.page_size = self.pageSize
-        self.httpClient.searchRnaQuantificationSets(self.datasetId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient.search_rna_quantification_sets(self.datasetId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "rnaquantificationsets",
             protocol.SearchRnaQuantificationSetsResponse)
 
@@ -246,9 +246,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.dataset_id = self.datasetId
         request.rna_quantification_set_id = self.rnaQuantificationSetId
         request.page_size = self.pageSize
-        self.httpClient.searchRnaQuantifications(
-            self.datasetId, rnaQuantificationSetId=self.rnaQuantificationSetId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient.search_rna_quantifications(
+            self.datasetId,
+            rna_quantification_set_id=self.rnaQuantificationSetId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "rnaquantifications",
             protocol.SearchRnaQuantificationsResponse)
 
@@ -257,7 +258,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.dataset_id = self.datasetId
         request.page_size = self.pageSize
         self.httpClient.searchFeatureGroups(self.datasetId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "featuregroups",
             protocol.SearchFeatureGroupsResponse)
 
@@ -339,24 +340,24 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
             "individuals", protocol.Individual, self.objectId)
 
     def testGetRnaQuantificationSet(self):
-        self.httpClient.getRnaQuantificationSet(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_rna_quantification_set(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "rnaquantificationsets", protocol.RnaQuantificationSet,
             self.objectId)
 
     def testGetRnaQuantification(self):
-        self.httpClient.getRnaQuantification(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_rna_quantification(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "rnaquantification", protocol.RnaQuantification, self.objectId)
 
     def testGetExpressionLevel(self):
-        self.httpClient.getExpressionLevel(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_expression_level(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "expressionlevels", protocol.ExpressionLevel, self.objectId)
 
     def testGetFeatureGroup(self):
-        self.httpClient.getFeatureGroup(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_feature_group(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "featuregroups", protocol.FeatureGroup, self.objectId)
 
     # def testGetFeatureSet(self):  # TODO
@@ -602,14 +603,14 @@ class ExhaustiveListingsMixin(object):
                             self.assertEqual(dmRead, read)
 
     def testAllRnaQuantificationSets(self):
-        for dataset in self.client.searchDatasets():
+        for dataset in self.client.search_datasets():
             rnaQuantificationSets = \
-                list(self.client.searchRnaQuantificationSets(dataset.id))
+                list(self.client.search_rna_quantification_sets(dataset.id))
             datamodelRnaQuantificationSets = self.dataRepo.getDataset(
                 dataset.id).getRnaQuantificationSets()
             self.verifyObjectList(
                 rnaQuantificationSets, datamodelRnaQuantificationSets,
-                self.client.getRnaQuantificationSet)
+                self.client.get_rna_quantification_set)
 
 
 class TestExhaustiveListingsHttp(ExhaustiveListingsMixin, unittest.TestCase):

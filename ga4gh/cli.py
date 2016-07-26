@@ -751,7 +751,7 @@ class SearchRnaQuantificationSetsRunner(AbstractSearchRunner):
         self._datasetId = args.datasetId
 
     def run(self):
-        iterator = self._client.searchRnaQuantificationSets(
+        iterator = self._client.search_rna_quantification_sets(
             self._datasetId)
         self._output(iterator)
 
@@ -773,7 +773,7 @@ class SearchRnaQuantificationsRunner(AbstractSearchRunner):
         self._rnaQuantificationSetId = args.rnaQuantificationSetId
 
     def run(self):
-        iterator = self._client.searchRnaQuantifications(
+        iterator = self._client.search_rna_quantifications(
             self._datasetId,
             self._rnaQuantificationSetId)
         self._output(iterator)
@@ -801,7 +801,7 @@ class SearchExpressionLevelsRunner(AbstractSearchRunner):
         self.threshold = args.threshold
 
     def run(self):
-        iterator = self._client.searchExpressionLevels(
+        iterator = self._client.search_expression_levels(
             featureGroupId=self._featureGroupId,
             rnaQuantificationId=self._rnaQuantificationId,
             threshold=self.threshold)
@@ -993,7 +993,7 @@ class GetRnaQuantificationRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetRnaQuantificationRunner, self).__init__(args)
-        self._method = self._client.getRnaQuantification
+        self._method = self._client.get_rna_quantification
 
 
 class GetExpressionLevelRunner(AbstractGetRunner):
@@ -1002,7 +1002,7 @@ class GetExpressionLevelRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetExpressionLevelRunner, self).__init__(args)
-        self._method = self._client.getExpressionLevel
+        self._method = self._client.get_expression_level
 
 
 class GetRnaQuantificationSetRunner(AbstractGetRunner):
@@ -1011,7 +1011,7 @@ class GetRnaQuantificationSetRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetRnaQuantificationSetRunner, self).__init__(args)
-        self._method = self._client.getRnaQuantificationSet
+        self._method = self._client.get_rna_quantification_set
 
 
 class GetFeatureGroupRunner(AbstractGetRunner):
@@ -1020,7 +1020,7 @@ class GetFeatureGroupRunner(AbstractGetRunner):
     """
     def __init__(self, args):
         super(GetFeatureGroupRunner, self).__init__(args)
-        self._method = self._client.getFeatureGroup
+        self._method = self._client.get_feature_group
 
 
 def addDisableUrllibWarningsArgument(parser):

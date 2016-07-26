@@ -270,53 +270,53 @@ class AbstractClient(object):
         return self._run_get_request(
             "features", protocol.Feature, feature_id)
 
-    def getRnaQuantificationSet(self, rnaQuantificationSetId):
+    def get_rna_quantification_set(self, rna_quantification_set_id):
         """
         Returns the RnaQuantificationSet with the specified ID from the server.
-        :param str rnaQuantificationSetId: The ID of the RnaQuantificationSet
-            of interest.
+        :param str rna_quantification_set_id: The ID of the
+            RnaQuantificationSet of interest.
         :return: The RnaQuantificationSet of interest.
         :rtype: :class:`ga4gh.protocol.RnaQuantificationSet`
         """
-        return self._runGetRequest(
+        return self._run_get_request(
             "rnaquantificationsets", protocol.RnaQuantificationSet,
-            rnaQuantificationSetId)
+            rna_quantification_set_id)
 
-    def getRnaQuantification(self, rnaQuantificationId):
+    def get_rna_quantification(self, rna_quantification_id):
         """
         Returns the RnaQuantification with the specified ID from the server.
-        :param str rnaQuantificationId: The ID of the RnaQuantification of
+        :param str rna_quantification_id: The ID of the RnaQuantification of
             interest.
         :return: The RnaQuantification of interest.
         :rtype: :class:`ga4gh.protocol.RnaQuantification`
         """
-        return self._runGetRequest(
+        return self._run_get_request(
             "rnaquantification", protocol.RnaQuantification,
-            rnaQuantificationId)
+            rna_quantification_id)
 
-    def getExpressionLevel(self, expressionLevelId):
+    def get_expression_level(self, expression_level_id):
         """
         Returns the ExpressionLevel with the specified ID from the server.
-        :param str expressionLevelId: The ID of the ExpressionLevel of
+        :param str expression_level_id: The ID of the ExpressionLevel of
             interest.
         :return: The ExpressionLevel of interest.
         :rtype: :class:`ga4gh.protocol.ExpressionLevel`
         """
-        return self._runGetRequest(
+        return self._run_get_request(
             "expressionlevels", protocol.ExpressionLevel,
-            expressionLevelId)
+            expression_level_id)
 
-    def getFeatureGroup(self, featureGroupId):
+    def get_feature_group(self, feature_group_id):
         """
         Returns the FeatureGroup with the specified ID from the server.
-        :param str featureGroupId: The ID of the FeatureGroup of
+        :param str feature_group_id: The ID of the FeatureGroup of
             interest.
         :return: The FeatureGroup of interest.
         :rtype: :class:`ga4gh.protocol.FeatureGroup`
         """
-        return self._runGetRequest(
+        return self._run_get_request(
             "featuregroups", protocol.FeatureGroup,
-            featureGroupId)
+            feature_group_id)
 
     def search_variants(
             self, variant_set_id, start=None, end=None, reference_name=None,
@@ -656,52 +656,54 @@ class AbstractClient(object):
         return self._run_search_request(
             request, "reads", protocol.SearchReadsResponse)
 
-    def searchRnaQuantificationSets(self, datasetId):
+    def search_rna_quantification_sets(self, dataset_id):
         """
         Returns an iterator over the RnaQuantificationSet objects from the
         server
         """
         request = protocol.SearchRnaQuantificationSetsRequest()
-        request.dataset_id = datasetId
-        request.page_size = pb.int(self._pageSize)
-        return self._runSearchRequest(
+        request.dataset_id = dataset_id
+        request.page_size = pb.int(self._page_size)
+        return self._run_search_request(
             request, "rnaquantificationsets",
             protocol.SearchRnaQuantificationSetsResponse)
 
-    def searchRnaQuantifications(self, datasetId, rnaQuantificationSetId=""):
+    def search_rna_quantifications(
+            self, dataset_id, rna_quantification_set_id=""):
         """
         Returns an iterator over the RnaQuantification objects from the server
 
-        :param str rnaQuantificationSetId: The ID of the
+        :param str rna_quantification_set_id: The ID of the
             :class:`ga4gh.protocol.RnaQuantificationSet` of interest.
         """
         request = protocol.SearchRnaQuantificationsRequest()
-        request.rna_quantification_set_id = rnaQuantificationSetId
-        request.dataset_id = datasetId
-        request.page_size = pb.int(self._pageSize)
-        return self._runSearchRequest(
+        request.rna_quantification_set_id = rna_quantification_set_id
+        request.dataset_id = dataset_id
+        request.page_size = pb.int(self._page_size)
+        return self._run_search_request(
             request, "rnaquantifications",
             protocol.SearchRnaQuantificationsResponse)
 
-    def searchExpressionLevels(
-            self, rnaQuantificationId="", featureGroupId="", threshold=0.0):
+    def search_expression_levels(
+            self, rna_quantification_id="", feature_group_id="",
+            threshold=0.0):
         """
         Returns an iterator over the ExpressionLevel objects from the server
 
         :param str expressionLevelId: The ID of the
             :class:`ga4gh.protocol.ExpressionLevel` of interest.
-        :param str featureGroupId: The ID of the
+        :param str feature_group_id: The ID of the
             :class:`ga4gh.protocol.FeatureGroup` of interest.
         :param str rnaQuantificationIdIDs: The ID of the
             :class:`ga4gh.protocol.RnaQuantification` of interest.
         :param float threshold: Minimum expression of responses to return.
         """
         request = protocol.SearchExpressionLevelsRequest()
-        request.rna_quantification_id = rnaQuantificationId
-        request.feature_group_id = featureGroupId
+        request.rna_quantification_id = rna_quantification_id
+        request.feature_group_id = feature_group_id
         request.threshold = threshold
-        request.page_size = pb.int(self._pageSize)
-        return self._runSearchRequest(
+        request.page_size = pb.int(self._page_size)
+        return self._run_search_request(
             request, "expressionlevels",
             protocol.SearchExpressionLevelsResponse)
 
@@ -712,8 +714,8 @@ class AbstractClient(object):
         """
         request = protocol.SearchFeatureGroupsRequest()
         request.dataset_id = datasetId
-        request.page_size = pb.int(self._pageSize)
-        return self._runSearchRequest(
+        request.page_size = pb.int(self._page_size)
+        return self._run_search_request(
             request, "featuregroups",
             protocol.SearchFeatureGroupsResponse)
 
