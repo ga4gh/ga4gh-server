@@ -28,8 +28,6 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
         super(PhenotypeAssociationSetTest, self).__init__(localId, baseDir)
         self.phenotypeAssocationSet = self.getDataModelInstance(localId,
                                                                 baseDir)
-        # TODO compare
-        pass
 
     def getDataModelInstance(self, localId, dataPath):
         return g2p.PhenotypeAssociationSet(self._dataset, localId, dataPath)
