@@ -235,6 +235,91 @@ class AbstractDataRepository(object):
                     featureSet.getId(),
                     sep="\t")
 
+    def allReferences(self):
+        """
+        Return an iterator over all references in the data repo
+        """
+        for referenceSet in self.getReferenceSets():
+            for reference in referenceSet.getReferences():
+                yield reference
+
+    def allBioSamples(self):
+        """
+        Return an iterator over all biosamples in the data repo
+        """
+        for dataset in self.getDatasets():
+            for bioSample in dataset.getBioSamples():
+                yield bioSample
+
+    def allIndividuals(self):
+        """
+        Return an iterator over all individuals in the data repo
+        """
+        for dataset in self.getDatasets():
+            for individual in dataset.getIndividuals():
+                yield individual
+
+    def allReadGroupSets(self):
+        """
+        Return an iterator over all read group sets in the data repo
+        """
+        for dataset in self.getDatasets():
+            for readGroupSet in dataset.getReadGroupSets():
+                yield readGroupSet
+
+    def allReadGroups(self):
+        """
+        Return an iterator over all read groups in the data repo
+        """
+        for dataset in self.getDatasets():
+            for readGroupSet in dataset.getReadGroupSets():
+                for readGroup in readGroupSet.getReadGroups():
+                    yield readGroup
+
+    def allVariantSets(self):
+        """
+        Return an iterator over all read variant sets in the data repo
+        """
+        for dataset in self.getDatasets():
+            for variantSet in dataset.getVariantSets():
+                yield variantSet
+
+    def allFeatureSets(self):
+        """
+        Return an iterator over all feature sets in the data repo
+        """
+        for dataset in self.getDatasets():
+            for featureSet in dataset.getFeatureSets():
+                yield featureSet
+
+    def allFeatures(self):
+        """
+        Return an iterator over all features in the data repo
+        """
+        for dataset in self.getDatasets():
+            for featureSet in dataset.getFeatureSets():
+                for feature in featureSet.getFeatures():
+                    yield feature
+
+    def allCallSets(self):
+        """
+        Return an iterator over all call sets in the data repo
+        """
+        for dataset in self.getDatasets():
+            for variantSet in dataset.getVariantSets():
+                for callSet in variantSet.getCallSets():
+                    yield callSet
+
+    def allVariantAnnotationSets(self):
+        """
+        Return an iterator over all variant annotation sets
+        in the data repo
+        """
+        for dataset in self.getDatasets():
+            for variantSet in dataset.getVariantSets():
+                for vaSet in variantSet.getVariantAnnotationSets():
+                    yield vaSet
+
 
 class EmptyDataRepository(AbstractDataRepository):
     """

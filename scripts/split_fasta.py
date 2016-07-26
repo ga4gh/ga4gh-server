@@ -70,6 +70,8 @@ def indexSplits(compressedFileNames):
 
 @utils.Timed()
 def main():
+    requiredExecutables = ['gunzip', 'bgzip', 'samtools']
+    utils.requireExecutables(requiredExecutables)
     args = parseArgs()
     fastaFileName = decompressFasta(args)
     splitFileNames = splitFasta(fastaFileName)

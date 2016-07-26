@@ -23,8 +23,8 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     """
     def setUp(self):
         self.httpClient = client.HttpClient("http://example.com")
-        self.httpClient._runSearchRequest = mock.Mock()
-        self.httpClient._runGetRequest = mock.Mock()
+        self.httpClient._run_search_request = mock.Mock()
+        self.httpClient._run_get_request = mock.Mock()
         self.objectId = "SomeId"
         self.objectName = "objectName"
         self.datasetId = "datasetId"
@@ -47,7 +47,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.referenceName = "referenceName"
         self.callSetIds = ["id1", "id2"]
         self.pageSize = 1000
-        self.httpClient.setPageSize(self.pageSize)
+        self.httpClient.set_page_size(self.pageSize)
         self.assemblyId = "assemblyId"
         self.accession = "accession"
         self.md5checksum = "md5checksum"
@@ -60,10 +60,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     def testSetPageSize(self):
         testClient = client.AbstractClient()
         # pageSize is None by default
-        self.assertIsNone(testClient.getPageSize())
+        self.assertIsNone(testClient.get_page_size())
         for pageSize in [1, 10, 100]:
-            testClient.setPageSize(pageSize)
-            self.assertEqual(testClient.getPageSize(), pageSize)
+            testClient.set_page_size(pageSize)
+            self.assertEqual(testClient.get_page_size(), pageSize)
 
     def testSearchVariants(self):
         request = protocol.SearchVariantsRequest()
@@ -73,33 +73,33 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.variant_set_id = self.variantSetId
         request.call_set_ids.extend(self.callSetIds)
         request.page_size = self.pageSize
-        self.httpClient.searchVariants(
+        self.httpClient.search_variants(
             self.variantSetId, start=self.start, end=self.end,
-            referenceName=self.referenceName, callSetIds=self.callSetIds)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+            reference_name=self.referenceName, call_set_ids=self.callSetIds)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "variants", protocol.SearchVariantsResponse)
 
     def testSearchDatasets(self):
         request = protocol.SearchDatasetsRequest()
         request.page_size = self.pageSize
-        self.httpClient.searchDatasets()
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient.search_datasets()
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "datasets", protocol.SearchDatasetsResponse)
 
     def testSearchVariantSets(self):
         request = protocol.SearchVariantSetsRequest()
         request.dataset_id = self.datasetId
         request.page_size = self.pageSize
-        self.httpClient.searchVariantSets(self.datasetId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient.search_variant_sets(self.datasetId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "variantsets", protocol.SearchVariantSetsResponse)
 
     def testSearchVariantAnnotationSets(self):
         request = protocol.SearchVariantAnnotationSetsRequest()
         request.variant_set_id = self.variantSetId
         request.page_size = self.pageSize
-        self.httpClient.searchVariantAnnotationSets(self.variantSetId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient.search_variant_annotation_sets(self.variantSetId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "variantannotationsets",
             protocol.SearchVariantAnnotationSetsResponse)
 
@@ -111,24 +111,24 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.reference_id = self.referenceId
         request.start = self.start
         request.end = self.end
-        self.httpClient.searchVariantAnnotations(
+        self.httpClient.search_variant_annotations(
             self.variantAnnotationSetId,
-            referenceName=self.referenceName,
+            reference_name=self.referenceName,
             start=self.start,
             end=self.end,
             effects=[],
-            referenceId=self.referenceId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+            reference_id=self.referenceId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "variantannotations",
             protocol.SearchVariantAnnotationsResponse)
         with self.assertRaises(exceptions.BadRequestException):
-            self.httpClient.searchVariantAnnotations(
+            self.httpClient.search_variant_annotations(
                 self.variantAnnotationSetId,
-                referenceName=self.referenceName,
+                reference_name=self.referenceName,
                 start=self.start,
                 end=self.end,
                 effects=[{"term": "just a term"}, {"id": "an id"}],
-                referenceId=self.referenceId)
+                reference_id=self.referenceId)
 
     def testSearchFeatures(self):
         request = protocol.SearchFeaturesRequest()
@@ -141,20 +141,20 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.name = self.objectName
         request.gene_symbol = self.geneSymbol
         request.feature_types.append(self.feature)
-        self.httpClient.searchFeatures(
-            self.featureSetId, parentId=self.parentId,
-            referenceName=self.referenceName, start=self.start,
-            end=self.end, featureTypes=[self.feature],
-            name=self.objectName, geneSymbol=self.geneSymbol)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient.search_features(
+            self.featureSetId, parent_id=self.parentId,
+            reference_name=self.referenceName, start=self.start,
+            end=self.end, feature_types=[self.feature],
+            name=self.objectName, gene_symbol=self.geneSymbol)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "features", protocol.SearchFeaturesResponse)
 
     def testSearchFeatureSets(self):
         request = protocol.SearchFeatureSetsRequest()
         request.dataset_id = self.datasetId
         request.page_size = self.pageSize
-        self.httpClient.searchFeatureSets(self.datasetId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient.search_feature_sets(self.datasetId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "featuresets", protocol.SearchFeatureSetsResponse)
 
     def testSearchReferenceSets(self):
@@ -163,10 +163,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.accession = self.accession
         request.md5checksum = self.md5checksum
         request.assembly_id = self.assemblyId
-        self.httpClient.searchReferenceSets(
+        self.httpClient.search_reference_sets(
             accession=self.accession, md5checksum=self.md5checksum,
-            assemblyId=self.assemblyId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+            assembly_id=self.assemblyId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "referencesets", protocol.SearchReferenceSetsResponse)
 
     def testSearchReferences(self):
@@ -175,10 +175,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.page_size = self.pageSize
         request.accession = self.accession
         request.md5checksum = self.md5checksum
-        self.httpClient.searchReferences(
+        self.httpClient.search_references(
             self.referenceSetId, accession=self.accession,
             md5checksum=self.md5checksum)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "references", protocol.SearchReferencesResponse)
 
     def testSearchReadGroupSets(self):
@@ -187,11 +187,11 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.name = self.objectName
         request.bio_sample_id = self.bioSampleId
         request.page_size = self.pageSize
-        self.httpClient.searchReadGroupSets(
+        self.httpClient.search_read_group_sets(
             self.datasetId,
             name=self.objectName,
-            bioSampleId=self.bioSampleId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+            bio_sample_id=self.bioSampleId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
     def testSearchCallSets(self):
@@ -200,11 +200,11 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.name = self.objectName
         request.bio_sample_id = self.bioSampleId
         request.page_size = self.pageSize
-        self.httpClient.searchCallSets(
+        self.httpClient.search_call_sets(
             self.variantSetId,
             name=self.objectName,
-            bioSampleId=self.bioSampleId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+            bio_sample_id=self.bioSampleId)
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "callsets", protocol.SearchCallSetsResponse)
 
     def testSearchReads(self):
@@ -214,10 +214,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.start = self.start
         request.end = self.end
         request.page_size = self.pageSize
-        self.httpClient.searchReads(
-            self.readGroupIds, referenceId=self.referenceId,
+        self.httpClient.search_reads(
+            self.readGroupIds, reference_id=self.referenceId,
             start=self.start, end=self.end)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "reads", protocol.SearchReadsResponse)
 
     def testSearchExpressionLevels(self):
@@ -267,9 +267,9 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.name = self.bioSampleName
         request.individual_id = self.individualId
         request.page_size = self.pageSize
-        self.httpClient.searchBioSamples(
+        self.httpClient.search_bio_samples(
             self.datasetId, self.bioSampleName, self.individualId)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "biosamples", protocol.SearchBioSamplesResponse)
 
     def testSearchIndividuals(self):
@@ -277,65 +277,65 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.dataset_id = self.datasetId
         request.name = self.individualName
         request.page_size = self.pageSize
-        self.httpClient.searchIndividuals(
+        self.httpClient.search_individuals(
             self.datasetId, self.individualName)
-        self.httpClient._runSearchRequest.assert_called_once_with(
+        self.httpClient._run_search_request.assert_called_once_with(
             request, "individuals", protocol.SearchIndividualsResponse)
 
     def testGetReferenceSet(self):
-        self.httpClient.getReferenceSet(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_reference_set(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "referencesets", protocol.ReferenceSet, self.objectId)
 
     def testGetVariantAnnotationSet(self):
-        self.httpClient.getVariantAnnotationSet(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_variant_annotation_set(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "variantannotationsets", protocol.VariantAnnotationSet,
             self.objectId)
 
     def testGetVariantSet(self):
-        self.httpClient.getVariantSet(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_variant_set(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "variantsets", protocol.VariantSet, self.objectId)
 
     def testGetReference(self):
-        self.httpClient.getReference(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_reference(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "references", protocol.Reference, self.objectId)
 
     def testGetReadGroupSets(self):
-        self.httpClient.getReadGroupSet(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_read_group_set(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "readgroupsets", protocol.ReadGroupSet, self.objectId)
 
     def testGetReadGroup(self):
-        self.httpClient.getReadGroup(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_read_group(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "readgroups", protocol.ReadGroup, self.objectId)
 
     def testGetCallSets(self):
-        self.httpClient.getCallSet(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_call_set(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "callsets", protocol.CallSet, self.objectId)
 
     def testGetDatasets(self):
-        self.httpClient.getDataset(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_dataset(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "datasets", protocol.Dataset, self.objectId)
 
     def testGetVariant(self):
-        self.httpClient.getVariant(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_variant(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "variants", protocol.Variant, self.objectId)
 
     def testGetBioSample(self):
-        self.httpClient.getBioSample(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_bio_sample(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "biosamples", protocol.BioSample, self.objectId)
 
     def testGetIndividual(self):
-        self.httpClient.getIndividual(self.objectId)
-        self.httpClient._runGetRequest.assert_called_once_with(
+        self.httpClient.get_individual(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
             "individuals", protocol.Individual, self.objectId)
 
     def testGetRnaQuantificationSet(self):
@@ -358,6 +358,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient.getFeatureGroup(self.objectId)
         self.httpClient._runGetRequest.assert_called_once_with(
             "featuregroups", protocol.FeatureGroup, self.objectId)
+
+    # def testGetFeatureSet(self):  # TODO
+
+    # def testGetFeature(self):  # TODO
 
 
 class DatamodelObjectWrapper(object):
@@ -479,7 +483,7 @@ class DummyHttpClient(client.HttpClient):
         self._urlPrefix = "http://example.com"
         super(DummyHttpClient, self).__init__(self._urlPrefix)
         self._session = DummyRequestsSession(backend, self._urlPrefix)
-        self._setupHttpSession()
+        self._setup_http_session()
 
 
 class ExhaustiveListingsMixin(object):
@@ -512,37 +516,37 @@ class ExhaustiveListingsMixin(object):
             self.assertEqual(gaObject, otherGaObject)
 
     def testAllDatasets(self):
-        datasets = list(self.client.searchDatasets())
+        datasets = list(self.client.search_datasets())
         self.verifyObjectList(
-            datasets, self.dataRepo.getDatasets(), self.client.getDataset)
+            datasets, self.dataRepo.getDatasets(), self.client.get_dataset)
 
     def testAllReferenceSets(self):
-        referenceSets = list(self.client.searchReferenceSets())
+        referenceSets = list(self.client.search_reference_sets())
         self.verifyObjectList(
             referenceSets, self.dataRepo.getReferenceSets(),
-            self.client.getReferenceSet)
+            self.client.get_reference_set)
 
     def testAllReferences(self):
-        for referenceSet in self.client.searchReferenceSets():
-            references = list(self.client.searchReferences(referenceSet.id))
+        for referenceSet in self.client.search_reference_sets():
+            references = list(self.client.search_references(referenceSet.id))
             datamodelReferences = self.dataRepo.getReferenceSet(
                 referenceSet.id).getReferences()
             self.verifyObjectList(
-                references, datamodelReferences, self.client.getReference)
+                references, datamodelReferences, self.client.get_reference)
             for datamodelReference in datamodelReferences:
-                bases = self.client.listReferenceBases(
+                bases = self.client.list_reference_bases(
                     datamodelReference.getId())
                 otherBases = datamodelReference.getBases(
                     0, datamodelReference.getLength())
                 self.assertEqual(bases, otherBases)
 
     def testAllVariantSets(self):
-        for dataset in self.client.searchDatasets():
-            variantSets = list(self.client.searchVariantSets(dataset.id))
+        for dataset in self.client.search_datasets():
+            variantSets = list(self.client.search_variant_sets(dataset.id))
             datamodelVariantSets = self.dataRepo.getDataset(
                 dataset.id).getVariantSets()
             self.verifyObjectList(
-                variantSets, datamodelVariantSets, self.client.getVariantSet)
+                variantSets, datamodelVariantSets, self.client.get_variant_set)
 
     def testAllVariants(self):
         for datamodelDataset in self.dataRepo.getDatasets():
@@ -552,31 +556,32 @@ class ExhaustiveListingsMixin(object):
                 start = 0
                 end = 20
                 referenceName = "fixme"
-                variants = list(self.client.searchVariants(
+                variants = list(self.client.search_variants(
                     datamodelVariantSet.getId(), start=start, end=end,
-                    referenceName=referenceName))
+                    reference_name=referenceName))
                 datamodelVariants = [
                     DatamodelObjectWrapper(variant) for variant in
                     datamodelVariantSet.getVariants(
                         referenceName, start, end)]
                 self.verifyObjectList(
-                    variants, datamodelVariants, self.client.getVariant)
+                    variants, datamodelVariants, self.client.get_variant)
 
     def testAllReadGroupSets(self):
-        for dataset in self.client.searchDatasets():
-            readGroupSets = list(self.client.searchReadGroupSets(dataset.id))
+        for dataset in self.client.search_datasets():
+            readGroupSets = list(
+                self.client.search_read_group_sets(dataset.id))
             datamodelReadGroupSets = self.dataRepo.getDataset(
                 dataset.id).getReadGroupSets()
             self.verifyObjectList(
                 readGroupSets, datamodelReadGroupSets,
-                self.client.getReadGroupSet)
+                self.client.get_read_group_set)
             # Check the readGroups.
             for readGroupSet, datamodelReadGroupSet in zip(
                     readGroupSets, datamodelReadGroupSets):
                 datamodelReadGroups = datamodelReadGroupSet.getReadGroups()
                 self.verifyObjectList(
                     readGroupSet.read_groups, datamodelReadGroups,
-                    self.client.getReadGroup)
+                    self.client.get_read_group)
 
     def testAllReads(self):
         for dmDataset in self.dataRepo.getDatasets():
@@ -589,7 +594,7 @@ class ExhaustiveListingsMixin(object):
                         end = 10
                         dmReads = list(dmReadGroup.getReadAlignments(
                             dmReference, start, end))
-                        reads = list(self.client.searchReads(
+                        reads = list(self.client.search_reads(
                             [dmReadGroup.getId()], dmReference.getId(),
                             start, end))
                         self.assertGreater(len(reads), 0)
@@ -651,7 +656,7 @@ class PagingMixin(object):
         """
         Verifies that we correctly return all references.
         """
-        references = list(self.client.searchReferences(
+        references = list(self.client.search_references(
             self.datamodelReferenceSet.getId()))
         self.assertEqual(references, self.references)
 
@@ -659,8 +664,8 @@ class PagingMixin(object):
         self.verifyAllReferences()
 
     def verifyPageSize(self, pageSize):
-        self.client.setPageSize(pageSize)
-        self.assertEqual(pageSize, self.client.getPageSize())
+        self.client.set_page_size(pageSize)
+        self.assertEqual(pageSize, self.client.get_page_size())
         self.verifyAllReferences()
 
     def testPageSize1(self):

@@ -290,15 +290,17 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
 
     def _removeNonMatchingTranscriptEffects(self, ann):
         newTxE = []
+        oldTxE = ann.transcript_effects
         if len(self._effects) == 0:
             return ann
-        for txe in ann.transcript_effects:
+        for txe in oldTxE:
             add = False
             for effect in txe.effects:
                 if self._matchAnyEffects(effect):
                     add = True
             if add:
                 newTxE.append(txe)
+        ann.ClearField('transcript_effects')
         ann.transcript_effects.extend(newTxE)
         return ann
 
