@@ -389,7 +389,9 @@ class G2PUtility(object):
         evidence.evidence_type.MergeFrom(term)
 
         evidence.description = self._getIdentifier(association['evidence'])
-        # TODO there is nowhere in evidence to place list of sources?
+        # Store publications list of sources
+        for source in association['sources'].split("|"):
+            evidence.info['publications'].values.add().string_value = source
         fpa.evidence.extend([evidence])
 
         # map environment (drug)
@@ -519,9 +521,6 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
                       protocol.SearchGenotypePhenotypeRequest):
             filters += self._filterSearchGenotypePhenotypeRequest(request,
                                                                   featureSets)
-
-        if issubclass(request.__class__, protocol.SearchGenotypesRequest):
-            filters += self._filterSearchGenotypesRequest(request)
 
         if issubclass(request.__class__, protocol.SearchPhenotypesRequest):
             filters += self._filterSearchPhenotypesRequest(request)
