@@ -463,7 +463,6 @@ class TestG2P(unittest.TestCase):
         obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
                                                          featureSet.name,
                                                          featureId)
-        print(obfuscated)
         request.feature_ids.extend([obfuscated])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',

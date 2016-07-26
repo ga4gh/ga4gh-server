@@ -1163,13 +1163,6 @@ class Backend(object):
             protocol.SearchPhenotypesResponse,
             self.phenotypesGenerator)
 
-# TODO Remove
-    # def runSearchGenotypes(self, request):
-    #     return self.runSearchRequest(
-    #         request, protocol.SearchGenotypesRequest,
-    #         protocol.SearchGenotypesResponse,
-    #         self.genotypesGenerator)
-
     def runSearchPhenotypeAssociationSets(self, request):
         return self.runSearchRequest(
             request, protocol.SearchPhenotypeAssociationSetsRequest,
