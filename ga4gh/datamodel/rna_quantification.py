@@ -18,8 +18,8 @@ import ga4gh.sqliteBackend as sqliteBackend
     directory.
 
     The sqlite .db file has 2 tables:
-    RNAQUANTIFICATION : contains rnaQuantification data
-    EXPRESSION : contains feature level expression data
+    RnaQuantification : contains rnaQuantification data
+    Expression : contains feature level expression data
 
     Desired GA4GH objects will be generated on the fly by the dictionaries
     returned by database queries and sent to the backend.
@@ -432,7 +432,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         :param rnaQuantificationId: string restrict search by id
         :return an array of dictionaries, representing the returned data.
         """
-        sql = ("SELECT * FROM RNAQUANTIFICATION")
+        sql = ("SELECT * FROM RnaQuantification")
         sql_args = ()
         if len(rnaQuantificationId) > 0:
             sql += " WHERE id = ? "
@@ -451,7 +451,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         :return: dictionary representing an RnaQuantification object,
             or None if no match is found.
         """
-        sql = ("SELECT * FROM RNAQUANTIFICATION WHERE id = ?")
+        sql = ("SELECT * FROM RnaQuantification WHERE id = ?")
         query = self._dbconn.execute(sql, (rnaQuantificationId,))
         try:
             return sqliteBackend.sqliteRow2Dict(query.fetchone())
@@ -472,7 +472,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         :param threshold: float minimum expression values to return
         :return an array of dictionaries, representing the returned data.
         """
-        sql = ("SELECT * FROM EXPRESSION WHERE "
+        sql = ("SELECT * FROM Expression WHERE "
                "rna_quantification_id = ? "
                "AND expression >= ? ")
         sql_args = (rnaQuantId, threshold)
@@ -496,7 +496,7 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         :return: dictionary representing an ExpressionLevel object,
             or None if no match is found.
         """
-        sql = ("SELECT * FROM EXPRESSION WHERE id = ?")
+        sql = ("SELECT * FROM Expression WHERE id = ?")
         query = self._dbconn.execute(sql, (expressionId,))
         try:
             return sqliteBackend.sqliteRow2Dict(query.fetchone())
