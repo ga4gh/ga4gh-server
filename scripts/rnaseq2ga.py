@@ -1,14 +1,15 @@
 """
-    Script to parse the output file produced by cufflinks.
+Script to parse the output file produced by cufflinks.
 """
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import sys
 import sqlite3
 import argparse
+
+import utils
 
 
 class RNASqliteStore(object):
@@ -20,7 +21,6 @@ class RNASqliteStore(object):
         # TODO: check to see if the rnaQuantId is in the db and exit if it is
         # since this is a generator and not an updater
         sqlFilePath = sqliteFileName
-        print(sqlFilePath)
         self._dbConn = sqlite3.connect(sqlFilePath)
         self._cursor = self._dbConn.cursor()
         self.createTables(self._cursor)
@@ -32,14 +32,14 @@ class RNASqliteStore(object):
 
     def createTables(self, cursor):
         # annotationIds is a comma separated list
-        cursor.execute('''CREATE TABLE RNAQUANTIFICATION (
+        cursor.execute('''CREATE TABLE RnaQuantification (
                        id text,
                        feature_set_ids text,
                        description text,
                        name text,
                        read_group_ids text,
                        programs text)''')
-        cursor.execute('''CREATE TABLE EXPRESSION (
+        cursor.execute('''CREATE TABLE Expression (
                        id text,
                        rna_quantification_id text,
                        name text,
@@ -260,8 +260,7 @@ def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv",
             elif rnaType == "rsem":
                 writer = RsemWriter(rnaDB, featureType=featureType)
             else:
-                print("Unknown RNA file type: {}".format(rnaType))
-                sys.exit(1)
+                raise Exception("Unknown RNA file type: {}".format(rnaType))
             rnaQuantId = fields[0].strip()
             quantFilename = os.path.join(dataFolder, fields[1].strip())
             readGroupIds = fields[4].strip()
@@ -272,8 +271,6 @@ def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv",
                              readGroupId=readGroupIds, programs=programs)
             quantFile = open(quantFilename, "r")
             writeExpressionTable(writer, [(rnaQuantId, quantFile)])
-
-    print("DONE")
 
 
 def parseArgs():
@@ -293,12 +290,13 @@ def parseArgs():
         default="rna_control_file.tsv")
     parser.add_argument('--verbose', '-v', action='count', default=0)
     args = parser.parse_args()
-    return (args.inputDir, args.outputFile, args.controlFile)
+    return args
 
 
+@utils.Timed()
 def main():
-    (inputDir, outputFile, controlFile) = parseArgs()
-    rnaseq2ga(inputDir, outputFile, controlFile)
+    args = parseArgs()
+    rnaseq2ga(args.inputDir, args.outputFile, args.controlFile)
 
 
 if __name__ == '__main__':
