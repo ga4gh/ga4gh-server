@@ -255,6 +255,10 @@ class TestClientArguments(unittest.TestCase):
         self.verifyGetArguments(
             "variants-get", cli.GetVariantRunner)
 
+    def testRnaQuantificationGetArguments(self):
+        self.verifyGetArguments(
+            "rnaquantifications-get", cli.GetRnaQuantificationRunner)
+
     def testReferenceBasesListArguments(self):
         cliInput = (
             "references-list-bases BASEURL ID --start 1 --end 2 "
@@ -305,6 +309,33 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.id, "VARIANTANNOTATIONSETID")
         self.assertEquals(
             args.runner, cli.GetVariantAnnotationSetRunner)
+
+    def testRnaQuantificationSearchArguments(self):
+        cliInput = (
+            "rnaquantifications-search --rnaQuantificationSetId ID BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.rnaQuantificationSetId, "ID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.runner, cli.SearchRnaQuantificationsRunner)
+
+    def testExpressionLevelSearchArguments(self):
+        cliInput = (
+            "expressionlevels-search --rnaQuantificationId rID "
+            "--featureGroupId fID --threshold 0.0 BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.rnaQuantificationId, "rID")
+        self.assertEqual(args.featureGroupId, "fID")
+        self.assertEqual(args.threshold, 0.0)
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.runner, cli.SearchExpressionLevelsRunner)
+
+    def testFeatureGroupSearchArguments(self):
+        cliInput = (
+            "featuregroups-search --datasetId DATASETID BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.datasetId, "DATASETID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.runner, cli.SearchFeatureGroupsRunner)
 
     # def testVariantSetsGet(self):  # TODO
 

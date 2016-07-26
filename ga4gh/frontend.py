@@ -176,6 +176,13 @@ class ServerStatus(object):
                 variantSet.getVariantAnnotationSets())
         return variantAnnotationSets
 
+    def getRnaQuantificationSets(self, datasetId):
+        """
+        Returns the list of RnaQuantificationSets for this server.
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getRnaQuantificationSets()
+
 
 def reset():
     """
@@ -605,6 +612,30 @@ def getIndividual(id):
         id, flask.request, app.backend.runGetIndividual)
 
 
+@DisplayedRoute('/rnaquantificationsets/search', postMethod=True)
+def searchRnaQuantificationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchRnaQuantificationSets)
+
+
+@DisplayedRoute('/rnaquantifications/search', postMethod=True)
+def searchRnaQuantifications():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchRnaQuantifications)
+
+
+@DisplayedRoute('/expressionlevels/search', postMethod=True)
+def searchExpressionLevels():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchExpressionLevels)
+
+
+@DisplayedRoute('/featuregroups/search', postMethod=True)
+def searchFeatureGroups():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatureGroups)
+
+
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
@@ -657,6 +688,38 @@ def getFeatureSet(id):
 def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
+
+
+@DisplayedRoute(
+    '/rnaquantificationsets/<no(search):id>',
+    pathDisplay='/rnaquantificationsetss/<id>')
+def getRnaQuantificationSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetRnaQuantificationSet)
+
+
+@DisplayedRoute(
+    '/rnaquantifications/<no(search):id>',
+    pathDisplay='/rnaquantifications/<id>')
+def getRnaQuantification(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetRnaQuantification)
+
+
+@DisplayedRoute(
+    '/expressionlevels/<no(search):id>',
+    pathDisplay='/expressionlevels/<id>')
+def getExpressionLevel(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetExpressionLevel)
+
+
+@DisplayedRoute(
+    '/featuregroups/<no(search):id>',
+    pathDisplay='/featuregroups/<id>')
+def getFeatureGroup(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetFeatureGroup)
 
 
 @app.route('/oauth2callback', methods=['GET'])

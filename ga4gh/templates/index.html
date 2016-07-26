@@ -147,6 +147,17 @@
                     {% endfor %}
                     {% endfor %}
                 </table>
+                <h6>RnaQuantificationSets</h6>
+                <table class="table table-striped">
+                    <th>Name</th>
+                    <th>Id</th>
+                    {% for rnaQuantificationSet in info.getRnaQuantificationSets(dataset.getId()) %}
+                    <tr>
+                    <td>{{ rnaQuantificationSet.getLocalId() }}</td>
+                    <td>{{ rnaQuantificationSet.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
             {% endfor %}
         </div>
     </div></body>
