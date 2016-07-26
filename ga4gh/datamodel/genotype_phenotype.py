@@ -382,7 +382,7 @@ class G2PUtility(object):
         evidence.evidence_type.MergeFrom(term)
 
         evidence.description = self._getIdentifier(association['evidence'])
-        # TODO there is nowhere in evidence to place list of sources?
+        # Store publications list of sources
         for source in association['sources'].split("|"):
             evidence.info['publications'].values.add().string_value = source
         fpa.evidence.extend([evidence])
