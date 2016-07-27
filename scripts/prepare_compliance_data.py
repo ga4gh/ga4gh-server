@@ -14,7 +14,6 @@ import shutil
 import json
 import pysam
 import utils
-import sys
 import generate_gff3_db
 import rnaseq2ga
 import tempfile
@@ -233,8 +232,6 @@ class ComplianceDataMunger(object):
             self.inputDirectory, rnaDbName, featureType="transcript")
 
         self.repo.commit()
-
-        print("Done converting compliance data.", file=sys.stderr)
 
     def addVariantSet(self,
                       variantFileName,

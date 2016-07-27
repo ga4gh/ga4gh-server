@@ -692,7 +692,7 @@ def getFeature(id):
 
 @DisplayedRoute(
     '/rnaquantificationsets/<no(search):id>',
-    pathDisplay='/rnaquantificationsetss/<id>')
+    pathDisplay='/rnaquantificationsets/<id>')
 def getRnaQuantificationSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetRnaQuantificationSet)
