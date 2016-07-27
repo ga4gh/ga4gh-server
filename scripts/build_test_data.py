@@ -58,7 +58,19 @@ def buildTestData(dataDirectory='tests/data', relativePaths=False):
     for j, dataFile in enumerate(glob.glob(pattern)):
         run(
             "add-featureset", repoFile, datasetName, useRelativePath,
-            dataFile, "-R NCBI37", "-O", sequenceOntologyName)
+            dataFile, "-R NCBI37", "-O", sequenceOntologyName,
+            "-C ga4gh.datamodel.sequenceAnnotations.Gff3DbFeatureSet")
+
+    pattern = os.path.join(prefix, "datasets/dataset1/phenotypes", "*")
+    for dataFile in glob.glob(pattern):
+        # coordinate featureset name and g2p name
+        name = dataFile.split("/")[-1]
+        run("add-g2p", repoFile, dataFile, datasetName, "-n {}".format(name))
+        run(
+            "add-featureset", repoFile, datasetName, useRelativePath,
+            dataFile, "-R NCBI37",  "-O", sequenceOntologyName,
+            "-C ga4gh.datamodel.genotype_phenotype_featureset."
+            "PhenotypeAssociationFeatureSet")
 
 
 def parseArgs():
@@ -77,6 +89,11 @@ def parseArgs():
 def main():
     args = parseArgs()
     buildTestData(args.data_directory, args.relativePaths)
+
+    # TODO -remove ?
+    # pattern = os.path.join(prefix, "datasets/dataset1/phenotypes", "*")
+    # for dataFile in glob.glob(pattern):
+    #     run("add-g2p", repoFile, dataFile, datasetName)
 
 
 if __name__ == "__main__":
