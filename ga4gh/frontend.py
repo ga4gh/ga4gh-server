@@ -437,7 +437,13 @@ def handleFlaskPostRequest(flaskRequest, endpoint):
     Invokes the specified endpoint to generate a response.
     """
     if flaskRequest.method == "POST":
-        return handleHttpPost(flaskRequest, endpoint)
+        try:
+            return handleHttpPost(flaskRequest, endpoint)
+        except Exception as e:
+            import sys
+            import traceback
+            traceback.print_exc(file=sys.stdout)
+            raise e
     elif flaskRequest.method == "OPTIONS":
         return handleHttpOptions()
     else:
@@ -733,6 +739,40 @@ def getDataset(id):
 def getVariantAnnotationSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetVariantAnnotationSet)
+
+# G2P API endpoints as proposed in
+# https://github.com/ohsu-computational-biology/schemas/blob/apichanges/doc/source/api/proposed_schema_changes.md#genotypephenotypessearch
+
+
+@DisplayedRoute(
+    '/datasets/<no(search):datasetId>/features/search',
+    pathDisplay='/datasets/<datasetId>/features/search', postMethod=True)
+def getFeaturesSearch(datasetId):
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatures)
+
+
+@DisplayedRoute(
+    '/phenotypes/search',
+    postMethod=True)
+def getPhenotypesSearch():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypes)
+
+
+@DisplayedRoute(
+    '/genotypephenotypes/search',
+    postMethod=True)
+def getGenotypePhenotypesSearch():
+    return handleFlaskPostRequest(
+        flask.request,
+        app.backend.runSearchGenotypePhenotypes)
+
+
+@DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+def searchPhenotypeAssociationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypeAssociationSets)
 
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html

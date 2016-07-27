@@ -38,6 +38,7 @@ import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.bio_metadata as biodata
+import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -1780,6 +1781,22 @@ class RepoManager(object):
         ontology.populateFromFile(filePath)
         self._updateRepo(self._repo.insertOntology, ontology)
 
+    def addPhenotypeAssociationSet(self):
+        """
+        Adds a new Ontology to this repo.
+        """
+        self._openRepo()
+        name = self._args.name
+        if name is None:
+            name = getNameFromPath(self._args.registryPath)
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        # parentContainer, localId, dataDir
+        phenotypeAssociationSet = \
+            genotype_phenotype \
+            .PhenotypeAssociationSet(dataset, name, self._args.filePath)
+        self._updateRepo(self._repo.insertPhenotypeAssociationSet,
+                         phenotypeAssociationSet)
+
     def addDataset(self):
         """
         Adds a new dataset into this repo.
@@ -2109,6 +2126,17 @@ class RepoManager(object):
             "datasetName", help="the name of the dataset")
 
     @classmethod
+    def addClassNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the class used to "
+            "fetch features in this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "-C", "--className",
+            default="ga4gh.datamodel.sequenceAnnotations.Gff3DbFeatureSet",
+            help=helpText)
+
+    @classmethod
     def addReferenceSetNameOption(cls, subparser, objectType):
         helpText = (
             "the name of the reference set to associate with this {}"
@@ -2370,6 +2398,7 @@ class RepoManager(object):
             "data")
         cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
         cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
+        cls.addClassNameOption(addFeatureSetParser, "feature set")
 
         removeFeatureSetParser = addSubparser(
             subparsers, "remove-featureset",
@@ -2413,6 +2442,29 @@ class RepoManager(object):
         cls.addDatasetNameArgument(removeIndividualParser)
         cls.addIndividualNameArgument(removeIndividualParser)
         cls.addForceOption(removeIndividualParser)
+
+        addPhenotypeAssociationSetParser = addSubparser(
+            subparsers, "add-g2p",
+            "Adds phenotypes in ttl format to the repo.")
+        addPhenotypeAssociationSetParser.set_defaults(
+                                         runner="addPhenotypeAssociationSet")
+        cls.addRepoArgument(addPhenotypeAssociationSetParser)
+        cls.addFilePathArgument(
+            addPhenotypeAssociationSetParser,
+            "The path of the ttl file defining phenotypes.")
+        # cls.addNameOption(addPhenotypeAssociationSetParser, "g2p")
+        cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
+        cls.addNameOption(addPhenotypeAssociationSetParser,
+                          "PhenotypeAssociationSet")
+
+        removePhenotypeAssociationSetParser = addSubparser(
+            subparsers, "remove-g2p",
+            "Remove an phenotypes from the repo")
+        removePhenotypeAssociationSetParser \
+            .set_defaults(runner="removePhenotypeAssociationSet")
+        cls.addRepoArgument(removePhenotypeAssociationSetParser)
+        cls.addNameOption(removePhenotypeAssociationSetParser, "g2p")
+
         return parser
 
     @classmethod
