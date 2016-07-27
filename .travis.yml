@@ -9,6 +9,7 @@ cache:
 
 install:
   - pip install pip --upgrade
+  - pip install setuptools==25.1.0
   - python setup.py sdist
   - pip install dist/ga4gh*.tar.gz
 # every installable in setup.py's entry_points should be tested here
