@@ -324,25 +324,6 @@ class PhenotypeAssociationCompoundId(CompoundId):
         ('phenotypeAssociationId', 2)]
 
 
-class PhenotypeAssociationSetCompoundId(CompoundId):
-    """
-    The compound id for a data set
-    """
-    fields = DatasetCompoundId.fields + ['phenotypeAssociationSet']
-    containerIds = DatasetCompoundId.containerIds + [
-        ('phenotypeAssociationSetId', 1)]
-
-
-class PhenotypeAssociationCompoundId(CompoundId):
-    """
-    The compound id for a data set
-    """
-    fields = PhenotypeAssociationSetCompoundId.fields + [
-        'phenotypeAssociation']
-    containerIds = PhenotypeAssociationSetCompoundId.containerIds + [
-        ('phenotypeAssociationId', 2)]
-
-
 class VariantSetCompoundId(DatasetCompoundId):
     """
     The compound id for a variant set

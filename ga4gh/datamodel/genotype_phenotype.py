@@ -549,7 +549,7 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
                                                       _formatFeatureClause(
                                                         feature))
                                 break
-                    except Exception as e:
+                    except Exception:
                         featureFilters.append(self._formatId(
                                               "NO-FIND", 'feature'))
             if len(featureFilters) > 0:
