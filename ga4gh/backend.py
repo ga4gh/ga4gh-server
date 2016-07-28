@@ -624,7 +624,7 @@ class Backend(object):
         if set(readGroupIds) != set(request.read_group_ids):
             raise exceptions.BadRequestException(
                 "If multiple readGroupIds are specified, "
-                "they must be all of the readGroupIds in a ReadGroup")
+                "they must be all of the readGroupIds in a ReadGroupSet")
         intervalIterator = ReadsIntervalIterator(
             request, readGroupSet, reference)
         return intervalIterator
@@ -750,9 +750,9 @@ class Backend(object):
         defined by the specified request.
         """
         dataset = self.getDataRepository().getDataset(request.dataset_id)
-        # TODO: search over all rnaQuantSets
         if len(request.rna_quantification_set_id) < 1:
-            return self._noObjectGenerator()
+            raise exceptions.BadRequestException(
+                "Rna Quantification Set Id must be specified")
         else:
             compoundId = datamodel.RnaQuantificationSetCompoundId.parse(
                 request.rna_quantification_set_id)
