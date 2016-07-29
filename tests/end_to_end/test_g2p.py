@@ -44,6 +44,9 @@ class TestG2P(unittest.TestCase):
         return self.app.get(path)
 
     def getPhenotypeAssociationSetId(self):
+        """
+        Gets the dataset phenotype association set ID
+        """
         request = protocol.SearchDatasetsRequest()
         response = self.sendSearchRequest(
             "datasets/search",
@@ -96,53 +99,10 @@ class TestG2P(unittest.TestCase):
         # there should be at least one entry
         self.assertGreater(len(response.phenotype_association_sets), 0)
 
-    # def testGenotypesSearchByExternalIdentifier(self):
-    #     request = protocol.SearchGenotypesRequest()
-    #     request.phenotype_association_set_id = \
-    #        self.getPhenotypeAssociationSetId()
-    #     # setup the external identifiers query
-    #     extid = protocol.ExternalIdentifier()
-    #     # http://www.ncbi.nlm.nih.gov/SNP/121908585
-    #     extid.identifier = "121908585"
-    #     extid.version = "*"
-    #     extid.database = "dbSNP"
-    #     request.external_identifiers.extend([extid])
-    #     response = self.sendSearchRequest(
-    #         '/genotypes/search',
-    #         request,
-    #         protocol.SearchGenotypesResponse)
-    #     self.assertEqual(1, len(response.genotypes))
-
-    # def testFindFeatureExternalIdentifier(self):
-    #     request = protocol.SearchGenotypesRequest()
-    #     request.phenotype_association_set_id = \
-    #       self.getPhenotypeAssociationSetId()
-    #     # setup the external identifiers query
-    #     extid = protocol.ExternalIdentifier()
-    #     # http://www.ncbi.nlm.nih.gov/SNP/121908585
-    #     extid.identifier = "121908585"
-    #     extid.version = "*"
-    #     extid.database = "dbSNP"
-    #     request.external_identifiers.extend([extid])
-    #     response = self.sendSearchRequest(
-    #         '/genotypes/search',
-    #         request,
-    #         protocol.SearchGenotypesResponse)
-    #     self.assertEqual(1, len(response.genotypes))
-    #     genotypeId = response.genotypes[0].id
-    #
-    #     request = protocol.SearchGenotypePhenotypeRequest()
-    #     request.phenotype_association_set_id = \
-    #       self.getPhenotypeAssociationSetId()
-    #     request.genotype_ids.append(genotypeId)
-    #     response = self.sendSearchRequest(
-    #         '/genotypephenotypes/search',
-    #         request,
-    #         protocol.SearchGenotypePhenotypeResponse)
-    #     self.assertEqual(1, len(response.associations))
-    #     self.assertEqual(1, len(response.associations[0].features))
-
     def getAllDatasets(self):
+        """
+        Gets all datasets available
+        """
         path = 'datasets/search'
         request = protocol.SearchDatasetsRequest()
         responseData = self.sendSearchRequest(
@@ -150,6 +110,9 @@ class TestG2P(unittest.TestCase):
         return responseData.datasets
 
     def getAllFeatureSets(self):
+        """
+        Gets all feature sets available
+        """
         datasetId = self.getAllDatasets()[0].id
         datasetName = self.getAllDatasets()[0].name
         path = 'featuresets/search'
@@ -160,6 +123,9 @@ class TestG2P(unittest.TestCase):
         return (datasetName, responseData.feature_sets)
 
     def getCGDDataSetFeatureSet(self):
+        """
+        Gets CGD data feature set
+        """
         (datasetName, featureSets) = self.getAllFeatureSets()
         for featureSet in featureSets:
             if featureSet.name == 'cgd':
@@ -167,6 +133,9 @@ class TestG2P(unittest.TestCase):
 
     def getObfuscatedFeatureCompoundId(self, dataSetName, featureSetName,
                                        featureId):
+        """
+        Gets the obfuscated feature compound Id
+        """
         splits = [
             dataSetName,
             featureSetName,
