@@ -202,10 +202,6 @@ class TestCompoundIds(unittest.TestCase):
         return rna_quantification.AbstractExpressionLevel(
             self.getRnaQuantification(), "expressionLevel")
 
-    def getFeatureGroup(self):
-        return rna_quantification.AbstractFeatureGroup(
-            self.getDataset(), "featureGroup")
-
     def testDataset(self):
         localId = "dataset"
         cid = datamodel.DatasetCompoundId(None, localId)
@@ -519,26 +515,3 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.rna_quantification, "c")
         self.assertEqual(cid.expression_level_id, "d")
         self.verifyParseFailure(idStr, datamodel.ExpressionLevelCompoundId)
-
-    def testFeatureGroup(self):
-        featureGroup = self.getFeatureGroup()
-        dataset = featureGroup.getParentContainer()
-        localId = "featureGroup"
-        cid = datamodel.FeatureGroupCompoundId(
-            dataset.getCompoundId(), localId)
-        self.assertRaises(
-            ValueError, datamodel.FeatureGroupCompoundId,
-            dataset.getCompoundId())
-        self.assertEqual(cid.dataset, dataset.getLocalId())
-        self.assertEqual(cid.dataset_id, dataset.getId())
-        self.assertEqual(
-            cid.feature_group_id, featureGroup.getLocalId())
-
-    def testFeatureGroupParse(self):
-        idStr = '["a","b"]'
-        obfuscated = datamodel.CompoundId.obfuscate(idStr)
-        cid = datamodel.FeatureGroupCompoundId.parse(obfuscated)
-        self.assertEqual(cid.dataset, "a")
-        self.assertEqual(cid.feature_group_id, "b")
-        self.verifyParseFailure(
-            idStr, datamodel.FeatureGroupCompoundId)

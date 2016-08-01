@@ -44,7 +44,6 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         self._name = localId
         self._confIntervalLow = 0.0
         self._confIntervalHigh = 0.0
-        self._featureGroupIds = []
 
     def toProtocolElement(self):
         protocolElement = protocol.ExpressionLevel()
@@ -59,7 +58,6 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         protocolElement.score = self._score
         protocolElement.conf_interval_low = self._confIntervalLow
         protocolElement.conf_interval_high = self._confIntervalHigh
-        protocolElement.feature_group_ids.extend(self._featureGroupIds)
         return protocolElement
 
 
@@ -80,84 +78,9 @@ class ExpressionLevel(AbstractExpressionLevel):
         self._name = record["name"]
         self._confIntervalLow = record["conf_low"]
         self._confIntervalHigh = record["conf_hi"]
-        self._featureGroupIds = record["feature_group_ids"].split(",")
 
     def getName(self):
         return self._name
-
-    def getFeatureGroups(self):
-        return self._featureGroupIds
-
-
-class AbstractFeatureGroup(datamodel.DatamodelObject):
-    """
-    Class representing a single FeatureGroup in the GA4GH model.
-    """
-    compoundIdClass = datamodel.FeatureGroupCompoundId
-
-    def __init__(self, parentContainer, localId):
-        super(AbstractFeatureGroup, self).__init__(
-            parentContainer, localId)
-        self._name = localId
-        self._description = ""
-        self._feature_ids = []
-
-    def toProtocolElement(self):
-        protocolElement = protocol.FeatureGroup()
-        protocolElement.id = self.getId()
-        protocolElement.name = self._name
-        protocolElement.description = self._description
-        protocolElement.feature_ids.extend(self._feature_ids)
-
-        return protocolElement
-
-
-class FeatureGroup(AbstractFeatureGroup):
-    """
-    Class representing a single FeatureGroup in the GA4GH model.
-    """
-
-    def __init__(self, parentContainer, name):
-        super(FeatureGroup, self).__init__(
-            parentContainer, name)
-        # self._featureIds = record["feature_group_ids"].split(",")
-        # self._description = record["name"]
-
-    def getReferenceSet(self):
-        """
-        Returns the reference set associated with this FeatureGroup.
-        """
-        return self._referenceSet
-
-    def setReferenceSet(self, referenceSet):
-        """
-        Sets the reference set associated with this FeatureGroup to the
-        specified value.
-        """
-        self._referenceSet = referenceSet
-
-    def populateFromFile(self, dataUrl):
-        """
-        Populates the instance variables of this FeatureGroup from the
-        specified data URL.
-        """
-        self._dbFilePath = dataUrl
-        self._db = SqliteRNABackend(self._dbFilePath)
-
-    def populateFromRow(self, row):
-        """
-        Populates the instance variables of this FeatureGroup from the
-        specified DB row.
-        """
-        self._dbFilePath = row[b'dataUrl']
-        self._db = SqliteRNABackend(self._dbFilePath)
-
-    def getDataUrl(self):
-        """
-        Returns the URL providing the data source for this
-        RnaQuantificationSet.
-        """
-        return self._dbFilePath
 
 
 class AbstractRNAQuantificationSet(datamodel.DatamodelObject):
@@ -387,22 +310,17 @@ class RNASeqResult(AbstractRNAQuantification):
 
     def getExpressionLevels(
             self, rnaQuantID, pageToken=0, pageSize=None, expressionId="",
-            featureGroupId="", threshold=0.0):
+            threshold=0.0):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
         if len(expressionId) > 0:
             parsedId = datamodel.ExpressionLevelCompoundId.parse(expressionId)
             expressionId = parsedId.expressionLevelId
-        if len(featureGroupId) > 0:
-            parsedId = datamodel.FeatureGroupCompoundId.parse(
-                featureGroupId)
-            featureGroupId = parsedId.feature_group_id
         with self._db as dataSource:
             expressionsReturned = dataSource.searchExpressionLevelsInDb(
                 rnaQuantID, pageToken=pageToken,
                 pageSize=pageSize, expressionId=expressionId,
-                featureGroupId=featureGroupId,
                 threshold=threshold)
         return [ExpressionLevel(self, expressionEntry) for
                 expressionEntry in expressionsReturned]
@@ -461,14 +379,12 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
 
     def searchExpressionLevelsInDb(
             self, rnaQuantId, pageToken=0, pageSize=None, expressionId="",
-            featureGroupId="", threshold=0.0):
+            threshold=0.0):
         """
         :param rnaQuantId: string restrict search by quantification id
         :param pageToken: int representing first record to return
         :param pageSize: int representing number of records to return
         :param expressionId: string restrict search by expression id
-        :param featureGroupId: string restrict search by feature
-            group id
         :param threshold: float minimum expression values to return
         :return an array of dictionaries, representing the returned data.
         """
@@ -479,9 +395,6 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
         if len(expressionId) > 0:
             sql += "AND id = ? "
             sql_args += (expressionId,)
-        if len(featureGroupId) > 0:
-            sql += "AND feature_group_ids = ? "
-            sql_args += (featureGroupId,)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
         query = self._dbconn.execute(sql, sql_args)
         try:
@@ -514,14 +427,3 @@ class SimulatedRnaQuantSet(AbstractRNAQuantificationSet):
         super(SimulatedRnaQuantSet, self).__init__(parentContainer, localId)
         self._dbFilePath = None
         self._db = None
-
-
-class SimulatedFeatureGroup(AbstractFeatureGroup):
-    """
-    A feature group that doesn't derive from a data store.
-    Used mostly for testing.
-    """
-    def __init__(self, parentContainer, localId):
-        super(SimulatedFeatureGroup, self).__init__(parentContainer, localId)
-        self._featureIds = []
-        self._description = ""

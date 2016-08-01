@@ -880,7 +880,7 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         """
         protocolElement = protocol.VariantAnnotationSet()
         protocolElement.id = self.getId()
-        protocolElement.variantSet_id = self._variantSet.getId()
+        protocolElement.variant_set_id = self._variantSet.getId()
         protocolElement.name = self.getLocalId()
         protocolElement.analysis.CopyFrom(self.getAnalysis())
         return protocolElement

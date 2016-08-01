@@ -57,7 +57,6 @@ _valueListNameMap = {
     SearchRnaQuantificationSetsResponse: "rna_quantification_sets",  # noqa
     SearchRnaQuantificationsResponse: "rna_quantifications",  # noqa
     SearchExpressionLevelsResponse: "expression_levels",  # noqa
-    SearchFeatureGroupsResponse: "feature_groups",  # noqa
 }
 
 
@@ -285,7 +284,4 @@ postMethods = \
       SearchRnaQuantificationsResponse),  # noqa
      ('/expressionlevels/search',
       SearchExpressionLevelsRequest,  # noqa
-      SearchExpressionLevelsResponse),  # noqa
-     ('/featuregroups/search',
-      SearchFeatureGroupsRequest,  # noqa
-      SearchFeatureGroupsResponse)]  # noqa
+      SearchExpressionLevelsResponse)]  # noqa

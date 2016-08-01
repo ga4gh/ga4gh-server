@@ -5,8 +5,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import unittest
-
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -38,7 +36,6 @@ _expressionTestData = {
     "name": "ENSG00000076984.13",
     "rna_quantification_id": "",
     "expression": 24.52,
-    "feature_group_ids": ["ENSG00000076984.13"],
     "feature_id": "ENSG00000076984.13",
     "is_normalized": True,
     "raw_read_count": 4317.0,
@@ -48,14 +45,6 @@ _expressionTestData = {
     "conf_interval_hi": 24.6,
     "num_expression_entries": 2,
     "num_entries_over_threshold": 1
-}
-
-
-_featureGroupTestData = {
-    "description": "",
-    "name": "ENSG00000076984.13",
-    "feature_ids": ["ENSG00000076984.13"],
-    "num_feature_group_entries": 2
 }
 
 
@@ -76,11 +65,6 @@ def _getRnaQuantCompoundId(dataSetName, quantSetName, rnaQuant):
 def _getExpressionCompoundId(
         dataSetName, quantSetName, rnaQuant, expressionId):
     splits = [dataSetName, quantSetName, rnaQuant, expressionId]
-    return _buildCompoundId(splits)
-
-
-def _getFeatureCompoundId(dataSetName, featureGroupId):
-    splits = [dataSetName, featureGroupId]
     return _buildCompoundId(splits)
 
 
@@ -130,8 +114,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(
             gaRnaQuant.description, _rnaQuantTestData["description"])
         self.assertEqual(gaRnaQuant.name, _rnaQuantTestData["name"])
-        self.assertEqual(
-            gaRnaQuant.read_group_ids, _rnaQuantTestData["read_group_ids"])
 
     def testGetExpressionLevelById(self):
         rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
@@ -161,9 +143,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(
             gaExpression.expression, testData["expression"])
         self.assertEqual(
-            gaExpression.feature_group_ids,
-            testData["feature_group_ids"])
-        self.assertEqual(
             gaExpression.is_normalized, testData["is_normalized"])
         self.assertEqual(
             gaExpression.raw_read_count, testData["raw_read_count"])
@@ -186,37 +165,3 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(
             _expressionTestData["num_entries_over_threshold"],
             len(overThreshold))
-
-    @unittest.skip("FeatureGroup still being worked on")
-    def testGetFeatureGroupById(self):
-        rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
-        idString = _buildCompoundId([
-            _datasetName,
-            _featureGroupTestData["name"]])
-        compoundId = datamodel.FeatureGroupCompoundId.parse(idString)
-        gaFeatureGroup = rnaQuantification.getFeatureGroup(
-            compoundId)
-        self.assertFeatureGroupEqual(
-            gaFeatureGroup, _featureGroupTestData)
-
-    @unittest.skip("FeatureGroup still being worked on")
-    def assertFeatureGroupEqual(self, gaFeatureGroupObj, testData):
-        gaFeatureGroup = gaFeatureGroupObj.toProtocolElement()
-        idString = _buildCompoundId([
-            _datasetName,
-            _featureGroupTestData["name"]])
-        compoundId = datamodel.FeatureGroupCompoundId.parse(idString)
-        self.assertEqual(gaFeatureGroup.id, str(compoundId))
-        self.assertEqual(gaFeatureGroup.name, testData["name"])
-        self.assertEqual(gaFeatureGroup.description, testData["description"])
-        self.assertEqual(gaFeatureGroup.name, testData["name"])
-        self.assertEqual(gaFeatureGroup.feature_ids, testData["feature_ids"])
-
-    @unittest.skip("FeatureGroup still being worked on")
-    def testSearchFeatureGroups(self):
-        rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
-        rnaQuantID = rnaQuantification.getLocalId()
-        featureGroups = rnaQuantification.getFeatureGroups(rnaQuantID)
-        self.assertEqual(
-            _featureGroupTestData["num_feature_group_entries"],
-            len(featureGroups))

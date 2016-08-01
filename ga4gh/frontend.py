@@ -630,12 +630,6 @@ def searchExpressionLevels():
         flask.request, app.backend.runSearchExpressionLevels)
 
 
-@DisplayedRoute('/featuregroups/search', postMethod=True)
-def searchFeatureGroups():
-    return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchFeatureGroups)
-
-
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
@@ -712,14 +706,6 @@ def getRnaQuantification(id):
 def getExpressionLevel(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetExpressionLevel)
-
-
-@DisplayedRoute(
-    '/featuregroups/<no(search):id>',
-    pathDisplay='/featuregroups/<id>')
-def getFeatureGroup(id):
-    return handleFlaskGetRequest(
-        id, flask.request, app.backend.runGetFeatureGroup)
 
 
 @app.route('/oauth2callback', methods=['GET'])
