@@ -1316,63 +1316,6 @@ class SqlDataRepository(AbstractDataRepository):
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (rnaQuantificationSet.getId(),))
 
-    def _createFeatureGroupTable(self, cursor):
-        sql = """
-            CREATE TABLE FeatureGroup (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                info TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
-
-    def insertFeatureGroup(self, featureGroup):
-        """
-        Inserts a the specified featureGroup into this repository.
-        """
-        sql = """
-            INSERT INTO FeatureGroup (
-                id, datasetId, referenceSetId, name, dataUrl)
-            VALUES (?, ?, ?, ?, ?)
-        """
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            featureGroup.getId(),
-            featureGroup.getParentContainer().getId(),
-            featureGroup.getReferenceSet().getId(),
-            featureGroup.getLocalId(),
-            featureGroup.getDataUrl()))
-
-    def _readFeatureGroupTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM FeatureGroup;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
-            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
-            featureGroup = rna_quantification.FeatureGroup(
-                dataset, row[b'name'])
-            featureGroup.setReferenceSet(referenceSet)
-            featureGroup.populateFromRow(row)
-            assert featureGroup.getId() == row[b'id']
-            dataset.addFeatureGroup(featureGroup)
-
-    def removeFeatureGroup(self, featureGroup):
-        """
-        Removes the specified featureGroup from this repository. This
-        performs a cascading removal of all items within this
-        featureGroup.
-        """
-        sql = "DELETE FROM FeatureGroup WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (featureGroup.getId(),))
-
     def initialise(self):
         """
         Initialise this data repostitory, creating any necessary directories
@@ -1394,7 +1337,6 @@ class SqlDataRepository(AbstractDataRepository):
         self._createBioSampleTable(cursor)
         self._createIndividualTable(cursor)
         self._createRnaQuantificationSetTable(cursor)
-        self._createFeatureGroupTable(cursor)
 
     def exists(self):
         """
@@ -1440,4 +1382,3 @@ class SqlDataRepository(AbstractDataRepository):
             self._readBioSampleTable(cursor)
             self._readIndividualTable(cursor)
             self._readRnaQuantificationSetTable(cursor)
-            self._readFeatureGroupTable(cursor)

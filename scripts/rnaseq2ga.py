@@ -44,7 +44,6 @@ class RNASqliteStore(object):
                        rna_quantification_id text,
                        name text,
                        expression real,
-                       feature_group_ids text,
                        is_normalized boolean,
                        raw_read_count real,
                        score real,
@@ -72,7 +71,7 @@ class RNASqliteStore(object):
     def addExpression(self, datafields):
         """
         Adds an Expression to the db.  Datafields is a tuple in the order:
-        id, rna_quantification_id, name, expression, feature_group_ids,
+        id, rna_quantification_id, name, expression,
         is_normalized, raw_read_count, score, units, conf_low, conf_hi
         """
         self._expressionValueList.append(datafields)
@@ -81,7 +80,7 @@ class RNASqliteStore(object):
 
     def batchAddExpression(self):
         if len(self._expressionValueList) > 0:
-            sql = "INSERT INTO EXPRESSION VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+            sql = "INSERT INTO EXPRESSION VALUES (?,?,?,?,?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._expressionValueList)
             self._dbConn.commit()
             self._expressionValueList = []
@@ -117,7 +116,6 @@ class AbstractWriter(object):
             expressionLevel = fields[self._expressionLevelCol]
             expressionId = fields[self._idCol]
             name = fields[self._nameCol]
-            featureGroupId = fields[self._featureCol]
             rawCount = 0.0
             if self._countCol is not None:
                 rawCount = fields[self._countCol]
@@ -130,7 +128,7 @@ class AbstractWriter(object):
                 score = (confidenceLow + confidenceHi)/2
 
             datafields = (expressionId, rnaQuantificationId, name,
-                          expressionLevel, featureGroupId, isNormalized,
+                          expressionLevel, isNormalized,
                           rawCount, score, units, confidenceLow, confidenceHi)
             self._db.addExpression(datafields)
         self._db.batchAddExpression()

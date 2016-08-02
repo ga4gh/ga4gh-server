@@ -54,7 +54,6 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.rnaQuantificationSetId = "rnaQuantificationSetId"
         self.rnaQuantificationId = "rnaQuantificationId"
         self.expressionLevelId = "expressionLevelId"
-        self.featureGroupId = "featureGroupId"
         self.threshold = 0.0
 
     def testSetPageSize(self):
@@ -222,12 +221,11 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchExpressionLevels(self):
         request = protocol.SearchExpressionLevelsRequest()
-        request.feature_group_id = self.featureGroupId
         request.rna_quantification_id = self.rnaQuantificationId
         request.threshold = self.threshold
         request.page_size = self.pageSize
         self.httpClient.search_expression_levels(
-            self.rnaQuantificationId, self.featureGroupId, self.threshold)
+            self.rnaQuantificationId, self.threshold)
         self.httpClient._run_search_request.assert_called_once_with(
             request, "expressionlevels",
             protocol.SearchExpressionLevelsResponse)
@@ -252,15 +250,6 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._run_search_request.assert_called_once_with(
             request, "rnaquantifications",
             protocol.SearchRnaQuantificationsResponse)
-
-    def testSearchFeatureGroups(self):
-        request = protocol.SearchFeatureGroupsRequest()
-        request.dataset_id = self.datasetId
-        request.page_size = self.pageSize
-        self.httpClient.searchFeatureGroups(self.datasetId)
-        self.httpClient._run_search_request.assert_called_once_with(
-            request, "featuregroups",
-            protocol.SearchFeatureGroupsResponse)
 
     def testSearchBioSamples(self):
         request = protocol.SearchBioSamplesRequest()
@@ -355,11 +344,6 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._run_get_request.assert_called_once_with(
             "expressionlevels", protocol.ExpressionLevel, self.objectId)
 
-    def testGetFeatureGroup(self):
-        self.httpClient.get_feature_group(self.objectId)
-        self.httpClient._run_get_request.assert_called_once_with(
-            "featuregroups", protocol.FeatureGroup, self.objectId)
-
     # def testGetFeatureSet(self):  # TODO
 
     # def testGetFeature(self):  # TODO
@@ -407,7 +391,6 @@ class DummyRequestsSession(object):
             "rnaquantifications": self._backend.runGetRnaQuantification,
             "rnaquantificationsets": self._backend.runGetRnaQuantificationSet,
             "expressionlevels": self._backend.runGetExpressionLevel,
-            "featureGroups": self._backend.runGetFeatureGroup,
         }
         self._searchMethodMap = {
             "datasets": self._backend.runSearchDatasets,
@@ -421,7 +404,6 @@ class DummyRequestsSession(object):
             "rnaquantificationsets":
                 self._backend.runSearchRnaQuantificationSets,
             "expressionlevels": self._backend.runSearchExpressionLevels,
-            "featureGroups": self._backend.runSearchFeatureGroups,
         }
         self.headers = {}
 

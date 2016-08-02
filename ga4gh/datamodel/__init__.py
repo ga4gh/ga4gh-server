@@ -455,13 +455,6 @@ class ExpressionLevelCompoundId(RnaQuantificationCompoundId):
     fields = RnaQuantificationCompoundId.fields + ['expression_level_id']
 
 
-class FeatureGroupCompoundId(DatasetCompoundId):
-    """
-    The compound id for a feature group
-    """
-    fields = DatasetCompoundId.fields + ['feature_group_id']
-
-
 class DatamodelObject(object):
     """
     Superclass of all datamodel types. A datamodel object is a concrete

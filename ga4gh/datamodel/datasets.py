@@ -43,9 +43,6 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetIds = []
         self._rnaQuantificationSetIdMap = {}
         self._rnaQuantificationSetNameMap = {}
-        self._featureGroupIds = []
-        self._featureGroupIdMap = {}
-        self._featureGroupNameMap = {}
 
     def populateFromRow(self, row):
         """
@@ -115,16 +112,6 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetIds.append(id_)
         name = rnaQuantSet.getLocalId()
         self._rnaQuantificationSetNameMap[name] = rnaQuantSet
-
-    def addFeatureGroup(self, featureGroup):
-        """
-        Adds the specified feature group to this dataset.
-        """
-        id_ = featureGroup.getId()
-        self._featureGroupIdMap[id_] = featureGroup
-        self._featureGroupIds.append(id_)
-        name = featureGroup.getLocalId()
-        self._featureGroupNameMap[name] = featureGroup
 
     def toProtocolElement(self):
         dataset = protocol.Dataset()
@@ -367,8 +354,7 @@ class SimulatedDataset(Dataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1, numFeatureSets=1, numRnaQuantSets=1,
-            numFeatureGroups=1):
+            numAlignments=1, numFeatureSets=1, numRnaQuantSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
         # TODO create a simulated Ontology
@@ -428,9 +414,3 @@ class SimulatedDataset(Dataset):
                 self, localId)
             rnaQuantSet.setReferenceSet(referenceSet)
             self.addRnaQuantificationSet(rnaQuantSet)
-        # FeatureGroups
-        for i in range(numFeatureGroups):
-            localId = 'simFg{}'.format(i)
-            featureGroup = rnaQuantification.SimulatedFeatureGroup(
-                self, localId)
-            self.addFeatureGroup(featureGroup)

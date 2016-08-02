@@ -321,21 +321,12 @@ class TestClientArguments(unittest.TestCase):
     def testExpressionLevelSearchArguments(self):
         cliInput = (
             "expressionlevels-search --rnaQuantificationId rID "
-            "--featureGroupId fID --threshold 0.0 BASEURL")
+            "--threshold 0.0 BASEURL")
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.rnaQuantificationId, "rID")
-        self.assertEqual(args.featureGroupId, "fID")
         self.assertEqual(args.threshold, 0.0)
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.runner, cli.SearchExpressionLevelsRunner)
-
-    def testFeatureGroupSearchArguments(self):
-        cliInput = (
-            "featuregroups-search --datasetId DATASETID BASEURL")
-        args = self.parser.parse_args(cliInput.split())
-        self.assertEqual(args.datasetId, "DATASETID")
-        self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEqual(args.runner, cli.SearchFeatureGroupsRunner)
 
     # def testVariantSetsGet(self):  # TODO
 

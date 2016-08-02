@@ -790,18 +790,7 @@ class Backend(object):
             rnaQuant.getExpressionLevels(
                 rnaQuantificationId, pageToken=request.page_token,
                 pageSize=request.page_size, expressionId=expressionLevelId,
-                featureGroupId=request.feature_group_id,
                 threshold=request.threshold))
-
-    def featureGroupsGenerator(self, request):
-        """
-        Returns a generator over the (featureGroup, nextPageToken) pairs
-        defined by the specified request.
-        """
-        dataset = self.getDataRepository().getDataset(request.dataset_id)
-        return self._topLevelObjectGenerator(
-            request, dataset.getNumFeatureGroups(),
-            dataset.getFeatureGroupByIndex)
 
     ###########################################################
     #
@@ -1033,15 +1022,6 @@ class Backend(object):
         rnaQuantificationSet = dataset.getRnaQuantificationSet(id_)
         return self.runGetRequest(rnaQuantificationSet)
 
-    def runGetFeatureGroup(self, id_):
-        """
-        Runs a getFeatureGroup request for the specified ID.
-        """
-        compoundId = datamodel.FeatureGroupCompoundId.parse(id_)
-        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
-        featureGroup = dataset.getFeatureGroup(id_)
-        return self.runGetRequest(featureGroup)
-
     def runGetExpressionLevel(self, id_):
         """
         Runs a getExpressionLevel request for the specified ID.
@@ -1215,13 +1195,3 @@ class Backend(object):
             request, protocol.SearchExpressionLevelsRequest,
             protocol.SearchExpressionLevelsResponse,
             self.expressionLevelsGenerator)
-
-    def runSearchFeatureGroups(self, request):
-        """
-        Returns a SearchFeatureGroupResponse for the specified
-        SearchFeatureGroupRequest object.
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchFeatureGroupsRequest,
-            protocol.SearchFeatureGroupsResponse,
-            self.featureGroupsGenerator)

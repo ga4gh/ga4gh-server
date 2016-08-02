@@ -306,18 +306,6 @@ class AbstractClient(object):
             "expressionlevels", protocol.ExpressionLevel,
             expression_level_id)
 
-    def get_feature_group(self, feature_group_id):
-        """
-        Returns the FeatureGroup with the specified ID from the server.
-        :param str feature_group_id: The ID of the FeatureGroup of
-            interest.
-        :return: The FeatureGroup of interest.
-        :rtype: :class:`ga4gh.protocol.FeatureGroup`
-        """
-        return self._run_get_request(
-            "featuregroups", protocol.FeatureGroup,
-            feature_group_id)
-
     def search_variants(
             self, variant_set_id, start=None, end=None, reference_name=None,
             call_set_ids=None):
@@ -685,39 +673,23 @@ class AbstractClient(object):
             protocol.SearchRnaQuantificationsResponse)
 
     def search_expression_levels(
-            self, rna_quantification_id="", feature_group_id="",
-            threshold=0.0):
+            self, rna_quantification_id="", threshold=0.0):
         """
         Returns an iterator over the ExpressionLevel objects from the server
 
         :param str expressionLevelId: The ID of the
             :class:`ga4gh.protocol.ExpressionLevel` of interest.
-        :param str feature_group_id: The ID of the
-            :class:`ga4gh.protocol.FeatureGroup` of interest.
         :param str rnaQuantificationIdIDs: The ID of the
             :class:`ga4gh.protocol.RnaQuantification` of interest.
         :param float threshold: Minimum expression of responses to return.
         """
         request = protocol.SearchExpressionLevelsRequest()
         request.rna_quantification_id = rna_quantification_id
-        request.feature_group_id = feature_group_id
         request.threshold = threshold
         request.page_size = pb.int(self._page_size)
         return self._run_search_request(
             request, "expressionlevels",
             protocol.SearchExpressionLevelsResponse)
-
-    def searchFeatureGroups(self, datasetId=""):
-        """
-        Returns an iterator over the FeatureGroup objects from the
-        server
-        """
-        request = protocol.SearchFeatureGroupsRequest()
-        request.dataset_id = datasetId
-        request.page_size = pb.int(self._page_size)
-        return self._run_search_request(
-            request, "featuregroups",
-            protocol.SearchFeatureGroupsResponse)
 
 
 class HttpClient(AbstractClient):
@@ -828,7 +800,6 @@ class LocalClient(AbstractClient):
             "rnaquantificationsets": self._backend.runGetRnaQuantificationSet,
             "rnaquantifications": self._backend.runGetRnaQuantification,
             "expressionlevels": self._backend.runGetExpressionLevel,
-            "featuregroups": self._backend.runGetFeatureGroup
         }
         self._search_method_map = {
             "callsets": self._backend.runSearchCallSets,
@@ -850,7 +821,6 @@ class LocalClient(AbstractClient):
                 self._backend.runSearchRnaQuantificationSets,
             "rnaquantifications": self._backend.runSearchRnaQuantifications,
             "expressionlevels": self._backend.runSearchExpressionLevels,
-            "featuregroups": self._backend.runSearchFeatureGroups
         }
 
     def _run_get_request(self, object_name, protocol_response_class, id_):
