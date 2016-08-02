@@ -48,6 +48,13 @@ class ComplianceDataMunger(object):
         self.repoPath = os.path.join(outputDirectory, "repo.db")
         self.tempdir = None
 
+        if os.path.exists(self.outputDirectory):
+            utils.log("Output directory '{}' already exists".format(
+                self.outputDirectory))
+            utils.log("Please specify an output path that does not exist")
+            utils.log("Exiting...")
+            exit(1)
+
         # If no input directory is specified download from GitHub
         if inputDirectory is None:
             utils.log("Downloading test data...")
