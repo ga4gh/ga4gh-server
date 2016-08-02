@@ -30,6 +30,7 @@ import ga4gh.datamodel.reads as reads  # NOQA
 import ga4gh.datamodel.ontologies as ontologies  # NOQA
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations  # NOQA
 import ga4gh.datamodel.bio_metadata as biodata  # NOQA
+import ga4gh.datamodel.rna_quantification as rna_quantification  # NOQA
 
 
 class ComplianceDataMunger(object):
@@ -237,6 +238,11 @@ class ComplianceDataMunger(object):
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
         rnaseq2ga.rnaseq2ga(
             self.inputDirectory, rnaDbName, featureType="transcript")
+        rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
+            dataset, "rnaseq")
+        rnaQuantificationSet.setReferenceSet(referenceSet)
+        rnaQuantificationSet.populateFromFile(rnaDbName)
+        self.repo.insertRnaQuantificationSet(rnaQuantificationSet)
 
         self.repo.commit()
 
