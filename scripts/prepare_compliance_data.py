@@ -30,6 +30,7 @@ import ga4gh.datamodel.reads as reads  # NOQA
 import ga4gh.datamodel.ontologies as ontologies  # NOQA
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations  # NOQA
 import ga4gh.datamodel.bio_metadata as biodata  # NOQA
+import ga4gh.datamodel.rna_quantification as rna_quantification  # NOQA
 
 
 class ComplianceDataMunger(object):
@@ -47,6 +48,13 @@ class ComplianceDataMunger(object):
         self.outputDirectory = outputDirectory
         self.repoPath = os.path.join(outputDirectory, "repo.db")
         self.tempdir = None
+
+        if os.path.exists(self.outputDirectory):
+            utils.log("Output directory '{}' already exists".format(
+                self.outputDirectory))
+            utils.log("Please specify an output path that does not exist")
+            utils.log("Exiting...")
+            exit(1)
 
         # If no input directory is specified download from GitHub
         if inputDirectory is None:
@@ -230,6 +238,11 @@ class ComplianceDataMunger(object):
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
         rnaseq2ga.rnaseq2ga(
             self.inputDirectory, rnaDbName, featureType="transcript")
+        rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
+            dataset, "rnaseq")
+        rnaQuantificationSet.setReferenceSet(referenceSet)
+        rnaQuantificationSet.populateFromFile(rnaDbName)
+        self.repo.insertRnaQuantificationSet(rnaQuantificationSet)
 
         self.repo.commit()
 
