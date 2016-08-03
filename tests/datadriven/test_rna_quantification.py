@@ -37,6 +37,7 @@ _expressionTestData = {
     "rna_quantification_id": "",
     "expression": 24.52,
     "feature_id": "ENSG00000076984.13",
+    "feature_ids": ["ENSG00000076984.14", "ENSG00000076984.13"],
     "is_normalized": True,
     "raw_read_count": 4317.0,
     "score": 24.35,
@@ -165,3 +166,13 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(
             _expressionTestData["num_entries_over_threshold"],
             len(overThreshold))
+
+    def testSearchExpressionLevelsWithFeatureIds(self):
+        rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
+        rnaQuantID = rnaQuantification.getLocalId()
+        featureIds = _expressionTestData["feature_ids"]
+        expressionLevels = rnaQuantification.getExpressionLevels(
+            rnaQuantID, featureIds=featureIds)
+        self.assertEqual(
+            _expressionTestData["num_expression_entries"],
+            len(expressionLevels))

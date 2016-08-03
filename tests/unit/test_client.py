@@ -225,7 +225,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.threshold = self.threshold
         request.page_size = self.pageSize
         self.httpClient.search_expression_levels(
-            self.rnaQuantificationId, self.threshold)
+            self.rnaQuantificationId, threshold=self.threshold)
         self.httpClient._run_search_request.assert_called_once_with(
             request, "expressionlevels",
             protocol.SearchExpressionLevelsResponse)

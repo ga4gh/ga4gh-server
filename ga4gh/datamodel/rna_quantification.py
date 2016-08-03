@@ -309,19 +309,15 @@ class RNASeqResult(AbstractRNAQuantification):
         return self._dbFilePath
 
     def getExpressionLevels(
-            self, rnaQuantID, pageToken=0, pageSize=None, expressionId="",
-            threshold=0.0):
+            self, rnaQuantID, pageToken=0, pageSize=None, threshold=0.0,
+            featureIds=[]):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
-        if len(expressionId) > 0:
-            parsedId = datamodel.ExpressionLevelCompoundId.parse(expressionId)
-            expressionId = parsedId.expressionLevelId
         with self._db as dataSource:
             expressionsReturned = dataSource.searchExpressionLevelsInDb(
-                rnaQuantID, pageToken=pageToken,
-                pageSize=pageSize, expressionId=expressionId,
-                threshold=threshold)
+                rnaQuantID, featureIds=featureIds, pageToken=pageToken,
+                pageSize=pageSize, threshold=threshold)
         return [ExpressionLevel(self, expressionEntry) for
                 expressionEntry in expressionsReturned]
 
@@ -378,13 +374,12 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
                 rnaQuantificationId)
 
     def searchExpressionLevelsInDb(
-            self, rnaQuantId, pageToken=0, pageSize=None, expressionId="",
+            self, rnaQuantId, featureIds=[], pageToken=0, pageSize=None,
             threshold=0.0):
         """
         :param rnaQuantId: string restrict search by quantification id
         :param pageToken: int representing first record to return
         :param pageSize: int representing number of records to return
-        :param expressionId: string restrict search by expression id
         :param threshold: float minimum expression values to return
         :return an array of dictionaries, representing the returned data.
         """
@@ -392,16 +387,15 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
                "rna_quantification_id = ? "
                "AND expression >= ? ")
         sql_args = (rnaQuantId, threshold)
-        if len(expressionId) > 0:
-            sql += "AND id = ? "
-            sql_args += (expressionId,)
+        if len(featureIds) > 0:
+            sql += "AND feature_id in ("
+            sql += ",".join(['?' for featureId in featureIds])
+            sql += ") "
+            for featureId in featureIds:
+                sql_args += (featureId,)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
         query = self._dbconn.execute(sql, sql_args)
-        try:
-            return sqliteBackend.sqliteRows2dicts(query.fetchall())
-        except AttributeError:
-            raise exceptions.ExpressionLevelNotFoundException(
-                expressionId)
+        return sqliteBackend.sqliteRows2dicts(query.fetchall())
 
     def getExpressionLevelById(self, expressionId):
         """
