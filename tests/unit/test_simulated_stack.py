@@ -1149,3 +1149,15 @@ class TestSimulatedStack(unittest.TestCase):
                 self.assertEqual(responseObject.id, bioSample.getId())
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
+
+    # TODO def testGetExpressionLevel(self):
+
+    # TODO def testSearchExpressionLevels(self):
+
+    # TODO def testGetRnaQuantification(self):
+
+    # TODO def testSearchRnaQuantifications(self):
+
+    # TODO def testGetRnaQuantificationSet(self):
+
+    # TODO def testSearchRnaQuantificationSets(self):

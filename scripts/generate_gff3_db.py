@@ -77,16 +77,13 @@ class Gff32Db(object):
 
     def _insertValues(self, dbcur, dbconn):
         if len(self.valueList) > 0:
-            sql = "INSERT INTO feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            sql = "INSERT INTO Feature VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             dbcur.executemany(sql, self.valueList)
             dbconn.commit()
             self.valueList = []
 
     def run(self):
-        print("Running GFF3 parser...", file=sys.stderr)
         gff3Data = gff3.Gff3Parser(self.gff3File).parse()
-
-        print("Generating database...", file=sys.stderr)
         dbconn = sqlite3.connect(self.dbFile)
         dbcur = dbconn.cursor()
         dbcur.execute(_dbTableSQL)  # create table
@@ -124,7 +121,6 @@ class Gff32Db(object):
 
         dbcur.close()
         dbconn.close()
-        print("Done.", file=sys.stderr)
 
 
 @utils.Timed()

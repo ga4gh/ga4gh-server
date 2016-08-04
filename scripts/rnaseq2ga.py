@@ -64,7 +64,7 @@ class RNASqliteStore(object):
 
     def batchAddRNAQuantification(self):
         if len(self._rnaValueList) > 0:
-            sql = "INSERT INTO RNAQUANTIFICATION VALUES (?,?,?,?,?,?)"
+            sql = "INSERT INTO RnaQuantification VALUES (?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._rnaValueList)
             self._dbConn.commit()
             self._rnaValueList = []
@@ -81,7 +81,7 @@ class RNASqliteStore(object):
 
     def batchAddExpression(self):
         if len(self._expressionValueList) > 0:
-            sql = "INSERT INTO EXPRESSION VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+            sql = "INSERT INTO Expression VALUES (?,?,?,?,?,?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._expressionValueList)
             self._dbConn.commit()
             self._expressionValueList = []
@@ -110,8 +110,7 @@ class AbstractWriter(object):
         """
         isNormalized = self._isNormalized
         units = self._units
-        # strip header and print - log it instead?
-        print(quantfile.readline())
+        quantfile.readline()  # skip header
         for expression in quantfile:
             fields = expression.strip().split("\t")
             expressionLevel = fields[self._expressionLevelCol]
@@ -227,7 +226,6 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
 
 def writeExpressionTable(writer, data):
     for rnaQuantId, quantfile in data:
-        print("processing {}".format(rnaQuantId))
         writer.writeExpression(rnaQuantId, quantfile)
 
 
@@ -248,7 +246,7 @@ def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv",
 
     rnaDB = RNASqliteStore(sqlFilename)
     with open(controlFilePath, "r") as rnaDatasetsFile:
-        print(rnaDatasetsFile.readline())
+        rnaDatasetsFile.readline()  # skip header
         for line in rnaDatasetsFile:
             fields = line.split("\t")
             rnaType = fields[2]
