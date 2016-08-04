@@ -238,7 +238,7 @@ class ComplianceDataMunger(object):
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
         rnaseq2ga.rnaseq2ga(
             self.inputDirectory, rnaDbName, featureType="transcript")
-        rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
+        rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
             dataset, "rnaseq")
         rnaQuantificationSet.setReferenceSet(referenceSet)
         rnaQuantificationSet.populateFromFile(rnaDbName)

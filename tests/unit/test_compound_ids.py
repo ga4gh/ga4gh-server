@@ -191,11 +191,11 @@ class TestCompoundIds(unittest.TestCase):
             self.getDataset(), "featureSet")
 
     def getRnaQuantificationSet(self):
-        return rna_quantification.AbstractRNAQuantificationSet(
+        return rna_quantification.AbstractRnaQuantificationSet(
             self.getDataset(), "rnaQuantificationSet")
 
     def getRnaQuantification(self):
-        return rna_quantification.AbstractRNAQuantification(
+        return rna_quantification.AbstractRnaQuantification(
             self.getRnaQuantificationSet(), "rnaQuantification")
 
     def getExpressionLevel(self):
