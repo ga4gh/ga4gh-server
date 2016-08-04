@@ -396,3 +396,15 @@ class TestFrontend(unittest.TestCase):
             readGroupIds=[self.readGroupId, "42"],
             referenceId=self.referenceId)
         self.assertEqual(400, response.status_code)
+
+    # TODO def testGetExpressionLevel(self):
+
+    # TODO def testGetRnaQuantification(self):
+
+    # TODO def testGetRnaQuantificationSet(self):
+
+    # TODO def testExpressionLevelsSearch(self):
+
+    # TODO def testRnaQuantificationsSearch(self):
+
+    # TODO def testRnaQuantificationSetsSearch(self):

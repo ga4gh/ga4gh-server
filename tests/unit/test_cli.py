@@ -338,6 +338,12 @@ class TestClientArguments(unittest.TestCase):
 
     # def testFeatureSetsSearch(self):  # TODO
 
+    # def testExpressionLevelsGet(self): # TODO
+
+    # def testRnaQuantificationSetsGet(self): # TODO
+
+    # def testRnaQuantificationSetsSearch(self): # TODO
+
 
 class TestRepoManagerCli(unittest.TestCase):
 

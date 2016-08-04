@@ -344,3 +344,15 @@ class TestClientJson(TestClientOutput):
     # def testGetFeatureSets(self):  # TODO
 
     # def testSearchFeatureSets(self):  # TODO
+
+    # def testSearchExpressionLevels(self):  # TODO
+
+    # def testSearchRnaQuantifications(self):  # TODO
+
+    # def testSearchRnaQuantifications(self):  # TODO
+
+    # def testGetExpressionLevels(self): # TODO
+
+    # def testGetRnaQuantifications(self): # TODO
+
+    # def testGetRnaQuantificationSets(self): # TODO
