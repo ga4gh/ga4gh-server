@@ -120,6 +120,12 @@ class Gff32Db(object):
         dbcur.execute((
             "create INDEX idx1 "
             "on feature(start, end, reference_name)"))
+        dbcur.execute((
+            "create INDEX idx2 "
+            "on feature(gene_name)"))
+        dbcur.execute((
+            "create INDEX idx3 "
+            "on feature(name)"))
         dbcur.execute("PRAGMA INDEX_LIST('feature')")
 
         dbcur.close()
@@ -141,6 +147,9 @@ def main():
         default='.')
     parser.add_argument('--verbose', '-v', action='count', default=0)
     args = parser.parse_args()
+    if len(sys.argv) == 1:
+        parser.print_help()
+        exit()
     g2d = Gff32Db(args.inputFile, args.outputFile)
     g2d.run()
 
