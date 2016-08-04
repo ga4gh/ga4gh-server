@@ -673,18 +673,19 @@ class AbstractClient(object):
             protocol.SearchRnaQuantificationsResponse)
 
     def search_expression_levels(
-            self, rna_quantification_id="", threshold=0.0):
+            self, rna_quantification_id="", feature_ids=[], threshold=0.0):
         """
         Returns an iterator over the ExpressionLevel objects from the server
 
-        :param str expressionLevelId: The ID of the
-            :class:`ga4gh.protocol.ExpressionLevel` of interest.
-        :param str rnaQuantificationIdIDs: The ID of the
+        :param str feature_ids: The IDs of the
+            :class:`ga4gh.protocol.Feature` of interest.
+        :param str rna_quantification_id: The ID of the
             :class:`ga4gh.protocol.RnaQuantification` of interest.
         :param float threshold: Minimum expression of responses to return.
         """
         request = protocol.SearchExpressionLevelsRequest()
         request.rna_quantification_id = rna_quantification_id
+        request.feature_ids.extend(feature_ids)
         request.threshold = threshold
         request.page_size = pb.int(self._page_size)
         return self._run_search_request(

@@ -774,23 +774,13 @@ class Backend(object):
             request.rna_quantification_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
-        expressionLevelId = request.expression_level_id
-        if len(expressionLevelId) > 0:
-            expressionCompoundId = datamodel.ExpressionLevelCompoundId.parse(
-                request.expression_level_id)
-            try:
-                return self._singleObjectGenerator(
-                    rnaQuant.getExpressionLevel(expressionCompoundId)
-                    )
-            except exceptions.ExpressionLevelNotFoundException:
-                return self._noObjectGenerator()
         rnaQuantificationId = rnaQuant.getLocalId()
         return self._objectListGenerator(
             request,
             rnaQuant.getExpressionLevels(
                 rnaQuantificationId, pageToken=request.page_token,
-                pageSize=request.page_size, expressionId=expressionLevelId,
-                threshold=request.threshold))
+                pageSize=request.page_size, threshold=request.threshold,
+                featureIds=request.feature_ids))
 
     ###########################################################
     #
