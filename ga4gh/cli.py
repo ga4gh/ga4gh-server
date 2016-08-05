@@ -795,16 +795,15 @@ class SearchExpressionLevelsRunner(AbstractSearchRunner):
     def __init__(self, args):
         super(SearchExpressionLevelsRunner, self).__init__(args)
         self._rnaQuantificationId = args.rnaQuantificationId
-        if len(args.feature_ids) > 0:
-            self._feature_ids = args.feature_ids.split(",")
-        else:
-            self._feature_ids = []
+        self._feature_ids = []
+        if len(args.featureIds) > 0:
+            self._feature_ids = args.featureIds.split(",")
         self.threshold = args.threshold
 
     def run(self):
         iterator = self._client.search_expression_levels(
-            rnaQuantificationId=self._rnaQuantificationId,
-            featureIds=self._featureIds,
+            rna_quantification_id=self._rnaQuantificationId,
+            feature_ids=self._feature_ids,
             threshold=self.threshold)
         self._output(iterator)
 
@@ -1580,7 +1579,7 @@ def addExpressionLevelsSearchParser(subparsers):
     addPageSizeArgument(parser)
     addFeatureIdsArgument(parser)
     parser.add_argument(
-        "--rnaQuantificationId", default=None,
+        "--rnaQuantificationId", default='',
         help="The RNA Quantification Id to search over")
     parser.add_argument(
         "--threshold", default=0.0, type=float,

@@ -35,6 +35,8 @@ class TestClientOutput(unittest.TestCase):
         dataRepository.open(datarepo.MODE_READ)
         self._backend = backend.Backend(dataRepository)
         self._client = client.LocalClient(self._backend)
+        # TODO probably could use a cache of objects, so we don't
+        # need to keep re-fetching them
 
     def captureCliOutput(self, command, arguments, outputFormat):
         clientCommand = "{} {} {} -O {}".format(
@@ -345,14 +347,73 @@ class TestClientJson(TestClientOutput):
 
     # def testSearchFeatureSets(self):  # TODO
 
-    # def testSearchExpressionLevels(self):  # TODO
+    def testSearchExpressionLevels(self):
+        for dataset in self._client.search_datasets():
+            for rnaQuantificationSet in \
+                    self._client.search_rna_quantification_sets(dataset.id):
+                for rnaQuantification in \
+                        self._client.search_rna_quantifications(
+                                rnaQuantificationSet.id):
+                    iterator = self._client.search_expression_levels(
+                        rnaQuantification.id)
+                    cliString = (
+                        "expressionlevels-search "
+                        "--rnaQuantificationId {}".format(
+                            rnaQuantification.id))
+                    self.verifyParsedOutputsEqual(iterator, cliString)
 
-    # def testSearchRnaQuantifications(self):  # TODO
+    def testSearchRnaQuantifications(self):
+        for dataset in self._client.search_datasets():
+            for rnaQuantificationSet in \
+                    self._client.search_rna_quantification_sets(dataset.id):
+                iterator = self._client.search_rna_quantifications(
+                    rnaQuantificationSet.id)
+                cliString = (
+                    "rnaquantifications-search "
+                    "--rnaQuantificationSetId {}".format(
+                        rnaQuantificationSet.id))
+                self.verifyParsedOutputsEqual(iterator, cliString)
 
-    # def testSearchRnaQuantifications(self):  # TODO
+    def testSearchRnaQuantificationSets(self):
+        for dataset in self._client.search_datasets():
+            iterator = self._client.search_rna_quantification_sets(dataset.id)
+            cliString = (
+                "rnaquantificationsets-search --datasetId {}".format(
+                    dataset.id))
+            self.verifyParsedOutputsEqual(iterator, cliString)
 
-    # def testGetExpressionLevels(self): # TODO
+    def testGetExpressionLevel(self):
+        for dataset in self._client.search_datasets():
+            for rnaQuantificationSet in \
+                    self._client.search_rna_quantification_sets(dataset.id):
+                for rnaQuantification in \
+                        self._client.search_rna_quantifications(
+                            rnaQuantificationSet.id):
+                            for expressionLevel in \
+                                    self._client.search_expression_levels(
+                                        rnaQuantification.id):
+                                self.verifyParsedOutputsEqual(
+                                    [expressionLevel],
+                                    "expressionlevels-get",
+                                    expressionLevel.id)
 
-    # def testGetRnaQuantifications(self): # TODO
+    def testGetRnaQuantification(self):
+        for dataset in self._client.search_datasets():
+            for rnaQuantificationSet in \
+                    self._client.search_rna_quantification_sets(dataset.id):
+                for rnaQuantification in \
+                        self._client.search_rna_quantifications(
+                            rnaQuantificationSet.id):
+                    self.verifyParsedOutputsEqual(
+                        [rnaQuantification],
+                        "rnaquantifications-get",
+                        rnaQuantification.id)
 
-    # def testGetRnaQuantificationSets(self): # TODO
+    def testGetRnaQuantificationSet(self):
+        for dataset in self._client.search_datasets():
+            for rnaQuantificationSet in \
+                    self._client.search_rna_quantification_sets(dataset.id):
+                self.verifyParsedOutputsEqual(
+                    [rnaQuantificationSet],
+                    "rnaquantificationsets-get",
+                    rnaQuantificationSet.id)
