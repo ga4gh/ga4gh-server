@@ -61,12 +61,13 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         return protocolElement
 
 
-class ExpressionLevel(AbstractExpressionLevel):
+class SqliteExpressionLevel(AbstractExpressionLevel):
     """
     Class representing a single ExpressionLevel in the GA4GH data model.
     """
     def __init__(self, parentContainer, record):
-        super(ExpressionLevel, self).__init__(parentContainer, record["id"])
+        super(SqliteExpressionLevel, self).__init__(
+            parentContainer, record["id"])
         self._expression = record["expression"]
         self._featureId = record["id"]
         # sqlite stores booleans as int (False = 0, True = 1)
@@ -191,13 +192,6 @@ class SqliteRnaQuantificationSet(AbstractRnaQuantificationSet):
             rnaQuantification.populateFromFile(self._dbFilePath)
             self.addRnaQuantification(rnaQuantification)
 
-    def getExpressionLevel(self, compoundId):
-        expressionId = compoundId.expression_level_id
-        with self._db as dataSource:
-            expressionReturned = dataSource.getExpressionLevelById(
-                expressionId)
-        return ExpressionLevel(self, expressionReturned)
-
 
 class AbstractRnaQuantification(datamodel.DatamodelObject):
     """
@@ -310,25 +304,29 @@ class SqliteRnaQuantification(AbstractRnaQuantification):
         return self._dbFilePath
 
     def getExpressionLevels(
-            self, rnaQuantID, pageToken=0, pageSize=None, threshold=0.0,
-            featureIds=[]):
+            self, pageToken=0, pageSize=None, threshold=0.0, featureIds=[]):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
+        rnaQuantificationId = self.getLocalId()
         with self._db as dataSource:
             expressionsReturned = dataSource.searchExpressionLevelsInDb(
-                rnaQuantID, featureIds=featureIds, pageToken=pageToken,
-                pageSize=pageSize, threshold=threshold)
-        return [ExpressionLevel(self, expressionEntry) for
+                rnaQuantificationId,
+                featureIds=featureIds,
+                pageToken=pageToken,
+                pageSize=pageSize,
+                threshold=threshold)
+            expressionLevels = [
+                SqliteExpressionLevel(self, expressionEntry) for
                 expressionEntry in expressionsReturned]
+            return expressionLevels
 
     def getExpressionLevel(self, compoundId):
         expressionId = compoundId.expression_level_id
         with self._db as dataSource:
             expressionReturned = dataSource.getExpressionLevelById(
                 expressionId)
-
-        return ExpressionLevel(self, expressionReturned)
+        return SqliteExpressionLevel(self, expressionReturned)
 
 
 class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
@@ -427,13 +425,6 @@ class SimulatedRnaQuantificationSet(AbstractRnaQuantificationSet):
             rnaQuantification = SimulatedRnaQuantification(self, localId)
             self.addRnaQuantification(rnaQuantification)
 
-    def getExpressionLevel(self, compoundId):
-        rnaQuantification = self._rnaQuantificationIdMap[
-            compoundId.rna_quantification_id]
-        expressionLevel = rnaQuantification._expressionLevelIdMap[
-            str(compoundId)]
-        return expressionLevel
-
 
 class SimulatedRnaQuantification(AbstractRnaQuantification):
     """
@@ -457,10 +448,14 @@ class SimulatedRnaQuantification(AbstractRnaQuantification):
 
     # TODO this makes very little sense
     def getExpressionLevels(
-            self, unusedArgs, pageToken=0, pageSize=None, threshold=0.0,
+            self, pageToken=0, pageSize=None, threshold=0.0,
             featureIds=[]):  # NOQA
         return [self._expressionLevelIdMap[id_] for
                 id_ in self._expressionLevelIds]
+
+    def getExpressionLevel(self, compoundId):
+        expressionId = str(compoundId)
+        return self._expressionLevelIdMap[expressionId]
 
 
 class SimulatedExpressionLevel(AbstractExpressionLevel):

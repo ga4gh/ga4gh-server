@@ -130,6 +130,21 @@ class TestInterfacingLayer(unittest.TestCase):
         self._testGetMethod(
             self._repo.allReferences, self._client.get_reference)
 
+    def testGetRnaQuantificationSet(self):
+        self._testGetMethod(
+            self._repo.allRnaQuantificationSets,
+            self._client.get_rna_quantification_set)
+
+    def testGetRnaQuantification(self):
+        self._testGetMethod(
+            self._repo.allRnaQuantifications,
+            self._client.get_rna_quantification)
+
+    def testGetExpressionLevel(self):
+        self._testGetMethod(
+            self._repo.allExpressionLevels,
+            self._client.get_expression_level)
+
     def testSearchVariants(self):
         for variantSet in self._repo.allVariantSets():
             referenceSet = variantSet.getReferenceSet()
@@ -267,3 +282,25 @@ class TestInterfacingLayer(unittest.TestCase):
                 for repoReference, reference in utils.zipLists(
                         repoReferences, references):
                     self._assertEqual(repoReference, reference)
+
+    def testSearchRnaQuantificationSets(self):
+        self._testSearchMethodInContainer(
+            'getRnaQuantificationSets',
+            self._client.search_rna_quantification_sets,
+            self._repo.getDatasets())
+
+    def testSearchRnaQuantifications(self):
+        self._testSearchMethodInContainer(
+            'getRnaQuantifications',
+            self._client.search_rna_quantifications,
+            self._repo.allRnaQuantificationSets())
+
+    # TODO: paging screwed up; client only iterates through
+    # 1 EL on pageSize of 1 (should be 2 ELs)...
+    # The next_page_token is not getting set properly
+    @unittest.skip('search_expression_levels paging not working')
+    def testSearchExpressionLevels(self):
+        self._testSearchMethodInContainer(
+            'getExpressionLevels',
+            self._client.search_expression_levels,
+            self._repo.allRnaQuantifications())

@@ -156,23 +156,21 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
 
     def testSearchExpressionLevels(self):
         rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
-        rnaQuantID = rnaQuantification.getLocalId()
-        expressionLevels = rnaQuantification.getExpressionLevels(rnaQuantID)
+        expressionLevels = rnaQuantification.getExpressionLevels()
         self.assertEqual(
             _expressionTestData["num_expression_entries"],
             len(expressionLevels))
         overThreshold = rnaQuantification.getExpressionLevels(
-            rnaQuantID, threshold=100.0)
+            threshold=100.0)
         self.assertEqual(
             _expressionTestData["num_entries_over_threshold"],
             len(overThreshold))
 
     def testSearchExpressionLevelsWithFeatureIds(self):
         rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
-        rnaQuantID = rnaQuantification.getLocalId()
         featureIds = _expressionTestData["feature_ids"]
         expressionLevels = rnaQuantification.getExpressionLevels(
-            rnaQuantID, featureIds=featureIds)
+            featureIds=featureIds)
         self.assertEqual(
             _expressionTestData["num_expression_entries"],
             len(expressionLevels))

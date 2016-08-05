@@ -67,7 +67,7 @@ class TestFrontend(unittest.TestCase):
             )[0]
         cls.rnaQuantificationId = cls.rnaQuantification.getId()
         cls.expressionLevel = cls.rnaQuantification.getExpressionLevels(
-            1, 2, 3, 4, 5)[0]
+            1, 2, 3, 4)[0]
         cls.expressionLevelId = cls.expressionLevel.getId()
 
     def sendPostRequest(self, path, request):
@@ -131,7 +131,6 @@ class TestFrontend(unittest.TestCase):
 
     def sendRnaQuantificationsSearch(self):
         request = protocol.SearchRnaQuantificationsRequest()
-        request.dataset_id = self.datasetId
         request.rna_quantification_set_id = self.rnaQuantificationSetId
         return self.sendPostRequest('/rnaquantifications/search', request)
 
