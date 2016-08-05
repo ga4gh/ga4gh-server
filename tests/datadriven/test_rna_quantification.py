@@ -80,7 +80,7 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
     """
     Data driven test class for rna quantification. Builds an alternative model
     of a rna quantification, and verifies that it is consistent with the model
-    built by the rna_quantification.RNASeqResult object.
+    built by the rna_quantification.SqliteRnaQuantification object.
     """
     def __init__(self, rnaQuantificationLocalId, baseDir):
         self._dataset = datasets.Dataset(_datasetName)
@@ -92,7 +92,7 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             rnaQuantificationId, baseDir)
 
     def getDataModelInstance(self, localId, dataPath):
-        rnaQuantSet = rna_quantification.RnaQuantificationSet(
+        rnaQuantSet = rna_quantification.SqliteRnaQuantificationSet(
             self._dataset, localId)
         rnaQuantSet.setReferenceSet(self._referenceSet)
         rnaQuantSet.populateFromFile(dataPath)

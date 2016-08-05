@@ -773,7 +773,9 @@ class Backend(object):
         compoundId = datamodel.RnaQuantificationCompoundId.parse(
             request.rna_quantification_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
-        rnaQuant = dataset.getRnaQuantification(rnaQuantificationId)
+        rnaQuantSet = dataset.getRnaQuantificationSet(
+            compoundId.rna_quantification_set_id)
+        rnaQuant = rnaQuantSet.getRnaQuantification(rnaQuantificationId)
         rnaQuantificationId = rnaQuant.getLocalId()
         return self._objectListGenerator(
             request,

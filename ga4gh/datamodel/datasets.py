@@ -410,7 +410,7 @@ class SimulatedDataset(Dataset):
         # RnaQuantificationSets
         for i in range(numRnaQuantSets):
             localId = 'simRqs{}'.format(i)
-            rnaQuantSet = rnaQuantification.SimulatedRnaQuantSet(
+            rnaQuantSet = rnaQuantification.SimulatedRnaQuantificationSet(
                 self, localId)
             rnaQuantSet.setReferenceSet(referenceSet)
             self.addRnaQuantificationSet(rnaQuantSet)

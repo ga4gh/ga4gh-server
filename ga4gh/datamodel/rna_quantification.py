@@ -65,7 +65,6 @@ class ExpressionLevel(AbstractExpressionLevel):
     """
     Class representing a single ExpressionLevel in the GA4GH data model.
     """
-
     def __init__(self, parentContainer, record):
         super(ExpressionLevel, self).__init__(parentContainer, record["id"])
         self._expression = record["expression"]
@@ -83,17 +82,39 @@ class ExpressionLevel(AbstractExpressionLevel):
         return self._name
 
 
-class AbstractRNAQuantificationSet(datamodel.DatamodelObject):
+class AbstractRnaQuantificationSet(datamodel.DatamodelObject):
     """
     An abstract base class of a RNA quantification set
     """
     compoundIdClass = datamodel.RnaQuantificationSetCompoundId
 
     def __init__(self, parentContainer, localId):
-        super(AbstractRNAQuantificationSet, self).__init__(
+        super(AbstractRnaQuantificationSet, self).__init__(
             parentContainer, localId)
         self._name = localId
         self._referenceSet = None
+        self._rnaQuantificationIdMap = {}
+        self._rnaQuantificationIds = []
+
+    def getNumRnaQuantifications(self):
+        """
+        Returns the number of rna quantifications in this set.
+        """
+        return len(self._rnaQuantificationIds)
+
+    def getRnaQuantificationByIndex(self, index):
+        """
+        Returns the rna quantification at the specified index in this set.
+        """
+        return self._rnaQuantificationIdMap[
+            self._rnaQuantificationIds[index]]
+
+    def getRnaQuantification(self, rnaQuantificationId):
+        return self._rnaQuantificationIdMap[rnaQuantificationId]
+
+    def getRnaQuantifications(self):
+        return [self._rnaQuantificationIdMap[id_] for
+                id_ in self._rnaQuantificationIds]
 
     def getReferenceSet(self):
         """
@@ -108,6 +129,14 @@ class AbstractRNAQuantificationSet(datamodel.DatamodelObject):
         """
         self._referenceSet = referenceSet
 
+    def addRnaQuantification(self, rnaQuantification):
+        """
+        Add an rnaQuantification to this rnaQuantificationSet
+        """
+        id_ = rnaQuantification.getId()
+        self._rnaQuantificationIdMap[id_] = rnaQuantification
+        self._rnaQuantificationIds.append(id_)
+
     def toProtocolElement(self):
         """
         Converts this rnaQuant into its GA4GH protocol equivalent.
@@ -116,50 +145,18 @@ class AbstractRNAQuantificationSet(datamodel.DatamodelObject):
         protocolElement.id = self.getId()
         protocolElement.dataset_id = self._parentContainer.getId()
         protocolElement.name = self._name
-
         return protocolElement
 
 
-class RnaQuantificationSet(AbstractRNAQuantificationSet):
+class SqliteRnaQuantificationSet(AbstractRnaQuantificationSet):
     """
     Class representing a single RnaQuantificationSet in the GA4GH model.
     """
-
     def __init__(self, parentContainer, name):
-        super(RnaQuantificationSet, self).__init__(
+        super(SqliteRnaQuantificationSet, self).__init__(
             parentContainer, name)
         self._dbFilePath = None
         self._db = None
-        self._rnaQuantIdMap = {}
-        self._rnaQuantIds = []
-
-    def populateFromFile(self, dataUrl):
-        """
-        Populates the instance variables of this RnaQuantificationSet from the
-        specified data URL.
-        """
-        self._dbFilePath = dataUrl
-        self._db = SqliteRNABackend(self._dbFilePath)
-        self.addRnaQuants()
-
-    def populateFromRow(self, row):
-        """
-        Populates the instance variables of this RnaQuantificationSet from the
-        specified DB row.
-        """
-        self._dbFilePath = row[b'dataUrl']
-        self._db = SqliteRNABackend(self._dbFilePath)
-        self.addRnaQuants()
-
-    def addRnaQuants(self):
-        with self._db as dataSource:
-            rnaQuantsReturned = dataSource.searchRnaQuantificationsInDb()
-        for rnaQuant in rnaQuantsReturned:
-            rnaQuantification = RNASeqResult(self, rnaQuant["name"])
-            rnaQuantification.populateFromFile(self._dbFilePath)
-            id = rnaQuantification.getId()
-            self._rnaQuantIdMap[id] = rnaQuantification
-            self._rnaQuantIds.append(id)
 
     def getDataUrl(self):
         """
@@ -168,43 +165,48 @@ class RnaQuantificationSet(AbstractRNAQuantificationSet):
         """
         return self._dbFilePath
 
-    def getNumRnaQuantifications(self):
+    def populateFromFile(self, dataUrl):
         """
-        Returns the number of rna quantifications in this set.
+        Populates the instance variables of this RnaQuantificationSet from the
+        specified data URL.
         """
-        return len(self._rnaQuantIds)
+        self._dbFilePath = dataUrl
+        self._db = SqliteRnaBackend(self._dbFilePath)
+        self.addRnaQuants()
 
-    def getRnaQuantificationByIndex(self, index):
+    def populateFromRow(self, row):
         """
-        Returns the rna quantification at the specified index in this set.
+        Populates the instance variables of this RnaQuantificationSet from the
+        specified DB row.
         """
-        return self._rnaQuantIdMap[
-            self._rnaQuantIds[index]]
+        self._dbFilePath = row[b'dataUrl']
+        self._db = SqliteRnaBackend(self._dbFilePath)
+        self.addRnaQuants()
 
-    def getRnaQuantification(self, rnaQuantificationId):
-        return self._rnaQuantIdMap[rnaQuantificationId]
-
-    def getRnaQuantifications(self):
-        return [self._rnaQuantIdMap[id_] for
-                id_ in self._rnaQuantIds]
+    def addRnaQuants(self):
+        with self._db as dataSource:
+            rnaQuantsReturned = dataSource.searchRnaQuantificationsInDb()
+        for rnaQuant in rnaQuantsReturned:
+            rnaQuantification = SqliteRnaQuantification(self, rnaQuant["name"])
+            rnaQuantification.populateFromFile(self._dbFilePath)
+            self.addRnaQuantification(rnaQuantification)
 
     def getExpressionLevel(self, compoundId):
         expressionId = compoundId.expression_level_id
         with self._db as dataSource:
             expressionReturned = dataSource.getExpressionLevelById(
                 expressionId)
-
         return ExpressionLevel(self, expressionReturned)
 
 
-class AbstractRNAQuantification(datamodel.DatamodelObject):
+class AbstractRnaQuantification(datamodel.DatamodelObject):
     """
     An abstract base class of a RNA quantification
     """
     compoundIdClass = datamodel.RnaQuantificationCompoundId
 
     def __init__(self, parentContainer, localId):
-        super(AbstractRNAQuantification, self).__init__(
+        super(AbstractRnaQuantification, self).__init__(
             parentContainer, localId)
         self._featureSetIds = []
         self._description = ""
@@ -262,13 +264,12 @@ class AbstractRNAQuantification(datamodel.DatamodelObject):
         self._referenceSet = referenceSet
 
 
-class RNASeqResult(AbstractRNAQuantification):
+class SqliteRnaQuantification(AbstractRnaQuantification):
     """
     Class representing a single RnaQuantification in the GA4GH data model.
     """
-
     def __init__(self, parentContainer, localId, rnaQuantDataPath=None):
-        super(RNASeqResult, self).__init__(parentContainer, localId)
+        super(SqliteRnaQuantification, self).__init__(parentContainer, localId)
         self._dbFilePath = None
         self._db = None
 
@@ -290,7 +291,7 @@ class RNASeqResult(AbstractRNAQuantification):
         data URL.
         """
         self._dbFilePath = dataUrl
-        self._db = SqliteRNABackend(self._dbFilePath)
+        self._db = SqliteRnaBackend(self._dbFilePath)
         self.getRnaQuantMetadata()
 
     def populateFromRow(self, row):
@@ -299,7 +300,7 @@ class RNASeqResult(AbstractRNAQuantification):
         DB row.
         """
         self._dbFilePath = row[b'dataUrl']
-        self._db = SqliteRNABackend(self._dbFilePath)
+        self._db = SqliteRnaBackend(self._dbFilePath)
         self.getRnaQuantMetadata()
 
     def getDataUrl(self):
@@ -330,13 +331,13 @@ class RNASeqResult(AbstractRNAQuantification):
         return ExpressionLevel(self, expressionReturned)
 
 
-class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
+class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
     """
     Defines an interface to a sqlite DB which stores all RNA quantifications
     in the dataset.
     """
     def __init__(self, rnaQuantSqlFile="ga4gh-rnaQuant.db"):
-        super(SqliteRNABackend, self).__init__(rnaQuantSqlFile)
+        super(SqliteRnaBackend, self).__init__(rnaQuantSqlFile)
 
     def searchRnaQuantificationsInDb(
             self, pageToken=0, pageSize=None, rnaQuantificationId=""):
@@ -412,12 +413,61 @@ class SqliteRNABackend(sqliteBackend.SqliteBackedDataSource):
                 expressionId)
 
 
-class SimulatedRnaQuantSet(AbstractRNAQuantificationSet):
+class SimulatedRnaQuantificationSet(AbstractRnaQuantificationSet):
     """
     An RNA Quantification set that doesn't derive from a data store.
     Used mostly for testing.
     """
+    def __init__(
+            self, parentContainer, localId, numRnaQuantifications=2):
+        super(SimulatedRnaQuantificationSet, self).__init__(
+            parentContainer, localId)
+        for i in range(numRnaQuantifications):
+            localId = "simRnaQ{}".format(i)
+            rnaQuantification = SimulatedRnaQuantification(self, localId)
+            self.addRnaQuantification(rnaQuantification)
+
+    def getExpressionLevel(self, compoundId):
+        rnaQuantification = self._rnaQuantificationIdMap[
+            compoundId.rna_quantification_id]
+        expressionLevel = rnaQuantification._expressionLevelIdMap[
+            str(compoundId)]
+        return expressionLevel
+
+
+class SimulatedRnaQuantification(AbstractRnaQuantification):
+    """
+    A simulated RNA Quantification
+    """
+    def __init__(
+            self, parentContainer, localId, numExpressionLevels=2):
+        super(SimulatedRnaQuantification, self).__init__(
+            parentContainer, localId)
+        self._expressionLevelIds = []
+        self._expressionLevelIdMap = {}
+        for i in range(numExpressionLevels):
+            localId = "simExpLvl{}".format(i)
+            expressionLevel = SimulatedExpressionLevel(self, localId)
+            self.addExpressionLevel(expressionLevel)
+
+    def addExpressionLevel(self, expressionLevel):
+        id_ = expressionLevel.getId()
+        self._expressionLevelIds.append(id_)
+        self._expressionLevelIdMap[id_] = expressionLevel
+
+    # TODO this makes very little sense
+    def getExpressionLevels(
+            self, unusedArgs, pageToken=0, pageSize=None, threshold=0.0,
+            featureIds=[]):  # NOQA
+        return [self._expressionLevelIdMap[id_] for
+                id_ in self._expressionLevelIds]
+
+
+class SimulatedExpressionLevel(AbstractExpressionLevel):
+    """
+    A simulated expression level
+    """
     def __init__(self, parentContainer, localId):
-        super(SimulatedRnaQuantSet, self).__init__(parentContainer, localId)
-        self._dbFilePath = None
-        self._db = None
+        super(SimulatedExpressionLevel, self).__init__(
+            parentContainer, localId)
+        self._isNormalized = False

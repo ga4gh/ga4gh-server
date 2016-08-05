@@ -2264,7 +2264,7 @@ class RepoManager(object):
             name = getNameFromPath(self._args.filePath)
         else:
             name = self._args.name
-        rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
+        rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
             dataset, name)
         referenceSetName = self._args.referenceSetName
         if referenceSetName is None:

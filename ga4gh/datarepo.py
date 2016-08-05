@@ -1299,8 +1299,9 @@ class SqlDataRepository(AbstractDataRepository):
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             referenceSet = self.getReferenceSet(row[b'referenceSetId'])
-            rnaQuantificationSet = rna_quantification.RnaQuantificationSet(
-                dataset, row[b'name'])
+            rnaQuantificationSet = \
+                rna_quantification.SqliteRnaQuantificationSet(
+                    dataset, row[b'name'])
             rnaQuantificationSet.setReferenceSet(referenceSet)
             rnaQuantificationSet.populateFromRow(row)
             assert rnaQuantificationSet.getId() == row[b'id']
