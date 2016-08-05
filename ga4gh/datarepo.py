@@ -320,6 +320,36 @@ class AbstractDataRepository(object):
                 for vaSet in variantSet.getVariantAnnotationSets():
                     yield vaSet
 
+    def allRnaQuantificationSets(self):
+        """
+        Return an iterator over all rna quantification sets
+        """
+        for dataset in self.getDatasets():
+            for rnaQuantificationSet in dataset.getRnaQuantificationSets():
+                yield rnaQuantificationSet
+
+    def allRnaQuantifications(self):
+        """
+        Return an iterator over all rna quantifications
+        """
+        for dataset in self.getDatasets():
+            for rnaQuantificationSet in dataset.getRnaQuantificationSets():
+                for rnaQuantification in \
+                        rnaQuantificationSet.getRnaQuantifications():
+                    yield rnaQuantification
+
+    def allExpressionLevels(self):
+        """
+        Return an iterator over all expression levels
+        """
+        for dataset in self.getDatasets():
+            for rnaQuantificationSet in dataset.getRnaQuantificationSets():
+                for rnaQuantification in \
+                        rnaQuantificationSet.getRnaQuantifications():
+                    for expressionLevel in \
+                            rnaQuantification.getExpressionLevels():
+                        yield expressionLevel
+
 
 class EmptyDataRepository(AbstractDataRepository):
     """

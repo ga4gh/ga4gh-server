@@ -241,11 +241,9 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
 
     def testSearchRnaQuantifications(self):
         request = protocol.SearchRnaQuantificationsRequest()
-        request.dataset_id = self.datasetId
         request.rna_quantification_set_id = self.rnaQuantificationSetId
         request.page_size = self.pageSize
         self.httpClient.search_rna_quantifications(
-            self.datasetId,
             rna_quantification_set_id=self.rnaQuantificationSetId)
         self.httpClient._run_search_request.assert_called_once_with(
             request, "rnaquantifications",
@@ -337,7 +335,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     def testGetRnaQuantification(self):
         self.httpClient.get_rna_quantification(self.objectId)
         self.httpClient._run_get_request.assert_called_once_with(
-            "rnaquantification", protocol.RnaQuantification, self.objectId)
+            "rnaquantifications", protocol.RnaQuantification, self.objectId)
 
     def testGetExpressionLevel(self):
         self.httpClient.get_expression_level(self.objectId)

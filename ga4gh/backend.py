@@ -749,13 +749,14 @@ class Backend(object):
         Returns a generator over the (rnaQuantification, nextPageToken) pairs
         defined by the specified request.
         """
-        dataset = self.getDataRepository().getDataset(request.dataset_id)
         if len(request.rna_quantification_set_id) < 1:
             raise exceptions.BadRequestException(
                 "Rna Quantification Set Id must be specified")
         else:
             compoundId = datamodel.RnaQuantificationSetCompoundId.parse(
                 request.rna_quantification_set_id)
+            dataset = self.getDataRepository().getDataset(
+                compoundId.dataset_id)
             rnaQuantSet = dataset.getRnaQuantificationSet(
                 compoundId.rna_quantification_set_id)
             return self._topLevelObjectGenerator(
@@ -780,7 +781,7 @@ class Backend(object):
         return self._objectListGenerator(
             request,
             rnaQuant.getExpressionLevels(
-                rnaQuantificationId, pageToken=request.page_token,
+                pageToken=request.page_token,
                 pageSize=request.page_size, threshold=request.threshold,
                 featureIds=request.feature_ids))
 
@@ -1022,7 +1023,9 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         rnaQuantificationSet = dataset.getRnaQuantificationSet(
             compoundId.rna_quantification_set_id)
-        expressionLevel = rnaQuantificationSet.getExpressionLevel(compoundId)
+        rnaQuantification = rnaQuantificationSet.getRnaQuantification(
+            compoundId.rna_quantification_id)
+        expressionLevel = rnaQuantification.getExpressionLevel(compoundId)
         return self.runGetRequest(expressionLevel)
 
     # Search requests.
