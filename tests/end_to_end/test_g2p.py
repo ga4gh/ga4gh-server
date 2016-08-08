@@ -377,7 +377,7 @@ class TestG2P(unittest.TestCase):
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
         request.description = "Melanoma, NOS with response to therapy"
-        request.age_of_on_set.id = "http://purl.obolibrary.org/obo/HP_0003581"
+        request.age_of_onset.id = "http://purl.obolibrary.org/obo/HP_0003581"
         postUrl = '/phenotypes/search'
         response = self.sendSearchRequest(
             postUrl,

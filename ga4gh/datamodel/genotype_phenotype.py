@@ -619,9 +619,9 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
                 request.qualifiers, 'phenotype_quality')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
-        if hasattr(request.age_of_on_set, 'id') and request.age_of_on_set.id:
+        if hasattr(request.age_of_onset, 'id') and request.age_of_onset.id:
             ontolgytermsClause = self._formatOntologyTermObject(
-                request.age_of_on_set, 'phenotype_quality')
+                request.age_of_onset, 'phenotype_quality')
             if ontolgytermsClause:
                 filters.append(ontolgytermsClause)
         return filters
