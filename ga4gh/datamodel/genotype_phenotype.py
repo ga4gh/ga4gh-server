@@ -62,7 +62,7 @@ class G2PUtility(object):
 
     def _featureTypeLabel(self, featureType):
         """
-        return a label for known types
+        Return a label for known types
         """
         featureTypes = {'http://purl.obolibrary.org/obo/SO_0001059':
                         'sequence_alteration',
@@ -75,7 +75,7 @@ class G2PUtility(object):
 
     def _extractAssociationsDetails(self, associations):
         """
-        given a set of results from our search query, return a
+        Given a set of results from our search query, return a
         list of the URIRef for each `detail` (feature,environment,phenotype)
         """
         detailedURIRef = []
@@ -90,7 +90,7 @@ class G2PUtility(object):
 
     def _detailTuples(self, uriRefs):
         """
-        given a list of uriRefs, return a list of dicts:
+        Given a list of uriRefs, return a list of dicts:
         {'subject': s, 'predicate': p, 'object': o }
         all values are strings
         """
@@ -106,7 +106,7 @@ class G2PUtility(object):
 
     def _bindingsToDict(self, bindings):
         """
-        given a binding from the sparql query result,
+        Given a binding from the sparql query result,
         create a dict of plain text
         """
         myDict = {}
@@ -115,7 +115,9 @@ class G2PUtility(object):
         return myDict
 
     def _addDataFile(self, filename):
-        """ given a filename, add it to the graph """
+        """
+        Given a filename, add it to the graph
+        """
         if filename.endswith('.ttl'):
             self._rdfGraph.parse(filename, format='n3')
         else:
@@ -123,7 +125,7 @@ class G2PUtility(object):
 
     def _getDetails(self, uriRef, associations_details):
         """
-        given a uriRef, return a dict of all the details for that Ref
+        Given a uriRef, return a dict of all the details for that Ref
         use the uriRef as the 'id' of the dict
         """
         associationDetail = {}
@@ -225,6 +227,9 @@ class G2PUtility(object):
         return elementClause
 
     def _formatEvidence(self, elements):
+        """
+        Formats elements passed into parts of a query for filtering
+        """
         elementClause = None
         filters = []
         for evidence in elements:
@@ -245,6 +250,9 @@ class G2PUtility(object):
         return elementClause
 
     def _baseQuery(self):
+        """
+        Returns a string with the base of the RDF query structure
+        """
         return """
             PREFIX OBAN: <http://purl.org/oban/>
             PREFIX OBO: <http://purl.obolibrary.org/obo/>
@@ -358,7 +366,6 @@ class G2PUtility(object):
 
         fpa = protocol.FeaturePhenotypeAssociation()
         fpa.id = association['id']
-        # fpa.features.extend([f])
         fpa.feature_ids.extend([feature['id']])
 
         msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' \
@@ -554,12 +561,6 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
                                               "NO-FIND", 'feature'))
             if len(featureFilters) > 0:
                 filters.append("({})".format(" || ".join(featureFilters)))
-
-        # if request.genotype_ids:
-        #     featureClause = self._formatIds(request.genotype_ids,
-        #                                     'feature')
-        #     if featureClause:
-        #         filters.append(featureClause)
 
         if request.evidence:
             evidenceClause = self._formatEvidence(request.evidence)
