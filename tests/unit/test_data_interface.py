@@ -295,10 +295,6 @@ class TestInterfacingLayer(unittest.TestCase):
             self._client.search_rna_quantifications,
             self._repo.allRnaQuantificationSets())
 
-    # TODO: paging screwed up; client only iterates through
-    # 1 EL on pageSize of 1 (should be 2 ELs)...
-    # The next_page_token is not getting set properly
-    @unittest.skip('search_expression_levels paging not working')
     def testSearchExpressionLevels(self):
         self._testSearchMethodInContainer(
             'getExpressionLevels',

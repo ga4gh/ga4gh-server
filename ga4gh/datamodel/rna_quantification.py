@@ -187,10 +187,11 @@ class SqliteRnaQuantificationSet(AbstractRnaQuantificationSet):
     def addRnaQuants(self):
         with self._db as dataSource:
             rnaQuantsReturned = dataSource.searchRnaQuantificationsInDb()
-        for rnaQuant in rnaQuantsReturned:
-            rnaQuantification = SqliteRnaQuantification(self, rnaQuant["name"])
-            rnaQuantification.populateFromFile(self._dbFilePath)
-            self.addRnaQuantification(rnaQuantification)
+            for rnaQuant in rnaQuantsReturned:
+                rnaQuantification = SqliteRnaQuantification(
+                    self, rnaQuant["name"])
+                rnaQuantification.populateFromFile(self._dbFilePath)
+                self.addRnaQuantification(rnaQuantification)
 
 
 class AbstractRnaQuantification(datamodel.DatamodelObject):
@@ -304,7 +305,7 @@ class SqliteRnaQuantification(AbstractRnaQuantification):
         return self._dbFilePath
 
     def getExpressionLevels(
-            self, pageToken=0, pageSize=None, threshold=0.0, featureIds=[]):
+            self, threshold=0.0, featureIds=[], startIndex=0, maxResults=0):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
@@ -313,9 +314,9 @@ class SqliteRnaQuantification(AbstractRnaQuantification):
             expressionsReturned = dataSource.searchExpressionLevelsInDb(
                 rnaQuantificationId,
                 featureIds=featureIds,
-                pageToken=pageToken,
-                pageSize=pageSize,
-                threshold=threshold)
+                threshold=threshold,
+                startIndex=startIndex,
+                maxResults=maxResults)
             expressionLevels = [
                 SqliteExpressionLevel(self, expressionEntry) for
                 expressionEntry in expressionsReturned]
@@ -338,10 +339,8 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
         super(SqliteRnaBackend, self).__init__(rnaQuantSqlFile)
 
     def searchRnaQuantificationsInDb(
-            self, pageToken=0, pageSize=None, rnaQuantificationId=""):
+            self, rnaQuantificationId=""):
         """
-        :param pageToken: int representing first record to return
-        :param pageSize: int representing number of records to return
         :param rnaQuantificationId: string restrict search by id
         :return an array of dictionaries, representing the returned data.
         """
@@ -350,10 +349,9 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
         if len(rnaQuantificationId) > 0:
             sql += " WHERE id = ? "
             sql_args += (rnaQuantificationId,)
-        sql += sqliteBackend.limitsSql(pageToken, pageSize)
         query = self._dbconn.execute(sql, sql_args)
         try:
-            return sqliteBackend.sqliteRows2dicts(query.fetchall())
+            return sqliteBackend.iterativeFetch(query)
         except AttributeError:
             raise exceptions.RnaQuantificationNotFoundException(
                 rnaQuantificationId)
@@ -367,18 +365,16 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
         sql = ("SELECT * FROM RnaQuantification WHERE id = ?")
         query = self._dbconn.execute(sql, (rnaQuantificationId,))
         try:
-            return sqliteBackend.sqliteRow2Dict(query.fetchone())
+            return sqliteBackend.fetchOne(query)
         except AttributeError:
             raise exceptions.RnaQuantificationNotFoundException(
                 rnaQuantificationId)
 
     def searchExpressionLevelsInDb(
-            self, rnaQuantId, featureIds=[], pageToken=0, pageSize=None,
-            threshold=0.0):
+            self, rnaQuantId, featureIds=[], threshold=0.0, startIndex=0,
+            maxResults=0):
         """
         :param rnaQuantId: string restrict search by quantification id
-        :param pageToken: int representing first record to return
-        :param pageSize: int representing number of records to return
         :param threshold: float minimum expression values to return
         :return an array of dictionaries, representing the returned data.
         """
@@ -392,9 +388,10 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
             sql += ") "
             for featureId in featureIds:
                 sql_args += (featureId,)
-        sql += sqliteBackend.limitsSql(pageToken, pageSize)
+        sql += sqliteBackend.limitsSql(
+            startIndex=startIndex, maxResults=maxResults)
         query = self._dbconn.execute(sql, sql_args)
-        return sqliteBackend.sqliteRows2dicts(query.fetchall())
+        return sqliteBackend.iterativeFetch(query)
 
     def getExpressionLevelById(self, expressionId):
         """
@@ -405,7 +402,7 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
         sql = ("SELECT * FROM Expression WHERE id = ?")
         query = self._dbconn.execute(sql, (expressionId,))
         try:
-            return sqliteBackend.sqliteRow2Dict(query.fetchone())
+            return sqliteBackend.fetchOne(query)
         except AttributeError:
             raise exceptions.ExpressionLevelNotFoundException(
                 expressionId)
@@ -448,8 +445,8 @@ class SimulatedRnaQuantification(AbstractRnaQuantification):
 
     # TODO this makes very little sense
     def getExpressionLevels(
-            self, pageToken=0, pageSize=None, threshold=0.0,
-            featureIds=[]):  # NOQA
+            self, threshold=0.0, featureIds=[],
+            startIndex=0, maxResults=0):  # NOQA
         return [self._expressionLevelIdMap[id_] for
                 id_ in self._expressionLevelIds]
 

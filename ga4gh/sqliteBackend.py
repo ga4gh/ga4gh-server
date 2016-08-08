@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 import sqlite3
 
 
-def sqliteRows2dicts(sqliteRows):
+def sqliteRowsToDicts(sqliteRows):
     """
     Unpacks sqlite rows as returned by fetchall
     into an array of simple dicts.
@@ -21,7 +21,7 @@ def sqliteRows2dicts(sqliteRows):
     return map(lambda r: dict(zip(r.keys(), r)), sqliteRows)
 
 
-def sqliteRow2Dict(sqliteRow):
+def sqliteRowToDict(sqliteRow):
     """
     Unpacks a single sqlite row as returned by fetchone
     into a simple dict.
@@ -32,68 +32,47 @@ def sqliteRow2Dict(sqliteRow):
     return dict(zip(sqliteRow.keys(), sqliteRow))
 
 
-def limitsSql(pageToken=0, pageSize=None):
+def limitsSql(startIndex=0, maxResults=0):
     """
-    Takes parsed pagination data, spits out equivalent SQL 'limit' statement.
-
-    :param pageToken: starting row position,
-        can be an int or string containing an int
-    :param pageSize: number of records requested for this transaciton,
-        can be an int or string containing an int
-    :return: SQL 'limit' statement string to append to query.
+    Construct a SQL LIMIT clause
     """
-    if not pageToken:
-        pageToken = 0
-    if pageSize is not None or pageToken > 0:
-        start = int(pageToken)
-        end = start + int(pageSize)
-        return " LIMIT {}, {}".format(start, end)
+    if startIndex and maxResults:
+        return " LIMIT {}, {}".format(startIndex, maxResults)
+    elif startIndex:
+        raise Exception("startIndex was provided, but maxResults was not")
+    elif maxResults:
+        return " LIMIT {}".format(maxResults)
     else:
         return ""
 
 
-def _whereClauseSql(**whereClauses):
-    """
-    Takes parsed search query parameters,
-    produces equivalent SQL 'where' clause.
+default_batch_size = 5  # arbitrary; can tweak later
 
-    :param whereClauses: key-value pairs of column names to limit by,
-        and values to limit them to.
-    :return: corresponding SQLite 'where' clause string ready to paste
-        into query.
+
+def iterativeFetch(query, batchSize=default_batch_size):
     """
-    if whereClauses is not None:
-        # wc is an array of "key ='value'" strings from whereClauses,
-        # with all entries where value = None removed.
-        wc = ["{} = '{}'".format(k, whereClauses[k])
-              for k in whereClauses.keys()
-              if whereClauses[k] is not None]
-        if len(wc) > 0:
-            return " WHERE " + " AND ".join(wc)
-    else:
-        return ""
+    Returns rows of a sql fetch query on demand
+    """
+    while True:
+        rows = query.fetchmany(batchSize)
+        if not rows:
+            break
+        rowDicts = sqliteRowsToDicts(rows)
+        for rowDict in rowDicts:
+            yield rowDict
+
+
+def fetchOne(query):
+    """
+    Returns a dict result from the fetch of one query row
+    """
+    return sqliteRowToDict(query.fetchone())
 
 
 class SqliteBackedDataSource(object):
     """
     Abstract class that sets up a SQLite database source
     as a context-managed data source.
-    Client code of a subclass can then look something as follows:
-
-    def search<DataModel>(self, queryParam1=val1, queryParam2=val2,
-                        assemblyId=None, pageToken=tok, pageSize=size):
-
-        limits = _makeLimits(tok, size)
-        with <dataSourceModule>.<DataSource>(self._dbFile) as dataSource:
-            count = dataSource.<customSQLCountMethod>()
-            datasetDicts = dataSource.<customSQLSearchMethod>(limits)
-        outData = []
-        for dict in datasetDicts:
-            outDataItem = protocol.<DataRecord>()
-            outDataItem.id = dict['ID']
-            outDataItem.<somethingElse> = dict['<somethingElse_columnName>']
-            outData.append(outDataItem)
-        return count, outData
     """
     def __init__(self, dbFile):
         """
