@@ -778,12 +778,35 @@ class Backend(object):
             compoundId.rna_quantification_set_id)
         rnaQuant = rnaQuantSet.getRnaQuantification(rnaQuantificationId)
         rnaQuantificationId = rnaQuant.getLocalId()
-        return self._objectListGenerator(
-            request,
-            rnaQuant.getExpressionLevels(
-                pageToken=request.page_token,
-                pageSize=request.page_size, threshold=request.threshold,
-                featureIds=request.feature_ids))
+        startIndex = request.page_token
+        maxResults = request.page_size
+        # we need to determine if another expressionLevel follows the one
+        # that is last returned from this method to set nextPageToken
+        # correctly, so request an additional expressionLevel from
+        # the database in all cases
+        if maxResults:
+            maxResults += 1
+        expressionLevels = list(rnaQuant.getExpressionLevels(
+            threshold=request.threshold,
+            featureIds=request.feature_ids,
+            startIndex=startIndex,
+            maxResults=maxResults))
+        # initialize loop
+        nextPageTokenIndex = 0
+        expressionLevelIndex = 0
+        if request.page_token:
+            nextPageTokenIndex, = _parsePageToken(request.page_token, 1)
+        numToReturn = request.page_size
+        # execute loop
+        while numToReturn > 0 and expressionLevelIndex < len(expressionLevels):
+            expressionLevel = expressionLevels[expressionLevelIndex]
+            nextPageTokenIndex += 1
+            nextPageToken = str(nextPageTokenIndex)
+            if expressionLevelIndex == len(expressionLevels) - 1:
+                nextPageToken = None
+            yield expressionLevel.toProtocolElement(), nextPageToken
+            expressionLevelIndex += 1
+            numToReturn -= 1
 
     ###########################################################
     #

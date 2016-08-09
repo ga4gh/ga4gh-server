@@ -67,7 +67,7 @@ class TestFrontend(unittest.TestCase):
             )[0]
         cls.rnaQuantificationId = cls.rnaQuantification.getId()
         cls.expressionLevel = cls.rnaQuantification.getExpressionLevels(
-            1, 2, 3, 4)[0]
+            1, 2)[0]
         cls.expressionLevelId = cls.expressionLevel.getId()
 
     def sendPostRequest(self, path, request):
