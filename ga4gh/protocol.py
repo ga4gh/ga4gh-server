@@ -55,7 +55,6 @@ _valueListNameMap = {
     SearchIndividualsResponse: "individuals",  # noqa
     SearchPhenotypeAssociationSetsResponse: "phenotype_association_sets",  # noqa
     SearchPhenotypesResponse: "phenotypes",  # noqa
-    SearchGenotypesResponse: "genotypes",  # noqa
     SearchGenotypePhenotypeResponse: "associations"  # noqa
 }
 

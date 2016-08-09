@@ -839,7 +839,8 @@ class Backend(object):
         try:
             request = protocol.fromJson(requestStr, requestClass)
         except protocol.json_format.ParseError:
-            print("cannot parse for class {} request {}".format(requestClass, requestStr))
+            print("cannot parse for class {} request {}"
+                  .format(requestClass, requestStr))
             raise exceptions.InvalidJsonException(requestStr)
         # TODO How do we detect when the page size is not set?
         if not request.page_size:
@@ -1162,13 +1163,6 @@ class Backend(object):
             request, protocol.SearchPhenotypesRequest,
             protocol.SearchPhenotypesResponse,
             self.phenotypesGenerator)
-
-# TODO Remove
-    # def runSearchGenotypes(self, request):
-    #     return self.runSearchRequest(
-    #         request, protocol.SearchGenotypesRequest,
-    #         protocol.SearchGenotypesResponse,
-    #         self.genotypesGenerator)
 
     def runSearchPhenotypeAssociationSets(self, request):
         return self.runSearchRequest(

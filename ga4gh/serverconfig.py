@@ -36,12 +36,14 @@ class BaseConfig(object):
 
     LANDING_MESSAGE_HTML = "landing_message.html"
 
+
 class ComplianceConfig(BaseConfig):
     """
     Configuration used for compliance testing.
     """
     DATA_SOURCE = "ga4gh-compliance-data/repo.db"
     DEBUG = True
+
 
 class DevelopmentConfig(BaseConfig):
     """

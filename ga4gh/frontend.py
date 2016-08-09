@@ -440,7 +440,8 @@ def handleFlaskPostRequest(flaskRequest, endpoint):
         try:
             return handleHttpPost(flaskRequest, endpoint)
         except Exception as e:
-            import sys, traceback
+            import sys
+            import traceback
             traceback.print_exc(file=sys.stdout)
             raise e
     elif flaskRequest.method == "OPTIONS":

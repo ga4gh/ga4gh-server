@@ -2439,7 +2439,7 @@ class RepoManager(object):
         cls.addDatasetNameArgument(removeIndividualParser)
         cls.addIndividualNameArgument(removeIndividualParser)
         cls.addForceOption(removeIndividualParser)
-                        
+
         addPhenotypeAssociationSetParser = addSubparser(
             subparsers, "add-g2p",
             "Adds phenotypes in ttl format to the repo.")
