@@ -26,8 +26,8 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
     def __init__(self, localId, baseDir):
         self._dataset = datasets.Dataset("ds")
         super(PhenotypeAssociationSetTest, self).__init__(localId, baseDir)
-        self.phenotypeAssocationSet = self.getDataModelInstance(localId,
-                                                                baseDir)
+        self.phenotypeAssocationSet = self.getDataModelInstance(
+            localId, baseDir)
 
     def getDataModelInstance(self, localId, dataPath):
         return g2p.PhenotypeAssociationSet(self._dataset, localId, dataPath)
@@ -126,8 +126,8 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
             u'http://www.w3.org/2000/01/rdf-schema#subClassOf':
             u'http://purl.obolibrary.org/obo/CHEBI_23888',
             u'id': u'http://www.drugbank.ca/drugs/DB01268'}
-        details = self.phenotypeAssocationSet._getDetails(uriRef,
-                                                          associations_details)
+        details = self.phenotypeAssocationSet._getDetails(
+            uriRef, associations_details)
         self.assertEqual(details, sample_details)
 
     def testToNamespaceURL(self):
@@ -181,14 +181,15 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
             GROUP  BY ?association
             ORDER  BY ?association
         """
-        sample_associations = self.phenotypeAssocationSet \
-                                  ._rdfGraph.query(sample_query)
-        result = self.phenotypeAssocationSet \
-                     ._extractAssociationsDetails(sample_associations)
+        sample_associations = \
+            self.phenotypeAssocationSet._rdfGraph.query(sample_query)
+        result = self.phenotypeAssocationSet._extractAssociationsDetails(
+            sample_associations)
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0].toPython(), 'http://ohsu.edu/cgd/27d2169c')
-        self.assertEqual(result[1].toPython(),
-                         'http://www.drugbank.ca/drugs/DB00619')
+        self.assertEqual(
+            result[1].toPython(),
+            'http://www.drugbank.ca/drugs/DB00619')
         self.assertEqual(result[2].toPython(), 'http://ohsu.edu/cgd/87752f6c')
 
     def testToGA4GH(self):
@@ -254,8 +255,8 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
             u'association': u'http://ohsu.edu/cgd/fe484b5c',
         }
         result = self.phenotypeAssocationSet._toGA4GH(sample_associations)
-        self.assertEqual(result.__class__.__name__,
-                         'FeaturePhenotypeAssociation')
+        self.assertEqual(
+            result.__class__.__name__, 'FeaturePhenotypeAssociation')
         fpa_dict = protocol.toJsonDict(result)
         description = 'Association: genotype:[RET M918T missense mutation]' \
                       ' phenotype:[Papillary thyroid carcinoma with ' \

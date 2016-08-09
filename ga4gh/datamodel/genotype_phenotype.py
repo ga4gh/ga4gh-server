@@ -2,7 +2,6 @@
 Module responsible for translating g2p data into GA4GH native
 objects.
 """
-
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -64,11 +63,12 @@ class G2PUtility(object):
         """
         Return a label for known types
         """
-        featureTypes = {'http://purl.obolibrary.org/obo/SO_0001059':
-                        'sequence_alteration',
-                        'http://purl.obolibrary.org/obo/SO_0001583':
-                        'missense_variant',
-                        'http://purl.obolibrary.org/obo/SO_0000147': 'exon'}
+        featureTypes = {
+            'http://purl.obolibrary.org/obo/SO_0001059':
+            'sequence_alteration',
+            'http://purl.obolibrary.org/obo/SO_0001583':
+            'missense_variant',
+            'http://purl.obolibrary.org/obo/SO_0000147': 'exon'}
         if featureType in featureTypes:
             return featureTypes[featureType]
         return featureType
@@ -85,7 +85,6 @@ class G2PUtility(object):
                 detailedURIRef.append(row['feature'])
                 detailedURIRef.append(row['environment'])
                 detailedURIRef.append(row['phenotype'])
-
         return detailedURIRef
 
     def _detailTuples(self, uriRefs):
@@ -96,11 +95,12 @@ class G2PUtility(object):
         """
         details = []
         for uriRef in uriRefs:
-            for s, p, o in self._rdfGraph.triples((uriRef, None, None)):
+            for subject, predicate, object_ in self._rdfGraph.triples(
+                    (uriRef, None, None)):
                 details.append({
-                    'subject': s.toPython(),
-                    'predicate': p.toPython(),
-                    'object': o.toPython()
+                    'subject': subject.toPython(),
+                    'predicate': predicate.toPython(),
+                    'object': object_.toPython()
                 })
         return details
 
@@ -145,8 +145,8 @@ class G2PUtility(object):
             element = protocol.toJsonDict(element)
         if element['externalIdentifiers']:
             for _id in element['externalIdentifiers']:
-                elements.append(self._formatExternalIdentifier(_id,
-                                                               element_type))
+                elements.append(self._formatExternalIdentifier(
+                    _id, element_type))
             elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
@@ -158,8 +158,8 @@ class G2PUtility(object):
             term = "{}:{}".format(element['database'], element['identifier'])
             namespaceTerm = self._toNamespaceURL(term)
         else:
-            namespaceTerm = "{}{}".format(element['database'],
-                                          element['identifier'])
+            namespaceTerm = "{}{}".format(
+                element['database'], element['identifier'])
         comparison = '?{} = <{}> '.format(element_type, namespaceTerm)
         return comparison
 
@@ -236,8 +236,8 @@ class G2PUtility(object):
             if evidence.description:
                 elementClause = 'regex(?{}, "{}")'.format(
                     'environment_label', evidence.description)
-            if hasattr(evidence, 'externalIdentifiers') \
-                    and evidence.externalIdentifiers:
+            if (hasattr(evidence, 'externalIdentifiers') and
+                    evidence.externalIdentifiers):
                 # TODO will this pick up > 1 externalIdentifiers ?
                 for externalIdentifier in evidence['externalIdentifiers']:
                     exid_clause = self._formatExternalIdentifier(
@@ -297,7 +297,7 @@ class G2PUtility(object):
         Leverages prefixes already in graph namespace
         Ex.  "DrugBank:DB01268" -> "http://www.drugbank.ca/drugs/DB01268"
         """
-        (termPrefix, termId) = term.split(':')
+        termPrefix, termId = term.split(':')
         for prefix, namespace in self._rdfGraph.namespaces():
             if prefix == termPrefix:
                 return "".join([namespace, termId])
@@ -313,7 +313,7 @@ class G2PUtility(object):
         """
         for prefix, namespace in self._rdfGraph.namespaces():
             if namespace in url:
-                return(url.replace(namespace, ''))
+                return url.replace(namespace, '')
 
     def _getPrefix(self, url):
         """
@@ -336,7 +336,7 @@ class G2PUtility(object):
         """
         for prefix, namespace in self._rdfGraph.namespaces():
             if namespace.toPython() in url:
-                return(namespace)
+                return namespace
 
     def _toGA4GH(self, association):
         """
@@ -433,7 +433,6 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
     (http://nif-crawler.neuinfo.org/monarch/ttl/cgd.ttl),
     published by the Monarch project, was the source of Evidence.
     """
-
     def __init__(self, parentContainer, localId, dataDir):
         super(PhenotypeAssociationSet, self).__init__(parentContainer, localId)
         """
@@ -475,8 +474,8 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
 
         # given get the details for the feature,phenotype and environment
         associations_details = self._detailTuples(
-                                    self._extractAssociationsDetails(
-                                        associations))
+            self._extractAssociationsDetails(
+                associations))
 
         # association_details is now a list of {subject,predicate,object}
         # for each of the association detail
@@ -505,8 +504,9 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
                 # references (labels or URIrefs)
 
         # create GA4GH objects
-        associations = [self._toGA4GH(assoc) for
-                        assoc in associationList]
+        associations = [
+            self._toGA4GH(assoc) for
+            assoc in associationList]
         return associations
 
     def _formatFilterQuery(self, request=None, featureSets=[]):
@@ -514,13 +514,11 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
         Generate a formatted sparql query with appropriate filters
         """
         query = self._baseQuery()
-
         filters = []
-
         if issubclass(request.__class__,
                       protocol.SearchGenotypePhenotypeRequest):
-            filters += self._filterSearchGenotypePhenotypeRequest(request,
-                                                                  featureSets)
+            filters += self._filterSearchGenotypePhenotypeRequest(
+                request, featureSets)
 
         if issubclass(request.__class__, protocol.SearchPhenotypesRequest):
             filters += self._filterSearchPhenotypesRequest(request)
@@ -530,7 +528,6 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
         if len(filters) == 0:
             filter = ""
         query = query.replace("#%FILTER%", filter)
-
         return query
 
     def _filterSearchGenotypePhenotypeRequest(self, request, featureSets):
@@ -545,20 +542,19 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
                         # we have a compoundId, so use it to lookup
                         # import ipdb; ipdb.set_trace()
                         if compoundId.feature_set == self.getLocalId():
-                            featureFilters.append(self._formatId(
-                                                  compoundId.featureId,
-                                                  'feature'))
+                            featureFilters.append(
+                                self._formatId(
+                                    compoundId.featureId, 'feature'))
                             break
                         else:
                             feature = featureSet.getFeature(compoundId)
                             if feature:
-                                featureFilters.append(self.
-                                                      _formatFeatureClause(
-                                                        feature))
+                                featureFilters.append(
+                                    self._formatFeatureClause(feature))
                                 break
                     except Exception:
-                        featureFilters.append(self._formatId(
-                                              "NO-FIND", 'feature'))
+                        featureFilters.append(
+                            self._formatId("NO-FIND", 'feature'))
             if len(featureFilters) > 0:
                 filters.append("({})".format(" || ".join(featureFilters)))
 
@@ -568,8 +564,8 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
                 filters.append(evidenceClause)
 
         if request.phenotype_ids:
-            phenotypeClause = self._formatIds(request.phenotype_ids,
-                                              'phenotype')
+            phenotypeClause = self._formatIds(
+                request.phenotype_ids, 'phenotype')
             filters.append(phenotypeClause)
 
         return filters
@@ -583,18 +579,17 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
             filters.append("?feature = <{}>".format(request.id))
 
         if request.reference_name:
-            filters.append('regex(?feature_label, "{}")'
-                           .format(request.reference_name))
+            filters.append(
+                'regex(?feature_label, "{}")'.format(request.reference_name))
 
         featureClause = self._formatExternalIdentifiers(request, 'external_id')
         if featureClause:
             filters.append(featureClause)
         # OntologyTerms
-        featureOntologytermsClause = self._formatOntologyTerm(request,
-                                                              'feature')
+        featureOntologytermsClause = self._formatOntologyTerm(
+            request, 'feature')
         if featureOntologytermsClause:
             filters.append(featureOntologytermsClause)
-
         return filters
 
     def _filterSearchPhenotypesRequest(self, request):
@@ -606,8 +601,8 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
             filters.append("?phenotype = <{}>".format(request.id))
 
         if request.description:
-            filters.append('regex(?phenotype_label, "{}")'
-                           .format(request.description))
+            filters.append(
+                'regex(?phenotype_label, "{}")'.format(request.description))
         # OntologyTerms
         # TODO: refactor this repetitive code
         if hasattr(request.type, 'id') and request.type.id:

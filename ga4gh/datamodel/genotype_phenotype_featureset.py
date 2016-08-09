@@ -2,11 +2,9 @@
 Module responsible for translating g2p data into GA4GH native
 objects.
 """
-
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-
 
 import bisect
 import rdflib
@@ -30,8 +28,8 @@ ASSOCIATION = "http://purl.org/oban/association"
 HAS_SUBJECT = "http://purl.org/oban/association_has_subject"
 
 
-class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
-                                     sequenceAnnotations.Gff3DbFeatureSet):
+class PhenotypeAssociationFeatureSet(
+        g2p.G2PUtility, sequenceAnnotations.Gff3DbFeatureSet):
     """
     An rdf object store.  The cancer genome database
     [Clinical Genomics Knowledge Base]
@@ -40,8 +38,8 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
     """
 
     def __init__(self, parentContainer, localId):
-        super(PhenotypeAssociationFeatureSet, self).__init__(parentContainer,
-                                                             localId)
+        super(PhenotypeAssociationFeatureSet, self).__init__(
+            parentContainer, localId)
 
     # mimic featureset
     def populateFromRow(self, row):
@@ -61,12 +59,10 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
         If path is set, this backend will load itself
         """
         self._dbFilePath = dataUrl
-
         # initialize graph
         self._rdfGraph = rdflib.ConjunctiveGraph()
         # save the path
         self._dataUrl = dataUrl
-
         try:
             self._scanDataFiles(self._dataUrl, ['*.ttl', '*.xml'])
         except AttributeError:
@@ -146,8 +142,8 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                     name=None, geneSymbol=None, numFeatures=10):
 
         # query to do search
-        query = self._filterSearchFeaturesRequest(referenceName, geneSymbol,
-                                                  name, start, end)
+        query = self._filterSearchFeaturesRequest(
+            referenceName, geneSymbol, name, start, end)
         featuresResults = self._rdfGraph.query(query)
         featureIds = set()
         for row in featuresResults.bindings:
@@ -191,26 +187,20 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
 
     def _filterSearchFeaturesRequest(self, reference_name, gene_symbol, name,
                                      start, end):
-
         """
         formulate a sparql query string based on parameters
         """
         filters = []
         query = self._baseQuery()
-
         filters = []
-
         location = self._findLocation(reference_name, start, end)
         if location:
             filters.append("?feature = <{}>".format(location))
-
         if gene_symbol:
-            filters.append('regex(?feature_label, "{}")'
-                           .format(gene_symbol))
+            filters.append('regex(?feature_label, "{}")')
         if name:
-            filters.append('regex(?feature_label, "{}")'
-                           .format(name))
-
+            filters.append(
+                'regex(?feature_label, "{}")'.format(name))
         # apply filters
         filter = "FILTER ({})".format(' && '.join(filters))
         if len(filters) == 0:
@@ -315,8 +305,9 @@ class PhenotypeAssociationFeatureSet(g2p.G2PUtility,
                             locationMap[build][chromosome][begin][end] = {}
                         locationMap[build][chromosome][begin][end] = \
                             location["_id"]
-                        locationMap[location["_id"]] = {"build": build,
-                                                        "chromosome":
-                                                        chromosome,
-                                                        "begin": begin,
-                                                        "end": end}
+                        locationMap[location["_id"]] = {
+                            "build": build,
+                            "chromosome": chromosome,
+                            "begin": begin,
+                            "end": end,
+                        }

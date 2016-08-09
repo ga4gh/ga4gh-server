@@ -229,8 +229,8 @@ class ComplianceDataMunger(object):
 
         # add g2p featureSet
         g2pPath = os.path.join(self.inputDirectory, "cgd")
-        featuresetG2P = g2p_featureset\
-            .PhenotypeAssociationFeatureSet(dataset,  g2pPath)
+        featuresetG2P = g2p_featureset.PhenotypeAssociationFeatureSet(
+            dataset, g2pPath)
         featuresetG2P.setOntology(sequenceOntology)
         featuresetG2P.setReferenceSet(referenceSet)
         featuresetG2P.populateFromFile(g2pPath)
@@ -245,9 +245,9 @@ class ComplianceDataMunger(object):
 
         print("Done converting compliance data.", file=sys.stderr)
 
-    def addVariantSet(self,
-                      variantFileName,
-                      dataset, referenceSet, ontology, bioSamples):
+    def addVariantSet(
+            self, variantFileName, dataset, referenceSet,
+            ontology, bioSamples):
         inputVcf = os.path.join(
             self.inputDirectory, variantFileName)
         outputVcf = os.path.join(

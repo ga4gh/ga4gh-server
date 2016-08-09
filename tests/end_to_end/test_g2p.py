@@ -1,7 +1,6 @@
 """
 G2P testing on the test data
 """
-
 import unittest
 
 import ga4gh.datamodel as datamodel
@@ -55,8 +54,8 @@ class TestG2P(unittest.TestCase):
         datasetId = response.datasets[0].id
         request = protocol.SearchPhenotypeAssociationSetsRequest()
         request.dataset_id = datasetId
-        response = self.sendPostRequest("phenotypeassociationsets/search",
-                                        request)
+        response = self.sendPostRequest(
+            "phenotypeassociationsets/search", request)
         response = protocol.fromJson(
             response.data, protocol.SearchPhenotypeAssociationSetsResponse)
         return response.phenotype_association_sets[0].id
@@ -120,19 +119,19 @@ class TestG2P(unittest.TestCase):
         request.dataset_id = datasetId
         responseData = self.sendSearchRequest(
             path, request, protocol.SearchFeatureSetsResponse)
-        return (datasetName, responseData.feature_sets)
+        return datasetName, responseData.feature_sets
 
     def getCGDDataSetFeatureSet(self):
         """
         Gets CGD data feature set
         """
-        (datasetName, featureSets) = self.getAllFeatureSets()
+        datasetName, featureSets = self.getAllFeatureSets()
         for featureSet in featureSets:
             if featureSet.name == 'cgd':
-                return (datasetName, featureSet)
+                return datasetName, featureSet
 
-    def getObfuscatedFeatureCompoundId(self, dataSetName, featureSetName,
-                                       featureId):
+    def getObfuscatedFeatureCompoundId(
+            self, dataSetName, featureSetName, featureId):
         """
         Gets the obfuscated feature compound Id
         """
@@ -145,32 +144,29 @@ class TestG2P(unittest.TestCase):
         return obfuscated
 
     def testEnsureCGDFeatureSet(self):
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         self.assertIsNotNone(datasetName)
         self.assertIsNotNone(featureSet)
         self.assertIsNotNone(featureSet.name)
 
     def testEnsureCGDFeatureId(self):
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         featureId = \
             "http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=736"
-        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
-                                                         featureSet.name,
-                                                         featureId)
+        obfuscated = self.getObfuscatedFeatureCompoundId(
+            datasetName, featureSet.name, featureId)
         compoundId = datamodel.FeatureCompoundId.parse(obfuscated)
         self.assertEqual(featureId, compoundId.featureId)
 
     def testCompoundFeatureSearch(self):
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         featureId = \
             "http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=736"
-        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
-                                                         featureSet.name,
-                                                         featureId)
+        obfuscated = self.getObfuscatedFeatureCompoundId(
+            datasetName, featureSet.name, featureId)
         request = protocol.GetFeatureRequest
         request.feature_id = obfuscated
-        response = self.sendGetRequest(
-            '/features/{}'.format(obfuscated))
+        response = self.sendGetRequest('/features/{}'.format(obfuscated))
 
         feature = protocol.fromJson(response.data, protocol.Feature)
 
@@ -189,12 +185,11 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(1, len(response.associations[0].feature_ids))
 
     def testFeaturesSearchById(self):
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         featureId = \
             "http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=965"
-        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
-                                                         featureSet.name,
-                                                         featureId)
+        obfuscated = self.getObfuscatedFeatureCompoundId(
+            datasetName, featureSet.name, featureId)
         request = protocol.GetFeatureRequest
         request.feature_id = obfuscated
         response = self.sendGetRequest(
@@ -212,7 +207,7 @@ class TestG2P(unittest.TestCase):
     def testGenotypesSearchByName(self):
         # setup phenotype query
         request = protocol.SearchFeaturesRequest()
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         request.feature_set_id = featureSet.id
         request.name = "RET M918T missense mutation"
 
@@ -235,7 +230,7 @@ class TestG2P(unittest.TestCase):
 
     def testGenotypesSearchByNameKIT(self):
         request = protocol.SearchFeaturesRequest()
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         request.feature_set_id = featureSet.id
         request.name = \
             "KIT *wild"
@@ -362,12 +357,11 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         featureId = \
             "http://ohsu.edu/cgd/27d2169c"
-        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
-                                                         featureSet.name,
-                                                         featureId)
+        obfuscated = self.getObfuscatedFeatureCompoundId(
+            datasetName, featureSet.name, featureId)
         # use the feature to look up associations
         request.feature_ids.extend([obfuscated])
         response = self.sendSearchRequest(
@@ -426,7 +420,7 @@ class TestG2P(unittest.TestCase):
             self.getPhenotypeAssociationSetId()
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         featureId = \
             "http://ohsu.edu/cgd/27d2169c"
         obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
@@ -445,12 +439,11 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         featureId = \
             "http://ohsu.edu/cgd/27d2169c"
-        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
-                                                         featureSet.name,
-                                                         featureId)
+        obfuscated = self.getObfuscatedFeatureCompoundId(
+            datasetName, featureSet.name, featureId)
         request.feature_ids.extend([obfuscated])
         eq = protocol.EvidenceQuery()
         eq.description = "imatinib"
@@ -471,7 +464,7 @@ class TestG2P(unittest.TestCase):
         """
         request = protocol.SearchFeaturesRequest()
         request.page_size = 1
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         request.feature_set_id = featureSet.id
         request.name = \
             "KIT *wild"
@@ -488,7 +481,7 @@ class TestG2P(unittest.TestCase):
         If page size is not set to more than one association should be returned
         """
         request = protocol.SearchFeaturesRequest()
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         request.feature_set_id = featureSet.id
         request.name = \
             "KIT *wild"
@@ -505,7 +498,7 @@ class TestG2P(unittest.TestCase):
         Loop through all pages
         """
         request = protocol.SearchFeaturesRequest()
-        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
         request.feature_set_id = featureSet.id
         request.page_size = 1
         request.name = \
