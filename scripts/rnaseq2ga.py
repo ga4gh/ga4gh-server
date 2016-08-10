@@ -11,6 +11,16 @@ import argparse
 
 import utils
 
+utils.ga4ghImportGlue()
+
+import ga4gh.datarepo as datarepo  # NOQA
+
+
+def data_repo(path):
+    dataRepository = datarepo.SqlDataRepository(path)
+    dataRepository.open(datarepo.MODE_READ)
+    return dataRepository
+
 
 class RNASqliteStore(object):
     """
@@ -91,7 +101,7 @@ class AbstractWriter(object):
     """
     Base class to use for the rna quantification writers
     """
-    def __init__(self, rnaDB):
+    def __init__(self, rnaDB, repoPath, featureType="gene"):
         self._db = rnaDB
         self._isNormalized = None
         self._units = 0  # EXPRESSION_UNIT_UNSPECIFIED
@@ -102,6 +112,8 @@ class AbstractWriter(object):
         self._countCol = None
         self._confColLow = None
         self._confColHi = None
+        self._dataRepo = data_repo(repoPath)
+        self._featureType = featureType
 
     def writeExpression(self, rnaQuantificationId, quantfile):
         """
@@ -127,7 +139,12 @@ class AbstractWriter(object):
                 confidenceHi = float(fields[self._confColHi])
                 score = (confidenceLow + confidenceHi)/2
 
-            featureId = fields[self._featureCol]
+            featureName = fields[self._featureCol]
+            dataset = self._dataRepo.getDatasets()[0]
+            featureSet = dataset.getFeatureSets()[0]
+            featureId = ""
+            for feature in featureSet.getFeatures(name=featureName):
+                featureId = feature[0].id
             datafields = (expressionId, rnaQuantificationId, name, featureId,
                           expressionLevel, isNormalized,
                           rawCount, score, units, confidenceLow, confidenceHi)
@@ -145,8 +162,8 @@ class CufflinksWriter(AbstractWriter):
         gene_short_name    tss_id    locus    length    coverage    FPKM
         FPKM_conf_lo    FPKM_conf_hi    FPKM_status
     """
-    def __init__(self, rnaDB):
-        super(CufflinksWriter, self).__init__(rnaDB)
+    def __init__(self, rnaDB, repoPath, featureType):
+        super(CufflinksWriter, self).__init__(rnaDB, repoPath, featureType)
         self._isNormalized = True
         self._units = 1  # FPKM
         self._expressionLevelCol = 9
@@ -176,15 +193,15 @@ class RsemWriter(AbstractWriter):
     IsoPct_from_pme_TPM    TPM_ci_lower_bound    TPM_ci_upper_bound
     FPKM_ci_lower_bound    FPKM_ci_upper_bound
     """
-    def __init__(self, rnaDB, featureType="gene"):
-        super(RsemWriter, self).__init__(rnaDB)
+    def __init__(self, rnaDB, repoPath, featureType):
+        super(RsemWriter, self).__init__(rnaDB, repoPath, featureType)
         self._isNormalized = True
         self._units = 2  # TPM
         self._expressionLevelCol = 5
         self._idCol = 0
         self._nameCol = self._idCol
         self._countCol = 4
-        if featureType is "transcript":
+        if self._featureType is "transcript":
             self._featureCol = 1
             self._confColLow = 13
             self._confColHi = 14
@@ -229,8 +246,8 @@ def writeExpressionTable(writer, data):
         writer.writeExpression(rnaQuantId, quantfile)
 
 
-def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv",
-              featureType="gene"):
+def rnaseq2ga(dataFolder, sqlFilename, repoPath="ga4gh-example-data/repo.db",
+              controlFile="rna_control_file.tsv", featureType="gene"):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
@@ -252,11 +269,11 @@ def rnaseq2ga(dataFolder, sqlFilename, controlFile="rna_control_file.tsv",
             rnaType = fields[2]
             annotationId = fields[3].strip()
             if rnaType == "cufflinks":
-                writer = CufflinksWriter(rnaDB)
+                writer = CufflinksWriter(rnaDB, repoPath)
             elif rnaType == "kallisto":
-                writer = KallistoWriter(rnaDB)
+                writer = KallistoWriter(rnaDB, repoPath)
             elif rnaType == "rsem":
-                writer = RsemWriter(rnaDB, featureType=featureType)
+                writer = RsemWriter(rnaDB, repoPath, featureType)
             else:
                 raise Exception("Unknown RNA file type: {}".format(rnaType))
             rnaQuantId = fields[0].strip()
