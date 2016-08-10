@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/genotype_phenotype.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x1ega4gh/genotype_phenotype.proto\x12\x05ga4gh\x1a\x14ga4gh/metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xc8\x01\n\x17PhenotypeAssociationSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x12\n\ndataset_id\x18\x03 \x01(\t\x12\x36\n\x04info\x18\x04 \x03(\x0b\x32(.ga4gh.PhenotypeAssociationSet.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"f\n\x14\x45nvironmentalContext\x12\n\n\x02id\x18\x01 \x01(\t\x12-\n\x10\x65nvironment_type\x18\x02 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\"\xa6\x02\n\x11PhenotypeInstance\x12\n\n\x02id\x18\x01 \x01(\t\x12!\n\x04type\x18\x02 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12&\n\tqualifier\x18\x03 \x03(\x0b\x32\x13.ga4gh.OntologyTerm\x12*\n\rage_of_on_set\x18\x04 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12\x30\n\x04info\x18\x06 \x03(\x0b\x32\".ga4gh.PhenotypeInstance.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\xbd\x01\n\x08\x45vidence\x12*\n\revidence_type\x18\x01 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\'\n\x04info\x18\x03 \x03(\x0b\x32\x19.ga4gh.Evidence.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\x86\x02\n\x1b\x46\x65\x61turePhenotypeAssociation\x12\n\n\x02id\x18\x01 \x01(\t\x12$\n\x1cphenotype_association_set_id\x18\x02 \x01(\t\x12\x13\n\x0b\x66\x65\x61ture_ids\x18\x03 \x03(\t\x12!\n\x08\x65vidence\x18\x04 \x03(\x0b\x32\x0f.ga4gh.Evidence\x12+\n\tphenotype\x18\x05 \x01(\x0b\x32\x18.ga4gh.PhenotypeInstance\x12\x13\n\x0b\x64\x65scription\x18\x06 \x01(\t\x12;\n\x16\x65nvironmental_contexts\x18\x07 \x03(\x0b\x32\x1b.ga4gh.EnvironmentalContextb\x06proto3')
+  serialized_pb=_b('\n\x1ega4gh/genotype_phenotype.proto\x12\x05ga4gh\x1a\x14ga4gh/metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"\xc8\x01\n\x17PhenotypeAssociationSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x12\n\ndataset_id\x18\x03 \x01(\t\x12\x36\n\x04info\x18\x04 \x03(\x0b\x32(.ga4gh.PhenotypeAssociationSet.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"f\n\x14\x45nvironmentalContext\x12\n\n\x02id\x18\x01 \x01(\t\x12-\n\x10\x65nvironment_type\x18\x02 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\"\xa5\x02\n\x11PhenotypeInstance\x12\n\n\x02id\x18\x01 \x01(\t\x12!\n\x04type\x18\x02 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12&\n\tqualifier\x18\x03 \x03(\x0b\x32\x13.ga4gh.OntologyTerm\x12)\n\x0c\x61ge_of_onset\x18\x04 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12\x30\n\x04info\x18\x06 \x03(\x0b\x32\".ga4gh.PhenotypeInstance.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\xbd\x01\n\x08\x45vidence\x12*\n\revidence_type\x18\x01 \x01(\x0b\x32\x13.ga4gh.OntologyTerm\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\'\n\x04info\x18\x03 \x03(\x0b\x32\x19.ga4gh.Evidence.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\x8b\x03\n\x1b\x46\x65\x61turePhenotypeAssociation\x12\n\n\x02id\x18\x01 \x01(\t\x12$\n\x1cphenotype_association_set_id\x18\x02 \x01(\t\x12\x13\n\x0b\x66\x65\x61ture_ids\x18\x03 \x03(\t\x12!\n\x08\x65vidence\x18\x04 \x03(\x0b\x32\x0f.ga4gh.Evidence\x12+\n\tphenotype\x18\x05 \x01(\x0b\x32\x18.ga4gh.PhenotypeInstance\x12\x13\n\x0b\x64\x65scription\x18\x06 \x01(\t\x12;\n\x16\x65nvironmental_contexts\x18\x07 \x03(\x0b\x32\x1b.ga4gh.EnvironmentalContext\x12:\n\x04info\x18\x08 \x03(\x0b\x32,.ga4gh.FeaturePhenotypeAssociation.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3')
   ,
   dependencies=[ga4gh_dot_metadata__pb2.DESCRIPTOR,google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -229,7 +229,7 @@ _PHENOTYPEINSTANCE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='age_of_on_set', full_name='ga4gh.PhenotypeInstance.age_of_on_set', index=3,
+      name='age_of_onset', full_name='ga4gh.PhenotypeInstance.age_of_onset', index=3,
       number=4, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -262,7 +262,7 @@ _PHENOTYPEINSTANCE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=401,
-  serialized_end=695,
+  serialized_end=694,
 )
 
 
@@ -343,10 +343,47 @@ _EVIDENCE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=698,
-  serialized_end=887,
+  serialized_start=697,
+  serialized_end=886,
 )
 
+
+_FEATUREPHENOTYPEASSOCIATION_INFOENTRY = _descriptor.Descriptor(
+  name='InfoEntry',
+  full_name='ga4gh.FeaturePhenotypeAssociation.InfoEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='ga4gh.FeaturePhenotypeAssociation.InfoEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='ga4gh.FeaturePhenotypeAssociation.InfoEntry.value', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=223,
+  serialized_end=294,
+)
 
 _FEATUREPHENOTYPEASSOCIATION = _descriptor.Descriptor(
   name='FeaturePhenotypeAssociation',
@@ -404,10 +441,17 @@ _FEATUREPHENOTYPEASSOCIATION = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='info', full_name='ga4gh.FeaturePhenotypeAssociation.info', index=7,
+      number=8, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
-  nested_types=[],
+  nested_types=[_FEATUREPHENOTYPEASSOCIATION_INFOENTRY, ],
   enum_types=[
   ],
   options=None,
@@ -416,8 +460,8 @@ _FEATUREPHENOTYPEASSOCIATION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=890,
-  serialized_end=1152,
+  serialized_start=889,
+  serialized_end=1284,
 )
 
 _PHENOTYPEASSOCIATIONSET_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
@@ -428,15 +472,18 @@ _PHENOTYPEINSTANCE_INFOENTRY.fields_by_name['value'].message_type = google_dot_p
 _PHENOTYPEINSTANCE_INFOENTRY.containing_type = _PHENOTYPEINSTANCE
 _PHENOTYPEINSTANCE.fields_by_name['type'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
 _PHENOTYPEINSTANCE.fields_by_name['qualifier'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
-_PHENOTYPEINSTANCE.fields_by_name['age_of_on_set'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
+_PHENOTYPEINSTANCE.fields_by_name['age_of_onset'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
 _PHENOTYPEINSTANCE.fields_by_name['info'].message_type = _PHENOTYPEINSTANCE_INFOENTRY
 _EVIDENCE_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
 _EVIDENCE_INFOENTRY.containing_type = _EVIDENCE
 _EVIDENCE.fields_by_name['evidence_type'].message_type = ga4gh_dot_metadata__pb2._ONTOLOGYTERM
 _EVIDENCE.fields_by_name['info'].message_type = _EVIDENCE_INFOENTRY
+_FEATUREPHENOTYPEASSOCIATION_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
+_FEATUREPHENOTYPEASSOCIATION_INFOENTRY.containing_type = _FEATUREPHENOTYPEASSOCIATION
 _FEATUREPHENOTYPEASSOCIATION.fields_by_name['evidence'].message_type = _EVIDENCE
 _FEATUREPHENOTYPEASSOCIATION.fields_by_name['phenotype'].message_type = _PHENOTYPEINSTANCE
 _FEATUREPHENOTYPEASSOCIATION.fields_by_name['environmental_contexts'].message_type = _ENVIRONMENTALCONTEXT
+_FEATUREPHENOTYPEASSOCIATION.fields_by_name['info'].message_type = _FEATUREPHENOTYPEASSOCIATION_INFOENTRY
 DESCRIPTOR.message_types_by_name['PhenotypeAssociationSet'] = _PHENOTYPEASSOCIATIONSET
 DESCRIPTOR.message_types_by_name['EnvironmentalContext'] = _ENVIRONMENTALCONTEXT
 DESCRIPTOR.message_types_by_name['PhenotypeInstance'] = _PHENOTYPEINSTANCE
@@ -496,11 +543,19 @@ _sym_db.RegisterMessage(Evidence)
 _sym_db.RegisterMessage(Evidence.InfoEntry)
 
 FeaturePhenotypeAssociation = _reflection.GeneratedProtocolMessageType('FeaturePhenotypeAssociation', (_message.Message,), dict(
+
+  InfoEntry = _reflection.GeneratedProtocolMessageType('InfoEntry', (_message.Message,), dict(
+    DESCRIPTOR = _FEATUREPHENOTYPEASSOCIATION_INFOENTRY,
+    __module__ = 'ga4gh.genotype_phenotype_pb2'
+    # @@protoc_insertion_point(class_scope:ga4gh.FeaturePhenotypeAssociation.InfoEntry)
+    ))
+  ,
   DESCRIPTOR = _FEATUREPHENOTYPEASSOCIATION,
   __module__ = 'ga4gh.genotype_phenotype_pb2'
   # @@protoc_insertion_point(class_scope:ga4gh.FeaturePhenotypeAssociation)
   ))
 _sym_db.RegisterMessage(FeaturePhenotypeAssociation)
+_sym_db.RegisterMessage(FeaturePhenotypeAssociation.InfoEntry)
 
 
 _PHENOTYPEASSOCIATIONSET_INFOENTRY.has_options = True
@@ -509,4 +564,6 @@ _PHENOTYPEINSTANCE_INFOENTRY.has_options = True
 _PHENOTYPEINSTANCE_INFOENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
 _EVIDENCE_INFOENTRY.has_options = True
 _EVIDENCE_INFOENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
+_FEATUREPHENOTYPEASSOCIATION_INFOENTRY.has_options = True
+_FEATUREPHENOTYPEASSOCIATION_INFOENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
 # @@protoc_insertion_point(module_scope)
