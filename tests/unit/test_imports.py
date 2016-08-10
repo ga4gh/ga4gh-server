@@ -190,7 +190,8 @@ class ImportGraphLayerChecker(object):
                      'ga4gh/sequence_annotations_pb2.py',
                      'ga4gh/sequence_annotation_service_pb2.py',
                      'ga4gh/genotype_phenotype_pb2.py',
-                     'ga4gh/genotype_phenotype_service_pb2.py'
+                     'ga4gh/genotype_phenotype_service_pb2.py',
+                     'ga4gh/_protocol_definitions.py',
                      ],
         'config': ['ga4gh/serverconfig.py'],
     }

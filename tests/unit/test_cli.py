@@ -540,6 +540,24 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.runner, "removeIndividual")
         self.assertEquals(args.force, False)
 
+    def testAddG2p(self):
+        cliInput = "add-g2p {} {} {} -n NAME".format(
+            self.registryPath,
+            self.filePath,
+            self.datasetName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.filePath, self.filePath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.name, "NAME")
+
+    def testRemoveG2p(self):
+        cliInput = "remove-g2p {} -n NAME".format(
+            self.registryPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.name, "NAME")
+
 
 class TestOutputFormats(unittest.TestCase):
     """

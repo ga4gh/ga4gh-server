@@ -1788,11 +1788,10 @@ class RepoManager(object):
             name = getNameFromPath(self._args.registryPath)
         dataset = self._repo.getDatasetByName(self._args.datasetName)
         # parentContainer, localId, dataDir
-        phenotypeAssociationSet = \
-            genotype_phenotype \
-            .PhenotypeAssociationSet(dataset, name, self._args.filePath)
-        self._updateRepo(self._repo.insertPhenotypeAssociationSet,
-                         phenotypeAssociationSet)
+        phenotypeAssociationSet = genotype_phenotype.PhenotypeAssociationSet(
+            dataset, name, self._args.filePath)
+        self._updateRepo(
+            self._repo.insertPhenotypeAssociationSet, phenotypeAssociationSet)
 
     def addDataset(self):
         """
@@ -2444,21 +2443,22 @@ class RepoManager(object):
             subparsers, "add-g2p",
             "Adds phenotypes in ttl format to the repo.")
         addPhenotypeAssociationSetParser.set_defaults(
-                                         runner="addPhenotypeAssociationSet")
+            runner="addPhenotypeAssociationSet")
         cls.addRepoArgument(addPhenotypeAssociationSetParser)
         cls.addFilePathArgument(
             addPhenotypeAssociationSetParser,
             "The path of the ttl file defining phenotypes.")
         # cls.addNameOption(addPhenotypeAssociationSetParser, "g2p")
         cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
-        cls.addNameOption(addPhenotypeAssociationSetParser,
-                          "PhenotypeAssociationSet")
+        cls.addNameOption(
+            addPhenotypeAssociationSetParser,
+            "PhenotypeAssociationSet")
 
         removePhenotypeAssociationSetParser = addSubparser(
             subparsers, "remove-g2p",
             "Remove an phenotypes from the repo")
-        removePhenotypeAssociationSetParser \
-            .set_defaults(runner="removePhenotypeAssociationSet")
+        removePhenotypeAssociationSetParser.set_defaults(
+            runner="removePhenotypeAssociationSet")
         cls.addRepoArgument(removePhenotypeAssociationSetParser)
         cls.addNameOption(removePhenotypeAssociationSetParser, "g2p")
 
