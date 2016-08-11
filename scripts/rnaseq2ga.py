@@ -253,7 +253,7 @@ def rnaseq2ga(dataFolder, sqlFilename, repoPath="ga4gh-example-data/repo.db",
     in a sqlite database for use by the GA4GH reference server.
 
     Quantifications are specified in a tab delimited control file with columns:
-    rna_quant_id    filename        type    annotation_id   read_group_id
+    rna_quant_name    filename        type    feature_set_name   read_group_set_name
     description    programs
 
     Supports the following quantification output type:
