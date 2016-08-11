@@ -212,6 +212,46 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEquals(args.runner, cli.SearchDatasetsRunner)
 
+    def testGenotypePhenotypeSearchArguments(self):
+        cliInput = (
+            "genotypephenotype-search --phenotype_association_set_id SET_ID "
+            "--feature_ids A,B,C --phenotype_ids D,E,F --pageSize 1 -E E1 "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.phenotype_association_set_id, "SET_ID")
+        self.assertEqual(args.feature_ids, "A,B,C")
+        self.assertEqual(args.phenotype_ids, "D,E,F")
+        self.assertEqual(args.evidence, "E1")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchGenotypePhenotypeRunner)
+
+    def testPhenotypeSearchArguments(self):
+        cliInput = (
+            "phenotype-search --phenotype_association_set_id SET_ID "
+            "--phenotype_id ID1 --description FOO --type T --age_of_onset 2 "
+            "--pageSize 1 BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.phenotype_association_set_id, "SET_ID")
+        self.assertEqual(args.phenotype_id, "ID1")
+        self.assertEqual(args.description, "FOO")
+        self.assertEqual(args.type, "T")
+        self.assertEqual(args.age_of_onset, "2")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchPhenotypeRunner)
+
+    def testPhenotypeAssociationSetsSearchArguments(self):
+        cliInput = (
+            "phenotypeassociationsets-search --datasetId SET_ID "
+            "--pageSize 1 BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.datasetId, "SET_ID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner,
+                          cli.SearchPhenotypeAssociationSetsRunner)
+
     def verifyGetArguments(self, command, runnerClass):
         cliInput = "{} BASEURL ID".format(command)
         args = self.parser.parse_args(cliInput.split())

@@ -77,6 +77,7 @@ class TestClientJson(TestClientOutput):
     various options is equal to the values we find using the Python
     client API.
     """
+
     def captureJsonOutput(self, command, arguments=""):
         """
         Runs the specified command add the JSON output option and
@@ -344,3 +345,50 @@ class TestClientJson(TestClientOutput):
     # def testGetFeatureSets(self):  # TODO
 
     # def testSearchFeatureSets(self):  # TODO
+
+    def testSearchGenotypePhenotype(self):
+        test_executed = 0
+        for dataset in self._client.search_datasets():
+            # pas = phenotype_association_set
+            for pas in \
+              self._client.search_phenotype_association_sets(dataset.id):
+                    iterator = self._client.search_genotype_phenotype(
+                        phenotype_association_set_id=pas.id,
+                        phenotype_ids=["http://ohsu.edu/cgd/87795e43"]
+                    )
+                    args = ("--phenotype_association_set_id {}"
+                            " --phenotype_ids {} ").format(
+                            pas.id,
+                            "http://ohsu.edu/cgd/87795e43")
+                    test_executed += self.verifyParsedOutputsEqual(
+                        iterator, "genotypephenotype-search", args)
+        self.assertGreater(test_executed, 0)
+
+    def testSearchPhenotype(self):
+        test_executed = 0
+        for dataset in self._client.search_datasets():
+            # pas = phenotype_association_set
+            for pas in \
+              self._client.search_phenotype_association_sets(dataset.id):
+                    iterator = self._client.search_phenotype(
+                        phenotype_association_set_id=pas.id,
+                        phenotype_id="http://ohsu.edu/cgd/87795e43"
+                    )
+                    args = ("--phenotype_association_set_id {}"
+                            " --phenotype_id {} ").format(
+                            pas.id,
+                            "http://ohsu.edu/cgd/87795e43")
+                    test_executed += self.verifyParsedOutputsEqual(
+                        iterator, "phenotype-search", args)
+        self.assertGreater(test_executed, 0)
+
+    def testSearchSearchPhenotypeAssociationSets(self):
+        test_executed = 0
+        for dataset in self._client.search_datasets():
+            iterator = self._client.search_phenotype_association_sets(
+                dataset_id=dataset.id
+            )
+            args = "--datasetId {}".format(dataset.id)
+            test_executed += self.verifyParsedOutputsEqual(
+                iterator, "phenotypeassociationsets-search", args)
+        self.assertGreater(test_executed, 0)
