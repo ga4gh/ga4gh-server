@@ -46,7 +46,8 @@ class ComplianceDataMunger(object):
         """
         self.inputDirectory = inputDirectory
         self.outputDirectory = outputDirectory
-        self.repoPath = os.path.join(outputDirectory, "repo.db")
+        self.repoPath = os.path.abspath(
+            os.path.join(outputDirectory, "repo.db"))
         self.tempdir = None
 
         if os.path.exists(self.outputDirectory):
@@ -233,11 +234,13 @@ class ComplianceDataMunger(object):
         gencode.setReferenceSet(referenceSet)
 
         self.repo.insertFeatureSet(gencode)
+        self.repo.commit()
 
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
         rnaseq2ga.rnaseq2ga(
-            self.inputDirectory, rnaDbName, featureType="transcript")
+            self.inputDirectory, rnaDbName, self.repoPath,
+            featureType="transcript")
         rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
             dataset, "rnaseq")
         rnaQuantificationSet.setReferenceSet(referenceSet)
