@@ -27,7 +27,7 @@ class RNASqliteStore(object):
     Defines a sqlite store for RNA data as well as methods for loading the
     tables.
     """
-    def __init__(self, sqliteFileName):
+    def __init__(self, sqliteFileName, repoPath):
         # TODO: check to see if the rnaQuantId is in the db and exit if it is
         # since this is a generator and not an updater
         sqlFilePath = sqliteFileName
@@ -253,21 +253,23 @@ def rnaseq2ga(dataFolder, sqlFilename, repoPath="ga4gh-example-data/repo.db",
     in a sqlite database for use by the GA4GH reference server.
 
     Quantifications are specified in a tab delimited control file with columns:
-    rna_quant_name    filename        type    feature_set_name   read_group_set_name
-    description    programs
+    rna_quant_name    filename        type    feature_set_name
+    read_group_set_name     description    programs
 
     Supports the following quantification output type:
     Cufflinks, kallisto, RSEM
     """
     controlFilePath = os.path.join(dataFolder, controlFile)
-
-    rnaDB = RNASqliteStore(sqlFilename)
+    dataRepo = data_repo(repoPath)
+    rnaDB = RNASqliteStore(sqlFilename, repoPath)
     with open(controlFilePath, "r") as rnaDatasetsFile:
         rnaDatasetsFile.readline()  # skip header
         for line in rnaDatasetsFile:
             fields = line.split("\t")
             rnaType = fields[2]
+            dataset = dataRepo.getDatasets()[0]
             annotationId = fields[3].strip()
+            featureSet = dataset.getFeatureSetByName(annotationId)
             if rnaType == "cufflinks":
                 writer = CufflinksWriter(rnaDB, repoPath)
             elif rnaType == "kallisto":
@@ -278,11 +280,14 @@ def rnaseq2ga(dataFolder, sqlFilename, repoPath="ga4gh-example-data/repo.db",
                 raise Exception("Unknown RNA file type: {}".format(rnaType))
             rnaQuantId = fields[0].strip()
             quantFilename = os.path.join(dataFolder, fields[1].strip())
-            readGroupIds = fields[4].strip()
+            readGroupSetName = fields[4].strip()
+            readGroupSet = dataset.getReadGroupSetByName(readGroupSetName)
+            readGroupIds = ",".join(
+                [x.getId() for x in readGroupSet.getReadGroups()])
             description = fields[5].strip()
             programs = fields[6].strip()
             writeRnaseqTable(rnaDB, [rnaQuantId], description,
-                             annotationId,
+                             featureSet.getId(),
                              readGroupId=readGroupIds, programs=programs)
             quantFile = open(quantFilename, "r")
             writeExpressionTable(writer, [(rnaQuantId, quantFile)])
