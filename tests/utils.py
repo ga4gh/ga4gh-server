@@ -13,6 +13,7 @@ import os
 import signal
 import sys
 import time
+import contextlib
 
 
 packageName = 'ga4gh'
@@ -45,8 +46,11 @@ def zipLists(*lists):
     an AssertionError otherwise.  Returns the zipped lists.
     """
     length = len(lists[0])
-    for list_ in lists[1:]:
-        assert len(list_) == length
+    for i, list_ in enumerate(lists[1:]):
+        if len(list_) != length:
+            msg = "List at index {} has length {} != {}".format(
+                i + 1, len(list_), length)
+            raise AssertionError(msg)
     return zip(*lists)
 
 
@@ -153,3 +157,35 @@ class Timeout(object):
                 signal.alarm(0)
             return result
         return wrapper
+
+
+@contextlib.contextmanager
+def suppressOutput():
+    # I would like to use sys.stdout.fileno() and sys.stderr.fileno()
+    # here instead of literal fd numbers, but nose does something like
+    # sys.stdout = StringIO.StringIO() when the -s flag is not enabled
+    # (to capture test output so it doesn't get entangled with nose's
+    # display) so the sys.stdout and sys.stderr objects are not able to
+    # be accessed here.
+    try:
+        # redirect stdout and stderr to /dev/null
+        devnull = open(os.devnull, 'w')
+        origStdoutFd = 1
+        origStderrFd = 2
+        origStdout = os.dup(origStdoutFd)
+        origStderr = os.dup(origStderrFd)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.dup2(devnull.fileno(), origStdoutFd)
+        os.dup2(devnull.fileno(), origStderrFd)
+        # enter the wrapped code
+        yield
+    finally:
+        # restore original file streams
+        devnull.flush()
+        os.dup2(origStdout, origStdoutFd)
+        os.dup2(origStderr, origStderrFd)
+        # clean up
+        os.close(origStdout)
+        os.close(origStderr)
+        devnull.close()

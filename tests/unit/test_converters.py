@@ -15,6 +15,7 @@ import ga4gh.client as client
 import ga4gh.converters as converters
 import ga4gh.datarepo as datarepo
 import tests.paths as paths
+import tests.utils as utils
 
 
 class TestSamConverter(unittest.TestCase):
@@ -78,7 +79,15 @@ class TestSamConverter(unittest.TestCase):
             converter.convert()
             samFile = pysam.AlignmentFile(fileHandle.name, "r")
             try:
-                convertedReads = list(samFile.fetch())
+                # TODO suppressed because of pysam output:
+                # [W::sam_parse1] mapped mate cannot have zero coordinate;
+                # treated as unmapped
+                # and
+                # [W::sam_parse1] mapped mate cannot have zero coordinate;
+                # treated as unmapped
+                # see discussion in https://github.com/ga4gh/server/pull/789
+                with utils.suppressOutput():
+                    convertedReads = list(samFile.fetch())
             finally:
                 samFile.close()
             samFile = pysam.AlignmentFile(readGroupSet.getDataUrl(), "rb")

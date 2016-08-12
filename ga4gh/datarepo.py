@@ -926,7 +926,14 @@ class SqlDataRepository(AbstractDataRepository):
         """
         sql = "DELETE FROM ReferenceSet WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (referenceSet.getId(),))
+        try:
+            cursor.execute(sql, (referenceSet.getId(),))
+        except sqlite3.IntegrityError:
+            msg = ("Unable to delete reference set.  "
+                   "There are objects currently in the registry which are "
+                   "aligned against it.  Remove these objects before removing "
+                   "the reference set.")
+            raise exceptions.RepoManagerException(msg)
 
     def _readReadGroupSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
