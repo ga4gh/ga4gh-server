@@ -619,9 +619,9 @@ class AbstractClient(object):
             request, "phenotype_association_sets",
             protocol.SearchPhenotypeAssociationSetsResponse)
 
-    def search_genotype_phenotype(self, phenotype_association_set_id=None,
-                                  feature_ids=None, phenotype_ids=None,
-                                  evidence=None):
+    def search_genotype_phenotype(
+            self, phenotype_association_set_id=None, feature_ids=None,
+            phenotype_ids=None, evidence=None):
         """
         Returns an iterator over the GeneotypePhenotype associations from
         the server
@@ -640,9 +640,9 @@ class AbstractClient(object):
             request, "genotypephenotype",
             protocol.SearchGenotypePhenotypeResponse)
 
-    def search_phenotype(self,
-                         phenotype_association_set_id=None, phenotype_id=None,
-                         description=None, type=None, age_of_onset=None):
+    def search_phenotype(
+            self, phenotype_association_set_id=None, phenotype_id=None,
+            description=None, type_=None, age_of_onset=None):
         """
         Returns an iterator over the Phenotypes from the server
         """
@@ -652,8 +652,8 @@ class AbstractClient(object):
             request.id = phenotype_id
         if description:
             request.description = description
-        if type:
-            request.type = type
+        if type_:
+            request.type.mergeFrom(type_)
         if age_of_onset:
             request.age_of_onset = age_of_onset
         request.page_size = pb.int(self._page_size)

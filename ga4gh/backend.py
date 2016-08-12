@@ -714,18 +714,12 @@ class Backend(object):
         defined by the (JSON string) request
         """
         # TODO make paging work using SPARQL?
-        # determine offset for paging
-        if request.page_token:
-            offset = _parsePageToken(request.page_token, 1)
-        else:
-            offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
             request.phenotype_association_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
-        annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.page_size, offset)
+        annotationList = phenotypeAssociationSet.getAssociations(request)
         phenotypes = [annotation.phenotype for annotation in annotationList]
         return self._protocolListGenerator(
             request, phenotypes)
@@ -736,18 +730,14 @@ class Backend(object):
         defined by the (JSON string) request
         """
         # TODO make paging work using SPARQL?
-        # determine offset for paging
-        if request.page_token:
-            offset = _parsePageToken(request.page_token, 1)
-        else:
-            offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
             request.phenotype_association_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
+        featureSets = dataset.getFeatureSets()
         annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.page_size, offset, dataset.getFeatureSets())
+            request, featureSets)
         return self._protocolListGenerator(request, annotationList)
 
     def callSetsGenerator(self, request):

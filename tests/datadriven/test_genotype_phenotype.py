@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import os
 import rdflib
 
-import ga4gh.datamodel.genotype_phenotype as g2p
+import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
@@ -30,7 +30,8 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
             localId, baseDir)
 
     def getDataModelInstance(self, localId, dataPath):
-        return g2p.PhenotypeAssociationSet(self._dataset, localId, dataPath)
+        return genotype_phenotype.RdfPhenotypeAssociationSet(
+            self._dataset, localId, dataPath)
 
     def getProtocolClass(self):
         return protocol.PhenotypeAssociationSet

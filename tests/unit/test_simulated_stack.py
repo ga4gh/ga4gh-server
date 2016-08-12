@@ -1146,3 +1146,9 @@ class TestSimulatedStack(unittest.TestCase):
                 self.assertEqual(responseObject.id, bioSample.getId())
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
+
+    # TODO def testSearchPhenotypes(self):
+
+    # TODO def testSearchPhenotypeAssociationSets(self):
+
+    # TODO def testSearchGenotypePhenotypes(self):

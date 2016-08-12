@@ -312,8 +312,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
             phenotype_association_set_id=self.phenotype_association_set_id,
             feature_ids=self.feature_ids,
             phenotype_ids=self.phenotype_ids,
-            evidence=[self.evidence]
-        )
+            evidence=[self.evidence])
         self.httpClient._run_search_request.assert_called_once_with(
             request, "genotypephenotype",
             protocol.SearchGenotypePhenotypeResponse)
@@ -326,8 +325,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.page_size = self.pageSize
         self.httpClient.search_phenotype(
             phenotype_association_set_id=self.phenotype_association_set_id,
-            phenotype_id=self.phenotype_ids[0],
-        )
+            phenotype_id=self.phenotype_ids[0])
         self.httpClient._run_search_request.assert_called_once_with(
             request, "phenotype",
             protocol.SearchPhenotypesResponse)
@@ -337,8 +335,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request.dataset_id = self.datasetId
         request.page_size = self.pageSize
         self.httpClient.search_phenotype_association_sets(
-            dataset_id=self.datasetId
-        )
+            dataset_id=self.datasetId)
         self.httpClient._run_search_request.assert_called_once_with(
             request, "phenotype_association_sets",
             protocol.SearchPhenotypeAssociationSetsResponse)
