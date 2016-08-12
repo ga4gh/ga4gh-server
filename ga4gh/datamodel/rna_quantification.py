@@ -380,7 +380,7 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
         """
         sql = ("SELECT * FROM Expression WHERE "
                "rna_quantification_id = ? "
-               "AND expression >= ? ")
+               "AND expression > ? ")
         sql_args = (rnaQuantId, threshold)
         if len(featureIds) > 0:
             sql += "AND feature_id in ("
