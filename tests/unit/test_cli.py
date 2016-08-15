@@ -364,6 +364,7 @@ class TestRepoManagerCli(unittest.TestCase):
         self.registryPath = 'a/repo/path'
         self.datasetName = "datasetName"
         self.filePath = 'a/file/path'
+        self.dirPath = 'a/dir/path/'
         self.individualName = "test"
         self.bioSampleName = "test"
         self.individual = protocol.toJson(
@@ -580,22 +581,23 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.runner, "removeIndividual")
         self.assertEquals(args.force, False)
 
-    def testAddG2p(self):
-        cliInput = "add-g2p {} {} {} -n NAME".format(
+    def testAddPhenotypeAssociationSet(self):
+        cliInput = "add-phenotypeassociationset {} {} {} -n NAME".format(
             self.registryPath,
-            self.filePath,
-            self.datasetName)
+            self.datasetName,
+            self.dirPath)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.registryPath, self.registryPath)
-        self.assertEquals(args.filePath, self.filePath)
         self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.dirPath, self.dirPath)
         self.assertEquals(args.name, "NAME")
 
-    def testRemoveG2p(self):
-        cliInput = "remove-g2p {} -n NAME".format(
-            self.registryPath)
+    def testRemovePhenotypeAssociationSet(self):
+        cliInput = "remove-phenotypeassociationset {} {} NAME".format(
+            self.registryPath, self.datasetName)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.name, "NAME")
 
 

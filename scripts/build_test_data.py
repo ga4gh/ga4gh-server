@@ -65,7 +65,9 @@ def buildTestData(dataDirectory='tests/data', relativePaths=False):
     for dataFile in glob.glob(pattern):
         # coordinate featureset name and g2p name
         name = dataFile.split("/")[-1]
-        run("add-g2p", repoFile, dataFile, datasetName, "-n {}".format(name))
+        run(
+            "add-phenotypeassociationset", repoFile,
+            datasetName, dataFile, "-n {}".format(name))
         run(
             "add-featureset", repoFile, datasetName, useRelativePath,
             dataFile, "-R NCBI37",  "-O", sequenceOntologyName,

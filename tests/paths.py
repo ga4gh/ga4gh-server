@@ -59,5 +59,9 @@ featuresPath = os.path.join(
 featuresPath2 = os.path.join(
     testDataDir, 'datasets/dataset1/sequenceAnnotations/specialCasesTest.db')
 
+# g2p
+phenotypeAssociationSetPath = os.path.join(
+    testDataDir, 'datasets/dataset1/phenotypes/cgd/')
+
 # misc.
 landingMessageHtml = os.path.join(testDataDir, "test.html")
