@@ -17,7 +17,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.bio_metadata as biodata
-import ga4gh.datamodel.genotype_phenotype as g2p
+import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.exceptions as exceptions
 
@@ -329,6 +329,15 @@ class AbstractDataRepository(object):
             for variantSet in dataset.getVariantSets():
                 for vaSet in variantSet.getVariantAnnotationSets():
                     yield vaSet
+
+    def allPhenotypeAssociationSets(self):
+        """
+        Return an iterator over all phenotype association sets
+        in the data repo
+        """
+        for dataset in self.getDatasets():
+            for paSet in dataset.getPhenotypeAssociationSets():
+                yield paSet
 
 
 class EmptyDataRepository(AbstractDataRepository):
@@ -1323,8 +1332,9 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute("SELECT * FROM PhenotypeAssociationSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
-            phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
-                dataset, row[b'name'], row[b'dataUrl'])
+            phenotypeAssociationSet = \
+                genotype_phenotype.RdfPhenotypeAssociationSet(
+                    dataset, row[b'name'], row[b'dataUrl'])
             dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
     def initialise(self):

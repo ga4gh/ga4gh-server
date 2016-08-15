@@ -565,9 +565,8 @@ class SearchPhenotypeRunner(AbstractSearchRunner):
             phenotype_association_set_id=self._phenotype_association_set_id,
             phenotype_id=self._phenotype_id,
             description=self._description,
-            type=self._type,
-            age_of_onset=self._age_of_onset
-            )
+            type_=self._type,
+            age_of_onset=self._age_of_onset)
         self._output(iterator)
 
 
@@ -581,8 +580,7 @@ class SearchPhenotypeAssociationSetsRunner(AbstractSearchRunner):
 
     def run(self):
         iterator = self._client.search_phenotype_association_sets(
-            dataset_id=self._dataset_id
-            )
+            dataset_id=self._dataset_id)
         self._output(iterator)
 
 
@@ -1028,20 +1026,16 @@ def addGenotypePhenotypeSearchOptions(parser):
     """
     parser.add_argument(
         "--phenotype_association_set_id", "-s", default=None,
-        help="Only return associations from this phenotype_association_set."
-    )
+        help="Only return associations from this phenotype_association_set.")
     parser.add_argument(
         "--feature_ids", "-f", default=None,
-        help="Only return associations for these features."
-    )
+        help="Only return associations for these features.")
     parser.add_argument(
         "--phenotype_ids", "-p", default=None,
-        help="Only return associations for these phenotypes."
-    )
+        help="Only return associations for these phenotypes.")
     parser.add_argument(
         "--evidence", "-E", default=None,
-        help="Only return associations to this evidence."
-    )
+        help="Only return associations to this evidence.")
 
 
 def addPhenotypeSearchOptions(parser):
@@ -1050,24 +1044,19 @@ def addPhenotypeSearchOptions(parser):
     """
     parser.add_argument(
         "--phenotype_association_set_id", "-s", default=None,
-        help="Only return phenotypes from this phenotype_association_set."
-    )
+        help="Only return phenotypes from this phenotype_association_set.")
     parser.add_argument(
         "--phenotype_id", "-p", default=None,
-        help="Only return this phenotype."
-    )
+        help="Only return this phenotype.")
     parser.add_argument(
         "--description", "-d", default=None,
-        help="Only return phenotypes matching this description."
-    )
+        help="Only return phenotypes matching this description.")
     parser.add_argument(
         "--age_of_onset", "-a", default=None,
-        help="Only return phenotypes with this age_of_onset."
-    )
+        help="Only return phenotypes with this age_of_onset.")
     parser.add_argument(
         "--type", "-T", default=None,
-        help="Only return phenotypes with this type."
-    )
+        help="Only return phenotypes with this type.")
 
 
 def addPhenotypeAssociationSetsSearchOptions(parser):
@@ -1554,11 +1543,9 @@ def addReferencesBasesListParser(subparsers):
 
 
 def addGenotypePhenotypeSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "genotypephenotype-search",
-        description="Search for genotype to phenotype associations",
-        help="Search for genotype to phenotype associations."
-    )
+    parser = addSubparser(
+        subparsers, "genotypephenotype-search",
+        "Search for genotype to phenotype associations")
     parser.set_defaults(runner=SearchGenotypePhenotypeRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -1568,11 +1555,8 @@ def addGenotypePhenotypeSearchParser(subparsers):
 
 
 def addPhenotypeSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "phenotype-search",
-        description="Search for phenotypes",
-        help="Search for phenotypes."
-    )
+    parser = addSubparser(
+        subparsers, "phenotype-search", "Search for phenotypes")
     parser.set_defaults(runner=SearchPhenotypeRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -1582,11 +1566,9 @@ def addPhenotypeSearchParser(subparsers):
 
 
 def addPhenotypeAssociationSetsSearchParser(subparsers):
-    parser = subparsers.add_parser(
-        "phenotypeassociationsets-search",
-        description="Search for phenotypeassociationsets",
-        help="Search for phenotypeassociationsets."
-    )
+    parser = addSubparser(
+        subparsers, "phenotypeassociationsets-search",
+        "Search for phenotypeassociationsets")
     parser.set_defaults(runner=SearchPhenotypeAssociationSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
@@ -1970,8 +1952,9 @@ class RepoManager(object):
             name = getNameFromPath(self._args.registryPath)
         dataset = self._repo.getDatasetByName(self._args.datasetName)
         # parentContainer, localId, dataDir
-        phenotypeAssociationSet = genotype_phenotype.PhenotypeAssociationSet(
-            dataset, name, self._args.filePath)
+        phenotypeAssociationSet = \
+            genotype_phenotype.RdfPhenotypeAssociationSet(
+                dataset, name, self._args.filePath)
         self._updateRepo(
             self._repo.insertPhenotypeAssociationSet, phenotypeAssociationSet)
 

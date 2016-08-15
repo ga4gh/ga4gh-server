@@ -741,22 +741,14 @@ def getVariantAnnotationSet(id):
         id, flask.request, app.backend.runGetVariantAnnotationSet)
 
 
-@DisplayedRoute(
-    '/datasets/<no(search):datasetId>/features/search',
-    pathDisplay='/datasets/<datasetId>/features/search', postMethod=True)
-def getFeaturesSearch(datasetId):
-    return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchFeatures)
-
-
 @DisplayedRoute('/phenotypes/search', postMethod=True)
-def getPhenotypesSearch():
+def searchPhenotypes():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchPhenotypes)
 
 
 @DisplayedRoute('/genotypephenotypes/search', postMethod=True)
-def getGenotypePhenotypesSearch():
+def searchGenotypePhenotypes():
     return handleFlaskPostRequest(
         flask.request,
         app.backend.runSearchGenotypePhenotypes)

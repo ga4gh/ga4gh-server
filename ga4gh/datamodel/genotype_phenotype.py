@@ -39,19 +39,19 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         super(SimulatedPhenotypeAssociationSet, self).__init__(
             parentContainer, localId)
 
+    # TODO this doesn't make much sense
     def getAssociations(
-            self, request=None,
-            pageSize=None, offset=0):
+            self, request=None, featureSets=[]):
         if request:
             fpa = protocol.FeaturePhenotypeAssociation()
-            fpa.id = "test"
-            fpa.features = []
-            fpa.evidence = []
-            fpa.environmentalContexts = []
-            fpa.phenotype = protocol.PhenotypeInstance()
-            fpa.phenotype.type = protocol.OntologyTerm()
-            fpa.phenotype.type.id = "test"
-            fpa.phenotypeAssociationSetId = self.getId()
+            fpa.phenotype_association_set_id = self._parentContainer.getId()
+            fpa.id = ""
+            fpa.feature_ids.extend(['featureId'])
+            fpa.evidence.extend([protocol.Evidence()])
+            fpa.phenotype.MergeFrom(protocol.PhenotypeInstance())
+            fpa.description = "description"
+            fpa.environmental_contexts.extend(
+                [protocol.EnvironmentalContext()])
             return [fpa]
         else:
             return []
@@ -426,7 +426,7 @@ class G2PUtility(object):
         return fpa
 
 
-class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
+class RdfPhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
     """
     An rdf object store.  The cancer genome database
     [Clinical Genomics Knowledge Base]
@@ -434,7 +434,8 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
     published by the Monarch project, was the source of Evidence.
     """
     def __init__(self, parentContainer, localId, dataDir):
-        super(PhenotypeAssociationSet, self).__init__(parentContainer, localId)
+        super(RdfPhenotypeAssociationSet, self).__init__(
+            parentContainer, localId)
         """
         Initialize dataset, using the passed dict of sources
         [{source,format}] see rdflib.parse() for more
@@ -459,8 +460,8 @@ class PhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
         for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
             self._version = o.toPython()
 
-    def getAssociations(self, request=None, pageSize=None, offset=0,
-                        featureSets=[]):
+    def getAssociations(
+            self, request=None, featureSets=[]):
         """
         This query is the main search mechanism.
         It queries the graph for annotations that match the

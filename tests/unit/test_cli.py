@@ -249,8 +249,8 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.pageSize, 1)
         self.assertEqual(args.datasetId, "SET_ID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner,
-                          cli.SearchPhenotypeAssociationSetsRunner)
+        self.assertEquals(
+            args.runner, cli.SearchPhenotypeAssociationSetsRunner)
 
     def verifyGetArguments(self, command, runnerClass):
         cliInput = "{} BASEURL ID".format(command)

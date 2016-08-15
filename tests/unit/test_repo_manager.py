@@ -74,7 +74,6 @@ class AbstractRepoManagerTest(unittest.TestCase):
         self.runCommand("init {}".format(self._repoPath))
 
     def addOntology(self):
-        # Add the sequence ontology
         self._ontologyName = paths.ontologyName
         cmd = "add-ontology {} {}".format(self._repoPath, paths.ontologyPath)
         self.runCommand(cmd)
