@@ -165,9 +165,7 @@ class Dataset(datamodel.DatamodelObject):
 
     def getPhenotypeAssociationSetByName(self, name):
         if name not in self._phenotypeAssociationSetNameMap:
-            # TODO make a new exception
-            # TODO is this codeblock reachable?
-            raise exceptions.DatasetNameNotFoundException(name)
+            raise exceptions.PhenotypeAssociationSetNotFoundException(name)
         return self._phenotypeAssociationSetNameMap[name]
 
     def getPhenotypeAssociationSetByIndex(self, index):

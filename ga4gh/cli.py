@@ -1944,19 +1944,37 @@ class RepoManager(object):
 
     def addPhenotypeAssociationSet(self):
         """
-        Adds a new Ontology to this repo.
+        Adds a new phenotype association set to this repo.
         """
         self._openRepo()
         name = self._args.name
         if name is None:
-            name = getNameFromPath(self._args.registryPath)
+            name = getNameFromPath(self._args.dirPath)
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        # parentContainer, localId, dataDir
         phenotypeAssociationSet = \
             genotype_phenotype.RdfPhenotypeAssociationSet(
-                dataset, name, self._args.filePath)
+                dataset, name, self._args.dirPath)
         self._updateRepo(
-            self._repo.insertPhenotypeAssociationSet, phenotypeAssociationSet)
+            self._repo.insertPhenotypeAssociationSet,
+            phenotypeAssociationSet)
+
+    def removePhenotypeAssociationSet(self):
+        """
+        Removes a phenotype association set from the repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSetByName(
+            self._args.name)
+
+        def func():
+            self._updateRepo(
+                self._repo.removePhenotypeAssociationSet,
+                phenotypeAssociationSet)
+        self._confirmDelete(
+            "PhenotypeAssociationSet",
+            phenotypeAssociationSet.getLocalId(),
+            func)
 
     def addDataset(self):
         """
@@ -2367,10 +2385,19 @@ class RepoManager(object):
         subparser.add_argument("filePath", help=helpText)
 
     @classmethod
+    def addDirPathArgument(cls, subparser, helpText):
+        subparser.add_argument("dirPath", help=helpText)
+
+    @classmethod
     def addNameOption(cls, parser, objectType):
         parser.add_argument(
             "-n", "--name", default=None,
             help="The name of the {}".format(objectType))
+
+    @classmethod
+    def addNameArgument(cls, parser, objectType):
+        parser.add_argument(
+            "name", help="The name of the {}".format(objectType))
 
     @classmethod
     def getParser(cls):
@@ -2605,27 +2632,30 @@ class RepoManager(object):
         cls.addForceOption(removeIndividualParser)
 
         addPhenotypeAssociationSetParser = addSubparser(
-            subparsers, "add-g2p",
+            subparsers, "add-phenotypeassociationset",
             "Adds phenotypes in ttl format to the repo.")
         addPhenotypeAssociationSetParser.set_defaults(
             runner="addPhenotypeAssociationSet")
         cls.addRepoArgument(addPhenotypeAssociationSetParser)
-        cls.addFilePathArgument(
-            addPhenotypeAssociationSetParser,
-            "The path of the ttl file defining phenotypes.")
-        # cls.addNameOption(addPhenotypeAssociationSetParser, "g2p")
         cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
+        cls.addDirPathArgument(
+            addPhenotypeAssociationSetParser,
+            "The path of the directory conainting ttl files.")
         cls.addNameOption(
             addPhenotypeAssociationSetParser,
             "PhenotypeAssociationSet")
 
         removePhenotypeAssociationSetParser = addSubparser(
-            subparsers, "remove-g2p",
+            subparsers, "remove-phenotypeassociationset",
             "Remove an phenotypes from the repo")
         removePhenotypeAssociationSetParser.set_defaults(
             runner="removePhenotypeAssociationSet")
         cls.addRepoArgument(removePhenotypeAssociationSetParser)
-        cls.addNameOption(removePhenotypeAssociationSetParser, "g2p")
+        cls.addDatasetNameArgument(removePhenotypeAssociationSetParser)
+        cls.addNameArgument(
+            removePhenotypeAssociationSetParser,
+            "phenotype association set")
+        cls.addForceOption(removePhenotypeAssociationSetParser)
 
         return parser
 

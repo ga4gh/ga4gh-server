@@ -789,6 +789,14 @@ class SqlDataRepository(AbstractDataRepository):
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (dataset.getId(),))
 
+    def removePhenotypeAssociationSet(self, phenotypeAssociationSet):
+        """
+        Remove a phenotype association set from the repo
+        """
+        sql = "DELETE FROM PhenotypeAssociationSet WHERE id=? "
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (phenotypeAssociationSet.getId(),))
+
     def removeFeatureSet(self, featureSet):
         """
         Removes the specified featureSet from this repository.
@@ -1316,16 +1324,19 @@ class SqlDataRepository(AbstractDataRepository):
         # TODO add support for info and sourceUri fields.
         sql = """
             INSERT INTO PhenotypeAssociationSet (
-                id, name, datasetId,dataUrl )
+                id, name, datasetId, dataUrl )
             VALUES (?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            phenotypeAssociationSet.getId(),
-            phenotypeAssociationSet.getLocalId(),
-            phenotypeAssociationSet.getParentContainer().getId(),
-            phenotypeAssociationSet._dataUrl
-            ))
+        try:
+            cursor.execute(sql, (
+                phenotypeAssociationSet.getId(),
+                phenotypeAssociationSet.getLocalId(),
+                phenotypeAssociationSet.getParentContainer().getId(),
+                phenotypeAssociationSet._dataUrl))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(
+                phenotypeAssociationSet.getParentContainer().getId())
 
     def _readPhenotypeAssociationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
