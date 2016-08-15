@@ -64,8 +64,9 @@ class TestFrontend(unittest.TestCase):
         cls.phenotypeAssociationSet = \
             cls.dataset.getPhenotypeAssociationSets()[0]
         cls.phenotypeAssociationSetId = cls.phenotypeAssociationSet.getId()
-        cls.phenotype = cls.phenotypeAssociationSet.getAssociations(
+        cls.association = cls.phenotypeAssociationSet.getAssociations(
             "notNone")[0]
+        cls.phenotype = cls.association.phenotype
         cls.phenotypeId = cls.phenotype.id
         cls.featureSets = cls.dataset.getFeatureSets()
         cls.genotypePhenotype = cls.phenotypeAssociationSet.getAssociations(
