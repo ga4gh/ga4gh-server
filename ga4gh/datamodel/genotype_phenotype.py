@@ -39,22 +39,18 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         super(SimulatedPhenotypeAssociationSet, self).__init__(
             parentContainer, localId)
 
-    # TODO this doesn't make much sense
     def getAssociations(
             self, request=None, featureSets=[]):
-        if request:
-            fpa = protocol.FeaturePhenotypeAssociation()
-            fpa.phenotype_association_set_id = self._parentContainer.getId()
-            fpa.id = ""
-            fpa.feature_ids.extend(['featureId'])
-            fpa.evidence.extend([protocol.Evidence()])
-            fpa.phenotype.MergeFrom(protocol.PhenotypeInstance())
-            fpa.description = "description"
-            fpa.environmental_contexts.extend(
-                [protocol.EnvironmentalContext()])
-            return [fpa]
-        else:
-            return []
+        fpa = protocol.FeaturePhenotypeAssociation()
+        fpa.phenotype_association_set_id = self._parentContainer.getId()
+        fpa.id = ""
+        fpa.feature_ids.extend(['featureId'])
+        fpa.evidence.extend([protocol.Evidence()])
+        fpa.phenotype.MergeFrom(protocol.PhenotypeInstance(id='phenotypeId'))
+        fpa.description = "description"
+        fpa.environmental_contexts.extend(
+            [protocol.EnvironmentalContext(id='environmentalContextId')])
+        return [fpa]
 
 
 class G2PUtility(object):
