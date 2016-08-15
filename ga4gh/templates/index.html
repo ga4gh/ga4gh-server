@@ -109,7 +109,7 @@
                     </tr>
                     {% endfor %}
                 </table>
-             <h6>FeatureSets</h6>
+                <h6>FeatureSets</h6>
                 <table class="table table-striped">
                     <tr>
                         <th>Name</th>
@@ -145,6 +145,19 @@
                         <td>{{ readGroup.getId() }}</td>
                     </tr>
                     {% endfor %}
+                    {% endfor %}
+                </table>
+                <h6>PhenotypeAssociationSets</h6>
+                <table class="table table-striped">
+                    <tr>
+                        <th>Name</th>
+                        <th>Id</th>
+                    </tr>
+                    {% for paSet in info.getPhenotypeAssociationSets(dataset.getId()) %}
+                    <tr>
+                        <td>{{ paSet.getLocalId() }}</td>
+                        <td>{{ paSet.getId() }}</td>
+                    </tr>
                     {% endfor %}
                 </table>
             {% endfor %}

@@ -178,6 +178,10 @@ class ServerStatus(object):
                 variantSet.getVariantAnnotationSets())
         return variantAnnotationSets
 
+    def getPhenotypeAssociationSets(self, datasetId):
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getPhenotypeAssociationSets()
+
 
 def reset():
     """
