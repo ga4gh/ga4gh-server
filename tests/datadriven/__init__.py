@@ -277,7 +277,6 @@ class DataDrivenTest(TestCase):
         Asserts that the specified JSON dictionary is a valid instance
         of the specified protocol class.
         """
-        print(jsonDict)
         try:
             json_format.Parse(jsonDict, protocolClass())
         except json_format.ParseError, e:
