@@ -235,13 +235,20 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
         numReadGroupsPerReadGroupSet = app.config[
             "SIMULATED_BACKEND_NUM_READ_GROUPS_PER_READ_GROUP_SET"]
+        numRnaQuantSets = app.config[
+            "SIMULATED_BACKEND_NUM_RNA_QUANTIFICATION_SETS"]
+        numExpressionLevels = app.config[
+            "SIMULATED_BACKEND_NUM_EXPRESSION_LEVELS_PER_RNA_QUANT_SET"]
+
         dataRepository = datarepo.SimulatedDataRepository(
             randomSeed=randomSeed, numCalls=numCalls,
             variantDensity=variantDensity, numVariantSets=numVariantSets,
             numReferenceSets=numReferenceSets,
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
             numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
-            numAlignments=numAlignmentsPerReadGroup)
+            numAlignments=numAlignmentsPerReadGroup,
+            numRnaQuantSets=numRnaQuantSets,
+            numExpressionLevels=numExpressionLevels)
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":

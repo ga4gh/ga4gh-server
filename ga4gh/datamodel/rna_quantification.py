@@ -414,12 +414,14 @@ class SimulatedRnaQuantificationSet(AbstractRnaQuantificationSet):
     Used mostly for testing.
     """
     def __init__(
-            self, parentContainer, localId, numRnaQuantifications=2):
+            self, parentContainer, localId, numRnaQuantifications=2,
+            numExpressionLevels=2):
         super(SimulatedRnaQuantificationSet, self).__init__(
             parentContainer, localId)
         for i in range(numRnaQuantifications):
             localId = "simRnaQ{}".format(i)
-            rnaQuantification = SimulatedRnaQuantification(self, localId)
+            rnaQuantification = SimulatedRnaQuantification(
+                self, localId, numExpressionLevels)
             self.addRnaQuantification(rnaQuantification)
 
 

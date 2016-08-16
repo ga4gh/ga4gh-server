@@ -368,7 +368,7 @@ class SimulatedDataRepository(AbstractDataRepository):
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReferenceSets=1, numReferencesPerReferenceSet=1,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=2, numRnaQuantSets=1):
+            numAlignments=2, numRnaQuantSets=2, numExpressionLevels=2):
         super(SimulatedDataRepository, self).__init__()
 
         # References
@@ -390,7 +390,9 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numVariantSets=numVariantSets,
                 numReadGroupSets=numReadGroupSets,
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
-                numAlignments=numAlignments, numRnaQuantSets=numRnaQuantSets)
+                numAlignments=numAlignments,
+                numRnaQuantSets=numRnaQuantSets,
+                numExpressionLevels=numExpressionLevels)
             self.addDataset(dataset)
 
 

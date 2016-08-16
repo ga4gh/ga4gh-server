@@ -316,8 +316,6 @@ class Backend(object):
         self._defaultPageSize = 100
         self._maxResponseLength = 2**20  # 1 MiB
         self._dataRepository = dataRepository
-        self._featureIdMap = {}
-        self._featureIds = []
 
     def getDataRepository(self):
         """

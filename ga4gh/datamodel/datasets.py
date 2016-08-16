@@ -354,7 +354,8 @@ class SimulatedDataset(Dataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1, numFeatureSets=1, numRnaQuantSets=1):
+            numAlignments=1, numFeatureSets=1, numRnaQuantSets=2,
+            numExpressionLevels=2):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
         # TODO create a simulated Ontology
