@@ -228,6 +228,8 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         self._readGroupIdMap = {}
         self._readGroupIds = []
         self._referenceSet = None
+        self._numAlignedReads = -1
+        self._numUnalignedReads = -1
 
     def setReferenceSet(self, referenceSet):
         """
