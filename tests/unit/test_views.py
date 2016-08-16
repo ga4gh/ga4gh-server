@@ -64,13 +64,12 @@ class TestFrontend(unittest.TestCase):
         cls.phenotypeAssociationSet = \
             cls.dataset.getPhenotypeAssociationSets()[0]
         cls.phenotypeAssociationSetId = cls.phenotypeAssociationSet.getId()
-        cls.association = cls.phenotypeAssociationSet.getAssociations(
-            "notNone")[0]
+        cls.association = cls.phenotypeAssociationSet.getAssociations()[0]
         cls.phenotype = cls.association.phenotype
         cls.phenotypeId = cls.phenotype.id
         cls.featureSets = cls.dataset.getFeatureSets()
         cls.genotypePhenotype = cls.phenotypeAssociationSet.getAssociations(
-            "notNone", cls.featureSets)[0]
+            request=None, featureSets=cls.featureSets)[0]
         cls.genotypePhenotypeId = cls.genotypePhenotype.id
 
     def sendPostRequest(self, path, request):
