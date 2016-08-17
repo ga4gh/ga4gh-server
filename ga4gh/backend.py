@@ -622,7 +622,7 @@ class Backend(object):
         if set(readGroupIds) != set(request.read_group_ids):
             raise exceptions.BadRequestException(
                 "If multiple readGroupIds are specified, "
-                "they must be all of the readGroupIds in a ReadGroup")
+                "they must be all of the readGroupIds in a ReadGroupSet")
         intervalIterator = ReadsIntervalIterator(
             request, readGroupSet, reference)
         return intervalIterator
@@ -731,6 +731,80 @@ class Backend(object):
         return self._topLevelObjectGenerator(
             request, dataset.getNumFeatureSets(),
             dataset.getFeatureSetByIndex)
+
+    def rnaQuantificationSetsGenerator(self, request):
+        """
+        Returns a generator over the (rnaQuantificationSet, nextPageToken)
+        pairs defined by the specified request.
+        """
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumRnaQuantificationSets(),
+            dataset.getRnaQuantificationSetByIndex)
+
+    def rnaQuantificationsGenerator(self, request):
+        """
+        Returns a generator over the (rnaQuantification, nextPageToken) pairs
+        defined by the specified request.
+        """
+        if len(request.rna_quantification_set_id) < 1:
+            raise exceptions.BadRequestException(
+                "Rna Quantification Set Id must be specified")
+        else:
+            compoundId = datamodel.RnaQuantificationSetCompoundId.parse(
+                request.rna_quantification_set_id)
+            dataset = self.getDataRepository().getDataset(
+                compoundId.dataset_id)
+            rnaQuantSet = dataset.getRnaQuantificationSet(
+                compoundId.rna_quantification_set_id)
+            return self._topLevelObjectGenerator(
+                request, rnaQuantSet.getNumRnaQuantifications(),
+                rnaQuantSet.getRnaQuantificationByIndex)
+
+    def expressionLevelsGenerator(self, request):
+        """
+        Returns a generator over the (expressionLevel, nextPageToken) pairs
+        defined by the specified request.
+
+        Currently only supports searching over a specified rnaQuantification
+        """
+        rnaQuantificationId = request.rna_quantification_id
+        compoundId = datamodel.RnaQuantificationCompoundId.parse(
+            request.rna_quantification_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        rnaQuantSet = dataset.getRnaQuantificationSet(
+            compoundId.rna_quantification_set_id)
+        rnaQuant = rnaQuantSet.getRnaQuantification(rnaQuantificationId)
+        rnaQuantificationId = rnaQuant.getLocalId()
+        startIndex = request.page_token
+        maxResults = request.page_size
+        # we need to determine if another expressionLevel follows the one
+        # that is last returned from this method to set nextPageToken
+        # correctly, so request an additional expressionLevel from
+        # the database in all cases
+        if maxResults:
+            maxResults += 1
+        expressionLevels = list(rnaQuant.getExpressionLevels(
+            threshold=request.threshold,
+            featureIds=request.feature_ids,
+            startIndex=startIndex,
+            maxResults=maxResults))
+        # initialize loop
+        nextPageTokenIndex = 0
+        expressionLevelIndex = 0
+        if request.page_token:
+            nextPageTokenIndex, = _parsePageToken(request.page_token, 1)
+        numToReturn = request.page_size
+        # execute loop
+        while numToReturn > 0 and expressionLevelIndex < len(expressionLevels):
+            expressionLevel = expressionLevels[expressionLevelIndex]
+            nextPageTokenIndex += 1
+            nextPageToken = str(nextPageTokenIndex)
+            if expressionLevelIndex == len(expressionLevels) - 1:
+                nextPageToken = None
+            yield expressionLevel.toProtocolElement(), nextPageToken
+            expressionLevelIndex += 1
+            numToReturn -= 1
 
     ###########################################################
     #
@@ -942,6 +1016,39 @@ class Backend(object):
         variantAnnotationSet = variantSet.getVariantAnnotationSet(id_)
         return self.runGetRequest(variantAnnotationSet)
 
+    def runGetRnaQuantification(self, id_):
+        """
+        Runs a getRnaQuantification request for the specified ID.
+        """
+        compoundId = datamodel.RnaQuantificationCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        rnaQuantificationSet = dataset.getRnaQuantificationSet(
+            compoundId.rna_quantification_set_id)
+        rnaQuantification = rnaQuantificationSet.getRnaQuantification(id_)
+        return self.runGetRequest(rnaQuantification)
+
+    def runGetRnaQuantificationSet(self, id_):
+        """
+        Runs a getRnaQuantificationSet request for the specified ID.
+        """
+        compoundId = datamodel.RnaQuantificationSetCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        rnaQuantificationSet = dataset.getRnaQuantificationSet(id_)
+        return self.runGetRequest(rnaQuantificationSet)
+
+    def runGetExpressionLevel(self, id_):
+        """
+        Runs a getExpressionLevel request for the specified ID.
+        """
+        compoundId = datamodel.ExpressionLevelCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        rnaQuantificationSet = dataset.getRnaQuantificationSet(
+            compoundId.rna_quantification_set_id)
+        rnaQuantification = rnaQuantificationSet.getRnaQuantification(
+            compoundId.rna_quantification_id)
+        expressionLevel = rnaQuantification.getExpressionLevel(compoundId)
+        return self.runGetRequest(expressionLevel)
+
     # Search requests.
 
     def runSearchReadGroupSets(self, request):
@@ -1074,3 +1181,33 @@ class Backend(object):
             request, protocol.SearchFeaturesRequest,
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
+
+    def runSearchRnaQuantificationSets(self, request):
+        """
+        Returns a SearchRnaQuantificationSetsResponse for the specified
+        SearchRnaQuantificationSetsRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchRnaQuantificationSetsRequest,
+            protocol.SearchRnaQuantificationSetsResponse,
+            self.rnaQuantificationSetsGenerator)
+
+    def runSearchRnaQuantifications(self, request):
+        """
+        Returns a SearchRnaQuantificationResponse for the specified
+        SearchRnaQuantificationRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchRnaQuantificationsRequest,
+            protocol.SearchRnaQuantificationsResponse,
+            self.rnaQuantificationsGenerator)
+
+    def runSearchExpressionLevels(self, request):
+        """
+        Returns a SearchExpressionLevelResponse for the specified
+        SearchExpressionLevelRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchExpressionLevelsRequest,
+            protocol.SearchExpressionLevelsResponse,
+            self.expressionLevelsGenerator)
