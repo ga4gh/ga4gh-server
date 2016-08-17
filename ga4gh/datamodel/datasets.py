@@ -337,7 +337,8 @@ class SimulatedDataset(Dataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1, numFeatureSets=1, numPhenotypeAssociationSets=1):
+            numAlignments=1, numFeatureSets=1, numPhenotypeAssociationSets=1,
+            numPhenotypeAssociations=2):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
 
@@ -345,7 +346,7 @@ class SimulatedDataset(Dataset):
             localId = "simPas{}".format(i)
             seed = randomSeed + i
             phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(
-                self, localId, seed)
+                self, localId, seed, numPhenotypeAssociations)
             self.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
         # TODO create a simulated Ontology
