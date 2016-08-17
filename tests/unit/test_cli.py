@@ -14,6 +14,7 @@ import ga4gh.cli as cli
 import ga4gh.protocol as protocol
 import google.protobuf.descriptor as descriptor
 import google.protobuf.internal.python_message as python_message
+import tests.utils as utils
 
 
 class TestServerArguments(unittest.TestCase):
@@ -81,13 +82,21 @@ class TestClientArguments(unittest.TestCase):
     Tests the client cli can parse all arguments it is supposed to
     and can initialize the runner in preparation for a request
     """
+    class ParseFailureException(Exception):
+        pass
+
+    def _raiseParseFailureException(self, exitVal):
+        raise self.ParseFailureException(exitVal)
+
     def setUp(self):
         self.parser = cli.getClientParser()
 
-    # TODO we need a way to test parse failures. This is tricky because
-    # argparse calls sys.exit() on error, which we can't catch directly as
-    # an exception. Using mock to intercept this call would at least
-    # verify that an error has been raised.
+    def testParseFailure(self):
+        cliInput = "invalidCommand"
+        with utils.suppressOutput():
+            with mock.patch('sys.exit', self._raiseParseFailureException):
+                with self.assertRaises(self.ParseFailureException):
+                    self.parser.parse_args(cliInput.split())
 
     def testOutputFormat(self):
         # Most of the commands support the output format option.
@@ -295,6 +304,30 @@ class TestClientArguments(unittest.TestCase):
         self.verifyGetArguments(
             "variants-get", cli.GetVariantRunner)
 
+    def testRnaQuantificationGetArguments(self):
+        self.verifyGetArguments(
+            "rnaquantifications-get", cli.GetRnaQuantificationRunner)
+
+    def testVariantSetsGet(self):
+        self.verifyGetArguments(
+            "variantsets-get", cli.GetVariantSetRunner)
+
+    def testFeaturesGet(self):
+        self.verifyGetArguments(
+            "features-get", cli.GetFeatureRunner)
+
+    def testFeatureSetsGet(self):
+        self.verifyGetArguments(
+            "featuresets-get", cli.GetFeatureSetRunner)
+
+    def testExpressionLevelsGet(self):
+        self.verifyGetArguments(
+            "expressionlevels-get", cli.GetExpressionLevelRunner)
+
+    def testRnaQuantificationSetsGet(self):
+        self.verifyGetArguments(
+            "rnaquantificationsets-get", cli.GetRnaQuantificationSetRunner)
+
     def testReferenceBasesListArguments(self):
         cliInput = (
             "references-list-bases BASEURL ID --start 1 --end 2 "
@@ -346,15 +379,64 @@ class TestClientArguments(unittest.TestCase):
         self.assertEquals(
             args.runner, cli.GetVariantAnnotationSetRunner)
 
-    # def testVariantSetsGet(self):  # TODO
+    def testRnaQuantificationSearchArguments(self):
+        cliInput = (
+            "rnaquantifications-search --rnaQuantificationSetId ID BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.rnaQuantificationSetId, "ID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.runner, cli.SearchRnaQuantificationsRunner)
 
-    # def testFeaturesGet(self):  # TODO
+    def testExpressionLevelSearchArguments(self):
+        cliInput = (
+            "expressionlevels-search --rnaQuantificationId rID "
+            "--threshold 0.0 BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.rnaQuantificationId, "rID")
+        self.assertEqual(args.threshold, 0.0)
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEqual(args.runner, cli.SearchExpressionLevelsRunner)
 
-    # def testFeaturesSearch(self):  # TODO
+    def testFeaturesSearch(self):
+        cliInput = (
+            "features-search "
+            "--pageSize 3 "
+            "--featureSetId FEATURESETID "
+            "--start 1 "
+            "--end 2 "
+            "--parentId PARENTID "
+            "--featureTypes FEATURE,TYPES "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 3)
+        self.assertEqual(args.featureSetId, "FEATURESETID")
+        self.assertEqual(args.start, 1)
+        self.assertEqual(args.end, 2)
+        self.assertEqual(args.parentId, "PARENTID")
+        self.assertEqual(args.featureTypes, "FEATURE,TYPES")
+        self.assertEqual(args.baseUrl, "BASEURL")
 
-    # def testFeatureSetsGet(self):  # TODO
+    def testFeatureSetsSearch(self):
+        cliInput = (
+            "featuresets-search "
+            "--pageSize 3 "
+            "--datasetId DATASETID "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 3)
+        self.assertEqual(args.datasetId, "DATASETID")
+        self.assertEqual(args.baseUrl, "BASEURL")
 
-    # def testFeatureSetsSearch(self):  # TODO
+    def testRnaQuantificationSetsSearch(self):
+        cliInput = (
+            "rnaquantificationsets-search "
+            "--pageSize 3 "
+            "--datasetId DATASETID "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 3)
+        self.assertEqual(args.datasetId, "DATASETID")
+        self.assertEqual(args.baseUrl, "BASEURL")
 
 
 class TestRepoManagerCli(unittest.TestCase):

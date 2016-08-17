@@ -40,6 +40,7 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.bio_metadata as biodata
 import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
+import ga4gh.datamodel.rna_quantification as rna_quantification
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -302,8 +303,8 @@ class AbstractSearchRunner(FormattedOutputRunner):
         """
         return self._client.search_reference_sets()
 
-
 # Runners for the various search methods
+
 
 class SearchDatasetsRunner(AbstractSearchRunner):
     """
@@ -325,10 +326,13 @@ class SearchReferenceSetsRunner(AbstractSearchRunner):
         super(SearchReferenceSetsRunner, self).__init__(args)
         self._accession = args.accession
         self._md5checksum = args.md5checksum
+        self._assemblyId = args.assemblyId
 
     def run(self):
         iterator = self._client.search_reference_sets(
-            accession=self._accession, md5checksum=self._md5checksum)
+            accession=self._accession,
+            md5checksum=self._md5checksum,
+            assembly_id=self._assemblyId)
         self._output(iterator)
 
 
@@ -819,9 +823,82 @@ class SearchReadsRunner(AbstractSearchRunner):
             print(read.id)
 
 
+class SearchRnaQuantificationSetsRunner(AbstractSearchRunner):
+    """
+    Runner class for the rnaquantificationsets/search method
+    """
+    def __init__(self, args):
+        super(SearchRnaQuantificationSetsRunner, self).__init__(args)
+        self._datasetId = args.datasetId
+
+    def run(self):
+        iterator = self._client.search_rna_quantification_sets(
+            self._datasetId)
+        self._output(iterator)
+
+    def _textOutput(self, rnaQuants):
+        for rnaQuant in rnaQuants:
+            print(
+                rnaQuant.id, rnaQuant.dataset_id, rnaQuant.name,
+                sep="\t", end="\t")
+            print()
+
+
+class SearchRnaQuantificationsRunner(AbstractSearchRunner):
+    """
+    Runner class for the rnaquantifications/search method
+    """
+    def __init__(self, args):
+        super(SearchRnaQuantificationsRunner, self).__init__(args)
+        self._rnaQuantificationSetId = args.rnaQuantificationSetId
+
+    def run(self):
+        iterator = self._client.search_rna_quantifications(
+            self._rnaQuantificationSetId)
+        self._output(iterator)
+
+    def _textOutput(self, rnaQuants):
+        for rnaQuant in rnaQuants:
+            print(
+                rnaQuant.id, rnaQuant.description, rnaQuant.name,
+                sep="\t", end="\t")
+            for featureSet in rnaQuant.featureSetIds:
+                print(featureSet, sep=",", end="\t")
+            for readGroup in rnaQuant.readGroupIds:
+                print(readGroup, sep=",", end="")
+            print()
+
+
+class SearchExpressionLevelsRunner(AbstractSearchRunner):
+    """
+    Runner class for the expressionlevels/search method
+    """
+    def __init__(self, args):
+        super(SearchExpressionLevelsRunner, self).__init__(args)
+        self._rnaQuantificationId = args.rnaQuantificationId
+        self._feature_ids = []
+        if len(args.featureIds) > 0:
+            self._feature_ids = args.featureIds.split(",")
+        self.threshold = args.threshold
+
+    def run(self):
+        iterator = self._client.search_expression_levels(
+            rna_quantification_id=self._rnaQuantificationId,
+            feature_ids=self._feature_ids,
+            threshold=self.threshold)
+        self._output(iterator)
+
+    def _textOutput(self, expressionObjs):
+        for expression in expressionObjs:
+            print(
+                expression.id, expression.expression, expression.name,
+                expression.isNormalized, expression.rawReadCount,
+                expression.score, expression.units, sep="\t", end="\t")
+            print()
+
+
 # ListReferenceBases is an oddball, and doesn't fit either get or
 # search patterns.
-
 class ListReferenceBasesRunner(AbstractQueryRunner):
     """
     Runner class for the references/{id}/bases method
@@ -965,6 +1042,33 @@ class GetFeatureSetRunner(AbstractGetRunner):
     def __init__(self, args):
         super(GetFeatureSetRunner, self).__init__(args)
         self._method = self._client.get_feature_set
+
+
+class GetRnaQuantificationRunner(AbstractGetRunner):
+    """
+    Runner class for the rnaquantifications/{id} method
+    """
+    def __init__(self, args):
+        super(GetRnaQuantificationRunner, self).__init__(args)
+        self._method = self._client.get_rna_quantification
+
+
+class GetExpressionLevelRunner(AbstractGetRunner):
+    """
+    Runner class for the expressionlevels/{id} method
+    """
+    def __init__(self, args):
+        super(GetExpressionLevelRunner, self).__init__(args)
+        self._method = self._client.get_expression_level
+
+
+class GetRnaQuantificationSetRunner(AbstractGetRunner):
+    """
+    Runner class for the rnaquantificationsets/{id} method
+    """
+    def __init__(self, args):
+        super(GetRnaQuantificationSetRunner, self).__init__(args)
+        self._method = self._client.get_rna_quantification_set
 
 
 def addDisableUrllibWarningsArgument(parser):
@@ -1526,6 +1630,28 @@ def addVariantsGetParser(subparsers):
     addGetArguments(parser)
 
 
+def addRnaQuantificationSetGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "rnaquantificationsets-get",
+        "Get a rna quantification set")
+    parser.set_defaults(runner=GetRnaQuantificationSetRunner)
+    addGetArguments(parser)
+
+
+def addRnaQuantificationGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "rnaquantifications-get", "Get a rna quantification")
+    parser.set_defaults(runner=GetRnaQuantificationRunner)
+    addGetArguments(parser)
+
+
+def addExpressionLevelGetParser(subparsers):
+    parser = addSubparser(
+        subparsers, "expressionlevels-get", "Get a expression level")
+    parser.set_defaults(runner=GetExpressionLevelRunner)
+    addGetArguments(parser)
+
+
 def addReferencesBasesListParser(subparsers):
     parser = addSubparser(
         subparsers, "references-list-bases", "List bases of a reference")
@@ -1574,6 +1700,52 @@ def addPhenotypeAssociationSetsSearchParser(subparsers):
     addOutputFormatArgument(parser)
     addPhenotypeAssociationSetsSearchOptions(parser)
     addPageSizeArgument(parser)
+
+
+def addRnaQuantificationSetsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "rnaquantificationsets-search",
+        description="Search for rna quantification set",
+        help="Search for rna quantification set")
+    parser.set_defaults(runner=SearchRnaQuantificationSetsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addDatasetIdArgument(parser)
+    addOutputFormatArgument(parser)
+    return parser
+
+
+def addRnaQuantificationsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "rnaquantifications-search",
+        description="Search for rna quantification",
+        help="Search for rna quantification")
+    parser.set_defaults(runner=SearchRnaQuantificationsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    parser.add_argument(
+        "--rnaQuantificationSetId", default=None,
+        help="The rnaQuantification set to search over")
+    addOutputFormatArgument(parser)
+    return parser
+
+
+def addExpressionLevelsSearchParser(subparsers):
+    parser = subparsers.add_parser(
+        "expressionlevels-search",
+        description="Search for feature expression",
+        help="Search for feature expression")
+    parser.set_defaults(runner=SearchExpressionLevelsRunner)
+    addUrlArgument(parser)
+    addPageSizeArgument(parser)
+    addFeatureIdsArgument(parser)
+    parser.add_argument(
+        "--rnaQuantificationId", default='',
+        help="The RNA Quantification Id to search over")
+    parser.add_argument(
+        "--threshold", default=0.0, type=float,
+        help="The minimum value for expression results to report.")
+    addOutputFormatArgument(parser)
     return parser
 
 
@@ -1609,10 +1781,16 @@ def getClientParser():
     addCallSetsGetParser(subparsers)
     addVariantsGetParser(subparsers)
     addDatasetsGetParser(subparsers)
+    addRnaQuantificationSetGetParser(subparsers)
+    addRnaQuantificationGetParser(subparsers)
+    addExpressionLevelGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
     addGenotypePhenotypeSearchParser(subparsers)
     addPhenotypeSearchParser(subparsers)
     addPhenotypeAssociationSetsSearchParser(subparsers)
+    addRnaQuantificationSetsSearchParser(subparsers)
+    addRnaQuantificationsSearchParser(subparsers)
+    addExpressionLevelsSearchParser(subparsers)
     return parser
 
 
@@ -2270,6 +2448,42 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeOntology, ontology)
         self._confirmDelete("Ontology", ontology.getName(), func)
 
+    def addRnaQuantificationSet(self):
+        """
+        Adds an rnaQuantificationSet into this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        if self._args.name is None:
+            name = getNameFromPath(self._args.filePath)
+        else:
+            name = self._args.name
+        rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
+            dataset, name)
+        referenceSetName = self._args.referenceSetName
+        if referenceSetName is None:
+            raise exceptions.RepoManagerException(
+                "A reference set name must be provided")
+        referenceSet = self._repo.getReferenceSetByName(referenceSetName)
+        rnaQuantificationSet.setReferenceSet(referenceSet)
+        rnaQuantificationSet.populateFromFile(self._args.filePath)
+        self._updateRepo(
+            self._repo.insertRnaQuantificationSet, rnaQuantificationSet)
+
+    def removeRnaQuantificationSet(self):
+        """
+        Removes an rnaQuantificationSet from this repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        rnaQuantSet = dataset.getRnaQuantificationSetByName(
+            self._args.rnaQuantificationSetName)
+
+        def func():
+            self._updateRepo(self._repo.removeRnaQuantification, rnaQuantSet)
+        self._confirmDelete(
+            "RnaQuantificationSet", rnaQuantSet.getLocalId(), func)
+
     #
     # Methods to simplify adding common arguments to the parser.
     #
@@ -2398,6 +2612,12 @@ class RepoManager(object):
     def addNameArgument(cls, parser, objectType):
         parser.add_argument(
             "name", help="The name of the {}".format(objectType))
+
+    @classmethod
+    def addRnaQuantificationNameArgument(cls, subparser):
+        subparser.add_argument(
+            "rnaQuantificationName",
+            help="the name of the RNA Quantification")
 
     @classmethod
     def getParser(cls):
@@ -2656,6 +2876,31 @@ class RepoManager(object):
             removePhenotypeAssociationSetParser,
             "phenotype association set")
         cls.addForceOption(removePhenotypeAssociationSetParser)
+
+        addRnaQuantificationSetParser = addSubparser(
+            subparsers, "add-rnaquantificationset",
+            "Add an RNA quantification set to the data repo")
+        addRnaQuantificationSetParser.set_defaults(
+            runner="addRnaQuantificationSet")
+        cls.addRepoArgument(addRnaQuantificationSetParser)
+        cls.addDatasetNameArgument(addRnaQuantificationSetParser)
+        cls.addFilePathArgument(
+            addRnaQuantificationSetParser,
+            "The path to the converted SQLite database containing RNA data")
+        objectType = "RnaQuantificationSet"
+        cls.addReferenceSetNameOption(
+            addRnaQuantificationSetParser, objectType)
+        cls.addNameOption(addRnaQuantificationSetParser, objectType)
+
+        removeRnaQuantificationSetParser = addSubparser(
+            subparsers, "remove-rnaquantificationset",
+            "Remove an RNA quantification set from the repo")
+        removeRnaQuantificationSetParser.set_defaults(
+            runner="removeRnaQuantificationSet")
+        cls.addRepoArgument(removeRnaQuantificationSetParser)
+        cls.addDatasetNameArgument(removeRnaQuantificationSetParser)
+        cls.addRnaQuantificationNameArgument(removeRnaQuantificationSetParser)
+        cls.addForceOption(removeRnaQuantificationSetParser)
 
         return parser
 

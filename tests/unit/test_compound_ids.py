@@ -16,6 +16,7 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.rna_quantification as rna_quantification
 
 
 class ExampleCompoundId(datamodel.CompoundId):
@@ -188,6 +189,18 @@ class TestCompoundIds(unittest.TestCase):
     def getFeatureSet(self):
         return sequenceAnnotations.AbstractFeatureSet(
             self.getDataset(), "featureSet")
+
+    def getRnaQuantificationSet(self):
+        return rna_quantification.AbstractRnaQuantificationSet(
+            self.getDataset(), "rnaQuantificationSet")
+
+    def getRnaQuantification(self):
+        return rna_quantification.AbstractRnaQuantification(
+            self.getRnaQuantificationSet(), "rnaQuantification")
+
+    def getExpressionLevel(self):
+        return rna_quantification.AbstractExpressionLevel(
+            self.getRnaQuantification(), "expressionLevel")
 
     def testDataset(self):
         localId = "dataset"
@@ -447,3 +460,58 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.dataset, "a")
         self.assertEqual(cid.feature_set, "b")
         self.verifyParseFailure(idStr, datamodel.FeatureSetCompoundId)
+
+    def testRnaQuantification(self):
+        rnaQuantification = self.getRnaQuantification()
+        rnaQuantificationSet = rnaQuantification.getParentContainer()
+        localId = "rnaQuantification"
+        cid = datamodel.RnaQuantificationCompoundId(
+            rnaQuantificationSet.getCompoundId(), localId)
+        self.assertRaises(
+            ValueError, datamodel.RnaQuantificationCompoundId,
+            rnaQuantificationSet.getCompoundId())
+        self.assertEqual(
+            cid.rna_quantification_set, rnaQuantificationSet.getLocalId())
+        self.assertEqual(
+            cid.rna_quantification, rnaQuantification.getLocalId())
+        self.assertEqual(
+            cid.rna_quantification_set_id, rnaQuantificationSet.getId())
+        self.assertEqual(cid.rna_quantification_id, rnaQuantification.getId())
+
+    def testRnaQuantificationParse(self):
+        idStr = '["a","b","c"]'
+        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        cid = datamodel.RnaQuantificationCompoundId.parse(obfuscated)
+        self.assertEqual(cid.dataset, "a")
+        self.assertEquals(cid.rna_quantification_set, "b")
+        self.assertEqual(cid.rna_quantification, "c")
+        self.verifyParseFailure(idStr, datamodel.RnaQuantificationCompoundId)
+
+    def testExpressionLevel(self):
+        expressionLevel = self.getExpressionLevel()
+        rnaQuantification = expressionLevel.getParentContainer()
+        rnaQuantificationSet = rnaQuantification.getParentContainer()
+        dataset = rnaQuantificationSet.getParentContainer()
+        localId = "expressionLevel"
+        cid = datamodel.ExpressionLevelCompoundId(
+            rnaQuantification.getCompoundId(), localId)
+        self.assertRaises(
+            ValueError, datamodel.ExpressionLevelCompoundId,
+            rnaQuantification.getCompoundId())
+        self.assertEqual(cid.dataset, dataset.getLocalId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(
+            cid.rna_quantification, rnaQuantification.getLocalId())
+        self.assertEqual(cid.rna_quantification_id, rnaQuantification.getId())
+        self.assertEqual(
+            cid.expression_level_id, expressionLevel.getLocalId())
+
+    def testExpressionLevelParse(self):
+        idStr = '["a","b","c","d"]'
+        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        cid = datamodel.ExpressionLevelCompoundId.parse(obfuscated)
+        self.assertEqual(cid.dataset, "a")
+        self.assertEquals(cid.rna_quantification_set, "b")
+        self.assertEqual(cid.rna_quantification, "c")
+        self.assertEqual(cid.expression_level_id, "d")
+        self.verifyParseFailure(idStr, datamodel.ExpressionLevelCompoundId)

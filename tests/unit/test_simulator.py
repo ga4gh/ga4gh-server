@@ -146,7 +146,7 @@ class TestSimulatedVariantAnnotationSet(unittest.TestCase):
                     self.referenceName, self.startPosition, self.endPosition)
         self.assertEquals(
             simulatedVariantSet.toProtocolElement().id,
-            simulatedVariantAnnotationSet.toProtocolElement().variantSet_id,
+            simulatedVariantAnnotationSet.toProtocolElement().variant_set_id,
             "Variant Set ID should match the annotation's variant set ID")
         for variant, ann in annotations:
             self.assertEquals(datetime.datetime.strptime(

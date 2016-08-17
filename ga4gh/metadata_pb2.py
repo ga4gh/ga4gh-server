@@ -13,16 +13,14 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/metadata.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x14ga4gh/metadata.proto\x12\x05ga4gh\x1a\x1cgoogle/protobuf/struct.proto\"U\n\x0cOntologyTerm\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04term\x18\x02 \x01(\t\x12\x13\n\x0bsource_name\x18\x03 \x01(\t\x12\x16\n\x0esource_version\x18\x04 \x01(\t\"\xa9\x01\n\x07\x44\x61taset\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\x12&\n\x04info\x18\x04 \x03(\x0b\x32\x18.ga4gh.Dataset.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"c\n\x07Program\x12\x14\n\x0c\x63ommand_line\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x17\n\x0fprev_program_id\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\tb\x06proto3')
-  ,
-  dependencies=[google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
+  serialized_pb=_b('\n\x14ga4gh/metadata.proto\x12\x05ga4gh\"U\n\x0cOntologyTerm\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04term\x18\x02 \x01(\t\x12\x13\n\x0bsource_name\x18\x03 \x01(\t\x12\x16\n\x0esource_version\x18\x04 \x01(\t\"8\n\x07\x44\x61taset\x12\n\n\x02id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x03 \x01(\t\"c\n\x07Program\x12\x14\n\x0c\x63ommand_line\x18\x01 \x01(\t\x12\n\n\x02id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x17\n\x0fprev_program_id\x18\x04 \x01(\t\x12\x0f\n\x07version\x18\x05 \x01(\tb\x06proto3')
+)
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
@@ -75,47 +73,10 @@ _ONTOLOGYTERM = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=61,
-  serialized_end=146,
+  serialized_start=31,
+  serialized_end=116,
 )
 
-
-_DATASET_INFOENTRY = _descriptor.Descriptor(
-  name='InfoEntry',
-  full_name='ga4gh.Dataset.InfoEntry',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='key', full_name='ga4gh.Dataset.InfoEntry.key', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-    _descriptor.FieldDescriptor(
-      name='value', full_name='ga4gh.Dataset.InfoEntry.value', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=_descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001')),
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=247,
-  serialized_end=318,
-)
 
 _DATASET = _descriptor.Descriptor(
   name='Dataset',
@@ -145,17 +106,10 @@ _DATASET = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
-    _descriptor.FieldDescriptor(
-      name='info', full_name='ga4gh.Dataset.info', index=3,
-      number=4, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None),
   ],
   extensions=[
   ],
-  nested_types=[_DATASET_INFOENTRY, ],
+  nested_types=[],
   enum_types=[
   ],
   options=None,
@@ -164,8 +118,8 @@ _DATASET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=149,
-  serialized_end=318,
+  serialized_start=118,
+  serialized_end=174,
 )
 
 
@@ -223,13 +177,10 @@ _PROGRAM = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=320,
-  serialized_end=419,
+  serialized_start=176,
+  serialized_end=275,
 )
 
-_DATASET_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
-_DATASET_INFOENTRY.containing_type = _DATASET
-_DATASET.fields_by_name['info'].message_type = _DATASET_INFOENTRY
 DESCRIPTOR.message_types_by_name['OntologyTerm'] = _ONTOLOGYTERM
 DESCRIPTOR.message_types_by_name['Dataset'] = _DATASET
 DESCRIPTOR.message_types_by_name['Program'] = _PROGRAM
@@ -242,19 +193,11 @@ OntologyTerm = _reflection.GeneratedProtocolMessageType('OntologyTerm', (_messag
 _sym_db.RegisterMessage(OntologyTerm)
 
 Dataset = _reflection.GeneratedProtocolMessageType('Dataset', (_message.Message,), dict(
-
-  InfoEntry = _reflection.GeneratedProtocolMessageType('InfoEntry', (_message.Message,), dict(
-    DESCRIPTOR = _DATASET_INFOENTRY,
-    __module__ = 'ga4gh.metadata_pb2'
-    # @@protoc_insertion_point(class_scope:ga4gh.Dataset.InfoEntry)
-    ))
-  ,
   DESCRIPTOR = _DATASET,
   __module__ = 'ga4gh.metadata_pb2'
   # @@protoc_insertion_point(class_scope:ga4gh.Dataset)
   ))
 _sym_db.RegisterMessage(Dataset)
-_sym_db.RegisterMessage(Dataset.InfoEntry)
 
 Program = _reflection.GeneratedProtocolMessageType('Program', (_message.Message,), dict(
   DESCRIPTOR = _PROGRAM,
@@ -264,6 +207,4 @@ Program = _reflection.GeneratedProtocolMessageType('Program', (_message.Message,
 _sym_db.RegisterMessage(Program)
 
 
-_DATASET_INFOENTRY.has_options = True
-_DATASET_INFOENTRY._options = _descriptor._ParseOptions(descriptor_pb2.MessageOptions(), _b('8\001'))
 # @@protoc_insertion_point(module_scope)
