@@ -35,26 +35,45 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
 
 
 class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
-    def __init__(self, parentContainer, localId, randomSeed):
+    def __init__(self, parentContainer, localId, randomSeed,
+                 numAssociations=2):
         super(SimulatedPhenotypeAssociationSet, self).__init__(
             parentContainer, localId)
+        self._numAssociations = numAssociations
 
-    # TODO this doesn't make much sense
-    def getAssociations(
-            self, request=None, featureSets=[]):
-        if request:
-            fpa = protocol.FeaturePhenotypeAssociation()
-            fpa.phenotype_association_set_id = self._parentContainer.getId()
-            fpa.id = ""
-            fpa.feature_ids.extend(['featureId'])
-            fpa.evidence.extend([protocol.Evidence()])
-            fpa.phenotype.MergeFrom(protocol.PhenotypeInstance())
-            fpa.description = "description"
-            fpa.environmental_contexts.extend(
-                [protocol.EnvironmentalContext()])
-            return [fpa]
+    def getAssociations(self, request=None, featureSets=[]):
+        associations = []
+        if request is None:
+            for i in range(self._numAssociations):
+                associations.append(self._makeSimulatedAssociation(i))
+        elif isinstance(request, protocol.SearchPhenotypesRequest):
+            associations.append(self._makeSimulatedAssociation(
+                _id=0, phenotype_id=request.id))
         else:
-            return []
+            test_phenotype_ids = ["phenotype-0"]
+            if len(request.phenotype_ids) > 0:
+                test_phenotype_ids = request.phenotype_ids
+            for i in range(len(test_phenotype_ids)):
+                associations.append(self._makeSimulatedAssociation(
+                                    _id=test_phenotype_ids[i].split("-")[1],
+                                    phenotype_id=test_phenotype_ids[i]))
+        return associations
+
+    def _makeSimulatedAssociation(self, _id=None, phenotype_id=None):
+        fpa = protocol.FeaturePhenotypeAssociation()
+        fpa.phenotype_association_set_id = self._parentContainer.getId()
+        fpa.id = "fpa-{}".format(_id)
+        fpa.feature_ids.extend(["feature-{}".format(_id)])
+        fpa.evidence.extend([protocol.Evidence()])
+        _phenotype_id = "phenotype-{}".format(_id)
+        if phenotype_id:
+            _phenotype_id = phenotype_id
+        fpa.phenotype.MergeFrom(protocol.PhenotypeInstance(
+                                id=_phenotype_id))
+        fpa.description = "description-{}".format(_id)
+        fpa.environmental_contexts.extend(
+            [protocol.EnvironmentalContext(id="context-{}".format(_id))])
+        return fpa
 
 
 class G2PUtility(object):

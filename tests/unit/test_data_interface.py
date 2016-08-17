@@ -269,14 +269,23 @@ class TestInterfacingLayer(unittest.TestCase):
                         repoReferences, references):
                     self._assertEqual(repoReference, reference)
 
-    # TODO
-    @unittest.skip("client and repo don't return same objects")
+    # search_phenotype does not return containers, it returns
+    # PhenotypeInstances. So, we iterate through the container
+    # (PhenotypeAssociationSet), and compare the leaf nodes (PhenotypeInstance)
     def testSearchPhenotypes(self):
-        self._testSearchMethodInContainer(
-            'getAssociations',
-            self._client.search_phenotype,
-            self._repo.allPhenotypeAssociationSets(),
-            equalMethod='assertEqual')
+        phenotypeAssociationSets = self._repo.allPhenotypeAssociationSets()
+        for phenotypeAssociationSet in phenotypeAssociationSets:
+            repoAssociations = list(phenotypeAssociationSet.getAssociations())
+            numAssociations = len(repoAssociations)
+            phenotypeAssociationSetId = phenotypeAssociationSet.getId()
+            pageSizes = self._getPageSizes(numAssociations)
+            for pageSize in pageSizes:
+                clientPhenotypes = list(self._client.search_phenotype
+                                        (phenotypeAssociationSetId))
+                for repoAssociation, clientPhenotype in utils.zipLists(
+                        repoAssociations, clientPhenotypes):
+                    self.assertEqual(repoAssociation.phenotype,
+                                     clientPhenotype)
 
     def testSearchPhenotypeAssociationSets(self):
         self._testSearchMethodInContainer(
