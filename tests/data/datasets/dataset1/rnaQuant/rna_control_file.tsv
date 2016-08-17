@@ -1,0 +1,2 @@
+rna_quant_id	filename	type	annotation_id	read_group_id	description	programs
+ENCFF305LZB	rsem_test_data.tsv	rsem	Gencodev16	test_reads	RNAseq data from ENCODE evaluation	

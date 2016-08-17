@@ -60,6 +60,14 @@ def buildTestData(dataDirectory='tests/data', relativePaths=False):
             "add-featureset", repoFile, datasetName, useRelativePath,
             dataFile, "-R NCBI37", "-O", sequenceOntologyName)
 
+    pattern = os.path.join(
+        prefix, "datasets/dataset1/rnaQuant", "*.db")
+    for j, dataFile in enumerate(glob.glob(pattern)):
+        name = "rnaseq_{}".format(j)
+        run(
+            "add-rnaquantificationset", repoFile, datasetName, dataFile,
+            "-R NCBI37", "-n ", name)
+
 
 def parseArgs():
     parser = argparse.ArgumentParser()

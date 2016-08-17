@@ -456,6 +456,36 @@ class SequenceAnnotationNotFoundException(NotFoundException):
             "SequenceAnnotation with name '{0}' not found".format(name))
 
 
+class RnaQuantificationSetNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "RnaQuantificationSet with name '{0}' not found".format(name))
+
+
+class RnaQuantificationSetNameNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "RnaQuantificationSet with name '{0}' not found".format(name))
+
+
+class RnaQuantificationNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "RnaQuantification with name '{0}' not found".format(name))
+
+
+class RnaQuantificationNameNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "RnaQuantification with name '{0}' not found".format(name))
+
+
+class ExpressionLevelNotFoundException(NotFoundException):
+    def __init__(self, name):
+        self.message = (
+            "ExpressionLevel with name '{0}' not found".format(name))
+
+
 class DataException(BaseServerException):
     """
     Exceptions thrown during data ingestion.

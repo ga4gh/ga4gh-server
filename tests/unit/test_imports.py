@@ -159,6 +159,7 @@ class ImportGraphLayerChecker(object):
         'datamodel': ['ga4gh/datamodel/bio_metadata.py',
                       'ga4gh/datamodel/reads.py',
                       'ga4gh/datamodel/references.py',
+                      'ga4gh/datamodel/rna_quantification.py',
                       'ga4gh/datamodel/variants.py',
                       'ga4gh/datamodel/datasets.py',
                       'ga4gh/datamodel/ontologies.py',
@@ -186,7 +187,9 @@ class ImportGraphLayerChecker(object):
                      'ga4gh/allele_annotations_pb2.py',
                      'ga4gh/allele_annotation_service_pb2.py',
                      'ga4gh/sequence_annotations_pb2.py',
-                     'ga4gh/sequence_annotation_service_pb2.py'],
+                     'ga4gh/sequence_annotation_service_pb2.py',
+                     'ga4gh/rna_quantification_pb2.py',
+                     'ga4gh/rna_quantification_service_pb2.py'],
         'config': ['ga4gh/serverconfig.py'],
     }
 
