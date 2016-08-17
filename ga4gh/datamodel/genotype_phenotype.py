@@ -7,7 +7,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import collections
-import random
 import rdflib
 
 import ga4gh.datamodel as datamodel
