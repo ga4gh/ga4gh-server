@@ -53,7 +53,6 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             test_phenotype_ids = ["phenotype-0"]
             if len(request.phenotype_ids) > 0:
                 test_phenotype_ids = request.phenotype_ids
-            print(test_phenotype_ids)
             for i in range(len(test_phenotype_ids)):
                 associations.append(self._makeSimulatedAssociation(
                                     _id=test_phenotype_ids[i].split("-")[1],
