@@ -243,7 +243,7 @@ class AbstractDataRepository(object):
                     "\t", phenotypeAssociationSet.getLocalId(),
                     phenotypeAssociationSet.getParentContainer().getId(),
                     sep="\t")
-                # TODO - gabrielle please improve this listing
+                # TODO -  please improve this listing
 
     def allReferences(self):
         """
@@ -563,7 +563,7 @@ class SqlDataRepository(AbstractDataRepository):
                     "\t\t\t", phenotypeAssociationSet.getLocalId(),
                     phenotypeAssociationSet.getParentContainer().getId(),
                     sep="\t")
-                # TODO - gabrielle please improve this verification,
+                # TODO - please improve this verification,
                 #        print out number of tuples in graph
 
     def _safeConnect(self):
