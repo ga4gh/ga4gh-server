@@ -424,7 +424,11 @@ class TestFrontend(unittest.TestCase):
         responseData = protocol.fromJson(
             response.data, protocol.SearchPhenotypeAssociationSetsResponse)
         pasets = list(responseData.phenotype_association_sets)
-        self.assertEqual(self.phenotypeAssociationSetId, pasets[0].id)
+        foundPASet = False
+        for paset in pasets:
+            if self.phenotypeAssociationSetId == paset.id:
+                foundPASet = True
+        self.assertTrue(foundPASet)
 
     def testGenotypePhenotypesSearch(self):
         response = self.sendGenotypePhenotypesSearch()
