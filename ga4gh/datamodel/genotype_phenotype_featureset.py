@@ -73,8 +73,8 @@ class PhenotypeAssociationFeatureSet(
         versionInfo = rdflib.URIRef(
             u'http://www.w3.org/2002/07/owl#versionInfo')
         self._version = None
-        for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
-            self._version = o.toPython()
+        for _, _, obj in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
+            self._version = obj.toPython()
 
         # setup location cache
         self._initializeLocationCache()
@@ -97,13 +97,13 @@ class PhenotypeAssociationFeatureSet(
         featureRef = rdflib.URIRef(featureId)
         featureDetails = self._detailTuples([featureRef])
         feature = {}
-        for f in featureDetails:
-            feature[f['predicate']] = []
+        for detail in featureDetails:
+            feature[detail['predicate']] = []
 
-        for f in featureDetails:
-            feature[f['predicate']].append(f['object'])
+        for detail in featureDetails:
+            feature[detail['predicate']].append(detail['object'])
 
-        f = protocol.Feature()
+        pbFeature = protocol.Feature()
 
         term = protocol.OntologyTerm()
         # Schema for feature only supports one type of `type`
@@ -112,28 +112,28 @@ class PhenotypeAssociationFeatureSet(
             if "obolibrary" in featureType:
                 term.term = self._featureTypeLabel(featureType)
                 term.id = featureType
-                f.feature_type.MergeFrom(term)
+                pbFeature.feature_type.MergeFrom(term)
                 break
 
-        f.id = featureId
+        pbFeature.id = featureId
         # Schema for feature only supports one type of `name` `symbol`
         # here we default to shortest for symbol and longest for name
         feature[LABEL].sort(key=len)
-        f.gene_symbol = feature[LABEL][0]
-        f.name = feature[LABEL][-1]
+        pbFeature.gene_symbol = feature[LABEL][0]
+        pbFeature.name = feature[LABEL][-1]
 
-        f.attributes.MergeFrom(protocol.Attributes())
+        pbFeature.attributes.MergeFrom(protocol.Attributes())
         for key in feature:
             for val in feature[key]:
-                f.attributes.vals[key].values.add().string_value = val
+                pbFeature.attributes.vals[key].values.add().string_value = val
 
         if featureId in self._locationMap:
             location = self._locationMap[featureId]
-            f.reference_name = location["chromosome"]
-            f.start = location["begin"]
-            f.end = location["end"]
+            pbFeature.reference_name = location["chromosome"]
+            pbFeature.start = location["begin"]
+            pbFeature.end = location["end"]
 
-        return f
+        return pbFeature
 
     # mimic featureset
     def getFeatures(self, referenceName=None, start=None, end=None,
@@ -150,10 +150,8 @@ class PhenotypeAssociationFeatureSet(
             featureIds.add(row['feature'].toPython())
 
         featuresCount = len(featureIds)
-        # else 1 + row number being returned (starting at row 0).
         if pageToken:
-            # nextPageToken = pb.int(pageToken) # TODO pb.int returns string?
-            nextPageToken = int(pageToken)      # TODO int works
+            nextPageToken = int(pageToken)
         else:
             nextPageToken = 0
         for idx, featureId in enumerate(featureIds):
@@ -232,22 +230,24 @@ class PhenotypeAssociationFeatureSet(
         Ref = rdflib.URIRef
 
         associations = []
-        for s, p, o in triples((None, RDF.type, Ref(ASSOCIATION))):
-            associations.append(s.toPython())
+        for subj, _, _ in triples((None, RDF.type, Ref(ASSOCIATION))):
+            associations.append(subj.toPython())
 
         locationIds = []
         for association in associations:
-            for s, p, o in triples((Ref(association), Ref(HAS_SUBJECT), None)):
-                locationIds.append(o.toPython())
+            for _, _, obj in triples((Ref(association),
+                                      Ref(HAS_SUBJECT), None)):
+                locationIds.append(obj.toPython())
 
         locations = []
         for _id in locationIds:
             location = {}
             location["_id"] = _id
-            for s, p, o in triples((Ref(location["_id"]), None, None)):
-                if not p.toPython() in location:
-                    location[p.toPython()] = []
-                bisect.insort(location[p.toPython()], o.toPython())
+            for subj, predicate, obj in triples((Ref(location["_id"]),
+                                                 None, None)):
+                if not predicate.toPython() in location:
+                    location[predicate.toPython()] = []
+                bisect.insort(location[predicate.toPython()], obj.toPython())
                 if FALDO_LOCATION in location:
                     locations.append(location)
 
@@ -256,37 +256,41 @@ class PhenotypeAssociationFeatureSet(
                 # lookup faldo region, ensure positions are sorted
                 faldoLocation = {}
                 faldoLocation["_id"] = _id
-                for s, p, o in triples((Ref(faldoLocation["_id"]),
-                                       None, None)):
-                    if not p.toPython() in faldoLocation:
-                        faldoLocation[p.toPython()] = []
-                    bisect.insort(faldoLocation[p.toPython()], o.toPython())
+                for subj, predicate, obj in triples((Ref(faldoLocation["_id"]),
+                                                    None, None)):
+                    if not predicate.toPython() in faldoLocation:
+                        faldoLocation[predicate.toPython()] = []
+                    bisect.insort(faldoLocation[predicate.toPython()],
+                                  obj.toPython())
 
                 faldoBegins = []
 
                 for _id in faldoLocation[FALDO_BEGIN]:
                     faldoBegin = {}
                     faldoBegin["_id"] = _id
-                    for s, p, o in triples((Ref(faldoBegin["_id"]),
-                                           None, None)):
-                        faldoBegin[p.toPython()] = o.toPython()
+                    for subj, predicate, obj in triples(
+                                                (Ref(faldoBegin["_id"]),
+                                                    None, None)):
+                        faldoBegin[predicate.toPython()] = obj.toPython()
                     faldoBegins.append(faldoBegin)
 
                 faldoReferences = []
                 for _id in faldoLocation[FALDO_BEGIN]:
                     faldoReference = {}
                     faldoReference["_id"] = faldoBegin[FALDO_REFERENCE]
-                    for s, p, o in triples((Ref(faldoReference["_id"]),
-                                           None, None)):
-                        faldoReference[p.toPython()] = o.toPython()
+                    for subj, predicate, obj in triples(
+                                                (Ref(faldoReference["_id"]),
+                                                    None, None)):
+                        faldoReference[predicate.toPython()] = obj.toPython()
                     faldoReferences.append(faldoReference)
 
                 faldoEnds = []
                 for _id in faldoLocation[FALDO_END]:
                     faldoEnd = {}
                     faldoEnd["_id"] = _id
-                    for s, p, o in triples((Ref(faldoEnd["_id"]), None, None)):
-                        faldoEnd[p.toPython()] = o.toPython()
+                    for subj, predicate, obj in triples((Ref(faldoEnd["_id"]),
+                                                        None, None)):
+                        faldoEnd[predicate.toPython()] = obj.toPython()
                     faldoEnds.append(faldoEnd)
 
                 for idx, faldoReference in enumerate(faldoReferences):
