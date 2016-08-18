@@ -63,10 +63,7 @@ class PhenotypeAssociationFeatureSet(
         self._rdfGraph = rdflib.ConjunctiveGraph()
         # save the path
         self._dataUrl = dataUrl
-        try:
-            self._scanDataFiles(self._dataUrl, ['*.ttl', '*.xml'])
-        except AttributeError:
-            pass
+        self._scanDataFiles(self._dataUrl, ['*.ttl'])
 
         # extract version
         cgdTTL = rdflib.URIRef("http://data.monarchinitiative.org/ttl/cgd.ttl")

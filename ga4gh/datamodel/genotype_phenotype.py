@@ -464,7 +464,7 @@ class RdfPhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
         # save the path
         self._dataUrl = dataDir
 
-        self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
+        self._scanDataFiles(dataDir, ['*.ttl'])
 
         # extract version
         cgdTTL = rdflib.URIRef("http://data.monarchinitiative.org/ttl/cgd.ttl")
