@@ -43,12 +43,17 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
     def getAssociations(self, request=None, featureSets=[]):
         associations = []
+        # no request, return a generic set of associations
         if request is None:
             for i in range(self._numAssociations):
                 associations.append(self._makeSimulatedAssociation(i))
+        # SearchPhenotypesRequest request , return
+        # a set of associations that match the request
         elif isinstance(request, protocol.SearchPhenotypesRequest):
             associations.append(self._makeSimulatedAssociation(
                 _id=0, phenotype_id=request.id))
+        # SearchGenotypePhenotypeRequest request past, return
+        # a set of associations that match the request
         else:
             test_phenotype_ids = ["phenotype-0"]
             if len(request.phenotype_ids) > 0:
@@ -94,12 +99,11 @@ class G2PUtility(object):
 
     def _extractAssociationsDetails(self, associations):
         """
-        Given a set of results from our search query, return a
-        list of the URIRef for each `detail` (feature,environment,phenotype)
+        Given a set of results from our search query, return the
+        `details` (feature,environment,phenotype)
         """
         detailedURIRef = []
         for row in associations.bindings:
-            # empty set [{}]
             if 'feature' in row:
                 detailedURIRef.append(row['feature'])
                 detailedURIRef.append(row['environment'])
@@ -362,25 +366,14 @@ class G2PUtility(object):
         given an association dict,
         return a protocol.FeaturePhenotypeAssociation
         """
-        # TODO: This method needs to broken in several parts. It's
-        # doing too much things
-        fpa = None
 
         # The association dict has the keys: environment, environment
         # label, evidence, feature label, phenotype and sources. Each
         # key's value is a dict with the RDF predicates as keys and
         # subject as values
 
-        # useful
-        # ECO_0000033 traceable author statement
-        # RO_0002558 has evidence
-        # RO_0002200 has phenotype
-        # RO_0002606 is substance that treats
-        # SO_0001059 sequence_alteration
-        # BFO_0000159 has quality
-        # OMIM_606764
-        # OBO:SO_0000147 exon
-
+        # 1) map a GA4GH FeaturePhenotypeAssociation
+        # from the association dict passed to us
         feature = association['feature']
 
         fpa = protocol.FeaturePhenotypeAssociation()
@@ -396,6 +389,9 @@ class G2PUtility(object):
             self._getIdentifier(association['evidence']),
             association['sources']
             )
+
+        # 2) map a GA4GH Evidence
+        # from the association's phenotype & evidence
         evidence = protocol.Evidence()
         phenotype = association['phenotype']
 
@@ -408,12 +404,13 @@ class G2PUtility(object):
         evidence.evidence_type.MergeFrom(term)
 
         evidence.description = self._getIdentifier(association['evidence'])
-        # Store publications list of sources
+
+        # 3) Store publications from the list of sources
         for source in association['sources'].split("|"):
             evidence.info['publications'].values.add().string_value = source
         fpa.evidence.extend([evidence])
 
-        # map environment (drug)
+        # 4) map environment (drug) to environmentalContext
         environmentalContext = protocol.EnvironmentalContext()
         environment = association['environment']
         environmentalContext.id = environment['id']
@@ -429,6 +426,7 @@ class G2PUtility(object):
 
         fpa.environmental_contexts.extend([environmentalContext])
 
+        # 5) map the phenotype
         phenotypeInstance = protocol.PhenotypeInstance()
         term = protocol.OntologyTerm()
         term.term = phenotype[TYPE]
@@ -453,31 +451,28 @@ class RdfPhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
     published by the Monarch project, was the source of Evidence.
     """
     def __init__(self, parentContainer, localId, dataDir):
-        super(RdfPhenotypeAssociationSet, self).__init__(
-            parentContainer, localId)
         """
         Initialize dataset, using the passed dict of sources
         [{source,format}] see rdflib.parse() for more
         If path is set, this backend will load itself
         """
+        super(RdfPhenotypeAssociationSet, self).__init__(
+            parentContainer, localId)
 
         # initialize graph
         self._rdfGraph = rdflib.ConjunctiveGraph()
         # save the path
         self._dataUrl = dataDir
 
-        try:
-            self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
-        except AttributeError:
-            pass
+        self._scanDataFiles(dataDir, ['*.ttl', '*.xml'])
 
         # extract version
         cgdTTL = rdflib.URIRef("http://data.monarchinitiative.org/ttl/cgd.ttl")
         versionInfo = rdflib.URIRef(
             u'http://www.w3.org/2002/07/owl#versionInfo')
         self._version = None
-        for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
-            self._version = o.toPython()
+        for _, _, obj in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
+            self._version = obj.toPython()
 
     def getAssociations(
             self, request=None, featureSets=[]):
