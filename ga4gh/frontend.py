@@ -449,11 +449,7 @@ def handleFlaskPostRequest(flaskRequest, endpoint):
     Invokes the specified endpoint to generate a response.
     """
     if flaskRequest.method == "POST":
-        try:
-            return handleHttpPost(flaskRequest, endpoint)
-        except Exception as e:
-            traceback.print_exc(file=sys.stdout)
-            raise e
+        return handleHttpPost(flaskRequest, endpoint)
     elif flaskRequest.method == "OPTIONS":
         return handleHttpOptions()
     else:
