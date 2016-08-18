@@ -14,8 +14,8 @@ import shutil
 import json
 import pysam
 import utils
-import sys
 import generate_gff3_db
+import rnaseq2ga
 import tempfile
 import zipfile
 
@@ -32,6 +32,7 @@ import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations  # NOQA
 import ga4gh.datamodel.bio_metadata as biodata  # NOQA
 import ga4gh.datamodel.genotype_phenotype_featureset as g2p_featureset  # NOQA
 import ga4gh.datamodel.genotype_phenotype as g2p_associationset  # NOQA
+import ga4gh.datamodel.rna_quantification as rna_quantification  # NOQA
 
 
 class ComplianceDataMunger(object):
@@ -47,8 +48,16 @@ class ComplianceDataMunger(object):
         """
         self.inputDirectory = inputDirectory
         self.outputDirectory = outputDirectory
-        self.repoPath = os.path.join(outputDirectory, "repo.db")
+        self.repoPath = os.path.abspath(
+            os.path.join(outputDirectory, "repo.db"))
         self.tempdir = None
+
+        if os.path.exists(self.outputDirectory):
+            utils.log("Output directory '{}' already exists".format(
+                self.outputDirectory))
+            utils.log("Please specify an output path that does not exist")
+            utils.log("Exiting...")
+            exit(1)
 
         # If no input directory is specified download from GitHub
         if inputDirectory is None:
@@ -215,6 +224,7 @@ class ComplianceDataMunger(object):
                 sequenceOntology,
                 bioSamples)
 
+        # Sequence annotations
         seqAnnFile = "brca1_gencodev19.gff3"
         seqAnnSrc = os.path.join(self.inputDirectory, seqAnnFile)
         seqAnnDest = os.path.join(self.outputDirectory, "gencodev19.db")
@@ -243,7 +253,18 @@ class ComplianceDataMunger(object):
 
         self.repo.commit()
 
-        print("Done converting compliance data.", file=sys.stderr)
+        # RNA Quantification
+        rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
+        rnaseq2ga.rnaseq2ga(
+            self.inputDirectory, rnaDbName, self.repoPath,
+            featureType="transcript")
+        rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
+            dataset, "rnaseq")
+        rnaQuantificationSet.setReferenceSet(referenceSet)
+        rnaQuantificationSet.populateFromFile(rnaDbName)
+        self.repo.insertRnaQuantificationSet(rnaQuantificationSet)
+
+        self.repo.commit()
 
     def addVariantSet(
             self, variantFileName, dataset, referenceSet,

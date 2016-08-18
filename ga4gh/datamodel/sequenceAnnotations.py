@@ -157,7 +157,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
             name=name, geneSymbol=geneSymbol)
         sql += sqliteBackend.limitsSql(pageToken, pageSize)
         query = self._dbconn.execute(sql, sql_args)
-        return sqliteBackend.sqliteRows2dicts(query.fetchall())
+        return sqliteBackend.sqliteRowsToDicts(query.fetchall())
 
     def getFeatureById(self, featureId):
         """
@@ -172,7 +172,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
         ret = query.fetchone()
         if ret is None:
             return None
-        return sqliteBackend.sqliteRow2Dict(ret)
+        return sqliteBackend.sqliteRowToDict(ret)
 
 
 class AbstractFeatureSet(datamodel.DatamodelObject):
