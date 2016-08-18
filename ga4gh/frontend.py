@@ -236,6 +236,8 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_READ_GROUPS_PER_READ_GROUP_SET"]
         numPhenotypeAssociations = app.config[
             "SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATIONS"]
+        numPhenotypeAssociationSets = app.config[
+            "SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATION_SETS"]
         dataRepository = datarepo.SimulatedDataRepository(
             randomSeed=randomSeed, numCalls=numCalls,
             variantDensity=variantDensity, numVariantSets=numVariantSets,
@@ -243,7 +245,8 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
             numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
             numAlignments=numAlignmentsPerReadGroup,
-            numPhenotypeAssociations=numPhenotypeAssociations)
+            numPhenotypeAssociations=numPhenotypeAssociations,
+            numPhenotypeAssociationSets=numPhenotypeAssociationSets)
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":

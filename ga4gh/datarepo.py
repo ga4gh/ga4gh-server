@@ -358,7 +358,8 @@ class SimulatedDataRepository(AbstractDataRepository):
             numReferenceSets=1, numReferencesPerReferenceSet=1,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
             numAlignments=2,
-            numPhenotypeAssociations=2):
+            numPhenotypeAssociations=2,
+            numPhenotypeAssociationSets=1):
         super(SimulatedDataRepository, self).__init__()
 
         # References
@@ -381,7 +382,8 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numReadGroupSets=numReadGroupSets,
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
                 numAlignments=numAlignments,
-                numPhenotypeAssociations=numPhenotypeAssociations)
+                numPhenotypeAssociations=numPhenotypeAssociations,
+                numPhenotypeAssociationSets=numPhenotypeAssociationSets)
             self.addDataset(dataset)
 
 
