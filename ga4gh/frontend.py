@@ -12,8 +12,6 @@ import datetime
 import socket
 import urlparse
 import functools
-import sys
-import traceback
 
 import flask
 import flask.ext.cors as cors
@@ -258,6 +256,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
             numAlignments=numAlignmentsPerReadGroup,
             numPhenotypeAssociations=numPhenotypeAssociations,
+            numPhenotypeAssociationSets=numPhenotypeAssociationSets,
             numRnaQuantSets=numRnaQuantSets,
             numExpressionLevels=numExpressionLevels)
     elif dataSource.scheme == "empty":

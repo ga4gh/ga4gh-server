@@ -1189,7 +1189,7 @@ class TestSimulatedStack(unittest.TestCase):
                     protocol.SearchGenotypePhenotypeResponse)
                 for clientAssoc in responseData.associations:
                     self.assertEqual(clientAssoc, repoAssoc)
-    
+
     # TODO def testSearchGenotypePhenotypes(self):
 
     # TODO def testGetExpressionLevel(self):

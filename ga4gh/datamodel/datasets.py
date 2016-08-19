@@ -392,7 +392,7 @@ class SimulatedDataset(Dataset):
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
             numAlignments=1, numFeatureSets=1, numPhenotypeAssociationSets=1,
             numPhenotypeAssociations=2, numRnaQuantSets=2,
-	    numExpressionLevels=2):
+            numExpressionLevels=2):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
 
