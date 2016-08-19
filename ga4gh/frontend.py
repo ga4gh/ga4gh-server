@@ -182,6 +182,13 @@ class ServerStatus(object):
         return app.backend.getDataRepository().getDataset(
             datasetId).getPhenotypeAssociationSets()
 
+    def getRnaQuantificationSets(self, datasetId):
+        """
+        Returns the list of RnaQuantificationSets for this server.
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getRnaQuantificationSets()
+
 
 def reset():
     """
@@ -238,6 +245,11 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATIONS"]
         numPhenotypeAssociationSets = app.config[
             "SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATION_SETS"]
+        numRnaQuantSets = app.config[
+            "SIMULATED_BACKEND_NUM_RNA_QUANTIFICATION_SETS"]
+        numExpressionLevels = app.config[
+            "SIMULATED_BACKEND_NUM_EXPRESSION_LEVELS_PER_RNA_QUANT_SET"]
+
         dataRepository = datarepo.SimulatedDataRepository(
             randomSeed=randomSeed, numCalls=numCalls,
             variantDensity=variantDensity, numVariantSets=numVariantSets,
@@ -246,7 +258,8 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
             numAlignments=numAlignmentsPerReadGroup,
             numPhenotypeAssociations=numPhenotypeAssociations,
-            numPhenotypeAssociationSets=numPhenotypeAssociationSets)
+            numRnaQuantSets=numRnaQuantSets,
+            numExpressionLevels=numExpressionLevels)
     elif dataSource.scheme == "empty":
         dataRepository = datarepo.EmptyDataRepository()
     elif dataSource.scheme == "file":
@@ -617,6 +630,24 @@ def getIndividual(id):
         id, flask.request, app.backend.runGetIndividual)
 
 
+@DisplayedRoute('/rnaquantificationsets/search', postMethod=True)
+def searchRnaQuantificationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchRnaQuantificationSets)
+
+
+@DisplayedRoute('/rnaquantifications/search', postMethod=True)
+def searchRnaQuantifications():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchRnaQuantifications)
+
+
+@DisplayedRoute('/expressionlevels/search', postMethod=True)
+def searchExpressionLevels():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchExpressionLevels)
+
+
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
@@ -669,6 +700,30 @@ def getFeatureSet(id):
 def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
+
+
+@DisplayedRoute(
+    '/rnaquantificationsets/<no(search):id>',
+    pathDisplay='/rnaquantificationsets/<id>')
+def getRnaQuantificationSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetRnaQuantificationSet)
+
+
+@DisplayedRoute(
+    '/rnaquantifications/<no(search):id>',
+    pathDisplay='/rnaquantifications/<id>')
+def getRnaQuantification(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetRnaQuantification)
+
+
+@DisplayedRoute(
+    '/expressionlevels/<no(search):id>',
+    pathDisplay='/expressionlevels/<id>')
+def getExpressionLevel(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetExpressionLevel)
 
 
 @app.route('/oauth2callback', methods=['GET'])

@@ -1,7 +1,7 @@
 """
 Unit tests for the frontend code.
 """
-# TODO a lot of these methods could use a refactor
+# TODO the sendGetX methods, etc. could use some refactoring
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -71,6 +71,14 @@ class TestFrontend(unittest.TestCase):
         cls.genotypePhenotype = cls.phenotypeAssociationSet.getAssociations(
             request=None, featureSets=cls.featureSets)[0]
         cls.genotypePhenotypeId = cls.genotypePhenotype.id
+        cls.rnaQuantificationSet = cls.dataset.getRnaQuantificationSets()[0]
+        cls.rnaQuantificationSetId = cls.rnaQuantificationSet.getId()
+        cls.rnaQuantification = cls.rnaQuantificationSet.getRnaQuantifications(
+            )[0]
+        cls.rnaQuantificationId = cls.rnaQuantification.getId()
+        cls.expressionLevel = cls.rnaQuantification.getExpressionLevels(
+            1, 2)[0]
+        cls.expressionLevelId = cls.expressionLevel.getId()
 
     def sendPostRequest(self, path, request):
         """
@@ -142,6 +150,21 @@ class TestFrontend(unittest.TestCase):
         return self.sendPostRequest(
             '/phenotypeassociationsets/search', request)
 
+    def sendRnaQuantificationSetsSearch(self):
+        request = protocol.SearchRnaQuantificationSetsRequest()
+        request.dataset_id = self.datasetId
+        return self.sendPostRequest('/rnaquantificationsets/search', request)
+
+    def sendRnaQuantificationsSearch(self):
+        request = protocol.SearchRnaQuantificationsRequest()
+        request.rna_quantification_set_id = self.rnaQuantificationSetId
+        return self.sendPostRequest('/rnaquantifications/search', request)
+
+    def sendExpressionLevelsSearch(self):
+        request = protocol.SearchExpressionLevelsRequest()
+        request.rna_quantification_id = self.rnaQuantificationId
+        return self.sendPostRequest('/expressionlevels/search', request)
+
     def sendReferencesSearch(self):
         path = "/references/search"
         request = protocol.SearchReferencesRequest()
@@ -201,6 +224,27 @@ class TestFrontend(unittest.TestCase):
         if id_ is None:
             id_ = self.referenceSetId
         path = "/referencesets/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
+    def sendGetRnaQuantificationSet(self, id_=None):
+        if id_ is None:
+            id_ = self.rnaQuantificationSetId
+        path = "/rnaquantificationsets/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
+    def sendGetRnaQuantification(self, id_=None):
+        if id_ is None:
+            id_ = self.rnaQuantificationId
+        path = "/rnaquantifications/{}".format(id_)
+        response = self.sendGetRequest(path)
+        return response
+
+    def sendGetExpressionLevel(self, id_=None):
+        if id_ is None:
+            id_ = self.expressionLevelId
+        path = "/expressionlevels/{}".format(id_)
         response = self.sendGetRequest(path)
         return response
 
@@ -451,3 +495,46 @@ class TestFrontend(unittest.TestCase):
             readGroupIds=[self.readGroupId, "42"],
             referenceId=self.referenceId)
         self.assertEqual(400, response.status_code)
+
+    def testGetExpressionLevel(self):
+        response = self.sendGetExpressionLevel()
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.fromJson(
+            response.data, protocol.ExpressionLevel)
+        self.assertEqual(responseData.id, self.expressionLevelId)
+
+    def testGetRnaQuantification(self):
+        response = self.sendGetRnaQuantification()
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.fromJson(
+            response.data, protocol.RnaQuantification)
+        self.assertEqual(responseData.id, self.rnaQuantificationId)
+
+    def testGetRnaQuantificationSet(self):
+        response = self.sendGetRnaQuantificationSet()
+        self.assertEqual(200, response.status_code)
+        responseData = protocol.fromJson(
+            response.data, protocol.RnaQuantificationSet)
+        self.assertEqual(responseData.id, self.rnaQuantificationSetId)
+
+    def testExpressionLevelsSearch(self):
+        response = self.sendExpressionLevelsSearch()
+        responseData = protocol.fromJson(
+            response.data, protocol.SearchExpressionLevelsResponse)
+        expressionLevels = list(responseData.expression_levels)
+        self.assertEqual(self.expressionLevelId, expressionLevels[0].id)
+
+    def testRnaQuantificationsSearch(self):
+        response = self.sendRnaQuantificationsSearch()
+        responseData = protocol.fromJson(
+            response.data, protocol.SearchRnaQuantificationsResponse)
+        rnaQuantifications = list(responseData.rna_quantifications)
+        self.assertEqual(self.rnaQuantificationId, rnaQuantifications[0].id)
+
+    def testRnaQuantificationSetsSearch(self):
+        response = self.sendRnaQuantificationSetsSearch()
+        responseData = protocol.fromJson(
+            response.data, protocol.SearchRnaQuantificationSetsResponse)
+        rnaQuantificationSets = list(responseData.rna_quantification_sets)
+        self.assertEqual(
+            self.rnaQuantificationSetId, rnaQuantificationSets[0].id)

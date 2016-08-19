@@ -722,6 +722,9 @@ class TestSimulatedStack(unittest.TestCase):
                            "There should be some results for a good effect ID")
         for ann in responseData.variant_annotations:
             effectPresent = False
+            txIds = map(lambda t: t.id, ann.transcript_effects)
+            self.assertEqual(len(txIds), len(set(txIds)),
+                             "Transcript effects should be unique")
             for effect in ann.transcript_effects:
                 for featureType in effect.effects:
                     if featureType.id in map(
@@ -1153,7 +1156,6 @@ class TestSimulatedStack(unittest.TestCase):
             repoPaSetIds = []
             for repoPaSet in dataset.getPhenotypeAssociationSets():
                 repoPaSetIds.append(repoPaSet.getId())
-
             request = protocol.SearchPhenotypeAssociationSetsRequest()
             request.dataset_id = dataset.getId()
             responseData = self.sendSearchRequest(
@@ -1187,3 +1189,17 @@ class TestSimulatedStack(unittest.TestCase):
                     protocol.SearchGenotypePhenotypeResponse)
                 for clientAssoc in responseData.associations:
                     self.assertEqual(clientAssoc, repoAssoc)
+    
+    # TODO def testSearchGenotypePhenotypes(self):
+
+    # TODO def testGetExpressionLevel(self):
+
+    # TODO def testSearchExpressionLevels(self):
+
+    # TODO def testGetRnaQuantification(self):
+
+    # TODO def testSearchRnaQuantifications(self):
+
+    # TODO def testGetRnaQuantificationSet(self):
+
+    # TODO def testSearchRnaQuantificationSets(self):

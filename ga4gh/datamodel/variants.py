@@ -880,7 +880,7 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         """
         protocolElement = protocol.VariantAnnotationSet()
         protocolElement.id = self.getId()
-        protocolElement.variantSet_id = self._variantSet.getId()
+        protocolElement.variant_set_id = self._variantSet.getId()
         protocolElement.name = self.getLocalId()
         protocolElement.analysis.CopyFrom(self.getAnalysis())
         return protocolElement
@@ -968,11 +968,10 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         ann.created = datetime.datetime.now().isoformat() + "Z"
         # make a transcript effect for each alternate base element
         # multiplied by a random integer (1,5)
-        for i in range(randomNumberGenerator.randint(1, 5)):
-            for base in variant.alternate_bases:
-                ann.transcript_effects.add().CopyFrom(
-                    self.generateTranscriptEffect(
-                        variant, ann, base, randomNumberGenerator))
+        for base in variant.alternate_bases:
+            ann.transcript_effects.add().CopyFrom(
+                self.generateTranscriptEffect(
+                    variant, ann, base, randomNumberGenerator))
         ann.id = self.getVariantAnnotationId(variant, ann)
         return ann
 
@@ -984,10 +983,6 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
         effect.protein_location.start = variant.start
         effect.cds_location.start = variant.start
         effect.cdna_location.start = variant.start
-        return effect
-
-    def _addTranscriptEffectId(self, effect):
-        effect.id = str(self.getTranscriptEffectId(effect))
         return effect
 
     def _getRandomOntologyTerm(self, randomNumberGenerator):
@@ -1032,7 +1027,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
             effect, randomNumberGenerator)
         effect = self._addTranscriptEffectOntologyTerm(
             effect, randomNumberGenerator)
-        effect = self._addTranscriptEffectId(effect)
+        effect.id = self.getTranscriptEffectId(effect)
         effect = self._addAnalysisResult(effect, ann, randomNumberGenerator)
         return effect
 

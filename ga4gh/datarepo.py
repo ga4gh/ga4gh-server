@@ -19,6 +19,7 @@ import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.bio_metadata as biodata
 import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.datamodel.genotype_phenotype_featureset as g2pFeatureset
+import ga4gh.datamodel.rna_quantification as rna_quantification
 import ga4gh.exceptions as exceptions
 
 from ga4gh import protocol
@@ -339,6 +340,36 @@ class AbstractDataRepository(object):
             for paSet in dataset.getPhenotypeAssociationSets():
                 yield paSet
 
+    def allRnaQuantificationSets(self):
+        """
+        Return an iterator over all rna quantification sets
+        """
+        for dataset in self.getDatasets():
+            for rnaQuantificationSet in dataset.getRnaQuantificationSets():
+                yield rnaQuantificationSet
+
+    def allRnaQuantifications(self):
+        """
+        Return an iterator over all rna quantifications
+        """
+        for dataset in self.getDatasets():
+            for rnaQuantificationSet in dataset.getRnaQuantificationSets():
+                for rnaQuantification in \
+                        rnaQuantificationSet.getRnaQuantifications():
+                    yield rnaQuantification
+
+    def allExpressionLevels(self):
+        """
+        Return an iterator over all expression levels
+        """
+        for dataset in self.getDatasets():
+            for rnaQuantificationSet in dataset.getRnaQuantificationSets():
+                for rnaQuantification in \
+                        rnaQuantificationSet.getRnaQuantifications():
+                    for expressionLevel in \
+                            rnaQuantification.getExpressionLevels():
+                        yield expressionLevel
+
 
 class EmptyDataRepository(AbstractDataRepository):
     """
@@ -357,9 +388,9 @@ class SimulatedDataRepository(AbstractDataRepository):
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReferenceSets=1, numReferencesPerReferenceSet=1,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=2,
             numPhenotypeAssociations=2,
-            numPhenotypeAssociationSets=1):
+            numPhenotypeAssociationSets=1,
+            numAlignments=2, numRnaQuantSets=2, numExpressionLevels=2):
         super(SimulatedDataRepository, self).__init__()
 
         # References
@@ -383,7 +414,9 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
                 numAlignments=numAlignments,
                 numPhenotypeAssociations=numPhenotypeAssociations,
-                numPhenotypeAssociationSets=numPhenotypeAssociationSets)
+                numPhenotypeAssociationSets=numPhenotypeAssociationSets,
+                numRnaQuantSets=numRnaQuantSets,
+                numExpressionLevels=numExpressionLevels)
             self.addDataset(dataset)
 
 
@@ -404,7 +437,7 @@ class SqlDataRepository(AbstractDataRepository):
         def __str__(self):
             return "{}.{}".format(self.major, self.minor)
 
-    version = SchemaVersion("2.0")
+    version = SchemaVersion("2.1")
     systemKeySchemaVersion = "schemaVersion"
     systemKeyCreationTimeStamp = "creationTimeStamp"
 
@@ -967,7 +1000,14 @@ class SqlDataRepository(AbstractDataRepository):
         """
         sql = "DELETE FROM ReferenceSet WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (referenceSet.getId(),))
+        try:
+            cursor.execute(sql, (referenceSet.getId(),))
+        except sqlite3.IntegrityError:
+            msg = ("Unable to delete reference set.  "
+                   "There are objects currently in the registry which are "
+                   "aligned against it.  Remove these objects before removing "
+                   "the reference set.")
+            raise exceptions.RepoManagerException(msg)
 
     def _readReadGroupSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -1185,8 +1225,6 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute("SELECT * FROM FeatureSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
-            # START Load feature set from g2p
-            # TODO perhaps extend the database record to include class_name
             if 'cgd' in row[b'name']:
                 featureSet = \
                     g2pFeatureset \
@@ -1194,7 +1232,6 @@ class SqlDataRepository(AbstractDataRepository):
             else:
                 featureSet = sequenceAnnotations.Gff3DbFeatureSet(
                     dataset, row[b'name'])
-            # END
             featureSet.setReferenceSet(
                 self.getReferenceSet(row[b'referenceSetId']))
             featureSet.setOntology(self.getOntology(row[b'ontologyId']))
@@ -1321,6 +1358,23 @@ class SqlDataRepository(AbstractDataRepository):
         """
         cursor.execute(sql)
 
+    def _createRnaQuantificationSetTable(self, cursor):
+        sql = """
+            CREATE TABLE RnaQuantificationSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
+                info TEXT,
+                dataUrl TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+            );
+        """
+        cursor.execute(sql)
+
     def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
         Inserts the specified individual into this repository.
@@ -1352,6 +1406,47 @@ class SqlDataRepository(AbstractDataRepository):
                     dataset, row[b'name'], row[b'dataUrl'])
             dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
+    def insertRnaQuantificationSet(self, rnaQuantificationSet):
+        """
+        Inserts a the specified rnaQuantificationSet into this repository.
+        """
+        sql = """
+            INSERT INTO RnaQuantificationSet (
+                id, datasetId, referenceSetId, name, dataUrl)
+            VALUES (?, ?, ?, ?, ?)
+        """
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (
+            rnaQuantificationSet.getId(),
+            rnaQuantificationSet.getParentContainer().getId(),
+            rnaQuantificationSet.getReferenceSet().getId(),
+            rnaQuantificationSet.getLocalId(),
+            rnaQuantificationSet.getDataUrl()))
+
+    def _readRnaQuantificationSetTable(self, cursor):
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT * FROM RnaQuantificationSet;")
+        for row in cursor:
+            dataset = self.getDataset(row[b'datasetId'])
+            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
+            rnaQuantificationSet = \
+                rna_quantification.SqliteRnaQuantificationSet(
+                    dataset, row[b'name'])
+            rnaQuantificationSet.setReferenceSet(referenceSet)
+            rnaQuantificationSet.populateFromRow(row)
+            assert rnaQuantificationSet.getId() == row[b'id']
+            dataset.addRnaQuantificationSet(rnaQuantificationSet)
+
+    def removeRnaQuantificationSet(self, rnaQuantificationSet):
+        """
+        Removes the specified rnaQuantificationSet from this repository. This
+        performs a cascading removal of all items within this
+        rnaQuantificationSet.
+        """
+        sql = "DELETE FROM RnaQuantificationSet WHERE id=?"
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (rnaQuantificationSet.getId(),))
+
     def initialise(self):
         """
         Initialise this data repostitory, creating any necessary directories
@@ -1373,6 +1468,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createBioSampleTable(cursor)
         self._createIndividualTable(cursor)
         self._createPhenotypeAssociationSetTable(cursor)
+        self._createRnaQuantificationSetTable(cursor)
 
     def exists(self):
         """
@@ -1418,3 +1514,4 @@ class SqlDataRepository(AbstractDataRepository):
             self._readBioSampleTable(cursor)
             self._readIndividualTable(cursor)
             self._readPhenotypeAssociationSetTable(cursor)
+            self._readRnaQuantificationSetTable(cursor)

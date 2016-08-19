@@ -13,6 +13,7 @@ import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.bio_metadata as biodata
 import ga4gh.datamodel.genotype_phenotype as g2p
+import ga4gh.datamodel.rna_quantification as rnaQuantification
 from ga4gh import pb
 
 
@@ -43,6 +44,9 @@ class Dataset(datamodel.DatamodelObject):
         self._phenotypeAssociationSetIdMap = {}
         self._phenotypeAssociationSetNameMap = {}
         self._phenotypeAssociationSetIds = []
+        self._rnaQuantificationSetIds = []
+        self._rnaQuantificationSetIdMap = {}
+        self._rnaQuantificationSetNameMap = {}
 
     def populateFromRow(self, row):
         """
@@ -102,6 +106,16 @@ class Dataset(datamodel.DatamodelObject):
         self._readGroupSetIdMap[id_] = readGroupSet
         self._readGroupSetNameMap[readGroupSet.getLocalId()] = readGroupSet
         self._readGroupSetIds.append(id_)
+
+    def addRnaQuantificationSet(self, rnaQuantSet):
+        """
+        Adds the specified rnaQuantification set to this dataset.
+        """
+        id_ = rnaQuantSet.getId()
+        self._rnaQuantificationSetIdMap[id_] = rnaQuantSet
+        self._rnaQuantificationSetIds.append(id_)
+        name = rnaQuantSet.getLocalId()
+        self._rnaQuantificationSetNameMap[name] = rnaQuantSet
 
     def toProtocolElement(self):
         dataset = protocol.Dataset()
@@ -328,6 +342,45 @@ class Dataset(datamodel.DatamodelObject):
         """
         return self._description
 
+    def getNumRnaQuantificationSets(self):
+        """
+        Returns the number of rna quantification sets in this dataset.
+        """
+        return len(self._rnaQuantificationSetIds)
+
+    def getRnaQuantificationSets(self):
+        """
+        Returns the list of RnaQuantification sets in this dataset
+        """
+        return [self._rnaQuantificationSetIdMap[id_] for
+                id_ in self._rnaQuantificationSetIds]
+
+    def getRnaQuantificationSetByIndex(self, index):
+        """
+        Returns the rna quantification set at the specified index in this
+        dataset.
+        """
+        return self._rnaQuantificationSetIdMap[
+            self._rnaQuantificationSetIds[index]]
+
+    def getRnaQuantificationSetByName(self, name):
+        """
+        Returns the RnaQuantification set with the specified name, or raises
+        an exception otherwise.
+        """
+        if name not in self._rnaQuantificationSetNameMap:
+            raise exceptions.RnaQuantificationSetNameNotFoundException(name)
+        return self._rnaQuantificationSetNameMap[name]
+
+    def getRnaQuantificationSet(self, id_):
+        """
+        Returns the RnaQuantification set with the specified name, or raises
+        a RnaQuantificationSetNotFoundException otherwise.
+        """
+        if id_ not in self._rnaQuantificationSetIdMap:
+            raise exceptions.RnaQuantificationSetNotFoundException(id_)
+        return self._rnaQuantificationSetIdMap[id_]
+
 
 class SimulatedDataset(Dataset):
     """
@@ -338,7 +391,8 @@ class SimulatedDataset(Dataset):
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
             numAlignments=1, numFeatureSets=1, numPhenotypeAssociationSets=1,
-            numPhenotypeAssociations=2):
+            numPhenotypeAssociations=2, numRnaQuantSets=2,
+	    numExpressionLevels=2):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
 
@@ -399,3 +453,10 @@ class SimulatedDataset(Dataset):
                 self, localId, seed)
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
+        # RnaQuantificationSets
+        for i in range(numRnaQuantSets):
+            localId = 'simRqs{}'.format(i)
+            rnaQuantSet = rnaQuantification.SimulatedRnaQuantificationSet(
+                self, localId)
+            rnaQuantSet.setReferenceSet(referenceSet)
+            self.addRnaQuantificationSet(rnaQuantSet)
