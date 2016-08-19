@@ -244,7 +244,7 @@ class AbstractDataRepository(object):
                     "\t", phenotypeAssociationSet.getLocalId(),
                     phenotypeAssociationSet.getParentContainer().getId(),
                     sep="\t")
-                # TODO - gabrielle please improve this listing
+                # TODO -  please improve this listing
 
     def allReferences(self):
         """
@@ -388,6 +388,8 @@ class SimulatedDataRepository(AbstractDataRepository):
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReferenceSets=1, numReferencesPerReferenceSet=1,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
+            numPhenotypeAssociations=2,
+            numPhenotypeAssociationSets=1,
             numAlignments=2, numRnaQuantSets=2, numExpressionLevels=2):
         super(SimulatedDataRepository, self).__init__()
 
@@ -411,6 +413,8 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numReadGroupSets=numReadGroupSets,
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
                 numAlignments=numAlignments,
+                numPhenotypeAssociations=numPhenotypeAssociations,
+                numPhenotypeAssociationSets=numPhenotypeAssociationSets,
                 numRnaQuantSets=numRnaQuantSets,
                 numExpressionLevels=numExpressionLevels)
             self.addDataset(dataset)
@@ -592,7 +596,7 @@ class SqlDataRepository(AbstractDataRepository):
                     "\t\t\t", phenotypeAssociationSet.getLocalId(),
                     phenotypeAssociationSet.getParentContainer().getId(),
                     sep="\t")
-                # TODO - gabrielle please improve this verification,
+                # TODO - please improve this verification,
                 #        print out number of tuples in graph
 
     def _safeConnect(self):
@@ -1221,8 +1225,6 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute("SELECT * FROM FeatureSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
-            # START Load feature set from g2p
-            # TODO perhaps extend the database record to include class_name
             if 'cgd' in row[b'name']:
                 featureSet = \
                     g2pFeatureset \
@@ -1230,7 +1232,6 @@ class SqlDataRepository(AbstractDataRepository):
             else:
                 featureSet = sequenceAnnotations.Gff3DbFeatureSet(
                     dataset, row[b'name'])
-            # END
             featureSet.setReferenceSet(
                 self.getReferenceSet(row[b'referenceSetId']))
             featureSet.setOntology(self.getOntology(row[b'ontologyId']))

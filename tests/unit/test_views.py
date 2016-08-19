@@ -64,12 +64,12 @@ class TestFrontend(unittest.TestCase):
         cls.phenotypeAssociationSet = \
             cls.dataset.getPhenotypeAssociationSets()[0]
         cls.phenotypeAssociationSetId = cls.phenotypeAssociationSet.getId()
-        cls.phenotype = cls.phenotypeAssociationSet.getAssociations(
-            "notNone")[0]
+        cls.association = cls.phenotypeAssociationSet.getAssociations()[0]
+        cls.phenotype = cls.association.phenotype
         cls.phenotypeId = cls.phenotype.id
         cls.featureSets = cls.dataset.getFeatureSets()
         cls.genotypePhenotype = cls.phenotypeAssociationSet.getAssociations(
-            "notNone", cls.featureSets)[0]
+            request=None, featureSets=cls.featureSets)[0]
         cls.genotypePhenotypeId = cls.genotypePhenotype.id
         cls.rnaQuantificationSet = cls.dataset.getRnaQuantificationSets()[0]
         cls.rnaQuantificationSetId = cls.rnaQuantificationSet.getId()
@@ -468,7 +468,11 @@ class TestFrontend(unittest.TestCase):
         responseData = protocol.fromJson(
             response.data, protocol.SearchPhenotypeAssociationSetsResponse)
         pasets = list(responseData.phenotype_association_sets)
-        self.assertEqual(self.phenotypeAssociationSetId, pasets[0].id)
+        foundPASet = False
+        for paset in pasets:
+            if self.phenotypeAssociationSetId == paset.id:
+                foundPASet = True
+        self.assertTrue(foundPASet)
 
     def testGenotypePhenotypesSearch(self):
         response = self.sendGenotypePhenotypesSearch()

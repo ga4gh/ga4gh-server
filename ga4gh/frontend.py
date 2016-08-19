@@ -12,8 +12,6 @@ import datetime
 import socket
 import urlparse
 import functools
-import sys
-import traceback
 
 import flask
 import flask.ext.cors as cors
@@ -241,6 +239,10 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
         numReadGroupsPerReadGroupSet = app.config[
             "SIMULATED_BACKEND_NUM_READ_GROUPS_PER_READ_GROUP_SET"]
+        numPhenotypeAssociations = app.config[
+            "SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATIONS"]
+        numPhenotypeAssociationSets = app.config[
+            "SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATION_SETS"]
         numRnaQuantSets = app.config[
             "SIMULATED_BACKEND_NUM_RNA_QUANTIFICATION_SETS"]
         numExpressionLevels = app.config[
@@ -253,6 +255,8 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
             numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
             numAlignments=numAlignmentsPerReadGroup,
+            numPhenotypeAssociations=numPhenotypeAssociations,
+            numPhenotypeAssociationSets=numPhenotypeAssociationSets,
             numRnaQuantSets=numRnaQuantSets,
             numExpressionLevels=numExpressionLevels)
     elif dataSource.scheme == "empty":
@@ -457,11 +461,7 @@ def handleFlaskPostRequest(flaskRequest, endpoint):
     Invokes the specified endpoint to generate a response.
     """
     if flaskRequest.method == "POST":
-        try:
-            return handleHttpPost(flaskRequest, endpoint)
-        except Exception as e:
-            traceback.print_exc(file=sys.stdout)
-            raise e
+        return handleHttpPost(flaskRequest, endpoint)
     elif flaskRequest.method == "OPTIONS":
         return handleHttpOptions()
     else:

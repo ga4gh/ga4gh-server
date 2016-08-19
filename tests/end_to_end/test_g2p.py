@@ -458,16 +458,19 @@ class TestG2P(unittest.TestCase):
                                        .environmental_contexts[0]
         self.assertEqual('imatinib', environmentalContext.description)
 
+    def _createPagingRequest(self):
+        request = protocol.SearchFeaturesRequest()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
+        request.feature_set_id = featureSet.id
+        request.name = "KIT *wild"
+        return request
+
     def testGenotypeSearchFeaturePagingOne(self):
         """
         If page size is set to 1 only one association should be returned
         """
-        request = protocol.SearchFeaturesRequest()
+        request = self._createPagingRequest()
         request.page_size = 1
-        datasetName, featureSet = self.getCGDDataSetFeatureSet()
-        request.feature_set_id = featureSet.id
-        request.name = \
-            "KIT *wild"
         postUrl = "features/search"
         response = self.sendSearchRequest(
             postUrl,
@@ -480,11 +483,7 @@ class TestG2P(unittest.TestCase):
         """
         If page size is not set to more than one association should be returned
         """
-        request = protocol.SearchFeaturesRequest()
-        datasetName, featureSet = self.getCGDDataSetFeatureSet()
-        request.feature_set_id = featureSet.id
-        request.name = \
-            "KIT *wild"
+        request = self._createPagingRequest()
         postUrl = "features/search"
         response = self.sendSearchRequest(
             postUrl,
@@ -497,12 +496,9 @@ class TestG2P(unittest.TestCase):
         """
         Loop through all pages
         """
-        request = protocol.SearchFeaturesRequest()
-        datasetName, featureSet = self.getCGDDataSetFeatureSet()
-        request.feature_set_id = featureSet.id
+        request = self._createPagingRequest()
         request.page_size = 1
-        request.name = \
-            "KIT *wild"
+        feature_set_id = request.feature_set_id
         postUrl = "features/search"
         response = self.sendSearchRequest(
             postUrl,
@@ -512,11 +508,11 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(1, len(response.features))
         self.assertIsNotNone(response.next_page_token)
         pageCount = 1
-        # import pdb; pdb.set_trace()
+
         while response.next_page_token:
             previous_id = response.features[0].id
             request = protocol.SearchFeaturesRequest()
-            request.feature_set_id = featureSet.id
+            request.feature_set_id = feature_set_id
             request.page_size = 1
             request.page_token = response.next_page_token
             request.name = "KIT *wild"
