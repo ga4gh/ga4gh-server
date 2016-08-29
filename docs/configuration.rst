@@ -383,7 +383,7 @@ each of those rnaquantifications.
 A helper script ``scripts/rnaseq2ga.py`` is included to create the
 rnaquantification database. Quantifications are specified in a tab delimited
 control file with columns:
-    rna_quant_name    filename    type    feature_set_name    read_group_set_name    description    programs
+rna_quant_name    filename    type    feature_set_name    read_group_set_name    description    programs
 
 Each line corresponds to one rnaquantification in the set.  The script supports
 the following quantification types: Cufflinks, kallisto and RSEM.
