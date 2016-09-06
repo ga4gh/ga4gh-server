@@ -365,6 +365,47 @@ Adds a new readgroups set based on a 1000 genomes BAM directly from the NCBI
 FTP server. Because this readgroup set uses a remote FTP URL, we must specify
 the location of the ``.bai`` index file on the local file system.
 
+++++++++++++++++++++++++
+add-rnaquantificationset
+++++++++++++++++++++++++
+
+Adds a rnaquantification set to a named dataset in a repository.
+Rnaquantification sets are currently derived from a single sqlite database,
+which is stored locally.
+
+Each rnaquantification set must be associated with the reference set that it is
+aligned to.  The sqlite database contains the rnaquantifications which are
+members of the rnaquantification set as well as the feature quantifications for
+each of those rnaquantifications.
+
+.. todo:: Database schema diagram.
+
+A helper script ``scripts/rnaseq2ga.py`` is included to create the
+rnaquantification database. Quantifications are specified in a tab delimited
+control file with columns:
+rna_quant_name    filename    type    feature_set_name    read_group_set_name    description    programs
+
+Each line corresponds to one rnaquantification in the set.  The script supports
+the following quantification types: Cufflinks, kallisto and RSEM.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-rnaquantificationset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-rnaquantificationset registry.db 1kg \
+        path/to/expression_values_database.db -R GRCh37-subset
+
+Adds a new rnaquantification set for a feature expression database stored on
+the local file system. The name of the rnaquantification set is automatically
+derived from the file name.
+
 +++++++++++++++
 remove-dataset
 +++++++++++++++
@@ -523,6 +564,28 @@ Removes a read group set from the repository.
     $ ga4gh_repo remove-readgroupset registry.db dataset1 HG00114
 
 Deletes the readgroup set named ``HG00114`` from the dataset named
+``dataset1`` from the repository represented by ``registry.db``.
+
++++++++++++++++++++++++++++
+remove-rnaquantificationset
++++++++++++++++++++++++++++
+
+Removes a rna quantification set from the repository.
+
+.. argparse::
+   :module: ga4gh.cli
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-rnaquantificationset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-rnaquantificationset registry.db dataset1 ENCFF305LZB
+
+Deletes the rnaquantification set named ``ENCFF305LZB`` from the dataset named
 ``dataset1`` from the repository represented by ``registry.db``.
 
 ------------------

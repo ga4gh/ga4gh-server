@@ -19,6 +19,25 @@ For more detail on individual development issues, please see the project's
 Release Notes
 +++++++++++++
 
+
+*****
+0.3.3
+*****
+
+Alpha pre-release supporting major feature update.
+
+- RNA functionality added to support the following API endpoints:
+   - POST /rnaquantificationsets/search
+   - GET /rnaquantificationsets/{id}
+   - POST /rnaquantifications/search
+   - GET /rnaquantifications/{id}
+   - POST /expressionlevels/search
+   - GET /expressionlevels/{id}
+
+- Fixed bug where transcript effects would be repeated within a 
+  search result.
+
+
 *****
 0.3.2
 *****

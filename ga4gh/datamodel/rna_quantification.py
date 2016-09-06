@@ -111,7 +111,11 @@ class AbstractRnaQuantificationSet(datamodel.DatamodelObject):
             self._rnaQuantificationIds[index]]
 
     def getRnaQuantification(self, rnaQuantificationId):
-        return self._rnaQuantificationIdMap[rnaQuantificationId]
+        try:
+            return self._rnaQuantificationIdMap[rnaQuantificationId]
+        except KeyError:
+            raise exceptions.RnaQuantificationNotFoundException(
+                rnaQuantificationId)
 
     def getRnaQuantifications(self):
         return [self._rnaQuantificationIdMap[id_] for
