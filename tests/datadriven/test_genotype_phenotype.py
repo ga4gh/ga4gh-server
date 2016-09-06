@@ -119,10 +119,6 @@ class PhenotypeAssociationSetTest(datadriven.DataDrivenTest):
         ]
         sample_details = {
             u'http://purl.obolibrary.org/obo/RO_0002606':
-            u'http://ohsu.edu/cgd/54039374',
-            u'http://purl.obolibrary.org/obo/RO_0002606':
-            u'http://ohsu.edu/cgd/983a1528',
-            u'http://purl.obolibrary.org/obo/RO_0002606':
             u'http://ohsu.edu/cgd/71fe9f0f',
             u'http://www.w3.org/2000/01/rdf-schema#subClassOf':
             u'http://purl.obolibrary.org/obo/CHEBI_23888',
