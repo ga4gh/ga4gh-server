@@ -923,7 +923,7 @@ class Backend(object):
         self.endProfile()
         return responseString
 
-    def runListReferenceBases(self, id_, requestJson):
+    def runListReferenceBases(self, requestJson):
         """
         Runs a listReferenceBases request for the specified ID and
         request arguments.
@@ -939,7 +939,6 @@ class Backend(object):
                     protocol.ListReferenceBasesRequest)
             except protocol.json_format.ParseError:
                 raise exceptions.InvalidJsonException(requestJson)
-        request.reference_id = id_
         compoundId = datamodel.ReferenceCompoundId.parse(request.reference_id)
         referenceSet = self.getDataRepository().getReferenceSet(
             compoundId.reference_set_id)

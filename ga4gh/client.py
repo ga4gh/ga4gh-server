@@ -80,14 +80,13 @@ class AbstractClient(object):
         request = protocol.ListReferenceBasesRequest()
         request.start = pb.int(start)
         request.end = pb.int(end)
+        request.reference_id = id_
         not_done = True
         # TODO We should probably use a StringIO here to make string buffering
         # a bit more efficient.
         bases_list = []
         while not_done:
-            request.reference_id = id_
-            response = self._run_list_reference_bases_page_request(
-                id_, request)
+            response = self._run_list_reference_bases_page_request(request)
             bases_list.append(response.sequence)
             not_done = bool(response.next_page_token)
             request.page_token = response.next_page_token
@@ -820,8 +819,8 @@ class HttpClient(AbstractClient):
         return self._deserialize_response(
             response.text, protocol_response_class)
 
-    def _run_list_reference_bases_page_request(self, id_, request):
-        url_suffix = "references/{}/bases".format(id_)
+    def _run_list_reference_bases_page_request(self, request):
+        url_suffix = "listreferencebases"
         url = posixpath.join(self._url_prefix, url_suffix)
         response = self._session.post(
             url, params=self._get_http_parameters(),
@@ -893,8 +892,8 @@ class LocalClient(AbstractClient):
         return self._deserialize_response(
             response_json, protocol_response_class)
 
-    def _run_list_reference_bases_page_request(self, id_, request):
+    def _run_list_reference_bases_page_request(self, request):
         response_json = self._backend.runListReferenceBases(
-            id_, protocol.toJson(request))
+            protocol.toJson(request))
         return self._deserialize_response(
             response_json, protocol.ListReferenceBasesResponse)

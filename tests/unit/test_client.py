@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import unittest
 
 import mock
+import json
 
 import ga4gh.protocol as protocol
 import ga4gh.backend as backend
@@ -479,28 +480,23 @@ class DummyRequestsSession(object):
         self.checkSessionParameters()
         assert url.startswith(self._urlPrefix)
         suffix = url[len(self._urlPrefix):]
-        basesSuffix = "/bases"
         searchSuffix = "/search"
-        splits = suffix.split("/")
-        if suffix.endswith(basesSuffix):
-            # ListReferenceBases is an oddball and needs to be treated
-            # separately.
-            assert splits[0] == ''
-            assert splits[1] == 'references'
-            id_ = splits[2]
-            assert splits[3] == 'bases'
-            args = protocol.ListReferenceBasesRequest()
-            args.reference_id = id_
-            args.start = int(params.get('start', 0))
-            args.end = int(params.get('end', 0))
-            args.page_token = params.get('pageToken', "")
-            result = self._backend.runListReferenceBases(
-                id_, protocol.toJson(args))
-        elif suffix.endswith(searchSuffix):
+        if suffix.endswith(searchSuffix):
             datatype = suffix[1:-len(searchSuffix)]
             assert datatype in self._searchMethodMap
             method = self._searchMethodMap[datatype]
             result = method(data)
+        else:
+            # ListReferenceBases is an oddball and needs to be treated
+            # separately.
+            data = json.loads(data)
+            args = protocol.ListReferenceBasesRequest()
+            args.reference_id = data.get('referenceId', "")
+            args.start = int(data.get('start', 0))
+            args.end = int(data.get('end', 0))
+            args.page_token = data.get('pageToken', "")
+            result = self._backend.runListReferenceBases(
+                protocol.toJson(args))
         return DummyResponse(result)
 
 

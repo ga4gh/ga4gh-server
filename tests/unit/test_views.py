@@ -333,9 +333,8 @@ class TestFrontend(unittest.TestCase):
         path = '/references/{}'
         path = path.format(referenceId)
         self.assertEqual(200, self.app.get(path).status_code)
-        path = 'references/{}/bases'
-        path = path.format(referenceId)
-        self.assertEqual(200, self.app.post(path).status_code)
+        path = '/listreferencebases'
+        self.assertEqual(404, self.app.post(path).status_code)
         referenceSetId = self.referenceSetId
         path = '/referencesets/{}'
         path = path.format(referenceSetId)
