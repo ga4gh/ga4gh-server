@@ -290,7 +290,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
         return feature
 
     def getFeatures(self, referenceName=None, start=None, end=None,
-                    pageToken=None, pageSize=None,
+                    pageToken=None, pageSize=10,
                     featureTypes=None, parentId=None,
                     name=None, geneSymbol=None, numFeatures=10):
         """
@@ -438,7 +438,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         return gaFeature
 
     def getFeatures(self, referenceName=None, start=None, end=None,
-                    pageToken=None, pageSize=None,
+                    pageToken="0", pageSize=10,
                     featureTypes=None, parentId=None,
                     name=None, geneSymbol=None):
         """
@@ -476,7 +476,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         # pagination logic: None if last feature was returned,
         # else 1 + row number being returned (starting at row 0).
         if pageToken:
-            nextPageToken = pb.int(pageToken)
+            nextPageToken = int(pageToken)
         else:
             nextPageToken = 0
         for featureRecord in featuresReturned:
