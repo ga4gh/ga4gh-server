@@ -1178,7 +1178,7 @@ class TestSimulatedStack(unittest.TestCase):
                     self.assertEqual(clientPhenotype, repoAssoc.phenotype)
 
     def testSearchGenotypePhenotypes(self):
-        path = "/genotypephenotypes/search"
+        path = "/featurephenotypeassociations/search"
         for repoPaSet in self.dataRepo.allPhenotypeAssociationSets():
             for repoAssoc in repoPaSet.getAssociations():
                 request = protocol.SearchGenotypePhenotypeRequest()

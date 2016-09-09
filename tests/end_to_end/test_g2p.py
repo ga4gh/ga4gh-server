@@ -178,7 +178,7 @@ class TestG2P(unittest.TestCase):
             self.getPhenotypeAssociationSetId()
         request.feature_ids.append(featureId)
         response = self.sendSearchRequest(
-            '/genotypephenotypes/search',
+            '/featurephenotypeassociations/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(1, len(response.associations))
@@ -365,7 +365,7 @@ class TestG2P(unittest.TestCase):
         # use the feature to look up associations
         request.feature_ids.extend([obfuscated])
         response = self.sendSearchRequest(
-            '/genotypephenotypes/search',
+            '/featurephenotypeassociations/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(1, len(response.associations[0].feature_ids))
@@ -381,7 +381,7 @@ class TestG2P(unittest.TestCase):
         eq.description = "imatinib"
         request.evidence.extend([eq])
         response = self.sendSearchRequest(
-            '/genotypephenotypes/search',
+            '/featurephenotypeassociations/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(1, len(response.associations[0].feature_ids))
@@ -395,7 +395,7 @@ class TestG2P(unittest.TestCase):
             self.getPhenotypeAssociationSetId()
         request.phenotype_ids.extend(["http://ohsu.edu/cgd/25abbb09"])
         response = self.sendSearchRequest(
-            '/genotypephenotypes/search',
+            '/featurephenotypeassociations/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(1, len(response.associations[0].feature_ids))
@@ -406,7 +406,7 @@ class TestG2P(unittest.TestCase):
             self.getPhenotypeAssociationSetId()
         request.feature_ids.extend(["FOOBAR"])
         response = self.sendSearchRequest(
-            '/genotypephenotypes/search',
+            '/featurephenotypeassociations/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(0, len(response.associations))
@@ -428,7 +428,7 @@ class TestG2P(unittest.TestCase):
                                                          featureId)
         request.feature_ids.extend([obfuscated])
         response = self.sendSearchRequest(
-            '/genotypephenotypes/search',
+            '/featurephenotypeassociations/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(1, len(response.associations[0].evidence))
@@ -449,7 +449,7 @@ class TestG2P(unittest.TestCase):
         eq.description = "imatinib"
         request.evidence.extend([eq])
         response = self.sendSearchRequest(
-            '/genotypephenotypes/search',
+            '/featurephenotypeassociations/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(

@@ -142,7 +142,8 @@ class TestFrontend(unittest.TestCase):
     def sendGenotypePhenotypesSearch(self):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = self.phenotypeAssociationSetId
-        return self.sendPostRequest('/genotypephenotypes/search', request)
+        return self.sendPostRequest('/featurephenotypeassociations/search',
+                                    request)
 
     def sendPhenotypeAssociationSetsSearch(self):
         request = protocol.SearchPhenotypeAssociationSetsRequest()
