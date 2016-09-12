@@ -511,7 +511,7 @@ class SearchCallSetsRunner(AbstractSearchRunner):
 
 class SearchGenotypePhenotypeRunner(AbstractSearchRunner):
     """
-    Runner class for the genotypephenotype/search method.
+    Runner class for the featurephenotypeassociations/search method.
     """
     def __init__(self, args):
         super(SearchGenotypePhenotypeRunner, self).__init__(args)

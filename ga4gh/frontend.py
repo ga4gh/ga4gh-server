@@ -807,7 +807,7 @@ def searchPhenotypes():
         flask.request, app.backend.runSearchPhenotypes)
 
 
-@DisplayedRoute('/genotypephenotypes/search', postMethod=True)
+@DisplayedRoute('/featurephenotypeassociations/search', postMethod=True)
 def searchGenotypePhenotypes():
     return handleFlaskPostRequest(
         flask.request,
