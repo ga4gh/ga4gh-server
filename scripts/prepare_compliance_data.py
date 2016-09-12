@@ -22,6 +22,7 @@ import zipfile
 utils.ga4ghImportGlue()
 
 # We need to turn off QA because of the import glue
+import ga4gh  # NOQA
 import ga4gh.datarepo as datarepo  # NOQA
 import ga4gh.datamodel.references as references  # NOQA
 import ga4gh.datamodel.datasets as datasets  # NOQA
@@ -119,6 +120,8 @@ class ComplianceDataMunger(object):
         self.repo.insertReferenceSet(referenceSet)
 
         dataset = datasets.Dataset("brca1")
+        # Some info is set, it isn't important what
+        dataset.setInfo({"version": ga4gh.__version__})
         self.repo.insertDataset(dataset)
 
         hg00096Individual = biodata.Individual(dataset, "HG00096")
