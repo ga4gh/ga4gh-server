@@ -19,6 +19,7 @@ import unittest
 import unittest.loader
 import unittest.suite
 import urlparse
+import json
 
 import requests
 
@@ -682,7 +683,7 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
         self._output(iterator)
 
     def run(self):
-        if self._featureSetId is None and self._parentId is None:
+        if self._featureSetId is None and not self._parentId:
             for featureSet in self.getAllFeatureSets():
                 self._run(featureSet)
         else:
@@ -1114,7 +1115,7 @@ def addFeatureTypesArgument(parser):
 
 def addParentFeatureIdArgument(parser):
     parser.add_argument(
-        "--parentId", "-p", default=None,
+        "--parentId", "-p", default="",
         help="Filter features by supplied parent ID")
 
 
@@ -1963,6 +1964,7 @@ class RepoManager(object):
         self._openRepo()
         dataset = datasets.Dataset(self._args.datasetName)
         dataset.setDescription(self._args.description)
+        dataset.setInfo(json.loads(self._args.info))
         self._updateRepo(self._repo.insertDataset, dataset)
 
     def addReferenceSet(self):
@@ -2321,6 +2323,11 @@ class RepoManager(object):
             "datasetName", help="the name of the dataset")
 
     @classmethod
+    def addDatasetInfoArgument(cls, subparser):
+        subparser.add_argument(
+            "-i", "--info", default="{}", help="the info of the dataset")
+
+    @classmethod
     def addReferenceSetNameOption(cls, subparser, objectType):
         helpText = (
             "the name of the reference set to associate with this {}"
@@ -2430,6 +2437,7 @@ class RepoManager(object):
         addDatasetParser.set_defaults(runner="addDataset")
         cls.addRepoArgument(addDatasetParser)
         cls.addDatasetNameArgument(addDatasetParser)
+        cls.addDatasetInfoArgument(addDatasetParser)
         cls.addDescriptionOption(addDatasetParser, "dataset")
 
         removeDatasetParser = addSubparser(
