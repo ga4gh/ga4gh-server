@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 
 import argparse
 import glob
-import json
 import logging
 import operator
 import os
@@ -20,6 +19,7 @@ import unittest
 import unittest.loader
 import unittest.suite
 import urlparse
+import json
 
 import requests
 
@@ -763,7 +763,7 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
         self._output(iterator)
 
     def run(self):
-        if self._featureSetId is None and self._parentId is None:
+        if self._featureSetId is None and not self._parentId:
             for featureSet in self.getAllFeatureSets():
                 self._run(featureSet)
         else:
@@ -1241,7 +1241,7 @@ def addFeatureTypesArgument(parser):
 
 def addParentFeatureIdArgument(parser):
     parser.add_argument(
-        "--parentId", "-p", default=None,
+        "--parentId", "-p", default="",
         help="Filter features by supplied parent ID")
 
 
@@ -1668,40 +1668,6 @@ def addReferencesBasesListParser(subparsers):
     addEndArgument(parser, defaultValue=None)
 
 
-def addGenotypePhenotypeSearchParser(subparsers):
-    parser = addSubparser(
-        subparsers, "genotypephenotype-search",
-        "Search for genotype to phenotype associations")
-    parser.set_defaults(runner=SearchGenotypePhenotypeRunner)
-    addUrlArgument(parser)
-    addOutputFormatArgument(parser)
-    addGenotypePhenotypeSearchOptions(parser)
-    addPageSizeArgument(parser)
-    return parser
-
-
-def addPhenotypeSearchParser(subparsers):
-    parser = addSubparser(
-        subparsers, "phenotype-search", "Search for phenotypes")
-    parser.set_defaults(runner=SearchPhenotypeRunner)
-    addUrlArgument(parser)
-    addOutputFormatArgument(parser)
-    addPhenotypeSearchOptions(parser)
-    addPageSizeArgument(parser)
-    return parser
-
-
-def addPhenotypeAssociationSetsSearchParser(subparsers):
-    parser = addSubparser(
-        subparsers, "phenotypeassociationsets-search",
-        "Search for phenotypeassociationsets")
-    parser.set_defaults(runner=SearchPhenotypeAssociationSetsRunner)
-    addUrlArgument(parser)
-    addOutputFormatArgument(parser)
-    addPhenotypeAssociationSetsSearchOptions(parser)
-    addPageSizeArgument(parser)
-
-
 def addRnaQuantificationSetsSearchParser(subparsers):
     parser = subparsers.add_parser(
         "rnaquantificationsets-search",
@@ -1749,6 +1715,40 @@ def addExpressionLevelsSearchParser(subparsers):
     return parser
 
 
+def addGenotypePhenotypeSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "genotypephenotype-search",
+        "Search for genotype to phenotype associations")
+    parser.set_defaults(runner=SearchGenotypePhenotypeRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addGenotypePhenotypeSearchOptions(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addPhenotypeSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "phenotype-search", "Search for phenotypes")
+    parser.set_defaults(runner=SearchPhenotypeRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addPhenotypeSearchOptions(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addPhenotypeAssociationSetsSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "phenotypeassociationsets-search",
+        "Search for phenotypeassociationsets")
+    parser.set_defaults(runner=SearchPhenotypeAssociationSetsRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addPhenotypeAssociationSetsSearchOptions(parser)
+    addPageSizeArgument(parser)
+
+
 def getClientParser():
     parser = createArgumentParser("GA4GH reference client")
     addClientGlobalOptions(parser)
@@ -1785,12 +1785,12 @@ def getClientParser():
     addRnaQuantificationGetParser(subparsers)
     addExpressionLevelGetParser(subparsers)
     addReferencesBasesListParser(subparsers)
-    addGenotypePhenotypeSearchParser(subparsers)
-    addPhenotypeSearchParser(subparsers)
-    addPhenotypeAssociationSetsSearchParser(subparsers)
     addRnaQuantificationSetsSearchParser(subparsers)
     addRnaQuantificationsSearchParser(subparsers)
     addExpressionLevelsSearchParser(subparsers)
+    addGenotypePhenotypeSearchParser(subparsers)
+    addPhenotypeSearchParser(subparsers)
+    addPhenotypeAssociationSetsSearchParser(subparsers)
     return parser
 
 
@@ -2120,40 +2120,6 @@ class RepoManager(object):
         ontology.populateFromFile(filePath)
         self._updateRepo(self._repo.insertOntology, ontology)
 
-    def addPhenotypeAssociationSet(self):
-        """
-        Adds a new phenotype association set to this repo.
-        """
-        self._openRepo()
-        name = self._args.name
-        if name is None:
-            name = getNameFromPath(self._args.dirPath)
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
-        phenotypeAssociationSet = \
-            genotype_phenotype.RdfPhenotypeAssociationSet(
-                dataset, name, self._args.dirPath)
-        self._updateRepo(
-            self._repo.insertPhenotypeAssociationSet,
-            phenotypeAssociationSet)
-
-    def removePhenotypeAssociationSet(self):
-        """
-        Removes a phenotype association set from the repo
-        """
-        self._openRepo()
-        dataset = self._repo.getDatasetByName(self._args.datasetName)
-        phenotypeAssociationSet = dataset.getPhenotypeAssociationSetByName(
-            self._args.name)
-
-        def func():
-            self._updateRepo(
-                self._repo.removePhenotypeAssociationSet,
-                phenotypeAssociationSet)
-        self._confirmDelete(
-            "PhenotypeAssociationSet",
-            phenotypeAssociationSet.getLocalId(),
-            func)
-
     def addDataset(self):
         """
         Adds a new dataset into this repo.
@@ -2161,6 +2127,7 @@ class RepoManager(object):
         self._openRepo()
         dataset = datasets.Dataset(self._args.datasetName)
         dataset.setDescription(self._args.description)
+        dataset.setInfo(json.loads(self._args.info))
         self._updateRepo(self._repo.insertDataset, dataset)
 
     def addReferenceSet(self):
@@ -2305,6 +2272,40 @@ class RepoManager(object):
             for annotationSet in annotationSets:
                 self._repo.insertVariantAnnotationSet(annotationSet)
         self._updateRepo(updateRepo)
+
+    def addPhenotypeAssociationSet(self):
+        """
+        Adds a new phenotype association set to this repo.
+        """
+        self._openRepo()
+        name = self._args.name
+        if name is None:
+            name = getNameFromPath(self._args.dirPath)
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        phenotypeAssociationSet = \
+            genotype_phenotype.RdfPhenotypeAssociationSet(
+                dataset, name, self._args.dirPath)
+        self._updateRepo(
+            self._repo.insertPhenotypeAssociationSet,
+            phenotypeAssociationSet)
+
+    def removePhenotypeAssociationSet(self):
+        """
+        Removes a phenotype association set from the repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSetByName(
+            self._args.name)
+
+        def func():
+            self._updateRepo(
+                self._repo.removePhenotypeAssociationSet,
+                phenotypeAssociationSet)
+        self._confirmDelete(
+            "PhenotypeAssociationSet",
+            phenotypeAssociationSet.getLocalId(),
+            func)
 
     def removeReferenceSet(self):
         """
@@ -2519,15 +2520,9 @@ class RepoManager(object):
             "datasetName", help="the name of the dataset")
 
     @classmethod
-    def addClassNameOption(cls, subparser, objectType):
-        helpText = (
-            "the name of the class used to "
-            "fetch features in this {}"
-        ).format(objectType)
+    def addDatasetInfoArgument(cls, subparser):
         subparser.add_argument(
-            "-C", "--className",
-            default="ga4gh.datamodel.sequenceAnnotations.Gff3DbFeatureSet",
-            help=helpText)
+            "-i", "--info", default="{}", help="the info of the dataset")
 
     @classmethod
     def addReferenceSetNameOption(cls, subparser, objectType):
@@ -2620,6 +2615,17 @@ class RepoManager(object):
             help="the name of the RNA Quantification")
 
     @classmethod
+    def addClassNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the class used to "
+            "fetch features in this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "-C", "--className",
+            default="ga4gh.datamodel.sequenceAnnotations.Gff3DbFeatureSet",
+            help=helpText)
+
+    @classmethod
     def getParser(cls):
         parser = createArgumentParser(
             "GA4GH data repository management tool")
@@ -2648,6 +2654,7 @@ class RepoManager(object):
         addDatasetParser.set_defaults(runner="addDataset")
         cls.addRepoArgument(addDatasetParser)
         cls.addDatasetNameArgument(addDatasetParser)
+        cls.addDatasetInfoArgument(addDatasetParser)
         cls.addDescriptionOption(addDatasetParser, "dataset")
 
         removeDatasetParser = addSubparser(
@@ -2851,6 +2858,31 @@ class RepoManager(object):
         cls.addIndividualNameArgument(removeIndividualParser)
         cls.addForceOption(removeIndividualParser)
 
+        objectType = "RnaQuantificationSet"
+        addRnaQuantificationSetParser = addSubparser(
+            subparsers, "add-rnaquantificationset",
+            "Add an RNA quantification set to the data repo")
+        addRnaQuantificationSetParser.set_defaults(
+            runner="addRnaQuantificationSet")
+        cls.addRepoArgument(addRnaQuantificationSetParser)
+        cls.addDatasetNameArgument(addRnaQuantificationSetParser)
+        cls.addFilePathArgument(
+            addRnaQuantificationSetParser,
+            "The path to the converted SQLite database containing RNA data")
+        cls.addReferenceSetNameOption(
+            addRnaQuantificationSetParser, objectType)
+        cls.addNameOption(addRnaQuantificationSetParser, objectType)
+
+        removeRnaQuantificationSetParser = addSubparser(
+            subparsers, "remove-rnaquantificationset",
+            "Remove an RNA quantification set from the repo")
+        removeRnaQuantificationSetParser.set_defaults(
+            runner="removeRnaQuantificationSet")
+        cls.addRepoArgument(removeRnaQuantificationSetParser)
+        cls.addDatasetNameArgument(removeRnaQuantificationSetParser)
+        cls.addRnaQuantificationNameArgument(removeRnaQuantificationSetParser)
+        cls.addForceOption(removeRnaQuantificationSetParser)
+
         addPhenotypeAssociationSetParser = addSubparser(
             subparsers, "add-phenotypeassociationset",
             "Adds phenotypes in ttl format to the repo.")
@@ -2860,7 +2892,7 @@ class RepoManager(object):
         cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
         cls.addDirPathArgument(
             addPhenotypeAssociationSetParser,
-            "The path of the directory conainting ttl files.")
+            "The path of the directory containing ttl files.")
         cls.addNameOption(
             addPhenotypeAssociationSetParser,
             "PhenotypeAssociationSet")
@@ -2876,31 +2908,6 @@ class RepoManager(object):
             removePhenotypeAssociationSetParser,
             "phenotype association set")
         cls.addForceOption(removePhenotypeAssociationSetParser)
-
-        addRnaQuantificationSetParser = addSubparser(
-            subparsers, "add-rnaquantificationset",
-            "Add an RNA quantification set to the data repo")
-        addRnaQuantificationSetParser.set_defaults(
-            runner="addRnaQuantificationSet")
-        cls.addRepoArgument(addRnaQuantificationSetParser)
-        cls.addDatasetNameArgument(addRnaQuantificationSetParser)
-        cls.addFilePathArgument(
-            addRnaQuantificationSetParser,
-            "The path to the converted SQLite database containing RNA data")
-        objectType = "RnaQuantificationSet"
-        cls.addReferenceSetNameOption(
-            addRnaQuantificationSetParser, objectType)
-        cls.addNameOption(addRnaQuantificationSetParser, objectType)
-
-        removeRnaQuantificationSetParser = addSubparser(
-            subparsers, "remove-rnaquantificationset",
-            "Remove an RNA quantification set from the repo")
-        removeRnaQuantificationSetParser.set_defaults(
-            runner="removeRnaQuantificationSet")
-        cls.addRepoArgument(removeRnaQuantificationSetParser)
-        cls.addDatasetNameArgument(removeRnaQuantificationSetParser)
-        cls.addRnaQuantificationNameArgument(removeRnaQuantificationSetParser)
-        cls.addForceOption(removeRnaQuantificationSetParser)
 
         return parser
 
