@@ -15,6 +15,16 @@ import ga4gh.datamodel.bio_metadata as biodata
 import ga4gh.datamodel.genotype_phenotype as g2p
 import ga4gh.datamodel.rna_quantification as rnaQuantification
 from ga4gh import pb
+import json
+
+import google.protobuf.struct_pb2 as struct_pb2
+
+
+def _encodeValue(value):
+    if isinstance(value, (list, tuple)):
+        return [struct_pb2.Value(string_value=str(v)) for v in value]
+    else:
+        return [struct_pb2.Value(string_value=str(value))]
 
 
 class Dataset(datamodel.DatamodelObject):
@@ -47,6 +57,7 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetIds = []
         self._rnaQuantificationSetIdMap = {}
         self._rnaQuantificationSetNameMap = {}
+        self._info = {}
 
     def populateFromRow(self, row):
         """
@@ -54,12 +65,19 @@ class Dataset(datamodel.DatamodelObject):
         specified database row.
         """
         self._description = row[b'description']
+        self._info = json.loads(row[b'info'])
 
     def setDescription(self, description):
         """
         Sets the description for this dataset to the specified value.
         """
         self._description = description
+
+    def setInfo(self, info):
+        """
+        Sets the info for this dataset to the specified value.
+        """
+        self._info = info
 
     def addVariantSet(self, variantSet):
         """
@@ -122,6 +140,8 @@ class Dataset(datamodel.DatamodelObject):
         dataset.id = self.getId()
         dataset.name = pb.string(self.getLocalId())
         dataset.description = pb.string(self.getDescription())
+        for key in self.getInfo():
+            dataset.info[key].values.extend(_encodeValue(self._info[key]))
         return dataset
 
     def getVariantSets(self):
@@ -335,6 +355,12 @@ class Dataset(datamodel.DatamodelObject):
         if id_ not in self._readGroupSetIdMap:
             raise exceptions.ReadGroupNotFoundException(id_)
         return self._readGroupSetIdMap[id_]
+
+    def getInfo(self):
+        """
+        Returns the info of this dataset.
+        """
+        return self._info
 
     def getDescription(self):
         """

@@ -85,7 +85,7 @@ _REFERENCE = _descriptor.Descriptor(
     _descriptor.FieldDescriptor(
       name='source_divergence', full_name='ga4gh.Reference.source_divergence', index=7,
       number=8, type=2, cpp_type=6, label=1,
-      has_default_value=False, default_value=float(0),
+      has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
