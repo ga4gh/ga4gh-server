@@ -1150,6 +1150,48 @@ class TestSimulatedStack(unittest.TestCase):
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
 
+    def testSearchPhenotypeAssociationSets(self):
+        path = "/phenotypeassociationsets/search"
+        for dataset in self.dataRepo.getDatasets():
+            repoPaSetIds = []
+            for repoPaSet in dataset.getPhenotypeAssociationSets():
+                repoPaSetIds.append(repoPaSet.getId())
+            request = protocol.SearchPhenotypeAssociationSetsRequest()
+            request.dataset_id = dataset.getId()
+            responseData = self.sendSearchRequest(
+                path, request,
+                protocol.SearchPhenotypeAssociationSetsResponse)
+            for clientPaSet in responseData.phenotype_association_sets:
+                self.assertTrue(clientPaSet.id in repoPaSetIds)
+
+    def testSearchPhenotypes(self):
+        path = "/phenotypes/search"
+        for repoPaSet in self.dataRepo.allPhenotypeAssociationSets():
+            for repoAssoc in repoPaSet.getAssociations():
+                request = protocol.SearchPhenotypesRequest()
+                request.phenotype_association_set_id = repoPaSet.getId()
+                request.id = repoAssoc.phenotype.id
+                responseData = self.sendSearchRequest(
+                    path, request,
+                    protocol.SearchPhenotypesResponse)
+                for clientPhenotype in responseData.phenotypes:
+                    self.assertEqual(clientPhenotype, repoAssoc.phenotype)
+
+    def testSearchGenotypePhenotypes(self):
+        path = "/featurephenotypeassociations/search"
+        for repoPaSet in self.dataRepo.allPhenotypeAssociationSets():
+            for repoAssoc in repoPaSet.getAssociations():
+                request = protocol.SearchGenotypePhenotypeRequest()
+                request.phenotype_association_set_id = repoPaSet.getId()
+                request.phenotype_ids.extend([repoAssoc.phenotype.id])
+                responseData = self.sendSearchRequest(
+                    path, request,
+                    protocol.SearchGenotypePhenotypeResponse)
+                for clientAssoc in responseData.associations:
+                    self.assertEqual(clientAssoc, repoAssoc)
+
+    # TODO def testSearchGenotypePhenotypes(self):
+
     # TODO def testGetExpressionLevel(self):
 
     # TODO def testSearchExpressionLevels(self):

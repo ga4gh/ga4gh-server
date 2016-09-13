@@ -176,6 +176,10 @@ class ServerStatus(object):
                 variantSet.getVariantAnnotationSets())
         return variantAnnotationSets
 
+    def getPhenotypeAssociationSets(self, datasetId):
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getPhenotypeAssociationSets()
+
     def getRnaQuantificationSets(self, datasetId):
         """
         Returns the list of RnaQuantificationSets for this server.
@@ -235,6 +239,10 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP"]
         numReadGroupsPerReadGroupSet = app.config[
             "SIMULATED_BACKEND_NUM_READ_GROUPS_PER_READ_GROUP_SET"]
+        numPhenotypeAssociations = app.config[
+            "SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATIONS"]
+        numPhenotypeAssociationSets = app.config[
+            "SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATION_SETS"]
         numRnaQuantSets = app.config[
             "SIMULATED_BACKEND_NUM_RNA_QUANTIFICATION_SETS"]
         numExpressionLevels = app.config[
@@ -247,6 +255,8 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             numReferencesPerReferenceSet=numReferencesPerReferenceSet,
             numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
             numAlignments=numAlignmentsPerReadGroup,
+            numPhenotypeAssociations=numPhenotypeAssociations,
+            numPhenotypeAssociationSets=numPhenotypeAssociationSets,
             numRnaQuantSets=numRnaQuantSets,
             numExpressionLevels=numExpressionLevels)
     elif dataSource.scheme == "empty":
@@ -789,6 +799,26 @@ def getDataset(id):
 def getVariantAnnotationSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetVariantAnnotationSet)
+
+
+@DisplayedRoute('/phenotypes/search', postMethod=True)
+def searchPhenotypes():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypes)
+
+
+@DisplayedRoute('/featurephenotypeassociations/search', postMethod=True)
+def searchGenotypePhenotypes():
+    return handleFlaskPostRequest(
+        flask.request,
+        app.backend.runSearchGenotypePhenotypes)
+
+
+@DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+def searchPhenotypeAssociationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypeAssociationSets)
+
 
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html

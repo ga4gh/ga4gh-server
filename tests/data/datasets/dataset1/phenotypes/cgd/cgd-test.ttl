@@ -1,0 +1,675 @@
+@prefix : <http://www.monarchinitiative.org/> .
+@prefix OBAN: <http://purl.org/oban/> .
+@prefix OBO: <http://purl.obolibrary.org/obo/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix CGD: <http://ohsu.edu/cgd/> .
+@prefix faldo: <http://biohackathon.org/resource/faldo#> .
+@prefix DrugBank: <http://www.drugbank.ca/drugs/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix MonarchData: <http://data.monarchinitiative.org/ttl/> .
+@prefix MonarchArchive: <http://archive.monarchinitiative.org/ttl/> .
+@prefix dbSNP: <http://www.ncbi.nlm.nih.gov/SNP/> .
+@prefix UCSC: <ftp://hgdownload.cse.ucsc.edu/goldenPath/> .
+
+MonarchData:cgd.ttl a owl:Ontology ;
+    owl:versionIRI MonarchArchive:cgd-2015-12-01-17-34.ttl ;
+    owl:versionInfo "cgd-2015-12-01-17-34" .
+
+<http://ohsu.edu/cgd/4657f28c> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB00619> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/87752f6c> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/27d2169c> .
+
+<http://ohsu.edu/cgd/76acc42d> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/87795e43> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/24228ad6> .
+
+<http://ohsu.edu/cgd/81a533a4> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01254> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/16397263> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/5c895709> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/d212cbf9> .
+
+<http://ohsu.edu/cgd/24228ad6> a OBO:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87795e43> .
+
+<http://ohsu.edu/cgd/27d2169c> a OBO:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> .
+
+<http://ohsu.edu/cgd/d212cbf9> a OBO:SO_0001059 ;
+    rdfs:label "KIT  wild type no mutation" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/5c895709> .
+
+<http://www.drugbank.ca/drugs/DB00619> a <http://www.w3.org/2002/07/owl#Class> ;
+    rdfs:label "imatinib" ;
+    OBO:RO_0002606 <http://ohsu.edu/cgd/0348822e>,
+        <http://ohsu.edu/cgd/0663d7aa>,
+        <http://ohsu.edu/cgd/10027e2b>,
+        <http://ohsu.edu/cgd/1141037f>,
+        <http://ohsu.edu/cgd/16ed1e21>,
+        <http://ohsu.edu/cgd/1b49fa54>,
+        <http://ohsu.edu/cgd/1b6442aa>,
+        <http://ohsu.edu/cgd/3660373b>,
+        <http://ohsu.edu/cgd/396e17ca>,
+        <http://ohsu.edu/cgd/4387ad11>,
+        <http://ohsu.edu/cgd/49773dd9>,
+        <http://ohsu.edu/cgd/4c9df69d>,
+        <http://ohsu.edu/cgd/593ba90d>,
+        <http://ohsu.edu/cgd/61a0ae6e>,
+        <http://ohsu.edu/cgd/6200b434>,
+        <http://ohsu.edu/cgd/622f5d87>,
+        <http://ohsu.edu/cgd/66956de7>,
+        <http://ohsu.edu/cgd/6f842dcb>,
+        <http://ohsu.edu/cgd/6fe97f66>,
+        <http://ohsu.edu/cgd/782a5adf>,
+        <http://ohsu.edu/cgd/80857771>,
+        <http://ohsu.edu/cgd/829ecfe4>,
+        <http://ohsu.edu/cgd/83589dc1>,
+        <http://ohsu.edu/cgd/8d3ef6b9>,
+        <http://ohsu.edu/cgd/a05b065c>,
+        <http://ohsu.edu/cgd/a28d6b63>,
+        <http://ohsu.edu/cgd/a52d56bd>,
+        <http://ohsu.edu/cgd/ad7fe4a2>,
+        <http://ohsu.edu/cgd/b0523fef>,
+        <http://ohsu.edu/cgd/b40a93d7>,
+        <http://ohsu.edu/cgd/b8059d5f>,
+        <http://ohsu.edu/cgd/b82bb601>,
+        <http://ohsu.edu/cgd/bd5ec05d>,
+        <http://ohsu.edu/cgd/c3f8dbe4>,
+        <http://ohsu.edu/cgd/c585206a>,
+        <http://ohsu.edu/cgd/c5e74da6>,
+        <http://ohsu.edu/cgd/cd634e7c>,
+        <http://ohsu.edu/cgd/cfa27e95>,
+        <http://ohsu.edu/cgd/cfaf14e7>,
+        <http://ohsu.edu/cgd/d467afaa>,
+        <http://ohsu.edu/cgd/d634d636>,
+        <http://ohsu.edu/cgd/daa8ce89>,
+        <http://ohsu.edu/cgd/de0c523d>,
+        <http://ohsu.edu/cgd/e4e2d39b>,
+        <http://ohsu.edu/cgd/ebd2e0a0>,
+        <http://ohsu.edu/cgd/ed09a007>,
+        <http://ohsu.edu/cgd/f1c0bea0>,
+        <http://ohsu.edu/cgd/f52055a9>,
+        <http://ohsu.edu/cgd/f5c5ae17>,
+        <http://ohsu.edu/cgd/fe0f3b26> ;
+    rdfs:subClassOf OBO:CHEBI_23888 .
+
+<http://www.drugbank.ca/drugs/DB01254> a <http://www.w3.org/2002/07/owl#Class> ;
+    rdfs:label "dasatinib" ;
+    OBO:RO_0002606 <http://ohsu.edu/cgd/0270d49e>,
+        <http://ohsu.edu/cgd/06d1537a>,
+        <http://ohsu.edu/cgd/07be695d>,
+        <http://ohsu.edu/cgd/204c5c4d>,
+        <http://ohsu.edu/cgd/211a6bfd>,
+        <http://ohsu.edu/cgd/24fc6515>,
+        <http://ohsu.edu/cgd/312a7c01>,
+        <http://ohsu.edu/cgd/316ba70b>,
+        <http://ohsu.edu/cgd/37ba4794>,
+        <http://ohsu.edu/cgd/39b33923>,
+        <http://ohsu.edu/cgd/4214ffb0>,
+        <http://ohsu.edu/cgd/53477124>,
+        <http://ohsu.edu/cgd/5730ad5d>,
+        <http://ohsu.edu/cgd/5d496096>,
+        <http://ohsu.edu/cgd/60d258f3>,
+        <http://ohsu.edu/cgd/6339e561>,
+        <http://ohsu.edu/cgd/79c33766>,
+        <http://ohsu.edu/cgd/7b37c3d3>,
+        <http://ohsu.edu/cgd/7f7b6467>,
+        <http://ohsu.edu/cgd/80412f7f>,
+        <http://ohsu.edu/cgd/83c53f39>,
+        <http://ohsu.edu/cgd/85722ca9>,
+        <http://ohsu.edu/cgd/88afcbf8>,
+        <http://ohsu.edu/cgd/90988c75>,
+        <http://ohsu.edu/cgd/9a0c7b6e>,
+        <http://ohsu.edu/cgd/9a3b8f86>,
+        <http://ohsu.edu/cgd/9ec35520>,
+        <http://ohsu.edu/cgd/a1313702>,
+        <http://ohsu.edu/cgd/a60218cf>,
+        <http://ohsu.edu/cgd/b0148c82>,
+        <http://ohsu.edu/cgd/b0a03037>,
+        <http://ohsu.edu/cgd/b12958da>,
+        <http://ohsu.edu/cgd/b5bacf6d>,
+        <http://ohsu.edu/cgd/c602b6f4>,
+        <http://ohsu.edu/cgd/caf00fdf>,
+        <http://ohsu.edu/cgd/cc04d9d5>,
+        <http://ohsu.edu/cgd/d006d388>,
+        <http://ohsu.edu/cgd/df43c04f>,
+        <http://ohsu.edu/cgd/ef8944b8>,
+        <http://ohsu.edu/cgd/f84840a9> ;
+    rdfs:subClassOf OBO:CHEBI_23888 .
+
+<http://www.drugbank.ca/drugs/DB01268> a <http://www.w3.org/2002/07/owl#Class> ;
+    rdfs:label "sunitinib" ;
+    OBO:RO_0002606 <http://ohsu.edu/cgd/11ba3f14>,
+        <http://ohsu.edu/cgd/202aab8b>,
+        <http://ohsu.edu/cgd/330fdb9d>,
+        <http://ohsu.edu/cgd/392fb86a>,
+        <http://ohsu.edu/cgd/3f99c173>,
+        <http://ohsu.edu/cgd/4da27469>,
+        <http://ohsu.edu/cgd/54039374>,
+        <http://ohsu.edu/cgd/5c4e4aa5>,
+        <http://ohsu.edu/cgd/5ea8d37b>,
+        <http://ohsu.edu/cgd/65b688b1>,
+        <http://ohsu.edu/cgd/71fe9f0f>,
+        <http://ohsu.edu/cgd/7e7ac65b>,
+        <http://ohsu.edu/cgd/86415d40>,
+        <http://ohsu.edu/cgd/88e4c778>,
+        <http://ohsu.edu/cgd/983a1528>,
+        <http://ohsu.edu/cgd/bff18fe6>,
+        <http://ohsu.edu/cgd/c9ce40f4>,
+        <http://ohsu.edu/cgd/d8f69729>,
+        <http://ohsu.edu/cgd/d9a4077f>,
+        <http://ohsu.edu/cgd/e901ee1e>,
+        <http://ohsu.edu/cgd/f7303413> ;
+    rdfs:subClassOf OBO:CHEBI_23888 .
+
+<http://ohsu.edu/cgd/5c895709> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with sensitivity to therapy" ;
+    OBO:BFO_0000159 <http://ohsu.edu/cgd/sensitivity> .
+
+<http://ohsu.edu/cgd/87752f6c> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with decreased sensitivity to therapy" ;
+    OBO:BFO_0000159 <http://ohsu.edu/cgd/decreased_sensitivity> .
+
+<http://ohsu.edu/cgd/87795e43> a OBO:OMIM_606764 ;
+    rdfs:label "GIST with response to therapy" ;
+    OBO:BFO_0000159 <http://ohsu.edu/cgd/response> .
+
+
+    <http://ohsu.edu/cgd/231ea225> a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/23840364> ;
+        OBAN:association_has_object <http://ohsu.edu/cgd/25abbb09> ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://ohsu.edu/cgd/276916f5> .
+
+    <http://ohsu.edu/cgd/38c9d1f2> a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/23375402> ;
+        OBAN:association_has_object <http://ohsu.edu/cgd/113fa330> ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://ohsu.edu/cgd/4d543083> .
+
+    <http://ohsu.edu/cgd/3c2258a3> a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+        OBAN:association_has_object CGD:da20b3e8 ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://ohsu.edu/cgd/055b872c> .
+
+    <http://ohsu.edu/cgd/3c9e37d1> a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/19861435> ;
+        OBAN:association_has_object CGD:ae494e40 ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject CGD:a459f86d .
+
+    <http://ohsu.edu/cgd/5f09d943> a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18421059>,
+            <http://www.ncbi.nlm.nih.gov/pubmed/21642685>,
+            <http://www.ncbi.nlm.nih.gov/pubmed/21690468>,
+            <http://www.ncbi.nlm.nih.gov/pubmed/22261812> ;
+        OBAN:association_has_object <http://ohsu.edu/cgd/216da168> ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://ohsu.edu/cgd/3b30c213> .
+
+    <http://ohsu.edu/cgd/76acc42d> a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+        OBAN:association_has_object <http://ohsu.edu/cgd/87795e43> ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://ohsu.edu/cgd/24228ad6> .
+
+    <http://ohsu.edu/cgd/89fdb38f> a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/16638875>,
+            <http://www.ncbi.nlm.nih.gov/pubmed/22718859> ;
+        OBAN:association_has_object CGD:bbf46e32 ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=736> .
+
+    <http://ohsu.edu/cgd/921b34b1> a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18421059>,
+            <http://www.ncbi.nlm.nih.gov/pubmed/21642685>,
+            <http://www.ncbi.nlm.nih.gov/pubmed/21690468>,
+            <http://www.ncbi.nlm.nih.gov/pubmed/22261812> ;
+        OBAN:association_has_object <http://ohsu.edu/cgd/032c97e8> ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject CGD:b878c0a3 .
+
+    CGD:ac4e3125 a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+        OBAN:association_has_object CGD:e232a338 ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject CGD:f0a9ac9b .
+
+    CGD:ac63aa75 a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/21470995> ;
+        OBAN:association_has_object <http://ohsu.edu/cgd/6461403a> ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://ohsu.edu/cgd/8a0a61c5> .
+
+    CGD:af4dad0b a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/21470995> ;
+        OBAN:association_has_object <http://ohsu.edu/cgd/0dc38c55> ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://ohsu.edu/cgd/62d638cf> .
+
+    CGD:c9a8a435 a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/22261812> ;
+        OBAN:association_has_object CGD:c3d9ceb3 ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://ohsu.edu/cgd/9350d171> .
+
+    CGD:fe484b5c a OBAN:association ;
+        OBO:RO_0002558 OBO:ECO_0000033 ;
+        OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+        dc:source <http://www.ncbi.nlm.nih.gov/pubmed/21470995> ;
+        OBAN:association_has_object <http://ohsu.edu/cgd/30ebfd1a> ;
+        OBAN:association_has_object_property OBO:RO_0002200 ;
+        OBAN:association_has_subject <http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=965> .
+
+    <http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=736> a OBO:SO_0001059,
+            OBO:SO_0001583,
+            <http://www.w3.org/2002/07/owl#NamedIndividual> ;
+        rdfs:label "COSM736",
+            "PDGFRA  D842V missense mutation" ;
+        faldo:location <http://www.monarchinitiative.org/_842842UniProtKB:P16234#P16234-1Region>,
+            <http://www.monarchinitiative.org/_CCDS:3495.1Region>,
+            <http://www.monarchinitiative.org/_hg19chr4Region> ;
+        OBO:GENO_0000408 <http://www.ncbi.nlm.nih.gov/gene/5156> ;
+        OBO:GENO_altered_nucleotide "T" ;
+        OBO:GENO_reference_amino_acid "D" ;
+        OBO:GENO_reference_nucleotide "A" ;
+        OBO:GENO_results_in_amino_acid_change "V" ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/202fd505>,
+            <http://ohsu.edu/cgd/5eb36bc3>,
+            <http://ohsu.edu/cgd/7986d6b0>,
+            CGD:a3b1b95c,
+            CGD:bbf46e32 ;
+        OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3495.1> ;
+        owl:sameAs  <http://www.ncbi.nlm.nih.gov/SNP/121908585> .
+
+    <http://www.monarchinitiative.org/_842842UniProtKB:P16234#P16234-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P16234#P16234-1-842> ;
+        faldo:end <http://www.monarchinitiative.org/_P16234#P16234-1-842> .
+
+    <http://www.monarchinitiative.org/_CCDS:3495.1Region> a faldo:Region ;
+        faldo:begin :_3495.1-2525 ;
+        faldo:end :_3495.1-2525 .
+
+    :_3495.1-2525 a faldo:Position ;
+        faldo:position 2525 ;
+        faldo:reference <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3495.1> .
+
+    :_hg19chr4Region a faldo:Region ;
+        faldo:begin :_hg19chr4-1806099,
+            :_hg19chr4-55152093,
+            :_hg19chr4-55599321,
+            :_hg19chr4-55599332,
+            :_hg19chr4-55599340,
+            :_hg19chr4-55955969 ;
+        faldo:end :_hg19chr4-1806099,
+            :_hg19chr4-55152093,
+            :_hg19chr4-55599321,
+            :_hg19chr4-55599332,
+            :_hg19chr4-55599340,
+            :_hg19chr4-55955969 .
+
+    :_hg19chr4-1806099 a faldo:Position ;
+        faldo:position 1806099 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55152093 a faldo:Position ;
+        faldo:position 55152093 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55599321 a faldo:Position ;
+        faldo:position 55599321 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55599332 a faldo:Position ;
+        faldo:position 55599332 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55599340 a faldo:Position ;
+        faldo:position 55599340 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :_hg19chr4-55955969 a faldo:Position ;
+        faldo:position 55955969 ;
+        faldo:reference :MONARCH_hg19chr4 .
+
+    :MONARCH_hg19chr4 a OBO:CHR_9606chr4,
+            OBO:SO_0000340 ;
+        rdfs:label "chr4 (hg19)" ;
+        OBO:RO_0002350 UCSC:hg19 .
+
+    <http://www.monarchinitiative.org/_842842UniProtKB:P16234#P16234-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P16234#P16234-1-842> ;
+        faldo:end <http://www.monarchinitiative.org/_P16234#P16234-1-842> .
+
+    <http://www.monarchinitiative.org/_P16234#P16234-1-842> a faldo:Position ;
+        faldo:position 842 ;
+        faldo:reference <http://identifiers.org/uniprot/P16234#P16234-1> .
+
+
+    <http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=965> a OBO:SO_0001059,
+            OBO:SO_0001583,
+            <http://www.w3.org/2002/07/owl#NamedIndividual> ;
+        rdfs:label "COSM965",
+            "RET M918T missense mutation" ;
+        faldo:location <http://www.monarchinitiative.org/_918918UniProtKB:P07949#P07949-1Region>,
+            <http://www.monarchinitiative.org/_CCDS:7200.1Region>,
+            <http://www.monarchinitiative.org/_hg19chr10Region> ;
+        OBO:GENO_0000408 <http://www.ncbi.nlm.nih.gov/gene/5979> ;
+        OBO:GENO_altered_nucleotide "C" ;
+        OBO:GENO_reference_amino_acid "M" ;
+        OBO:GENO_reference_nucleotide "T" ;
+        OBO:GENO_results_in_amino_acid_change "T" ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/0c4c9a57>,
+            <http://ohsu.edu/cgd/0d78e0e7>,
+            <http://ohsu.edu/cgd/30ebfd1a>,
+            <http://ohsu.edu/cgd/3774b1d2> ;
+        OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=7200.1> ;
+        owl:sameAs  <http://www.ncbi.nlm.nih.gov/SNP/74799832> .
+
+:_hg19chr10Region a faldo:Region ;
+    faldo:begin :_hg19chr10-43617416 ;
+    faldo:end :_hg19chr10-43617416 .
+
+:_hg19chr10-43617416 a faldo:Position ;
+    faldo:position 43617416 ;
+    faldo:reference :MONARCH_hg19chr10 .
+
+:MONARCH_hg19chr10 a OBO:CHR_9606chr10,
+        OBO:SO_0000340 ;
+    rdfs:label "chr10 (hg19)" ;
+    OBO:RO_0002350 UCSC:hg19 .
+
+
+<http://www.monarchinitiative.org/_CCDS:7200.1Region> a faldo:Region ;
+    faldo:begin :_7200.1-2753 ;
+    faldo:end :_7200.1-2753 .
+
+:_7200.1-2753 a faldo:Position ;
+    faldo:position 2753 ;
+    faldo:reference <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=7200.1> .
+
+    <http://www.monarchinitiative.org/_918918UniProtKB:P07949#P07949-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P07949#P07949-1-918> ;
+        faldo:end <http://www.monarchinitiative.org/_P07949#P07949-1-918> .
+    <http://www.monarchinitiative.org/_P07949#P07949-1-918> a faldo:Position ;
+        faldo:position 918 ;
+        faldo:reference <http://identifiers.org/uniprot/P07949#P07949-1> .
+    <http://identifiers.org/uniprot/P07949#P07949-1> a OBO:SO_0000104 ;
+        rdfs:label "P07949-1" .
+
+    <http://ohsu.edu/cgd/055b872c> a OBO:SO_0001059 ;
+        rdfs:label "PDGFRA  wild type no mutation" ;
+        OBO:RO_0002200 CGD:da20b3e8 .
+
+    <http://ohsu.edu/cgd/24228ad6> a OBO:SO_0001059 ;
+        rdfs:label "KIT  wild type no mutation" ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/87795e43> .
+
+    <http://ohsu.edu/cgd/276916f5> a OBO:SO_0001059 ;
+        rdfs:label "KIT exon 17 p.788-828 any mutation" ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/25abbb09> .
+
+    <http://ohsu.edu/cgd/3b30c213> a OBO:SO_0001059 ;
+        rdfs:label "KIT exon 11 p.550-592, exon 13 p.627-664   any mutation  " ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/216da168> .
+
+    <http://ohsu.edu/cgd/4d543083> a OBO:SO_0001059,
+            OBO:SO_0001583,
+            <http://www.w3.org/2002/07/owl#NamedIndividual> ;
+        rdfs:label "KIT Y553N missense mutation" ;
+        faldo:location <http://www.monarchinitiative.org/_553553UniProtKB:P10721#P10721-1Region> ;
+        OBO:GENO_0000408 <http://www.ncbi.nlm.nih.gov/gene/3815> ;
+        OBO:GENO_reference_amino_acid "Y" ;
+        OBO:GENO_results_in_amino_acid_change "N" ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/113fa330> ;
+        OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3496.1> .
+
+
+    <http://www.monarchinitiative.org/_553553UniProtKB:P10721#P10721-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P10721#P10721-1-553> ;
+        faldo:end <http://www.monarchinitiative.org/_P10721#P10721-1-553> .
+
+    <http://www.monarchinitiative.org/_P10721#P10721-1-553> a faldo:Position ;
+        faldo:position 553 ;
+        faldo:reference <http://identifiers.org/uniprot/P10721#P10721-1> .
+
+    <http://identifiers.org/uniprot/P10721#P10721-1> a OBO:SO_0000104 ;
+        rdfs:label "P10721-1" .
+
+    <http://ohsu.edu/cgd/62d638cf> a OBO:SO_0001059 ;
+        rdfs:label "RET PTC1 fusion gene" ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/0dc38c55> .
+
+    <http://ohsu.edu/cgd/8a0a61c5> a OBO:SO_0001059,
+            OBO:SO_0001583,
+            <http://www.w3.org/2002/07/owl#NamedIndividual> ;
+        rdfs:label "RET C634W missense mutation" ;
+        faldo:location <http://www.monarchinitiative.org/_634634UniProtKB:P07949#P07949-1Region> ;
+        OBO:GENO_0000408 <http://www.ncbi.nlm.nih.gov/gene/5979> ;
+        OBO:GENO_reference_amino_acid "C" ;
+        OBO:GENO_results_in_amino_acid_change "W" ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/6461403a> ;
+        OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=7200.1> .
+
+    <http://www.monarchinitiative.org/_634634UniProtKB:P07949#P07949-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P07949#P07949-1-634> ;
+        faldo:end <http://www.monarchinitiative.org/_P07949#P07949-1-634> .
+
+    <http://www.monarchinitiative.org/_P07949#P07949-1-634> a faldo:Position ;
+        faldo:position 634 ;
+        faldo:reference <http://identifiers.org/uniprot/P07949#P07949-1> .
+
+    <http://identifiers.org/uniprot/P07949#P07949-1> a OBO:SO_0000104 ;
+        rdfs:label "P07949-1" .
+
+    <http://ohsu.edu/cgd/9350d171> a OBO:SO_0001059 ;
+        rdfs:label "KIT amplification copy number gain" ;
+        OBO:RO_0002200 CGD:c3d9ceb3 .
+
+    CGD:a459f86d a OBO:SO_0001059,
+            OBO:SO_0001583,
+            <http://www.w3.org/2002/07/owl#NamedIndividual> ;
+        rdfs:label "KIT H697Y missense mutation" ;
+        faldo:location <http://www.monarchinitiative.org/_697697UniProtKB:P10721#P10721-1Region> ;
+        OBO:GENO_0000408 <http://www.ncbi.nlm.nih.gov/gene/3815> ;
+        OBO:GENO_reference_amino_acid "H" ;
+        OBO:GENO_results_in_amino_acid_change "Y" ;
+        OBO:RO_0002200 CGD:ae494e40 ;
+        OBO:RO_0002205 <http://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=3496.1> .
+
+    <http://www.monarchinitiative.org/_697697UniProtKB:P10721#P10721-1Region> a faldo:Region ;
+        faldo:begin <http://www.monarchinitiative.org/_P10721#P10721-1-697> ;
+        faldo:end <http://www.monarchinitiative.org/_P10721#P10721-1-697> .
+
+    <http://www.monarchinitiative.org/_P10721#P10721-1-697> a faldo:Position ;
+        faldo:position 697 ;
+        faldo:reference <http://identifiers.org/uniprot/P10721#P10721-1> .
+
+    <http://identifiers.org/uniprot/P10721#P10721-1> a OBO:SO_0000104 ;
+        rdfs:label "P10721-1" .
+
+    CGD:b878c0a3 a OBO:SO_0001059 ;
+        rdfs:label "KIT exon 11 p.550-592, exon 13 p.627-664   any mutation  " ;
+        OBO:RO_0002200 <http://ohsu.edu/cgd/032c97e8> .
+
+    CGD:f0a9ac9b a OBO:SO_0001059 ;
+        rdfs:label "KIT exon 11 p.550-592 any mutation" ;
+        OBO:RO_0002200 CGD:e232a338 .
+
+    <http://ohsu.edu/cgd/032c97e8> a OBO:DOID_3162 ;
+        rdfs:label "Melanoma, NOS with response to therapy" ;
+        OBO:BFO_0000159 CGD:response .
+
+    <http://ohsu.edu/cgd/0dc38c55> a OBO:DOID_3969 ;
+        rdfs:label "Papillary thyroid carcinoma with sensitivity to therapy" ;
+        OBO:BFO_0000159 CGD:sensitivity .
+
+    <http://ohsu.edu/cgd/113fa330> a OBO:DOID_3284 ;
+        rdfs:label "Thymic carcinoma with response to therapy" ;
+        OBO:BFO_0000159 CGD:response .
+
+    <http://ohsu.edu/cgd/216da168> a OBO:DOID_3162 ;
+        rdfs:label "Melanoma, NOS with response to therapy" ;
+        OBO:BFO_0000159 CGD:response ,
+                        <http://purl.obolibrary.org/obo/PATO_0000396>,
+                        <http://purl.obolibrary.org/obo/PATO_0000460>,
+                        <http://purl.obolibrary.org/obo/HP_0003581> .
+
+    <http://ohsu.edu/cgd/25abbb09> a OBO:OMIM_606764 ;
+        rdfs:label "GIST with decreased sensitivity to therapy" ;
+        OBO:BFO_0000159 CGD:decreased_sensitivity .
+
+    <http://ohsu.edu/cgd/30ebfd1a> a OBO:DOID_3969 ;
+        rdfs:label "Papillary thyroid carcinoma with sensitivity to therapy" ;
+        OBO:BFO_0000159 CGD:sensitivity .
+
+    <http://ohsu.edu/cgd/6461403a> a OBO:DOID_3969 ;
+        rdfs:label "Papillary thyroid carcinoma with sensitivity to therapy" ;
+        OBO:BFO_0000159 CGD:sensitivity .
+
+    <http://ohsu.edu/cgd/87795e43> a OBO:OMIM_606764 ;
+        rdfs:label "GIST with response to therapy" ;
+        OBO:BFO_0000159 CGD:response .
+
+    CGD:ae494e40 a OBO:DOID_3284 ;
+        rdfs:label "Thymic carcinoma with sensitivity to therapy" ;
+        OBO:BFO_0000159 CGD:sensitivity .
+
+    CGD:bbf46e32 a OBO:OMIM_606764 ;
+        rdfs:label "GIST with resistance to therapy" ;
+        OBO:BFO_0000159 CGD:resistance .
+
+    CGD:c3d9ceb3 a OBO:DOID_3162 ;
+        rdfs:label "Melanoma, NOS with response to therapy" ;
+        OBO:BFO_0000159 CGD:response .
+
+    CGD:da20b3e8 a OBO:OMIM_606764 ;
+        rdfs:label "GIST with response to therapy" ;
+        OBO:BFO_0000159 CGD:response .
+
+    CGD:e232a338 a OBO:OMIM_606764 ;
+        rdfs:label "GIST with response to therapy" ;
+        OBO:BFO_0000159 CGD:response .
+
+    <http://www.drugbank.ca/drugs/DB01268> a <http://www.w3.org/2002/07/owl#Class> ;
+        rdfs:label "sunitinib" ;
+        OBO:RO_0002606 <http://ohsu.edu/cgd/11ba3f14>,
+            <http://ohsu.edu/cgd/202aab8b>,
+            <http://ohsu.edu/cgd/330fdb9d>,
+            <http://ohsu.edu/cgd/392fb86a>,
+            <http://ohsu.edu/cgd/3f99c173>,
+            <http://ohsu.edu/cgd/4da27469>,
+            <http://ohsu.edu/cgd/54039374>,
+            <http://ohsu.edu/cgd/5c4e4aa5>,
+            <http://ohsu.edu/cgd/5ea8d37b>,
+            <http://ohsu.edu/cgd/65b688b1>,
+            <http://ohsu.edu/cgd/71fe9f0f>,
+            <http://ohsu.edu/cgd/7e7ac65b>,
+            <http://ohsu.edu/cgd/86415d40>,
+            <http://ohsu.edu/cgd/88e4c778>,
+            <http://ohsu.edu/cgd/983a1528>,
+            CGD:bff18fe6,
+            CGD:c9ce40f4,
+            CGD:d8f69729,
+            CGD:d9a4077f,
+            CGD:e901ee1e,
+            CGD:f7303413 ;
+        rdfs:subClassOf OBO:CHEBI_23888 .
+
+
+<http://ohsu.edu/cgd/test-assoc-1> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/87795e43> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/test-location-1> .
+
+<http://ohsu.edu/cgd/test-location-1> a OBO:SO_0001059 ;
+    rdfs:label "DDX11L16" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> .
+
+
+<http://ohsu.edu/cgd/test-assoc-2> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/87795e43> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/test-location-2> .
+
+<http://ohsu.edu/cgd/test-location-2> a OBO:SO_0001059 ;
+    rdfs:label "exon:ENSTR0000507418.3:5" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> .
+
+
+<http://ohsu.edu/cgd/test-assoc-3> a OBAN:association ;
+    OBO:RO_0002558 OBO:ECO_0000033 ;
+    OBO:RO_has_environment <http://www.drugbank.ca/drugs/DB01268> ;
+    dc:source <http://www.ncbi.nlm.nih.gov/pubmed/18955458> ;
+    OBAN:association_has_object <http://ohsu.edu/cgd/87795e43> ;
+    OBAN:association_has_object_property OBO:RO_0002200 ;
+    OBAN:association_has_subject <http://ohsu.edu/cgd/test-location-3> .
+
+<http://ohsu.edu/cgd/test-location-3> a OBO:SO_0000147;
+    rdfs:label "foo" ;
+    OBO:RO_0002200 <http://ohsu.edu/cgd/87752f6c> ;
+    faldo:location <http://www.monarchinitiative.org/_hg19chr1TestRegion> .
+
+:_hg19chr1TestRegion a faldo:Region ;
+    faldo:begin :_hg19chr1-0 ;
+    faldo:end :_hg19chr1-65536 .
+
+:_hg19chr1-0 a faldo:Position ;
+    faldo:position 0 ;
+    faldo:reference :MONARCH_hg19chr1 .
+
+:_hg19chr1-65536 a faldo:Position ;
+    faldo:position 65536 ;
+    faldo:reference :MONARCH_hg19chr1 .
+
+:MONARCH_hg19chr1 a OBO:CHR_9606chr1,
+        OBO:SO_0000340 ;
+    rdfs:label "chr1 (hg19)" ;
+    OBO:RO_0002350 UCSC:hg19 .

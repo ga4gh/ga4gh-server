@@ -373,6 +373,52 @@ class TestClientJson(TestClientOutput):
                 iterator, "featuresets-search",
                 "--datasetId {}".format(dataset.id))
 
+    def testSearchGenotypePhenotype(self):
+        phenotype_id = "http://ohsu.edu/cgd/87795e43"
+        test_executed = 0
+        for dataset in self._client.search_datasets():
+            # pas = phenotype_association_set
+            for pas in \
+              self._client.search_phenotype_association_sets(dataset.id):
+                    iterator = self._client.search_genotype_phenotype(
+                        phenotype_association_set_id=pas.id,
+                        phenotype_ids=[phenotype_id])
+                    args = (
+                        "--phenotype_association_set_id {}"
+                        " --phenotype_ids {} ").format(
+                        pas.id, phenotype_id)
+                    test_executed += self.verifyParsedOutputsEqual(
+                        iterator, "genotypephenotype-search", args)
+        self.assertGreater(test_executed, 0)
+
+    def testSearchPhenotype(self):
+        phenotype_id = "http://ohsu.edu/cgd/87795e43"
+        test_executed = 0
+        for dataset in self._client.search_datasets():
+            # pas = phenotype_association_set
+            for pas in \
+              self._client.search_phenotype_association_sets(dataset.id):
+                    iterator = self._client.search_phenotype(
+                        phenotype_association_set_id=pas.id,
+                        phenotype_id=phenotype_id)
+                    args = (
+                        "--phenotype_association_set_id {}"
+                        " --phenotype_id {} ").format(
+                        pas.id, phenotype_id)
+                    test_executed += self.verifyParsedOutputsEqual(
+                        iterator, "phenotype-search", args)
+        self.assertGreater(test_executed, 0)
+
+    def testSearchSearchPhenotypeAssociationSets(self):
+        test_executed = 0
+        for dataset in self._client.search_datasets():
+            iterator = self._client.search_phenotype_association_sets(
+                dataset_id=dataset.id)
+            args = "--datasetId {}".format(dataset.id)
+            test_executed += self.verifyParsedOutputsEqual(
+                iterator, "phenotypeassociationsets-search", args)
+        self.assertGreater(test_executed, 0)
+
     def testSearchExpressionLevels(self):
         for dataset in self._client.search_datasets():
             for rnaQuantificationSet in \

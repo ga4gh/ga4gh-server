@@ -12,6 +12,7 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.bio_metadata as biodata
+import ga4gh.datamodel.genotype_phenotype as g2p
 import ga4gh.datamodel.rna_quantification as rnaQuantification
 from ga4gh import pb
 import json
@@ -50,6 +51,9 @@ class Dataset(datamodel.DatamodelObject):
         self._individualIds = []
         self._individualIdMap = {}
         self._individualNameMap = {}
+        self._phenotypeAssociationSetIdMap = {}
+        self._phenotypeAssociationSetNameMap = {}
+        self._phenotypeAssociationSetIds = []
         self._rnaQuantificationSetIds = []
         self._rnaQuantificationSetIdMap = {}
         self._rnaQuantificationSetNameMap = {}
@@ -175,6 +179,38 @@ class Dataset(datamodel.DatamodelObject):
         if name not in self._variantSetNameMap:
             raise exceptions.VariantSetNameNotFoundException(name)
         return self._variantSetNameMap[name]
+
+    def addPhenotypeAssociationSet(self, phenotypeAssociationSet):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        id_ = phenotypeAssociationSet.getId()
+        self._phenotypeAssociationSetIdMap[id_] = phenotypeAssociationSet
+        self._phenotypeAssociationSetNameMap[
+            phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
+        self._phenotypeAssociationSetIds.append(id_)
+
+    def getPhenotypeAssociationSets(self):
+        return [self._phenotypeAssociationSetIdMap[id_]
+                for id_ in self._phenotypeAssociationSetIdMap]
+
+    def getPhenotypeAssociationSet(self, id_):
+        return self._phenotypeAssociationSetIdMap[id_]
+
+    def getPhenotypeAssociationSetByName(self, name):
+        if name not in self._phenotypeAssociationSetNameMap:
+            raise exceptions.PhenotypeAssociationSetNotFoundException(name)
+        return self._phenotypeAssociationSetNameMap[name]
+
+    def getPhenotypeAssociationSetByIndex(self, index):
+        return self._phenotypeAssociationSetIdMap[
+            self._phenotypeAssociationSetIds[index]]
+
+    def getNumPhenotypeAssociationSets(self):
+        """
+        Returns the number of reference sets in this data repository.
+        """
+        return len(self._phenotypeAssociationSetIds)
 
     def getFeatureSets(self):
         """
@@ -380,10 +416,19 @@ class SimulatedDataset(Dataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1, numFeatureSets=1, numRnaQuantSets=2,
+            numAlignments=1, numFeatureSets=1, numPhenotypeAssociationSets=1,
+            numPhenotypeAssociations=2, numRnaQuantSets=2,
             numExpressionLevels=2):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+
+        for i in range(numPhenotypeAssociationSets):
+            localId = "simPas{}".format(i)
+            seed = randomSeed + i
+            phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(
+                self, localId, seed, numPhenotypeAssociations)
+            self.addPhenotypeAssociationSet(phenotypeAssociationSet)
+
         # TODO create a simulated Ontology
         # Variants
         for i in range(numVariantSets):

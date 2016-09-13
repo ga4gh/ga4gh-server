@@ -9,6 +9,8 @@ cache:
 
 install:
   - pip install pip --upgrade
+# RDFLib requres html5lib;  html5lib requires setuptools version 18.5 or above;
+  - pip install setuptools==25.1.0
   - python setup.py sdist
   - pip install dist/ga4gh*.tar.gz
 # every installable in setup.py's entry_points should be tested here

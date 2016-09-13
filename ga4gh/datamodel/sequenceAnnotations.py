@@ -89,7 +89,7 @@ class Gff3DbBackend(sqliteBackend.SqliteBackedDataSource):
             parentId=parentId, featureTypes=featureTypes,
             name=name, geneSymbol=geneSymbol)
         query = self._dbconn.execute(sql, sql_args)
-        return (query.fetchone())[0]
+        return query.fetchone()[0]
 
     def featuresQuery(self, **kwargs):
         """

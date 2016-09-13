@@ -61,6 +61,16 @@ class TestFrontend(unittest.TestCase):
         cls.readGroupId = cls.readGroup.getId()
         cls.readAlignment = cls.readGroup.getReadAlignments().next()
         cls.readAlignmentId = cls.readAlignment.id
+        cls.phenotypeAssociationSet = \
+            cls.dataset.getPhenotypeAssociationSets()[0]
+        cls.phenotypeAssociationSetId = cls.phenotypeAssociationSet.getId()
+        cls.association = cls.phenotypeAssociationSet.getAssociations()[0]
+        cls.phenotype = cls.association.phenotype
+        cls.phenotypeId = cls.phenotype.id
+        cls.featureSets = cls.dataset.getFeatureSets()
+        cls.genotypePhenotype = cls.phenotypeAssociationSet.getAssociations(
+            request=None, featureSets=cls.featureSets)[0]
+        cls.genotypePhenotypeId = cls.genotypePhenotype.id
         cls.rnaQuantificationSet = cls.dataset.getRnaQuantificationSets()[0]
         cls.rnaQuantificationSetId = cls.rnaQuantificationSet.getId()
         cls.rnaQuantification = cls.rnaQuantificationSet.getRnaQuantifications(
@@ -123,6 +133,23 @@ class TestFrontend(unittest.TestCase):
     def sendDatasetsSearch(self):
         request = protocol.SearchDatasetsRequest()
         return self.sendPostRequest('/datasets/search', request)
+
+    def sendPhenotypesSearch(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotype_association_set_id = self.phenotypeAssociationSetId
+        return self.sendPostRequest('/phenotypes/search', request)
+
+    def sendGenotypePhenotypesSearch(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotype_association_set_id = self.phenotypeAssociationSetId
+        return self.sendPostRequest('/featurephenotypeassociations/search',
+                                    request)
+
+    def sendPhenotypeAssociationSetsSearch(self):
+        request = protocol.SearchPhenotypeAssociationSetsRequest()
+        request.dataset_id = self.datasetId
+        return self.sendPostRequest(
+            '/phenotypeassociationsets/search', request)
 
     def sendRnaQuantificationSetsSearch(self):
         request = protocol.SearchRnaQuantificationSetsRequest()
@@ -262,6 +289,9 @@ class TestFrontend(unittest.TestCase):
         assertHeaders(self.sendReferencesSearch())
         assertHeaders(self.sendReferenceBasesList())
         assertHeaders(self.sendDatasetsSearch())
+        assertHeaders(self.sendPhenotypesSearch())
+        assertHeaders(self.sendGenotypePhenotypesSearch())
+        assertHeaders(self.sendPhenotypeAssociationSetsSearch())
         # Get-based accessor methods
         assertHeaders(self.sendGetVariantSet())
         assertHeaders(self.sendGetReference())
@@ -427,13 +457,38 @@ class TestFrontend(unittest.TestCase):
         datasets = list(responseData.datasets)
         self.assertEqual(self.datasetId, datasets[0].id)
 
+    def testPhenotypesSearch(self):
+        response = self.sendPhenotypesSearch()
+        responseData = protocol.fromJson(
+            response.data, protocol.SearchPhenotypesResponse)
+        phenotypes = list(responseData.phenotypes)
+        self.assertEqual(self.phenotypeId, phenotypes[0].id)
+
+    def testPhenotypeAssociationSetsSearch(self):
+        response = self.sendPhenotypeAssociationSetsSearch()
+        responseData = protocol.fromJson(
+            response.data, protocol.SearchPhenotypeAssociationSetsResponse)
+        pasets = list(responseData.phenotype_association_sets)
+        foundPASet = False
+        for paset in pasets:
+            if self.phenotypeAssociationSetId == paset.id:
+                foundPASet = True
+        self.assertTrue(foundPASet)
+
+    def testGenotypePhenotypesSearch(self):
+        response = self.sendGenotypePhenotypesSearch()
+        responseData = protocol.fromJson(
+            response.data, protocol.SearchGenotypePhenotypeResponse)
+        genotypePhenotypes = list(responseData.associations)
+        self.assertEqual(self.genotypePhenotypeId, genotypePhenotypes[0].id)
+
     def testNoAuthentication(self):
         path = '/oauth2callback'
         self.assertEqual(501, self.app.get(path).status_code)
 
     def testSearchUnmappedReads(self):
-        response = self.sendReadsSearch(readGroupIds=[self.readGroupId],
-                                        referenceId="")
+        response = self.sendReadsSearch(
+            readGroupIds=[self.readGroupId], referenceId="")
         self.assertEqual(501, response.status_code)
 
     def testSearchReadsMultipleReadGroupSetsSetMismatch(self):

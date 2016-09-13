@@ -644,6 +644,59 @@ class AbstractClient(object):
         return self._run_search_request(
             request, "reads", protocol.SearchReadsResponse)
 
+    def search_phenotype_association_sets(self, dataset_id):
+        """
+        Returns an iterator over the PhenotypeAssociationSets on the server.
+        """
+        request = protocol.SearchPhenotypeAssociationSetsRequest()
+        request.dataset_id = dataset_id
+        request.page_size = pb.int(self._page_size)
+        return self._run_search_request(
+            request, "phenotype_association_sets",
+            protocol.SearchPhenotypeAssociationSetsResponse)
+
+    def search_genotype_phenotype(
+            self, phenotype_association_set_id=None, feature_ids=None,
+            phenotype_ids=None, evidence=None):
+        """
+        Returns an iterator over the GeneotypePhenotype associations from
+        the server
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotype_association_set_id = phenotype_association_set_id
+        if feature_ids:
+            request.feature_ids.extend(feature_ids)
+        if phenotype_ids:
+            request.phenotype_ids.extend(phenotype_ids)
+        if evidence:
+            request.evidence.extend(evidence)
+        request.page_size = pb.int(self._page_size)
+        self._logger.debug("search_genotype_phenotype {}".format(request))
+        return self._run_search_request(
+            request, "genotypephenotype",
+            protocol.SearchGenotypePhenotypeResponse)
+
+    def search_phenotype(
+            self, phenotype_association_set_id=None, phenotype_id=None,
+            description=None, type_=None, age_of_onset=None):
+        """
+        Returns an iterator over the Phenotypes from the server
+        """
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotype_association_set_id = phenotype_association_set_id
+        if phenotype_id:
+            request.id = phenotype_id
+        if description:
+            request.description = description
+        if type_:
+            request.type.mergeFrom(type_)
+        if age_of_onset:
+            request.age_of_onset = age_of_onset
+        request.page_size = pb.int(self._page_size)
+        return self._run_search_request(
+            request, "phenotype",
+            protocol.SearchPhenotypesResponse)
+
     def search_rna_quantification_sets(self, dataset_id):
         """
         Returns an iterator over the RnaQuantificationSet objects from the
@@ -816,6 +869,10 @@ class LocalClient(AbstractClient):
                 self._backend.runSearchVariantAnnotationSets,
             "biosamples": self._backend.runSearchBioSamples,
             "individuals": self._backend.runSearchIndividuals,
+            "genotypephenotype": self._backend.runSearchGenotypePhenotypes,
+            "phenotype": self._backend.runSearchPhenotypes,
+            "phenotype_association_sets":
+                self._backend.runSearchPhenotypeAssociationSets,
             "rnaquantificationsets":
                 self._backend.runSearchRnaQuantificationSets,
             "rnaquantifications": self._backend.runSearchRnaQuantifications,

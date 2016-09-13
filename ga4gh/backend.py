@@ -484,6 +484,16 @@ class Backend(object):
                 results.append(obj)
         return self._objectListGenerator(request, results)
 
+    def phenotypeAssociationSetsGenerator(self, request):
+        """
+        Returns a generator over the (phenotypeAssociationSet, nextPageToken)
+        pairs defined by the specified request
+        """
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumPhenotypeAssociationSets(),
+            dataset.getPhenotypeAssociationSetByIndex)
+
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
@@ -699,6 +709,38 @@ class Backend(object):
             request.reference_name, start, end,
             request.page_token, request.page_size,
             request.feature_types, parentId, request.name, request.gene_symbol)
+
+    def phenotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        associations = phenotypeAssociationSet.getAssociations(request)
+        phenotypes = [association.phenotype for association in associations]
+        return self._protocolListGenerator(
+            request, phenotypes)
+
+    def genotypesPhenotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        featureSets = dataset.getFeatureSets()
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request, featureSets)
+        return self._protocolListGenerator(request, annotationList)
 
     def callSetsGenerator(self, request):
         """
@@ -1181,6 +1223,24 @@ class Backend(object):
             request, protocol.SearchFeaturesRequest,
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
+
+    def runSearchGenotypePhenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypePhenotypeRequest,
+            protocol.SearchGenotypePhenotypeResponse,
+            self.genotypesPhenotypesGenerator)
+
+    def runSearchPhenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypesRequest,
+            protocol.SearchPhenotypesResponse,
+            self.phenotypesGenerator)
+
+    def runSearchPhenotypeAssociationSets(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypeAssociationSetsRequest,
+            protocol.SearchPhenotypeAssociationSetsResponse,
+            self.phenotypeAssociationSetsGenerator)
 
     def runSearchRnaQuantificationSets(self, request):
         """

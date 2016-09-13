@@ -75,9 +75,20 @@ class RepoManagerEndToEndTest(unittest.TestCase):
             "add-variantset", self.datasetName,
             paths.annotatedVcfPath, '-R', paths.referenceSetName,
             "-aO", paths.ontologyName, "-n", variantAnnotationSetName)
+        phenotypeAssociationSetName = "paSet"
+        self._runCmd(
+            "add-phenotypeassociationset",
+            self.datasetName,
+            paths.phenotypeAssociationSetPath,
+            "-n",
+            phenotypeAssociationSetName)
 
         self._runCmd("verify")
         self._runCmd("list")
+
+        self._runCmd(
+            "remove-phenotypeassociationset",
+            self.datasetName, phenotypeAssociationSetName, "-f")
         self._runCmd(
             "remove-variantset", self.datasetName, paths.variantSetName, "-f")
         self._runCmd(
