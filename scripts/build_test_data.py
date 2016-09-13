@@ -18,14 +18,18 @@ def run(*args):
     utils.runCommand(cmd)
 
 
-def buildTestData(dataDirectory='tests/data', relativePaths=False):
+def buildTestData(
+        dataDirectory='tests/data', relativePaths=False, force=False):
     prefix = dataDirectory
     repoFile = os.path.join(prefix, "repo.db")
     if os.path.exists(repoFile):
-        print("'{}' already exists".format(repoFile))
-        return
-    else:
-        print("building repo at '{}'".format(repoFile))
+        if force:
+            print("deleting repo at '{}'".format(repoFile))
+            os.unlink(repoFile)
+        else:
+            print("'{}' already exists".format(repoFile))
+            return
+    print("building repo at '{}'".format(repoFile))
     sequenceOntologyName = "so-xp-simple"
     useRelativePath = '-r' if relativePaths else ''
     run("init", "-f", repoFile)
@@ -77,6 +81,9 @@ def parseArgs():
     parser.add_argument(
         "-r", "--relativePaths", default=False, action="store_true",
         help="store relative paths in database")
+    parser.add_argument(
+        "-f", "--force", default=False, action="store_true",
+        help="delete previous database and build a new one")
     args = parser.parse_args()
     return args
 
@@ -84,7 +91,7 @@ def parseArgs():
 @utils.Timed()
 def main():
     args = parseArgs()
-    buildTestData(args.data_directory, args.relativePaths)
+    buildTestData(args.data_directory, args.relativePaths, args.force)
 
 
 if __name__ == "__main__":

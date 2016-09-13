@@ -339,13 +339,39 @@ class TestClientJson(TestClientOutput):
                         iterator, "variantannotations-search", args)
         self.assertGreater(test_executed, 0)
 
-    # def testGetFeatures(self):  # TODO
+    def testGetFeatures(self):
+        for dataset in self._client.search_datasets():
+            datasetId = dataset.id
+            for featureSet in self._client.search_feature_sets(datasetId):
+                for feature in self._client.search_features(
+                        featureSet.id):
+                    self.verifyParsedOutputsEqual(
+                        [feature], "features-get", feature.id)
+                    break  # this test takes too long otherwise
 
-    # def testSearchFeatures(self):  # TODO
+    @unittest.skip("Fix feature search semantics, then reenable")
+    def testSearchFeatures(self):
+        for dataset in self._client.search_datasets():
+            datasetId = dataset.id
+            for featureSet in self._client.search_feature_sets(datasetId):
+                iterator = self._client.search_features(featureSet.id)
+                self.verifyParsedOutputsEqual(
+                    iterator, "features-search",
+                    "--featureSetId {}".format(featureSet.id))
 
-    # def testGetFeatureSets(self):  # TODO
+    def testGetFeatureSets(self):
+        for dataset in self._client.search_datasets():
+            datasetId = dataset.id
+            for featureSet in self._client.search_feature_sets(datasetId):
+                self.verifyParsedOutputsEqual(
+                    [featureSet], "featuresets-get", featureSet.id)
 
-    # def testSearchFeatureSets(self):  # TODO
+    def testSearchFeatureSets(self):
+        for dataset in self._client.search_datasets():
+            iterator = self._client.search_feature_sets(dataset.id)
+            self.verifyParsedOutputsEqual(
+                iterator, "featuresets-search",
+                "--datasetId {}".format(dataset.id))
 
     def testSearchExpressionLevels(self):
         for dataset in self._client.search_datasets():

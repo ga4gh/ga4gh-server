@@ -342,9 +342,15 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._run_get_request.assert_called_once_with(
             "expressionlevels", protocol.ExpressionLevel, self.objectId)
 
-    # def testGetFeatureSet(self):  # TODO
+    def testGetFeatureSet(self):
+        self.httpClient.get_feature_set(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
+            "featuresets", protocol.FeatureSet, self.objectId)
 
-    # def testGetFeature(self):  # TODO
+    def testGetFeature(self):
+        self.httpClient.get_feature(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
+            "features", protocol.Feature, self.objectId)
 
 
 class DatamodelObjectWrapper(object):
