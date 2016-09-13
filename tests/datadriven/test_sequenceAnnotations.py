@@ -160,20 +160,17 @@ class FeatureSetTests(datadriven.DataDrivenTest):
 
     def testFetchAllFeaturesInRegion(self):
         features = []
-        nextPageTokens = []
-        for (feature, nextPageToken) in self._gaObject.getFeatures(
+        for feature in self._gaObject.getFeatures(
                 self._testData["referenceName"],
                 self._testData["region"][0],
                 self._testData["region"][1],
                 None, 1000):
             features.append(feature)
-            nextPageTokens.append(nextPageToken)
         self.assertEqual(len(features), self._testData["totalFeatures"])
-        self.assertIsNone(nextPageTokens[-1])
 
     def testFetchFeaturesRestrictedByOntology(self):
         features = []
-        for (feature, _) in self._gaObject.getFeatures(
+        for feature in self._gaObject.getFeatures(
                 self._testData["referenceName"],
                 self._testData["region"][0],
                 self._testData["region"][1],
@@ -193,7 +190,7 @@ class FeatureSetTests(datadriven.DataDrivenTest):
             parentId = datamodel.FeatureCompoundId.parse(
                 parentIdString).featureId
         features = []
-        for (feature, _) in self._gaObject.getFeatures(
+        for feature in self._gaObject.getFeatures(
                 self._testData["referenceName"],
                 self._testData["region"][0],
                 self._testData["region"][1],
