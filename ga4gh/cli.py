@@ -643,12 +643,12 @@ class FeatureFormatterMixin(object):
     def _textOutput(self, gaObjects):
         for feature in gaObjects:
             print(
-                feature.id, feature.parentId, feature.featureSetId,
-                feature.referenceName, feature.start, feature.end,
+                feature.id, feature.parent_id, feature.feature_set_id,
+                feature.reference_name, feature.start, feature.end,
                 feature.strand, sep="\t", end="\t")
             print(
-                "FeatureType:", feature.featureType.id,
-                feature.featureType.term, end="\t")
+                "FeatureType:", feature.feature_type.id,
+                feature.feature_type.term, end="\t")
             for attrkey in feature.attributes.vals.keys():
                 print(
                     attrkey, feature.attributes.vals[attrkey],
@@ -1117,7 +1117,7 @@ def addFeaturesSearchOptions(parser):
     Adds common options to a features search command line parser.
     """
     addFeatureSetIdArgument(parser)
-    addReferenceNameArgument(parser)
+    addFeaturesReferenceNameArgument(parser)
     addStartArgument(parser)
     addEndArgument(parser)
     addParentFeatureIdArgument(parser)
@@ -1196,6 +1196,12 @@ def addFeatureSetIdArgument(parser):
 def addReferenceNameArgument(parser):
     parser.add_argument(
         "--referenceName", "-r", default="1",
+        help="Only return variants on this reference.")
+
+
+def addFeaturesReferenceNameArgument(parser):
+    parser.add_argument(
+        "--referenceName", "-r", default="",
         help="Only return variants on this reference.")
 
 

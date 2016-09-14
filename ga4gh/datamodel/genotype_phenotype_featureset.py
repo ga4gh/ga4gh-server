@@ -134,7 +134,7 @@ class PhenotypeAssociationFeatureSet(
 
     # mimic featureset
     def getFeatures(self, referenceName=None, start=None, end=None,
-                    pageToken=None, pageSize=None,
+                    startIndex=None, maxResults=None,
                     featureTypes=None, parentId=None,
                     name=None, geneSymbol=None, numFeatures=10):
 
@@ -146,24 +146,17 @@ class PhenotypeAssociationFeatureSet(
         for row in featuresResults.bindings:
             featureIds.add(row['feature'].toPython())
 
-        featuresCount = len(featureIds)
-        if pageToken:
-            nextPageToken = int(pageToken)
+        if startIndex:
+            startPosition = int(startIndex)
         else:
-            nextPageToken = 0
-        for idx, featureId in enumerate(featureIds):
-            if idx < nextPageToken:
+            startPosition = 0
+        for i, featureId in enumerate(featureIds):
+            if i < startPosition:
                 continue
             feature = self._getFeatureById(featureId)
-            # get _getFeatureById returns native id, cast to compound
+            # _getFeatureById returns native id, cast to compound
             feature.id = self.getCompoundIdForFeatureId(feature.id)
-            if nextPageToken < featuresCount - 1:
-                nextPageToken += 1
-            else:
-                nextPageToken = None
-            yield feature, (
-                str(nextPageToken)
-                if nextPageToken is not None else None)
+            yield feature
 
     def _baseQuery(self):
         return """

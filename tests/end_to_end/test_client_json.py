@@ -349,7 +349,7 @@ class TestClientJson(TestClientOutput):
                         [feature], "features-get", feature.id)
                     break  # this test takes too long otherwise
 
-    @unittest.skip("Fix feature search semantics, then reenable")
+    @unittest.skip("features fixed generally, but g2p breaks this")
     def testSearchFeatures(self):
         for dataset in self._client.search_datasets():
             datasetId = dataset.id

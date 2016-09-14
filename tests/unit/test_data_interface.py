@@ -118,7 +118,6 @@ class TestInterfacingLayer(unittest.TestCase):
     def testGetFeature(self):
         repoFeatures = self._repo.allFeatures()
         for repoFeature in repoFeatures:
-            repoFeature = repoFeature[0]
             featureId = repoFeature.id
             feature = self._client.get_feature(featureId)
             self.assertEqual(repoFeature, feature)
@@ -181,10 +180,6 @@ class TestInterfacingLayer(unittest.TestCase):
                         repoVariantAnnotations, variantAnnotations):
                     self._assertEqual(repoVa, va)
 
-    # TODO
-    """
-    # something is wrong with the features generator...
-    # doesn't always set nextPageToken appropriately?
     def testSearchFeatures(self):
         repoFeatureSets = self._repo.allFeatureSets()
         for repoFeatureSet in repoFeatureSets:
@@ -196,9 +191,7 @@ class TestInterfacingLayer(unittest.TestCase):
                 features = list(self._client.search_features(featureSetId))
                 for repoFeature, feature in utils.zipLists(
                         repoFeatures, features):
-                    repoFeature = repoFeature[0]
                     self.assertEqual(repoFeature, feature)
-    """
 
     def testSearchDatasets(self):
         self._testSearchMethod(
