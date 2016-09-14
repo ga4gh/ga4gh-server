@@ -109,7 +109,7 @@
                     </tr>
                     {% endfor %}
                 </table>
-             <h6>FeatureSets</h6>
+                <h6>FeatureSets</h6>
                 <table class="table table-striped">
                     <tr>
                         <th>Name</th>
@@ -147,14 +147,27 @@
                     {% endfor %}
                     {% endfor %}
                 </table>
+                <h6>PhenotypeAssociationSets</h6>
+                <table class="table table-striped">
+                    <tr>
+                        <th>Name</th>
+                        <th>Id</th>
+                    </tr>
+                    {% for paSet in info.getPhenotypeAssociationSets(dataset.getId()) %}
+                    <tr>
+                        <td>{{ paSet.getLocalId() }}</td>
+                        <td>{{ paSet.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
                 <h6>RnaQuantificationSets</h6>
                 <table class="table table-striped">
                     <th>Name</th>
                     <th>Id</th>
                     {% for rnaQuantificationSet in info.getRnaQuantificationSets(dataset.getId()) %}
                     <tr>
-                    <td>{{ rnaQuantificationSet.getLocalId() }}</td>
-                    <td>{{ rnaQuantificationSet.getId() }}</td>
+                        <td>{{ rnaQuantificationSet.getLocalId() }}</td>
+                        <td>{{ rnaQuantificationSet.getId() }}</td>
                     </tr>
                     {% endfor %}
                 </table>

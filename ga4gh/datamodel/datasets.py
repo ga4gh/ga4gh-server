@@ -7,13 +7,24 @@ from __future__ import unicode_literals
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 import ga4gh.datamodel.bio_metadata as biodata
+import ga4gh.datamodel.genotype_phenotype as g2p
 import ga4gh.datamodel.rna_quantification as rnaQuantification
 from ga4gh import pb
+import json
+
+import google.protobuf.struct_pb2 as struct_pb2
+
+
+def _encodeValue(value):
+    if isinstance(value, (list, tuple)):
+        return [struct_pb2.Value(string_value=str(v)) for v in value]
+    else:
+        return [struct_pb2.Value(string_value=str(value))]
 
 
 class Dataset(datamodel.DatamodelObject):
@@ -40,9 +51,13 @@ class Dataset(datamodel.DatamodelObject):
         self._individualIds = []
         self._individualIdMap = {}
         self._individualNameMap = {}
+        self._phenotypeAssociationSetIdMap = {}
+        self._phenotypeAssociationSetNameMap = {}
+        self._phenotypeAssociationSetIds = []
         self._rnaQuantificationSetIds = []
         self._rnaQuantificationSetIdMap = {}
         self._rnaQuantificationSetNameMap = {}
+        self._info = {}
 
     def populateFromRow(self, row):
         """
@@ -50,12 +65,19 @@ class Dataset(datamodel.DatamodelObject):
         specified database row.
         """
         self._description = row[b'description']
+        self._info = json.loads(row[b'info'])
 
     def setDescription(self, description):
         """
         Sets the description for this dataset to the specified value.
         """
         self._description = description
+
+    def setInfo(self, info):
+        """
+        Sets the info for this dataset to the specified value.
+        """
+        self._info = info
 
     def addVariantSet(self, variantSet):
         """
@@ -118,6 +140,8 @@ class Dataset(datamodel.DatamodelObject):
         dataset.id = self.getId()
         dataset.name = pb.string(self.getLocalId())
         dataset.description = pb.string(self.getDescription())
+        for key in self.getInfo():
+            dataset.info[key].values.extend(_encodeValue(self._info[key]))
         return dataset
 
     def getVariantSets(self):
@@ -155,6 +179,38 @@ class Dataset(datamodel.DatamodelObject):
         if name not in self._variantSetNameMap:
             raise exceptions.VariantSetNameNotFoundException(name)
         return self._variantSetNameMap[name]
+
+    def addPhenotypeAssociationSet(self, phenotypeAssociationSet):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        id_ = phenotypeAssociationSet.getId()
+        self._phenotypeAssociationSetIdMap[id_] = phenotypeAssociationSet
+        self._phenotypeAssociationSetNameMap[
+            phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
+        self._phenotypeAssociationSetIds.append(id_)
+
+    def getPhenotypeAssociationSets(self):
+        return [self._phenotypeAssociationSetIdMap[id_]
+                for id_ in self._phenotypeAssociationSetIdMap]
+
+    def getPhenotypeAssociationSet(self, id_):
+        return self._phenotypeAssociationSetIdMap[id_]
+
+    def getPhenotypeAssociationSetByName(self, name):
+        if name not in self._phenotypeAssociationSetNameMap:
+            raise exceptions.PhenotypeAssociationSetNotFoundException(name)
+        return self._phenotypeAssociationSetNameMap[name]
+
+    def getPhenotypeAssociationSetByIndex(self, index):
+        return self._phenotypeAssociationSetIdMap[
+            self._phenotypeAssociationSetIds[index]]
+
+    def getNumPhenotypeAssociationSets(self):
+        """
+        Returns the number of reference sets in this data repository.
+        """
+        return len(self._phenotypeAssociationSetIds)
 
     def getFeatureSets(self):
         """
@@ -300,6 +356,12 @@ class Dataset(datamodel.DatamodelObject):
             raise exceptions.ReadGroupNotFoundException(id_)
         return self._readGroupSetIdMap[id_]
 
+    def getInfo(self):
+        """
+        Returns the info of this dataset.
+        """
+        return self._info
+
     def getDescription(self):
         """
         Returns the free text description of this dataset.
@@ -354,10 +416,19 @@ class SimulatedDataset(Dataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1, numFeatureSets=1, numRnaQuantSets=2,
+            numAlignments=1, numFeatureSets=1, numPhenotypeAssociationSets=1,
+            numPhenotypeAssociations=2, numRnaQuantSets=2,
             numExpressionLevels=2):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+
+        for i in range(numPhenotypeAssociationSets):
+            localId = "simPas{}".format(i)
+            seed = randomSeed + i
+            phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(
+                self, localId, seed, numPhenotypeAssociations)
+            self.addPhenotypeAssociationSet(phenotypeAssociationSet)
+
         # TODO create a simulated Ontology
         # Variants
         for i in range(numVariantSets):
@@ -404,7 +475,7 @@ class SimulatedDataset(Dataset):
         for i in range(numFeatureSets):
             localId = "simFs{}".format(i)
             seed = randomSeed + i
-            featureSet = sequenceAnnotations.SimulatedFeatureSet(
+            featureSet = sequence_annotations.SimulatedFeatureSet(
                 self, localId, seed)
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)

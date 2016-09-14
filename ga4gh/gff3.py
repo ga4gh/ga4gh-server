@@ -201,7 +201,7 @@ class Gff3Set(object):
         Sort order for Features, by genomic coordinate,
         disambiguated by feature type (alphabetically).
         """
-        return (r.seqname, r.start, -r.end, r.type)
+        return r.seqname, r.start, -r.end, r.type
 
     def _writeRec(self, fh, rec):
         """
@@ -264,7 +264,7 @@ class Gff3Parser(object):
         val = m.group(2)
         # Split by comma to separate then unquote.
         # Commas in values must be url encoded.
-        return (name, [urllib.unquote(v) for v in val.split(',')])
+        return name, [urllib.unquote(v) for v in val.split(',')]
 
     SPLIT_ATTR_COL_RE = re.compile("; *")
 

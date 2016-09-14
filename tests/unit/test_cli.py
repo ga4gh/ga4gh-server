@@ -221,6 +221,46 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEquals(args.runner, cli.SearchDatasetsRunner)
 
+    def testGenotypePhenotypeSearchArguments(self):
+        cliInput = (
+            "genotypephenotype-search --phenotype_association_set_id SET_ID "
+            "--feature_ids A,B,C --phenotype_ids D,E,F --pageSize 1 -E E1 "
+            "BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.phenotype_association_set_id, "SET_ID")
+        self.assertEqual(args.feature_ids, "A,B,C")
+        self.assertEqual(args.phenotype_ids, "D,E,F")
+        self.assertEqual(args.evidence, "E1")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchGenotypePhenotypeRunner)
+
+    def testPhenotypeSearchArguments(self):
+        cliInput = (
+            "phenotype-search --phenotype_association_set_id SET_ID "
+            "--phenotype_id ID1 --description FOO --type T --age_of_onset 2 "
+            "--pageSize 1 BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.phenotype_association_set_id, "SET_ID")
+        self.assertEqual(args.phenotype_id, "ID1")
+        self.assertEqual(args.description, "FOO")
+        self.assertEqual(args.type, "T")
+        self.assertEqual(args.age_of_onset, "2")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(args.runner, cli.SearchPhenotypeRunner)
+
+    def testPhenotypeAssociationSetsSearchArguments(self):
+        cliInput = (
+            "phenotypeassociationsets-search --datasetId SET_ID "
+            "--pageSize 1 BASEURL")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEqual(args.pageSize, 1)
+        self.assertEqual(args.datasetId, "SET_ID")
+        self.assertEqual(args.baseUrl, "BASEURL")
+        self.assertEquals(
+            args.runner, cli.SearchPhenotypeAssociationSetsRunner)
+
     def verifyGetArguments(self, command, runnerClass):
         cliInput = "{} BASEURL ID".format(command)
         args = self.parser.parse_args(cliInput.split())
@@ -406,6 +446,7 @@ class TestRepoManagerCli(unittest.TestCase):
         self.registryPath = 'a/repo/path'
         self.datasetName = "datasetName"
         self.filePath = 'a/file/path'
+        self.dirPath = 'a/dir/path/'
         self.individualName = "test"
         self.bioSampleName = "test"
         self.individual = protocol.toJson(
@@ -621,6 +662,25 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.individualName, self.individualName)
         self.assertEquals(args.runner, "removeIndividual")
         self.assertEquals(args.force, False)
+
+    def testAddPhenotypeAssociationSet(self):
+        cliInput = "add-phenotypeassociationset {} {} {} -n NAME".format(
+            self.registryPath,
+            self.datasetName,
+            self.dirPath)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.dirPath, self.dirPath)
+        self.assertEquals(args.name, "NAME")
+
+    def testRemovePhenotypeAssociationSet(self):
+        cliInput = "remove-phenotypeassociationset {} {} NAME".format(
+            self.registryPath, self.datasetName)
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.name, "NAME")
 
 
 class TestOutputFormats(unittest.TestCase):

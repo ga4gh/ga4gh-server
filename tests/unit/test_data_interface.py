@@ -47,7 +47,7 @@ class TestInterfacingLayer(unittest.TestCase):
 
     def _testSearchMethodInContainer(
             self, containerAccessorMethod, clientSearchMethod,
-            containerIteratorMethod):
+            containerIteratorMethod, equalMethod="_assertEqual"):
         for container in containerIteratorMethod:
             containerId = container.getId()
             repoObjs = getattr(container, containerAccessorMethod)()
@@ -58,7 +58,8 @@ class TestInterfacingLayer(unittest.TestCase):
                 clientObjs = list(clientSearchMethod(containerId))
                 for repoObj, clientObj in utils.zipLists(
                         repoObjs, clientObjs):
-                    self._assertEqual(repoObj, clientObj)
+                    assertEqual = getattr(self, equalMethod)
+                    assertEqual(repoObj, clientObj)
 
     def setUp(self):
         self._repo = datarepo.SqlDataRepository(paths.testDataRepo)
@@ -117,7 +118,6 @@ class TestInterfacingLayer(unittest.TestCase):
     def testGetFeature(self):
         repoFeatures = self._repo.allFeatures()
         for repoFeature in repoFeatures:
-            repoFeature = repoFeature[0]
             featureId = repoFeature.id
             feature = self._client.get_feature(featureId)
             self.assertEqual(repoFeature, feature)
@@ -180,10 +180,6 @@ class TestInterfacingLayer(unittest.TestCase):
                         repoVariantAnnotations, variantAnnotations):
                     self._assertEqual(repoVa, va)
 
-    # TODO
-    """
-    # something is wrong with the features generator...
-    # doesn't always set nextPageToken appropriately?
     def testSearchFeatures(self):
         repoFeatureSets = self._repo.allFeatureSets()
         for repoFeatureSet in repoFeatureSets:
@@ -195,9 +191,7 @@ class TestInterfacingLayer(unittest.TestCase):
                 features = list(self._client.search_features(featureSetId))
                 for repoFeature, feature in utils.zipLists(
                         repoFeatures, features):
-                    repoFeature = repoFeature[0]
                     self.assertEqual(repoFeature, feature)
-    """
 
     def testSearchDatasets(self):
         self._testSearchMethod(
@@ -282,6 +276,37 @@ class TestInterfacingLayer(unittest.TestCase):
                 for repoReference, reference in utils.zipLists(
                         repoReferences, references):
                     self._assertEqual(repoReference, reference)
+
+    # search_phenotype does not return containers, it returns
+    # PhenotypeInstances. So, we iterate through the container
+    # (PhenotypeAssociationSet), and compare the leaf nodes (PhenotypeInstance)
+    def testSearchPhenotypes(self):
+        phenotypeAssociationSets = self._repo.allPhenotypeAssociationSets()
+        for phenotypeAssociationSet in phenotypeAssociationSets:
+            repoAssociations = list(phenotypeAssociationSet.getAssociations())
+            numAssociations = len(repoAssociations)
+            phenotypeAssociationSetId = phenotypeAssociationSet.getId()
+            pageSizes = self._getPageSizes(numAssociations)
+            for pageSize in pageSizes:
+                clientPhenotypes = list(self._client.search_phenotype
+                                        (phenotypeAssociationSetId))
+                for repoAssociation, clientPhenotype in utils.zipLists(
+                        repoAssociations, clientPhenotypes):
+                    self.assertEqual(repoAssociation.phenotype,
+                                     clientPhenotype)
+
+    def testSearchPhenotypeAssociationSets(self):
+        self._testSearchMethodInContainer(
+            'getPhenotypeAssociationSets',
+            self._client.search_phenotype_association_sets,
+            self._repo.getDatasets())
+
+    def testSearchGenotypePhenotypes(self):
+        self._testSearchMethodInContainer(
+            'getAssociations',
+            self._client.search_genotype_phenotype,
+            self._repo.allPhenotypeAssociationSets(),
+            equalMethod='assertEqual')
 
     def testSearchRnaQuantificationSets(self):
         self._testSearchMethodInContainer(

@@ -222,6 +222,14 @@ class VariantSetNotFoundException(NotFoundException):
             variantSetId)
 
 
+class PhenotypeAssociationSetNotFoundException(NotFoundException):
+    def __init__(self, paSetId):
+        self.message = (
+            "The requested PhenotypeAssociationSet '{}' "
+            "was not found".format(
+                paSetId))
+
+
 class BioSampleNotFoundException(NotFoundException):
     def __init__(self, bioSampleId):
         self.message = "The requested BioSample '{}' was not found".format(

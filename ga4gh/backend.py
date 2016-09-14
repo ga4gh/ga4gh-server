@@ -484,6 +484,16 @@ class Backend(object):
                 results.append(obj)
         return self._objectListGenerator(request, results)
 
+    def phenotypeAssociationSetsGenerator(self, request):
+        """
+        Returns a generator over the (phenotypeAssociationSet, nextPageToken)
+        pairs defined by the specified request
+        """
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumPhenotypeAssociationSets(),
+            dataset.getPhenotypeAssociationSetByIndex)
+
     def readGroupSetsGenerator(self, request):
         """
         Returns a generator over the (readGroupSet, nextPageToken) pairs
@@ -661,10 +671,10 @@ class Backend(object):
         """
         compoundId = None
         parentId = None
-        if request.feature_set_id is not None:
+        if request.feature_set_id != "":
             compoundId = datamodel.FeatureSetCompoundId.parse(
                 request.feature_set_id)
-        if request.parent_id and request.parent_id != "":
+        if request.parent_id != "":
             compoundParentId = datamodel.FeatureCompoundId.parse(
                 request.parent_id)
             parentId = compoundParentId.featureId
@@ -689,16 +699,73 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(
             compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(compoundId.feature_set_id)
-        if request.start == request.end and request.start == 0:
-            start = None
-            end = None
+
+        if request.start == request.end == 0:
+            start = end = None
         else:
             start = request.start
             end = request.end
-        return featureSet.getFeatures(
+        startIndex = request.page_token
+        maxResults = request.page_size
+        # we need to determine if another expressionLevel follows the one
+        # that is last returned from this method to set nextPageToken
+        # correctly, so request an additional expressionLevel from
+        # the database in all cases
+        if maxResults:
+            maxResults += 1
+        features = list(featureSet.getFeatures(
             request.reference_name, start, end,
-            request.page_token, request.page_size,
-            request.feature_types, parentId, request.name, request.gene_symbol)
+            startIndex, maxResults,
+            request.feature_types, parentId,
+            request.name, request.gene_symbol))
+        # initialize loop
+        nextPageTokenIndex = 0
+        featureIndex = 0
+        if request.page_token:
+            nextPageTokenIndex, = _parsePageToken(request.page_token, 1)
+        numToReturn = request.page_size
+        # execute loop
+        while numToReturn > 0 and featureIndex < len(features):
+            feature = features[featureIndex]
+            nextPageTokenIndex += 1
+            nextPageToken = str(nextPageTokenIndex)
+            if featureIndex == len(features) - 1:
+                nextPageToken = None
+            yield feature, nextPageToken
+            featureIndex += 1
+            numToReturn -= 1
+
+    def phenotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        associations = phenotypeAssociationSet.getAssociations(request)
+        phenotypes = [association.phenotype for association in associations]
+        return self._protocolListGenerator(
+            request, phenotypes)
+
+    def genotypesPhenotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        featureSets = dataset.getFeatureSets()
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request, featureSets)
+        return self._protocolListGenerator(request, annotationList)
 
     def callSetsGenerator(self, request):
         """
@@ -1181,6 +1248,24 @@ class Backend(object):
             request, protocol.SearchFeaturesRequest,
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
+
+    def runSearchGenotypePhenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypePhenotypeRequest,
+            protocol.SearchGenotypePhenotypeResponse,
+            self.genotypesPhenotypesGenerator)
+
+    def runSearchPhenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypesRequest,
+            protocol.SearchPhenotypesResponse,
+            self.phenotypesGenerator)
+
+    def runSearchPhenotypeAssociationSets(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypeAssociationSetsRequest,
+            protocol.SearchPhenotypeAssociationSetsResponse,
+            self.phenotypeAssociationSetsGenerator)
 
     def runSearchRnaQuantificationSets(self, request):
         """

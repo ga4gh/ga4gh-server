@@ -22,14 +22,17 @@ import zipfile
 utils.ga4ghImportGlue()
 
 # We need to turn off QA because of the import glue
+import ga4gh  # NOQA
 import ga4gh.datarepo as datarepo  # NOQA
 import ga4gh.datamodel.references as references  # NOQA
 import ga4gh.datamodel.datasets as datasets  # NOQA
 import ga4gh.datamodel.variants as variants  # NOQA
 import ga4gh.datamodel.reads as reads  # NOQA
 import ga4gh.datamodel.ontologies as ontologies  # NOQA
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations  # NOQA
+import ga4gh.datamodel.sequence_annotations as sequence_annotations  # NOQA
 import ga4gh.datamodel.bio_metadata as biodata  # NOQA
+import ga4gh.datamodel.genotype_phenotype_featureset as g2p_featureset  # NOQA
+import ga4gh.datamodel.genotype_phenotype as g2p_associationset  # NOQA
 import ga4gh.datamodel.rna_quantification as rna_quantification  # NOQA
 
 
@@ -119,6 +122,8 @@ class ComplianceDataMunger(object):
         self.repo.insertReferenceSet(referenceSet)
 
         dataset = datasets.Dataset("brca1")
+        # Some info is set, it isn't important what
+        dataset.setInfo({"version": ga4gh.__version__})
         self.repo.insertDataset(dataset)
 
         hg00096Individual = biodata.Individual(dataset, "HG00096")
@@ -228,12 +233,27 @@ class ComplianceDataMunger(object):
         seqAnnDest = os.path.join(self.outputDirectory, "gencodev19.db")
         dbgen = generate_gff3_db.Gff32Db(seqAnnSrc, seqAnnDest)
         dbgen.run()
-        gencode = sequenceAnnotations.Gff3DbFeatureSet(dataset, "gencodev19")
+        gencode = sequence_annotations.Gff3DbFeatureSet(dataset, "gencodev19")
         gencode.setOntology(sequenceOntology)
         gencode.populateFromFile(seqAnnDest)
         gencode.setReferenceSet(referenceSet)
 
         self.repo.insertFeatureSet(gencode)
+
+        # add g2p featureSet
+        g2pPath = os.path.join(self.inputDirectory, "cgd")
+        featuresetG2P = g2p_featureset.PhenotypeAssociationFeatureSet(
+            dataset, g2pPath)
+        featuresetG2P.setOntology(sequenceOntology)
+        featuresetG2P.setReferenceSet(referenceSet)
+        featuresetG2P.populateFromFile(g2pPath)
+        self.repo.insertFeatureSet(featuresetG2P)
+
+        # add g2p phenotypeAssociationSet
+        phenotypeAssociationSet = g2p_associationset\
+            .RdfPhenotypeAssociationSet(dataset, "cgd", g2pPath)
+        self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
+
         self.repo.commit()
 
         # RNA Quantification
@@ -249,9 +269,9 @@ class ComplianceDataMunger(object):
 
         self.repo.commit()
 
-    def addVariantSet(self,
-                      variantFileName,
-                      dataset, referenceSet, ontology, bioSamples):
+    def addVariantSet(
+            self, variantFileName, dataset, referenceSet,
+            ontology, bioSamples):
         inputVcf = os.path.join(
             self.inputDirectory, variantFileName)
         outputVcf = os.path.join(
