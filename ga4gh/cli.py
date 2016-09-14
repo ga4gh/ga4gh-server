@@ -35,7 +35,7 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.bio_metadata as biodata
@@ -2370,7 +2370,7 @@ class RepoManager(object):
         filePath = self._getFilePath(self._args.filePath,
                                      self._args.relativePath)
         name = getNameFromPath(self._args.filePath)
-        featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+        featureSet = sequence_annotations.Gff3DbFeatureSet(
             dataset, name)
         referenceSetName = self._args.referenceSetName
         if referenceSetName is None:
@@ -2628,7 +2628,7 @@ class RepoManager(object):
         ).format(objectType)
         subparser.add_argument(
             "-C", "--className",
-            default="ga4gh.datamodel.sequenceAnnotations.Gff3DbFeatureSet",
+            default="ga4gh.datamodel.sequence_annotations.Gff3DbFeatureSet",
             help=helpText)
 
     @classmethod

@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 import ga4gh.datamodel as datamodel
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
-import ga4gh.sqliteBackend as sqliteBackend
+import ga4gh.sqlite_backend as sqlite_backend
 
 
 """
@@ -334,7 +334,7 @@ class SqliteRnaQuantification(AbstractRnaQuantification):
         return SqliteExpressionLevel(self, expressionReturned)
 
 
-class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
+class SqliteRnaBackend(sqlite_backend.SqliteBackedDataSource):
     """
     Defines an interface to a sqlite DB which stores all RNA quantifications
     in the dataset.
@@ -355,7 +355,7 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
             sql_args += (rnaQuantificationId,)
         query = self._dbconn.execute(sql, sql_args)
         try:
-            return sqliteBackend.iterativeFetch(query)
+            return sqlite_backend.iterativeFetch(query)
         except AttributeError:
             raise exceptions.RnaQuantificationNotFoundException(
                 rnaQuantificationId)
@@ -369,7 +369,7 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
         sql = ("SELECT * FROM RnaQuantification WHERE id = ?")
         query = self._dbconn.execute(sql, (rnaQuantificationId,))
         try:
-            return sqliteBackend.fetchOne(query)
+            return sqlite_backend.fetchOne(query)
         except AttributeError:
             raise exceptions.RnaQuantificationNotFoundException(
                 rnaQuantificationId)
@@ -392,10 +392,10 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
             sql += ") "
             for featureId in featureIds:
                 sql_args += (featureId,)
-        sql += sqliteBackend.limitsSql(
+        sql += sqlite_backend.limitsSql(
             startIndex=startIndex, maxResults=maxResults)
         query = self._dbconn.execute(sql, sql_args)
-        return sqliteBackend.iterativeFetch(query)
+        return sqlite_backend.iterativeFetch(query)
 
     def getExpressionLevelById(self, expressionId):
         """
@@ -406,7 +406,7 @@ class SqliteRnaBackend(sqliteBackend.SqliteBackedDataSource):
         sql = ("SELECT * FROM Expression WHERE id = ?")
         query = self._dbconn.execute(sql, (expressionId,))
         try:
-            return sqliteBackend.fetchOne(query)
+            return sqlite_backend.fetchOne(query)
         except AttributeError:
             raise exceptions.ExpressionLevelNotFoundException(
                 expressionId)

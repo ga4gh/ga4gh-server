@@ -29,7 +29,7 @@ import ga4gh.datamodel.datasets as datasets  # NOQA
 import ga4gh.datamodel.variants as variants  # NOQA
 import ga4gh.datamodel.reads as reads  # NOQA
 import ga4gh.datamodel.ontologies as ontologies  # NOQA
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations  # NOQA
+import ga4gh.datamodel.sequence_annotations as sequence_annotations  # NOQA
 import ga4gh.datamodel.bio_metadata as biodata  # NOQA
 import ga4gh.datamodel.genotype_phenotype_featureset as g2p_featureset  # NOQA
 import ga4gh.datamodel.genotype_phenotype as g2p_associationset  # NOQA
@@ -233,7 +233,7 @@ class ComplianceDataMunger(object):
         seqAnnDest = os.path.join(self.outputDirectory, "gencodev19.db")
         dbgen = generate_gff3_db.Gff32Db(seqAnnSrc, seqAnnDest)
         dbgen.run()
-        gencode = sequenceAnnotations.Gff3DbFeatureSet(dataset, "gencodev19")
+        gencode = sequence_annotations.Gff3DbFeatureSet(dataset, "gencodev19")
         gencode.setOntology(sequenceOntology)
         gencode.populateFromFile(seqAnnDest)
         gencode.setReferenceSet(referenceSet)

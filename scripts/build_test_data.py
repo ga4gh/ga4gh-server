@@ -63,7 +63,7 @@ def buildTestData(
         run(
             "add-featureset", repoFile, datasetName, useRelativePath,
             dataFile, "-R NCBI37", "-O", sequenceOntologyName,
-            "-C ga4gh.datamodel.sequenceAnnotations.Gff3DbFeatureSet")
+            "-C ga4gh.datamodel.sequence_annotations.Gff3DbFeatureSet")
 
     pattern = os.path.join(prefix, "datasets/dataset1/phenotypes", "*")
     for dataFile in glob.glob(pattern):
