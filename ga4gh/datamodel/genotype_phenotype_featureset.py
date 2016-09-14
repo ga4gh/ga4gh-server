@@ -105,7 +105,7 @@ class PhenotypeAssociationFeatureSet(
         term = protocol.OntologyTerm()
         # Schema for feature only supports one type of `type`
         # here we default to first OBO defined
-        for featureType in feature[TYPE]:
+        for featureType in sorted(feature[TYPE]):
             if "obolibrary" in featureType:
                 term.term = self._featureTypeLabel(featureType)
                 term.id = featureType
@@ -121,7 +121,7 @@ class PhenotypeAssociationFeatureSet(
 
         pbFeature.attributes.MergeFrom(protocol.Attributes())
         for key in feature:
-            for val in feature[key]:
+            for val in sorted(feature[key]):
                 pbFeature.attributes.vals[key].values.add().string_value = val
 
         if featureId in self._locationMap:
@@ -171,6 +171,7 @@ class PhenotypeAssociationFeatureSet(
                    ?feature  rdfs:label ?feature_label  .
                    #%FILTER%
         }
+        ORDER BY ?feature
         """
 
     def _filterSearchFeaturesRequest(self, reference_name, gene_symbol, name,
