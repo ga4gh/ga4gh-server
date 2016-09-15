@@ -2,8 +2,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import sqlite3
+
+import ga4gh.exceptions as exceptions
+
+
+SUPPORTED_INPUT_FORMATS = ["cufflinks", "kallisto", "rsem"]
 
 
 class RNASqliteStore(object):
@@ -91,7 +95,7 @@ class AbstractWriter(object):
     def __init__(self, rnaDB, featureType="gene"):
         self._db = rnaDB
         self._isNormalized = None
-        self._units = 0 # EXPRESSION_UNIT_UNSPECIFIED
+        self._units = 0  # EXPRESSION_UNIT_UNSPECIFIED
         self._expressionLevelCol = None
         self._idCol = None
         self._nameCol = None
@@ -100,7 +104,7 @@ class AbstractWriter(object):
         self._confColLow = None
         self._confColHi = None
         self._dataRepo = None
-        self._dataset = self._db.getDataset()       
+        self._dataset = self._db.getDataset()
         self._featureType = featureType
 
     def setUnits(self, units):
@@ -140,8 +144,11 @@ class AbstractWriter(object):
             featureId = ""
             if featureSets is not None:
                 for featureSet in featureSets:
-                    for feature in featureSet.getFeatures(name=featureName):
-                        featureId = feature[0].id
+                    if featureId == "":
+                        for feature in featureSet.getFeatures(
+                                name=featureName):
+                            featureId = feature[0].id
+                            break
             datafields = (expressionId, rnaQuantificationId, name, featureId,
                           expressionLevel, isNormalized,
                           rawCount, score, units, confidenceLow, confidenceHi)
@@ -243,9 +250,9 @@ def writeExpressionTable(writer, data):
         writer.writeExpression(rnaQuantId, quantfile)
 
 
-def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType, dataset=None,
-              featureType="gene", description="", programs="", annotationIds="",
-              readGroupSetNames=""):
+def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
+              dataset=None, featureType="gene", description="", programs="",
+              annotationNames="", readGroupSetNames=""):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
@@ -253,6 +260,21 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType, dataset=N
     Supports the following quantification output types:
     Cufflinks, kallisto, RSEM
     """
+    readGroupSetName = readGroupSetNames.strip().split(",")[0]
+    featureSetIds = ""
+    readGroupIds = ""
+    if dataset:
+        featureSetIdList = []
+        for annotationName in annotationNames.split(","):
+            featureSet = dataset.getFeatureSetByName(annotationName)
+            featureSetIdList.append(featureSet.getId())
+        featureSetIds = ",".join(featureSetIdList)
+        # TODO: multiple readGroupSets
+        readGroupSet = dataset.getReadGroupSetByName(readGroupSetName)
+        readGroupIds = ",".join(
+            [x.getId() for x in readGroupSet.getReadGroups()])
+    if rnaType not in SUPPORTED_INPUT_FORMATS:
+        raise exceptions.UnsupportedFormatException(rnaType)
     rnaDB = RNASqliteStore(sqlFilename, dataset)
     if rnaType == "cufflinks":
         writer = CufflinksWriter(rnaDB, featureType)
@@ -260,21 +282,6 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType, dataset=N
         writer = KallistoWriter(rnaDB, featureType)
     elif rnaType == "rsem":
         writer = RsemWriter(rnaDB, featureType)
-    else:
-        raise Exception("Unknown RNA file type: {}".format(rnaType))
-    readGroupSetName = readGroupSetNames.strip().split(",")[0]
-    featureSetIds = ""
-    readGroupIds = ""
-    if dataset:
-        featureSetIdList = []
-        for annotationId in annotationIds.split(","):
-            featureSet = dataset.getFeatureSetByName(annotationId)
-            featureSetIdList.append(featureSet.getId())
-        featureSetIds = ",".join(featureSetIdList)
-        # TODO: multiple readGroupSets
-        readGroupSet = dataset.getReadGroupSetByName(readGroupSetName)
-        readGroupIds = ",".join(
-            [x.getId() for x in readGroupSet.getReadGroups()])
     writeRnaseqTable(rnaDB, [localName], description,
                      featureSetIds,
                      readGroupId=readGroupIds, programs=programs)

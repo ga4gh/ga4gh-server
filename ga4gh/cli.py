@@ -2283,7 +2283,8 @@ class RepoManager(object):
             self._args.rnaQuantificationSetName)
 
         def func():
-            self._updateRepo(self._repo.removeRnaQuantificationSet, rnaQuantSet)
+            self._updateRepo(
+                self._repo.removeRnaQuantificationSet, rnaQuantSet)
         self._confirmDelete(
             "RnaQuantificationSet", rnaQuantSet.getLocalId(), func)
 
@@ -2293,18 +2294,19 @@ class RepoManager(object):
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        rnaDBFilePath = self._args.filePath
         if self._args.name is None:
-            name = getNameFromPath(rnaDBFilePath)
+            name = getNameFromPath(self._args.filePath)
         else:
             name = self._args.name
         # TODO: programs not fully supported by GA4GH yet
         programs = ""
         featureType = "gene"
         if self._args.trascript:
-            featureType="transcript"
+            featureType = "transcript"
+        # TODO: change the pattern to match how the others are being added for
+        #  consistency
         rnaseq2ga.rnaseq2ga(
-            self._args.quantificationFilePath, rnaDBFilePath, name,
+            self._args.quantificationFilePath, self._args.filePath, name,
             self._args.format, dataset=dataset, featureType=featureType,
             description=self._args.description, programs=programs,
             annotationIds=self._args.featureGroupName,
@@ -2694,7 +2696,8 @@ class RepoManager(object):
             runner="removeRnaQuantificationSet")
         cls.addRepoArgument(removeRnaQuantificationSetParser)
         cls.addDatasetNameArgument(removeRnaQuantificationSetParser)
-        cls.addRnaQuantificationSetNameArgument(removeRnaQuantificationSetParser)
+        cls.addRnaQuantificationSetNameArgument(
+            removeRnaQuantificationSetParser)
         cls.addForceOption(removeRnaQuantificationSetParser)
 
         objectType = "RnaQuantification"

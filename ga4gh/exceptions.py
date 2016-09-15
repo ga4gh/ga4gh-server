@@ -721,3 +721,13 @@ class MissingIndexException(RepoManagerException):
         msg = "An index file must be provided for remote file '{}'".format(
             dataUrl)
         super(MissingIndexException, self).__init__(msg)
+
+
+class UnsupportedFormatException(RepoManagerException):
+    """
+    The user has specified a data format which is not supported.
+    """
+    def __init__(self, dataFormat):
+        msg = "Unsupported format: {}".format(dataFormat)
+        super(UnsupportedFormatException, self).__init__(msg)
+
