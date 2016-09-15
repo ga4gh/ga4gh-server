@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import unittest
 
 import mock
+import json
 
 import ga4gh.protocol as protocol
 import ga4gh.backend as backend
@@ -466,30 +467,13 @@ class DummyRequestsSession(object):
         self.checkSessionParameters()
         assert url.startswith(self._urlPrefix)
         suffix = url[len(self._urlPrefix):]
-        basesSuffix = "/bases"
         splits = suffix.split("/")
-        if suffix.endswith(basesSuffix):
-            # ListReferenceBases is an oddball and needs to be treated
-            # separately.
-            assert splits[0] == ''
-            assert splits[1] == 'references'
-            id_ = splits[2]
-            assert splits[3] == 'bases'
-            # This is all very ugly --- see the comments in the LocalClient
-            # for why we need to do this. Definitely needs to be fixed.
-            args = dict(params)
-            if args[u'end'] == u'0':
-                del args['end']
-            if args['pageToken'] is "":
-                del args['pageToken']
-            result = self._backend.runListReferenceBases(id_, args)
-        else:
-            assert len(splits) == 3
-            assert splits[0] == ''
-            datatype, id_ = splits[1:]
-            assert datatype in self._getMethodMap
-            method = self._getMethodMap[datatype]
-            result = method(id_)
+        assert len(splits) == 3
+        assert splits[0] == ''
+        datatype, id_ = splits[1:]
+        assert datatype in self._getMethodMap
+        method = self._getMethodMap[datatype]
+        result = method(id_)
         return DummyResponse(result)
 
     def post(self, url, params=None, data=None):
@@ -497,12 +481,22 @@ class DummyRequestsSession(object):
         assert url.startswith(self._urlPrefix)
         suffix = url[len(self._urlPrefix):]
         searchSuffix = "/search"
-        assert suffix.startswith("/")
-        assert suffix.endswith(searchSuffix)
-        datatype = suffix[1:-len(searchSuffix)]
-        assert datatype in self._searchMethodMap
-        method = self._searchMethodMap[datatype]
-        result = method(data)
+        if suffix.endswith(searchSuffix):
+            datatype = suffix[1:-len(searchSuffix)]
+            assert datatype in self._searchMethodMap
+            method = self._searchMethodMap[datatype]
+            result = method(data)
+        else:
+            # ListReferenceBases is an oddball and needs to be treated
+            # separately.
+            data = json.loads(data)
+            args = protocol.ListReferenceBasesRequest()
+            args.reference_id = data.get('referenceId', "")
+            args.start = int(data.get('start', 0))
+            args.end = int(data.get('end', 0))
+            args.page_token = data.get('pageToken', "")
+            result = self._backend.runListReferenceBases(
+                protocol.toJson(args))
         return DummyResponse(result)
 
 
