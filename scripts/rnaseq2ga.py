@@ -144,7 +144,8 @@ class AbstractWriter(object):
             featureSet = dataset.getFeatureSets()[0]
             featureId = ""
             for feature in featureSet.getFeatures(name=featureName):
-                featureId = feature[0].id
+                featureId = feature.id
+                break
             datafields = (expressionId, rnaQuantificationId, name, featureId,
                           expressionLevel, isNormalized,
                           rawCount, score, units, confidenceLow, confidenceHi)
