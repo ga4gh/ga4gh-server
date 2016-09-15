@@ -63,7 +63,7 @@ class AbstractClient(object):
             not_done = bool(response_object.next_page_token)
             protocol_request.page_token = response_object.next_page_token
 
-    def _run_list_reference_bases_page_request(self, id_, protocol_request):
+    def _run_list_reference_bases_page_request(self, protocol_request):
         """
         Runs a complete transaction with the server to get a single
         page of results for the specified ListReferenceBasesRequest.
@@ -80,13 +80,13 @@ class AbstractClient(object):
         request = protocol.ListReferenceBasesRequest()
         request.start = pb.int(start)
         request.end = pb.int(end)
+        request.reference_id = id_
         not_done = True
         # TODO We should probably use a StringIO here to make string buffering
         # a bit more efficient.
         bases_list = []
         while not_done:
-            response = self._run_list_reference_bases_page_request(
-                id_, request)
+            response = self._run_list_reference_bases_page_request(request)
             bases_list.append(response.sequence)
             not_done = bool(response.next_page_token)
             request.page_token = response.next_page_token
@@ -819,12 +819,12 @@ class HttpClient(AbstractClient):
         return self._deserialize_response(
             response.text, protocol_response_class)
 
-    def _run_list_reference_bases_page_request(self, id_, request):
-        url_suffix = "references/{id}/bases".format(id=id_)
+    def _run_list_reference_bases_page_request(self, request):
+        url_suffix = "listreferencebases"
         url = posixpath.join(self._url_prefix, url_suffix)
-        params = self._get_http_parameters()
-        params.update(protocol.toJsonDict(request))
-        response = self._session.get(url, params=params)
+        response = self._session.post(
+            url, params=self._get_http_parameters(),
+            data=protocol.toJson(request))
         self._check_response_status(response)
         return self._deserialize_response(
             response.text, protocol.ListReferenceBasesResponse)
@@ -892,17 +892,8 @@ class LocalClient(AbstractClient):
         return self._deserialize_response(
             response_json, protocol_response_class)
 
-    def _run_list_reference_bases_page_request(self, id_, request):
-        request_args = protocol.toJsonDict(request)
-        # We need to remove end from this dict if it's not specified because
-        # of the way we're interacting with Flask and HTTP GET params.
-        # TODO: This is a really nasty way of doing things; we really
-        # should just have a request object and pass that around instead of an
-        # arguments dictionary.
-        if request.end is 0:
-            del request_args["end"]
-        if request.page_token == '':
-            del request_args["pageToken"]
-        response_json = self._backend.runListReferenceBases(id_, request_args)
+    def _run_list_reference_bases_page_request(self, request):
+        response_json = self._backend.runListReferenceBases(
+            protocol.toJson(request))
         return self._deserialize_response(
             response_json, protocol.ListReferenceBasesResponse)
