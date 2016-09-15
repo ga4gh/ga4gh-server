@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import unittest
 import random
 
-import ga4gh.backend as backend
+import ga4gh.paging as paging
 
 
 def setUp():
@@ -104,7 +104,7 @@ class FakeRequest(object):
         self.end = end
 
 
-class TrivialIntervalIterator(backend.IntervalIterator):
+class TrivialIntervalIterator(paging.IntervalIterator):
     """
     The simplest possible instance of the interval iterator
     used to test the iteration code.

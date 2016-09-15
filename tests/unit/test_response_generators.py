@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import unittest
 
 import ga4gh.backend as backend
+import ga4gh.paging as paging
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
@@ -173,7 +174,7 @@ class TestVariantsIntervalIteratorClassMethods(unittest.TestCase):
         self.variant = protocol.Variant()
         self.variant.start = 4
         self.variant.end = 6
-        self.intervalIterator = backend.VariantsIntervalIterator
+        self.intervalIterator = paging.VariantsIntervalIterator
 
     def testGetVariantStart(self):
         result = self.intervalIterator._getStart(self.variant)
@@ -190,7 +191,7 @@ class TestReadsIntervalIteratorClassMethods(unittest.TestCase):
     """
     def setUp(self):
         self.read = generateReadAlignment(5)
-        self.intervalIterator = backend.ReadsIntervalIterator
+        self.intervalIterator = paging.ReadsIntervalIterator
 
     def testGetReadStart(self):
         result = self.intervalIterator._getStart(self.read)

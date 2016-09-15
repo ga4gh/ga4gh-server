@@ -9,300 +9,7 @@ from __future__ import unicode_literals
 import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
-
-
-def _parseIntegerArgument(args, key, defaultValue):
-    """
-    Attempts to parse the specified key in the specified argument
-    dictionary into an integer. If the argument cannot be parsed,
-    raises a BadRequestIntegerException. If the key is not present,
-    return the specified default value.
-    """
-    ret = defaultValue
-    try:
-        if key in args:
-            try:
-                ret = int(args[key])
-            except ValueError:
-                raise exceptions.BadRequestIntegerException(key, args[key])
-    except TypeError:
-        raise Exception((key, args))
-    return ret
-
-
-def _parsePageToken(pageToken, numValues):
-    """
-    Parses the specified pageToken and returns a list of the specified
-    number of values. Page tokens are assumed to consist of a fixed
-    number of integers seperated by colons. If the page token does
-    not conform to this specification, raise a InvalidPageToken
-    exception.
-    """
-    tokens = pageToken.split(":")
-    if len(tokens) != numValues:
-        msg = "Invalid number of values in page token"
-        raise exceptions.BadPageTokenException(msg)
-    try:
-        values = map(int, tokens)
-    except ValueError:
-        msg = "Malformed integers in page token"
-        raise exceptions.BadPageTokenException(msg)
-    return values
-
-
-class IntervalIterator(object):
-    """
-    Implements generator logic for types which accept a start/end
-    range to search for the object. Returns an iterator over
-    (object, pageToken) pairs. The pageToken is a string which allows
-    us to pick up the iteration at any point, and is None for the last
-    value in the iterator.
-    """
-    def __init__(self, request, parentContainer):
-        self._request = request
-        self._parentContainer = parentContainer
-        self._searchIterator = None
-        self._currentObject = None
-        self._nextObject = None
-        self._searchAnchor = None
-        self._distanceFromAnchor = None
-        if not request.page_token:
-            self._initialiseIteration()
-        else:
-            # Set the search start point and the number of records to skip from
-            # the page token.
-            searchAnchor, objectsToSkip = _parsePageToken(
-                request.page_token, 2)
-            self._pickUpIteration(searchAnchor, objectsToSkip)
-
-    def _extractProtocolObject(self, obj):
-        """
-        Returns the protocol object from the object passed back by iteration.
-        """
-        return obj
-
-    def _initialiseIteration(self):
-        """
-        Starts a new iteration.
-        """
-        self._searchIterator = self._search(
-            self._request.start,
-            self._request.end if self._request.end != 0 else None)
-        self._currentObject = next(self._searchIterator, None)
-        if self._currentObject is not None:
-            self._nextObject = next(self._searchIterator, None)
-            self._searchAnchor = self._request.start
-            self._distanceFromAnchor = 0
-            firstObjectStart = self._getStart(self._currentObject)
-            if firstObjectStart > self._request.start:
-                self._searchAnchor = firstObjectStart
-
-    def _pickUpIteration(self, searchAnchor, objectsToSkip):
-        """
-        Picks up iteration from a previously provided page token. There are two
-        different phases here:
-        1) We are iterating over the initial set of intervals in which start
-        is < the search start coorindate.
-        2) We are iterating over the remaining intervals in which start >= to
-        the search start coordinate.
-        """
-        self._searchAnchor = searchAnchor
-        self._distanceFromAnchor = objectsToSkip
-        self._searchIterator = self._search(
-            searchAnchor,
-            self._request.end if self._request.end != 0 else None)
-        obj = next(self._searchIterator)
-        if searchAnchor == self._request.start:
-            # This is the initial set of intervals, we just skip forward
-            # objectsToSkip positions
-            for _ in range(objectsToSkip):
-                obj = next(self._searchIterator)
-        else:
-            # Now, we are past this initial set of intervals.
-            # First, we need to skip forward over the intervals where
-            # start < searchAnchor, as we've seen these already.
-            while self._getStart(obj) < searchAnchor:
-                obj = next(self._searchIterator)
-            # Now, we skip over objectsToSkip objects such that
-            # start == searchAnchor
-            for _ in range(objectsToSkip):
-                if self._getStart(obj) != searchAnchor:
-                    raise exceptions.BadPageTokenException
-                obj = next(self._searchIterator)
-        self._currentObject = obj
-        self._nextObject = next(self._searchIterator, None)
-
-    def next(self):
-        """
-        Returns the next (object, nextPageToken) pair.
-        """
-        if self._currentObject is None:
-            raise StopIteration()
-        nextPageToken = None
-        if self._nextObject is not None:
-            start = self._getStart(self._nextObject)
-            # If start > the search anchor, move the search anchor. Otherwise,
-            # increment the distance from the anchor.
-            if start > self._searchAnchor:
-                self._searchAnchor = start
-                self._distanceFromAnchor = 0
-            else:
-                self._distanceFromAnchor += 1
-            nextPageToken = "{}:{}".format(
-                self._searchAnchor, self._distanceFromAnchor)
-        ret = self._extractProtocolObject(self._currentObject), nextPageToken
-        self._currentObject = self._nextObject
-        self._nextObject = next(self._searchIterator, None)
-        return ret
-
-    def __iter__(self):
-        return self
-
-
-class ReadsIntervalIterator(IntervalIterator):
-    """
-    An interval iterator for reads
-    """
-    def __init__(self, request, parentContainer, reference):
-        self._reference = reference
-        super(ReadsIntervalIterator, self).__init__(request, parentContainer)
-
-    def _search(self, start, end):
-        return self._parentContainer.getReadAlignments(
-            self._reference, start, end)
-
-    @classmethod
-    def _getStart(cls, readAlignment):
-        if readAlignment.alignment.position.position == 0:
-            # unmapped read with mapped mate; see SAM standard 2.4.1
-            return readAlignment.next_mate_position.position
-        else:
-            # usual case
-            return readAlignment.alignment.position.position
-
-    @classmethod
-    def _getEnd(cls, readAlignment):
-        return (
-            cls._getStart(readAlignment) +
-            len(readAlignment.aligned_sequence))
-
-
-class VariantsIntervalIterator(IntervalIterator):
-    """
-    An interval iterator for variants
-    """
-
-    def _search(self, start, end):
-        return self._parentContainer.getVariants(
-            self._request.reference_name, start, end,
-            self._request.call_set_ids)
-
-    @classmethod
-    def _getStart(cls, variant):
-        return variant.start
-
-    @classmethod
-    def _getEnd(cls, variant):
-        return variant.end
-
-
-class VariantAnnotationsIntervalIterator(IntervalIterator):
-    """
-    An interval iterator for annotations
-    """
-
-    def __init__(self, request, parentContainer):
-        super(VariantAnnotationsIntervalIterator, self).__init__(
-            request, parentContainer)
-        # TODO do input validation somewhere more sensible
-        if self._request.effects is None:
-            self._effects = []
-        else:
-            self._effects = self._request.effects
-
-    def _search(self, start, end):
-        return self._parentContainer.getVariantAnnotations(
-            self._request.reference_name, start, end)
-
-    def _extractProtocolObject(self, pair):
-        variant, annotation = pair
-        return annotation
-
-    @classmethod
-    def _getStart(cls, pair):
-        variant, annotation = pair
-        return variant.start
-
-    @classmethod
-    def _getEnd(cls, pair):
-        variant, annotation = pair
-        return variant.end
-
-    def next(self):
-        while True:
-            ret = super(VariantAnnotationsIntervalIterator, self).next()
-            vann = ret[0]
-            if self.filterVariantAnnotation(vann):
-                return self._removeNonMatchingTranscriptEffects(vann), ret[1]
-        return None
-
-    def filterVariantAnnotation(self, vann):
-        """
-        Returns true when an annotation should be included.
-        """
-        # TODO reintroduce feature ID search
-        ret = False
-        if len(self._effects) != 0 and not vann.transcript_effects:
-            return False
-        elif len(self._effects) == 0:
-            return True
-        for teff in vann.transcript_effects:
-            if self.filterEffect(teff):
-                ret = True
-        return ret
-
-    def filterEffect(self, teff):
-        """
-        Returns true when any of the transcript effects
-        are present in the request.
-        """
-        ret = False
-        for effect in teff.effects:
-            ret = self._matchAnyEffects(effect) or ret
-        return ret
-
-    def _checkIdEquality(self, requestedEffect, effect):
-        """
-        Tests whether a requested effect and an effect
-        present in an annotation are equal.
-        """
-        return self._idPresent(requestedEffect) and (
-            effect.id == requestedEffect.id)
-
-    def _idPresent(self, requestedEffect):
-        return requestedEffect.id != ""
-
-    def _matchAnyEffects(self, effect):
-        ret = False
-        for requestedEffect in self._effects:
-            ret = self._checkIdEquality(requestedEffect, effect) or ret
-        return ret
-
-    def _removeNonMatchingTranscriptEffects(self, ann):
-        newTxE = []
-        oldTxE = ann.transcript_effects
-        if len(self._effects) == 0:
-            return ann
-        for txe in oldTxE:
-            add = False
-            for effect in txe.effects:
-                if self._matchAnyEffects(effect):
-                    add = True
-            if add:
-                newTxE.append(txe)
-        ann.ClearField('transcript_effects')
-        ann.transcript_effects.extend(newTxE)
-        return ann
+import ga4gh.paging as paging
 
 
 class Backend(object):
@@ -390,7 +97,8 @@ class Backend(object):
         """
         currentIndex = 0
         if request.page_token:
-            currentIndex, = _parsePageToken(request.page_token, 1)
+            currentIndex, = paging._parsePageToken(
+                request.page_token, 1)
         while currentIndex < numObjects:
             object_ = getByIndexMethod(currentIndex)
             currentIndex += 1
@@ -410,7 +118,8 @@ class Backend(object):
         """
         currentIndex = 0
         if request.page_token:
-            currentIndex, = _parsePageToken(request.page_token, 1)
+            currentIndex, = paging._parsePageToken(
+                request.page_token, 1)
         while currentIndex < numObjects:
             object_ = getByIndexMethod(currentIndex)
             currentIndex += 1
@@ -614,7 +323,7 @@ class Backend(object):
                     readGroupSet.getId())
         reference = referenceSet.getReference(request.reference_id)
         readGroup = readGroupSet.getReadGroup(compoundId.read_group_id)
-        intervalIterator = ReadsIntervalIterator(
+        intervalIterator = paging.ReadsIntervalIterator(
             request, readGroup, reference)
         return intervalIterator
 
@@ -633,7 +342,7 @@ class Backend(object):
             raise exceptions.BadRequestException(
                 "If multiple readGroupIds are specified, "
                 "they must be all of the readGroupIds in a ReadGroupSet")
-        intervalIterator = ReadsIntervalIterator(
+        intervalIterator = paging.ReadsIntervalIterator(
             request, readGroupSet, reference)
         return intervalIterator
 
@@ -646,7 +355,8 @@ class Backend(object):
             .parse(request.variant_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         variantSet = dataset.getVariantSet(compoundId.variant_set_id)
-        intervalIterator = VariantsIntervalIterator(request, variantSet)
+        intervalIterator = paging.VariantsIntervalIterator(
+            request, variantSet)
         return intervalIterator
 
     def variantAnnotationsGenerator(self, request):
@@ -660,9 +370,9 @@ class Backend(object):
         variantSet = dataset.getVariantSet(compoundId.variant_set_id)
         variantAnnotationSet = variantSet.getVariantAnnotationSet(
             request.variant_annotation_set_id)
-        intervalIterator = VariantAnnotationsIntervalIterator(
+        iterator = paging.VariantAnnotationsIntervalIterator(
             request, variantAnnotationSet)
-        return intervalIterator
+        return iterator
 
     def featuresGenerator(self, request):
         """
@@ -699,41 +409,9 @@ class Backend(object):
         dataset = self.getDataRepository().getDataset(
             compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(compoundId.feature_set_id)
-
-        if request.start == request.end == 0:
-            start = end = None
-        else:
-            start = request.start
-            end = request.end
-        startIndex = request.page_token
-        maxResults = request.page_size
-        # we need to determine if another expressionLevel follows the one
-        # that is last returned from this method to set nextPageToken
-        # correctly, so request an additional expressionLevel from
-        # the database in all cases
-        if maxResults:
-            maxResults += 1
-        features = list(featureSet.getFeatures(
-            request.reference_name, start, end,
-            startIndex, maxResults,
-            request.feature_types, parentId,
-            request.name, request.gene_symbol))
-        # initialize loop
-        nextPageTokenIndex = 0
-        featureIndex = 0
-        if request.page_token:
-            nextPageTokenIndex, = _parsePageToken(request.page_token, 1)
-        numToReturn = request.page_size
-        # execute loop
-        while numToReturn > 0 and featureIndex < len(features):
-            feature = features[featureIndex]
-            nextPageTokenIndex += 1
-            nextPageToken = str(nextPageTokenIndex)
-            if featureIndex == len(features) - 1:
-                nextPageToken = None
-            yield feature, nextPageToken
-            featureIndex += 1
-            numToReturn -= 1
+        iterator = paging.FeaturesIterator(
+            request, featureSet, parentId)
+        return iterator
 
     def phenotypesGenerator(self, request):
         """
@@ -843,35 +521,9 @@ class Backend(object):
             compoundId.rna_quantification_set_id)
         rnaQuant = rnaQuantSet.getRnaQuantification(rnaQuantificationId)
         rnaQuantificationId = rnaQuant.getLocalId()
-        startIndex = request.page_token
-        maxResults = request.page_size
-        # we need to determine if another expressionLevel follows the one
-        # that is last returned from this method to set nextPageToken
-        # correctly, so request an additional expressionLevel from
-        # the database in all cases
-        if maxResults:
-            maxResults += 1
-        expressionLevels = list(rnaQuant.getExpressionLevels(
-            threshold=request.threshold,
-            featureIds=request.feature_ids,
-            startIndex=startIndex,
-            maxResults=maxResults))
-        # initialize loop
-        nextPageTokenIndex = 0
-        expressionLevelIndex = 0
-        if request.page_token:
-            nextPageTokenIndex, = _parsePageToken(request.page_token, 1)
-        numToReturn = request.page_size
-        # execute loop
-        while numToReturn > 0 and expressionLevelIndex < len(expressionLevels):
-            expressionLevel = expressionLevels[expressionLevelIndex]
-            nextPageTokenIndex += 1
-            nextPageToken = str(nextPageTokenIndex)
-            if expressionLevelIndex == len(expressionLevels) - 1:
-                nextPageToken = None
-            yield expressionLevel.toProtocolElement(), nextPageToken
-            expressionLevelIndex += 1
-            numToReturn -= 1
+        iterator = paging.ExpressionLevelsIterator(
+            request, rnaQuant)
+        return iterator
 
     ###########################################################
     #
@@ -949,7 +601,7 @@ class Backend(object):
             end = reference.getLength()
         if request.page_token:
             pageTokenStr = request.page_token
-            start = _parsePageToken(pageTokenStr, 1)[0]
+            start = paging._parsePageToken(pageTokenStr, 1)[0]
 
         chunkSize = self._maxResponseLength
         nextPageToken = None
