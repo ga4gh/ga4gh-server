@@ -245,7 +245,7 @@ class ComplianceDataMunger(object):
         g2pPath = os.path.join(self.inputDirectory, "cgd")
         # copy all files input directory to output path
         outputG2PPath = os.path.join(
-          self.outputDirectory, "cgd")
+            self.outputDirectory, "cgd")
         os.makedirs(outputG2PPath)
         for filename in glob.glob(os.path.join(g2pPath, '*.*')):
             shutil.copy(filename, outputG2PPath)
