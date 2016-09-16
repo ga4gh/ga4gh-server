@@ -31,7 +31,7 @@ import ga4gh.configtest as configtest
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
 import ga4gh.protocol as protocol
-import ga4gh.rnaseq2ga as rnaseq2ga
+import ga4gh.repo.rnaseq2ga as rnaseq2ga
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references

@@ -7,7 +7,7 @@ import sqlite3
 import ga4gh.exceptions as exceptions
 
 
-SUPPORTED_INPUT_FORMATS = ["cufflinks", "kallisto", "rsem"]
+SUPPORTED_RNA_INPUT_FORMATS = ["cufflinks", "kallisto", "rsem"]
 
 
 class RNASqliteStore(object):
@@ -273,7 +273,7 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
         readGroupSet = dataset.getReadGroupSetByName(readGroupSetName)
         readGroupIds = ",".join(
             [x.getId() for x in readGroupSet.getReadGroups()])
-    if rnaType not in SUPPORTED_INPUT_FORMATS:
+    if rnaType not in SUPPORTED_RNA_INPUT_FORMATS:
         raise exceptions.UnsupportedFormatException(rnaType)
     rnaDB = RNASqliteStore(sqlFilename, dataset)
     if rnaType == "cufflinks":

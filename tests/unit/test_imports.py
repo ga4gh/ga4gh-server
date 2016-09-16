@@ -154,9 +154,7 @@ class ImportGraphLayerChecker(object):
         'cli': ['ga4gh/cli.py'],
         'client': ['ga4gh/client.py'],
         'frontend': ['ga4gh/frontend.py', 'ga4gh/repo_manager.py'],
-        'backend': ['ga4gh/backend.py',
-                    'ga4gh/rnaseq2ga.py',
-                    'ga4gh/datarepo.py'],
+        'backend': ['ga4gh/backend.py', 'ga4gh/datarepo.py'],
         'exceptions': ['ga4gh/exceptions.py'],
         'datamodel': ['ga4gh/datamodel/bio_metadata.py',
                       'ga4gh/datamodel/reads.py',
@@ -193,6 +191,7 @@ class ImportGraphLayerChecker(object):
                      'ga4gh/rna_quantification_pb2.py',
                      'ga4gh/rna_quantification_service_pb2.py'],
         'config': ['ga4gh/serverconfig.py'],
+        'repo': ['ga4gh/repo/rnaseq2ga.py'],
     }
 
     # each moduleGroupName has one and only one entry here
@@ -203,6 +202,7 @@ class ImportGraphLayerChecker(object):
         ['backend'],
         ['libraries'],
         ['datamodel'],
+        ['repo'],
         ['exceptions'],
         ['config'],
         ['protocol'],

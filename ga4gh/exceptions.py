@@ -730,4 +730,3 @@ class UnsupportedFormatException(RepoManagerException):
     def __init__(self, dataFormat):
         msg = "Unsupported format: {}".format(dataFormat)
         super(UnsupportedFormatException, self).__init__(msg)
-
