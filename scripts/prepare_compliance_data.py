@@ -243,14 +243,6 @@ class ComplianceDataMunger(object):
 
         # add g2p featureSet
         g2pPath = os.path.join(self.inputDirectory, "cgd")
-        featuresetG2P = g2p_featureset.PhenotypeAssociationFeatureSet(
-            dataset, g2pPath)
-        featuresetG2P.setOntology(sequenceOntology)
-        featuresetG2P.setReferenceSet(referenceSet)
-        featuresetG2P.populateFromFile(g2pPath)
-        self.repo.insertFeatureSet(featuresetG2P)
-
-        # add g2p phenotypeAssociationSet
         # copy all files input directory to output path
         outputG2PPath = os.path.join(
           self.outputDirectory, "cgd")
@@ -258,6 +250,14 @@ class ComplianceDataMunger(object):
         for filename in glob.glob(os.path.join(g2pPath, '*.*')):
             shutil.copy(filename, outputG2PPath)
 
+        featuresetG2P = g2p_featureset.PhenotypeAssociationFeatureSet(
+            dataset, outputG2PPath)
+        featuresetG2P.setOntology(sequenceOntology)
+        featuresetG2P.setReferenceSet(referenceSet)
+        featuresetG2P.populateFromFile(outputG2PPath)
+        self.repo.insertFeatureSet(featuresetG2P)
+
+        # add g2p phenotypeAssociationSet
         phenotypeAssociationSet = g2p_associationset\
             .RdfPhenotypeAssociationSet(dataset, "cgd", outputG2PPath)
         self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
