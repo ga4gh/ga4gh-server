@@ -11,6 +11,7 @@ import unittest
 
 import ga4gh.exceptions as exceptions
 import ga4gh.backend as backend
+import ga4gh.paging as paging
 import ga4gh.datarepo as datarepo
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
@@ -223,17 +224,19 @@ class TestPrivateBackendMethods(unittest.TestCase):
     """
     def testParsePageToken(self):
         goodPageToken = "12:34:567:8:9000"
-        parsedToken = backend._parsePageToken(goodPageToken, 5)
+        parsedToken = paging._parsePageToken(goodPageToken, 5)
         self.assertEqual(parsedToken[2], 567)
 
     def testParseIntegerArgument(self):
         good = {"one": "1", "minusone": "-1"}
         expected = {"one": 1, "minusone": -1}
         bad = {"string": "A", "float": "0.98"}
-        self.assertEqual(backend._parseIntegerArgument({}, "missing", 0), 0)
+        self.assertEqual(paging._parseIntegerArgument(
+            {}, "missing", 0), 0)
         for key in good:
             self.assertEqual(
-                backend._parseIntegerArgument(good, key, 0), expected[key])
+                paging._parseIntegerArgument(
+                    good, key, 0), expected[key])
         for key in bad:
             with self.assertRaises(exceptions.BadRequestIntegerException):
-                backend._parseIntegerArgument(bad, key, 0)
+                paging._parseIntegerArgument(bad, key, 0)
