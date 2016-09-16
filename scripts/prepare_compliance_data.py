@@ -18,6 +18,7 @@ import generate_gff3_db
 import rnaseq2ga
 import tempfile
 import zipfile
+import glob
 
 utils.ga4ghImportGlue()
 
@@ -242,16 +243,23 @@ class ComplianceDataMunger(object):
 
         # add g2p featureSet
         g2pPath = os.path.join(self.inputDirectory, "cgd")
+        # copy all files input directory to output path
+        outputG2PPath = os.path.join(
+            self.outputDirectory, "cgd")
+        os.makedirs(outputG2PPath)
+        for filename in glob.glob(os.path.join(g2pPath, '*.*')):
+            shutil.copy(filename, outputG2PPath)
+
         featuresetG2P = g2p_featureset.PhenotypeAssociationFeatureSet(
-            dataset, g2pPath)
+            dataset, outputG2PPath)
         featuresetG2P.setOntology(sequenceOntology)
         featuresetG2P.setReferenceSet(referenceSet)
-        featuresetG2P.populateFromFile(g2pPath)
+        featuresetG2P.populateFromFile(outputG2PPath)
         self.repo.insertFeatureSet(featuresetG2P)
 
         # add g2p phenotypeAssociationSet
         phenotypeAssociationSet = g2p_associationset\
-            .RdfPhenotypeAssociationSet(dataset, "cgd", g2pPath)
+            .RdfPhenotypeAssociationSet(dataset, "cgd", outputG2PPath)
         self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
 
         self.repo.commit()
