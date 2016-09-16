@@ -9,7 +9,7 @@ import ga4gh.datarepo as datarepo
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.references as references
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
@@ -100,7 +100,7 @@ def testFeatureSets():
 class FeatureSetTests(datadriven.DataDrivenTest):
     """
     Re-parses source GFF3 files, compares the results with the contents
-    of corresponding sequenceAnnotations.Feature objects.
+    of corresponding sequence_annotations.Feature objects.
     """
     def __init__(self, featureSetLocalName, dataPath):
         """
@@ -122,7 +122,7 @@ class FeatureSetTests(datadriven.DataDrivenTest):
         return protocol.FeatureSet
 
     def getDataModelInstance(self, localId, dataPath):
-        featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+        featureSet = sequence_annotations.Gff3DbFeatureSet(
             self._dataset, localId)
         featureSet.setOntology(self._ontology)
         featureSet.setReferenceSet(self._referenceSet)
@@ -160,20 +160,17 @@ class FeatureSetTests(datadriven.DataDrivenTest):
 
     def testFetchAllFeaturesInRegion(self):
         features = []
-        nextPageTokens = []
-        for (feature, nextPageToken) in self._gaObject.getFeatures(
+        for feature in self._gaObject.getFeatures(
                 self._testData["referenceName"],
                 self._testData["region"][0],
                 self._testData["region"][1],
                 None, 1000):
             features.append(feature)
-            nextPageTokens.append(nextPageToken)
         self.assertEqual(len(features), self._testData["totalFeatures"])
-        self.assertIsNone(nextPageTokens[-1])
 
     def testFetchFeaturesRestrictedByOntology(self):
         features = []
-        for (feature, _) in self._gaObject.getFeatures(
+        for feature in self._gaObject.getFeatures(
                 self._testData["referenceName"],
                 self._testData["region"][0],
                 self._testData["region"][1],
@@ -193,7 +190,7 @@ class FeatureSetTests(datadriven.DataDrivenTest):
             parentId = datamodel.FeatureCompoundId.parse(
                 parentIdString).featureId
         features = []
-        for (feature, _) in self._gaObject.getFeatures(
+        for feature in self._gaObject.getFeatures(
                 self._testData["referenceName"],
                 self._testData["region"][0],
                 self._testData["region"][1],

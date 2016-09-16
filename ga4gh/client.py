@@ -63,7 +63,7 @@ class AbstractClient(object):
             not_done = bool(response_object.next_page_token)
             protocol_request.page_token = response_object.next_page_token
 
-    def _run_list_reference_bases_page_request(self, id_, protocol_request):
+    def _run_list_reference_bases_page_request(self, protocol_request):
         """
         Runs a complete transaction with the server to get a single
         page of results for the specified ListReferenceBasesRequest.
@@ -80,13 +80,13 @@ class AbstractClient(object):
         request = protocol.ListReferenceBasesRequest()
         request.start = pb.int(start)
         request.end = pb.int(end)
+        request.reference_id = id_
         not_done = True
         # TODO We should probably use a StringIO here to make string buffering
         # a bit more efficient.
         bases_list = []
         while not_done:
-            response = self._run_list_reference_bases_page_request(
-                id_, request)
+            response = self._run_list_reference_bases_page_request(request)
             bases_list.append(response.sequence)
             not_done = bool(response.next_page_token)
             request.page_token = response.next_page_token
@@ -644,6 +644,59 @@ class AbstractClient(object):
         return self._run_search_request(
             request, "reads", protocol.SearchReadsResponse)
 
+    def search_phenotype_association_sets(self, dataset_id):
+        """
+        Returns an iterator over the PhenotypeAssociationSets on the server.
+        """
+        request = protocol.SearchPhenotypeAssociationSetsRequest()
+        request.dataset_id = dataset_id
+        request.page_size = pb.int(self._page_size)
+        return self._run_search_request(
+            request, "phenotype_association_sets",
+            protocol.SearchPhenotypeAssociationSetsResponse)
+
+    def search_genotype_phenotype(
+            self, phenotype_association_set_id=None, feature_ids=None,
+            phenotype_ids=None, evidence=None):
+        """
+        Returns an iterator over the GeneotypePhenotype associations from
+        the server
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotype_association_set_id = phenotype_association_set_id
+        if feature_ids:
+            request.feature_ids.extend(feature_ids)
+        if phenotype_ids:
+            request.phenotype_ids.extend(phenotype_ids)
+        if evidence:
+            request.evidence.extend(evidence)
+        request.page_size = pb.int(self._page_size)
+        self._logger.debug("search_genotype_phenotype {}".format(request))
+        return self._run_search_request(
+            request, "genotypephenotype",
+            protocol.SearchGenotypePhenotypeResponse)
+
+    def search_phenotype(
+            self, phenotype_association_set_id=None, phenotype_id=None,
+            description=None, type_=None, age_of_onset=None):
+        """
+        Returns an iterator over the Phenotypes from the server
+        """
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotype_association_set_id = phenotype_association_set_id
+        if phenotype_id:
+            request.id = phenotype_id
+        if description:
+            request.description = description
+        if type_:
+            request.type.mergeFrom(type_)
+        if age_of_onset:
+            request.age_of_onset = age_of_onset
+        request.page_size = pb.int(self._page_size)
+        return self._run_search_request(
+            request, "phenotype",
+            protocol.SearchPhenotypesResponse)
+
     def search_rna_quantification_sets(self, dataset_id):
         """
         Returns an iterator over the RnaQuantificationSet objects from the
@@ -766,12 +819,12 @@ class HttpClient(AbstractClient):
         return self._deserialize_response(
             response.text, protocol_response_class)
 
-    def _run_list_reference_bases_page_request(self, id_, request):
-        url_suffix = "references/{id}/bases".format(id=id_)
+    def _run_list_reference_bases_page_request(self, request):
+        url_suffix = "listreferencebases"
         url = posixpath.join(self._url_prefix, url_suffix)
-        params = self._get_http_parameters()
-        params.update(protocol.toJsonDict(request))
-        response = self._session.get(url, params=params)
+        response = self._session.post(
+            url, params=self._get_http_parameters(),
+            data=protocol.toJson(request))
         self._check_response_status(response)
         return self._deserialize_response(
             response.text, protocol.ListReferenceBasesResponse)
@@ -816,6 +869,10 @@ class LocalClient(AbstractClient):
                 self._backend.runSearchVariantAnnotationSets,
             "biosamples": self._backend.runSearchBioSamples,
             "individuals": self._backend.runSearchIndividuals,
+            "genotypephenotype": self._backend.runSearchGenotypePhenotypes,
+            "phenotype": self._backend.runSearchPhenotypes,
+            "phenotype_association_sets":
+                self._backend.runSearchPhenotypeAssociationSets,
             "rnaquantificationsets":
                 self._backend.runSearchRnaQuantificationSets,
             "rnaquantifications": self._backend.runSearchRnaQuantifications,
@@ -835,17 +892,8 @@ class LocalClient(AbstractClient):
         return self._deserialize_response(
             response_json, protocol_response_class)
 
-    def _run_list_reference_bases_page_request(self, id_, request):
-        request_args = protocol.toJsonDict(request)
-        # We need to remove end from this dict if it's not specified because
-        # of the way we're interacting with Flask and HTTP GET params.
-        # TODO: This is a really nasty way of doing things; we really
-        # should just have a request object and pass that around instead of an
-        # arguments dictionary.
-        if request.end is 0:
-            del request_args["end"]
-        if request.page_token == '':
-            del request_args["pageToken"]
-        response_json = self._backend.runListReferenceBases(id_, request_args)
+    def _run_list_reference_bases_page_request(self, request):
+        response_json = self._backend.runListReferenceBases(
+            protocol.toJson(request))
         return self._deserialize_response(
             response_json, protocol.ListReferenceBasesResponse)

@@ -74,7 +74,6 @@ class AbstractRepoManagerTest(unittest.TestCase):
         self.runCommand("init {}".format(self._repoPath))
 
     def addOntology(self):
-        # Add the sequence ontology
         self._ontologyName = paths.ontologyName
         cmd = "add-ontology {} {}".format(self._repoPath, paths.ontologyPath)
         self.runCommand(cmd)
@@ -120,6 +119,17 @@ class AbstractRepoManagerTest(unittest.TestCase):
             "--ontologyName={}").format(
             self._repoPath, self._datasetName, featuresPath,
             self._referenceSetName, self._ontologyName)
+        self.runCommand(cmd)
+
+    def addPhenotypeAssociationSet(self):
+        phenotypeAssociationSetPath = paths.phenotypeAssociationSetPath
+        self._phenotypeAssociationSetName = "test_phenotypeAssociationSet"
+        cmd = (
+            "add-phenotypeassociationset {} {} {} -n {}").format(
+                self._repoPath,
+                self._datasetName,
+                phenotypeAssociationSetPath,
+                self._phenotypeAssociationSetName)
         self.runCommand(cmd)
 
     def getFeatureSet(self):
@@ -225,6 +235,59 @@ class TestAddDataset(AbstractRepoManagerTest):
         self.runCommand(cmd)
         self.assertRaises(
             exceptions.DuplicateNameException, self.runCommand, cmd)
+
+
+class TestAddPhenotypeAssociationSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddPhenotypeAssociationSet, self).setUp()
+        self.init()
+
+    def testDefaults(self):
+        self.addDataset()
+        self.addPhenotypeAssociationSet()
+
+    def testSameName(self):
+        self.addDataset()
+        self.addPhenotypeAssociationSet()
+        with self.assertRaises(exceptions.DuplicateNameException):
+            self.addPhenotypeAssociationSet()
+
+
+class TestRemovePhenotypeAssociationSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemovePhenotypeAssociationSet, self).setUp()
+        self.init()
+
+    def _assertPhenotypeAssociationSetRemoved(self):
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        with self.assertRaises(
+                exceptions.PhenotypeAssociationSetNotFoundException):
+            dataset.getPhenotypeAssociationSetByName(
+                self._phenotypeAssociationSetName)
+
+    def _removePhenotypeAssociationSet(self):
+        cmdString = "remove-phenotypeassociationset {} {} {} -f"
+        self.runCommand(cmdString.format(
+            self._repoPath, self._datasetName,
+            self._phenotypeAssociationSetName))
+
+    def testDefaults(self):
+        self.addDataset()
+        self.addPhenotypeAssociationSet()
+        self._removePhenotypeAssociationSet()
+        self._assertPhenotypeAssociationSetRemoved()
+
+    def testDuplicateDelete(self):
+        self.addDataset()
+        self.addPhenotypeAssociationSet()
+        self._removePhenotypeAssociationSet()
+        self._assertPhenotypeAssociationSetRemoved()
+        with self.assertRaises(
+                exceptions.PhenotypeAssociationSetNotFoundException):
+            self._removePhenotypeAssociationSet()
 
 
 class TestAddReferenceSet(AbstractRepoManagerTest):

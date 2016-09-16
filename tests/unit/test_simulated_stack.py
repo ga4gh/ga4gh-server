@@ -13,7 +13,7 @@ import random
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.sequenceAnnotations as features
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 
@@ -110,14 +110,13 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertIsInstance(obj, responseClass)
         return obj
 
-    def sendListReferenceBasesRequest(self, id_, request):
+    def sendListReferenceBasesRequest(self, request):
         """
         Sends a ListReferenceBasesRequest and parses the result into a
         ListReferenceBasesResponse.
         """
-        path = '/references/{}/bases'.format(id_)
-        response = self.app.get(
-            path, query_string=protocol.toJsonDict(request))
+        path = '/listreferencebases'
+        response = self.sendJsonPostRequest(path, protocol.toJson(request))
         self.assertEqual(response.status_code, 200)
         obj = protocol.fromJson(
             response.data, protocol.ListReferenceBasesResponse)
@@ -753,7 +752,8 @@ class TestSimulatedStack(unittest.TestCase):
                     path, featureSet.getId(), protocol.FeatureSet)
                 self.verifyFeatureSetsEqual(responseObject, featureSet)
             for badId in self.getBadIds():
-                featureSet = features.AbstractFeatureSet(dataset, badId)
+                featureSet = sequence_annotations.AbstractFeatureSet(
+                    dataset, badId)
                 self.verifyGetMethodFails(path, featureSet.getId())
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
@@ -829,41 +829,45 @@ class TestSimulatedStack(unittest.TestCase):
     def testListReferenceBases(self):
         for referenceSet in self.dataRepo.getReferenceSets():
             for reference in referenceSet.getReferences():
-                id_ = reference.getId()
                 length = reference.getLength()
                 sequence = reference.getBases(0, length)
                 # fetch the bases
                 args = protocol.ListReferenceBasesRequest()
-                response = self.sendListReferenceBasesRequest(id_, args)
+                args.reference_id = reference.getId()
+                response = self.sendListReferenceBasesRequest(args)
                 self.assertEqual(response.sequence, sequence)
                 # Try some simple slices.
                 ranges = [(0, length), (0, 1), (length - 1, length)]
                 for start, end in ranges:
                     args = protocol.ListReferenceBasesRequest()
                     args.start, args.end = start, end
-                    response = self.sendListReferenceBasesRequest(id_, args)
+                    args.reference_id = reference.getId()
+                    response = self.sendListReferenceBasesRequest(args)
                     self.assertEqual(response.sequence, sequence[start:end])
                     self.assertEqual("", response.next_page_token)
                     self.assertEqual(response.offset, start)
 
     def testListReferenceBasesErrors(self):
         referenceSet = self.dataRepo.getReferenceSets()[0]
+        args = protocol.ListReferenceBasesRequest()
         for badId in self.getBadIds():
-            path = '/references/{}/bases'.format(badId)
-            response = self.app.get(path)
+            args.reference_id = badId
+            path = '/listreferencebases'
+            response = self.sendJsonPostRequest(path, protocol.toJson(args))
             self.assertEqual(response.status_code, 404)
             reference = references.AbstractReference(referenceSet, badId)
-            path = '/references/{}/bases'.format(reference.getId())
-            response = self.app.get(path)
+            args.reference_id = reference.getId()
+            path = '/listreferencebases'
+            response = self.sendJsonPostRequest(path, protocol.toJson(args))
             self.assertEqual(response.status_code, 404)
-        path = '/references/{}/bases'.format(self.reference.getId())
+        path = '/listreferencebases'
         length = self.reference.getLength()
         badRanges = [(-1, 0), (-1, -1), (length, 0), (0, length + 1)]
         for start, end in badRanges:
             args = protocol.ListReferenceBasesRequest()
             args.start, args.end = start, end
-            response = self.app.get(
-                path, query_string=protocol.toJsonDict(args))
+            args.reference_id = self.reference.getId()
+            response = self.sendJsonPostRequest(path, protocol.toJson(args))
             self.assertEqual(response.status_code, 416)
 
     def testListReferenceBasesPaging(self):
@@ -875,16 +879,16 @@ class TestSimulatedStack(unittest.TestCase):
             for pageSize in [1, 2, length - 1]:
                 self.backend.setMaxResponseLength(pageSize)
                 args = protocol.ListReferenceBasesRequest()
-                args.start, args.end = start, end
-                response = self.sendListReferenceBasesRequest(id_, args)
+                args.start, args.end, args.reference_id = start, end, id_
+                response = self.sendListReferenceBasesRequest(args)
                 self.assertEqual(response.sequence, sequence[:pageSize])
                 self.assertEqual(response.offset, start)
                 sequenceFragments = [response.sequence]
-                while response.next_page_token is not "":
+                while response.next_page_token:
                     args = protocol.ListReferenceBasesRequest()
                     args.page_token = response.next_page_token
-                    args.start, args.end = start, end
-                    response = self.sendListReferenceBasesRequest(id_, args)
+                    args.start, args.end, args.reference_id = start, end, id_
+                    response = self.sendListReferenceBasesRequest(args)
                     self.assertGreater(len(response.sequence), 0)
                     sequenceFragments.append(response.sequence)
                     offset = response.offset
@@ -1149,6 +1153,48 @@ class TestSimulatedStack(unittest.TestCase):
                 self.assertEqual(responseObject.id, bioSample.getId())
         for badId in self.getBadIds():
             self.verifyGetMethodFails(path, badId)
+
+    def testSearchPhenotypeAssociationSets(self):
+        path = "/phenotypeassociationsets/search"
+        for dataset in self.dataRepo.getDatasets():
+            repoPaSetIds = []
+            for repoPaSet in dataset.getPhenotypeAssociationSets():
+                repoPaSetIds.append(repoPaSet.getId())
+            request = protocol.SearchPhenotypeAssociationSetsRequest()
+            request.dataset_id = dataset.getId()
+            responseData = self.sendSearchRequest(
+                path, request,
+                protocol.SearchPhenotypeAssociationSetsResponse)
+            for clientPaSet in responseData.phenotype_association_sets:
+                self.assertTrue(clientPaSet.id in repoPaSetIds)
+
+    def testSearchPhenotypes(self):
+        path = "/phenotypes/search"
+        for repoPaSet in self.dataRepo.allPhenotypeAssociationSets():
+            for repoAssoc in repoPaSet.getAssociations():
+                request = protocol.SearchPhenotypesRequest()
+                request.phenotype_association_set_id = repoPaSet.getId()
+                request.id = repoAssoc.phenotype.id
+                responseData = self.sendSearchRequest(
+                    path, request,
+                    protocol.SearchPhenotypesResponse)
+                for clientPhenotype in responseData.phenotypes:
+                    self.assertEqual(clientPhenotype, repoAssoc.phenotype)
+
+    def testSearchGenotypePhenotypes(self):
+        path = "/featurephenotypeassociations/search"
+        for repoPaSet in self.dataRepo.allPhenotypeAssociationSets():
+            for repoAssoc in repoPaSet.getAssociations():
+                request = protocol.SearchGenotypePhenotypeRequest()
+                request.phenotype_association_set_id = repoPaSet.getId()
+                request.phenotype_ids.extend([repoAssoc.phenotype.id])
+                responseData = self.sendSearchRequest(
+                    path, request,
+                    protocol.SearchGenotypePhenotypeResponse)
+                for clientAssoc in responseData.associations:
+                    self.assertEqual(clientAssoc, repoAssoc)
+
+    # TODO def testSearchGenotypePhenotypes(self):
 
     # TODO def testGetExpressionLevel(self):
 

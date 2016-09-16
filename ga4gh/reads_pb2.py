@@ -23,12 +23,66 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/reads.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x11ga4gh/reads.proto\x12\x05ga4gh\x1a\x12ga4gh/common.proto\x1a\x1aga4gh/assay_metadata.proto\x1a\x14ga4gh/metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"Y\n\tReadStats\x12\x1a\n\x12\x61ligned_read_count\x18\x01 \x01(\x03\x12\x1c\n\x14unaligned_read_count\x18\x02 \x01(\x03\x12\x12\n\nbase_count\x18\x03 \x01(\x03\"\xb2\x03\n\tReadGroup\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\ndataset_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x04 \x01(\t\x12\x13\n\x0bsample_name\x18\x05 \x01(\t\x12\x15\n\rbio_sample_id\x18\x06 \x01(\t\x12%\n\nexperiment\x18\x07 \x01(\x0b\x32\x11.ga4gh.Experiment\x12\x1d\n\x15predicted_insert_size\x18\x08 \x01(\x05\x12\x0f\n\x07\x63reated\x18\t \x01(\x03\x12\x0f\n\x07updated\x18\n \x01(\x03\x12\x1f\n\x05stats\x18\x0b \x01(\x0b\x32\x10.ga4gh.ReadStats\x12 \n\x08programs\x18\x0c \x03(\x0b\x32\x0e.ga4gh.Program\x12\x18\n\x10reference_set_id\x18\r \x01(\t\x12(\n\x04info\x18\x0e \x03(\x0b\x32\x1a.ga4gh.ReadGroup.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\x84\x01\n\x0cReadGroupSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\ndataset_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x1f\n\x05stats\x18\x04 \x01(\x0b\x32\x10.ga4gh.ReadStats\x12%\n\x0bread_groups\x18\x05 \x03(\x0b\x32\x10.ga4gh.ReadGroup\"n\n\x0fLinearAlignment\x12!\n\x08position\x18\x01 \x01(\x0b\x32\x0f.ga4gh.Position\x12\x17\n\x0fmapping_quality\x18\x02 \x01(\x05\x12\x1f\n\x05\x63igar\x18\x03 \x03(\x0b\x32\x10.ga4gh.CigarUnit\"\xab\x04\n\rReadAlignment\x12\n\n\x02id\x18\x01 \x01(\t\x12\x15\n\rread_group_id\x18\x02 \x01(\t\x12\x15\n\rfragment_name\x18\x03 \x01(\t\x12\x1a\n\x12improper_placement\x18\x04 \x01(\x08\x12\x1a\n\x12\x64uplicate_fragment\x18\x05 \x01(\x08\x12\x14\n\x0cnumber_reads\x18\x06 \x01(\x05\x12\x17\n\x0f\x66ragment_length\x18\x07 \x01(\x05\x12\x13\n\x0bread_number\x18\x08 \x01(\x05\x12$\n\x1c\x66\x61iled_vendor_quality_checks\x18\t \x01(\x08\x12)\n\talignment\x18\n \x01(\x0b\x32\x16.ga4gh.LinearAlignment\x12\x1b\n\x13secondary_alignment\x18\x0b \x01(\x08\x12\x1f\n\x17supplementary_alignment\x18\x0c \x01(\x08\x12\x18\n\x10\x61ligned_sequence\x18\r \x01(\t\x12\x17\n\x0f\x61ligned_quality\x18\x0e \x03(\x05\x12+\n\x12next_mate_position\x18\x0f \x01(\x0b\x32\x0f.ga4gh.Position\x12,\n\x04info\x18\x10 \x03(\x0b\x32\x1e.ga4gh.ReadAlignment.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x11ga4gh/reads.proto\x12\x05ga4gh\x1a\x12ga4gh/common.proto\x1a\x1aga4gh/assay_metadata.proto\x1a\x14ga4gh/metadata.proto\x1a\x1cgoogle/protobuf/struct.proto\"Y\n\tReadStats\x12\x1a\n\x12\x61ligned_read_count\x18\x01 \x01(\x03\x12\x1c\n\x14unaligned_read_count\x18\x02 \x01(\x03\x12\x12\n\nbase_count\x18\x03 \x01(\x03\"\xb2\x03\n\tReadGroup\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\ndataset_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x04 \x01(\t\x12\x13\n\x0bsample_name\x18\x05 \x01(\t\x12\x15\n\rbio_sample_id\x18\x06 \x01(\t\x12%\n\nexperiment\x18\x07 \x01(\x0b\x32\x11.ga4gh.Experiment\x12\x1d\n\x15predicted_insert_size\x18\x08 \x01(\x05\x12\x0f\n\x07\x63reated\x18\t \x01(\x03\x12\x0f\n\x07updated\x18\n \x01(\x03\x12\x1f\n\x05stats\x18\x0b \x01(\x0b\x32\x10.ga4gh.ReadStats\x12 \n\x08programs\x18\x0c \x03(\x0b\x32\x0e.ga4gh.Program\x12\x18\n\x10reference_set_id\x18\r \x01(\t\x12(\n\x04info\x18\x0e \x03(\x0b\x32\x1a.ga4gh.ReadGroup.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\x84\x01\n\x0cReadGroupSet\x12\n\n\x02id\x18\x01 \x01(\t\x12\x12\n\ndataset_id\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x1f\n\x05stats\x18\x04 \x01(\x0b\x32\x10.ga4gh.ReadStats\x12%\n\x0bread_groups\x18\x05 \x03(\x0b\x32\x10.ga4gh.ReadGroup\"n\n\x0fLinearAlignment\x12!\n\x08position\x18\x01 \x01(\x0b\x32\x0f.ga4gh.Position\x12\x17\n\x0fmapping_quality\x18\x02 \x01(\x05\x12\x1f\n\x05\x63igar\x18\x03 \x03(\x0b\x32\x10.ga4gh.CigarUnit\"\xab\x04\n\rReadAlignment\x12\n\n\x02id\x18\x01 \x01(\t\x12\x15\n\rread_group_id\x18\x02 \x01(\t\x12\x15\n\rfragment_name\x18\x03 \x01(\t\x12\x1a\n\x12improper_placement\x18\x04 \x01(\x08\x12\x1a\n\x12\x64uplicate_fragment\x18\x05 \x01(\x08\x12\x14\n\x0cnumber_reads\x18\x06 \x01(\x05\x12\x17\n\x0f\x66ragment_length\x18\x07 \x01(\x05\x12\x13\n\x0bread_number\x18\x08 \x01(\x05\x12$\n\x1c\x66\x61iled_vendor_quality_checks\x18\t \x01(\x08\x12)\n\talignment\x18\n \x01(\x0b\x32\x16.ga4gh.LinearAlignment\x12\x1b\n\x13secondary_alignment\x18\x0b \x01(\x08\x12\x1f\n\x17supplementary_alignment\x18\x0c \x01(\x08\x12\x18\n\x10\x61ligned_sequence\x18\r \x01(\t\x12\x17\n\x0f\x61ligned_quality\x18\x0e \x03(\x05\x12+\n\x12next_mate_position\x18\x0f \x01(\x0b\x32\x0f.ga4gh.Position\x12,\n\x04info\x18\x10 \x03(\x0b\x32\x1e.ga4gh.ReadAlignment.InfoEntry\x1aG\n\tInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12)\n\x05value\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.ListValue:\x02\x38\x01\"\xa2\x02\n\tCigarUnit\x12-\n\toperation\x18\x01 \x01(\x0e\x32\x1a.ga4gh.CigarUnit.Operation\x12\x18\n\x10operation_length\x18\x02 \x01(\x03\x12\x1a\n\x12reference_sequence\x18\x03 \x01(\t\"\xaf\x01\n\tOperation\x12\x19\n\x15OPERATION_UNSPECIFIED\x10\x00\x12\x13\n\x0f\x41LIGNMENT_MATCH\x10\x01\x12\n\n\x06INSERT\x10\x02\x12\n\n\x06\x44\x45LETE\x10\x03\x12\x08\n\x04SKIP\x10\x04\x12\r\n\tCLIP_SOFT\x10\x05\x12\r\n\tCLIP_HARD\x10\x06\x12\x07\n\x03PAD\x10\x07\x12\x12\n\x0eSEQUENCE_MATCH\x10\x08\x12\x15\n\x11SEQUENCE_MISMATCH\x10\tb\x06proto3')
   ,
   dependencies=[ga4gh_dot_common__pb2.DESCRIPTOR,ga4gh_dot_assay__metadata__pb2.DESCRIPTOR,ga4gh_dot_metadata__pb2.DESCRIPTOR,google_dot_protobuf_dot_struct__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
+
+_CIGARUNIT_OPERATION = _descriptor.EnumDescriptor(
+  name='Operation',
+  full_name='ga4gh.CigarUnit.Operation',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='OPERATION_UNSPECIFIED', index=0, number=0,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='ALIGNMENT_MATCH', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='INSERT', index=2, number=2,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='DELETE', index=3, number=3,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='SKIP', index=4, number=4,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='CLIP_SOFT', index=5, number=5,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='CLIP_HARD', index=6, number=6,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='PAD', index=7, number=7,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='SEQUENCE_MATCH', index=8, number=8,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='SEQUENCE_MISMATCH', index=9, number=9,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=1577,
+  serialized_end=1752,
+)
+_sym_db.RegisterEnumDescriptor(_CIGARUNIT_OPERATION)
 
 
 _READSTATS = _descriptor.Descriptor(
@@ -511,6 +565,52 @@ _READALIGNMENT = _descriptor.Descriptor(
   serialized_end=1459,
 )
 
+
+_CIGARUNIT = _descriptor.Descriptor(
+  name='CigarUnit',
+  full_name='ga4gh.CigarUnit',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='operation', full_name='ga4gh.CigarUnit.operation', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='operation_length', full_name='ga4gh.CigarUnit.operation_length', index=1,
+      number=2, type=3, cpp_type=2, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='reference_sequence', full_name='ga4gh.CigarUnit.reference_sequence', index=2,
+      number=3, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+    _CIGARUNIT_OPERATION,
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1462,
+  serialized_end=1752,
+)
+
 _READGROUP_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
 _READGROUP_INFOENTRY.containing_type = _READGROUP
 _READGROUP.fields_by_name['experiment'].message_type = ga4gh_dot_assay__metadata__pb2._EXPERIMENT
@@ -520,17 +620,20 @@ _READGROUP.fields_by_name['info'].message_type = _READGROUP_INFOENTRY
 _READGROUPSET.fields_by_name['stats'].message_type = _READSTATS
 _READGROUPSET.fields_by_name['read_groups'].message_type = _READGROUP
 _LINEARALIGNMENT.fields_by_name['position'].message_type = ga4gh_dot_common__pb2._POSITION
-_LINEARALIGNMENT.fields_by_name['cigar'].message_type = ga4gh_dot_common__pb2._CIGARUNIT
+_LINEARALIGNMENT.fields_by_name['cigar'].message_type = _CIGARUNIT
 _READALIGNMENT_INFOENTRY.fields_by_name['value'].message_type = google_dot_protobuf_dot_struct__pb2._LISTVALUE
 _READALIGNMENT_INFOENTRY.containing_type = _READALIGNMENT
 _READALIGNMENT.fields_by_name['alignment'].message_type = _LINEARALIGNMENT
 _READALIGNMENT.fields_by_name['next_mate_position'].message_type = ga4gh_dot_common__pb2._POSITION
 _READALIGNMENT.fields_by_name['info'].message_type = _READALIGNMENT_INFOENTRY
+_CIGARUNIT.fields_by_name['operation'].enum_type = _CIGARUNIT_OPERATION
+_CIGARUNIT_OPERATION.containing_type = _CIGARUNIT
 DESCRIPTOR.message_types_by_name['ReadStats'] = _READSTATS
 DESCRIPTOR.message_types_by_name['ReadGroup'] = _READGROUP
 DESCRIPTOR.message_types_by_name['ReadGroupSet'] = _READGROUPSET
 DESCRIPTOR.message_types_by_name['LinearAlignment'] = _LINEARALIGNMENT
 DESCRIPTOR.message_types_by_name['ReadAlignment'] = _READALIGNMENT
+DESCRIPTOR.message_types_by_name['CigarUnit'] = _CIGARUNIT
 
 ReadStats = _reflection.GeneratedProtocolMessageType('ReadStats', (_message.Message,), dict(
   DESCRIPTOR = _READSTATS,
@@ -582,6 +685,13 @@ ReadAlignment = _reflection.GeneratedProtocolMessageType('ReadAlignment', (_mess
   ))
 _sym_db.RegisterMessage(ReadAlignment)
 _sym_db.RegisterMessage(ReadAlignment.InfoEntry)
+
+CigarUnit = _reflection.GeneratedProtocolMessageType('CigarUnit', (_message.Message,), dict(
+  DESCRIPTOR = _CIGARUNIT,
+  __module__ = 'ga4gh.reads_pb2'
+  # @@protoc_insertion_point(class_scope:ga4gh.CigarUnit)
+  ))
+_sym_db.RegisterMessage(CigarUnit)
 
 
 _READGROUP_INFOENTRY.has_options = True

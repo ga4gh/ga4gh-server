@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.datamodel.sequenceAnnotations as features
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.datamodel.datasets as datasets
 
 
@@ -20,7 +20,7 @@ class TestAbstractFeatureSet(unittest.TestCase):
     def setUp(self):
         self._featureSetName = "testFeatureSet"
         self._dataset = datasets.Dataset("test_ds")
-        self._featureSet = features.AbstractFeatureSet(
+        self._featureSet = sequence_annotations.AbstractFeatureSet(
             self._dataset, self._featureSetName)
 
     def testGetFeatureIdFailsWithNullInput(self):

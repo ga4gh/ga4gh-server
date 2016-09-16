@@ -19,6 +19,7 @@ import unittest
 import unittest.loader
 import unittest.suite
 import urlparse
+import json
 
 import requests
 
@@ -35,10 +36,11 @@ import ga4gh.repo.rnaseq2ga as rnaseq2ga
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.references as references
-import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.bio_metadata as biodata
+import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.datamodel.rna_quantification as rna_quantification
 
 
@@ -508,6 +510,85 @@ class SearchCallSetsRunner(AbstractSearchRunner):
             self._run(self._variantSetId)
 
 
+class SearchGenotypePhenotypeRunner(AbstractSearchRunner):
+    """
+    Runner class for the featurephenotypeassociations/search method.
+    """
+    def __init__(self, args):
+        super(SearchGenotypePhenotypeRunner, self).__init__(args)
+
+        # if arg is JSON; parse; else return as string
+        def checkJson(value):
+            if value is not None:
+                try:
+                    return json.loads(value)
+                except ValueError:
+                    return value
+
+        self._feature_ids = None
+        self._evidence = None
+        self._phenotype_ids = None
+        self._phenotype_association_set_id = args.phenotype_association_set_id
+        if args.feature_ids:
+            self._feature_ids = args.feature_ids.split(",")
+        if args.phenotype_ids:
+            self._phenotype_ids = args.phenotype_ids.split(",")
+        if args.evidence:
+            self._evidence = checkJson(args.evidence)
+
+    def run(self):
+        iterator = self._client.search_genotype_phenotype(
+            phenotype_association_set_id=self._phenotype_association_set_id,
+            feature_ids=self._feature_ids,
+            phenotype_ids=self._phenotype_ids,
+            evidence=self._evidence)
+        self._output(iterator)
+
+    def _textOutput(self, gaObjects):
+        """
+        Prints out the specified FeaturePhenotypeAssociation objects.
+        """
+        for association in gaObjects:
+            print(association.id)
+
+
+class SearchPhenotypeRunner(AbstractSearchRunner):
+    """
+    Runner class for the phenotype/search method.
+    """
+    def __init__(self, args):
+        super(SearchPhenotypeRunner, self).__init__(args)
+
+        self._phenotype_association_set_id = args.phenotype_association_set_id
+        self._phenotype_id = args.phenotype_id
+        self._description = args.description
+        self._type = args.type
+        self._age_of_onset = args.age_of_onset
+
+    def run(self):
+        iterator = self._client.search_phenotype(
+            phenotype_association_set_id=self._phenotype_association_set_id,
+            phenotype_id=self._phenotype_id,
+            description=self._description,
+            type_=self._type,
+            age_of_onset=self._age_of_onset)
+        self._output(iterator)
+
+
+class SearchPhenotypeAssociationSetsRunner(AbstractSearchRunner):
+    """
+    Runner class for the phenotypeassociationsets/search method.
+    """
+    def __init__(self, args):
+        super(SearchPhenotypeAssociationSetsRunner, self).__init__(args)
+        self._dataset_id = args.datasetId
+
+    def run(self):
+        iterator = self._client.search_phenotype_association_sets(
+            dataset_id=self._dataset_id)
+        self._output(iterator)
+
+
 class VariantFormatterMixin(object):
     """
     Simple mixin to format variant objects.
@@ -563,12 +644,12 @@ class FeatureFormatterMixin(object):
     def _textOutput(self, gaObjects):
         for feature in gaObjects:
             print(
-                feature.id, feature.parentId, feature.featureSetId,
-                feature.referenceName, feature.start, feature.end,
+                feature.id, feature.parent_id, feature.feature_set_id,
+                feature.reference_name, feature.start, feature.end,
                 feature.strand, sep="\t", end="\t")
             print(
-                "FeatureType:", feature.featureType.id,
-                feature.featureType.term, end="\t")
+                "FeatureType:", feature.feature_type.id,
+                feature.feature_type.term, end="\t")
             for attrkey in feature.attributes.vals.keys():
                 print(
                     attrkey, feature.attributes.vals[attrkey],
@@ -683,7 +764,7 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
         self._output(iterator)
 
     def run(self):
-        if self._featureSetId is None and self._parentId is None:
+        if self._featureSetId is None and not self._parentId:
             for featureSet in self.getAllFeatureSets():
                 self._run(featureSet)
         else:
@@ -1037,11 +1118,57 @@ def addFeaturesSearchOptions(parser):
     Adds common options to a features search command line parser.
     """
     addFeatureSetIdArgument(parser)
-    addReferenceNameArgument(parser)
+    addFeaturesReferenceNameArgument(parser)
     addStartArgument(parser)
     addEndArgument(parser)
     addParentFeatureIdArgument(parser)
     addFeatureTypesArgument(parser)
+
+
+def addGenotypePhenotypeSearchOptions(parser):
+    """
+    Adds options to a g2p searches command line parser.
+    """
+    parser.add_argument(
+        "--phenotype_association_set_id", "-s", default=None,
+        help="Only return associations from this phenotype_association_set.")
+    parser.add_argument(
+        "--feature_ids", "-f", default=None,
+        help="Only return associations for these features.")
+    parser.add_argument(
+        "--phenotype_ids", "-p", default=None,
+        help="Only return associations for these phenotypes.")
+    parser.add_argument(
+        "--evidence", "-E", default=None,
+        help="Only return associations to this evidence.")
+
+
+def addPhenotypeSearchOptions(parser):
+    """
+    Adds options to a phenotype searches command line parser.
+    """
+    parser.add_argument(
+        "--phenotype_association_set_id", "-s", default=None,
+        help="Only return phenotypes from this phenotype_association_set.")
+    parser.add_argument(
+        "--phenotype_id", "-p", default=None,
+        help="Only return this phenotype.")
+    parser.add_argument(
+        "--description", "-d", default=None,
+        help="Only return phenotypes matching this description.")
+    parser.add_argument(
+        "--age_of_onset", "-a", default=None,
+        help="Only return phenotypes with this age_of_onset.")
+    parser.add_argument(
+        "--type", "-T", default=None,
+        help="Only return phenotypes with this type.")
+
+
+def addPhenotypeAssociationSetsSearchOptions(parser):
+    """
+    Adds options to a phenotype assoc. sets searches command line parser.
+    """
+    addDatasetIdArgument(parser)
 
 
 def addVariantSetIdArgument(parser):
@@ -1070,6 +1197,12 @@ def addFeatureSetIdArgument(parser):
 def addReferenceNameArgument(parser):
     parser.add_argument(
         "--referenceName", "-r", default="1",
+        help="Only return variants on this reference.")
+
+
+def addFeaturesReferenceNameArgument(parser):
+    parser.add_argument(
+        "--referenceName", "-r", default="",
         help="Only return variants on this reference.")
 
 
@@ -1115,7 +1248,7 @@ def addFeatureTypesArgument(parser):
 
 def addParentFeatureIdArgument(parser):
     parser.add_argument(
-        "--parentId", "-p", default=None,
+        "--parentId", "-p", default="",
         help="Filter features by supplied parent ID")
 
 
@@ -1589,6 +1722,40 @@ def addExpressionLevelsSearchParser(subparsers):
     return parser
 
 
+def addGenotypePhenotypeSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "genotypephenotype-search",
+        "Search for genotype to phenotype associations")
+    parser.set_defaults(runner=SearchGenotypePhenotypeRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addGenotypePhenotypeSearchOptions(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addPhenotypeSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "phenotype-search", "Search for phenotypes")
+    parser.set_defaults(runner=SearchPhenotypeRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addPhenotypeSearchOptions(parser)
+    addPageSizeArgument(parser)
+    return parser
+
+
+def addPhenotypeAssociationSetsSearchParser(subparsers):
+    parser = addSubparser(
+        subparsers, "phenotypeassociationsets-search",
+        "Search for phenotypeassociationsets")
+    parser.set_defaults(runner=SearchPhenotypeAssociationSetsRunner)
+    addUrlArgument(parser)
+    addOutputFormatArgument(parser)
+    addPhenotypeAssociationSetsSearchOptions(parser)
+    addPageSizeArgument(parser)
+
+
 def getClientParser():
     parser = createArgumentParser("GA4GH reference client")
     addClientGlobalOptions(parser)
@@ -1628,6 +1795,9 @@ def getClientParser():
     addRnaQuantificationSetsSearchParser(subparsers)
     addRnaQuantificationsSearchParser(subparsers)
     addExpressionLevelsSearchParser(subparsers)
+    addGenotypePhenotypeSearchParser(subparsers)
+    addPhenotypeSearchParser(subparsers)
+    addPhenotypeAssociationSetsSearchParser(subparsers)
     return parser
 
 
@@ -1964,6 +2134,7 @@ class RepoManager(object):
         self._openRepo()
         dataset = datasets.Dataset(self._args.datasetName)
         dataset.setDescription(self._args.description)
+        dataset.setInfo(json.loads(self._args.info))
         self._updateRepo(self._repo.insertDataset, dataset)
 
     def addReferenceSet(self):
@@ -2109,6 +2280,40 @@ class RepoManager(object):
                 self._repo.insertVariantAnnotationSet(annotationSet)
         self._updateRepo(updateRepo)
 
+    def addPhenotypeAssociationSet(self):
+        """
+        Adds a new phenotype association set to this repo.
+        """
+        self._openRepo()
+        name = self._args.name
+        if name is None:
+            name = getNameFromPath(self._args.dirPath)
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        phenotypeAssociationSet = \
+            genotype_phenotype.RdfPhenotypeAssociationSet(
+                dataset, name, self._args.dirPath)
+        self._updateRepo(
+            self._repo.insertPhenotypeAssociationSet,
+            phenotypeAssociationSet)
+
+    def removePhenotypeAssociationSet(self):
+        """
+        Removes a phenotype association set from the repo
+        """
+        self._openRepo()
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSetByName(
+            self._args.name)
+
+        def func():
+            self._updateRepo(
+                self._repo.removePhenotypeAssociationSet,
+                phenotypeAssociationSet)
+        self._confirmDelete(
+            "PhenotypeAssociationSet",
+            phenotypeAssociationSet.getLocalId(),
+            func)
+
     def removeReferenceSet(self):
         """
         Removes a referenceSet from the repo.
@@ -2166,7 +2371,7 @@ class RepoManager(object):
         filePath = self._getFilePath(self._args.filePath,
                                      self._args.relativePath)
         name = getNameFromPath(self._args.filePath)
-        featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+        featureSet = sequence_annotations.Gff3DbFeatureSet(
             dataset, name)
         referenceSetName = self._args.referenceSetName
         if referenceSetName is None:
@@ -2347,6 +2552,11 @@ class RepoManager(object):
             "datasetName", help="the name of the dataset")
 
     @classmethod
+    def addDatasetInfoArgument(cls, subparser):
+        subparser.add_argument(
+            "-i", "--info", default="{}", help="the info of the dataset")
+
+    @classmethod
     def addReferenceSetNameOption(cls, subparser, objectType):
         helpText = (
             "the name of the reference set to associate with this {}"
@@ -2416,10 +2626,19 @@ class RepoManager(object):
         subparser.add_argument("filePath", help=helpText)
 
     @classmethod
+    def addDirPathArgument(cls, subparser, helpText):
+        subparser.add_argument("dirPath", help=helpText)
+
+    @classmethod
     def addNameOption(cls, parser, objectType):
         parser.add_argument(
             "-n", "--name", default=None,
             help="The name of the {}".format(objectType))
+
+    @classmethod
+    def addNameArgument(cls, parser, objectType):
+        parser.add_argument(
+            "name", help="The name of the {}".format(objectType))
 
     @classmethod
     def addRnaQuantificationSetNameArgument(cls, subparser):
@@ -2442,6 +2661,17 @@ class RepoManager(object):
         subparser.add_argument(
             "-t", "--transcript", action="store_true", default=False,
             help="sets the quantification type to transcript")
+
+    @classmethod
+    def addClassNameOption(cls, subparser, objectType):
+        helpText = (
+            "the name of the class used to "
+            "fetch features in this {}"
+        ).format(objectType)
+        subparser.add_argument(
+            "-C", "--className",
+            default="ga4gh.datamodel.sequence_annotations.Gff3DbFeatureSet",
+            help=helpText)
 
     @classmethod
     def getParser(cls):
@@ -2472,6 +2702,7 @@ class RepoManager(object):
         addDatasetParser.set_defaults(runner="addDataset")
         cls.addRepoArgument(addDatasetParser)
         cls.addDatasetNameArgument(addDatasetParser)
+        cls.addDatasetInfoArgument(addDatasetParser)
         cls.addDescriptionOption(addDatasetParser, "dataset")
 
         removeDatasetParser = addSubparser(
@@ -2630,6 +2861,7 @@ class RepoManager(object):
             "data")
         cls.addReferenceSetNameOption(addFeatureSetParser, "feature set")
         cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
+        cls.addClassNameOption(addFeatureSetParser, "feature set")
 
         removeFeatureSetParser = addSubparser(
             subparsers, "remove-featureset",
@@ -2699,6 +2931,32 @@ class RepoManager(object):
         cls.addRnaQuantificationSetNameArgument(
             removeRnaQuantificationSetParser)
         cls.addForceOption(removeRnaQuantificationSetParser)
+
+        addPhenotypeAssociationSetParser = addSubparser(
+            subparsers, "add-phenotypeassociationset",
+            "Adds phenotypes in ttl format to the repo.")
+        addPhenotypeAssociationSetParser.set_defaults(
+            runner="addPhenotypeAssociationSet")
+        cls.addRepoArgument(addPhenotypeAssociationSetParser)
+        cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
+        cls.addDirPathArgument(
+            addPhenotypeAssociationSetParser,
+            "The path of the directory containing ttl files.")
+        cls.addNameOption(
+            addPhenotypeAssociationSetParser,
+            "PhenotypeAssociationSet")
+
+        removePhenotypeAssociationSetParser = addSubparser(
+            subparsers, "remove-phenotypeassociationset",
+            "Remove an phenotypes from the repo")
+        removePhenotypeAssociationSetParser.set_defaults(
+            runner="removePhenotypeAssociationSet")
+        cls.addRepoArgument(removePhenotypeAssociationSetParser)
+        cls.addDatasetNameArgument(removePhenotypeAssociationSetParser)
+        cls.addNameArgument(
+            removePhenotypeAssociationSetParser,
+            "phenotype association set")
+        cls.addForceOption(removePhenotypeAssociationSetParser)
 
         objectType = "RnaQuantification"
         addRnaQuantificationParser = addSubparser(

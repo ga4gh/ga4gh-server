@@ -46,3 +46,6 @@ lxml==3.4.4
 
 # We need sphinx-argparse to build on readthedocs.
 sphinx-argparse==0.1.15
+
+# G2P uses a ttl backend
+RDFLib==4.2.1

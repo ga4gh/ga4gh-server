@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import unittest
 
 import mock
+import json
 
 import ga4gh.protocol as protocol
 import ga4gh.backend as backend
@@ -51,6 +52,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.assemblyId = "assemblyId"
         self.accession = "accession"
         self.md5checksum = "md5checksum"
+        self.phenotype_association_set_id = "phenotype_association_set_id"
+        self.feature_ids = ["id1", "id2"]
+        self.phenotype_ids = ["id3", "id4"]
+        self.evidence = protocol.EvidenceQuery()
         self.rnaQuantificationSetId = "rnaQuantificationSetId"
         self.rnaQuantificationId = "rnaQuantificationId"
         self.expressionLevelId = "expressionLevelId"
@@ -342,9 +347,55 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._run_get_request.assert_called_once_with(
             "expressionlevels", protocol.ExpressionLevel, self.objectId)
 
-    # def testGetFeatureSet(self):  # TODO
+    def testGetFeatureSet(self):
+        self.httpClient.get_feature_set(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
+            "featuresets", protocol.FeatureSet, self.objectId)
 
-    # def testGetFeature(self):  # TODO
+    def testGetFeature(self):
+        self.httpClient.get_feature(self.objectId)
+        self.httpClient._run_get_request.assert_called_once_with(
+            "features", protocol.Feature, self.objectId)
+
+    def testSearchGenotypePhenotype(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotype_association_set_id = \
+            self.phenotype_association_set_id
+        request.feature_ids.extend(self.feature_ids)
+        request.phenotype_ids.extend(self.phenotype_ids)
+        request.evidence.extend([self.evidence])
+        request.page_size = self.pageSize
+        self.httpClient.search_genotype_phenotype(
+            phenotype_association_set_id=self.phenotype_association_set_id,
+            feature_ids=self.feature_ids,
+            phenotype_ids=self.phenotype_ids,
+            evidence=[self.evidence])
+        self.httpClient._run_search_request.assert_called_once_with(
+            request, "genotypephenotype",
+            protocol.SearchGenotypePhenotypeResponse)
+
+    def testSearchPhenotype(self):
+        request = protocol.SearchPhenotypesRequest()
+        request.phenotype_association_set_id = \
+            self.phenotype_association_set_id
+        request.id = self.phenotype_ids[0]
+        request.page_size = self.pageSize
+        self.httpClient.search_phenotype(
+            phenotype_association_set_id=self.phenotype_association_set_id,
+            phenotype_id=self.phenotype_ids[0])
+        self.httpClient._run_search_request.assert_called_once_with(
+            request, "phenotype",
+            protocol.SearchPhenotypesResponse)
+
+    def testSearchPhenotypeAssociationSets(self):
+        request = protocol.SearchPhenotypeAssociationSetsRequest()
+        request.dataset_id = self.datasetId
+        request.page_size = self.pageSize
+        self.httpClient.search_phenotype_association_sets(
+            dataset_id=self.datasetId)
+        self.httpClient._run_search_request.assert_called_once_with(
+            request, "phenotype_association_sets",
+            protocol.SearchPhenotypeAssociationSetsResponse)
 
 
 class DatamodelObjectWrapper(object):
@@ -416,30 +467,13 @@ class DummyRequestsSession(object):
         self.checkSessionParameters()
         assert url.startswith(self._urlPrefix)
         suffix = url[len(self._urlPrefix):]
-        basesSuffix = "/bases"
         splits = suffix.split("/")
-        if suffix.endswith(basesSuffix):
-            # ListReferenceBases is an oddball and needs to be treated
-            # separately.
-            assert splits[0] == ''
-            assert splits[1] == 'references'
-            id_ = splits[2]
-            assert splits[3] == 'bases'
-            # This is all very ugly --- see the comments in the LocalClient
-            # for why we need to do this. Definitely needs to be fixed.
-            args = dict(params)
-            if args[u'end'] == u'0':
-                del args['end']
-            if args['pageToken'] is "":
-                del args['pageToken']
-            result = self._backend.runListReferenceBases(id_, args)
-        else:
-            assert len(splits) == 3
-            assert splits[0] == ''
-            datatype, id_ = splits[1:]
-            assert datatype in self._getMethodMap
-            method = self._getMethodMap[datatype]
-            result = method(id_)
+        assert len(splits) == 3
+        assert splits[0] == ''
+        datatype, id_ = splits[1:]
+        assert datatype in self._getMethodMap
+        method = self._getMethodMap[datatype]
+        result = method(id_)
         return DummyResponse(result)
 
     def post(self, url, params=None, data=None):
@@ -447,12 +481,22 @@ class DummyRequestsSession(object):
         assert url.startswith(self._urlPrefix)
         suffix = url[len(self._urlPrefix):]
         searchSuffix = "/search"
-        assert suffix.startswith("/")
-        assert suffix.endswith(searchSuffix)
-        datatype = suffix[1:-len(searchSuffix)]
-        assert datatype in self._searchMethodMap
-        method = self._searchMethodMap[datatype]
-        result = method(data)
+        if suffix.endswith(searchSuffix):
+            datatype = suffix[1:-len(searchSuffix)]
+            assert datatype in self._searchMethodMap
+            method = self._searchMethodMap[datatype]
+            result = method(data)
+        else:
+            # ListReferenceBases is an oddball and needs to be treated
+            # separately.
+            data = json.loads(data)
+            args = protocol.ListReferenceBasesRequest()
+            args.reference_id = data.get('referenceId', "")
+            args.start = int(data.get('start', 0))
+            args.end = int(data.get('end', 0))
+            args.page_token = data.get('pageToken', "")
+            result = self._backend.runListReferenceBases(
+                protocol.toJson(args))
         return DummyResponse(result)
 
 
