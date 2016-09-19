@@ -2506,7 +2506,7 @@ class RepoManager(object):
         # TODO: programs not fully supported by GA4GH yet
         programs = ""
         featureType = "gene"
-        if self._args.trascript:
+        if self._args.transcript:
             featureType = "transcript"
         # TODO: change the pattern to match how the others are being added for
         #  consistency
@@ -2514,7 +2514,7 @@ class RepoManager(object):
             self._args.quantificationFilePath, self._args.filePath, name,
             self._args.format, dataset=dataset, featureType=featureType,
             description=self._args.description, programs=programs,
-            annotationIds=self._args.featureGroupName,
+            annotationNames=self._args.featureSetName,
             readGroupSetNames=self._args.readGroupSetName)
 
     #
@@ -2653,11 +2653,10 @@ class RepoManager(object):
     @classmethod
     def addRnaFormatArgument(cls, subparser):
         subparser.add_argument(
-            "-F", "--format", default=None,
-            help="format of the quantification input data")
+            "format", help="format of the quantification input data")
 
     @classmethod
-    def addRnaFeatureTypeArgument(cls, subparser):
+    def addRnaFeatureTypeOption(cls, subparser):
         subparser.add_argument(
             "-t", "--transcript", action="store_true", default=False,
             help="sets the quantification type to transcript")
@@ -2970,11 +2969,13 @@ class RepoManager(object):
         cls.addQuantificationFilePathArgument(
             addRnaQuantificationParser, "The path to the expression file.")
         cls.addRnaFormatArgument(addRnaQuantificationParser)
-        cls.addDescriptionOption(addRnaQuantificationParser, objectType)
         cls.addRepoArgument(addRnaQuantificationParser)
         cls.addDatasetNameArgument(addRnaQuantificationParser)
         cls.addFeatureSetNameArgument(addRnaQuantificationParser)
         cls.addReadGroupSetNameArgument(addRnaQuantificationParser)
+        cls.addNameOption(addRnaQuantificationParser, "rna quantification")
+        cls.addDescriptionOption(addRnaQuantificationParser, objectType)
+        cls.addRnaFeatureTypeOption(addRnaQuantificationParser)
 
         return parser
 

@@ -147,7 +147,7 @@ class AbstractWriter(object):
                     if featureId == "":
                         for feature in featureSet.getFeatures(
                                 name=featureName):
-                            featureId = feature[0].id
+                            featureId = feature.id
                             break
             datafields = (expressionId, rnaQuantificationId, name, featureId,
                           expressionLevel, isNormalized,
