@@ -13,7 +13,7 @@ import unittest
 
 import ga4gh.exceptions as exceptions
 import ga4gh.datarepo as datarepo
-import ga4gh.cli as cli
+import ga4gh.cli.repomanager as cli_repomanager
 import ga4gh.datamodel as datamodel
 import tests.paths as paths
 
@@ -24,31 +24,37 @@ class TestGetNameFromPath(unittest.TestCase):
     paths.
     """
     def testError(self):
-        self.assertRaises(ValueError, cli.getNameFromPath, "")
+        self.assertRaises(ValueError, cli_repomanager.getNameFromPath, "")
 
     def testLocalDirectory(self):
-        self.assertEqual(cli.getNameFromPath("no_extension"), "no_extension")
-        self.assertEqual(cli.getNameFromPath("x.y"), "x")
-        self.assertEqual(cli.getNameFromPath("x.y.z"), "x")
+        self.assertEqual(
+            cli_repomanager.getNameFromPath("no_extension"), "no_extension")
+        self.assertEqual(cli_repomanager.getNameFromPath("x.y"), "x")
+        self.assertEqual(cli_repomanager.getNameFromPath("x.y.z"), "x")
 
     def testFullPaths(self):
-        self.assertEqual(cli.getNameFromPath("/no_ext"), "no_ext")
-        self.assertEqual(cli.getNameFromPath("/x.y"), "x")
-        self.assertEqual(cli.getNameFromPath("/x.y.z"), "x")
-        self.assertEqual(cli.getNameFromPath("/a/no_ext"), "no_ext")
-        self.assertEqual(cli.getNameFromPath("/a/x.y"), "x")
-        self.assertEqual(cli.getNameFromPath("/a/x.y.z"), "x")
+        self.assertEqual(
+            cli_repomanager.getNameFromPath("/no_ext"), "no_ext")
+        self.assertEqual(cli_repomanager.getNameFromPath("/x.y"), "x")
+        self.assertEqual(cli_repomanager.getNameFromPath("/x.y.z"), "x")
+        self.assertEqual(
+            cli_repomanager.getNameFromPath("/a/no_ext"), "no_ext")
+        self.assertEqual(cli_repomanager.getNameFromPath("/a/x.y"), "x")
+        self.assertEqual(cli_repomanager.getNameFromPath("/a/x.y.z"), "x")
 
     def testUrls(self):
-        self.assertEqual(cli.getNameFromPath("file:///no_ext"), "no_ext")
-        self.assertEqual(cli.getNameFromPath("http://example.com/x.y"), "x")
-        self.assertEqual(cli.getNameFromPath("ftp://x.y.z"), "x")
+        self.assertEqual(
+            cli_repomanager.getNameFromPath("file:///no_ext"), "no_ext")
+        self.assertEqual(
+            cli_repomanager.getNameFromPath("http://example.com/x.y"), "x")
+        self.assertEqual(
+            cli_repomanager.getNameFromPath("ftp://x.y.z"), "x")
 
     def testDirectoryName(self):
-        self.assertEqual(cli.getNameFromPath("/a/xy"), "xy")
-        self.assertEqual(cli.getNameFromPath("/a/xy/"), "xy")
-        self.assertEqual(cli.getNameFromPath("xy/"), "xy")
-        self.assertEqual(cli.getNameFromPath("xy"), "xy")
+        self.assertEqual(cli_repomanager.getNameFromPath("/a/xy"), "xy")
+        self.assertEqual(cli_repomanager.getNameFromPath("/a/xy/"), "xy")
+        self.assertEqual(cli_repomanager.getNameFromPath("xy/"), "xy")
+        self.assertEqual(cli_repomanager.getNameFromPath("xy"), "xy")
 
 
 class AbstractRepoManagerTest(unittest.TestCase):
@@ -60,7 +66,7 @@ class AbstractRepoManagerTest(unittest.TestCase):
         os.unlink(self._repoPath)
 
     def runCommand(self, cmd):
-        cli.RepoManager.runCommand(cmd.split())
+        cli_repomanager.RepoManager.runCommand(cmd.split())
 
     def tearDown(self):
         os.unlink(self._repoPath)
