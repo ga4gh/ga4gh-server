@@ -84,7 +84,7 @@ class ServerStatus(object):
         """
         # TODO what other config keys are appropriate to export here?
         keys = [
-            'DEBUG', 'REQUEST_VALIDATION', 'RESPONSE_VALIDATION',
+            'DEBUG', 'REQUEST_VALIDATION',
             'DEFAULT_PAGE_SIZE', 'MAX_RESPONSE_LENGTH', 'LANDING_MESSAGE_HTML'
         ]
         return [(k, app.config[k]) for k in keys]
@@ -270,7 +270,6 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             "Unsupported data source scheme: " + dataSource.scheme)
     theBackend = backend.Backend(dataRepository)
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
-    theBackend.setResponseValidation(app.config["RESPONSE_VALIDATION"])
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])
     theBackend.setMaxResponseLength(app.config["MAX_RESPONSE_LENGTH"])
     app.backend = theBackend

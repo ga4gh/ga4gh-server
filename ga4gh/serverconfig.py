@@ -18,7 +18,6 @@ class BaseConfig(object):
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
     MAX_RESPONSE_LENGTH = 1024 * 1024  # 1MB
     REQUEST_VALIDATION = True
-    RESPONSE_VALIDATION = False
     DEFAULT_PAGE_SIZE = 100
     DATA_SOURCE = "empty://"
 
@@ -71,7 +70,6 @@ class SimulatedConfig(BaseConfig):
     DATA_SOURCE = "simulated://"
     DEBUG = True
     REQUEST_VALIDATION = True
-    RESPONSE_VALIDATION = True
 
 
 class ProductionConfig(BaseConfig):
@@ -101,7 +99,6 @@ class TestConfig(BaseConfig):
     """
     TESTING = True
     REQUEST_VALIDATION = True
-    RESPONSE_VALIDATION = True
 
 
 class TestOidcConfig(TestConfig):

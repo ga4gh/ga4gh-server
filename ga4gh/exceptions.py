@@ -656,21 +656,6 @@ class ServerError(RuntimeException):
     message = "Internal Server Error"
 
 
-class ResponseValidationFailureException(ServerError):
-    """
-    A validation of the response data failed
-    """
-    def __init__(self, jsonDict, requestClass):
-        validator = Validator(requestClass)
-        self.message = (
-            "Response '{}' is not a valid instance of {}. "
-            "Invalid fields: {} "
-            "Please file a bug report.".format(
-                jsonDict, requestClass,
-                validator.getInvalidFields(jsonDict)
-            ))
-
-
 #####################################################################
 #
 # Client exceptions

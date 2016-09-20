@@ -646,11 +646,6 @@ REQUEST_VALIDATION
     they conform to the protocol. This may result in clients with poor standards
     compliance receiving errors rather than the expected results.
 
-RESPONSE_VALIDATION
-    Set this to True to strictly validate all outgoing responses to ensure
-    that they conform to the protocol. This should only be used for development
-    purposes.
-
 LANDING_MESSAGE_HTML
     The server provides a simple landing page at its root. By setting this
     value to point at a file containing an HTML block element it is possible to

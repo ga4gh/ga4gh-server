@@ -101,13 +101,6 @@ class TestExceptionConsistency(unittest.TestCase):
                 obj.start = -1
                 jsonDict = protocol.toJsonDict(obj)
                 args = (jsonDict, objClass)
-            elif class_ == exceptions.ResponseValidationFailureException:
-                objClass = protocol.SearchReadsResponse
-                obj = objClass()
-                obj.alignments.extend([protocol.ReadAlignment()])
-                obj.alignments[0].alignment.mapping_quality = -1
-                jsonDict = protocol.toJsonDict(obj)
-                args = (jsonDict, objClass)
             else:
                 numInitArgs = len(inspect.getargspec(
                     class_.__init__).args) - 1
@@ -142,15 +135,4 @@ class TestValidationExceptions(unittest.TestCase):
             jsonDict, objClass)
         self.assertIn("invalid fields:", instance.message)
         self.assertIn("u'start': u'thisIsWrong'", instance.message)
-        self.assertEqual(instance.message.count(wrongString), 2)
-
-        # ResponseValidationFailureException
-        objClass = protocol.SearchReadsResponse
-        obj = objClass()
-        obj.alignments.extend([protocol.ReadAlignment()])
-        obj.alignments[0].alignment.mapping_quality = wrongString
-        jsonDict = obj.toJsonDict()
-        instance = exceptions.ResponseValidationFailureException(
-            jsonDict, objClass)
-        self.assertIn("Invalid fields", instance.message)
         self.assertEqual(instance.message.count(wrongString), 2)

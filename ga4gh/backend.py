@@ -19,7 +19,6 @@ class Backend(object):
     """
     def __init__(self, dataRepository):
         self._requestValidation = False
-        self._responseValidation = False
         self._defaultPageSize = 100
         self._maxResponseLength = 2**20  # 1 MiB
         self._dataRepository = dataRepository
@@ -35,12 +34,6 @@ class Backend(object):
         Set enabling request validation
         """
         self._requestValidation = requestValidation
-
-    def setResponseValidation(self, responseValidation):
-        """
-        Set enabling response validation
-        """
-        self._responseValidation = responseValidation
 
     def setDefaultPageSize(self, defaultPageSize):
         """
