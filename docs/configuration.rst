@@ -415,7 +415,7 @@ Clinical Genomics Knowledge Base http://nif-crawler.neuinfo.org/monarch/ttl/cgd.
 published by the Monarch project, is the supported format for Evidence.
 
 .. argparse::
-   :module: ga4gh.cli
+   :module: ga4gh.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-phenotypeassociationset
@@ -618,7 +618,7 @@ remove-phenotypeassociationset
 Removes an rdf object store.
 
 .. argparse::
-   :module: ga4gh.cli
+   :module: ga4gh.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-phenotypeassociationset
