@@ -245,6 +245,17 @@ class AbstractDataRepository(object):
                     phenotypeAssociationSet.getParentContainer().getId(),
                     sep="\t")
                 # TODO -  please improve this listing
+            print("\tRnaQuantificationSets:")
+            for rna_quantification_set in dataset.getRnaQuantificationSets():
+                print(
+                    "\t", rna_quantification_set.getLocalId(),
+                    rna_quantification_set.getId(), sep="\t")
+                for quant in rna_quantification_set.getRnaQuantifications():
+                        print(
+                            "\t\t", quant.getLocalId(),
+                            quant._description,
+                            quant._readGroupIds[0],
+                            quant._featureSetIds[0], sep="\t")
 
     def allReferences(self):
         """
