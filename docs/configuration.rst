@@ -171,7 +171,7 @@ Adds a reference set used in the 1000 Genomes project using the name
 add-biosample
 ++++++++++++++++
 
-Adds a new biosample to the repository. The biosample argument is 
+Adds a new biosample to the repository. The biosample argument is
 a JSON document according to the GA4GH JSON schema.
 
 .. argparse::
@@ -194,7 +194,7 @@ Adds the biosample named HG00096 to the repository with the individual ID
 add-individual
 ++++++++++++++++
 
-Adds a new individual to the repository. The individual argument is 
+Adds a new individual to the repository. The individual argument is
 a JSON document following the GA4GH JSON schema.
 
 .. argparse::
@@ -406,6 +406,29 @@ Adds a new rnaquantification set for a feature expression database stored on
 the local file system. The name of the rnaquantification set is automatically
 derived from the file name.
 
++++++++++++++++++++++++++++
+add-phenotypeassociationset
++++++++++++++++++++++++++++
+
+Adds an rdf object store.  The cancer genome database
+Clinical Genomics Knowledge Base http://nif-crawler.neuinfo.org/monarch/ttl/cgd.ttl,
+published by the Monarch project, is the supported format for Evidence.
+
+.. argparse::
+   :module: ga4gh.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-phenotypeassociationset
+   :nodefault:
+
+
+Examples:
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-phenotypeassociationset registry.db dataset1 /monarch/ttl/cgd.ttl -n cgd
+
+
 +++++++++++++++
 remove-dataset
 +++++++++++++++
@@ -472,7 +495,7 @@ Removes a biosample from the repository.
 
     $ ga4gh_repo remove-biosample registry.db dataset1 HG00096
 
-Deletes the biosample with name ``HG00096`` in the dataset 
+Deletes the biosample with name ``HG00096`` in the dataset
 ``dataset1`` from the repository represented by ``registry.db``
 
 +++++++++++++++++
@@ -494,7 +517,7 @@ Removes an individual from the repository.
 
     $ ga4gh_repo remove-individual registry.db dataset1 HG00096
 
-Deletes the individual with name ``HG00096`` in the dataset 
+Deletes the individual with name ``HG00096`` in the dataset
 ``dataset1`` from the repository represented by ``registry.db``
 
 ++++++++++++++++++++
@@ -587,6 +610,25 @@ Removes a rna quantification set from the repository.
 
 Deletes the rnaquantification set named ``ENCFF305LZB`` from the dataset named
 ``dataset1`` from the repository represented by ``registry.db``.
+
+++++++++++++++++++++++++++++++
+remove-phenotypeassociationset
+++++++++++++++++++++++++++++++
+
+Removes an rdf object store.
+
+.. argparse::
+   :module: ga4gh.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-phenotypeassociationset
+   :nodefault:
+
+Examples:
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-phenotypeassociationset registry.db dataset1  cgd
 
 ------------------
 Configuration file
