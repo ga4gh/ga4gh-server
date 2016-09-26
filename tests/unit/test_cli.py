@@ -10,7 +10,11 @@ import mock
 import unittest
 import shlex
 
-import ga4gh.cli as cli
+import ga4gh.cli.server as cli_server
+import ga4gh.cli.client as cli_client
+import ga4gh.cli.repomanager as cli_repomanager
+import ga4gh.cli.ga2vcf as cli_ga2vcf
+import ga4gh.cli.ga2sam as cli_ga2sam
 import ga4gh.protocol as protocol
 import google.protobuf.descriptor as descriptor
 import google.protobuf.internal.python_message as python_message
@@ -24,7 +28,7 @@ class TestServerArguments(unittest.TestCase):
     def testParseArguments(self):
         cliInput = """--port 7777 --host 123.4.5.6 --config MockConfigName
         --config-file /path/to/config --tls --dont-use-reloader"""
-        parser = cli.getServerParser()
+        parser = cli_server.getServerParser()
         args = parser.parse_args(cliInput.split())
         self.assertEqual(args.port, 7777)
         self.assertEqual(args.host, "123.4.5.6")
@@ -42,7 +46,7 @@ class TestGa2VcfArguments(unittest.TestCase):
         cliInput = """--key KEY -O vcf --outputFile /dev/null
         --referenceName REFERENCENAME --callSetIds CALL,SET,IDS --start 0
         --end 1 --pageSize 2 BASEURL VARIANTSETID"""
-        parser = cli.getGa2VcfParser()
+        parser = cli_ga2vcf.getGa2VcfParser()
         args = parser.parse_args(cliInput.split())
         self.assertEqual(args.key, "KEY")
         self.assertEqual(args.outputFormat, "vcf")
@@ -64,7 +68,7 @@ class TestGa2SamArguments(unittest.TestCase):
         cliInput = """--key KEY --outputFormat sam
         --pageSize 1 --start 2 --end 3 --outputFile OUT.SAM
         --referenceId REFERENCEID BASEURL READGROUPID"""
-        parser = cli.getGa2SamParser()
+        parser = cli_ga2sam.getGa2SamParser()
         args = parser.parse_args(cliInput.split())
         self.assertEqual(args.key, "KEY")
         self.assertEqual(args.outputFormat, "sam")
@@ -89,7 +93,7 @@ class TestClientArguments(unittest.TestCase):
         raise self.ParseFailureException(exitVal)
 
     def setUp(self):
-        self.parser = cli.getClientParser()
+        self.parser = cli_client.getClientParser()
 
     def testParseFailure(self):
         cliInput = "invalidCommand"
@@ -120,7 +124,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.pageSize, 2)
         self.assertEqual(args.variantSetId, "VARIANTSETID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEqual(args.runner, cli.SearchVariantsRunner)
+        self.assertEqual(args.runner, cli_client.SearchVariantsRunner)
 
     def testVariantSetsSearchArguments(self):
         cliInput = (
@@ -129,7 +133,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.pageSize, 1)
         self.assertEqual(args.datasetId, "DATASETID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchVariantSetsRunner)
+        self.assertEquals(args.runner, cli_client.SearchVariantSetsRunner)
 
     def testReferenceSetsSearchArguments(self):
         cliInput = (
@@ -142,7 +146,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.assemblyId, "ASSEMBLYID")
         self.assertEqual(args.accession, "ACCESSION")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchReferenceSetsRunner)
+        self.assertEquals(args.runner, cli_client.SearchReferenceSetsRunner)
 
     def testReferencesSearchArguments(self):
         cliInput = (
@@ -153,7 +157,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.md5checksum, "MD5CHECKSUM")
         self.assertEqual(args.accession, "ACCESSION")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchReferencesRunner)
+        self.assertEquals(args.runner, cli_client.SearchReferencesRunner)
 
     def testReadGroupSetsSearchArguments(self):
         cliInput = (
@@ -164,7 +168,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.datasetId, "DATASETID")
         self.assertEqual(args.name, "NAME")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchReadGroupSetsRunner)
+        self.assertEquals(args.runner, cli_client.SearchReadGroupSetsRunner)
 
     def testCallSetsSearchArguments(self):
         cliInput = (
@@ -175,7 +179,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.variantSetId, "VARIANTSETID")
         self.assertEqual(args.name, "NAME")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchCallSetsRunner)
+        self.assertEquals(args.runner, cli_client.SearchCallSetsRunner)
 
     def testReadsSearchArguments(self):
         cliInput = (
@@ -189,7 +193,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.readGroupIds, "READ,GROUP,IDS")
         self.assertEqual(args.referenceId, "REFERENCEID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchReadsRunner)
+        self.assertEquals(args.runner, cli_client.SearchReadsRunner)
 
     def testBioSamplesSearchArguments(self):
         cliInput = (
@@ -201,7 +205,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.name, "BIOSAMPLENAME")
         self.assertEqual(args.datasetId, "DATASETID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchBioSamplesRunner)
+        self.assertEquals(args.runner, cli_client.SearchBioSamplesRunner)
 
     def testIndividualsSearchArguments(self):
         cliInput = (
@@ -213,13 +217,13 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.name, "INDIVIDUALNAME")
         self.assertEqual(args.datasetId, "DATASETID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchIndividualsRunner)
+        self.assertEquals(args.runner, cli_client.SearchIndividualsRunner)
 
     def testDatasetsSearchArguments(self):
         cliInput = "datasets-search BASEURL"
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchDatasetsRunner)
+        self.assertEquals(args.runner, cli_client.SearchDatasetsRunner)
 
     def testGenotypePhenotypeSearchArguments(self):
         cliInput = (
@@ -233,7 +237,8 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.phenotype_ids, "D,E,F")
         self.assertEqual(args.evidence, "E1")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchGenotypePhenotypeRunner)
+        self.assertEquals(
+            args.runner, cli_client.SearchGenotypePhenotypeRunner)
 
     def testPhenotypeSearchArguments(self):
         cliInput = (
@@ -248,7 +253,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.type, "T")
         self.assertEqual(args.age_of_onset, "2")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchPhenotypeRunner)
+        self.assertEquals(args.runner, cli_client.SearchPhenotypeRunner)
 
     def testPhenotypeAssociationSetsSearchArguments(self):
         cliInput = (
@@ -259,7 +264,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.datasetId, "SET_ID")
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEquals(
-            args.runner, cli.SearchPhenotypeAssociationSetsRunner)
+            args.runner, cli_client.SearchPhenotypeAssociationSetsRunner)
 
     def verifyGetArguments(self, command, runnerClass):
         cliInput = "{} BASEURL ID".format(command)
@@ -270,63 +275,64 @@ class TestClientArguments(unittest.TestCase):
 
     def testReferenceSetGetArguments(self):
         self.verifyGetArguments(
-            "referencesets-get", cli.GetReferenceSetRunner)
+            "referencesets-get", cli_client.GetReferenceSetRunner)
 
     def testBioSamplesGetArguments(self):
         self.verifyGetArguments(
-            "biosamples-get", cli.GetBioSampleRunner)
+            "biosamples-get", cli_client.GetBioSampleRunner)
 
     def testIndividualsGetArguments(self):
         self.verifyGetArguments(
-            "individuals-get", cli.GetIndividualRunner)
+            "individuals-get", cli_client.GetIndividualRunner)
 
     def testReferenceGetArguments(self):
         self.verifyGetArguments(
-            "references-get", cli.GetReferenceRunner)
+            "references-get", cli_client.GetReferenceRunner)
 
     def testReadGroupSetGetArguments(self):
         self.verifyGetArguments(
-            "readgroupsets-get", cli.GetReadGroupSetRunner)
+            "readgroupsets-get", cli_client.GetReadGroupSetRunner)
 
     def testReadGroupGetArguments(self):
         self.verifyGetArguments(
-            "readgroups-get", cli.GetReadGroupRunner)
+            "readgroups-get", cli_client.GetReadGroupRunner)
 
     def testCallSetGetArguments(self):
         self.verifyGetArguments(
-            "callsets-get", cli.GetCallSetRunner)
+            "callsets-get", cli_client.GetCallSetRunner)
 
     def testDatasetsGetArguments(self):
         self.verifyGetArguments(
-            "datasets-get", cli.GetDatasetRunner)
+            "datasets-get", cli_client.GetDatasetRunner)
 
     def testVariantGetArguments(self):
         self.verifyGetArguments(
-            "variants-get", cli.GetVariantRunner)
+            "variants-get", cli_client.GetVariantRunner)
 
     def testRnaQuantificationGetArguments(self):
         self.verifyGetArguments(
-            "rnaquantifications-get", cli.GetRnaQuantificationRunner)
+            "rnaquantifications-get", cli_client.GetRnaQuantificationRunner)
 
     def testVariantSetsGet(self):
         self.verifyGetArguments(
-            "variantsets-get", cli.GetVariantSetRunner)
+            "variantsets-get", cli_client.GetVariantSetRunner)
 
     def testFeaturesGet(self):
         self.verifyGetArguments(
-            "features-get", cli.GetFeatureRunner)
+            "features-get", cli_client.GetFeatureRunner)
 
     def testFeatureSetsGet(self):
         self.verifyGetArguments(
-            "featuresets-get", cli.GetFeatureSetRunner)
+            "featuresets-get", cli_client.GetFeatureSetRunner)
 
     def testExpressionLevelsGet(self):
         self.verifyGetArguments(
-            "expressionlevels-get", cli.GetExpressionLevelRunner)
+            "expressionlevels-get", cli_client.GetExpressionLevelRunner)
 
     def testRnaQuantificationSetsGet(self):
         self.verifyGetArguments(
-            "rnaquantificationsets-get", cli.GetRnaQuantificationSetRunner)
+            "rnaquantificationsets-get",
+            cli_client.GetRnaQuantificationSetRunner)
 
     def testReferenceBasesListArguments(self):
         cliInput = (
@@ -338,7 +344,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.start, 1)
         self.assertEqual(args.end, 2)
         self.assertEquals(args.outputFormat, "fasta")
-        self.assertEquals(args.runner, cli.ListReferenceBasesRunner)
+        self.assertEquals(args.runner, cli_client.ListReferenceBasesRunner)
 
     def testVariantAnnotationsSearch(self):
         cliInput = (
@@ -356,7 +362,8 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.effects, "EFFECTS")
         self.assertEqual(args.pageSize, 3)
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEquals(args.runner, cli.SearchVariantAnnotationsRunner)
+        self.assertEquals(
+            args.runner, cli_client.SearchVariantAnnotationsRunner)
 
     def testVariationAnnotationSetsSearch(self):
         cliInput = (
@@ -367,7 +374,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.variantSetId, "VARIANTSETID")
         self.assertEquals(
-            args.runner, cli.SearchVariantAnnotationSetsRunner)
+            args.runner, cli_client.SearchVariantAnnotationSetsRunner)
 
     def testVariationAnnotationSetsGet(self):
         cliInput = (
@@ -377,7 +384,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.baseUrl, "BASEURL")
         self.assertEqual(args.id, "VARIANTANNOTATIONSETID")
         self.assertEquals(
-            args.runner, cli.GetVariantAnnotationSetRunner)
+            args.runner, cli_client.GetVariantAnnotationSetRunner)
 
     def testRnaQuantificationSearchArguments(self):
         cliInput = (
@@ -385,7 +392,8 @@ class TestClientArguments(unittest.TestCase):
         args = self.parser.parse_args(cliInput.split())
         self.assertEqual(args.rnaQuantificationSetId, "ID")
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEqual(args.runner, cli.SearchRnaQuantificationsRunner)
+        self.assertEqual(
+            args.runner, cli_client.SearchRnaQuantificationsRunner)
 
     def testExpressionLevelSearchArguments(self):
         cliInput = (
@@ -395,7 +403,7 @@ class TestClientArguments(unittest.TestCase):
         self.assertEqual(args.rnaQuantificationId, "rID")
         self.assertEqual(args.threshold, 0.0)
         self.assertEqual(args.baseUrl, "BASEURL")
-        self.assertEqual(args.runner, cli.SearchExpressionLevelsRunner)
+        self.assertEqual(args.runner, cli_client.SearchExpressionLevelsRunner)
 
     def testFeaturesSearch(self):
         cliInput = (
@@ -442,7 +450,7 @@ class TestClientArguments(unittest.TestCase):
 class TestRepoManagerCli(unittest.TestCase):
 
     def setUp(self):
-        self.parser = cli.RepoManager.getParser()
+        self.parser = cli_repomanager.RepoManager.getParser()
         self.registryPath = 'a/repo/path'
         self.datasetName = "datasetName"
         self.filePath = 'a/file/path'
@@ -757,7 +765,7 @@ class TestOutputFormats(unittest.TestCase):
         args.start = 1
         args.end = 100
         returnVal = 'AGCT' * 100  # 400 bases
-        runner = cli.ListReferenceBasesRunner(args)
+        runner = cli_client.ListReferenceBasesRunner(args)
         runner._client.list_reference_bases = mock.Mock(
             return_value=returnVal)
         printCalls = self._getRunPrintMethodCalls(runner)
@@ -770,7 +778,7 @@ class TestOutputFormats(unittest.TestCase):
     def testTextOutput(self):
         returnObj = self.makeFakeObject()
         args = self.FakeArgs()
-        runner = cli.AbstractGetRunner(args)
+        runner = cli_client.AbstractGetRunner(args)
         runner._method = mock.Mock(return_value=returnObj)
         printCalls = self._getRunPrintMethodCalls(runner)
         self.assertEqual(printCalls, [((u'id', u'name'), {'sep': u'\t'})])
@@ -778,7 +786,7 @@ class TestOutputFormats(unittest.TestCase):
     def testJsonOutput(self):
         returnObj = self.makeFakeObject()
         args = self.FakeArgs('json')
-        runner = cli.AbstractGetRunner(args)
+        runner = cli_client.AbstractGetRunner(args)
         runner._method = mock.Mock(return_value=returnObj)
         printCalls = self._getRunPrintMethodCalls(runner)
         self.assertEqual(json.loads(printCalls[0][0][0])['name'], 'name')
