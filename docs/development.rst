@@ -324,7 +324,7 @@ To generate a new ``_protocol_definitions.py`` file, use
 
 .. code-block:: bash
 
-   $ python scripts/process_schemas.py -i path/to/schemas desiredVersion
+   $ python scripts/process_schemas.py desiredVersion path/to/schemas
 
 Where ``desiredVersion`` is the version that will be written to the
 ``_protocol_definitions.py`` file.  This version must be in the form

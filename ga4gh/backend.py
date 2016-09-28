@@ -159,10 +159,10 @@ class Backend(object):
             request, self.getDataRepository().getNumDatasets(),
             self.getDataRepository().getDatasetByIndex)
 
-    def bioSamplesGenerator(self, request):
+    def biosamplesGenerator(self, request):
         dataset = self.getDataRepository().getDataset(request.dataset_id)
         results = []
-        for obj in dataset.getBioSamples():
+        for obj in dataset.getBiosamples():
             include = True
             if request.name:
                 if request.name != obj.getLocalId():
@@ -209,10 +209,10 @@ class Backend(object):
             if request.name:
                 if request.name != obj.getLocalId():
                     include = False
-            if request.bio_sample_id:
+            if request.biosample_id:
                 rgsp.ClearField("read_groups")
                 for readGroup in obj.getReadGroups():
-                    if request.bio_sample_id == readGroup.getBioSampleId():
+                    if request.biosample_id == readGroup.getBiosampleId():
                         rgsp.read_groups.extend(
                             [readGroup.toProtocolElement()])
                 # If none of the biosamples match and the readgroupset
@@ -453,8 +453,8 @@ class Backend(object):
             if request.name:
                 if request.name != obj.getLocalId():
                     include = False
-            if request.bio_sample_id:
-                if request.bio_sample_id != obj.getBioSampleId():
+            if request.biosample_id:
+                if request.biosample_id != obj.getBiosampleId():
                     include = False
             if include:
                 results.append(obj)
@@ -637,20 +637,20 @@ class Backend(object):
         jsonString = protocol.toJson(gaVariant)
         return jsonString
 
-    def runGetBioSample(self, id_):
+    def runGetBiosample(self, id_):
         """
-        Runs a getBioSample request for the specified ID.
+        Runs a getBiosample request for the specified ID.
         """
-        compoundId = datamodel.BioSampleCompoundId.parse(id_)
+        compoundId = datamodel.BiosampleCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
-        bioSample = dataset.getBioSample(id_)
-        return self.runGetRequest(bioSample)
+        biosample = dataset.getBiosample(id_)
+        return self.runGetRequest(biosample)
 
     def runGetIndividual(self, id_):
         """
         Runs a getIndividual request for the specified ID.
         """
-        compoundId = datamodel.BioSampleCompoundId.parse(id_)
+        compoundId = datamodel.BiosampleCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         individual = dataset.getIndividual(id_)
         return self.runGetRequest(individual)
@@ -791,14 +791,14 @@ class Backend(object):
             protocol.SearchIndividualsResponse,
             self.individualsGenerator)
 
-    def runSearchBioSamples(self, request):
+    def runSearchBiosamples(self, request):
         """
-        Runs the specified SearchBioSamplesRequest.
+        Runs the specified SearchBiosamplesRequest.
         """
         return self.runSearchRequest(
-            request, protocol.SearchBioSamplesRequest,
-            protocol.SearchBioSamplesResponse,
-            self.bioSamplesGenerator)
+            request, protocol.SearchBiosamplesRequest,
+            protocol.SearchBiosamplesResponse,
+            self.biosamplesGenerator)
 
     def runSearchReads(self, request):
         """

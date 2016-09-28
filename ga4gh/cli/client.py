@@ -238,12 +238,12 @@ class SearchVariantSetsRunner(AbstractSearchRunner):
             self._run(self._datasetId)
 
 
-class SearchBioSamplesRunner(AbstractSearchRunner):
+class SearchBiosamplesRunner(AbstractSearchRunner):
     """
     Runner class for the biosamples/search method.
     """
     def __init__(self, args):
-        super(SearchBioSamplesRunner, self).__init__(args)
+        super(SearchBiosamplesRunner, self).__init__(args)
         self._datasetId = args.datasetId
         self._individualId = args.individualId
         self._name = args.name
@@ -821,13 +821,13 @@ class GetReadGroupRunner(AbstractGetRunner):
         self._method = self._client.get_read_group
 
 
-class GetBioSampleRunner(AbstractGetRunner):
+class GetBiosampleRunner(AbstractGetRunner):
     """
     Runner class for the references/{id} method
     """
     def __init__(self, args):
-        super(GetBioSampleRunner, self).__init__(args)
-        self._method = self._client.getBioSample
+        super(GetBiosampleRunner, self).__init__(args)
+        self._method = self._client.getBiosample
 
 
 class GetIndividualRunner(AbstractGetRunner):
@@ -1176,9 +1176,9 @@ def addIndividualIdArgument(parser):
         help="The ID of the individual")
 
 
-def addBioSampleIdArgument(parser):
+def addBiosampleIdArgument(parser):
     parser.add_argument(
-        "--bioSampleId", default=None,
+        "--biosampleId", default=None,
         help="The ID of the biosample")
 
 
@@ -1274,10 +1274,10 @@ def addFeatureSetsGetParser(subparsers):
     addGetArguments(parser)
 
 
-def addBioSamplesGetParser(subparsers):
+def addBiosamplesGetParser(subparsers):
     parser = cli.addSubparser(
         subparsers, "biosamples-get", "Get a biosample by ID")
-    parser.set_defaults(runner=GetBioSampleRunner)
+    parser.set_defaults(runner=GetBiosampleRunner)
     addGetArguments(parser)
 
 
@@ -1288,12 +1288,12 @@ def addIndividualsGetParser(subparsers):
     addGetArguments(parser)
 
 
-def addBioSamplesSearchParser(subparsers):
+def addBiosamplesSearchParser(subparsers):
     parser = subparsers.add_parser(
         "biosamples-search",
         description="Search for biosamples",
         help="Search for biosamples.")
-    parser.set_defaults(runner=SearchBioSamplesRunner)
+    parser.set_defaults(runner=SearchBiosamplesRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
     addPageSizeArgument(parser)
@@ -1377,7 +1377,7 @@ def addReadGroupSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
-    addBioSampleIdArgument(parser)
+    addBiosampleIdArgument(parser)
     addPageSizeArgument(parser)
     addDatasetIdArgument(parser)
     addNameArgument(parser)
@@ -1390,7 +1390,7 @@ def addCallSetsSearchParser(subparsers):
     parser.set_defaults(runner=SearchCallSetsRunner)
     addUrlArgument(parser)
     addOutputFormatArgument(parser)
-    addBioSampleIdArgument(parser)
+    addBiosampleIdArgument(parser)
     addPageSizeArgument(parser)
     addNameArgument(parser)
     addVariantSetIdArgument(parser)
@@ -1612,8 +1612,8 @@ def getClientParser():
     addFeaturesGetParser(subparsers)
     addFeatureSetsGetParser(subparsers)
     addFeatureSetsSearchParser(subparsers)
-    addBioSamplesSearchParser(subparsers)
-    addBioSamplesGetParser(subparsers)
+    addBiosamplesSearchParser(subparsers)
+    addBiosamplesGetParser(subparsers)
     addIndividualsSearchParser(subparsers)
     addIndividualsGetParser(subparsers)
     addReferenceSetsSearchParser(subparsers)

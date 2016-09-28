@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/bio_metadata_service.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n ga4gh/bio_metadata_service.proto\x12\x05ga4gh\x1a\x18ga4gh/bio_metadata.proto\"c\n\x18SearchIndividualsRequest\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x11\n\tpage_size\x18\x03 \x01(\x05\x12\x12\n\npage_token\x18\x04 \x01(\t\"-\n\x14GetIndividualRequest\x12\x15\n\rindividual_id\x18\x01 \x01(\t\",\n\x13GetBioSampleRequest\x12\x15\n\rbio_sample_id\x18\x01 \x01(\t\"\\\n\x19SearchIndividualsResponse\x12&\n\x0bindividuals\x18\x01 \x03(\x0b\x32\x11.ga4gh.Individual\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"y\n\x17SearchBioSamplesRequest\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x15\n\rindividual_id\x18\x03 \x01(\t\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\x12\n\npage_token\x18\x05 \x01(\t\"Y\n\x18SearchBioSamplesResponse\x12$\n\nbiosamples\x18\x01 \x03(\x0b\x32\x10.ga4gh.BioSample\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t2\xc0\x02\n\x12\x42ioMetadataService\x12V\n\x11SearchIndividuals\x12\x1f.ga4gh.SearchIndividualsRequest\x1a .ga4gh.SearchIndividualsResponse\x12S\n\x10SearchBioSamples\x12\x1e.ga4gh.SearchBioSamplesRequest\x1a\x1f.ga4gh.SearchBioSamplesResponse\x12?\n\rGetIndividual\x12\x1b.ga4gh.GetIndividualRequest\x1a\x11.ga4gh.Individual\x12<\n\x0cGetBioSample\x12\x1a.ga4gh.GetBioSampleRequest\x1a\x10.ga4gh.BioSampleb\x06proto3')
+  serialized_pb=_b('\n ga4gh/bio_metadata_service.proto\x12\x05ga4gh\x1a\x18ga4gh/bio_metadata.proto\"c\n\x18SearchIndividualsRequest\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x11\n\tpage_size\x18\x03 \x01(\x05\x12\x12\n\npage_token\x18\x04 \x01(\t\"-\n\x14GetIndividualRequest\x12\x15\n\rindividual_id\x18\x01 \x01(\t\"+\n\x13GetBiosampleRequest\x12\x14\n\x0c\x62iosample_id\x18\x01 \x01(\t\"\\\n\x19SearchIndividualsResponse\x12&\n\x0bindividuals\x18\x01 \x03(\x0b\x32\x11.ga4gh.Individual\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"y\n\x17SearchBiosamplesRequest\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x15\n\rindividual_id\x18\x03 \x01(\t\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\x12\n\npage_token\x18\x05 \x01(\t\"Y\n\x18SearchBiosamplesResponse\x12$\n\nbiosamples\x18\x01 \x03(\x0b\x32\x10.ga4gh.Biosample\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t2\xc0\x02\n\x12\x42ioMetadataService\x12V\n\x11SearchIndividuals\x12\x1f.ga4gh.SearchIndividualsRequest\x1a .ga4gh.SearchIndividualsResponse\x12S\n\x10SearchBiosamples\x12\x1e.ga4gh.SearchBiosamplesRequest\x1a\x1f.ga4gh.SearchBiosamplesResponse\x12?\n\rGetIndividual\x12\x1b.ga4gh.GetIndividualRequest\x1a\x11.ga4gh.Individual\x12<\n\x0cGetBiosample\x12\x1a.ga4gh.GetBiosampleRequest\x1a\x10.ga4gh.Biosampleb\x06proto3')
   ,
   dependencies=[ga4gh_dot_bio__metadata__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -112,14 +112,14 @@ _GETINDIVIDUALREQUEST = _descriptor.Descriptor(
 
 
 _GETBIOSAMPLEREQUEST = _descriptor.Descriptor(
-  name='GetBioSampleRequest',
-  full_name='ga4gh.GetBioSampleRequest',
+  name='GetBiosampleRequest',
+  full_name='ga4gh.GetBiosampleRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='bio_sample_id', full_name='ga4gh.GetBioSampleRequest.bio_sample_id', index=0,
+      name='biosample_id', full_name='ga4gh.GetBiosampleRequest.biosample_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -138,7 +138,7 @@ _GETBIOSAMPLEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=217,
-  serialized_end=261,
+  serialized_end=260,
 )
 
 
@@ -175,48 +175,48 @@ _SEARCHINDIVIDUALSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=263,
-  serialized_end=355,
+  serialized_start=262,
+  serialized_end=354,
 )
 
 
 _SEARCHBIOSAMPLESREQUEST = _descriptor.Descriptor(
-  name='SearchBioSamplesRequest',
-  full_name='ga4gh.SearchBioSamplesRequest',
+  name='SearchBiosamplesRequest',
+  full_name='ga4gh.SearchBiosamplesRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='dataset_id', full_name='ga4gh.SearchBioSamplesRequest.dataset_id', index=0,
+      name='dataset_id', full_name='ga4gh.SearchBiosamplesRequest.dataset_id', index=0,
       number=1, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='name', full_name='ga4gh.SearchBioSamplesRequest.name', index=1,
+      name='name', full_name='ga4gh.SearchBiosamplesRequest.name', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='individual_id', full_name='ga4gh.SearchBioSamplesRequest.individual_id', index=2,
+      name='individual_id', full_name='ga4gh.SearchBiosamplesRequest.individual_id', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='page_size', full_name='ga4gh.SearchBioSamplesRequest.page_size', index=3,
+      name='page_size', full_name='ga4gh.SearchBiosamplesRequest.page_size', index=3,
       number=4, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='page_token', full_name='ga4gh.SearchBioSamplesRequest.page_token', index=4,
+      name='page_token', full_name='ga4gh.SearchBiosamplesRequest.page_token', index=4,
       number=5, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -234,27 +234,27 @@ _SEARCHBIOSAMPLESREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=357,
-  serialized_end=478,
+  serialized_start=356,
+  serialized_end=477,
 )
 
 
 _SEARCHBIOSAMPLESRESPONSE = _descriptor.Descriptor(
-  name='SearchBioSamplesResponse',
-  full_name='ga4gh.SearchBioSamplesResponse',
+  name='SearchBiosamplesResponse',
+  full_name='ga4gh.SearchBiosamplesResponse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='biosamples', full_name='ga4gh.SearchBioSamplesResponse.biosamples', index=0,
+      name='biosamples', full_name='ga4gh.SearchBiosamplesResponse.biosamples', index=0,
       number=1, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='next_page_token', full_name='ga4gh.SearchBioSamplesResponse.next_page_token', index=1,
+      name='next_page_token', full_name='ga4gh.SearchBiosamplesResponse.next_page_token', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -272,18 +272,18 @@ _SEARCHBIOSAMPLESRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=480,
-  serialized_end=569,
+  serialized_start=479,
+  serialized_end=568,
 )
 
 _SEARCHINDIVIDUALSRESPONSE.fields_by_name['individuals'].message_type = ga4gh_dot_bio__metadata__pb2._INDIVIDUAL
 _SEARCHBIOSAMPLESRESPONSE.fields_by_name['biosamples'].message_type = ga4gh_dot_bio__metadata__pb2._BIOSAMPLE
 DESCRIPTOR.message_types_by_name['SearchIndividualsRequest'] = _SEARCHINDIVIDUALSREQUEST
 DESCRIPTOR.message_types_by_name['GetIndividualRequest'] = _GETINDIVIDUALREQUEST
-DESCRIPTOR.message_types_by_name['GetBioSampleRequest'] = _GETBIOSAMPLEREQUEST
+DESCRIPTOR.message_types_by_name['GetBiosampleRequest'] = _GETBIOSAMPLEREQUEST
 DESCRIPTOR.message_types_by_name['SearchIndividualsResponse'] = _SEARCHINDIVIDUALSRESPONSE
-DESCRIPTOR.message_types_by_name['SearchBioSamplesRequest'] = _SEARCHBIOSAMPLESREQUEST
-DESCRIPTOR.message_types_by_name['SearchBioSamplesResponse'] = _SEARCHBIOSAMPLESRESPONSE
+DESCRIPTOR.message_types_by_name['SearchBiosamplesRequest'] = _SEARCHBIOSAMPLESREQUEST
+DESCRIPTOR.message_types_by_name['SearchBiosamplesResponse'] = _SEARCHBIOSAMPLESRESPONSE
 
 SearchIndividualsRequest = _reflection.GeneratedProtocolMessageType('SearchIndividualsRequest', (_message.Message,), dict(
   DESCRIPTOR = _SEARCHINDIVIDUALSREQUEST,
@@ -299,12 +299,12 @@ GetIndividualRequest = _reflection.GeneratedProtocolMessageType('GetIndividualRe
   ))
 _sym_db.RegisterMessage(GetIndividualRequest)
 
-GetBioSampleRequest = _reflection.GeneratedProtocolMessageType('GetBioSampleRequest', (_message.Message,), dict(
+GetBiosampleRequest = _reflection.GeneratedProtocolMessageType('GetBiosampleRequest', (_message.Message,), dict(
   DESCRIPTOR = _GETBIOSAMPLEREQUEST,
   __module__ = 'ga4gh.bio_metadata_service_pb2'
-  # @@protoc_insertion_point(class_scope:ga4gh.GetBioSampleRequest)
+  # @@protoc_insertion_point(class_scope:ga4gh.GetBiosampleRequest)
   ))
-_sym_db.RegisterMessage(GetBioSampleRequest)
+_sym_db.RegisterMessage(GetBiosampleRequest)
 
 SearchIndividualsResponse = _reflection.GeneratedProtocolMessageType('SearchIndividualsResponse', (_message.Message,), dict(
   DESCRIPTOR = _SEARCHINDIVIDUALSRESPONSE,
@@ -313,19 +313,19 @@ SearchIndividualsResponse = _reflection.GeneratedProtocolMessageType('SearchIndi
   ))
 _sym_db.RegisterMessage(SearchIndividualsResponse)
 
-SearchBioSamplesRequest = _reflection.GeneratedProtocolMessageType('SearchBioSamplesRequest', (_message.Message,), dict(
+SearchBiosamplesRequest = _reflection.GeneratedProtocolMessageType('SearchBiosamplesRequest', (_message.Message,), dict(
   DESCRIPTOR = _SEARCHBIOSAMPLESREQUEST,
   __module__ = 'ga4gh.bio_metadata_service_pb2'
-  # @@protoc_insertion_point(class_scope:ga4gh.SearchBioSamplesRequest)
+  # @@protoc_insertion_point(class_scope:ga4gh.SearchBiosamplesRequest)
   ))
-_sym_db.RegisterMessage(SearchBioSamplesRequest)
+_sym_db.RegisterMessage(SearchBiosamplesRequest)
 
-SearchBioSamplesResponse = _reflection.GeneratedProtocolMessageType('SearchBioSamplesResponse', (_message.Message,), dict(
+SearchBiosamplesResponse = _reflection.GeneratedProtocolMessageType('SearchBiosamplesResponse', (_message.Message,), dict(
   DESCRIPTOR = _SEARCHBIOSAMPLESRESPONSE,
   __module__ = 'ga4gh.bio_metadata_service_pb2'
-  # @@protoc_insertion_point(class_scope:ga4gh.SearchBioSamplesResponse)
+  # @@protoc_insertion_point(class_scope:ga4gh.SearchBiosamplesResponse)
   ))
-_sym_db.RegisterMessage(SearchBioSamplesResponse)
+_sym_db.RegisterMessage(SearchBiosamplesResponse)
 
 
 # @@protoc_insertion_point(module_scope)

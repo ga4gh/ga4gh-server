@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/read_service.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x18ga4gh/read_service.proto\x12\x05ga4gh\x1a\x11ga4gh/reads.proto\"|\n\x1aSearchReadGroupSetsRequest\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x15\n\rbio_sample_id\x18\x03 \x01(\t\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\x12\n\npage_token\x18\x05 \x01(\t\"d\n\x1bSearchReadGroupSetsResponse\x12,\n\x0fread_group_sets\x18\x01 \x03(\x0b\x32\x13.ga4gh.ReadGroupSet\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"3\n\x16GetReadGroupSetRequest\x12\x19\n\x11read_group_set_id\x18\x01 \x01(\t\"\x85\x01\n\x12SearchReadsRequest\x12\x16\n\x0eread_group_ids\x18\x01 \x03(\t\x12\x14\n\x0creference_id\x18\x02 \x01(\t\x12\r\n\x05start\x18\x03 \x01(\x03\x12\x0b\n\x03\x65nd\x18\x04 \x01(\x03\x12\x11\n\tpage_size\x18\x05 \x01(\x05\x12\x12\n\npage_token\x18\x06 \x01(\t\"X\n\x13SearchReadsResponse\x12(\n\nalignments\x18\x01 \x03(\x0b\x32\x14.ga4gh.ReadAlignment\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t2\xf8\x01\n\x0bReadService\x12\\\n\x13SearchReadGroupSets\x12!.ga4gh.SearchReadGroupSetsRequest\x1a\".ga4gh.SearchReadGroupSetsResponse\x12\x45\n\x0fGetReadGroupSet\x12\x1d.ga4gh.GetReadGroupSetRequest\x1a\x13.ga4gh.ReadGroupSet\x12\x44\n\x0bSearchReads\x12\x19.ga4gh.SearchReadsRequest\x1a\x1a.ga4gh.SearchReadsResponseb\x06proto3')
+  serialized_pb=_b('\n\x18ga4gh/read_service.proto\x12\x05ga4gh\x1a\x11ga4gh/reads.proto\"{\n\x1aSearchReadGroupSetsRequest\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x14\n\x0c\x62iosample_id\x18\x03 \x01(\t\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\x12\n\npage_token\x18\x05 \x01(\t\"d\n\x1bSearchReadGroupSetsResponse\x12,\n\x0fread_group_sets\x18\x01 \x03(\x0b\x32\x13.ga4gh.ReadGroupSet\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"3\n\x16GetReadGroupSetRequest\x12\x19\n\x11read_group_set_id\x18\x01 \x01(\t\"\x85\x01\n\x12SearchReadsRequest\x12\x16\n\x0eread_group_ids\x18\x01 \x03(\t\x12\x14\n\x0creference_id\x18\x02 \x01(\t\x12\r\n\x05start\x18\x03 \x01(\x03\x12\x0b\n\x03\x65nd\x18\x04 \x01(\x03\x12\x11\n\tpage_size\x18\x05 \x01(\x05\x12\x12\n\npage_token\x18\x06 \x01(\t\"X\n\x13SearchReadsResponse\x12(\n\nalignments\x18\x01 \x03(\x0b\x32\x14.ga4gh.ReadAlignment\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t2\xf8\x01\n\x0bReadService\x12\\\n\x13SearchReadGroupSets\x12!.ga4gh.SearchReadGroupSetsRequest\x1a\".ga4gh.SearchReadGroupSetsResponse\x12\x45\n\x0fGetReadGroupSet\x12\x1d.ga4gh.GetReadGroupSetRequest\x1a\x13.ga4gh.ReadGroupSet\x12\x44\n\x0bSearchReads\x12\x19.ga4gh.SearchReadsRequest\x1a\x1a.ga4gh.SearchReadsResponseb\x06proto3')
   ,
   dependencies=[ga4gh_dot_reads__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -50,7 +50,7 @@ _SEARCHREADGROUPSETSREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='bio_sample_id', full_name='ga4gh.SearchReadGroupSetsRequest.bio_sample_id', index=2,
+      name='biosample_id', full_name='ga4gh.SearchReadGroupSetsRequest.biosample_id', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -83,7 +83,7 @@ _SEARCHREADGROUPSETSREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=54,
-  serialized_end=178,
+  serialized_end=177,
 )
 
 
@@ -120,8 +120,8 @@ _SEARCHREADGROUPSETSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=180,
-  serialized_end=280,
+  serialized_start=179,
+  serialized_end=279,
 )
 
 
@@ -151,8 +151,8 @@ _GETREADGROUPSETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=282,
-  serialized_end=333,
+  serialized_start=281,
+  serialized_end=332,
 )
 
 
@@ -217,8 +217,8 @@ _SEARCHREADSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=336,
-  serialized_end=469,
+  serialized_start=335,
+  serialized_end=468,
 )
 
 
@@ -255,8 +255,8 @@ _SEARCHREADSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=471,
-  serialized_end=559,
+  serialized_start=470,
+  serialized_end=558,
 )
 
 _SEARCHREADGROUPSETSRESPONSE.fields_by_name['read_group_sets'].message_type = ga4gh_dot_reads__pb2._READGROUPSET

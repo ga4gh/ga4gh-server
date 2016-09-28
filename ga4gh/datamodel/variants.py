@@ -45,14 +45,14 @@ class CallSet(datamodel.DatamodelObject):
     def __init__(self, parentContainer, localId):
         super(CallSet, self).__init__(parentContainer, localId)
         self._info = {}
-        self._bioSampleId = None
+        self._biosampleId = None
 
     def populateFromRow(self, row):
         """
         Populates this CallSet from the specified DB row.
         """
         # currently a noop
-        self._bioSampleId = row[b'bioSampleId']
+        self._biosampleId = row[b'biosampleId']
 
     def toProtocolElement(self):
         """
@@ -61,7 +61,7 @@ class CallSet(datamodel.DatamodelObject):
         """
         variantSet = self.getParentContainer()
         gaCallSet = protocol.CallSet(
-            bio_sample_id=self.getBioSampleId())
+            biosample_id=self.getBiosampleId())
         if variantSet.getCreationTime():
             gaCallSet.created = variantSet.getCreationTime()
         if variantSet.getUpdatedTime():
@@ -73,17 +73,17 @@ class CallSet(datamodel.DatamodelObject):
             gaCallSet.info[key].values.extend(_encodeValue(self._info[key]))
         return gaCallSet
 
-    def getBioSampleId(self):
+    def getBiosampleId(self):
         """
-        Returns the bioSampleId for this CallSet.
+        Returns the biosampleId for this CallSet.
         """
-        return self._bioSampleId
+        return self._biosampleId
 
-    def setBioSampleId(self, bioSampleId):
+    def setBiosampleId(self, biosampleId):
         """
-        Set the bioSampleId for the current sample.
+        Set the biosampleId for the current sample.
         """
-        self._bioSampleId = bioSampleId
+        self._biosampleId = biosampleId
 
     def getSampleName(self):
         """

@@ -67,9 +67,9 @@ class TestInterfacingLayer(unittest.TestCase):
         self._backend = backend.Backend(self._repo)
         self._client = client.LocalClient(self._backend)
 
-    def testGetBioSample(self):
+    def testGetBiosample(self):
         self._testGetMethod(
-            self._repo.allBioSamples, self._client.get_bio_sample)
+            self._repo.allBiosamples, self._client.get_bio_sample)
 
     def testGetIndividual(self):
         self._testGetMethod(
@@ -221,9 +221,9 @@ class TestInterfacingLayer(unittest.TestCase):
             self._client.search_call_sets,
             self._repo.allVariantSets())
 
-    def testSearchBioSamples(self):
+    def testSearchBiosamples(self):
         self._testSearchMethodInContainer(
-            'getBioSamples',
+            'getBiosamples',
             self._client.search_bio_samples,
             self._repo.getDatasets())
 

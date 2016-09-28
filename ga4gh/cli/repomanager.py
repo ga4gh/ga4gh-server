@@ -420,28 +420,28 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeFeatureSet, featureSet)
         self._confirmDelete("FeatureSet", featureSet.getLocalId(), func)
 
-    def addBioSample(self):
+    def addBiosample(self):
         """
         Adds a new biosample into this repo
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        bioSample = bio_metadata.BioSample(
-            dataset, self._args.bioSampleName)
-        bioSample.populateFromJson(self._args.bioSample)
-        self._updateRepo(self._repo.insertBioSample, bioSample)
+        biosample = bio_metadata.Biosample(
+            dataset, self._args.biosampleName)
+        biosample.populateFromJson(self._args.biosample)
+        self._updateRepo(self._repo.insertBiosample, biosample)
 
-    def removeBioSample(self):
+    def removeBiosample(self):
         """
         Removes a biosample from this repo
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
-        bioSample = dataset.getBioSampleByName(self._args.bioSampleName)
+        biosample = dataset.getBiosampleByName(self._args.biosampleName)
 
         def func():
-            self._updateRepo(self._repo.removeBioSample, bioSample)
-        self._confirmDelete("BioSample", bioSample.getLocalId(), func)
+            self._updateRepo(self._repo.removeBiosample, biosample)
+        self._confirmDelete("Biosample", biosample.getLocalId(), func)
 
     def addIndividual(self):
         """
@@ -600,15 +600,15 @@ class RepoManager(object):
             help="the name of the individual")
 
     @classmethod
-    def addBioSampleNameArgument(cls, subparser):
+    def addBiosampleNameArgument(cls, subparser):
         subparser.add_argument(
-            "bioSampleName",
+            "biosampleName",
             help="the name of the biosample")
 
     @classmethod
-    def addBioSampleArgument(cls, subparser):
+    def addBiosampleArgument(cls, subparser):
         subparser.add_argument(
-            "bioSample",
+            "biosample",
             help="the JSON of the biosample")
 
     @classmethod
@@ -852,22 +852,22 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
-        addBioSampleParser = cli.addSubparser(
-            subparsers, "add-biosample", "Add a BioSample to the dataset")
-        addBioSampleParser.set_defaults(runner="addBioSample")
-        cls.addRepoArgument(addBioSampleParser)
-        cls.addDatasetNameArgument(addBioSampleParser)
-        cls.addBioSampleNameArgument(addBioSampleParser)
-        cls.addBioSampleArgument(addBioSampleParser)
+        addBiosampleParser = cli.addSubparser(
+            subparsers, "add-biosample", "Add a Biosample to the dataset")
+        addBiosampleParser.set_defaults(runner="addBiosample")
+        cls.addRepoArgument(addBiosampleParser)
+        cls.addDatasetNameArgument(addBiosampleParser)
+        cls.addBiosampleNameArgument(addBiosampleParser)
+        cls.addBiosampleArgument(addBiosampleParser)
 
-        removeBioSampleParser = cli.addSubparser(
+        removeBiosampleParser = cli.addSubparser(
             subparsers, "remove-biosample",
-            "Remove a BioSample from the repo")
-        removeBioSampleParser.set_defaults(runner="removeBioSample")
-        cls.addRepoArgument(removeBioSampleParser)
-        cls.addDatasetNameArgument(removeBioSampleParser)
-        cls.addBioSampleNameArgument(removeBioSampleParser)
-        cls.addForceOption(removeBioSampleParser)
+            "Remove a Biosample from the repo")
+        removeBiosampleParser.set_defaults(runner="removeBiosample")
+        cls.addRepoArgument(removeBiosampleParser)
+        cls.addDatasetNameArgument(removeBiosampleParser)
+        cls.addBiosampleNameArgument(removeBiosampleParser)
+        cls.addForceOption(removeBiosampleParser)
 
         addIndividualParser = cli.addSubparser(
             subparsers, "add-individual", "Add an Individual to the dataset")

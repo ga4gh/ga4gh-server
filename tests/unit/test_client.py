@@ -38,8 +38,8 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.referenceId = "referenceId"
         self.readGroupIds = ["readGroupId"]
         self.referenceName = "referenceName"
-        self.bioSampleId = "bioSampleId"
-        self.bioSampleName = "bioSampleName"
+        self.biosampleId = "biosampleId"
+        self.biosampleName = "biosampleName"
         self.individualName = "individualName"
         self.individualId = "individualId"
         self.geneSymbol = "geneSymbol"
@@ -189,12 +189,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request = protocol.SearchReadGroupSetsRequest()
         request.dataset_id = self.datasetId
         request.name = self.objectName
-        request.bio_sample_id = self.bioSampleId
+        request.biosample_id = self.biosampleId
         request.page_size = self.pageSize
         self.httpClient.search_read_group_sets(
             self.datasetId,
             name=self.objectName,
-            bio_sample_id=self.bioSampleId)
+            biosample_id=self.biosampleId)
         self.httpClient._run_search_request.assert_called_once_with(
             request, "readgroupsets", protocol.SearchReadGroupSetsResponse)
 
@@ -202,12 +202,12 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         request = protocol.SearchCallSetsRequest()
         request.variant_set_id = self.variantSetId
         request.name = self.objectName
-        request.bio_sample_id = self.bioSampleId
+        request.biosample_id = self.biosampleId
         request.page_size = self.pageSize
         self.httpClient.search_call_sets(
             self.variantSetId,
             name=self.objectName,
-            bio_sample_id=self.bioSampleId)
+            biosample_id=self.biosampleId)
         self.httpClient._run_search_request.assert_called_once_with(
             request, "callsets", protocol.SearchCallSetsResponse)
 
@@ -254,16 +254,16 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
             request, "rnaquantifications",
             protocol.SearchRnaQuantificationsResponse)
 
-    def testSearchBioSamples(self):
-        request = protocol.SearchBioSamplesRequest()
+    def testSearchBiosamples(self):
+        request = protocol.SearchBiosamplesRequest()
         request.dataset_id = self.datasetId
-        request.name = self.bioSampleName
+        request.name = self.biosampleName
         request.individual_id = self.individualId
         request.page_size = self.pageSize
         self.httpClient.search_bio_samples(
-            self.datasetId, self.bioSampleName, self.individualId)
+            self.datasetId, self.biosampleName, self.individualId)
         self.httpClient._run_search_request.assert_called_once_with(
-            request, "biosamples", protocol.SearchBioSamplesResponse)
+            request, "biosamples", protocol.SearchBiosamplesResponse)
 
     def testSearchIndividuals(self):
         request = protocol.SearchIndividualsRequest()
@@ -321,10 +321,10 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
         self.httpClient._run_get_request.assert_called_once_with(
             "variants", protocol.Variant, self.objectId)
 
-    def testGetBioSample(self):
+    def testGetBiosample(self):
         self.httpClient.get_bio_sample(self.objectId)
         self.httpClient._run_get_request.assert_called_once_with(
-            "biosamples", protocol.BioSample, self.objectId)
+            "biosamples", protocol.Biosample, self.objectId)
 
     def testGetIndividual(self):
         self.httpClient.get_individual(self.objectId)

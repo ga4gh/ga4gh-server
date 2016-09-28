@@ -485,7 +485,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         self._iso8601 = datetimeNow.strftime("%Y-%m-%dT%H:%M:%SZ")
         self._creationTime = now
         self._updateTime = now
-        self._bioSampleId = None
+        self._biosampleId = None
 
     def toProtocolElement(self):
         """
@@ -503,7 +503,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.predicted_insert_size = pb.int(self.getPredictedInsertSize())
         referenceSet = self._parentContainer.getReferenceSet()
         readGroup.sample_name = pb.string(self.getSampleName())
-        readGroup.bio_sample_id = pb.string(self.getBioSampleId())
+        readGroup.biosample_id = pb.string(self.getBiosampleId())
         if referenceSet is not None:
             readGroup.reference_set_id = referenceSet.getId()
         readGroup.stats.CopyFrom(self.getStats())
@@ -558,11 +558,11 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         """
         raise NotImplementedError()
 
-    def getBioSampleId(self):
-        return self._bioSampleId
+    def getBiosampleId(self):
+        return self._biosampleId
 
-    def setBioSampleId(self, bioSampleId):
-        self._bioSampleId = bioSampleId
+    def setBiosampleId(self, biosampleId):
+        self._biosampleId = biosampleId
 
     def getDescription(self):
         """
@@ -718,7 +718,7 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         self._dataUrl = parentContainer.getDataUrl()
         self._indexFile = parentContainer.getIndexFile()
         self._filterReads = localId != HtslibReadGroupSet.defaultReadGroupName
-        self._bioSampleId = None
+        self._biosampleId = None
         self._sampleName = None
         self._description = None
         self._predictedInsertSize = None
@@ -751,7 +751,7 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         Populate the instance variables using the specified DB row.
         """
         self._sampleName = row[b'sampleName']
-        self._bioSampleId = row[b'bioSampleId']
+        self._biosampleId = row[b'biosampleId']
         self._description = row[b'description']
         self._predictedInsertSize = row[b'predictedInsertSize']
         stats = protocol.fromJson(row[b'stats'], protocol.ReadStats)

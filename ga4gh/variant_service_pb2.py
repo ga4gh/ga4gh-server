@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='ga4gh/variant_service.proto',
   package='ga4gh',
   syntax='proto3',
-  serialized_pb=_b('\n\x1bga4gh/variant_service.proto\x12\x05ga4gh\x1a\x14ga4gh/variants.proto\"U\n\x18SearchVariantSetsRequest\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t\"]\n\x19SearchVariantSetsResponse\x12\'\n\x0cvariant_sets\x18\x01 \x03(\x0b\x32\x11.ga4gh.VariantSet\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\".\n\x14GetVariantSetRequest\x12\x16\n\x0evariant_set_id\x18\x01 \x01(\t\"\xa0\x01\n\x15SearchVariantsRequest\x12\x16\n\x0evariant_set_id\x18\x01 \x01(\t\x12\x14\n\x0c\x63\x61ll_set_ids\x18\x02 \x03(\t\x12\x16\n\x0ereference_name\x18\x03 \x01(\t\x12\r\n\x05start\x18\x04 \x01(\x03\x12\x0b\n\x03\x65nd\x18\x05 \x01(\x03\x12\x11\n\tpage_size\x18\x06 \x01(\x05\x12\x12\n\npage_token\x18\x07 \x01(\t\"S\n\x16SearchVariantsResponse\x12 \n\x08variants\x18\x01 \x03(\x0b\x32\x0e.ga4gh.Variant\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"\'\n\x11GetVariantRequest\x12\x12\n\nvariant_id\x18\x01 \x01(\t\"{\n\x15SearchCallSetsRequest\x12\x16\n\x0evariant_set_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x15\n\rbio_sample_id\x18\x03 \x01(\t\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\x12\n\npage_token\x18\x05 \x01(\t\"T\n\x16SearchCallSetsResponse\x12!\n\tcall_sets\x18\x01 \x03(\x0b\x32\x0e.ga4gh.CallSet\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"(\n\x11GetCallSetRequest\x12\x13\n\x0b\x63\x61ll_set_id\x18\x01 \x01(\t2\xb7\x03\n\x0eVariantService\x12V\n\x11SearchVariantSets\x12\x1f.ga4gh.SearchVariantSetsRequest\x1a .ga4gh.SearchVariantSetsResponse\x12?\n\rGetVariantSet\x12\x1b.ga4gh.GetVariantSetRequest\x1a\x11.ga4gh.VariantSet\x12M\n\x0eSearchVariants\x12\x1c.ga4gh.SearchVariantsRequest\x1a\x1d.ga4gh.SearchVariantsResponse\x12\x36\n\nGetVariant\x12\x18.ga4gh.GetVariantRequest\x1a\x0e.ga4gh.Variant\x12M\n\x0eSearchCallSets\x12\x1c.ga4gh.SearchCallSetsRequest\x1a\x1d.ga4gh.SearchCallSetsResponse\x12\x36\n\nGetCallSet\x12\x18.ga4gh.GetCallSetRequest\x1a\x0e.ga4gh.CallSetb\x06proto3')
+  serialized_pb=_b('\n\x1bga4gh/variant_service.proto\x12\x05ga4gh\x1a\x14ga4gh/variants.proto\"U\n\x18SearchVariantSetsRequest\x12\x12\n\ndataset_id\x18\x01 \x01(\t\x12\x11\n\tpage_size\x18\x02 \x01(\x05\x12\x12\n\npage_token\x18\x03 \x01(\t\"]\n\x19SearchVariantSetsResponse\x12\'\n\x0cvariant_sets\x18\x01 \x03(\x0b\x32\x11.ga4gh.VariantSet\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\".\n\x14GetVariantSetRequest\x12\x16\n\x0evariant_set_id\x18\x01 \x01(\t\"\xa0\x01\n\x15SearchVariantsRequest\x12\x16\n\x0evariant_set_id\x18\x01 \x01(\t\x12\x14\n\x0c\x63\x61ll_set_ids\x18\x02 \x03(\t\x12\x16\n\x0ereference_name\x18\x03 \x01(\t\x12\r\n\x05start\x18\x04 \x01(\x03\x12\x0b\n\x03\x65nd\x18\x05 \x01(\x03\x12\x11\n\tpage_size\x18\x06 \x01(\x05\x12\x12\n\npage_token\x18\x07 \x01(\t\"S\n\x16SearchVariantsResponse\x12 \n\x08variants\x18\x01 \x03(\x0b\x32\x0e.ga4gh.Variant\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"\'\n\x11GetVariantRequest\x12\x12\n\nvariant_id\x18\x01 \x01(\t\"z\n\x15SearchCallSetsRequest\x12\x16\n\x0evariant_set_id\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x14\n\x0c\x62iosample_id\x18\x03 \x01(\t\x12\x11\n\tpage_size\x18\x04 \x01(\x05\x12\x12\n\npage_token\x18\x05 \x01(\t\"T\n\x16SearchCallSetsResponse\x12!\n\tcall_sets\x18\x01 \x03(\x0b\x32\x0e.ga4gh.CallSet\x12\x17\n\x0fnext_page_token\x18\x02 \x01(\t\"(\n\x11GetCallSetRequest\x12\x13\n\x0b\x63\x61ll_set_id\x18\x01 \x01(\t2\xb7\x03\n\x0eVariantService\x12V\n\x11SearchVariantSets\x12\x1f.ga4gh.SearchVariantSetsRequest\x1a .ga4gh.SearchVariantSetsResponse\x12?\n\rGetVariantSet\x12\x1b.ga4gh.GetVariantSetRequest\x1a\x11.ga4gh.VariantSet\x12M\n\x0eSearchVariants\x12\x1c.ga4gh.SearchVariantsRequest\x1a\x1d.ga4gh.SearchVariantsResponse\x12\x36\n\nGetVariant\x12\x18.ga4gh.GetVariantRequest\x1a\x0e.ga4gh.Variant\x12M\n\x0eSearchCallSets\x12\x1c.ga4gh.SearchCallSetsRequest\x1a\x1d.ga4gh.SearchCallSetsResponse\x12\x36\n\nGetCallSet\x12\x18.ga4gh.GetCallSetRequest\x1a\x0e.ga4gh.CallSetb\x06proto3')
   ,
   dependencies=[ga4gh_dot_variants__pb2.DESCRIPTOR,])
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
@@ -306,7 +306,7 @@ _SEARCHCALLSETSREQUEST = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='bio_sample_id', full_name='ga4gh.SearchCallSetsRequest.bio_sample_id', index=2,
+      name='biosample_id', full_name='ga4gh.SearchCallSetsRequest.biosample_id', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -339,7 +339,7 @@ _SEARCHCALLSETSREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=579,
-  serialized_end=702,
+  serialized_end=701,
 )
 
 
@@ -376,8 +376,8 @@ _SEARCHCALLSETSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=704,
-  serialized_end=788,
+  serialized_start=703,
+  serialized_end=787,
 )
 
 
@@ -407,8 +407,8 @@ _GETCALLSETREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=790,
-  serialized_end=830,
+  serialized_start=789,
+  serialized_end=829,
 )
 
 _SEARCHVARIANTSETSRESPONSE.fields_by_name['variant_sets'].message_type = ga4gh_dot_variants__pb2._VARIANTSET
