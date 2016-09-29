@@ -153,7 +153,7 @@ class AbstractFileDownloader(object):
         if os.path.exists(self.dirName) and args.force:
             shutil.rmtree(self.dirName)
         os.mkdir(self.dirName)
-        self.repoPath = os.path.join(self.dirName, "repo.db")
+        self.repoPath = os.path.join(self.dirName, "registry.db")
 
     def log(self, message):
         print(message)

@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    registryDb = "ga4gh-example-data/repo.db"
+    registryDb = "ga4gh-example-data/registry.db"
 
     if args.profile == 'heap':
         backendClass = HeapProfilerBackend
