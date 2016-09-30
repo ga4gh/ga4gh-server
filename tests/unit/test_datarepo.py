@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import os
 import tempfile
 import unittest
+import shutil
 
 import ga4gh.datarepo as datarepo
 import ga4gh.exceptions as exceptions
@@ -17,7 +18,8 @@ prefix = "ga4gh_datarepo_test"
 
 
 def makeTempFile():
-    return tempfile.mkstemp(prefix=prefix)
+    fd, path = tempfile.mkstemp(prefix=prefix)
+    return path
 
 
 def makeTempDir():
@@ -29,10 +31,12 @@ class AbstractDataRepoTest(unittest.TestCase):
     Parent class for data repo tests
     """
     def setUp(self):
-        _, self._repoPath = makeTempFile()
+        self._repoPath = makeTempDir()
+        self._registryPath = datarepo.SqlDataRepository.getRegistryPath(
+            self._repoPath)
 
     def tearDown(self):
-        os.unlink(self._repoPath)
+        shutil.rmtree(self._repoPath)
 
 
 class TestDataRepoVersion(AbstractDataRepoTest):
@@ -65,12 +69,14 @@ class TestBadDatabase(AbstractDataRepoTest):
     Tests that errors are thrown when an invalid database is used
     """
     def testDbFileWithoutTables(self):
+        with open(self._registryPath, 'w') as textFile:
+            pass
         repo = datarepo.SqlDataRepository(self._repoPath)
         with self.assertRaises(exceptions.RepoInvalidDatabaseException):
             repo.open(datarepo.MODE_READ)
 
     def testTextFile(self):
-        with open(self._repoPath, 'w') as textFile:
+        with open(self._registryPath, 'w') as textFile:
             textFile.write('This is now a text file')
         repo = datarepo.SqlDataRepository(self._repoPath)
         with self.assertRaises(exceptions.RepoInvalidDatabaseException):
@@ -82,10 +88,10 @@ class TestBadDatabaseNoSetup(unittest.TestCase):
     Tests that errors are thrown when an invalid database is used
     (does not use setup/teardown functions)
     """
-    def testDirectory(self):
-        repoPath = makeTempDir()
+    def testFile(self):
+        repoPath = makeTempFile()
         repo = datarepo.SqlDataRepository(repoPath)
-        with self.assertRaises(exceptions.RepoInvalidDatabaseException):
+        with self.assertRaises(exceptions.RepoNotFoundException):
             repo.open(datarepo.MODE_READ)
 
     def testNonexistantFile(self):

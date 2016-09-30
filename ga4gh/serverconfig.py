@@ -44,7 +44,7 @@ class ComplianceConfig(BaseConfig):
     """
     Configuration used for compliance testing.
     """
-    DATA_SOURCE = "ga4gh-compliance-data/repo.db"
+    DATA_SOURCE = "ga4gh-compliance-data"
     DEBUG = True
 
 
@@ -52,7 +52,7 @@ class DevelopmentConfig(BaseConfig):
     """
     Configuration used for development.
     """
-    DATA_SOURCE = "ga4gh-example-data/repo.db"
+    DATA_SOURCE = "ga4gh-example-data"
     DEBUG = True
 
 

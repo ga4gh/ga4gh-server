@@ -1,5 +1,5 @@
 """
-Builds the test data repo DB.
+Builds the test data registry DB.
 """
 from __future__ import division
 from __future__ import print_function
@@ -7,9 +7,16 @@ from __future__ import unicode_literals
 
 import argparse
 import glob
-import os.path
+import os
+import shutil
 
 import utils
+
+
+dataDirectoryDefault = 'tests/data'
+relativePathsDefault = False
+forceDefault = False
+targetDirDefault = 'tests/data/repo'
 
 
 def run(*args):
@@ -19,49 +26,52 @@ def run(*args):
 
 
 def buildTestData(
-        dataDirectory='tests/data', relativePaths=False, force=False):
+        dataDirectory=dataDirectoryDefault,
+        relativePaths=relativePathsDefault,
+        force=forceDefault,
+        targetDir=targetDirDefault):
     prefix = dataDirectory
-    repoFile = os.path.join(prefix, "repo.db")
-    if os.path.exists(repoFile):
+    repoDir = targetDir
+    repoFile = os.path.join(repoDir, "registry.db")
+    if os.path.exists(repoDir) and os.path.isdir(repoDir):
         if force:
-            print("deleting repo at '{}'".format(repoFile))
-            os.unlink(repoFile)
+            print("deleting repo at '{}'".format(repoDir))
         else:
-            print("'{}' already exists".format(repoFile))
+            print("'{}' already exists".format(repoDir))
             return
-    print("building repo at '{}'".format(repoFile))
+    print("building repo at '{}'".format(repoDir))
     sequenceOntologyName = "so-xp-simple"
     useRelativePath = '-r' if relativePaths else ''
-    run("init", "-f", repoFile)
+    run("init", "-f", repoDir)
 
     pattern = os.path.join(prefix, "referenceSets", "*.fa.gz")
     for dataFile in glob.glob(pattern):
-        run("add-referenceset", repoFile, useRelativePath, dataFile)
+        run("add-referenceset", repoDir, useRelativePath, dataFile)
 
     pattern = os.path.join(prefix, "ontologies", "*.obo")
     for dataFile in glob.glob(pattern):
-        run("add-ontology", repoFile, useRelativePath, dataFile)
+        run("add-ontology", repoDir, useRelativePath, dataFile)
 
     datasetName = "dataset1"
-    run("add-dataset", repoFile, datasetName)
+    run("add-dataset", repoDir, datasetName)
 
     pattern = os.path.join(prefix, "datasets/dataset1/reads", "*.bam")
     for dataFile in glob.glob(pattern):
-        run("add-readgroupset", repoFile, datasetName, useRelativePath,
+        run("add-readgroupset", repoDir, datasetName, useRelativePath,
             dataFile)
 
     pattern = os.path.join(prefix, "datasets/dataset1/variants", "*")
     for j, dataFile in enumerate(glob.glob(pattern)):
         name = "vs_{}".format(j)
         run(
-            "add-variantset", repoFile, datasetName, useRelativePath,
+            "add-variantset", repoDir, datasetName, useRelativePath,
             dataFile, "-R NCBI37", "-n ", name, "-aO", sequenceOntologyName)
 
     pattern = os.path.join(
         prefix, "datasets/dataset1/sequenceAnnotations", "*.db")
     for j, dataFile in enumerate(glob.glob(pattern)):
         run(
-            "add-featureset", repoFile, datasetName, useRelativePath,
+            "add-featureset", repoDir, datasetName, useRelativePath,
             dataFile, "-R NCBI37", "-O", sequenceOntologyName,
             "-C ga4gh.datamodel.sequence_annotations.Gff3DbFeatureSet")
 
@@ -70,10 +80,10 @@ def buildTestData(
         # coordinate featureset name and g2p name
         name = dataFile.split("/")[-1]
         run(
-            "add-phenotypeassociationset", repoFile,
+            "add-phenotypeassociationset", repoDir,
             datasetName, dataFile, "-n {}".format(name))
         run(
-            "add-featureset", repoFile, datasetName, useRelativePath,
+            "add-featureset", repoDir, datasetName, useRelativePath,
             dataFile, "-R NCBI37",  "-O", sequenceOntologyName,
             "-C ga4gh.datamodel.genotype_phenotype_featureset."
             "PhenotypeAssociationFeatureSet")
@@ -83,21 +93,25 @@ def buildTestData(
     for j, dataFile in enumerate(glob.glob(pattern)):
         name = "rnaseq_{}".format(j)
         run(
-            "add-rnaquantificationset", repoFile, datasetName, dataFile,
+            "add-rnaquantificationset", repoDir, datasetName, dataFile,
             "-R NCBI37", "-n ", name)
 
 
 def parseArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-d", "--data-directory", default='tests/data', action="store_true",
+        "-d", "--data-directory", default=dataDirectoryDefault,
         help="root directory for test data")
     parser.add_argument(
-        "-r", "--relativePaths", default=False, action="store_true",
+        "-r", "--relativePaths",
+        default=relativePathsDefault, action="store_true",
         help="store relative paths in database")
     parser.add_argument(
-        "-f", "--force", default=False, action="store_true",
+        "-f", "--force", default=forceDefault, action="store_true",
         help="delete previous database and build a new one")
+    parser.add_argument(
+        "-t", "--target-dir", default=targetDirDefault,
+        help="where the repo should be initialized")
     args = parser.parse_args()
     return args
 
@@ -105,7 +119,9 @@ def parseArgs():
 @utils.Timed()
 def main():
     args = parseArgs()
-    buildTestData(args.data_directory, args.relativePaths, args.force)
+    buildTestData(
+        args.data_directory, args.relativePaths, args.force,
+        args.target_dir)
 
 
 if __name__ == "__main__":

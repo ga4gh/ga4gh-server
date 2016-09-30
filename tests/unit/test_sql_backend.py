@@ -13,7 +13,7 @@ import tests.paths as paths
 
 class SqliteDB(sqlite_backend.SqliteBackedDataSource):
 
-    def __init__(self, dbPath=paths.testDataRepo):
+    def __init__(self, dbPath=paths.testDataRegistry):
         super(SqliteDB, self).__init__(dbPath)
         self._readGroupSql = "SELECT id, name FROM ReadGroup"
 

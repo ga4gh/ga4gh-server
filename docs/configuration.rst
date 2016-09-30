@@ -643,7 +643,7 @@ example, we might have
 
 .. code-block:: python
 
-    DATA_SOURCE = "/path/to/registry.db"
+    DATA_SOURCE = "/path/to/directory/containing/registry"
 
 For production deployments, we shouldn't need to add any more configuration
 than this, as the other keys have sensible defaults. However,

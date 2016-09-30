@@ -76,7 +76,7 @@ Alpha pre-release supporting major feature update. This release is not
 backwards compatible with previous releases, and requires the data files
 be re-imported.
 
-- File locations are now tracked in a repo.db registry such that the
+- File locations are now tracked in a registry.db registry such that the
   files can be located anywhere. The information from the json sidecar
   files are also included in the database.
 

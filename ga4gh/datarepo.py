@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import json
 import os
 import sqlite3
+import shutil
 
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.datasets as datasets
@@ -451,10 +452,12 @@ class SqlDataRepository(AbstractDataRepository):
     version = SchemaVersion("2.1")
     systemKeySchemaVersion = "schemaVersion"
     systemKeyCreationTimeStamp = "creationTimeStamp"
+    registryFileName = "registry.db"
 
-    def __init__(self, fileName):
+    def __init__(self, dirPath):
         super(SqlDataRepository, self).__init__()
-        self._dbFilename = fileName
+        self._repoPath = dirPath
+        self._dbFilename = self.getRegistryPath(dirPath)
         # We open the repo in either read or write mode. When we want to
         # update the repo we open it in write mode. For normal online
         # server use, we open it in read mode.
@@ -473,6 +476,14 @@ class SqlDataRepository(AbstractDataRepository):
     def _checkReadMode(self):
         if self._openMode != MODE_READ:
             raise ValueError("Repo must be opened in read mode")
+
+    @classmethod
+    def getRegistryPath(cls, dirPath):
+        """
+        Return the path of the registry db file, given the path
+        of its containing directory
+        """
+        return os.path.join(dirPath, cls.registryFileName)
 
     def open(self, mode=MODE_READ):
         """
@@ -1483,14 +1494,20 @@ class SqlDataRepository(AbstractDataRepository):
         self._createPhenotypeAssociationSetTable(cursor)
         self._createRnaQuantificationSetTable(cursor)
 
+    def createDirectoryStructure(self):
+        if not os.path.exists(self._repoPath):
+            os.mkdir(self._repoPath)
+
     def exists(self):
         """
         Checks that this data repository exists in the file system and has the
         required structure.
         """
-        # TODO should this invoke a full load operation or just check the DB
-        # exists?
-        return os.path.exists(self._dbFilename)
+        # TODO should this invoke a full load operation or just check if
+        # the DB exists?
+        return (os.path.exists(self._repoPath) and
+                os.path.isdir(self._repoPath) and
+                os.path.exists(self._dbFilename))
 
     def assertExists(self):
         if not self.exists():
@@ -1501,7 +1518,7 @@ class SqlDataRepository(AbstractDataRepository):
         Delete this data repository by recursively removing all directories.
         This will delete ALL data stored within the repository!!
         """
-        os.unlink(self._dbFilename)
+        shutil.rmtree(self._repoPath)
 
     def load(self):
         """

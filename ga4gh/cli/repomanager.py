@@ -114,6 +114,7 @@ class RepoManager(object):
             else:
                 raise exceptions.RepoManagerException(
                     forceMessage.format(self._registryPath))
+        self._repo.createDirectoryStructure()
         self._updateRepo(self._repo.initialise)
 
     def list(self):
@@ -520,8 +521,8 @@ class RepoManager(object):
     @classmethod
     def addRepoArgument(cls, subparser):
         subparser.add_argument(
-            "registryPath",
-            help="the location of the registry database")
+            "repoPath",
+            help="the location of the data repository")
 
     @classmethod
     def addForceOption(cls, subparser):

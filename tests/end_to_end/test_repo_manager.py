@@ -9,6 +9,7 @@ import mock
 import os
 import tempfile
 import unittest
+import shutil
 
 import ga4gh.cli.repomanager as cli_repomanager
 import tests.paths as paths
@@ -32,16 +33,15 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         updated="2016-05-19T21:00:19Z"))
 
     def setUp(self):
-        _, self.repoFile = tempfile.mkstemp(
+        self.repoDir = tempfile.mkdtemp(
             prefix='ga4gh_repo_manager_end2end_test')
-        os.unlink(self.repoFile)
 
     def tearDown(self):
-        if os.path.exists(self.repoFile):
-            os.unlink(self.repoFile)
+        if os.path.exists(self.repoDir):
+            shutil.rmtree(self.repoDir)
 
     def _runCmd(self, cmd, *args):
-        command = [cmd, self.repoFile] + list(args)
+        command = [cmd, self.repoDir] + list(args)
         cli_repomanager.repo_main(command)
 
     def testEndToEnd(self):

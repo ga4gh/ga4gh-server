@@ -10,7 +10,8 @@ import os
 
 testDir = 'tests'
 testDataDir = os.path.join(testDir, 'data')
-testDataRepo = os.path.join(testDataDir, 'repo.db')
+testDataRepo = os.path.join(testDataDir, 'repo')
+testDataRegistry = os.path.join(testDataRepo, 'registry.db')
 
 # references
 referenceSetName = 'chr17'

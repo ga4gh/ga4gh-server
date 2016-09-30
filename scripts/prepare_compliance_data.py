@@ -51,7 +51,7 @@ class ComplianceDataMunger(object):
         self.inputDirectory = inputDirectory
         self.outputDirectory = outputDirectory
         self.repoPath = os.path.abspath(
-            os.path.join(outputDirectory, "repo.db"))
+            os.path.join(outputDirectory, "registry.db"))
         self.tempdir = None
 
         if os.path.exists(self.outputDirectory):

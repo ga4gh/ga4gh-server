@@ -62,14 +62,13 @@ class AbstractRepoManagerTest(unittest.TestCase):
     Base class for repo manager tests
     """
     def setUp(self):
-        fd, self._repoPath = tempfile.mkstemp(prefix="ga4gh_repoman_test")
-        os.unlink(self._repoPath)
+        self._repoPath = tempfile.mkdtemp(prefix="ga4gh_repoman_test")
 
     def runCommand(self, cmd):
         cli_repomanager.RepoManager.runCommand(cmd.split())
 
     def tearDown(self):
-        os.unlink(self._repoPath)
+        shutil.rmtree(self._repoPath)
 
     def readRepo(self):
         repo = datarepo.SqlDataRepository(self._repoPath)
