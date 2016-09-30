@@ -1429,12 +1429,16 @@ class SqlDataRepository(AbstractDataRepository):
             VALUES (?, ?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            rnaQuantificationSet.getId(),
-            rnaQuantificationSet.getParentContainer().getId(),
-            rnaQuantificationSet.getReferenceSet().getId(),
-            rnaQuantificationSet.getLocalId(),
-            rnaQuantificationSet.getDataUrl()))
+        try:
+            cursor.execute(sql, (
+                rnaQuantificationSet.getId(),
+                rnaQuantificationSet.getParentContainer().getId(),
+                rnaQuantificationSet.getReferenceSet().getId(),
+                rnaQuantificationSet.getLocalId(),
+                rnaQuantificationSet.getDataUrl()))
+        except sqlite3.IntegrityError:
+            raise exceptions.DuplicateNameException(
+                rnaQuantificationSet.getLocalId())
 
     def _readRnaQuantificationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row

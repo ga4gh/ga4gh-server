@@ -57,6 +57,23 @@ class TestGetNameFromPath(unittest.TestCase):
         self.assertEqual(cli_repomanager.getNameFromPath("xy"), "xy")
 
 
+class TestGetExtensionFromPath(unittest.TestCase):
+    """
+    Tests the method for deriving the extension from a file path
+    """
+    def testGetExtension(self):
+        path_result = [
+            ["a", ""],
+            ["a.b", "b"],
+            ["dir/a.b", "b"],
+            ["a.b.c", "b.c"],
+            ["a.b.c.d", "b.c.d"],
+        ]
+        for path, result in path_result:
+            extension = cli_repomanager.getExtensionFromPath(path)
+            self.assertEqual(extension, result)
+
+
 class AbstractRepoManagerTest(unittest.TestCase):
     """
     Base class for repo manager tests
@@ -144,6 +161,26 @@ class AbstractRepoManagerTest(unittest.TestCase):
         featureSet = dataset.getFeatureSetByName(self._featureSetName)
         return featureSet
 
+    def addRnaQuantificationSet(
+            self, repoPath=None, datasetName=None, dbPath=None,
+            refSetName=None, quantSetName=None):
+        self._rnaQuantificationSetName = "test_rna_quant_set"
+        self._rnaQuantificationSetDbPath = paths.rnaQuantificationSetDbPath
+        if repoPath is None:
+            repoPath = self._repoPath
+        if datasetName is None:
+            datasetName = self._datasetName
+        if dbPath is None:
+            dbPath = self._rnaQuantificationSetDbPath
+        if refSetName is None:
+            refSetName = self._referenceSetName
+        if quantSetName is None:
+            quantSetName = self._rnaQuantificationSetName
+        command = "add-rnaquantificationset {} {} {} -R {} -n {}".format(
+            repoPath, datasetName, dbPath,
+            refSetName, quantSetName)
+        self.runCommand(command)
+
 
 class TestAddFeatureSet(AbstractRepoManagerTest):
 
@@ -220,6 +257,90 @@ class TestRemoveFeatureSet(AbstractRepoManagerTest):
         self.runCommand(cmd)
         with self.assertRaises(exceptions.FeatureSetNameNotFoundException):
             self.getFeatureSet()
+
+
+class TestAddRnaQuantificationSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddRnaQuantificationSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+
+    def testDefaults(self):
+        self.addRnaQuantificationSet()
+
+    def testSameName(self):
+        self.addRnaQuantificationSet()
+        with self.assertRaises(exceptions.DuplicateNameException):
+            self.addRnaQuantificationSet()
+
+    def testNonexistentRepoPath(self):
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.addRnaQuantificationSet(repoPath="wrong")
+
+    def testNonexistantDataset(self):
+        with self.assertRaises(exceptions.DatasetNameNotFoundException):
+            self.addRnaQuantificationSet(datasetName="wrong")
+
+    def testNonexistantRnaDb(self):
+        with self.assertRaises(exceptions.RepoManagerException):
+            self.addRnaQuantificationSet(dbPath="wrong")
+
+    def testNonexistentReference(self):
+        with self.assertRaises(
+                exceptions.ReferenceSetNameNotFoundException):
+            self.addRnaQuantificationSet(refSetName="wrong")
+
+    # TODO tests with misconfigured rna db
+
+
+class TestRemoveRnaQuantificationSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveRnaQuantificationSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addRnaQuantificationSet()
+
+    def _removeRnaQuantificationSet(self, rnaQuantSetName=None):
+        if rnaQuantSetName is None:
+            rnaQuantSetName = self._rnaQuantificationSetName
+        cmd = "remove-rnaquantificationset -f {} {} {}".format(
+            self._repoPath, self._datasetName, rnaQuantSetName)
+        self.runCommand(cmd)
+
+    def testDefaults(self):
+        self._removeRnaQuantificationSet()
+
+    def testDoubleRemove(self):
+        self._removeRnaQuantificationSet()
+        with self.assertRaises(
+                exceptions.RnaQuantificationSetNameNotFoundException):
+            self._removeRnaQuantificationSet()
+
+    def testWrongName(self):
+        with self.assertRaises(
+                exceptions.RnaQuantificationSetNameNotFoundException):
+            self._removeRnaQuantificationSet(rnaQuantSetName="wrong")
+
+
+class TestAddRnaQuantification(AbstractRepoManagerTest):
+
+    def __init__(self):
+        super(TestAddRnaQuantification, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addRnaQuantificationSet()
+
+    def testDefaults(self):
+        pass  # TODO
+
+
+class TestRemoveRnaQuantification(AbstractRepoManagerTest):
+    pass  # TODO
 
 
 class TestAddDataset(AbstractRepoManagerTest):

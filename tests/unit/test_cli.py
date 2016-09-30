@@ -690,6 +690,30 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.datasetName, self.datasetName)
         self.assertEquals(args.name, "NAME")
 
+    def testAddRnaQuantificationSet(self):
+        cliInput = "add-rnaquantificationset {} {} {} -R {} -n {}".format(
+            self.registryPath,
+            self.datasetName,
+            self.filePath,
+            "REFERENCESETNAME",
+            "NAME")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.filePath, self.filePath)
+        self.assertEquals(args.referenceSetName, "REFERENCESETNAME")
+        self.assertEquals(args.name, "NAME")
+
+    def testRemoveRnaQuantificationSet(self):
+        cliInput = "remove-rnaquantificationset {} {} {}".format(
+            self.registryPath,
+            self.datasetName,
+            "NAME")
+        args = self.parser.parse_args(cliInput.split())
+        self.assertEquals(args.registryPath, self.registryPath)
+        self.assertEquals(args.datasetName, self.datasetName)
+        self.assertEquals(args.rnaQuantificationSetName, "NAME")
+
 
 class TestOutputFormats(unittest.TestCase):
     """
