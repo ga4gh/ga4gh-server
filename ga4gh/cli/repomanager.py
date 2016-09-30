@@ -504,7 +504,7 @@ class RepoManager(object):
         """
         Initialize an empty RNA quantification set
         """
-        store = rnaseq2ga.RNASqliteStore(self._args.filePath)
+        store = rnaseq2ga.RnaSqliteStore(self._args.filePath)
         store.createTables()
 
     def addRnaQuantificationSet(self):
