@@ -503,15 +503,8 @@ class FeatureFormatterMixin(object):
             print(
                 feature.id, feature.parent_id, feature.feature_set_id,
                 feature.reference_name, feature.start, feature.end,
-                feature.strand, sep="\t", end="\t")
-            print(
-                "FeatureType:", feature.feature_type.id,
-                feature.feature_type.term, end="\t")
-            for attrkey in feature.attributes.vals.keys():
-                print(
-                    attrkey, feature.attributes.vals[attrkey],
-                    sep=":", end="; ")
-            print()
+                feature.strand, "FeatureType:", feature.feature_type.id,
+                feature.feature_type.term, sep="\t")
 
 
 class SearchVariantsRunner(VariantFormatterMixin, AbstractSearchRunner):
@@ -623,7 +616,7 @@ class SearchFeaturesRunner(FeatureFormatterMixin, AbstractSearchRunner):
     def run(self):
         if self._featureSetId is None and not self._parentId:
             for featureSet in self.getAllFeatureSets():
-                self._run(featureSet)
+                self._run(featureSet.id)
         else:
             self._run(self._featureSetId)
 
