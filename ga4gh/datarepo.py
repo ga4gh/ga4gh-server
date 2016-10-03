@@ -265,13 +265,13 @@ class AbstractDataRepository(object):
             for reference in referenceSet.getReferences():
                 yield reference
 
-    def allBioSamples(self):
+    def allBiosamples(self):
         """
         Return an iterator over all biosamples in the data repo
         """
         for dataset in self.getDatasets():
-            for bioSample in dataset.getBioSamples():
-                yield bioSample
+            for biosample in dataset.getBiosamples():
+                yield biosample
 
     def allIndividuals(self):
         """
@@ -876,7 +876,7 @@ class SqlDataRepository(AbstractDataRepository):
                 description TEXT,
                 stats TEXT NOT NULL,
                 experiment TEXT NOT NULL,
-                bioSampleId TEXT,
+                biosampleId TEXT,
                 created TEXT,
                 updated TEXT,
                 UNIQUE (readGroupSetId, name),
@@ -894,7 +894,7 @@ class SqlDataRepository(AbstractDataRepository):
             INSERT INTO ReadGroup (
                 id, readGroupSetId, name, predictedInsertSize,
                 sampleName, description, stats, experiment,
-                bioSampleId, created, updated)
+                biosampleId, created, updated)
             VALUES
                 (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
         """
@@ -906,7 +906,7 @@ class SqlDataRepository(AbstractDataRepository):
             readGroup.getId(), readGroup.getParentContainer().getId(),
             readGroup.getLocalId(), readGroup.getPredictedInsertSize(),
             readGroup.getSampleName(), readGroup.getDescription(),
-            statsJson, experimentJson, readGroup.getBioSampleId()))
+            statsJson, experimentJson, readGroup.getBiosampleId()))
 
     def removeReadGroupSet(self, readGroupSet):
         """
@@ -926,13 +926,13 @@ class SqlDataRepository(AbstractDataRepository):
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (variantSet.getId(),))
 
-    def removeBioSample(self, bioSample):
+    def removeBiosample(self, biosample):
         """
-        Removes the specified bioSample from this repository.
+        Removes the specified biosample from this repository.
         """
-        sql = "DELETE FROM BioSample WHERE id=?"
+        sql = "DELETE FROM Biosample WHERE id=?"
         cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (bioSample.getId(),))
+        cursor.execute(sql, (biosample.getId(),))
 
     def removeIndividual(self, individual):
         """
@@ -1097,7 +1097,7 @@ class SqlDataRepository(AbstractDataRepository):
                 id TEXT NOT NULL PRIMARY KEY,
                 name TEXT NOT NULL,
                 variantSetId TEXT NOT NULL,
-                bioSampleId TEXT,
+                biosampleId TEXT,
                 UNIQUE (variantSetId, name),
                 FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
                     ON DELETE CASCADE
@@ -1111,7 +1111,7 @@ class SqlDataRepository(AbstractDataRepository):
         """
         sql = """
             INSERT INTO CallSet (
-                id, name, variantSetId, bioSampleId)
+                id, name, variantSetId, biosampleId)
             VALUES (?, ?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
@@ -1119,7 +1119,7 @@ class SqlDataRepository(AbstractDataRepository):
             callSet.getId(),
             callSet.getLocalId(),
             callSet.getParentContainer().getId(),
-            callSet.getBioSampleId()))
+            callSet.getBiosampleId()))
 
     def _readCallSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
@@ -1252,9 +1252,9 @@ class SqlDataRepository(AbstractDataRepository):
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
 
-    def _createBioSampleTable(self, cursor):
+    def _createBiosampleTable(self, cursor):
         sql = """
-            CREATE TABLE BioSample (
+            CREATE TABLE Biosample (
                 id TEXT NOT NULL PRIMARY KEY,
                 datasetId TEXT NOT NULL,
                 name TEXT NOT NULL,
@@ -1271,38 +1271,38 @@ class SqlDataRepository(AbstractDataRepository):
         """
         cursor.execute(sql)
 
-    def insertBioSample(self, bioSample):
+    def insertBiosample(self, biosample):
         """
-        Inserts the specified BioSample into this repository.
+        Inserts the specified Biosample into this repository.
         """
         sql = """
-            INSERT INTO BioSample (
+            INSERT INTO Biosample (
                 id, datasetId, name, description, disease,
                 created, updated, individualId, info)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
-            bioSample.getId(),
-            bioSample.getParentContainer().getId(),
-            bioSample.getLocalId(),
-            bioSample.getDescription(),
-            json.dumps(bioSample.getDisease()),
-            bioSample.getCreated(),
-            bioSample.getUpdated(),
-            bioSample.getIndividualId(),
-            json.dumps(bioSample.getInfo())))
+            biosample.getId(),
+            biosample.getParentContainer().getId(),
+            biosample.getLocalId(),
+            biosample.getDescription(),
+            json.dumps(biosample.getDisease()),
+            biosample.getCreated(),
+            biosample.getUpdated(),
+            biosample.getIndividualId(),
+            json.dumps(biosample.getInfo())))
 
-    def _readBioSampleTable(self, cursor):
+    def _readBiosampleTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM BioSample;")
+        cursor.execute("SELECT * FROM Biosample;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
-            bioSample = biodata.BioSample(
+            biosample = biodata.Biosample(
                 dataset, row[b'name'])
-            bioSample.populateFromRow(row)
-            assert bioSample.getId() == row[b'id']
-            dataset.addBioSample(bioSample)
+            biosample.populateFromRow(row)
+            assert biosample.getId() == row[b'id']
+            dataset.addBiosample(biosample)
 
     def _createIndividualTable(self, cursor):
         sql = """
@@ -1478,7 +1478,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createVariantSetTable(cursor)
         self._createVariantAnnotationSetTable(cursor)
         self._createFeatureSetTable(cursor)
-        self._createBioSampleTable(cursor)
+        self._createBiosampleTable(cursor)
         self._createIndividualTable(cursor)
         self._createPhenotypeAssociationSetTable(cursor)
         self._createRnaQuantificationSetTable(cursor)
@@ -1524,7 +1524,7 @@ class SqlDataRepository(AbstractDataRepository):
             self._readCallSetTable(cursor)
             self._readVariantAnnotationSetTable(cursor)
             self._readFeatureSetTable(cursor)
-            self._readBioSampleTable(cursor)
+            self._readBiosampleTable(cursor)
             self._readIndividualTable(cursor)
             self._readPhenotypeAssociationSetTable(cursor)
             self._readRnaQuantificationSetTable(cursor)

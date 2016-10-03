@@ -599,9 +599,9 @@ def searchFeatures():
 
 
 @DisplayedRoute('/biosamples/search', postMethod=True)
-def searchBioSamples():
+def searchBiosamples():
     return handleFlaskPostRequest(
-        flask.request, app.backend.runSearchBioSamples)
+        flask.request, app.backend.runSearchBiosamples)
 
 
 @DisplayedRoute('/individuals/search', postMethod=True)
@@ -613,9 +613,9 @@ def searchIndividuals():
 @DisplayedRoute(
     '/biosamples/<no(search):id>',
     pathDisplay='/biosamples/<id>')
-def getBioSample(id):
+def getBiosample(id):
     return handleFlaskGetRequest(
-        id, flask.request, app.backend.runGetBioSample)
+        id, flask.request, app.backend.runGetBiosample)
 
 
 @DisplayedRoute(

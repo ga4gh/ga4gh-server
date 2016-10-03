@@ -13,16 +13,16 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
 
-class BioSample(datamodel.DatamodelObject):
+class Biosample(datamodel.DatamodelObject):
     """
-    This class represents an abstract BioSample object.
+    This class represents an abstract Biosample object.
     It sets default values and getters, as well as the
     toProtocolElement function.
     """
-    compoundIdClass = datamodel.BioSampleCompoundId
+    compoundIdClass = datamodel.BiosampleCompoundId
 
     def __init__(self, parentContainer, localId):
-        super(BioSample, self).__init__(parentContainer, localId)
+        super(Biosample, self).__init__(parentContainer, localId)
         self._created = datetime.datetime.now().isoformat()
         self._updated = datetime.datetime.now().isoformat()
         self._description = None
@@ -37,7 +37,7 @@ class BioSample(datamodel.DatamodelObject):
         if self.getDisease():
             disease = protocol.fromJson(
                 json.dumps(self.getDisease()), protocol.OntologyTerm)
-        bioSample = protocol.BioSample(
+        biosample = protocol.Biosample(
             dataset_id=self._datasetId,
             created=self.getCreated(),
             updated=self.getUpdated(),
@@ -48,12 +48,12 @@ class BioSample(datamodel.DatamodelObject):
             disease=disease)
         for key in self.getInfo():
             for value in self.getInfo()[key]['values']:
-                bioSample.info[key].values.add().string_value = value
-        return bioSample
+                biosample.info[key].values.add().string_value = value
+        return biosample
 
     def populateFromJson(self, jsonString):
         try:
-            parsed = protocol.fromJson(jsonString, protocol.BioSample)
+            parsed = protocol.fromJson(jsonString, protocol.Biosample)
         except:
             raise exceptions.InvalidJsonException(jsonString)
         self._created = parsed.created
