@@ -1,25 +1,14 @@
-"""
-Script to parse the output file produced by cufflinks.
-"""
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
 import sqlite3
-import argparse
 
-import utils
-
-utils.ga4ghImportGlue()
-
-import ga4gh.datarepo as datarepo  # NOQA
+import ga4gh.exceptions as exceptions
+import pickle
 
 
-def data_repo(path):
-    dataRepository = datarepo.SqlDataRepository(path)
-    dataRepository.open(datarepo.MODE_READ)
-    return dataRepository
+SUPPORTED_RNA_INPUT_FORMATS = ["cufflinks", "kallisto", "rsem"]
 
 
 class RNASqliteStore(object):
@@ -27,29 +16,28 @@ class RNASqliteStore(object):
     Defines a sqlite store for RNA data as well as methods for loading the
     tables.
     """
-    def __init__(self, sqliteFileName, repoPath):
+    def __init__(self, sqliteFileName):
         # TODO: check to see if the rnaQuantId is in the db and exit if it is
         # since this is a generator and not an updater
-        sqlFilePath = sqliteFileName
-        self._dbConn = sqlite3.connect(sqlFilePath)
+        self._dbConn = sqlite3.connect(sqliteFileName)
         self._cursor = self._dbConn.cursor()
-        self.createTables(self._cursor)
-        self._dbConn.commit()
+        # self.createTables(self._cursor)
+        # self._dbConn.commit()
 
         self._batchSize = 100
         self._rnaValueList = []
         self._expressionValueList = []
 
-    def createTables(self, cursor):
+    def createTables(self):
         # annotationIds is a comma separated list
-        cursor.execute('''CREATE TABLE RnaQuantification (
+        self._cursor.execute('''CREATE TABLE RnaQuantification (
                        id text,
                        feature_set_ids text,
                        description text,
                        name text,
                        read_group_ids text,
                        programs text)''')
-        cursor.execute('''CREATE TABLE Expression (
+        self._cursor.execute('''CREATE TABLE Expression (
                        id text,
                        rna_quantification_id text,
                        name text,
@@ -61,6 +49,7 @@ class RNASqliteStore(object):
                        units integer,
                        conf_low real,
                        conf_hi real)''')
+        self._cursor._dbConn.commit()
 
     def addRNAQuantification(self, datafields):
         """
@@ -101,7 +90,7 @@ class AbstractWriter(object):
     """
     Base class to use for the rna quantification writers
     """
-    def __init__(self, rnaDB, repoPath, featureType="gene"):
+    def __init__(self, rnaDB, featureType="gene", dataset=None):
         self._db = rnaDB
         self._isNormalized = None
         self._units = 0  # EXPRESSION_UNIT_UNSPECIFIED
@@ -112,8 +101,16 @@ class AbstractWriter(object):
         self._countCol = None
         self._confColLow = None
         self._confColHi = None
-        self._dataRepo = data_repo(repoPath)
+        self._dataRepo = None
+        self._dataset = dataset
         self._featureType = featureType
+        self._features = {}
+
+    def setUnits(self, units):
+        if units == "fpkm":
+            self._units = 1
+        elif units == "tpm":
+            self._units = 2
 
     def writeExpression(self, rnaQuantificationId, quantfile):
         """
@@ -122,6 +119,9 @@ class AbstractWriter(object):
         """
         isNormalized = self._isNormalized
         units = self._units
+        featureSets = None
+        if self._dataset:
+            featureSets = self._dataset.getFeatureSets()
         quantfile.readline()  # skip header
         for expression in quantfile:
             fields = expression.strip().split("\t")
@@ -140,12 +140,16 @@ class AbstractWriter(object):
                 score = (confidenceLow + confidenceHi)/2
 
             featureName = fields[self._featureCol]
-            dataset = self._dataRepo.getDatasets()[0]
-            featureSet = dataset.getFeatureSets()[0]
             featureId = ""
-            for feature in featureSet.getFeatures(name=featureName):
-                featureId = feature.id
-                break
+            if featureSets is not None:
+                for featureSet in featureSets:
+                    if featureId == "":
+                        for feature in featureSet.getFeatures(
+                                name=featureName):
+                            self._features[feature.id] = feature
+                            featureId = feature.id
+                            print(featureId)
+                            break
             datafields = (expressionId, rnaQuantificationId, name, featureId,
                           expressionLevel, isNormalized,
                           rawCount, score, units, confidenceLow, confidenceHi)
@@ -163,16 +167,16 @@ class CufflinksWriter(AbstractWriter):
         gene_short_name    tss_id    locus    length    coverage    FPKM
         FPKM_conf_lo    FPKM_conf_hi    FPKM_status
     """
-    def __init__(self, rnaDB, repoPath, featureType):
-        super(CufflinksWriter, self).__init__(rnaDB, repoPath, featureType)
+    def __init__(self, rnaDB, featureType, units="fpkm"):
+        super(CufflinksWriter, self).__init__(rnaDB, featureType)
         self._isNormalized = True
-        self._units = 1  # FPKM
         self._expressionLevelCol = 9
         self._idCol = 0
         self._nameCol = 4
         self._featureCol = 3
         self._confColLow = 10
         self._confColHi = 11
+        self.setUnits(units)
 
 
 class RsemWriter(AbstractWriter):
@@ -194,10 +198,9 @@ class RsemWriter(AbstractWriter):
     IsoPct_from_pme_TPM    TPM_ci_lower_bound    TPM_ci_upper_bound
     FPKM_ci_lower_bound    FPKM_ci_upper_bound
     """
-    def __init__(self, rnaDB, repoPath, featureType):
-        super(RsemWriter, self).__init__(rnaDB, repoPath, featureType)
+    def __init__(self, rnaDB, featureType, units="tpm"):
+        super(RsemWriter, self).__init__(rnaDB, featureType)
         self._isNormalized = True
-        self._units = 2  # TPM
         self._expressionLevelCol = 5
         self._idCol = 0
         self._nameCol = self._idCol
@@ -210,6 +213,7 @@ class RsemWriter(AbstractWriter):
             self._featureCol = 0
             self._confColLow = 11
             self._confColHi = 12
+        self.setUnits(units)
 
 
 class KallistoWriter(AbstractWriter):
@@ -220,15 +224,15 @@ class KallistoWriter(AbstractWriter):
     kallisto header:
         target_id    length    eff_length    est_counts    tpm
     """
-    def __init__(self, rnaDB):
-        super(KallistoWriter, self).__init__(rnaDB)
+    def __init__(self, rnaDB, featureType, units="tpm"):
+        super(KallistoWriter, self).__init__(rnaDB, featureType)
         self._isNormalized = True
-        self._units = 2  # TPM
         self._expressionLevelCol = 4
         self._idCol = 0
         self._nameCol = 0
         self._featureCol = 0
         self._countCol = 3
+        self.setUnits(units)
 
 
 def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
@@ -245,81 +249,43 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
 def writeExpressionTable(writer, data):
     for rnaQuantId, quantfile in data:
         writer.writeExpression(rnaQuantId, quantfile)
+    pickle.dump(writer._features, open( "features.pickle", "wb" ))
 
-
-def rnaseq2ga(
-        dataFolder, sqlFilename, repoPath="ga4gh-example-data/registry.db",
-        controlFile="rna_control_file.tsv", featureType="gene"):
+def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
+              dataset=None, featureType="gene", description="", programs="",
+              annotationNames="", readGroupSetNames=""):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
 
-    Quantifications are specified in a tab delimited control file with columns:
-    rna_quant_name    filename        type    feature_set_name
-    read_group_set_name     description    programs
-
-    Supports the following quantification output type:
+    Supports the following quantification output types:
     Cufflinks, kallisto, RSEM
     """
-    controlFilePath = os.path.join(dataFolder, controlFile)
-    dataRepo = data_repo(repoPath)
-    rnaDB = RNASqliteStore(sqlFilename, repoPath)
-    with open(controlFilePath, "r") as rnaDatasetsFile:
-        rnaDatasetsFile.readline()  # skip header
-        for line in rnaDatasetsFile:
-            fields = line.split("\t")
-            rnaType = fields[2]
-            dataset = dataRepo.getDatasets()[0]
-            annotationId = fields[3].strip()
-            featureSet = dataset.getFeatureSetByName(annotationId)
-            if rnaType == "cufflinks":
-                writer = CufflinksWriter(rnaDB, repoPath)
-            elif rnaType == "kallisto":
-                writer = KallistoWriter(rnaDB, repoPath)
-            elif rnaType == "rsem":
-                writer = RsemWriter(rnaDB, repoPath, featureType)
-            else:
-                raise Exception("Unknown RNA file type: {}".format(rnaType))
-            rnaQuantId = fields[0].strip()
-            quantFilename = os.path.join(dataFolder, fields[1].strip())
-            readGroupSetName = fields[4].strip()
-            readGroupSet = dataset.getReadGroupSetByName(readGroupSetName)
-            readGroupIds = ",".join(
-                [x.getId() for x in readGroupSet.getReadGroups()])
-            description = fields[5].strip()
-            programs = fields[6].strip()
-            writeRnaseqTable(rnaDB, [rnaQuantId], description,
-                             featureSet.getId(),
-                             readGroupId=readGroupIds, programs=programs)
-            quantFile = open(quantFilename, "r")
-            writeExpressionTable(writer, [(rnaQuantId, quantFile)])
-
-
-def parseArgs():
-    parser = argparse.ArgumentParser(
-        description="Script to generate SQLite database corresponding to "
-        "input RNA Quantification experiment files.")
-    parser.add_argument(
-        "--outputFile", "-o", default="rnaseq.db",
-        help="The file to output the server-ready database to.")
-    parser.add_argument(
-        "--inputDir", "-i",
-        help="Path to input directory containing RNA quant files.",
-        default='.')
-    parser.add_argument(
-        "--controlFile", "-c",
-        help="Name of control file (.tsv format) in the inputDir",
-        default="rna_control_file.tsv")
-    parser.add_argument('--verbose', '-v', action='count', default=0)
-    args = parser.parse_args()
-    return args
-
-
-@utils.Timed()
-def main():
-    args = parseArgs()
-    rnaseq2ga(args.inputDir, args.outputFile, args.controlFile)
-
-
-if __name__ == '__main__':
-    main()
+    readGroupSetName = readGroupSetNames.strip().split(",")[0]
+    featureSetIds = ""
+    readGroupIds = ""
+    if dataset:
+        featureSetIdList = []
+        for annotationName in annotationNames.split(","):
+            featureSet = dataset.getFeatureSetByName(annotationName)
+            featureSetIdList.append(featureSet.getId())
+        featureSetIds = ",".join(featureSetIdList)
+        # TODO: multiple readGroupSets
+        readGroupSet = dataset.getReadGroupSetByName(readGroupSetName)
+        readGroupIds = ",".join(
+            [x.getId() for x in readGroupSet.getReadGroups()])
+    if rnaType not in SUPPORTED_RNA_INPUT_FORMATS:
+        raise exceptions.UnsupportedFormatException(rnaType)
+    rnaDB = RNASqliteStore(sqlFilename, dataset)
+    if rnaType == "cufflinks":
+        writer = CufflinksWriter(rnaDB, featureType, dataset)
+    elif rnaType == "kallisto":
+        writer = KallistoWriter(rnaDB, featureType, dataset)
+    elif rnaType == "rsem":
+        writer = RsemWriter(rnaDB, featureType, dataset)
+    # need to make this update an existing database
+    writeRnaseqTable(rnaDB, [localName], description,
+                     featureSetIds,
+                     readGroupId=readGroupIds, programs=programs)
+    quantFile = open(quantificationFilename, "r")
+    writeExpressionTable(writer, [(localName, quantFile)])
