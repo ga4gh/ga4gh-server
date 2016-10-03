@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import sqlite3
 
 import ga4gh.exceptions as exceptions
-import pickle
 
 
 SUPPORTED_RNA_INPUT_FORMATS = ["cufflinks", "kallisto", "rsem"]
@@ -21,9 +20,6 @@ class RNASqliteStore(object):
         # since this is a generator and not an updater
         self._dbConn = sqlite3.connect(sqliteFileName)
         self._cursor = self._dbConn.cursor()
-        # self.createTables(self._cursor)
-        # self._dbConn.commit()
-
         self._batchSize = 100
         self._rnaValueList = []
         self._expressionValueList = []
@@ -49,7 +45,7 @@ class RNASqliteStore(object):
                        units integer,
                        conf_low real,
                        conf_hi real)''')
-        self._cursor._dbConn.commit()
+        self._dbConn.commit()
 
     def addRNAQuantification(self, datafields):
         """
@@ -148,8 +144,9 @@ class AbstractWriter(object):
                                 name=featureName):
                             self._features[feature.id] = feature
                             featureId = feature.id
-                            print(featureId)
                             break
+                    else:
+                        break
             datafields = (expressionId, rnaQuantificationId, name, featureId,
                           expressionLevel, isNormalized,
                           rawCount, score, units, confidenceLow, confidenceHi)
@@ -167,8 +164,9 @@ class CufflinksWriter(AbstractWriter):
         gene_short_name    tss_id    locus    length    coverage    FPKM
         FPKM_conf_lo    FPKM_conf_hi    FPKM_status
     """
-    def __init__(self, rnaDB, featureType, units="fpkm"):
-        super(CufflinksWriter, self).__init__(rnaDB, featureType)
+    def __init__(self, rnaDB, featureType, units="fpkm", dataset=None):
+        super(CufflinksWriter, self).__init__(
+            rnaDB, featureType, dataset=dataset)
         self._isNormalized = True
         self._expressionLevelCol = 9
         self._idCol = 0
@@ -198,8 +196,9 @@ class RsemWriter(AbstractWriter):
     IsoPct_from_pme_TPM    TPM_ci_lower_bound    TPM_ci_upper_bound
     FPKM_ci_lower_bound    FPKM_ci_upper_bound
     """
-    def __init__(self, rnaDB, featureType, units="tpm"):
-        super(RsemWriter, self).__init__(rnaDB, featureType)
+    def __init__(self, rnaDB, featureType, units="tpm", dataset=None):
+        super(RsemWriter, self).__init__(
+            rnaDB, featureType=featureType, dataset=dataset)
         self._isNormalized = True
         self._expressionLevelCol = 5
         self._idCol = 0
@@ -224,8 +223,9 @@ class KallistoWriter(AbstractWriter):
     kallisto header:
         target_id    length    eff_length    est_counts    tpm
     """
-    def __init__(self, rnaDB, featureType, units="tpm"):
-        super(KallistoWriter, self).__init__(rnaDB, featureType)
+    def __init__(self, rnaDB, featureType, units="tpm", dataset=None):
+        super(KallistoWriter, self).__init__(
+            rnaDB, featureType, dataset=dataset)
         self._isNormalized = True
         self._expressionLevelCol = 4
         self._idCol = 0
@@ -249,11 +249,11 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
 def writeExpressionTable(writer, data):
     for rnaQuantId, quantfile in data:
         writer.writeExpression(rnaQuantId, quantfile)
-    pickle.dump(writer._features, open( "features.pickle", "wb" ))
+
 
 def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
               dataset=None, featureType="gene", description="", programs="",
-              annotationNames="", readGroupSetNames=""):
+              featureSetNames="", readGroupSetNames=""):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
@@ -276,13 +276,13 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
             [x.getId() for x in readGroupSet.getReadGroups()])
     if rnaType not in SUPPORTED_RNA_INPUT_FORMATS:
         raise exceptions.UnsupportedFormatException(rnaType)
-    rnaDB = RNASqliteStore(sqlFilename, dataset)
+    rnaDB = RNASqliteStore(sqlFilename)
     if rnaType == "cufflinks":
-        writer = CufflinksWriter(rnaDB, featureType, dataset)
+        writer = CufflinksWriter(rnaDB, featureType, dataset=dataset)
     elif rnaType == "kallisto":
-        writer = KallistoWriter(rnaDB, featureType, dataset)
+        writer = KallistoWriter(rnaDB, featureType, dataset=dataset)
     elif rnaType == "rsem":
-        writer = RsemWriter(rnaDB, featureType, dataset)
+        writer = RsemWriter(rnaDB, featureType, dataset=dataset)
     # need to make this update an existing database
     writeRnaseqTable(rnaDB, [localName], description,
                      featureSetIds,
