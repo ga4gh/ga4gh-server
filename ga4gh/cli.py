@@ -2038,6 +2038,7 @@ class RepoManager(object):
     """
     def __init__(self, args):
         self._args = args
+        # TODO make it so this is not a required argument to the CLI
         self._registryPath = args.registryPath
         self._repo = datarepo.SqlDataRepository(self._registryPath)
 
@@ -2492,6 +2493,14 @@ class RepoManager(object):
                 self._repo.removeRnaQuantificationSet, rnaQuantSet)
         self._confirmDelete(
             "RnaQuantificationSet", rnaQuantSet.getLocalId(), func)
+
+    def initRnaQuantificationSet(self):
+        """
+        Initialize the RNA Quantification set tables.
+        """
+        self._openRepo()
+        store = rnaseq2ga.RNASqliteStore(self._args.filePath)
+        store.createTables()
 
     def addRnaQuantification(self):
         """
@@ -2958,6 +2967,15 @@ class RepoManager(object):
         cls.addForceOption(removePhenotypeAssociationSetParser)
 
         objectType = "RnaQuantification"
+        initRnaQuantificationParser = addSubparser(
+            subparsers, "init-rnaquantification",
+            "Initialize an RNA Quantification set")
+        initRnaQuantificationParser.set_defaults(
+            runner="initRnaQuantification")
+        cls.addFilePathArgument(
+            initRnaQuantificationParser,
+            "The path to the RNA SQLite database to create or modify")
+
         addRnaQuantificationParser = addSubparser(
             subparsers, "add-rnaquantification",
             "Add an RNA quantification to the data repo")

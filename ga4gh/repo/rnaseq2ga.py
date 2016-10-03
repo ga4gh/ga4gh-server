@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import sqlite3
 
 import ga4gh.exceptions as exceptions
+import pickle
 
 
 SUPPORTED_RNA_INPUT_FORMATS = ["cufflinks", "kallisto", "rsem"]
@@ -15,29 +16,28 @@ class RNASqliteStore(object):
     Defines a sqlite store for RNA data as well as methods for loading the
     tables.
     """
-    def __init__(self, sqliteFileName, dataset):
+    def __init__(self, sqliteFileName):
         # TODO: check to see if the rnaQuantId is in the db and exit if it is
         # since this is a generator and not an updater
-        self._dataset = dataset
         self._dbConn = sqlite3.connect(sqliteFileName)
         self._cursor = self._dbConn.cursor()
-        self.createTables(self._cursor)
-        self._dbConn.commit()
+        # self.createTables(self._cursor)
+        # self._dbConn.commit()
 
         self._batchSize = 100
         self._rnaValueList = []
         self._expressionValueList = []
 
-    def createTables(self, cursor):
+    def createTables(self):
         # annotationIds is a comma separated list
-        cursor.execute('''CREATE TABLE RnaQuantification (
+        self._cursor.execute('''CREATE TABLE RnaQuantification (
                        id text,
                        feature_set_ids text,
                        description text,
                        name text,
                        read_group_ids text,
                        programs text)''')
-        cursor.execute('''CREATE TABLE Expression (
+        self._cursor.execute('''CREATE TABLE Expression (
                        id text,
                        rna_quantification_id text,
                        name text,
@@ -49,6 +49,7 @@ class RNASqliteStore(object):
                        units integer,
                        conf_low real,
                        conf_hi real)''')
+        self._cursor._dbConn.commit()
 
     def addRNAQuantification(self, datafields):
         """
@@ -84,15 +85,12 @@ class RNASqliteStore(object):
             self._dbConn.commit()
             self._expressionValueList = []
 
-    def getDataset(self):
-        return self._dataset
-
 
 class AbstractWriter(object):
     """
     Base class to use for the rna quantification writers
     """
-    def __init__(self, rnaDB, featureType="gene"):
+    def __init__(self, rnaDB, featureType="gene", dataset=None):
         self._db = rnaDB
         self._isNormalized = None
         self._units = 0  # EXPRESSION_UNIT_UNSPECIFIED
@@ -104,8 +102,9 @@ class AbstractWriter(object):
         self._confColLow = None
         self._confColHi = None
         self._dataRepo = None
-        self._dataset = self._db.getDataset()
+        self._dataset = dataset
         self._featureType = featureType
+        self._features = {}
 
     def setUnits(self, units):
         if units == "fpkm":
@@ -147,7 +146,9 @@ class AbstractWriter(object):
                     if featureId == "":
                         for feature in featureSet.getFeatures(
                                 name=featureName):
+                            self._features[feature.id] = feature
                             featureId = feature.id
+                            print(featureId)
                             break
             datafields = (expressionId, rnaQuantificationId, name, featureId,
                           expressionLevel, isNormalized,
@@ -248,7 +249,7 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
 def writeExpressionTable(writer, data):
     for rnaQuantId, quantfile in data:
         writer.writeExpression(rnaQuantId, quantfile)
-
+    pickle.dump(writer._features, open( "features.pickle", "wb" ))
 
 def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
               dataset=None, featureType="gene", description="", programs="",
@@ -277,11 +278,12 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
         raise exceptions.UnsupportedFormatException(rnaType)
     rnaDB = RNASqliteStore(sqlFilename, dataset)
     if rnaType == "cufflinks":
-        writer = CufflinksWriter(rnaDB, featureType)
+        writer = CufflinksWriter(rnaDB, featureType, dataset)
     elif rnaType == "kallisto":
-        writer = KallistoWriter(rnaDB, featureType)
+        writer = KallistoWriter(rnaDB, featureType, dataset)
     elif rnaType == "rsem":
-        writer = RsemWriter(rnaDB, featureType)
+        writer = RsemWriter(rnaDB, featureType, dataset)
+    # need to make this update an existing database
     writeRnaseqTable(rnaDB, [localName], description,
                      featureSetIds,
                      readGroupId=readGroupIds, programs=programs)
