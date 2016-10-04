@@ -1,5 +1,5 @@
 """
-Builds the test data repo DB.
+Builds the test data registry DB.
 """
 from __future__ import division
 from __future__ import print_function
@@ -21,7 +21,7 @@ def run(*args):
 def buildTestData(
         dataDirectory='tests/data', relativePaths=False, force=False):
     prefix = dataDirectory
-    repoFile = os.path.join(prefix, "repo.db")
+    repoFile = os.path.join(prefix, "registry.db")
     if os.path.exists(repoFile):
         if force:
             print("deleting repo at '{}'".format(repoFile))

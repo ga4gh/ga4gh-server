@@ -247,8 +247,9 @@ def writeExpressionTable(writer, data):
         writer.writeExpression(rnaQuantId, quantfile)
 
 
-def rnaseq2ga(dataFolder, sqlFilename, repoPath="ga4gh-example-data/repo.db",
-              controlFile="rna_control_file.tsv", featureType="gene"):
+def rnaseq2ga(
+        dataFolder, sqlFilename, repoPath="ga4gh-example-data/registry.db",
+        controlFile="rna_control_file.tsv", featureType="gene"):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
