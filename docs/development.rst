@@ -26,8 +26,8 @@ libraries. On Debian or Ubuntu, we can install these using
     $ sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libssl-dev
 
 .. note::
-    TODO: Document this basic step for other platforms? We definitely want
-    to tell people how to do this with Brew or ports on a Mac.
+    instructions for configuring the reference server on Mac OS X
+     can be found here :ref:`Installtion <installing-the-development-version-on-mac-os-x>`
 
 If you don't have admin access to your machine, please contact your system
 administrator, and ask them to install the development version of Python 2.7
