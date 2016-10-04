@@ -28,11 +28,477 @@ MODE_READ = 'r'
 MODE_WRITE = 'w'
 
 
+class AbstractRepositoryObject(object):
+    """
+    An abstract object in the data repository
+    """
+    @classmethod
+    def createTable(cls, cursor):
+        sql = cls.getCreateSql()
+        cursor.execute(sql)
+
+    @classmethod
+    def getSelectAllSql(cls):
+        return "SELECT * FROM {};".format(cls.__name__)
+
+    @classmethod
+    def getDeleteByIdSql(cls):
+        return "DELETE FROM {} WHERE id=?".format(cls.__name__)
+
+    @classmethod
+    def getDeleteByNameSql(cls):
+        return "DELETE FROM {} WHERE name=?".format(cls.__name__)
+
+    @classmethod
+    def deleteById(cls, id_, cursor):
+        sql = cls.getDeleteByIdSql()
+        cursor.execute(sql, (id_,))
+
+    @classmethod
+    def deleteByName(cls, name, cursor):
+        sql = cls.getDeleteByNameSql()
+        cursor.execute(sql, (name,))
+
+
+class Ontology(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE Ontology(
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                dataUrl TEXT NOT NULL,
+                ontologyPrefix TEXT NOT NULL,
+                UNIQUE (name)
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO Ontology(id, name, dataUrl, ontologyPrefix)
+            VALUES (?, ?, ?, ?);
+        """
+        return sql
+
+
+class Reference(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE Reference (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
+                length INTEGER,
+                isDerived INTEGER,
+                md5checksum TEXT,
+                ncbiTaxonId INTEGER,
+                sourceAccessions TEXT,
+                sourceDivergence REAL,
+                sourceUri TEXT,
+                UNIQUE (referenceSetId, name),
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+                    ON DELETE CASCADE
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO Reference (
+                id, referenceSetId, name, length, isDerived, md5checksum,
+                ncbiTaxonId, sourceAccessions, sourceUri)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        return sql
+
+
+class ReferenceSet(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE ReferenceSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                assemblyId TEXT,
+                isDerived INTEGER,
+                md5checksum TEXT,
+                ncbiTaxonId INTEGER,
+                sourceAccessions TEXT,
+                sourceUri TEXT,
+                dataUrl TEXT NOT NULL,
+                UNIQUE (name)
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO ReferenceSet (
+                id, name, description, assemblyId, isDerived, md5checksum,
+                ncbiTaxonId, sourceAccessions, sourceUri, dataUrl)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        return sql
+
+
+class Dataset(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE Dataset (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                info TEXT,
+                UNIQUE (name)
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO Dataset (id, name, description, info)
+            VALUES (?, ?, ?, ?);
+        """
+        return sql
+
+
+class ReadGroup(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE ReadGroup (
+                id TEXT NOT NULL PRIMARY KEY,
+                readGroupSetId TEXT NOT NULL,
+                name TEXT NOT NULL,
+                predictedInsertSize INTEGER,
+                sampleName TEXT,
+                description TEXT,
+                stats TEXT NOT NULL,
+                experiment TEXT NOT NULL,
+                bioSampleId TEXT,
+                created TEXT,
+                updated TEXT,
+                UNIQUE (readGroupSetId, name),
+                FOREIGN KEY(readGroupSetId) REFERENCES ReadGroupSet(id)
+                    ON DELETE CASCADE
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO ReadGroup (
+                id, readGroupSetId, name, predictedInsertSize,
+                sampleName, description, stats, experiment,
+                bioSampleId, created, updated)
+            VALUES
+                (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
+        """
+        return sql
+
+
+class ReadGroupSet(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE ReadGroupSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
+                programs TEXT,
+                stats TEXT NOT NULL,
+                dataUrl TEXT NOT NULL,
+                indexFile TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO ReadGroupSet (
+                id, datasetId, referenceSetId, name, programs, stats,
+                dataUrl, indexFile)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        return sql
+
+
+class VariantAnnotationSet(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE VariantAnnotationSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                variantSetId TEXT NOT NULL,
+                ontologyId TEXT NOT NULL,
+                analysis TEXT,
+                annotationType TEXT,
+                created TEXT,
+                updated TEXT,
+                UNIQUE (variantSetId, name),
+                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO VariantAnnotationSet (
+                id, variantSetId, ontologyId, name, analysis, annotationType,
+                created, updated)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        return sql
+
+
+class CallSet(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE CallSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                variantSetId TEXT NOT NULL,
+                bioSampleId TEXT,
+                UNIQUE (variantSetId, name),
+                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
+                    ON DELETE CASCADE
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO CallSet (
+                id, name, variantSetId, bioSampleId)
+            VALUES (?, ?, ?, ?);
+        """
+        return sql
+
+
+class VariantSet(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE VariantSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
+                created TEXT,
+                updated TEXT,
+                metadata TEXT,
+                dataUrlIndexMap TEXT NOT NULL,
+                UNIQUE (datasetID, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO VariantSet (
+                id, datasetId, referenceSetId, name, created, updated,
+                metadata, dataUrlIndexMap)
+            VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), ?, ?);
+        """
+        return sql
+
+
+class FeatureSet(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE FeatureSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
+                ontologyId TEXT NOT NULL,
+                info TEXT,
+                sourceUri TEXT,
+                dataUrl TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO FeatureSet (
+                id, datasetId, referenceSetId, ontologyId, name, dataUrl)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """
+        return sql
+
+
+class BioSample(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE BioSample (
+                id TEXT NOT NULL PRIMARY KEY,
+                datasetId TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT,
+                disease TEXT,
+                created TEXT,
+                updated TEXT,
+                individualId TEXT,
+                info TEXT,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO BioSample (
+                id, datasetId, name, description, disease,
+                created, updated, individualId, info)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        return sql
+
+
+class Individual(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE Individual (
+                id TEXT NOT NULL PRIMARY KEY,
+                datasetId TEXT NOT NULL,
+                name TEXT,
+                description TEXT,
+                created TEXT NOT NULL,
+                updated TEXT,
+                species TEXT,
+                sex TEXT,
+                info TEXT,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO Individual (
+                id, datasetId, name, description, created,
+                updated, species, sex, info)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        return sql
+
+
+class PhenotypeAssociationSet(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE PhenotypeAssociationSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT,
+                datasetId TEXT NOT NULL,
+                dataUrl TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO PhenotypeAssociationSet (
+                id, name, datasetId, dataUrl )
+            VALUES (?, ?, ?, ?)
+        """
+        return sql
+
+
+class RnaQuantificationSet(AbstractRepositoryObject):
+
+    @classmethod
+    def getCreateSql(cls):
+        sql = """
+            CREATE TABLE RnaQuantificationSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                datasetId TEXT NOT NULL,
+                referenceSetId TEXT NOT NULL,
+                info TEXT,
+                dataUrl TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE,
+                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
+            );
+        """
+        return sql
+
+    @classmethod
+    def getInsertSql(cls):
+        sql = """
+            INSERT INTO RnaQuantificationSet (
+                id, datasetId, referenceSetId, name, dataUrl)
+            VALUES (?, ?, ?, ?, ?)
+        """
+        return sql
+
+
 class AbstractDataRepository(object):
     """
     An abstract GA4GH data repository
     """
     def __init__(self):
+        self.repoObjectClasses = AbstractRepositoryObject.__subclasses__()
         self._datasetIdMap = {}
         self._datasetNameMap = {}
         self._datasetIds = []
@@ -648,26 +1114,11 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoSchemaVersionMismatchException(
                 schemaVersion, self.version)
 
-    def _createOntologyTable(self, cursor):
-        sql = """
-            CREATE TABLE Ontology(
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                ontologyPrefix TEXT NOT NULL,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
-
     def insertOntology(self, ontology):
         """
         Inserts the specified ontology into this repository.
         """
-        sql = """
-            INSERT INTO Ontology(id, name, dataUrl, ontologyPrefix)
-            VALUES (?, ?, ?, ?);
-        """
+        sql = Ontology.getInsertSql()
         cursor = self._dbConnection.cursor()
         # TODO we need to create a proper ID when we're doing ID generation
         # for the rest of the container objects.
@@ -682,50 +1133,31 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readOntologyTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Ontology;")
+        cursor.execute(Ontology.getSelectAllSql())
         for row in cursor:
             ontology = ontologies.Ontology(row[b'name'])
             ontology.populateFromRow(row)
             self.addOntology(ontology)
 
+    def _removeById(self, repoObjectClass, id_):
+        cursor = self._dbConnection.cursor()
+        repoObjectClass.deleteById(id_, cursor)
+
+    def _removeByName(self, repoObjectClass, name):
+        cursor = self._dbConnection.cursor()
+        repoObjectClass.deleteByName(name, cursor)
+
     def removeOntology(self, ontology):
         """
         Removes the specified ontology term map from this repository.
         """
-        sql = "DELETE FROM Ontology WHERE name=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (ontology.getName(),))
-
-    def _createReferenceTable(self, cursor):
-        sql = """
-            CREATE TABLE Reference (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                length INTEGER,
-                isDerived INTEGER,
-                md5checksum TEXT,
-                ncbiTaxonId INTEGER,
-                sourceAccessions TEXT,
-                sourceDivergence REAL,
-                sourceUri TEXT,
-                UNIQUE (referenceSetId, name),
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+        self._removeByName(Ontology, ontology.getName())
 
     def insertReference(self, reference):
         """
         Inserts the specified reference into this repository.
         """
-        sql = """
-            INSERT INTO Reference (
-                id, referenceSetId, name, length, isDerived, md5checksum,
-                ncbiTaxonId, sourceAccessions, sourceUri)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """
+        sql = Reference.getInsertSql()
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             reference.getId(), reference.getParentContainer().getId(),
@@ -739,7 +1171,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readReferenceTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Reference;")
+        cursor.execute(Reference.getSelectAllSql())
         for row in cursor:
             referenceSet = self.getReferenceSet(row[b'referenceSetId'])
             reference = references.HtslibReference(referenceSet, row[b'name'])
@@ -747,34 +1179,11 @@ class SqlDataRepository(AbstractDataRepository):
             assert reference.getId() == row[b"id"]
             referenceSet.addReference(reference)
 
-    def _createReferenceSetTable(self, cursor):
-        sql = """
-            CREATE TABLE ReferenceSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT,
-                assemblyId TEXT,
-                isDerived INTEGER,
-                md5checksum TEXT,
-                ncbiTaxonId INTEGER,
-                sourceAccessions TEXT,
-                sourceUri TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
-
     def insertReferenceSet(self, referenceSet):
         """
         Inserts the specified referenceSet into this repository.
         """
-        sql = """
-            INSERT INTO ReferenceSet (
-                id, name, description, assemblyId, isDerived, md5checksum,
-                ncbiTaxonId, sourceAccessions, sourceUri, dataUrl)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """
+        sql = ReferenceSet.getInsertSql()
         cursor = self._dbConnection.cursor()
         try:
             cursor.execute(sql, (
@@ -793,7 +1202,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readReferenceSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM ReferenceSet;")
+        cursor.execute(ReferenceSet.getSelectAllSql())
         for row in cursor:
             referenceSet = references.HtslibReferenceSet(row[b'name'])
             referenceSet.populateFromRow(row)
@@ -801,26 +1210,11 @@ class SqlDataRepository(AbstractDataRepository):
             # Insert the referenceSet into the memory-based object model.
             self.addReferenceSet(referenceSet)
 
-    def _createDatasetTable(self, cursor):
-        sql = """
-            CREATE TABLE Dataset (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT,
-                info TEXT,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
-
     def insertDataset(self, dataset):
         """
         Inserts the specified dataset into this repository.
         """
-        sql = """
-            INSERT INTO Dataset (id, name, description, info)
-            VALUES (?, ?, ?, ?);
-        """
+        sql = Dataset.getInsertSql()
         cursor = self._dbConnection.cursor()
         try:
             cursor.execute(sql, (
@@ -835,29 +1229,25 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        sql = "DELETE FROM Dataset WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (dataset.getId(),))
+        self._removeById(Dataset, dataset.getId())
 
     def removePhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
         Remove a phenotype association set from the repo
         """
-        sql = "DELETE FROM PhenotypeAssociationSet WHERE id=? "
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (phenotypeAssociationSet.getId(),))
+        self._removeById(
+            PhenotypeAssociationSet, phenotypeAssociationSet.getId())
 
     def removeFeatureSet(self, featureSet):
         """
         Removes the specified featureSet from this repository.
         """
-        sql = "DELETE FROM FeatureSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (featureSet.getId(),))
+        self._removeById(
+            FeatureSet, featureSet.getId())
 
     def _readDatasetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Dataset;")
+        cursor.execute(Dataset.getSelectAllSql())
         for row in cursor:
             dataset = datasets.Dataset(row[b'name'])
             dataset.populateFromRow(row)
@@ -865,39 +1255,11 @@ class SqlDataRepository(AbstractDataRepository):
             # Insert the dataset into the memory-based object model.
             self.addDataset(dataset)
 
-    def _createReadGroupTable(self, cursor):
-        sql = """
-            CREATE TABLE ReadGroup (
-                id TEXT NOT NULL PRIMARY KEY,
-                readGroupSetId TEXT NOT NULL,
-                name TEXT NOT NULL,
-                predictedInsertSize INTEGER,
-                sampleName TEXT,
-                description TEXT,
-                stats TEXT NOT NULL,
-                experiment TEXT NOT NULL,
-                bioSampleId TEXT,
-                created TEXT,
-                updated TEXT,
-                UNIQUE (readGroupSetId, name),
-                FOREIGN KEY(readGroupSetId) REFERENCES ReadGroupSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
-
     def insertReadGroup(self, readGroup):
         """
         Inserts the specified readGroup into the DB.
         """
-        sql = """
-            INSERT INTO ReadGroup (
-                id, readGroupSetId, name, predictedInsertSize,
-                sampleName, description, stats, experiment,
-                bioSampleId, created, updated)
-            VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
-        """
+        sql = ReadGroup.getInsertSql()
         cursor = self._dbConnection.cursor()
         statsJson = json.dumps(protocol.toJsonDict(readGroup.getStats()))
         experimentJson = json.dumps(
@@ -913,38 +1275,30 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified readGroupSet from this repository. This performs
         a cascading removal of all items within this readGroupSet.
         """
-        sql = "DELETE FROM ReadGroupSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (readGroupSet.getId(),))
+        self._removeById(ReadGroupSet, readGroupSet.getId())
 
     def removeVariantSet(self, variantSet):
         """
         Removes the specified variantSet from this repository. This performs
         a cascading removal of all items within this variantSet.
         """
-        sql = "DELETE FROM VariantSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (variantSet.getId(),))
+        self._removeById(VariantSet, variantSet.getId())
 
     def removeBioSample(self, bioSample):
         """
         Removes the specified bioSample from this repository.
         """
-        sql = "DELETE FROM BioSample WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (bioSample.getId(),))
+        self._removeById(BioSample, bioSample.getId())
 
     def removeIndividual(self, individual):
         """
         Removes the specified individual from this repository.
         """
-        sql = "DELETE FROM Individual WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (individual.getId(),))
+        self._removeById(Individual, individual.getId())
 
     def _readReadGroupTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM ReadGroup;")
+        cursor.execute(ReadGroup.getSelectAllSql())
         for row in cursor:
             readGroupSet = self.getReadGroupSet(row[b'readGroupSetId'])
             readGroup = reads.HtslibReadGroup(readGroupSet, row[b'name'])
@@ -954,35 +1308,11 @@ class SqlDataRepository(AbstractDataRepository):
             # Insert the readGroupSet into the memory-based object model.
             readGroupSet.addReadGroup(readGroup)
 
-    def _createReadGroupSetTable(self, cursor):
-        sql = """
-            CREATE TABLE ReadGroupSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                programs TEXT,
-                stats TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                indexFile TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
-
     def insertReadGroupSet(self, readGroupSet):
         """
         Inserts a the specified readGroupSet into this repository.
         """
-        sql = """
-            INSERT INTO ReadGroupSet (
-                id, datasetId, referenceSetId, name, programs, stats,
-                dataUrl, indexFile)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        """
+        sql = ReadGroupSet.getInsertSql()
         programsJson = json.dumps(
             [protocol.toJsonDict(program) for program in
              readGroupSet.getPrograms()])
@@ -1011,7 +1341,7 @@ class SqlDataRepository(AbstractDataRepository):
         refer to this ReferenceSet. These must be deleted before the
         referenceSet can be removed.
         """
-        sql = "DELETE FROM ReferenceSet WHERE id=?"
+        sql = ReferenceSet.getDeleteByIdSql()
         cursor = self._dbConnection.cursor()
         try:
             cursor.execute(sql, (referenceSet.getId(),))
@@ -1024,7 +1354,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readReadGroupSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM ReadGroupSet;")
+        cursor.execute(ReadGroupSet.getSelectAllSql())
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             readGroupSet = reads.HtslibReadGroupSet(dataset, row[b'name'])
@@ -1035,35 +1365,11 @@ class SqlDataRepository(AbstractDataRepository):
             # Insert the readGroupSet into the memory-based object model.
             dataset.addReadGroupSet(readGroupSet)
 
-    def _createVariantAnnotationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE VariantAnnotationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                variantSetId TEXT NOT NULL,
-                ontologyId TEXT NOT NULL,
-                analysis TEXT,
-                annotationType TEXT,
-                created TEXT,
-                updated TEXT,
-                UNIQUE (variantSetId, name),
-                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
-            );
-        """
-        cursor.execute(sql)
-
     def insertVariantAnnotationSet(self, variantAnnotationSet):
         """
         Inserts a the specified variantAnnotationSet into this repository.
         """
-        sql = """
-            INSERT INTO VariantAnnotationSet (
-                id, variantSetId, ontologyId, name, analysis, annotationType,
-                created, updated)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        """
+        sql = VariantAnnotationSet.getInsertSql()
         analysisJson = json.dumps(
             protocol.toJsonDict(variantAnnotationSet.getAnalysis()))
         cursor = self._dbConnection.cursor()
@@ -1079,7 +1385,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readVariantAnnotationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM VariantAnnotationSet;")
+        cursor.execute(VariantAnnotationSet.getSelectAllSql())
         for row in cursor:
             variantSet = self.getVariantSet(row[b'variantSetId'])
             ontology = self.getOntology(row[b'ontologyId'])
@@ -1091,29 +1397,11 @@ class SqlDataRepository(AbstractDataRepository):
             # Insert the variantAnnotationSet into the memory-based model.
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
 
-    def _createCallSetTable(self, cursor):
-        sql = """
-            CREATE TABLE CallSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                variantSetId TEXT NOT NULL,
-                bioSampleId TEXT,
-                UNIQUE (variantSetId, name),
-                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
-
     def insertCallSet(self, callSet):
         """
         Inserts a the specified callSet into this repository.
         """
-        sql = """
-            INSERT INTO CallSet (
-                id, name, variantSetId, bioSampleId)
-            VALUES (?, ?, ?, ?);
-        """
+        sql = CallSet.getInsertSql()
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             callSet.getId(),
@@ -1123,7 +1411,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readCallSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM CallSet;")
+        cursor.execute(CallSet.getSelectAllSql())
         for row in cursor:
             variantSet = self.getVariantSet(row[b'variantSetId'])
             callSet = variants.CallSet(variantSet, row[b'name'])
@@ -1132,35 +1420,11 @@ class SqlDataRepository(AbstractDataRepository):
             # Insert the callSet into the memory-based object model.
             variantSet.addCallSet(callSet)
 
-    def _createVariantSetTable(self, cursor):
-        sql = """
-            CREATE TABLE VariantSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                created TEXT,
-                updated TEXT,
-                metadata TEXT,
-                dataUrlIndexMap TEXT NOT NULL,
-                UNIQUE (datasetID, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
-
     def insertVariantSet(self, variantSet):
         """
         Inserts a the specified variantSet into this repository.
         """
-        sql = """
-            INSERT INTO VariantSet (
-                id, datasetId, referenceSetId, name, created, updated,
-                metadata, dataUrlIndexMap)
-            VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), ?, ?);
-        """
+        sql = VariantSet.getInsertSql()
         cursor = self._dbConnection.cursor()
         # We cheat a little here with the VariantSetMetadata, and encode these
         # within the table as a JSON dump. These should really be stored in
@@ -1183,7 +1447,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readVariantSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM VariantSet;")
+        cursor.execute(VariantSet.getSelectAllSql())
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             referenceSet = self.getReferenceSet(row[b'referenceSetId'])
@@ -1194,36 +1458,12 @@ class SqlDataRepository(AbstractDataRepository):
             # Insert the variantSet into the memory-based object model.
             dataset.addVariantSet(variantSet)
 
-    def _createFeatureSetTable(self, cursor):
-        sql = """
-            CREATE TABLE FeatureSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                ontologyId TEXT NOT NULL,
-                info TEXT,
-                sourceUri TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
-            );
-        """
-        cursor.execute(sql)
-
     def insertFeatureSet(self, featureSet):
         """
         Inserts a the specified featureSet into this repository.
         """
         # TODO add support for info and sourceUri fields.
-        sql = """
-            INSERT INTO FeatureSet (
-                id, datasetId, referenceSetId, ontologyId, name, dataUrl)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """
+        sql = FeatureSet.getInsertSql()
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             featureSet.getId(),
@@ -1235,7 +1475,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readFeatureSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM FeatureSet;")
+        cursor.execute(FeatureSet.getSelectAllSql())
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             if 'cgd' in row[b'name']:
@@ -1252,35 +1492,11 @@ class SqlDataRepository(AbstractDataRepository):
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
 
-    def _createBioSampleTable(self, cursor):
-        sql = """
-            CREATE TABLE BioSample (
-                id TEXT NOT NULL PRIMARY KEY,
-                datasetId TEXT NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                disease TEXT,
-                created TEXT,
-                updated TEXT,
-                individualId TEXT,
-                info TEXT,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
-
     def insertBioSample(self, bioSample):
         """
         Inserts the specified BioSample into this repository.
         """
-        sql = """
-            INSERT INTO BioSample (
-                id, datasetId, name, description, disease,
-                created, updated, individualId, info)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
+        sql = BioSample.getInsertSql()
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             bioSample.getId(),
@@ -1295,7 +1511,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readBioSampleTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM BioSample;")
+        cursor.execute(BioSample.getSelectAllSql())
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             bioSample = biodata.BioSample(
@@ -1304,36 +1520,12 @@ class SqlDataRepository(AbstractDataRepository):
             assert bioSample.getId() == row[b'id']
             dataset.addBioSample(bioSample)
 
-    def _createIndividualTable(self, cursor):
-        sql = """
-            CREATE TABLE Individual (
-                id TEXT NOT NULL PRIMARY KEY,
-                datasetId TEXT NOT NULL,
-                name TEXT,
-                description TEXT,
-                created TEXT NOT NULL,
-                updated TEXT,
-                species TEXT,
-                sex TEXT,
-                info TEXT,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
-
     def insertIndividual(self, individual):
         """
         Inserts the specified individual into this repository.
         """
         # TODO add support for info and sourceUri fields.
-        sql = """
-            INSERT INTO Individual (
-                id, datasetId, name, description, created,
-                updated, species, sex, info)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
+        sql = Individual.getInsertSql()
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             individual.getId(),
@@ -1348,7 +1540,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readIndividualTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Individual;")
+        cursor.execute(Individual.getSelectAllSql())
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             individual = biodata.Individual(
@@ -1357,47 +1549,12 @@ class SqlDataRepository(AbstractDataRepository):
             assert individual.getId() == row[b'id']
             dataset.addIndividual(individual)
 
-    def _createPhenotypeAssociationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE PhenotypeAssociationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT,
-                datasetId TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
-
-    def _createRnaQuantificationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE RnaQuantificationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                info TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
-
     def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
         Inserts the specified individual into this repository.
         """
         # TODO add support for info and sourceUri fields.
-        sql = """
-            INSERT INTO PhenotypeAssociationSet (
-                id, name, datasetId, dataUrl )
-            VALUES (?, ?, ?, ?)
-        """
+        sql = PhenotypeAssociationSet.getInsertSql()
         cursor = self._dbConnection.cursor()
         try:
             cursor.execute(sql, (
@@ -1411,7 +1568,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readPhenotypeAssociationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM PhenotypeAssociationSet;")
+        cursor.execute(PhenotypeAssociationSet.getSelectAllSql())
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             phenotypeAssociationSet = \
@@ -1423,11 +1580,7 @@ class SqlDataRepository(AbstractDataRepository):
         """
         Inserts a the specified rnaQuantificationSet into this repository.
         """
-        sql = """
-            INSERT INTO RnaQuantificationSet (
-                id, datasetId, referenceSetId, name, dataUrl)
-            VALUES (?, ?, ?, ?, ?)
-        """
+        sql = RnaQuantificationSet.getInsertSql()
         cursor = self._dbConnection.cursor()
         cursor.execute(sql, (
             rnaQuantificationSet.getId(),
@@ -1438,7 +1591,7 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readRnaQuantificationSetTable(self, cursor):
         cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM RnaQuantificationSet;")
+        cursor.execute(RnaQuantificationSet.getSelectAllSql())
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
             referenceSet = self.getReferenceSet(row[b'referenceSetId'])
@@ -1456,9 +1609,8 @@ class SqlDataRepository(AbstractDataRepository):
         performs a cascading removal of all items within this
         rnaQuantificationSet.
         """
-        sql = "DELETE FROM RnaQuantificationSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (rnaQuantificationSet.getId(),))
+        self._removeById(
+            RnaQuantificationSet, rnaQuantificationSet.getId())
 
     def initialise(self):
         """
@@ -1468,20 +1620,8 @@ class SqlDataRepository(AbstractDataRepository):
         self._checkWriteMode()
         cursor = self._dbConnection
         self._createSystemTable(cursor)
-        self._createOntologyTable(cursor)
-        self._createReferenceSetTable(cursor)
-        self._createReferenceTable(cursor)
-        self._createDatasetTable(cursor)
-        self._createReadGroupSetTable(cursor)
-        self._createReadGroupTable(cursor)
-        self._createCallSetTable(cursor)
-        self._createVariantSetTable(cursor)
-        self._createVariantAnnotationSetTable(cursor)
-        self._createFeatureSetTable(cursor)
-        self._createBioSampleTable(cursor)
-        self._createIndividualTable(cursor)
-        self._createPhenotypeAssociationSetTable(cursor)
-        self._createRnaQuantificationSetTable(cursor)
+        for cls in self.repoObjectClasses:
+            cls.createTable(cursor)
 
     def exists(self):
         """
