@@ -35,6 +35,7 @@ import ga4gh.datamodel.bio_metadata as biodata  # NOQA
 import ga4gh.datamodel.genotype_phenotype_featureset as g2p_featureset  # NOQA
 import ga4gh.datamodel.genotype_phenotype as g2p_associationset  # NOQA
 import ga4gh.datamodel.rna_quantification as rna_quantification  # NOQA
+import ga4gh.repo.rnaseq2ga as rnaseq2ga  # NOQA
 
 
 class ComplianceDataMunger(object):
@@ -266,9 +267,13 @@ class ComplianceDataMunger(object):
 
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
+        store = rnaseq2ga.RNASqliteStore(rnaDbName)
+        store.createTables()
         rnaseq2ga.rnaseq2ga(
-            self.inputDirectory, rnaDbName, self.repoPath,
-            featureType="transcript")
+            self.inputDirectory + "/rna_brca1.tsv",
+            rnaDbName, self.repoPath, "rsem",
+            featureType="transcript",
+            readGroupSetNames="HG00096", featureSetNames="gencode")
         rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
             dataset, "rnaseq")
         rnaQuantificationSet.setReferenceSet(referenceSet)

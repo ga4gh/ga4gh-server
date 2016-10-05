@@ -266,7 +266,7 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
     readGroupIds = ""
     if dataset:
         featureSetIdList = []
-        for annotationName in annotationNames.split(","):
+        for annotationName in featureSetNames.split(","):
             featureSet = dataset.getFeatureSetByName(annotationName)
             featureSetIdList.append(featureSet.getId())
         featureSetIds = ",".join(featureSetIdList)
