@@ -652,7 +652,7 @@ class AbstractClient(object):
         request.dataset_id = dataset_id
         request.page_size = pb.int(self._page_size)
         return self._run_search_request(
-            request, "phenotype_association_sets",
+            request, "phenotypeassociationsets",
             protocol.SearchPhenotypeAssociationSetsResponse)
 
     def search_genotype_phenotype(
@@ -673,7 +673,7 @@ class AbstractClient(object):
         request.page_size = pb.int(self._page_size)
         self._logger.debug("search_genotype_phenotype {}".format(request))
         return self._run_search_request(
-            request, "genotypephenotype",
+            request, "featurephenotypeassociations",
             protocol.SearchGenotypePhenotypeResponse)
 
     def search_phenotype(
@@ -694,7 +694,7 @@ class AbstractClient(object):
             request.age_of_onset = age_of_onset
         request.page_size = pb.int(self._page_size)
         return self._run_search_request(
-            request, "phenotype",
+            request, "phenotypes",
             protocol.SearchPhenotypesResponse)
 
     def search_rna_quantification_sets(self, dataset_id):
@@ -869,9 +869,10 @@ class LocalClient(AbstractClient):
                 self._backend.runSearchVariantAnnotationSets,
             "biosamples": self._backend.runSearchBioSamples,
             "individuals": self._backend.runSearchIndividuals,
-            "genotypephenotype": self._backend.runSearchGenotypePhenotypes,
-            "phenotype": self._backend.runSearchPhenotypes,
-            "phenotype_association_sets":
+            "featurephenotypeassociations":
+                self._backend.runSearchGenotypePhenotypes,
+            "phenotypes": self._backend.runSearchPhenotypes,
+            "phenotypeassociationsets":
                 self._backend.runSearchPhenotypeAssociationSets,
             "rnaquantificationsets":
                 self._backend.runSearchRnaQuantificationSets,
