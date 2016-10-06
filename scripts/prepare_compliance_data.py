@@ -15,7 +15,6 @@ import json
 import pysam
 import utils
 import generate_gff3_db
-import rnaseq2ga
 import tempfile
 import zipfile
 import glob
@@ -35,6 +34,7 @@ import ga4gh.datamodel.bio_metadata as biodata  # NOQA
 import ga4gh.datamodel.genotype_phenotype_featureset as g2p_featureset  # NOQA
 import ga4gh.datamodel.genotype_phenotype as g2p_associationset  # NOQA
 import ga4gh.datamodel.rna_quantification as rna_quantification  # NOQA
+import ga4gh.repo.rnaseq2ga as rnaseq2ga  # NOQA
 
 
 class ComplianceDataMunger(object):
@@ -196,6 +196,7 @@ class ComplianceDataMunger(object):
             readGroupSet = reads.HtslibReadGroupSet(dataset, name)
             readGroupSet.populateFromFile(destFilePath, destFilePath + ".bai")
             readGroupSet.setReferenceSet(referenceSet)
+            dataset.addReadGroupSet(readGroupSet)
             bioSamples = [hg00096BioSample, hg00099BioSample, hg00101BioSample]
             for readGroup in readGroupSet.getReadGroups():
                 for bioSample in bioSamples:
@@ -263,12 +264,18 @@ class ComplianceDataMunger(object):
         self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
 
         self.repo.commit()
+        dataset.addFeatureSet(gencode)
 
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
+        store = rnaseq2ga.RNASqliteStore(rnaDbName)
+        store.createTables()
         rnaseq2ga.rnaseq2ga(
-            self.inputDirectory, rnaDbName, self.repoPath,
-            featureType="transcript")
+            self.inputDirectory + "/rna_brca1.tsv",
+            rnaDbName, "rna_brca1.tsv", "rsem",
+            featureType="transcript",
+            readGroupSetNames="HG00096", featureSetNames="gencodev19",
+            dataset=dataset)
         rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
             dataset, "rnaseq")
         rnaQuantificationSet.setReferenceSet(referenceSet)
