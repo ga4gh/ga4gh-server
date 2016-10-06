@@ -3,6 +3,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sqlite3
+import csv
 
 import ga4gh.exceptions as exceptions
 
@@ -16,8 +17,6 @@ class RNASqliteStore(object):
     tables.
     """
     def __init__(self, sqliteFileName):
-        # TODO: check to see if the rnaQuantId is in the db and exit if it is
-        # since this is a generator and not an updater
         self._dbConn = sqlite3.connect(sqliteFileName)
         self._cursor = self._dbConn.cursor()
         self._batchSize = 100
@@ -108,7 +107,7 @@ class AbstractWriter(object):
         elif units == "tpm":
             self._units = 2
 
-    def writeExpression(self, rnaQuantificationId, quantfile):
+    def writeExpression(self, rnaQuantificationId, quantfilename):
         """
         Reads the quantification results file and adds entries to the
         specified database.
@@ -118,40 +117,42 @@ class AbstractWriter(object):
         featureSets = None
         if self._dataset:
             featureSets = self._dataset.getFeatureSets()
-        quantfile.readline()  # skip header
-        for expression in quantfile:
-            fields = expression.strip().split("\t")
-            expressionLevel = fields[self._expressionLevelCol]
-            expressionId = fields[self._idCol]
-            name = fields[self._nameCol]
-            rawCount = 0.0
-            if self._countCol is not None:
-                rawCount = fields[self._countCol]
-            confidenceLow = 0.0
-            confidenceHi = 0.0
-            score = 0.0
-            if (self._confColLow is not None and self._confColHi is not None):
-                confidenceLow = float(fields[self._confColLow])
-                confidenceHi = float(fields[self._confColHi])
-                score = (confidenceLow + confidenceHi)/2
+        with open(quantfilename, "r") as quantFile:
+            quantificationReader = csv.DictReader(quantFile, delimiter=b"\t")
+            for expression in quantificationReader:
+                expressionLevel = expression[self._expressionLevelCol]
+                expressionId = expression[self._idCol]
+                name = expression[self._nameCol]
+                rawCount = 0.0
+                if self._countCol is not None:
+                    rawCount = expression[self._countCol]
+                confidenceLow = 0.0
+                confidenceHi = 0.0
+                score = 0.0
+                if (self._confColLow is not None and
+                        self._confColHi is not None):
+                    confidenceLow = float(expression[self._confColLow])
+                    confidenceHi = float(expression[self._confColHi])
+                    score = (confidenceLow + confidenceHi)/2
 
-            featureName = fields[self._featureCol]
-            featureId = ""
-            if featureSets is not None:
-                for featureSet in featureSets:
-                    if featureId == "":
-                        for feature in featureSet.getFeatures(
-                                name=featureName):
-                            self._features[feature.id] = feature
-                            featureId = feature.id
+                featureName = expression[self._featureCol]
+                featureId = ""
+                if featureSets is not None:
+                    for featureSet in featureSets:
+                        if featureId == "":
+                            for feature in featureSet.getFeatures(
+                                    name=featureName):
+                                self._features[feature.id] = feature
+                                featureId = feature.id
+                                break
+                        else:
                             break
-                    else:
-                        break
-            datafields = (expressionId, rnaQuantificationId, name, featureId,
-                          expressionLevel, isNormalized,
-                          rawCount, score, units, confidenceLow, confidenceHi)
-            self._db.addExpression(datafields)
-        self._db.batchAddExpression()
+                datafields = (expressionId, rnaQuantificationId, name,
+                              featureId, expressionLevel, isNormalized,
+                              rawCount, score, units, confidenceLow,
+                              confidenceHi)
+                self._db.addExpression(datafields)
+            self._db.batchAddExpression()
 
 
 class CufflinksWriter(AbstractWriter):
@@ -168,12 +169,12 @@ class CufflinksWriter(AbstractWriter):
         super(CufflinksWriter, self).__init__(
             rnaDB, featureType, dataset=dataset)
         self._isNormalized = True
-        self._expressionLevelCol = 9
-        self._idCol = 0
-        self._nameCol = 4
-        self._featureCol = 3
-        self._confColLow = 10
-        self._confColHi = 11
+        self._expressionLevelCol = "FPKM"
+        self._idCol = "tracking_id"
+        self._nameCol = "gene_short_name"
+        self._featureCol = "gene_id"
+        self._confColLow = "FPKM_conf_lo"
+        self._confColHi = "FPKM_conf_hi"
         self.setUnits(units)
 
 
@@ -200,18 +201,16 @@ class RsemWriter(AbstractWriter):
         super(RsemWriter, self).__init__(
             rnaDB, featureType=featureType, dataset=dataset)
         self._isNormalized = True
-        self._expressionLevelCol = 5
-        self._idCol = 0
-        self._nameCol = self._idCol
-        self._countCol = 4
+        self._expressionLevelCol = "TPM"
+        self._featureCol = "gene_id"
+        self._confColLow = "TPM_ci_lower_bound"
+        self._confColHi = "TPM_ci_upper_bound"
+        self._countCol = "expected_count"
         if self._featureType is "transcript":
-            self._featureCol = 1
-            self._confColLow = 13
-            self._confColHi = 14
+            self._idCol = "transcript_id"
         else:
-            self._featureCol = 0
-            self._confColLow = 11
-            self._confColHi = 12
+            self._idCol = "gene_id"
+        self._nameCol = self._idCol
         self.setUnits(units)
 
 
@@ -227,11 +226,11 @@ class KallistoWriter(AbstractWriter):
         super(KallistoWriter, self).__init__(
             rnaDB, featureType, dataset=dataset)
         self._isNormalized = True
-        self._expressionLevelCol = 4
-        self._idCol = 0
-        self._nameCol = 0
-        self._featureCol = 0
-        self._countCol = 3
+        self._expressionLevelCol = "tpm"
+        self._idCol = "target_id"
+        self._nameCol = "target_id"
+        self._featureCol = "target_id"
+        self._countCol = "est_counts"
         self.setUnits(units)
 
 
@@ -247,8 +246,8 @@ def writeRnaseqTable(rnaDB, analysisIds, name, annotationId,
 
 
 def writeExpressionTable(writer, data):
-    for rnaQuantId, quantfile in data:
-        writer.writeExpression(rnaQuantId, quantfile)
+    for rnaQuantId, quantfilename in data:
+        writer.writeExpression(rnaQuantId, quantfilename)
 
 
 def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
@@ -283,9 +282,7 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
         writer = KallistoWriter(rnaDB, featureType, dataset=dataset)
     elif rnaType == "rsem":
         writer = RsemWriter(rnaDB, featureType, dataset=dataset)
-    # need to make this update an existing database
     writeRnaseqTable(rnaDB, [localName], localName,
                      featureSetIds,
                      readGroupId=readGroupIds, programs=programs)
-    quantFile = open(quantificationFilename, "r")
-    writeExpressionTable(writer, [(localName, quantFile)])
+    writeExpressionTable(writer, [(localName, quantificationFilename)])

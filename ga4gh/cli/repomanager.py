@@ -497,7 +497,7 @@ class RepoManager(object):
             self._args.quantificationFilePath, self._args.filePath, name,
             self._args.format, dataset=dataset, featureType=featureType,
             description=self._args.description, programs=programs,
-            annotationNames=self._args.featureSetName,
+            featureSetNames=self._args.featureSetName,
             readGroupSetNames=self._args.readGroupSetName)
 
     def initRnaQuantificationSet(self):
