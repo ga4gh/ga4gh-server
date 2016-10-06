@@ -8,13 +8,88 @@ from __future__ import unicode_literals
 import json
 import logging
 import requests
+import argparse
+import operator
 
-import ga4gh.cli as cli
-import ga4gh.backend as backend
+import ga4gh
 import ga4gh.client as client
-import ga4gh.datarepo as datarepo
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+
+
+###############
+# Common
+###############
+
+
+AVRO_LONG_MAX = 2**31 - 1
+
+
+class SortedHelpFormatter(argparse.HelpFormatter):
+    """
+    An argparse HelpFormatter that sorts the flags and subcommands
+    in alphabetical order
+    """
+    def add_arguments(self, actions):
+        """
+        Sort the flags alphabetically
+        """
+        actions = sorted(
+            actions, key=operator.attrgetter('option_strings'))
+        super(SortedHelpFormatter, self).add_arguments(actions)
+
+    def _iter_indented_subactions(self, action):
+        """
+        Sort the subcommands alphabetically
+        """
+        try:
+            get_subactions = action._get_subactions
+        except AttributeError:
+            pass
+        else:
+            self._indent()
+            if isinstance(action, argparse._SubParsersAction):
+                for subaction in sorted(
+                        get_subactions(), key=lambda x: x.dest):
+                    yield subaction
+            else:
+                for subaction in get_subactions():
+                    yield subaction
+            self._dedent()
+
+
+def addDisableUrllibWarningsArgument(parser):
+    parser.add_argument(
+        "--disable-urllib-warnings", default=False, action="store_true",
+        help="Disable urllib3 warnings")
+
+
+def createArgumentParser(description):
+    parser = argparse.ArgumentParser(
+        description=description,
+        formatter_class=SortedHelpFormatter)
+    return parser
+
+
+def addVersionArgument(parser):
+    # TODO argparse strips newlines from version output
+    versionString = (
+        "GA4GH Server Version {}\n"
+        "(Protocol Version {})".format(
+            ga4gh.__version__, protocol.version))
+    parser.add_argument(
+        "--version", version=versionString, action="version")
+
+
+def addSubparser(subparsers, subcommand, description):
+    parser = subparsers.add_parser(
+        subcommand, description=description, help=description)
+    return parser
+
+
+###############
+# Client
+###############
 
 
 def verbosityToLogLevel(verbosity):
@@ -35,22 +110,8 @@ class AbstractQueryRunner(object):
     """
     def __init__(self, args):
         self._key = args.key
-        # TODO this is an experimental addition which is useful for
-        # testing. We should think about this and document it if we
-        # this it's a useful feature. There is an argument for pushing
-        # the backend instantiation into the client, and letting the
-        # client be a factory, instantiating the correct Client class
-        # depending on the prefix.
-        filePrefix = "file://"
-        if args.baseUrl.startswith(filePrefix):
-            registryPath = args.baseUrl[len(filePrefix):]
-            repo = datarepo.SqlDataRepository(registryPath)
-            repo.open(datarepo.MODE_READ)
-            theBackend = backend.Backend(repo)
-            self._client = client.LocalClient(theBackend)
-        else:
-            self._client = client.HttpClient(
-                args.baseUrl, verbosityToLogLevel(args.verbose), self._key)
+        self._client = client.HttpClient(
+            args.baseUrl, verbosityToLogLevel(args.verbose), self._key)
 
 
 class FormattedOutputRunner(AbstractQueryRunner):
@@ -1099,7 +1160,7 @@ def addStartArgument(parser):
         help="The start of the search range (inclusive).")
 
 
-def addEndArgument(parser, defaultValue=cli.AVRO_LONG_MAX):
+def addEndArgument(parser, defaultValue=AVRO_LONG_MAX):
     parser.add_argument(
         "--end", "-e", default=defaultValue, type=int,
         help="The end of the search range (exclusive).")
@@ -1189,8 +1250,8 @@ def addClientGlobalOptions(parser):
     parser.add_argument(
         "--key", "-k", default='invalid',
         help="Auth Key. Found on server index page.")
-    cli.addDisableUrllibWarningsArgument(parser)
-    cli.addVersionArgument(parser)
+    addDisableUrllibWarningsArgument(parser)
+    addVersionArgument(parser)
 
 
 def addHelpParser(subparsers):
@@ -1201,7 +1262,7 @@ def addHelpParser(subparsers):
 
 
 def addVariantsSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "variants-search", "Search for variants")
     parser.set_defaults(runner=SearchVariantsRunner)
     addUrlArgument(parser)
@@ -1211,7 +1272,7 @@ def addVariantsSearchParser(subparsers):
 
 
 def addVariantSetsSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "variantsets-search", "Search for variantSets")
     parser.set_defaults(runner=SearchVariantSetsRunner)
     addOutputFormatArgument(parser)
@@ -1247,42 +1308,42 @@ def addVariantAnnotationSetsSearchParser(subparsers):
 
 
 def addVariantAnnotationSetsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "variantannotationsets-get", "Get a variantAnnotationSet")
     parser.set_defaults(runner=GetVariantAnnotationSetRunner)
     addGetArguments(parser)
 
 
 def addVariantSetsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "variantsets-get", "Get a variantSet")
     parser.set_defaults(runner=GetVariantSetRunner)
     addGetArguments(parser)
 
 
 def addFeaturesGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "features-get", "Get a feature by ID")
     parser.set_defaults(runner=GetFeatureRunner)
     addGetArguments(parser)
 
 
 def addFeatureSetsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "featuresets-get", "Get a featureSet by ID")
     parser.set_defaults(runner=GetFeatureSetRunner)
     addGetArguments(parser)
 
 
 def addBioSamplesGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "biosamples-get", "Get a biosample by ID")
     parser.set_defaults(runner=GetBioSampleRunner)
     addGetArguments(parser)
 
 
 def addIndividualsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "individuals-get", "Get a individual by ID")
     parser.set_defaults(runner=GetIndividualRunner)
     addGetArguments(parser)
@@ -1344,7 +1405,7 @@ def addFeatureSetsSearchParser(subparsers):
 
 
 def addReferenceSetsSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "referencesets-search", "Search for referenceSets")
     parser.set_defaults(runner=SearchReferenceSetsRunner)
     addUrlArgument(parser)
@@ -1359,7 +1420,7 @@ def addReferenceSetsSearchParser(subparsers):
 
 
 def addReferencesSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "references-search", "Search for references")
     parser.set_defaults(runner=SearchReferencesRunner)
     addUrlArgument(parser)
@@ -1372,7 +1433,7 @@ def addReferencesSearchParser(subparsers):
 
 
 def addReadGroupSetsSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "readgroupsets-search", "Search for readGroupSets")
     parser.set_defaults(runner=SearchReadGroupSetsRunner)
     addUrlArgument(parser)
@@ -1385,7 +1446,7 @@ def addReadGroupSetsSearchParser(subparsers):
 
 
 def addCallSetsSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "callsets-search", "Search for callSets")
     parser.set_defaults(runner=SearchCallSetsRunner)
     addUrlArgument(parser)
@@ -1398,7 +1459,7 @@ def addCallSetsSearchParser(subparsers):
 
 
 def addReadsSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "reads-search", "Search for reads")
     parser.set_defaults(runner=SearchReadsRunner)
     addOutputFormatArgument(parser)
@@ -1407,14 +1468,14 @@ def addReadsSearchParser(subparsers):
 
 
 def addDatasetsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "datasets-get", "Get a dataset")
     parser.set_defaults(runner=GetDatasetRunner)
     addGetArguments(parser)
 
 
 def addDatasetsSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "datasets-search", "Search for datasets")
     parser.set_defaults(runner=SearchDatasetsRunner)
     addUrlArgument(parser)
@@ -1437,49 +1498,49 @@ def addReadsSearchParserArguments(parser):
 
 
 def addReferenceSetsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "referencesets-get", "Get a referenceset")
     parser.set_defaults(runner=GetReferenceSetRunner)
     addGetArguments(parser)
 
 
 def addReferencesGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "references-get", "Get a reference")
     parser.set_defaults(runner=GetReferenceRunner)
     addGetArguments(parser)
 
 
 def addReadGroupSetsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "readgroupsets-get", "Get a read group set")
     parser.set_defaults(runner=GetReadGroupSetRunner)
     addGetArguments(parser)
 
 
 def addReadGroupsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "readgroups-get", "Get a read group")
     parser.set_defaults(runner=GetReadGroupRunner)
     addGetArguments(parser)
 
 
 def addCallSetsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "callsets-get", "Get a callSet")
     parser.set_defaults(runner=GetCallSetRunner)
     addGetArguments(parser)
 
 
 def addVariantsGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "variants-get", "Get a variant")
     parser.set_defaults(runner=GetVariantRunner)
     addGetArguments(parser)
 
 
 def addRnaQuantificationSetGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "rnaquantificationsets-get",
         "Get a rna quantification set")
     parser.set_defaults(runner=GetRnaQuantificationSetRunner)
@@ -1487,21 +1548,21 @@ def addRnaQuantificationSetGetParser(subparsers):
 
 
 def addRnaQuantificationGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "rnaquantifications-get", "Get a rna quantification")
     parser.set_defaults(runner=GetRnaQuantificationRunner)
     addGetArguments(parser)
 
 
 def addExpressionLevelGetParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "expressionlevels-get", "Get a expression level")
     parser.set_defaults(runner=GetExpressionLevelRunner)
     addGetArguments(parser)
 
 
 def addReferencesBasesListParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "references-list-bases", "List bases of a reference")
     parser.add_argument(
         "--outputFormat", "-O", choices=['text', 'fasta'], default="text",
@@ -1564,7 +1625,7 @@ def addExpressionLevelsSearchParser(subparsers):
 
 
 def addGenotypePhenotypeSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "genotypephenotype-search",
         "Search for genotype to phenotype associations")
     parser.set_defaults(runner=SearchGenotypePhenotypeRunner)
@@ -1576,7 +1637,7 @@ def addGenotypePhenotypeSearchParser(subparsers):
 
 
 def addPhenotypeSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "phenotype-search", "Search for phenotypes")
     parser.set_defaults(runner=SearchPhenotypeRunner)
     addUrlArgument(parser)
@@ -1587,7 +1648,7 @@ def addPhenotypeSearchParser(subparsers):
 
 
 def addPhenotypeAssociationSetsSearchParser(subparsers):
-    parser = cli.addSubparser(
+    parser = addSubparser(
         subparsers, "phenotypeassociationsets-search",
         "Search for phenotypeassociationsets")
     parser.set_defaults(runner=SearchPhenotypeAssociationSetsRunner)
@@ -1598,7 +1659,7 @@ def addPhenotypeAssociationSetsSearchParser(subparsers):
 
 
 def getClientParser():
-    parser = cli.createArgumentParser("GA4GH reference client")
+    parser = createArgumentParser("GA4GH reference client")
     addClientGlobalOptions(parser)
     subparsers = parser.add_subparsers(title='subcommands',)
     addHelpParser(subparsers)

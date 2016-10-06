@@ -91,6 +91,7 @@ class ProtobufGenerator(object):
         cmd = "{protoc} -I {src} --python_out={server} {proto_files}".format(
             protoc=protoc, src=src,
             server=server, proto_files=" ".join(protos))
+        print(cmd)
         os.system(cmd)
 
         with open("ga4gh/_protocol_version.py", "w") as version_file:

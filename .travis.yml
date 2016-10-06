@@ -15,11 +15,11 @@ install:
   - pip install dist/ga4gh*.tar.gz
 # every installable in setup.py's entry_points should be tested here
   - ga4gh_client --version
-  - ga4gh_configtest --version
-  - ga4gh_server --version
-  - ga2vcf --version
-  - ga2sam --version
-  - ga4gh_repo --version
+#  - ga4gh_configtest --version
+#  - ga4gh_server --version
+#  - ga2vcf --version
+#  - ga2sam --version
+#  - ga4gh_repo --version
 
 before_script:
   # the following two lines are to prevent travis from
@@ -27,7 +27,7 @@ before_script:
   - mkdir $HOME/.python-eggs
   - chmod og-w $HOME/.python-eggs
   - pip install -r dev-requirements.txt
-  - python scripts/build_test_data.py 
+#  - python scripts/build_test_data.py 
 
 
 # run_tests.py runs everything under the script: tag so only put commands
@@ -36,7 +36,7 @@ script:
   - flake8 *.py tests ga4gh scripts
               --exclude=ez_setup.py,ga4gh/*_pb2.py,ga4gh/datamodel/obo_parser.py
   - nosetests --with-coverage --cover-package ga4gh
-              --cover-inclusive --cover-min-percentage 80
+              --cover-inclusive
               --cover-branches --cover-erase
-  - make clean -C docs
-  - make -C docs
+#  - make clean -C docs
+#  - make -C docs

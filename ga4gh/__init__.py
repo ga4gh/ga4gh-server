@@ -1,7 +1,6 @@
 """
-Reference implementation of the GA4GH APIs.
+Reference implementation of the GA4GH client
 """
-
 __version__ = "undefined"
 try:
     from . import _version

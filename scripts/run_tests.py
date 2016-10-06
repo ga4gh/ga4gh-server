@@ -11,7 +11,6 @@ import subprocess
 import yaml
 
 import utils
-import build_test_data
 
 
 class TravisSimulator(object):
@@ -37,6 +36,5 @@ class TravisSimulator(object):
 
 
 if __name__ == '__main__':
-    build_test_data.buildTestData()
     travisSimulator = TravisSimulator()
     travisSimulator.runTests()
