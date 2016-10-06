@@ -235,12 +235,12 @@ class KallistoWriter(AbstractWriter):
         self.setUnits(units)
 
 
-def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
+def writeRnaseqTable(rnaDB, analysisIds, name, annotationId,
                      readGroupId="", programs=""):
     if readGroupId is None:
         readGroupId = ""
     for analysisId in analysisIds:
-        datafields = (analysisId, annotationId, description, analysisId,
+        datafields = (analysisId, annotationId, name, analysisId,
                       readGroupId, programs)
         rnaDB.addRNAQuantification(datafields)
     rnaDB.batchAddRNAQuantification()
@@ -284,7 +284,7 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
     elif rnaType == "rsem":
         writer = RsemWriter(rnaDB, featureType, dataset=dataset)
     # need to make this update an existing database
-    writeRnaseqTable(rnaDB, [localName], description,
+    writeRnaseqTable(rnaDB, [localName], localName,
                      featureSetIds,
                      readGroupId=readGroupIds, programs=programs)
     quantFile = open(quantificationFilename, "r")

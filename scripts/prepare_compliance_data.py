@@ -15,7 +15,6 @@ import json
 import pysam
 import utils
 import generate_gff3_db
-import rnaseq2ga
 import tempfile
 import zipfile
 import glob
@@ -197,6 +196,7 @@ class ComplianceDataMunger(object):
             readGroupSet = reads.HtslibReadGroupSet(dataset, name)
             readGroupSet.populateFromFile(destFilePath, destFilePath + ".bai")
             readGroupSet.setReferenceSet(referenceSet)
+            dataset.addReadGroupSet(readGroupSet)
             bioSamples = [hg00096BioSample, hg00099BioSample, hg00101BioSample]
             for readGroup in readGroupSet.getReadGroups():
                 for bioSample in bioSamples:
@@ -264,6 +264,7 @@ class ComplianceDataMunger(object):
         self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
 
         self.repo.commit()
+        dataset.addFeatureSet(gencode)
 
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
@@ -271,9 +272,10 @@ class ComplianceDataMunger(object):
         store.createTables()
         rnaseq2ga.rnaseq2ga(
             self.inputDirectory + "/rna_brca1.tsv",
-            rnaDbName, self.repoPath, "rsem",
+            rnaDbName, "rna_brca1.tsv", "rsem",
             featureType="transcript",
-            readGroupSetNames="HG00096", featureSetNames="gencode")
+            readGroupSetNames="HG00096", featureSetNames="gencodev19",
+            dataset=dataset)
         rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
             dataset, "rnaseq")
         rnaQuantificationSet.setReferenceSet(referenceSet)
