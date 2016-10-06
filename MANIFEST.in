@@ -1,5 +1,0 @@
-include README.txt
-include README.pypi.rst
-include ez_setup.py
-include LICENSE
-include ga4gh/templates/*.html
