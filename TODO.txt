@@ -1,0 +1,9 @@
+- get a barely working client
+    - change ga4gh folder to ga4gh_client
+    - requirements.txt and dev-requirements.txt
+- tests
+- docs
+- create ga4gh-client package
+- create ga4gh-common package, make ga4gh and ga4gh-client depend on it
+- create ga4gh-server package and migrate ga4gh to it
+- make ga4gh-server depend on ga4gh-client
