@@ -124,13 +124,13 @@ class AbstractWriter(object):
                 expressionId = expression[self._idCol]
                 name = expression[self._nameCol]
                 rawCount = 0.0
-                if self._countCol is not None:
+                if self._countCol in expression.keys():
                     rawCount = expression[self._countCol]
                 confidenceLow = 0.0
                 confidenceHi = 0.0
                 score = 0.0
-                if (self._confColLow is not None and
-                        self._confColHi is not None):
+                if (self._confColLow in expression.keys() and
+                        self._confColHi in expression.keys()):
                     confidenceLow = float(expression[self._confColLow])
                     confidenceHi = float(expression[self._confColHi])
                     score = (confidenceLow + confidenceHi)/2
@@ -235,11 +235,11 @@ class KallistoWriter(AbstractWriter):
 
 
 def writeRnaseqTable(rnaDB, analysisIds, name, annotationId,
-                     readGroupId="", programs=""):
+                     description, readGroupId="", programs=""):
     if readGroupId is None:
         readGroupId = ""
     for analysisId in analysisIds:
-        datafields = (analysisId, annotationId, name, analysisId,
+        datafields = (analysisId, annotationId, description, name,
                       readGroupId, programs)
         rnaDB.addRNAQuantification(datafields)
     rnaDB.batchAddRNAQuantification()
@@ -283,6 +283,6 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
     elif rnaType == "rsem":
         writer = RsemWriter(rnaDB, featureType, dataset=dataset)
     writeRnaseqTable(rnaDB, [localName], localName,
-                     featureSetIds,
+                     featureSetIds, description,
                      readGroupId=readGroupIds, programs=programs)
     writeExpressionTable(writer, [(localName, quantificationFilename)])
