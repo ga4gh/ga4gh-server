@@ -365,6 +365,27 @@ Adds a new readgroups set based on a 1000 genomes BAM directly from the NCBI
 FTP server. Because this readgroup set uses a remote FTP URL, we must specify
 the location of the ``.bai`` index file on the local file system.
 
++++++++++++++++++++++++++
+init-rnaquantificationset
++++++++++++++++++++++++++
+
+Initializes a rnaquantification set.
+
+.. argparse::
+   :module: ga4gh.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: init-rnaquantificationset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo init-rnaquantificationset repo.db rnaseq.db
+
+Initializes the RNA Quantification Set with the filename rnaseq.db.
+
 ++++++++++++++++++++++++
 add-rnaquantificationset
 ++++++++++++++++++++++++

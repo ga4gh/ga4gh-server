@@ -414,3 +414,31 @@ as follows:
     MWtnLXAzLXN1YnNldDptdm5jYWxs    mvncall
 
 
+Use the client package
+=============================
+
+If you only want to use the client and don't need the server functionality,
+there is a seperate pypi package, `ga4gh-client
+<https://pypi.python.org/pypi/ga4gh-client>`_, which includes only the
+client.  It is also much quicker to install.  To install, simply run:
+
+.. code-block:: bash
+
+    (ga4gh-env) $ pip install --pre ga4gh_client
+
+This installs the ``ga4gh_client`` command line program, which provides
+identical functionality to the ``ga4gh_client`` which is installed via the
+``ga4gh`` package:
+
+.. code-block:: bash
+
+    (ga4gh-env) $ ga4gh_client datasets-search http://1kgenomes.ga4gh.org
+
+Installing the ``ga4gh_client`` package also gives you access to the
+client's libraries for use in your own programs:
+
+.. code-block:: python
+
+    >>> import ga4gh_client.client as client
+    >>> client.HttpClient
+    <class 'ga4gh_client.client.HttpClient'>
