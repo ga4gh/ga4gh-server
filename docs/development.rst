@@ -26,12 +26,23 @@ libraries. On Debian or Ubuntu, we can install these using
     $ sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libssl-dev
 
 .. note::
-    TODO: Document this basic step for other platforms? We definitely want
-    to tell people how to do this with Brew or ports on a Mac.
+
+    instructions for configuring the reference server on Mac OS X
+    can be found here :ref:`installation`
 
 If you don't have admin access to your machine, please contact your system
 administrator, and ask them to install the development version of Python 2.7
 and the development headers for `zlib <http://www.zlib.net/>`_.
+
+You will also need to install Protocol Buffers 3.0 in your development
+environment.  The general process for doing the install is best described in
+the protobuf documentation here: https://github.com/google/protobuf
+If you are working on ``Mac OS X`` then there is an easy install process
+through brew:
+
+.. code-block:: bash
+
+    $ brew update && brew install --devel protobuf
 
 Once these basic prerequisites are in place, we can then bootstrap our
 local Python installation so that we have all of the packages we require
@@ -324,7 +335,7 @@ To generate a new ``_protocol_definitions.py`` file, use
 
 .. code-block:: bash
 
-   $ python scripts/process_schemas.py -i path/to/schemas desiredVersion
+   $ python scripts/process_schemas.py desiredVersion path/to/schemas 
 
 Where ``desiredVersion`` is the version that will be written to the
 ``_protocol_definitions.py`` file.  This version must be in the form
