@@ -100,18 +100,18 @@ def makeDir(path):
             raise
 
 
-def writeRNAQuant(rnaDB, analysisId, description, annotationId,
+def writeRnaQuant(rnaDB, analysisId, description, annotationId,
                   readGroupId="", programs=""):
     datafields = (analysisId, annotationId, description, analysisId,
                   readGroupId, programs)
-    rnaDB.addRNAQuantification(datafields)
+    rnaDB.addRnaQuantification(datafields)
 
 
 def writeRnaseqTables(rnaDB, analysisIds, description, annotationId,
                       readGroupId="", programs=""):
     log("Writing rnaseq tables")
     for analysisId in analysisIds:
-        writeRNAQuant(rnaDB, analysisId, description, annotationId,
+        writeRnaQuant(rnaDB, analysisId, description, annotationId,
                       readGroupId=readGroupId, programs=programs)
 
 
@@ -160,7 +160,7 @@ def main(argv):
     if options.expressionType == "gene":
         dataType = "gene quantifications"
     sqlFilename = argv[1]
-    rnaDB = rnaseq2ga.RNASqliteStore(sqlFilename)
+    rnaDB = rnaseq2ga.RnaSqliteStore(sqlFilename)
     subset = options.subset
     log("Downloading GA4GH test dataset - RNA Quantification API")
     print("ENCODE dataset: {}".format(Color.blue(dataset)))
@@ -172,7 +172,7 @@ def main(argv):
     getDataFromHost(rnaDB, url, headers, host, dataType,
                     options.description, options.annotationId, subset,
                     options.readGroupId)
-    rnaDB.batchAddRNAQuantification()
+    rnaDB.batchAddRnaQuantification()
     log("DONE")
 
 
