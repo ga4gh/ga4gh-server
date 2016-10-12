@@ -277,7 +277,7 @@ class ComplianceDataMunger(object):
 
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
-        store = rnaseq2ga.RNASqliteStore(rnaDbName)
+        store = rnaseq2ga.RnaSqliteStore(rnaDbName)
         store.createTables()
         rnaseq2ga.rnaseq2ga(
             self.inputDirectory + "/rna_brca1.tsv",

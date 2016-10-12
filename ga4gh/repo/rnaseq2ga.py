@@ -11,7 +11,7 @@ import ga4gh.exceptions as exceptions
 SUPPORTED_RNA_INPUT_FORMATS = ["cufflinks", "kallisto", "rsem"]
 
 
-class RNASqliteStore(object):
+class RnaSqliteStore(object):
     """
     Defines a sqlite store for RNA data as well as methods for loading the
     tables.
@@ -26,27 +26,27 @@ class RNASqliteStore(object):
     def createTables(self):
         # annotationIds is a comma separated list
         self._cursor.execute('''CREATE TABLE RnaQuantification (
-                       id text,
-                       feature_set_ids text,
-                       description text,
-                       name text,
-                       read_group_ids text,
-                       programs text)''')
+                       id TEXT NOT NULL PRIMARY KEY,
+                       feature_set_ids TEXT,
+                       description TEXT,
+                       name TEXT,
+                       read_group_ids TEXT,
+                       programs TEXT)''')
         self._cursor.execute('''CREATE TABLE Expression (
-                       id text,
-                       rna_quantification_id text,
-                       name text,
-                       feature_id text,
-                       expression real,
-                       is_normalized boolean,
-                       raw_read_count real,
-                       score real,
-                       units integer,
-                       conf_low real,
-                       conf_hi real)''')
+                       id TEXT NOT NULL PRIMARY KEY,
+                       rna_quantification_id TEXT,
+                       name TEXT,
+                       feature_id TEXT,
+                       expression REAL,
+                       is_normalized BOOLEAN,
+                       raw_read_count REAL,
+                       score REAL,
+                       units INTEGER,
+                       conf_low REAL,
+                       conf_hi REAL)''')
         self._dbConn.commit()
 
-    def addRNAQuantification(self, datafields):
+    def addRnaQuantification(self, datafields):
         """
         Adds an RNAQuantification to the db.  Datafields is a tuple in the
         order:
@@ -54,9 +54,9 @@ class RNASqliteStore(object):
         """
         self._rnaValueList.append(datafields)
         if len(self._rnaValueList) >= self._batchSize:
-            self.batchAddRNAQuantification()
+            self.batchAddRnaQuantification()
 
-    def batchAddRNAQuantification(self):
+    def batchAddRnaQuantification(self):
         if len(self._rnaValueList) > 0:
             sql = "INSERT INTO RnaQuantification VALUES (?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._rnaValueList)
@@ -241,8 +241,8 @@ def writeRnaseqTable(rnaDB, analysisIds, name, annotationId,
     for analysisId in analysisIds:
         datafields = (analysisId, annotationId, description, name,
                       readGroupId, programs)
-        rnaDB.addRNAQuantification(datafields)
-    rnaDB.batchAddRNAQuantification()
+        rnaDB.addRnaQuantification(datafields)
+    rnaDB.batchAddRnaQuantification()
 
 
 def writeExpressionTable(writer, data):
@@ -275,7 +275,7 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
             [x.getId() for x in readGroupSet.getReadGroups()])
     if rnaType not in SUPPORTED_RNA_INPUT_FORMATS:
         raise exceptions.UnsupportedFormatException(rnaType)
-    rnaDB = RNASqliteStore(sqlFilename)
+    rnaDB = RnaSqliteStore(sqlFilename)
     if rnaType == "cufflinks":
         writer = CufflinksWriter(rnaDB, featureType, dataset=dataset)
     elif rnaType == "kallisto":
