@@ -484,6 +484,10 @@ class RepoManager(object):
         """
         self._openRepo()
         dataset = self._repo.getDatasetByName(self._args.datasetName)
+        bioSampleId = ""
+        if self._args.bioSampleName:
+            bioSample = dataset.getBioSampleByName(self._args.bioSampleName)
+            bioSampleId = bioSample.getId()
         if self._args.name is None:
             name = getNameFromPath(self._args.filePath)
         else:
@@ -497,8 +501,9 @@ class RepoManager(object):
             self._args.quantificationFilePath, self._args.filePath, name,
             self._args.format, dataset=dataset, featureType=featureType,
             description=self._args.description, programs=programs,
-            featureSetNames=self._args.featureSetName,
-            readGroupSetNames=self._args.readGroupSetName)
+            featureSetNames=self._args.featureSetNames,
+            readGroupSetNames=self._args.readGroupSetName,
+            bioSampleId=bioSampleId)
 
     def initRnaQuantificationSet(self):
         """
@@ -951,8 +956,12 @@ class RepoManager(object):
         cls.addRnaFormatArgument(addRnaQuantificationParser)
         cls.addRepoArgument(addRnaQuantificationParser)
         cls.addDatasetNameArgument(addRnaQuantificationParser)
-        cls.addFeatureSetNameArgument(addRnaQuantificationParser)
-        cls.addReadGroupSetNameArgument(addRnaQuantificationParser)
+        addRnaQuantificationParser.add_argument(
+            "--bioSampleName", default=None, help="BioSample Name")
+        addRnaQuantificationParser.add_argument(
+            "--readGroupSetName", default=None, help="Read Group Set Name")
+        addRnaQuantificationParser.add_argument(
+            "--featureSetNames", default=None, help="Comma separated list")
         cls.addNameOption(addRnaQuantificationParser, "rna quantification")
         cls.addDescriptionOption(addRnaQuantificationParser, objectType)
         cls.addRnaFeatureTypeOption(addRnaQuantificationParser)

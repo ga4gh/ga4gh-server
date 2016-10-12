@@ -283,8 +283,10 @@ class ComplianceDataMunger(object):
             self.inputDirectory + "/rna_brca1.tsv",
             rnaDbName, "rna_brca1.tsv", "rsem",
             featureType="transcript",
-            readGroupSetNames="HG00096", featureSetNames="gencodev19",
-            dataset=dataset)
+            readGroupSetNames="HG00096",
+            dataset=dataset,
+            featureSetNames="gencodev19",
+            bioSampleId=hg00096BioSample.getId())
         rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
             dataset, "rnaseq")
         rnaQuantificationSet.setReferenceSet(referenceSet)
