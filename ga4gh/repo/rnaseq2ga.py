@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 import sqlite3
 import csv
+import uuid
 
 import ga4gh.exceptions as exceptions
 
@@ -47,7 +48,7 @@ class RnaSqliteStore(object):
                        conf_hi REAL)''')
         self._dbConn.commit()
 
-    def addRnaQuantification(self, datafields):
+    def addRNAQuantification(self, datafields):
         """
         Adds an RNAQuantification to the db.  Datafields is a tuple in the
         order:
@@ -56,9 +57,9 @@ class RnaSqliteStore(object):
         """
         self._rnaValueList.append(datafields)
         if len(self._rnaValueList) >= self._batchSize:
-            self.batchAddRnaQuantification()
+            self.batchaddRNAQuantification()
 
-    def batchAddRnaQuantification(self):
+    def batchaddRNAQuantification(self):
         if len(self._rnaValueList) > 0:
             sql = "INSERT INTO RnaQuantification VALUES (?,?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._rnaValueList)
@@ -123,7 +124,7 @@ class AbstractWriter(object):
             quantificationReader = csv.DictReader(quantFile, delimiter=b"\t")
             for expression in quantificationReader:
                 expressionLevel = expression[self._expressionLevelCol]
-                expressionId = expression[self._idCol]
+                expressionId = str(uuid.uuid4())
                 name = expression[self._nameCol]
                 rawCount = 0.0
                 if self._countCol in expression.keys():
@@ -244,7 +245,7 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
         datafields = (analysisId, annotationId, description, analysisId,
                       readGroupId, programs, bioSampleId)
         rnaDB.addRNAQuantification(datafields)
-    rnaDB.batchAddRNAQuantification()
+    rnaDB.batchaddRNAQuantification()
 
 
 def writeExpressionTable(writer, data):
