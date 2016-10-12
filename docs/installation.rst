@@ -325,6 +325,8 @@ This will set the environment variable which is read by config.py
 
 You can then get logs from the docker container by running ``docker logs (container)`` e.g. ``docker logs ga4gh_demo``
 
+.. _macosinstall:
+
 ----------------------------------------------
 Installing the development version on Mac OS X
 ----------------------------------------------

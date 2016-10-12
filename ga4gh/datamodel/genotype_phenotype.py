@@ -361,7 +361,7 @@ class G2PUtility(object):
             if namespace.toPython() in url:
                 return namespace
 
-    def _toGA4GH(self, association):
+    def _toGA4GH(self, association, featureSets=[]):
         """
         given an association dict,
         return a protocol.FeaturePhenotypeAssociation
@@ -378,7 +378,13 @@ class G2PUtility(object):
 
         fpa = protocol.FeaturePhenotypeAssociation()
         fpa.id = association['id']
-        fpa.feature_ids.extend([feature['id']])
+
+        feature_id = feature['id']
+        for feature_set in featureSets:
+            if self.getLocalId() in feature_set.getLocalId():
+                feature_id = feature_set.getCompoundIdForFeatureId(feature_id)
+
+        fpa.feature_ids.extend([feature_id])
 
         msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' \
               'evidence:[{}] publications:[{}]'
@@ -481,6 +487,8 @@ class RdfPhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
         It queries the graph for annotations that match the
         AND of [feature,environment,phenotype].
         """
+        if len(featureSets) == 0:
+            featureSets = self.getParentContainer().getFeatureSets()
         # query to do search
         query = self._formatFilterQuery(request, featureSets)
         associations = self._rdfGraph.query(query)
@@ -520,7 +528,7 @@ class RdfPhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
 
         # create GA4GH objects
         associations = [
-            self._toGA4GH(assoc) for
+            self._toGA4GH(assoc, featureSets) for
             assoc in associationList]
         return associations
 

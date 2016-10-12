@@ -38,7 +38,8 @@ import ga4gh.repo.rnaseq2ga as rnaseq2ga  # NOQA
 
 
 class ComplianceDataMunger(object):
-    def __init__(self, inputDirectory, outputDirectory):
+
+    def __init__(self, inputDirectory, outputDirectory, force):
         """
         Converts human readable dataset from compliance repository,
         and translates it into a reference-server readable filesystem
@@ -55,11 +56,19 @@ class ComplianceDataMunger(object):
         self.tempdir = None
 
         if os.path.exists(self.outputDirectory):
-            utils.log("Output directory '{}' already exists".format(
-                self.outputDirectory))
-            utils.log("Please specify an output path that does not exist")
-            utils.log("Exiting...")
-            exit(1)
+            if force:
+                utils.log(
+                    "Removing existing output directory at '{}'".format(
+                        self.outputDirectory))
+                shutil.rmtree(self.outputDirectory)
+            else:
+                utils.log(
+                    "Output directory '{}' already exists".format(
+                        self.outputDirectory))
+                utils.log(
+                    "Please specify an output path that does not exist")
+                utils.log("Exiting...")
+                exit(1)
 
         # If no input directory is specified download from GitHub
         if inputDirectory is None:
@@ -268,7 +277,7 @@ class ComplianceDataMunger(object):
 
         # RNA Quantification
         rnaDbName = os.path.join(self.outputDirectory, "rnaseq.db")
-        store = rnaseq2ga.RNASqliteStore(rnaDbName)
+        store = rnaseq2ga.RnaSqliteStore(rnaDbName)
         store.createTables()
         rnaseq2ga.rnaseq2ga(
             self.inputDirectory + "/rna_brca1.tsv",
@@ -332,8 +341,10 @@ def main():
         "download the compliance test-data from github",
         default=None)
     parser.add_argument('--verbose', '-v', action='count', default=0)
+    parser.add_argument('--force', '-f', action='store_true', default=False)
     args = parser.parse_args()
-    cdm = ComplianceDataMunger(args.inputDirectory, args.outputDirectory)
+    cdm = ComplianceDataMunger(
+        args.inputDirectory, args.outputDirectory, args.force)
     try:
         cdm.run()
     finally:
