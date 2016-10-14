@@ -495,9 +495,15 @@ class Backend(object):
                 compoundId.dataset_id)
             rnaQuantSet = dataset.getRnaQuantificationSet(
                 compoundId.rna_quantification_set_id)
-            return self._topLevelObjectGenerator(
-                request, rnaQuantSet.getNumRnaQuantifications(),
-                rnaQuantSet.getRnaQuantificationByIndex)
+        results = []
+        for obj in rnaQuantSet.getRnaQuantifications():
+            include = True
+            if request.bio_sample_id:
+                if request.bio_sample_id != obj.getBioSampleId():
+                    include = False
+            if include:
+                results.append(obj)
+        return self._objectListGenerator(request, results)
 
     def expressionLevelsGenerator(self, request):
         """
