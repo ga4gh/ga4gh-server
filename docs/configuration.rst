@@ -386,28 +386,61 @@ Initializes a rnaquantification set.
 
 Initializes the RNA Quantification Set with the filename rnaseq.db.
 
++++++++++++++++++++++++++
+init-rnaquantificationset
++++++++++++++++++++++++++
+
+Initializes a rnaquantification set.
+
+.. argparse::
+   :module: ga4gh.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: init-rnaquantificationset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo init-rnaquantificationset repo.db rnaseq.db
+
+Initializes the RNA Quantification Set with the filename rnaseq.db.
+
++++++++++++++++++++++
+add-rnaquantification
++++++++++++++++++++++
+
+Adds a rnaquantification to a RNA quantification set.
+
+RNA quantification formats supported are currently kallisto and RSEM.
+
+.. argparse::
+   :module: ga4gh.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-rnaquantification
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-rnaquantification rnaseq.db data.tsv \
+             kallisto ga4gh-example-data/registry.db brca1 \
+            --bioSampleName HG00096 --featureSetNames gencodev19
+            --readGroupSetName HG00096rna --transcript
+
+Adds the data.tsv in kallisto format to the `rnaseq.db` quantification set with
+optional fields for associating a quantification with a Feature Set, Read Group
+Set, and BioSample.
+
 ++++++++++++++++++++++++
 add-rnaquantificationset
 ++++++++++++++++++++++++
 
-Adds a rnaquantification set to a named dataset in a repository.
-Rnaquantification sets are currently derived from a single sqlite database,
-which is stored locally.
-
-Each rnaquantification set must be associated with the reference set that it is
-aligned to.  The sqlite database contains the rnaquantifications which are
-members of the rnaquantification set as well as the feature quantifications for
-each of those rnaquantifications.
-
-.. todo:: Database schema diagram.
-
-A helper script ``scripts/rnaseq2ga.py`` is included to create the
-rnaquantification database. Quantifications are specified in a tab delimited
-control file with columns:
-rna_quant_name    filename    type    feature_set_name    read_group_set_name    description    programs
-
-Each line corresponds to one rnaquantification in the set.  The script supports
-the following quantification types: Cufflinks, kallisto and RSEM.
+When the desired RNA quantification have been added to the set, use this command
+to add them to the registry.
 
 .. argparse::
    :module: ga4gh.cli.repomanager
@@ -420,12 +453,12 @@ the following quantification types: Cufflinks, kallisto and RSEM.
 
 .. code-block:: bash
 
-    $ ga4gh_repo add-rnaquantificationset registry.db 1kg \
-        path/to/expression_values_database.db -R GRCh37-subset
+    $ ga4gh_repo add-rnaquantificationset registry.db brca1 rnaseq.db \
+        -R hg37 -n rnaseq
 
-Adds a new rnaquantification set for a feature expression database stored on
-the local file system. The name of the rnaquantification set is automatically
-derived from the file name.
+Adds the RNA quantification set `rnaseq.db` to the registry under the `brca1`
+dataset. The flags set the reference genome to be hg37 and the name of the
+set to `rnaseq`.
 
 +++++++++++++++++++++++++++
 add-phenotypeassociationset
