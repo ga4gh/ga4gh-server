@@ -6,8 +6,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import utils
-utils.ga4ghImportGlue()
+import glue
+
+glue.ga4ghImportGlue()
 import ga4gh.client as client  # NOQA
 
 

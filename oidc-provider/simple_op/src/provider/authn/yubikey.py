@@ -12,9 +12,10 @@ logger = logging.getLogger(__name__)
 class YubicoOTP(AuthnModule):
     url_endpoint = "/yubi_otp/verify"
 
-    def __init__(self, yubikey_db, validation_server, client_id, template_env,
-                 secret_key=None, verify_ssl=True, template="yubico_otp.jinja2",
-                 **kwargs):
+    def __init__(
+            self, yubikey_db, validation_server, client_id, template_env,
+            secret_key=None, verify_ssl=True, template="yubico_otp.jinja2",
+            **kwargs):
         super(YubicoOTP, self).__init__(None)
         self.template_env = template_env
         self.template = template
@@ -58,4 +59,5 @@ class YubicoOTP(AuthnModule):
             return self.yubikey_db[yubikey_public_id], True
         else:
             logger.error(
-                "No response from the servers or received other negative status code")
+                "No response from the servers "
+                "or received other negative status code")

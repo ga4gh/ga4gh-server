@@ -11,7 +11,7 @@ import ga4gh.client as client
 import ga4gh.datarepo as datarepo
 import ga4gh.backend as backend
 import tests.paths as paths
-import tests.utils as utils
+import ga4gh_common.utils as utils
 
 
 class TestInterfacingLayer(unittest.TestCase):

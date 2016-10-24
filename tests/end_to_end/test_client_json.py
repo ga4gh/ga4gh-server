@@ -16,7 +16,7 @@ import ga4gh.backend as backend
 import ga4gh.cli.client as cli_client
 import ga4gh.protocol as protocol
 import ga4gh.datarepo as datarepo
-import tests.utils as utils
+import ga4gh_common.utils as utils
 import tests.paths as paths
 
 import freezegun

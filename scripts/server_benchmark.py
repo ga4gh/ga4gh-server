@@ -13,8 +13,9 @@ import cProfile
 
 import guppy
 
-import utils
-utils.ga4ghImportGlue()
+import glue
+
+glue.ga4ghImportGlue()
 import ga4gh.backend as backend  # noqa
 import ga4gh.protocol as protocol  # noqa
 import ga4gh.datarepo as datarepo  # noqa

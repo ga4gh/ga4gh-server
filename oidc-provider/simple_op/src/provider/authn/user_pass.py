@@ -8,7 +8,8 @@ from provider.authn import make_cls_from_name, AuthnModule
 class UserPass(AuthnModule):
     url_endpoint = "/user_pass/verify"
 
-    def __init__(self, db, template_env, template="user_pass.jinja2", **kwargs):
+    def __init__(
+            self, db, template_env, template="user_pass.jinja2", **kwargs):
         super(UserPass, self).__init__(None)
         self.template_env = template_env
         self.template = template
@@ -31,7 +32,7 @@ class UserPass(AuthnModule):
     def verify(self, *args, **kwargs):
         username = kwargs["username"]
         if username in self.user_db and self.user_db[username] == kwargs[
-            "password"]:
+                "password"]:
             return username, True
         else:
             return self.FAILED_AUTHN

@@ -9,6 +9,8 @@ import ga4gh.cli as cli
 import ga4gh.cli.client as cli_client
 import ga4gh.converters as converters
 
+import ga4gh_common.cli as common_cli
+
 
 class Ga2SamRunner(cli_client.SearchReadsRunner):
     """
@@ -31,7 +33,7 @@ class Ga2SamRunner(cli_client.SearchReadsRunner):
 
 
 def getGa2SamParser():
-    parser = cli.createArgumentParser("GA4GH SAM conversion tool")
+    parser = common_cli.createArgumentParser("GA4GH SAM conversion tool")
     cli_client.addClientGlobalOptions(parser)
     cli_client.addUrlArgument(parser)
     parser.add_argument(

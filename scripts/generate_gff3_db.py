@@ -16,8 +16,10 @@ import sys
 import json
 import sqlite3
 
-import utils
-utils.ga4ghImportGlue()
+import ga4gh_common.utils as utils
+import glue
+
+glue.ga4ghImportGlue()
 import ga4gh.gff3 as gff3  # NOQA
 
 # TODO: Shift this to use the Gff3DbBackend class.

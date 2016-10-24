@@ -16,7 +16,7 @@ import oic
 import oic.oic.message as message
 
 import ga4gh.frontend as frontend
-import tests.utils as utils
+import ga4gh_common.utils as utils
 
 RANDSTR = 'abc'
 OICCODE = (

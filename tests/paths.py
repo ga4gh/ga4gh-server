@@ -8,6 +8,18 @@ from __future__ import unicode_literals
 import os
 
 
+packageName = 'ga4gh'
+
+
+def getProjectRootFilePath():
+    # assumes we're in a directory one level below the project root
+    return os.path.dirname(os.path.dirname(__file__))
+
+
+def getGa4ghFilePath():
+    return os.path.join(getProjectRootFilePath(), packageName)
+
+
 testDir = 'tests'
 testDataDir = os.path.join(testDir, 'data')
 testDataRepo = os.path.join(testDataDir, 'registry.db')

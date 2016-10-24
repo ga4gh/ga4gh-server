@@ -13,13 +13,17 @@ import os
 import shutil
 import json
 import pysam
-import utils
 import generate_gff3_db
 import tempfile
 import zipfile
 import glob
 
-utils.ga4ghImportGlue()
+import file_downloader
+
+import ga4gh_common.utils as utils
+import glue
+
+glue.ga4ghImportGlue()
 
 # We need to turn off QA because of the import glue
 import ga4gh  # NOQA
@@ -77,7 +81,7 @@ class ComplianceDataMunger(object):
             assert(os.path.exists(self.tempdir))
             url = "https://github.com/ga4gh/compliance/archive/master.zip"
             filePath = os.path.join(self.tempdir, 'compliance-master.zip')
-            downloader = utils.HttpFileDownloader(url, filePath)
+            downloader = file_downloader.HttpFileDownloader(url, filePath)
             downloader.download()
             utils.log("Extracting test data...")
             with zipfile.ZipFile(filePath, "r") as z:

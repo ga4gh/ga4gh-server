@@ -18,7 +18,7 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import tests.datadriven as datadriven
-import tests.utils as utils
+import ga4gh_common.utils as utils
 import tests.paths as paths
 
 

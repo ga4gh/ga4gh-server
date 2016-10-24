@@ -17,8 +17,10 @@ import urllib2
 
 import pysam
 
-import utils
-utils.ga4ghImportGlue()
+import ga4gh_common.utils as utils
+import glue
+
+glue.ga4ghImportGlue()
 
 # We need to turn off QA because of the import glue
 import ga4gh.datarepo as datarepo  # NOQA

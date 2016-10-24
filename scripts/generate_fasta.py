@@ -12,7 +12,7 @@ import math
 import os
 import random
 
-import utils
+import ga4gh_common.utils as utils
 
 
 class FastaGenerator(object):
