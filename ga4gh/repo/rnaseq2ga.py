@@ -102,7 +102,6 @@ class AbstractWriter(object):
         self._dataRepo = None
         self._dataset = dataset
         self._featureType = featureType
-        self._features = {}
 
     def setUnits(self, units):
         if units == "fpkm":
@@ -145,7 +144,6 @@ class AbstractWriter(object):
                         if featureId == "":
                             for feature in featureSet.getFeatures(
                                     name=featureName):
-                                self._features[feature.id] = feature
                                 featureId = feature.id
                                 break
                         else:
