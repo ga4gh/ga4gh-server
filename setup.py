@@ -33,7 +33,6 @@ setup(
     use_scm_version={"write_to": "ga4gh/_version.py"},
     entry_points={
         'console_scripts': [
-            'ga4gh_client=ga4gh.cli.client:client_main',
             'ga4gh_configtest=ga4gh.cli.configtest:configtest_main',
             'ga4gh_server=ga4gh.cli.server:server_main',
             'ga2vcf=ga4gh.cli.ga2vcf:ga2vcf_main',

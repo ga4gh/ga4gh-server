@@ -6,10 +6,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import ga4gh.cli as cli
-import ga4gh.cli.client as cli_client
 import ga4gh.converters as converters
 
 import ga4gh_common.cli as common_cli
+import ga4gh_client.cli as cli_client
 
 
 class Ga2VcfRunner(cli_client.SearchVariantsRunner):

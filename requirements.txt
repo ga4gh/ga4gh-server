@@ -10,6 +10,7 @@
 
 ga4gh-common==0.0.4
 ga4gh-schemas==0.0.7
+ga4gh-client==0.0.2
 
 Werkzeug==0.11.5
 MarkupSafe==0.23

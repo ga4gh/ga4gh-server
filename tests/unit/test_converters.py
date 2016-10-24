@@ -11,10 +11,11 @@ import unittest
 import pysam
 
 import ga4gh.backend as backend
-import ga4gh.client as client
 import ga4gh.converters as converters
 import ga4gh.datarepo as datarepo
 import tests.paths as paths
+
+import ga4gh_client.client as client
 import ga4gh_common.utils as utils
 
 
