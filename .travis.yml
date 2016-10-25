@@ -35,6 +35,7 @@ before_script:
 script: 
   - flake8 *.py tests ga4gh scripts
               --exclude=ez_setup.py,ga4gh/*_pb2.py,ga4gh/datamodel/obo_parser.py
+              --max-line-length=100
   - nosetests --with-coverage --cover-package ga4gh
               --cover-inclusive --cover-min-percentage 80
               --cover-branches --cover-erase
