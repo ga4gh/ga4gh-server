@@ -64,7 +64,7 @@ class TestSearchMethodsCallRunRequest(unittest.TestCase):
     def testSetPageSize(self):
         testClient = client.AbstractClient()
         # pageSize is None by default
-        self.assertIsNone(testClient.get_page_size())
+        self.assertEqual(testClient.get_page_size(), 10)
         for pageSize in [1, 10, 100]:
             testClient.set_page_size(pageSize)
             self.assertEqual(testClient.get_page_size(), pageSize)

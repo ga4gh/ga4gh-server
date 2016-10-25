@@ -20,7 +20,7 @@ class AbstractClient(object):
     """
 
     def __init__(self, log_level=0):
-        self._page_size = None
+        self._page_size = 10
         self._log_level = log_level
         self._protocol_bytes_received = 0
         logging.basicConfig()
