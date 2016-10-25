@@ -20,7 +20,7 @@ class RnaSqliteStore(object):
     def __init__(self, sqliteFileName):
         self._dbConn = sqlite3.connect(sqliteFileName)
         self._cursor = self._dbConn.cursor()
-        self._batchSize = 100
+        self._batchSize = 2000
         self._rnaValueList = []
         self._expressionValueList = []
 
@@ -109,7 +109,8 @@ class AbstractWriter(object):
         elif units == "tpm":
             self._units = 2
 
-    def writeExpression(self, rnaQuantificationId, quantfilename):
+    def writeExpression(self, rnaQuantificationId, quantfilename,
+                        featureSetNames=None):
         """
         Reads the quantification results file and adds entries to the
         specified database.
@@ -117,8 +118,11 @@ class AbstractWriter(object):
         isNormalized = self._isNormalized
         units = self._units
         featureSets = None
-        if self._dataset:
-            featureSets = self._dataset.getFeatureSets()
+        if self._dataset and featureSetNames:
+            featureSets = []
+            for annotationName in featureSetNames.split(","):
+                featureSets.append(
+                    self._dataset.getFeatureSetByName(annotationName))
         with open(quantfilename, "r") as quantFile:
             quantificationReader = csv.DictReader(quantFile, delimiter=b"\t")
             for expression in quantificationReader:
@@ -246,9 +250,10 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
     rnaDB.batchaddRNAQuantification()
 
 
-def writeExpressionTable(writer, data):
+def writeExpressionTable(writer, data, featureSetNames=None):
     for rnaQuantId, quantfilename in data:
-        writer.writeExpression(rnaQuantId, quantfilename)
+        writer.writeExpression(
+            rnaQuantId, quantfilename, featureSetNames=featureSetNames)
 
 
 def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
@@ -291,4 +296,6 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
                      featureSetIds,
                      readGroupId=readGroupIds, programs=programs,
                      bioSampleId=bioSampleId)
-    writeExpressionTable(writer, [(localName, quantificationFilename)])
+    writeExpressionTable(
+        writer, [(localName, quantificationFilename)],
+        featureSetNames=featureSetNames)
