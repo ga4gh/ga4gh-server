@@ -489,7 +489,7 @@ class RepoManager(object):
             bioSample = dataset.getBioSampleByName(self._args.bioSampleName)
             bioSampleId = bioSample.getId()
         if self._args.name is None:
-            name = getNameFromPath(self._args.filePath)
+            name = getNameFromPath(self._args.quantificationFilePath)
         else:
             name = self._args.name
         # TODO: programs not fully supported by GA4GH yet
