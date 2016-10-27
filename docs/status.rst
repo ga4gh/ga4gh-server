@@ -21,6 +21,30 @@ Release Notes
 
 
 *****
+0.3.4
+*****
+
+Alpha pre-release supporting major feature update.
+
+- G2P functionality added to support the following API endpoints:
+   - POST `/phenotypeassociationsets/search`
+   - POST `/phenotypes/search`
+   - POST `/featurephenotypeassociations/search`
+- Biometadata tags for RNA quantifications.
+- Improvements to the RNA quantification ingestion pipeline.
+- Migrated CLI related code to `cli` module.
+- Add demonstration RNA quantification data.
+- Minor doc fixes
+
+Known Issues
+
+- When searching using a wildcard, `*`, an Internal Server Error 
+  occurs. #1379
+- When listing many Read Group Sets, responses can be quite slow
+  causing timeouts. #1316
+
+
+*****
 0.3.3
 *****
 
