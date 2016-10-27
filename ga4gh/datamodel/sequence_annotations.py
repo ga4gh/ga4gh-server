@@ -13,7 +13,8 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel as datamodel
 import ga4gh.sqlite_backend as sqlite_backend
 import ga4gh.exceptions as exceptions
-import ga4gh.pb as pb
+
+import ga4gh_schemas.pb as pb
 
 # Note to self: There's the Feature ID as understood in a GFF3 file,
 # the Feature ID that is its server-assigned compoundId, and the
