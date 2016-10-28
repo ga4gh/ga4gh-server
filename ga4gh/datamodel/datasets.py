@@ -14,10 +14,11 @@ import ga4gh.protocol as protocol
 import ga4gh.datamodel.bio_metadata as biodata
 import ga4gh.datamodel.genotype_phenotype as g2p
 import ga4gh.datamodel.rna_quantification as rnaQuantification
-from ga4gh import pb
 import json
 
 import google.protobuf.struct_pb2 as struct_pb2
+
+import ga4gh_schemas.pb as pb
 
 
 def _encodeValue(value):

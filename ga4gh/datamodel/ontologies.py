@@ -12,7 +12,9 @@ import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
 import ga4gh.datamodel.obo_parser as obo_parser
-from ga4gh import pb
+
+import ga4gh_schemas.pb as pb
+
 
 SEQUENCE_ONTOLOGY_PREFIX = "SO"
 

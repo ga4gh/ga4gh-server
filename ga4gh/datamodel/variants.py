@@ -20,7 +20,9 @@ import google.protobuf.struct_pb2 as struct_pb2
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
-import ga4gh.pb as pb
+
+import ga4gh_schemas.pb as pb
+
 
 ANNOTATIONS_VEP_V82 = "VEP_v82"
 ANNOTATIONS_VEP_V77 = "VEP_v77"

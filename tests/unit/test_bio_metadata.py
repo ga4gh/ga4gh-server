@@ -11,7 +11,8 @@ import ga4gh.datamodel.datasets as datasets
 import ga4gh.exceptions as exceptions
 import ga4gh.datamodel.bio_metadata as bioMetadata
 import ga4gh.protocol as protocol
-from ga4gh import pb
+
+import ga4gh_schemas.pb as pb
 
 
 class TestIndividuals(unittest.TestCase):
