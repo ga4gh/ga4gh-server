@@ -10,7 +10,9 @@ import os
 import tarfile
 import time
 
-import utils
+import file_downloader
+
+import ga4gh_common.utils as utils
 
 
 dataDirPath = 'ga4gh-example-data'
@@ -43,7 +45,7 @@ def archiveExistingData():
 def downloadData():
     url = ("https://github.com/ga4gh/server/releases/"
            "download/data/ga4gh-example-data-v3.2.tar")
-    fileDownloader = utils.HttpFileDownloader(url, tarballPath)
+    fileDownloader = file_downloader.HttpFileDownloader(url, tarballPath)
     fileDownloader.download()
     utils.log("Downloading finished")
 

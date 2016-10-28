@@ -39,6 +39,7 @@ tests/data/registry.db
 *.rar
 *.tar
 *.zip
+*.whl
  
 # Logs and databases #
 ######################

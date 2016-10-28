@@ -16,7 +16,7 @@ import ga4gh.datamodel.references as references
 import ga4gh.protocol as protocol
 import ga4gh.datarepo as datarepo
 import tests.datadriven as datadriven
-import tests.utils as utils
+import ga4gh_common.utils as utils
 import tests.paths as paths
 
 import pysam

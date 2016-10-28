@@ -22,10 +22,6 @@ install:
   - ga4gh_repo --version
 
 before_script:
-  # the following two lines are to prevent travis from
-  # verbosely complaining about a security problem; see issue 54
-  - mkdir $HOME/.python-eggs
-  - chmod og-w $HOME/.python-eggs
   - pip install -r dev-requirements.txt
   - python scripts/build_test_data.py 
 
@@ -33,14 +29,16 @@ before_script:
 # run_tests.py runs everything under the script: tag so only put commands
 # under it that we want to run (and want to be able to run) as local tests
 script: 
-  - flake8 *.py tests ga4gh scripts
-              --exclude=ez_setup.py,ga4gh/*_pb2.py,ga4gh/datamodel/obo_parser.py
+  - flake8 client_dev.py configtest_dev.py convert_error_code.py
+           ga2sam_dev.py ga2vcf_dev.py repo_dev.py server_dev.py
+           setup.py
+           tests ga4gh scripts
   - nosetests --with-coverage --cover-package ga4gh
               --cover-inclusive --cover-min-percentage 80
               --cover-branches --cover-erase
   - make clean -C docs
   - make -C docs
 
-# run codecov !
 after_success:
+# run codecov
   - bash <(curl -s https://codecov.io/bash)

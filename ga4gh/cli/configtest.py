@@ -11,6 +11,8 @@ import unittest
 import ga4gh.cli as cli
 import ga4gh.configtest as configtest
 
+import ga4gh_common.cli as common_cli
+
 
 class SimplerResult(unittest.TestResult):
     """
@@ -29,7 +31,7 @@ class SimplerResult(unittest.TestResult):
 
 def configtest_main(parser=None):
     if parser is None:
-        parser = cli.createArgumentParser(
+        parser = common_cli.createArgumentParser(
             "GA4GH server configuration validator")
     parser.add_argument(
         "--config", "-c", default='DevelopmentConfig', type=str,

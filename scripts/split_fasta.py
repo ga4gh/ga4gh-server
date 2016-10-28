@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import argparse
 import os
 
-import utils
+import ga4gh_common.utils as utils
 
 
 def parseArgs():

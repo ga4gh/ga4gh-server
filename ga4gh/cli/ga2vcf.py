@@ -9,6 +9,8 @@ import ga4gh.cli as cli
 import ga4gh.cli.client as cli_client
 import ga4gh.converters as converters
 
+import ga4gh_common.cli as common_cli
+
 
 class Ga2VcfRunner(cli_client.SearchVariantsRunner):
     """
@@ -35,7 +37,7 @@ class Ga2VcfRunner(cli_client.SearchVariantsRunner):
 
 
 def getGa2VcfParser():
-    parser = cli.createArgumentParser((
+    parser = common_cli.createArgumentParser((
         "GA4GH VCF conversion tool. Converts variant information "
         "stored in a GA4GH repository into VCF format."))
     cli_client.addClientGlobalOptions(parser)

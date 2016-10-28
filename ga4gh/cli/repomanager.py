@@ -27,6 +27,8 @@ import ga4gh.datarepo as datarepo
 import ga4gh.exceptions as exceptions
 import ga4gh.repo.rnaseq2ga as rnaseq2ga
 
+import ga4gh_common.cli as common_cli
+
 
 def getNameFromPath(filePath):
     """
@@ -712,29 +714,29 @@ class RepoManager(object):
 
     @classmethod
     def getParser(cls):
-        parser = cli.createArgumentParser(
+        parser = common_cli.createArgumentParser(
             "GA4GH data repository management tool")
         subparsers = parser.add_subparsers(title='subcommands',)
         cli.addVersionArgument(parser)
 
-        initParser = cli.addSubparser(
+        initParser = common_cli.addSubparser(
             subparsers, "init", "Initialize a data repository")
         initParser.set_defaults(runner="init")
         cls.addRepoArgument(initParser)
         cls.addForceOption(initParser)
 
-        verifyParser = cli.addSubparser(
+        verifyParser = common_cli.addSubparser(
             subparsers, "verify",
             "Verifies the repository by examing all data files")
         verifyParser.set_defaults(runner="verify")
         cls.addRepoArgument(verifyParser)
 
-        listParser = cli.addSubparser(
+        listParser = common_cli.addSubparser(
             subparsers, "list", "List the contents of the repo")
         listParser.set_defaults(runner="list")
         cls.addRepoArgument(listParser)
 
-        addDatasetParser = cli.addSubparser(
+        addDatasetParser = common_cli.addSubparser(
             subparsers, "add-dataset", "Add a dataset to the data repo")
         addDatasetParser.set_defaults(runner="addDataset")
         cls.addRepoArgument(addDatasetParser)
@@ -742,7 +744,7 @@ class RepoManager(object):
         cls.addDatasetInfoArgument(addDatasetParser)
         cls.addDescriptionOption(addDatasetParser, "dataset")
 
-        removeDatasetParser = cli.addSubparser(
+        removeDatasetParser = common_cli.addSubparser(
             subparsers, "remove-dataset",
             "Remove a dataset from the data repo")
         removeDatasetParser.set_defaults(runner="removeDataset")
@@ -751,7 +753,7 @@ class RepoManager(object):
         cls.addForceOption(removeDatasetParser)
 
         objectType = "reference set"
-        addReferenceSetParser = cli.addSubparser(
+        addReferenceSetParser = common_cli.addSubparser(
             subparsers, "add-referenceset",
             "Add a reference set to the data repo")
         addReferenceSetParser.set_defaults(runner="addReferenceSet")
@@ -778,7 +780,7 @@ class RepoManager(object):
             "--sourceUri", default=None,
             help="The source URI")
 
-        removeReferenceSetParser = cli.addSubparser(
+        removeReferenceSetParser = common_cli.addSubparser(
             subparsers, "remove-referenceset",
             "Remove a reference set from the repo")
         removeReferenceSetParser.set_defaults(runner="removeReferenceSet")
@@ -789,7 +791,7 @@ class RepoManager(object):
         cls.addForceOption(removeReferenceSetParser)
 
         objectType = "ReadGroupSet"
-        addReadGroupSetParser = cli.addSubparser(
+        addReadGroupSetParser = common_cli.addSubparser(
             subparsers, "add-readgroupset",
             "Add a read group set to the data repo")
         addReadGroupSetParser.set_defaults(runner="addReadGroupSet")
@@ -810,7 +812,7 @@ class RepoManager(object):
                 "file name. If the dataFile is a remote URL the path to "
                 "a local file containing the BAM index must be provided"))
 
-        addOntologyParser = cli.addSubparser(
+        addOntologyParser = common_cli.addSubparser(
             subparsers, "add-ontology",
             "Adds an ontology in OBO format to the repo. Currently, "
             "a sequence ontology (SO) instance is required to translate "
@@ -825,7 +827,7 @@ class RepoManager(object):
         cls.addRelativePathOption(addOntologyParser)
         cls.addNameOption(addOntologyParser, "ontology")
 
-        removeOntologyParser = cli.addSubparser(
+        removeOntologyParser = common_cli.addSubparser(
             subparsers, "remove-ontology",
             "Remove an ontology from the repo")
         removeOntologyParser.set_defaults(runner="removeOntology")
@@ -833,7 +835,7 @@ class RepoManager(object):
         cls.addOntologyNameArgument(removeOntologyParser)
         cls.addForceOption(removeOntologyParser)
 
-        removeReadGroupSetParser = cli.addSubparser(
+        removeReadGroupSetParser = common_cli.addSubparser(
             subparsers, "remove-readgroupset",
             "Remove a read group set from the repo")
         removeReadGroupSetParser.set_defaults(runner="removeReadGroupSet")
@@ -843,7 +845,7 @@ class RepoManager(object):
         cls.addForceOption(removeReadGroupSetParser)
 
         objectType = "VariantSet"
-        addVariantSetParser = cli.addSubparser(
+        addVariantSetParser = common_cli.addSubparser(
             subparsers, "add-variantset",
             "Add a variant set to the data repo based on one or "
             "more VCF files. ")
@@ -877,7 +879,7 @@ class RepoManager(object):
                 "If the supplied VCF file contains annotations, create the "
                 "corresponding VariantAnnotationSet."))
 
-        removeVariantSetParser = cli.addSubparser(
+        removeVariantSetParser = common_cli.addSubparser(
             subparsers, "remove-variantset",
             "Remove a variant set from the repo")
         removeVariantSetParser.set_defaults(runner="removeVariantSet")
@@ -886,7 +888,7 @@ class RepoManager(object):
         cls.addVariantSetNameArgument(removeVariantSetParser)
         cls.addForceOption(removeVariantSetParser)
 
-        addFeatureSetParser = cli.addSubparser(
+        addFeatureSetParser = common_cli.addSubparser(
             subparsers, "add-featureset", "Add a feature set to the data repo")
         addFeatureSetParser.set_defaults(runner="addFeatureSet")
         cls.addRepoArgument(addFeatureSetParser)
@@ -900,7 +902,7 @@ class RepoManager(object):
         cls.addSequenceOntologyNameOption(addFeatureSetParser, "feature set")
         cls.addClassNameOption(addFeatureSetParser, "feature set")
 
-        removeFeatureSetParser = cli.addSubparser(
+        removeFeatureSetParser = common_cli.addSubparser(
             subparsers, "remove-featureset",
             "Remove a feature set from the repo")
         removeFeatureSetParser.set_defaults(runner="removeFeatureSet")
@@ -909,7 +911,7 @@ class RepoManager(object):
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
 
-        addBioSampleParser = cli.addSubparser(
+        addBioSampleParser = common_cli.addSubparser(
             subparsers, "add-biosample", "Add a BioSample to the dataset")
         addBioSampleParser.set_defaults(runner="addBioSample")
         cls.addRepoArgument(addBioSampleParser)
@@ -917,7 +919,7 @@ class RepoManager(object):
         cls.addBioSampleNameArgument(addBioSampleParser)
         cls.addBioSampleArgument(addBioSampleParser)
 
-        removeBioSampleParser = cli.addSubparser(
+        removeBioSampleParser = common_cli.addSubparser(
             subparsers, "remove-biosample",
             "Remove a BioSample from the repo")
         removeBioSampleParser.set_defaults(runner="removeBioSample")
@@ -926,7 +928,7 @@ class RepoManager(object):
         cls.addBioSampleNameArgument(removeBioSampleParser)
         cls.addForceOption(removeBioSampleParser)
 
-        addIndividualParser = cli.addSubparser(
+        addIndividualParser = common_cli.addSubparser(
             subparsers, "add-individual", "Add an Individual to the dataset")
         addIndividualParser.set_defaults(runner="addIndividual")
         cls.addRepoArgument(addIndividualParser)
@@ -934,7 +936,7 @@ class RepoManager(object):
         cls.addIndividualNameArgument(addIndividualParser)
         cls.addIndividualArgument(addIndividualParser)
 
-        removeIndividualParser = cli.addSubparser(
+        removeIndividualParser = common_cli.addSubparser(
             subparsers, "remove-individual",
             "Remove an Individual from the repo")
         removeIndividualParser.set_defaults(runner="removeIndividual")
@@ -944,7 +946,7 @@ class RepoManager(object):
         cls.addForceOption(removeIndividualParser)
 
         objectType = "RnaQuantification"
-        addRnaQuantificationParser = cli.addSubparser(
+        addRnaQuantificationParser = common_cli.addSubparser(
             subparsers, "add-rnaquantification",
             "Add an RNA quantification to the data repo")
         addRnaQuantificationParser.set_defaults(
@@ -968,7 +970,7 @@ class RepoManager(object):
         cls.addRnaFeatureTypeOption(addRnaQuantificationParser)
 
         objectType = "RnaQuantificationSet"
-        initRnaQuantificationSetParser = cli.addSubparser(
+        initRnaQuantificationSetParser = common_cli.addSubparser(
             subparsers, "init-rnaquantificationset",
             "Initializes an RNA quantification set")
         initRnaQuantificationSetParser.set_defaults(
@@ -978,7 +980,7 @@ class RepoManager(object):
             initRnaQuantificationSetParser,
             "The path to the resulting Quantification Set")
 
-        addRnaQuantificationSetParser = cli.addSubparser(
+        addRnaQuantificationSetParser = common_cli.addSubparser(
             subparsers, "add-rnaquantificationset",
             "Add an RNA quantification set to the data repo")
         addRnaQuantificationSetParser.set_defaults(
@@ -992,7 +994,7 @@ class RepoManager(object):
             addRnaQuantificationSetParser, objectType)
         cls.addNameOption(addRnaQuantificationSetParser, objectType)
 
-        removeRnaQuantificationSetParser = cli.addSubparser(
+        removeRnaQuantificationSetParser = common_cli.addSubparser(
             subparsers, "remove-rnaquantificationset",
             "Remove an RNA quantification set from the repo")
         removeRnaQuantificationSetParser.set_defaults(
@@ -1003,7 +1005,7 @@ class RepoManager(object):
             removeRnaQuantificationSetParser)
         cls.addForceOption(removeRnaQuantificationSetParser)
 
-        addPhenotypeAssociationSetParser = cli.addSubparser(
+        addPhenotypeAssociationSetParser = common_cli.addSubparser(
             subparsers, "add-phenotypeassociationset",
             "Adds phenotypes in ttl format to the repo.")
         addPhenotypeAssociationSetParser.set_defaults(
@@ -1017,7 +1019,7 @@ class RepoManager(object):
             addPhenotypeAssociationSetParser,
             "PhenotypeAssociationSet")
 
-        removePhenotypeAssociationSetParser = cli.addSubparser(
+        removePhenotypeAssociationSetParser = common_cli.addSubparser(
             subparsers, "remove-phenotypeassociationset",
             "Remove an phenotypes from the repo")
         removePhenotypeAssociationSetParser.set_defaults(

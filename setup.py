@@ -1,3 +1,5 @@
+# Don't import __future__ packages here; they make setup fail
+
 # First, we try to use setuptools. If it's not available locally,
 # we fall back on ez_setup.
 try:
@@ -22,16 +24,13 @@ with open("requirements.txt") as requirementsFile:
         install_requires.append(pinnedVersion)
 
 setup(
+    # END BOILERPLATE
     name="ga4gh",
     description="A reference implementation of the ga4gh API",
-    license='Apache License 2.0',
-    long_description=long_description,
     packages=["ga4gh", "ga4gh.datamodel", "ga4gh.templates"],
-    include_package_data=True,
     zip_safe=False,
-    author="Global Alliance for Genomics and Health",
-    author_email="theglobalalliance@genomicsandhealth.org",
     url="https://github.com/ga4gh/server",
+    use_scm_version={"write_to": "ga4gh/_version.py"},
     entry_points={
         'console_scripts': [
             'ga4gh_client=ga4gh.cli.client:client_main',
@@ -42,6 +41,13 @@ setup(
             'ga4gh_repo=ga4gh.cli.repomanager:repo_main',
         ]
     },
+    # BEGIN BOILERPLATE
+    long_description=long_description,
+    install_requires=install_requires,
+    license='Apache License 2.0',
+    include_package_data=True,
+    author="Global Alliance for Genomics and Health",
+    author_email="theglobalalliance@genomicsandhealth.org",
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
@@ -50,11 +56,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Topic :: Scientific/Engineering :: Bio-Informatics',
     ],
-    keywords='genomics reference',
-    install_requires=install_requires,
+    keywords=['genomics', 'reference'],
     # Use setuptools_scm to set the version number automatically from Git
     setup_requires=['setuptools_scm'],
-    use_scm_version={
-        "write_to": "ga4gh/_version.py"
-    },
 )

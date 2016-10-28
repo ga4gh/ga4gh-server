@@ -15,7 +15,7 @@ import ga4gh.client as client
 import ga4gh.converters as converters
 import ga4gh.datarepo as datarepo
 import tests.paths as paths
-import tests.utils as utils
+import ga4gh_common.utils as utils
 
 
 class TestSamConverter(unittest.TestCase):

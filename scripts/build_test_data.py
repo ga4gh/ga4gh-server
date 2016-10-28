@@ -9,7 +9,7 @@ import argparse
 import glob
 import os.path
 
-import utils
+import ga4gh_common.utils as utils
 
 
 def run(*args):

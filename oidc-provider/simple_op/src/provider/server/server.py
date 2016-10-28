@@ -140,7 +140,8 @@ def _webfinger(provider, request, **kwargs):
 def make_static_handler(static_dir):
     def static(environ, start_response):
         path = environ['PATH_INFO']
-        full_path = os.path.join(static_dir, os.path.normpath(path).lstrip("/"))
+        full_path = os.path.join(
+            static_dir, os.path.normpath(path).lstrip("/"))
 
         if os.path.exists(full_path):
             with open(full_path, 'rb') as f:
@@ -174,8 +175,8 @@ def main():
 
     template_dirs = settings["server"].get("template_dirs", "templates")
     jinja_env = Environment(loader=FileSystemLoader(template_dirs))
-    authn_broker, auth_routing = setup_authentication_methods(settings["authn"],
-                                                              jinja_env)
+    authn_broker, auth_routing = setup_authentication_methods(
+        settings["authn"], jinja_env)
 
     # Setup userinfo
     userinfo_conf = settings["userinfo"]

@@ -21,7 +21,7 @@ from snakefood.find import ERROR_IMPORT, ERROR_SYMBOL, ERROR_UNUSED
 from snakefood.fallback.collections import defaultdict
 from snakefood.roots import find_roots, relfile
 
-import tests.utils as utils
+import tests.paths as paths
 
 
 class TestImports(unittest.TestCase):
@@ -248,7 +248,7 @@ class ImportGraphLayerChecker(object):
     def _checkConfiguration(self):
         # each module that exists in the file tree appears in moduleGroupNames
         pythonFiles = []
-        for root, dirnames, filenames in os.walk(utils.getGa4ghFilePath()):
+        for root, dirnames, filenames in os.walk(paths.getGa4ghFilePath()):
             for filename in fnmatch.filter(filenames, '*.py'):
                 pythonFilename = os.path.relpath(
                     os.path.join(root, filename))
@@ -444,7 +444,7 @@ class SnakefoodScanner(object):
         self.optsIgnores = ['.svn', 'CVS', 'build', '.hg', '.git']
         self.optsPrintRoots = None
         self.optsFollow = True
-        self.args = [utils.packageName]
+        self.args = [paths.packageName]
 
     def scan(self):
         """

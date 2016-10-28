@@ -18,7 +18,7 @@ import ga4gh.cli.ga2sam as cli_ga2sam
 import ga4gh.protocol as protocol
 import google.protobuf.descriptor as descriptor
 import google.protobuf.internal.python_message as python_message
-import tests.utils as utils
+import ga4gh_common.utils as utils
 
 
 class TestServerArguments(unittest.TestCase):

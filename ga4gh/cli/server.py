@@ -10,6 +10,8 @@ import requests
 import ga4gh.cli as cli
 import ga4gh.frontend as frontend
 
+import ga4gh_common.cli as common_cli
+
 
 def addServerOptions(parser):
     parser.add_argument(
@@ -35,7 +37,7 @@ def addServerOptions(parser):
 
 
 def getServerParser():
-    parser = cli.createArgumentParser("GA4GH reference server")
+    parser = common_cli.createArgumentParser("GA4GH reference server")
     addServerOptions(parser)
     return parser
 
