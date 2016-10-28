@@ -40,3 +40,7 @@ script:
               --cover-branches --cover-erase
   - make clean -C docs
   - make -C docs
+
+# run codecov !
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
