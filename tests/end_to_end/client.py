@@ -25,7 +25,7 @@ class ClientForTesting(object):
         else:
             self.flags = flags
         self.cmdLine = (
-            "python client_dev.py {flags} {command} {serverUrl} {arguments}")
+            "ga4gh_client {flags} {command} {serverUrl} {arguments}")
         self._createLogFiles()
 
     def _createLogFiles(self):

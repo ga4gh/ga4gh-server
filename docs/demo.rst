@@ -177,7 +177,7 @@ free text form. This is not intended to be used as the input to other
 programs, and is simply a data exploration tool for users.
 To really *use* our data, we should use a GA4GH client library.
 
-Part of the GA4GH reference implementation is a :ref:`client-library`. This makes sending requests to the server and using the
+Part of the GA4GH reference implementation is a client library. This makes sending requests to the server and using the
 responses very easy. For example, to run the same query as we
 performed above, we can use the following code:
 
@@ -185,7 +185,7 @@ performed above, we can use the following code:
 
     from __future__ import print_function
 
-    import ga4gh.client as client
+    import ga4gh_client.client as client
 
     httpClient = client.HttpClient("http://localhost:8000")
     # Get the datasets on the server.

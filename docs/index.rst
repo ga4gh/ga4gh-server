@@ -17,7 +17,6 @@ Contents
     introduction
     demo
     installation
-    api
     configuration
     development
     status

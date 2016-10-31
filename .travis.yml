@@ -11,10 +11,10 @@ install:
   - pip install pip --upgrade
 # RDFLib requres html5lib;  html5lib requires setuptools version 18.5 or above;
   - pip install setuptools==25.1.0
+  - pip install ga4gh-common # need ga4gh_common.setup for sdist
   - python setup.py sdist
   - pip install dist/ga4gh*.tar.gz
 # every installable in setup.py's entry_points should be tested here
-  - ga4gh_client --version
   - ga4gh_configtest --version
   - ga4gh_server --version
   - ga2vcf --version
@@ -29,7 +29,7 @@ before_script:
 # run_tests.py runs everything under the script: tag so only put commands
 # under it that we want to run (and want to be able to run) as local tests
 script: 
-  - flake8 client_dev.py configtest_dev.py convert_error_code.py
+  - flake8 configtest_dev.py convert_error_code.py
            ga2sam_dev.py ga2vcf_dev.py repo_dev.py server_dev.py
            setup.py
            tests ga4gh scripts

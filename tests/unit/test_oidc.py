@@ -18,6 +18,7 @@ import oic.oic.message as message
 import ga4gh.frontend as frontend
 import ga4gh_common.utils as utils
 
+
 RANDSTR = 'abc'
 OICCODE = (
     "5GzAsW4Gfz8Km8PTuayFi6j2tA2VnPrHiWybL%2BkryEpr05D0OUKTGTi49Z54yl%2"

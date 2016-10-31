@@ -7,10 +7,11 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.client as client
 import ga4gh.datarepo as datarepo
 import ga4gh.backend as backend
 import tests.paths as paths
+
+import ga4gh_client.client as client
 import ga4gh_common.utils as utils
 
 
