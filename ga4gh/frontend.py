@@ -197,28 +197,8 @@ def reset():
     app.config.from_object(configStr)
 
 
-def configure(configFile=None, baseConfig="ProductionConfig",
-              port=8000, extraConfig={}):
-    """
-    TODO Document this critical function! What does it do? What does
-    it assume?
-    """
-    file_handler = StreamHandler()
-    file_handler.setLevel(logging.WARNING)
-    app.logger.addHandler(file_handler)
-    configStr = 'ga4gh.serverconfig:{0}'.format(baseConfig)
-    app.config.from_object(configStr)
-    if os.environ.get('GA4GH_CONFIGURATION') is not None:
-        app.config.from_envvar('GA4GH_CONFIGURATION')
-    if configFile is not None:
-        app.config.from_pyfile(configFile)
-    app.config.update(extraConfig.items())
-    # Setup file handle cache max size
-    datamodel.fileHandleCache.setMaxCacheSize(
-        app.config["FILE_HANDLE_CACHE_MAX_SIZE"])
-    # Setup CORS
-    cors.CORS(app, allow_headers='Content-Type')
-    app.serverStatus = ServerStatus()
+def _configure_backend(app):
+    """A helper function used just to help modularize the code a bit."""
     # Allocate the backend
     # We use URLs to specify the backend. Currently we have file:// URLs (or
     # URLs with no scheme) for the SqlDataRepository, and special empty:// and
@@ -272,7 +252,33 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     theBackend.setRequestValidation(app.config["REQUEST_VALIDATION"])
     theBackend.setDefaultPageSize(app.config["DEFAULT_PAGE_SIZE"])
     theBackend.setMaxResponseLength(app.config["MAX_RESPONSE_LENGTH"])
-    app.backend = theBackend
+    return theBackend
+
+
+def configure(configFile=None, baseConfig="ProductionConfig",
+              port=8000, extraConfig={}):
+    """
+    TODO Document this critical function! What does it do? What does
+    it assume?
+    """
+    file_handler = StreamHandler()
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
+    configStr = 'ga4gh.serverconfig:{0}'.format(baseConfig)
+    app.config.from_object(configStr)
+    if os.environ.get('GA4GH_CONFIGURATION') is not None:
+        app.config.from_envvar('GA4GH_CONFIGURATION')
+    if configFile is not None:
+        app.config.from_pyfile(configFile)
+    app.config.update(extraConfig.items())
+    # Setup file handle cache max size
+    datamodel.fileHandleCache.setMaxCacheSize(
+        app.config["FILE_HANDLE_CACHE_MAX_SIZE"])
+    # Setup CORS
+    cors.CORS(app, allow_headers='Content-Type')
+    app.serverStatus = ServerStatus()
+
+    app.backend = _configure_backend(app)
     app.secret_key = os.urandom(SECRET_KEY_LENGTH)
     app.oidcClient = None
     app.tokenMap = None
