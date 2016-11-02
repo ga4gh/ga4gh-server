@@ -10,9 +10,9 @@ import bisect
 import rdflib
 from rdflib import RDF
 
-import ga4gh.protocol as protocol
-import ga4gh.datamodel.sequence_annotations as sequence_annotations
-import ga4gh.datamodel.genotype_phenotype as g2p
+import ga4gh.server.protocol as protocol
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel.genotype_phenotype as g2p
 
 # annotation keys
 TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'

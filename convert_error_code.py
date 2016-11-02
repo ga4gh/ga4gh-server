@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 
 import argparse
 
-import ga4gh.exceptions as exceptions
+import ga4gh.server.exceptions as exceptions
 
 
 def parseArgs():

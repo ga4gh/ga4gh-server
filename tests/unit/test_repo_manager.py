@@ -11,10 +11,10 @@ import shutil
 import tempfile
 import unittest
 
-import ga4gh.exceptions as exceptions
-import ga4gh.datarepo as datarepo
-import ga4gh.cli.repomanager as cli_repomanager
-import ga4gh.datamodel as datamodel
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.datarepo as datarepo
+import ga4gh.server.cli.repomanager as cli_repomanager
+import ga4gh.server.datamodel as datamodel
 import tests.paths as paths
 
 

@@ -8,10 +8,10 @@ from __future__ import unicode_literals
 import logging
 import unittest
 
-import ga4gh.cli as cli
-import ga4gh.configtest as configtest
+import ga4gh.server.cli as cli
+import ga4gh.server.configtest as configtest
 
-import ga4gh_common.cli as common_cli
+import ga4gh.common.cli as common_cli
 
 
 class SimplerResult(unittest.TestResult):

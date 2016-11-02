@@ -8,10 +8,10 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.backend as backend
-import ga4gh.datamodel.references as references
-import ga4gh.exceptions as exceptions
-import ga4gh.datarepo as datarepo
+import ga4gh.server.backend as backend
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.datarepo as datarepo
 
 
 class TestAbstractReferenceSet(unittest.TestCase):

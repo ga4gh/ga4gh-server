@@ -8,17 +8,17 @@ from __future__ import unicode_literals
 import collections
 import os
 
-import ga4gh.backend as backend
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.references as references
-import ga4gh.protocol as protocol
-import ga4gh.datarepo as datarepo
+import ga4gh.server.backend as backend
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.protocol as protocol
+import ga4gh.server.datarepo as datarepo
 import tests.datadriven as datadriven
 import tests.paths as paths
 
-import ga4gh_common.utils as utils
+import ga4gh.common.utils as utils
 
 import pysam
 

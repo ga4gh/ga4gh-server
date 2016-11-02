@@ -7,9 +7,9 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.frontend as frontend
-import ga4gh.exceptions as exceptions
-import ga4gh.protocol as protocol
+import ga4gh.server.frontend as frontend
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.protocol as protocol
 
 
 class TestFrontendErrors(unittest.TestCase):

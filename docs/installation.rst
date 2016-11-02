@@ -70,8 +70,8 @@ contents:
 
 .. code-block:: python
 
-    from ga4gh.frontend import app as application
-    import ga4gh.frontend as frontend
+    from ga4gh.server.frontend import app as application
+    import ga4gh.server.frontend as frontend
     frontend.configure("/srv/ga4gh/config.py")
 
 Create the configuration file at ``/srv/ga4gh/config.py``, and write the
