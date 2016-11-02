@@ -3,9 +3,9 @@ G2P testing on the test data
 """
 import unittest
 
-import ga4gh.datamodel as datamodel
-import ga4gh.protocol as protocol
-import ga4gh.frontend as frontend
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.protocol as protocol
+import ga4gh.server.frontend as frontend
 import tests.paths as paths
 
 

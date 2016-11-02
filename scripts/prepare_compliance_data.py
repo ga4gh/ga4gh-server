@@ -20,25 +20,25 @@ import glob
 
 import file_downloader
 
-import ga4gh_common.utils as utils
+import ga4gh.common.utils as utils
 import glue
 
 glue.ga4ghImportGlue()
 
 # We need to turn off QA because of the import glue
-import ga4gh  # NOQA
-import ga4gh.datarepo as datarepo  # NOQA
-import ga4gh.datamodel.references as references  # NOQA
-import ga4gh.datamodel.datasets as datasets  # NOQA
-import ga4gh.datamodel.variants as variants  # NOQA
-import ga4gh.datamodel.reads as reads  # NOQA
-import ga4gh.datamodel.ontologies as ontologies  # NOQA
-import ga4gh.datamodel.sequence_annotations as sequence_annotations  # NOQA
-import ga4gh.datamodel.bio_metadata as biodata  # NOQA
-import ga4gh.datamodel.genotype_phenotype_featureset as g2p_featureset  # NOQA
-import ga4gh.datamodel.genotype_phenotype as g2p_associationset  # NOQA
-import ga4gh.datamodel.rna_quantification as rna_quantification  # NOQA
-import ga4gh.repo.rnaseq2ga as rnaseq2ga  # NOQA
+import ga4gh.server  # NOQA
+import ga4gh.server.datarepo as datarepo  # NOQA
+import ga4gh.server.datamodel.references as references  # NOQA
+import ga4gh.server.datamodel.datasets as datasets  # NOQA
+import ga4gh.server.datamodel.variants as variants  # NOQA
+import ga4gh.server.datamodel.reads as reads  # NOQA
+import ga4gh.server.datamodel.ontologies as ontologies  # NOQA
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations  # NOQA
+import ga4gh.server.datamodel.bio_metadata as biodata  # NOQA
+import ga4gh.server.datamodel.genotype_phenotype_featureset as g2p_featureset  # NOQA
+import ga4gh.server.datamodel.genotype_phenotype as g2p_associationset  # NOQA
+import ga4gh.server.datamodel.rna_quantification as rna_quantification  # NOQA
+import ga4gh.server.repo.rnaseq2ga as rnaseq2ga  # NOQA
 
 
 class ComplianceDataMunger(object):
@@ -137,7 +137,7 @@ class ComplianceDataMunger(object):
 
         dataset = datasets.Dataset("brca1")
         # Some info is set, it isn't important what
-        dataset.setInfo({"version": ga4gh.__version__})
+        dataset.setInfo({"version": ga4gh.server.__version__})
         self.repo.insertDataset(dataset)
 
         hg00096Individual = biodata.Individual(dataset, "HG00096")

@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 import unittest
 import random
 
-import ga4gh.paging as paging
+import ga4gh.server.paging as paging
 
 
 def setUp():

@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.sqlite_backend as sqlite_backend
+import ga4gh.server.sqlite_backend as sqlite_backend
 import tests.paths as paths
 
 

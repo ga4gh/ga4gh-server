@@ -6,7 +6,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh_common.client as client
+import ga4gh.common.client as client
 
 
 def runDemo():
