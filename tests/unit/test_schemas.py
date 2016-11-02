@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.protocol as protocol
+import ga4gh.server.protocol as protocol
 
 
 def getValueListName(cls):

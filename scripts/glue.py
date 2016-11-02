@@ -7,6 +7,10 @@ from __future__ import unicode_literals
 
 import os
 import sys
+# the following two lines are the same ones as in dev_glue.py
+# they enable python to find the ga4gh.server package
+import ga4gh
+ga4gh.__path__.insert(0, 'ga4gh')
 
 
 def ga4ghImportGlue():

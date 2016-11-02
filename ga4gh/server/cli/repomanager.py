@@ -13,21 +13,21 @@ import textwrap
 import traceback
 import urlparse
 
-import ga4gh.cli as cli
-import ga4gh.datamodel.bio_metadata as bio_metadata
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
-import ga4gh.datamodel.ontologies as ontologies
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.rna_quantification as rna_quantification
-import ga4gh.datamodel.sequence_annotations as sequence_annotations
-import ga4gh.datamodel.variants as variants
-import ga4gh.datarepo as datarepo
-import ga4gh.exceptions as exceptions
-import ga4gh.repo.rnaseq2ga as rnaseq2ga
+import ga4gh.server.cli as cli
+import ga4gh.server.datamodel.bio_metadata as bio_metadata
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
+import ga4gh.server.datamodel.ontologies as ontologies
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.datamodel.rna_quantification as rna_quantification
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.datarepo as datarepo
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.repo.rnaseq2ga as rnaseq2ga
 
-import ga4gh_common.cli as common_cli
+import ga4gh.common.cli as common_cli
 
 
 def getNameFromPath(filePath):

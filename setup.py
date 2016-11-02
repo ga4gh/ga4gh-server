@@ -27,17 +27,19 @@ setup(
     # END BOILERPLATE
     name="ga4gh",
     description="A reference implementation of the ga4gh API",
-    packages=["ga4gh", "ga4gh.datamodel", "ga4gh.templates"],
+    packages=["ga4gh", "ga4gh.server", "ga4gh.server.datamodel",
+              "ga4gh.server.templates"],
+    namespace_packages=["ga4gh"],
     zip_safe=False,
     url="https://github.com/ga4gh/server",
-    use_scm_version={"write_to": "ga4gh/_version.py"},
+    use_scm_version={"write_to": "ga4gh/server/_version.py"},
     entry_points={
         'console_scripts': [
-            'ga4gh_configtest=ga4gh.cli.configtest:configtest_main',
-            'ga4gh_server=ga4gh.cli.server:server_main',
-            'ga2vcf=ga4gh.cli.ga2vcf:ga2vcf_main',
-            'ga2sam=ga4gh.cli.ga2sam:ga2sam_main',
-            'ga4gh_repo=ga4gh.cli.repomanager:repo_main',
+            'ga4gh_configtest=ga4gh.server.cli.configtest:configtest_main',
+            'ga4gh_server=ga4gh.server.cli.server:server_main',
+            'ga2vcf=ga4gh.server.cli.ga2vcf:ga2vcf_main',
+            'ga2sam=ga4gh.server.cli.ga2sam:ga2sam_main',
+            'ga4gh_repo=ga4gh.server.cli.repomanager:repo_main',
         ]
     },
     # BEGIN BOILERPLATE

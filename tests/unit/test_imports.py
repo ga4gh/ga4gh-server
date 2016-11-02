@@ -151,34 +151,58 @@ class ImportGraphLayerChecker(object):
 
     # each file/module is in one and only one moduleGroup
     moduleGroupNames = {
-        'cli': ['ga4gh/cli/client.py', 'ga4gh/cli/common.py',
-                'ga4gh/cli/configtest.py', 'ga4gh/cli/ga2sam.py',
-                'ga4gh/cli/ga2vcf.py', 'ga4gh/cli/repomanager.py',
-                'ga4gh/cli/server.py', ],
-        'client': ['ga4gh/client.py'],
-        'frontend': ['ga4gh/frontend.py', 'ga4gh/repo_manager.py'],
-        'backend': ['ga4gh/backend.py', 'ga4gh/datarepo.py',
-                    'ga4gh/paging.py'],
-        'exceptions': ['ga4gh/exceptions.py'],
-        'datamodel': ['ga4gh/datamodel/bio_metadata.py',
-                      'ga4gh/datamodel/reads.py',
-                      'ga4gh/datamodel/references.py',
-                      'ga4gh/datamodel/rna_quantification.py',
-                      'ga4gh/datamodel/variants.py',
-                      'ga4gh/datamodel/datasets.py',
-                      'ga4gh/datamodel/ontologies.py',
-                      'ga4gh/datamodel/obo_parser.py',
-                      'ga4gh/datamodel/sequence_annotations.py',
-                      'ga4gh/datamodel/genotype_phenotype.py',
-                      'ga4gh/datamodel/genotype_phenotype_featureset.py',
-                      'ga4gh/gff3.py',
-                      'ga4gh/sqlite_backend.py'],
-        'libraries': ['ga4gh/converters.py',
-                      'ga4gh/configtest.py'],
-        'protocol': ['ga4gh/protocol.py',
-                     ],
-        'config': ['ga4gh/serverconfig.py'],
-        'repo': ['ga4gh/repo/rnaseq2ga.py'],
+        'cli': [
+            'ga4gh/server/cli/client.py',
+            'ga4gh/server/cli/common.py',
+            'ga4gh/server/cli/configtest.py',
+            'ga4gh/server/cli/ga2sam.py',
+            'ga4gh/server/cli/ga2vcf.py',
+            'ga4gh/server/cli/repomanager.py',
+            'ga4gh/server/cli/server.py',
+        ],
+        'client': [
+            'ga4gh/server/client.py',
+        ],
+        'frontend': [
+            'ga4gh/server/frontend.py',
+            'ga4gh/server/repo_manager.py',
+        ],
+        'backend': [
+            'ga4gh/server/backend.py',
+            'ga4gh/server/datarepo.py',
+            'ga4gh/server/paging.py',
+        ],
+        'exceptions': [
+            'ga4gh/server/exceptions.py',
+        ],
+        'datamodel': [
+            'ga4gh/server/datamodel/bio_metadata.py',
+            'ga4gh/server/datamodel/reads.py',
+            'ga4gh/server/datamodel/references.py',
+            'ga4gh/server/datamodel/rna_quantification.py',
+            'ga4gh/server/datamodel/variants.py',
+            'ga4gh/server/datamodel/datasets.py',
+            'ga4gh/server/datamodel/ontologies.py',
+            'ga4gh/server/datamodel/obo_parser.py',
+            'ga4gh/server/datamodel/sequence_annotations.py',
+            'ga4gh/server/datamodel/genotype_phenotype.py',
+            'ga4gh/server/datamodel/genotype_phenotype_featureset.py',
+            'ga4gh/server/gff3.py',
+            'ga4gh/server/sqlite_backend.py',
+        ],
+        'libraries': [
+            'ga4gh/server/converters.py',
+            'ga4gh/server/configtest.py',
+        ],
+        'protocol': [
+            'ga4gh/server/protocol.py',
+        ],
+        'config': [
+            'ga4gh/server/serverconfig.py',
+        ],
+        'repo': [
+            'ga4gh/server/repo/rnaseq2ga.py',
+        ],
     }
 
     # each moduleGroupName has one and only one entry here

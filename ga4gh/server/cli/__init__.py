@@ -5,8 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh
-import ga4gh.protocol as protocol
+import ga4gh.server
+import ga4gh.server.protocol as protocol
 
 # the maximum value of a long type in avro = 2**63 - 1
 # (64 bit signed integer)
@@ -22,7 +22,7 @@ def addVersionArgument(parser):
     versionString = (
         "GA4GH Server Version {}\n"
         "(Protocol Version {})".format(
-            ga4gh.__version__, protocol.version))
+            ga4gh.server.__version__, protocol.version))
     parser.add_argument(
         "--version", version=versionString, action="version")
 

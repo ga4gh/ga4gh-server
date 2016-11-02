@@ -10,8 +10,8 @@ import collections
 
 import pysam
 
-import ga4gh.datamodel.reads as reads
-import ga4gh.protocol as protocol
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.protocol as protocol
 
 
 class AbstractConverter(object):
