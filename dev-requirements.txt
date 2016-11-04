@@ -17,7 +17,7 @@ PyYAML==3.11
 # an executable that we ship
 
 mock
-nose
+nose2
 pep8
 flake8
 coverage
