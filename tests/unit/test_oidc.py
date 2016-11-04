@@ -15,8 +15,8 @@ import mimetypes
 import oic
 import oic.oic.message as message
 
-import ga4gh.frontend as frontend
-import ga4gh_common.utils as utils
+import ga4gh.server.frontend as frontend
+import ga4gh.common.utils as utils
 
 
 RANDSTR = 'abc'

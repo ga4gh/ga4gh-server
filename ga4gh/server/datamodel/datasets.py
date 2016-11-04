@@ -5,20 +5,20 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.sequence_annotations as sequence_annotations
-import ga4gh.datamodel.variants as variants
-import ga4gh.exceptions as exceptions
-import ga4gh.protocol as protocol
-import ga4gh.datamodel.bio_metadata as biodata
-import ga4gh.datamodel.genotype_phenotype as g2p
-import ga4gh.datamodel.rna_quantification as rnaQuantification
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.protocol as protocol
+import ga4gh.server.datamodel.bio_metadata as biodata
+import ga4gh.server.datamodel.genotype_phenotype as g2p
+import ga4gh.server.datamodel.rna_quantification as rnaQuantification
 import json
 
 import google.protobuf.struct_pb2 as struct_pb2
 
-import ga4gh_schemas.pb as pb
+import ga4gh.schemas.pb as pb
 
 
 def _encodeValue(value):

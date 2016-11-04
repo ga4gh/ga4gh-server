@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh.gff3 as gff3
+import ga4gh.server.gff3 as gff3
 import unittest
 
 _testDataDir = "tests/data/datasets/dataset1/sequenceAnnotations/"
