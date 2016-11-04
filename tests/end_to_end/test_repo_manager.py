@@ -13,7 +13,7 @@ import unittest
 import ga4gh.server.cli.repomanager as cli_repomanager
 import tests.paths as paths
 
-import ga4gh.protocol as protocol
+import ga4gh.server.protocol as protocol
 
 
 class RepoManagerEndToEndTest(unittest.TestCase):

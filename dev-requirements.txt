@@ -16,8 +16,8 @@ PyYAML==3.11
 # do not import them in any code that can be reached via 
 # an executable that we ship
 
+pytest==3.0.3
 mock
-nose
 pep8
 flake8
 coverage
