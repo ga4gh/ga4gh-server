@@ -9,14 +9,14 @@ from __future__ import unicode_literals
 import json
 import unittest
 
-import ga4gh.datamodel as datamodel
-import ga4gh.exceptions as exceptions
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.rna_quantification as rna_quantification
-import ga4gh.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.datamodel.rna_quantification as rna_quantification
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
 
 
 class ExampleCompoundId(datamodel.CompoundId):

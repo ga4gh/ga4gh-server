@@ -7,7 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 
-import ga4gh.exceptions as exceptions
+import ga4gh.server.exceptions as exceptions
 
 
 def _parsePageToken(pageToken, numValues):

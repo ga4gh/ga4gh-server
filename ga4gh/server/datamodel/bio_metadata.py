@@ -8,9 +8,9 @@ from __future__ import unicode_literals
 import datetime
 import json
 
-import ga4gh.datamodel as datamodel
-import ga4gh.protocol as protocol
-import ga4gh.exceptions as exceptions
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.protocol as protocol
+import ga4gh.server.exceptions as exceptions
 
 
 class BioSample(datamodel.DatamodelObject):
