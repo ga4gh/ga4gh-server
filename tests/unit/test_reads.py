@@ -8,8 +8,8 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.datamodel.reads as reads
-import ga4gh.protocol as protocol
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.protocol as protocol
 
 
 class TestParseMalformedBamHeader(unittest.TestCase):

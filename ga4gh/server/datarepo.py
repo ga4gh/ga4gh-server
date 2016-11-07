@@ -9,20 +9,20 @@ import json
 import os
 import sqlite3
 
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.ontologies as ontologies
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.sequence_annotations as sequence_annotations
-import ga4gh.datamodel.bio_metadata as biodata
-import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
-import ga4gh.datamodel.genotype_phenotype_featureset as g2pFeatureset
-import ga4gh.datamodel.rna_quantification as rna_quantification
-import ga4gh.exceptions as exceptions
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.datamodel.ontologies as ontologies
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel.bio_metadata as biodata
+import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
+import ga4gh.server.datamodel.genotype_phenotype_featureset as g2pFeatureset
+import ga4gh.server.datamodel.rna_quantification as rna_quantification
+import ga4gh.server.exceptions as exceptions
 
-from ga4gh import protocol
+from ga4gh.server import protocol
 
 MODE_READ = 'r'
 MODE_WRITE = 'w'

@@ -8,11 +8,11 @@ from __future__ import unicode_literals
 import unittest
 import datetime
 
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.variants as variants
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.datamodel.variants as variants
 
 
 class TestSimulatedVariantSet(unittest.TestCase):

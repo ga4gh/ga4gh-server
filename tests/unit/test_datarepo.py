@@ -9,8 +9,8 @@ import os
 import tempfile
 import unittest
 
-import ga4gh.datarepo as datarepo
-import ga4gh.exceptions as exceptions
+import ga4gh.server.datarepo as datarepo
+import ga4gh.server.exceptions as exceptions
 
 
 prefix = "ga4gh_datarepo_test"

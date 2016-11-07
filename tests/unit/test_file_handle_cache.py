@@ -12,7 +12,7 @@ import tempfile
 import unittest
 import uuid
 
-import ga4gh.datamodel as datamodel
+import ga4gh.server.datamodel as datamodel
 
 
 class TestFileHandleCache(datamodel.PysamFileHandleCache, unittest.TestCase):

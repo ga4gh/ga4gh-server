@@ -1,2 +1,2 @@
 [flake8]
-exclude = ga4gh/*_pb2.py,ga4gh/datamodel/obo_parser.py,docs,ez_setup.py
+exclude = ga4gh/server/datamodel/obo_parser.py,docs,ez_setup.py
