@@ -8,10 +8,10 @@ from __future__ import unicode_literals
 import os
 import unittest
 
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.variants as variants
-import ga4gh.exceptions as exceptions
-import ga4gh.protocol as protocol
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.protocol as protocol
 
 
 class FaultyVariantDataTest(unittest.TestCase):

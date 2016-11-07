@@ -21,15 +21,15 @@ import oic
 import oic.oauth2
 import oic.oic.message as message
 import requests
-
-import ga4gh
-import ga4gh.backend as backend
-import ga4gh.datamodel as datamodel
-import ga4gh.protocol as protocol
-import ga4gh.exceptions as exceptions
-import ga4gh.datarepo as datarepo
 import logging
 from logging import StreamHandler
+
+import ga4gh.server
+import ga4gh.server.backend as backend
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.protocol as protocol
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.datarepo as datarepo
 
 
 MIMETYPE = "application/json"
@@ -121,7 +121,7 @@ class ServerStatus(object):
         """
         Returns the software version of this server.
         """
-        return ga4gh.__version__
+        return ga4gh.server.__version__
 
     def getUrls(self):
         """
@@ -193,7 +193,7 @@ def reset():
     Resets the flask app; used in testing
     """
     app.config.clear()
-    configStr = 'ga4gh.serverconfig:FlaskDefaultConfig'
+    configStr = 'ga4gh.server.serverconfig:FlaskDefaultConfig'
     app.config.from_object(configStr)
 
 
@@ -264,7 +264,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     file_handler = StreamHandler()
     file_handler.setLevel(logging.WARNING)
     app.logger.addHandler(file_handler)
-    configStr = 'ga4gh.serverconfig:{0}'.format(baseConfig)
+    configStr = 'ga4gh.server.serverconfig:{0}'.format(baseConfig)
     app.config.from_object(configStr)
     if os.environ.get('GA4GH_CONFIGURATION') is not None:
         app.config.from_envvar('GA4GH_CONFIGURATION')

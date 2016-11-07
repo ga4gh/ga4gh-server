@@ -1,10 +1,8 @@
 """
-Reference implementation of the GA4GH APIs.
+GA4GH server
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
-__version__ = "undefined"
-try:
-    from . import _version
-    __version__ = _version.version
-except ImportError:
-    pass
+__import__('pkg_resources').declare_namespace(__name__)

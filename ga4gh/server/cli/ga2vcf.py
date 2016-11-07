@@ -5,11 +5,11 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh.cli as cli
-import ga4gh.converters as converters
+import ga4gh.server.cli as cli
+import ga4gh.server.converters as converters
 
-import ga4gh_common.cli as common_cli
-import ga4gh_client.cli as cli_client
+import ga4gh.common.cli as common_cli
+import ga4gh.client.cli as cli_client
 
 
 class Ga2VcfRunner(cli_client.SearchVariantsRunner):

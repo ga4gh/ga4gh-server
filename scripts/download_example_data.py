@@ -17,17 +17,17 @@ import urllib2
 
 import pysam
 
-import ga4gh_common.utils as utils
+import ga4gh.common.utils as utils
 import glue
 
 glue.ga4ghImportGlue()
 
 # We need to turn off QA because of the import glue
-import ga4gh.datarepo as datarepo  # NOQA
-import ga4gh.datamodel.references as references  # NOQA
-import ga4gh.datamodel.datasets as datasets  # NOQA
-import ga4gh.datamodel.variants as variants  # NOQA
-import ga4gh.datamodel.reads as reads  # NOQA
+import ga4gh.server.datarepo as datarepo  # NOQA
+import ga4gh.server.datamodel.references as references  # NOQA
+import ga4gh.server.datamodel.datasets as datasets  # NOQA
+import ga4gh.server.datamodel.variants as variants  # NOQA
+import ga4gh.server.datamodel.reads as reads  # NOQA
 
 
 class ChromMinMax(object):
