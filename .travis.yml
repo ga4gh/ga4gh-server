@@ -8,6 +8,10 @@ cache:
     - $HOME/.cache/pip
 
 install:
+# test that development works
+  - pip install -r dev-requirements.txt
+  - python server_dev.py --version
+
   - pip install pip --upgrade
 # RDFLib requres html5lib;  html5lib requires setuptools version 18.5 or above;
   - pip install setuptools==25.1.0
@@ -21,9 +25,7 @@ install:
   - ga4gh_repo --version
 
 before_script:
-  - pip install -r dev-requirements.txt
   - python scripts/build_test_data.py 
-
 
 # run_tests.py runs everything under the script: tag so only put commands
 # under it that we want to run (and want to be able to run) as local tests
