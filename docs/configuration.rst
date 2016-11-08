@@ -43,7 +43,7 @@ file path. This is the first command that must be issued
 when creating a new GA4GH repository.
 
 .. argparse::
-    :module: ga4gh.cli.repomanager
+    :module: ga4gh.server.cli.repomanager
     :func: getRepoManagerParser
     :prog: ga4gh_repo
     :path: init
@@ -69,7 +69,7 @@ understand the structure of the repository that they are managing.
    of this command should improve considerably in the near future.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: list
@@ -99,7 +99,7 @@ well in their repository.
    of this command should improve considerably in the near future.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: verify
@@ -121,7 +121,7 @@ of ReadGroupSets, VariantSets, VariantAnnotationSets and FeatureSets. Each
 dataset has a name, which is used to identify it in the repository manager.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-dataset
@@ -149,7 +149,7 @@ number of metadata values (.e.g. ``ncbiTaxonId``) which can be set
 using command line options.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-referenceset
@@ -175,7 +175,7 @@ Adds a new biosample to the repository. The biosample argument is
 a JSON document according to the GA4GH JSON schema.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-biosample
@@ -198,7 +198,7 @@ Adds a new individual to the repository. The individual argument is
 a JSON document following the GA4GH JSON schema.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-individual
@@ -224,7 +224,7 @@ to ontology IDs. Sequence ontology definitions can be downloaded from
 the `Sequence Ontology site <https://github.com/The-Sequence-Ontology/SO-Ontologies>`_.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-ontology
@@ -254,7 +254,7 @@ provided using the ``-I`` option.
 .. todo:: Document adding VariantAnnotationSets using the -a option.
 
 .. argparse::
-    :module: ga4gh.cli.repomanager
+    :module: ga4gh.server.cli.repomanager
     :func: getRepoManagerParser
     :prog: ga4gh_repo
     :path: add-variantset
@@ -324,7 +324,7 @@ then the readgroup set will be associated with it automatically. If it does not
 name of the reference set using the ``--referenceSetName`` option.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-readgroupset
@@ -372,7 +372,7 @@ init-rnaquantificationset
 Initializes a rnaquantification set.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: init-rnaquantificationset
@@ -393,7 +393,7 @@ init-rnaquantificationset
 Initializes a rnaquantification set.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: init-rnaquantificationset
@@ -416,7 +416,7 @@ Adds a rnaquantification to a RNA quantification set.
 RNA quantification formats supported are currently kallisto and RSEM.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-rnaquantification
@@ -443,7 +443,7 @@ When the desired RNA quantification have been added to the set, use this command
 to add them to the registry.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-rnaquantificationset
@@ -469,7 +469,7 @@ Clinical Genomics Knowledge Base http://nif-crawler.neuinfo.org/monarch/ttl/cgd.
 published by the Monarch project, is the supported format for Evidence.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: add-phenotypeassociationset
@@ -491,7 +491,7 @@ Removes a dataset from the repository and recursively removes all
 objects (ReadGroupSets, VariantSets, etc) within this dataset.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-dataset
@@ -515,7 +515,7 @@ to remove a reference set that is referenced by other objects in the
 repository will result in an error.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-referenceset
@@ -537,7 +537,7 @@ remove-biosample
 Removes a biosample from the repository.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-biosample
@@ -559,7 +559,7 @@ remove-individual
 Removes an individual from the repository.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-individual
@@ -583,7 +583,7 @@ to remove an ontology that is referenced by other objects in the
 repository will result in an error.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-ontology
@@ -606,7 +606,7 @@ Removes a variant set from the repository. This also deletes all
 associated call sets and variant annotation sets from the repository.
 
 .. argparse::
-    :module: ga4gh.cli.repomanager
+    :module: ga4gh.server.cli.repomanager
     :func: getRepoManagerParser
     :prog: ga4gh_repo
     :path: remove-variantset
@@ -628,7 +628,7 @@ remove-readgroupset
 Removes a read group set from the repository.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-readgroupset
@@ -650,7 +650,7 @@ remove-rnaquantificationset
 Removes a rna quantification set from the repository.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-rnaquantificationset
@@ -672,7 +672,7 @@ remove-phenotypeassociationset
 Removes an rdf object store.
 
 .. argparse::
-   :module: ga4gh.cli.repomanager
+   :module: ga4gh.server.cli.repomanager
    :func: getRepoManagerParser
    :prog: ga4gh_repo
    :path: remove-phenotypeassociationset

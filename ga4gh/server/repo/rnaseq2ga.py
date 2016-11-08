@@ -6,7 +6,7 @@ import sqlite3
 import csv
 import uuid
 
-import ga4gh.exceptions as exceptions
+import ga4gh.server.exceptions as exceptions
 
 
 SUPPORTED_RNA_INPUT_FORMATS = ["cufflinks", "kallisto", "rsem"]

@@ -12,7 +12,7 @@ import glob
 import json
 import os
 
-import ga4gh.exceptions as exceptions
+import ga4gh.server.exceptions as exceptions
 
 
 class PysamFileHandleCache(object):

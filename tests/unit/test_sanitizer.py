@@ -7,8 +7,8 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.datamodel as datamodel
-import ga4gh.exceptions as exceptions
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.exceptions as exceptions
 
 
 class TestPysamSanitizer(datamodel.PysamDatamodelMixin, unittest.TestCase):

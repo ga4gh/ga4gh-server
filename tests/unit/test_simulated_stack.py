@@ -10,12 +10,12 @@ from __future__ import unicode_literals
 import unittest
 import logging
 import random
-import ga4gh.datamodel.reads as reads
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.sequence_annotations as sequence_annotations
-import ga4gh.frontend as frontend
-import ga4gh.protocol as protocol
+import ga4gh.server.datamodel.reads as reads
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.frontend as frontend
+import ga4gh.server.protocol as protocol
 
 
 class TestSimulatedStack(unittest.TestCase):

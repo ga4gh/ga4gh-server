@@ -12,11 +12,11 @@ import random
 
 import pysam
 
-import ga4gh.datamodel as datamodel
-import ga4gh.protocol as protocol
-import ga4gh.exceptions as exceptions
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.protocol as protocol
+import ga4gh.server.exceptions as exceptions
 
-import ga4gh_schemas.pb as pb
+import ga4gh.schemas.pb as pb
 
 
 DEFAULT_REFERENCESET_NAME = "Default"

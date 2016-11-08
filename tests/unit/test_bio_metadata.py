@@ -7,12 +7,12 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.exceptions as exceptions
-import ga4gh.datamodel.bio_metadata as bioMetadata
-import ga4gh.protocol as protocol
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.exceptions as exceptions
+import ga4gh.server.datamodel.bio_metadata as bioMetadata
+import ga4gh.server.protocol as protocol
 
-import ga4gh_schemas.pb as pb
+import ga4gh.schemas.pb as pb
 
 
 class TestIndividuals(unittest.TestCase):

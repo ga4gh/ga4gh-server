@@ -14,29 +14,29 @@ import google.protobuf.json_format as json_format
 import google.protobuf.message as message
 import google.protobuf.struct_pb2 as struct_pb2
 
-import ga4gh_schemas.pb as pb
+import ga4gh.schemas.pb as pb
 
-from ga4gh_schemas._protocol_version import version  # noqa
-from ga4gh_schemas.ga4gh.common_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.assay_metadata_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.metadata_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.metadata_service_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.read_service_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.reads_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.reference_service_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.references_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.variant_service_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.variants_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.allele_annotations_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.allele_annotation_service_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.sequence_annotations_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.sequence_annotation_service_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.bio_metadata_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.bio_metadata_service_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.genotype_phenotype_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.genotype_phenotype_service_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.rna_quantification_pb2 import *  # noqa
-from ga4gh_schemas.ga4gh.rna_quantification_service_pb2 import *  # noqa
+from ga4gh.schemas._protocol_version import version  # noqa
+from ga4gh.schemas.ga4gh.common_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.assay_metadata_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.metadata_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.metadata_service_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.read_service_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.reads_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.reference_service_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.references_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.variant_service_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.variants_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.allele_annotations_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.allele_annotation_service_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.sequence_annotations_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.sequence_annotation_service_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.bio_metadata_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.bio_metadata_service_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.genotype_phenotype_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.genotype_phenotype_service_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.rna_quantification_pb2 import *  # noqa
+from ga4gh.schemas.ga4gh.rna_quantification_service_pb2 import *  # noqa
 
 
 # A map of response objects to the name of the attribute used to

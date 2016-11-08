@@ -15,7 +15,7 @@ from __future__ import unicode_literals
 import server_test
 import client
 
-import ga4gh.datarepo as datarepo
+import ga4gh.server.datarepo as datarepo
 
 
 class TestGestalt(server_test.ServerTest):

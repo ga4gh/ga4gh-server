@@ -5,12 +5,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh.datarepo as datarepo
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.sequence_annotations as sequence_annotations
-import ga4gh.protocol as protocol
+import ga4gh.server.datarepo as datarepo
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
 

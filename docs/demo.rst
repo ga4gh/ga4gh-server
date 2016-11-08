@@ -185,7 +185,7 @@ performed above, we can use the following code:
 
     from __future__ import print_function
 
-    import ga4gh_client.client as client
+    import ga4gh.client.client as client
 
     httpClient = client.HttpClient("http://localhost:8000")
     # Get the datasets on the server.
@@ -439,6 +439,6 @@ client's libraries for use in your own programs:
 
 .. code-block:: python
 
-    >>> import ga4gh_client.client as client
+    >>> import ga4gh.client.client as client
     >>> client.HttpClient
     <class 'ga4gh_client.client.HttpClient'>

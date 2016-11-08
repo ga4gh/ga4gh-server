@@ -9,8 +9,8 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.datamodel.sequence_annotations as sequence_annotations
-import ga4gh.datamodel.datasets as datasets
+import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel.datasets as datasets
 
 
 class TestAbstractFeatureSet(unittest.TestCase):

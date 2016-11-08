@@ -10,10 +10,10 @@ import os
 import tempfile
 import unittest
 
-import ga4gh.cli.repomanager as cli_repomanager
+import ga4gh.server.cli.repomanager as cli_repomanager
 import tests.paths as paths
 
-import ga4gh.protocol as protocol
+import ga4gh.server.protocol as protocol
 
 
 class RepoManagerEndToEndTest(unittest.TestCase):
@@ -111,9 +111,13 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         datasetName = 'dataset1'
         self._runCmd("init")
         self._runCmd("add-dataset", datasetName)
-        with mock.patch('ga4gh.cli.repomanager.getRawInput', lambda x: 'N'):
+        with mock.patch(
+                'ga4gh.server.cli.repomanager.getRawInput',
+                lambda x: 'N'):
             self._runCmd("remove-dataset", datasetName)
-        with mock.patch('ga4gh.cli.repomanager.getRawInput', lambda x: 'y'):
+        with mock.patch(
+                'ga4gh.server.cli.repomanager.getRawInput',
+                lambda x: 'y'):
             self._runCmd("remove-dataset", datasetName)
             with self.assertRaises(SystemExit):
                 self._runCmd("remove-dataset", datasetName)

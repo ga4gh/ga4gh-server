@@ -10,12 +10,12 @@ import glob
 
 import vcf
 
-import ga4gh.datamodel as datamodel
-import ga4gh.datamodel.datasets as datasets
-import ga4gh.datamodel.variants as variants
-import ga4gh.datamodel.references as references
-import ga4gh.datamodel.ontologies as ontologies
-import ga4gh.protocol as protocol
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.datamodel.datasets as datasets
+import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.datamodel.references as references
+import ga4gh.server.datamodel.ontologies as ontologies
+import ga4gh.server.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
 
