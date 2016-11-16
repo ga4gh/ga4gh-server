@@ -32,6 +32,8 @@ import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datarepo as datarepo
 
+import ga4gh.server.auth as auth
+
 
 MIMETYPE = "application/json"
 SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
@@ -293,6 +295,8 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         app.cache_dir, threshold=5000, default_timeout=600, mode=384)
     app.oidcClient = None
     app.myPort = port
+    if app.config.get('AUTH0_ENABLED'):
+        map(auth.authorize_email, app.config.get('USERS','').split(','))
     if "OIDC_PROVIDER" in app.config:
         # The oic client. If we're testing, we don't want to verify
         # SSL certificates
@@ -515,6 +519,42 @@ class DisplayedRoute(object):
 def index():
     return flask.render_template('index.html', info=app.serverStatus)
 
+@app.route("/login")
+def login():
+    if app.config.get('AUTH0_ENABLED'):
+        return auth.render_login(
+            app=app,
+            scopes=app.config.get('AUTH0_SCOPES'),
+            redirect_uri=app.config.get('AUTH0_CALLBACK_URL'),
+            domain=app.config.get('AUTH0_HOST'),
+            client_id=app.config.get('AUTH0_CLIENT_ID'))
+    else:
+        return "Not found" # TODO 404
+
+@app.route('/callback')
+def callback_handling():
+  if app.config.get('AUTH0_ENABLED'):
+      return auth.callback_maker(
+          domain=app.config.get('AUTH0_HOST'),
+          client_id=app.config.get('AUTH0_CLIENT_ID'),
+          client_secret=app.config.get('AUTH0_CLIENT_SECRET'),
+          redirect_uri=app.config.get('AUTH0_CALLBACK_URL'))()
+  else:
+      return "Not found" # TODO 404
+
+requires_auth = auth.auth_decorator(app)
+
+@app.route("/logout")
+@requires_auth
+@cors.cross_origin(headers=['Content-Type', 'Authorization'])
+def logout():
+  key = flask.session['key']
+  auth.logout()
+  return flask.redirect('https://{}/v2/logout?access_token={}&?client_id={}'.format(
+      app.config.get('AUTH0_HOST'),
+      key,
+      app.config.get('AUTH0_CLIENT_ID'),
+      app.config.get('AUTH0_CALLBACK_URL')))
 
 @app.route('/favicon.ico')
 @app.route('/robots.txt')
@@ -522,8 +562,8 @@ def robots():
     return flask.send_from_directory(
         app.static_folder, flask.request.path[1:])
 
-
 @DisplayedRoute('/references/<id>')
+@requires_auth
 def getReference(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetReference)
@@ -596,6 +636,7 @@ def searchVariantAnnotations():
 
 
 @DisplayedRoute('/datasets/search', postMethod=True)
+@requires_auth
 def searchDatasets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchDatasets)
@@ -711,6 +752,8 @@ def getFeatureSet(id):
 def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
+
+
 
 
 @DisplayedRoute(

@@ -94,6 +94,15 @@ class GoogleOidcConfig(ProductionConfig):
     OIDC_CLIENT_ID = "XXX"
     OIDC_CLIENT_SECRET = "XXX"
 
+class Auth0Config(DevelopmentConfig):
+    AUTH0_ENABLED=True
+    AUTH0_SCOPES='openid email'
+    AUTH0_CALLBACK_URL="http://localhost:8000/callback"
+    AUTH0_HOST="david4096.auth0.com"
+    AUTH0_CLIENT_ID="7PyT5eQRRdaSxgM4hEYz04wzncNiXpqH"
+    AUTH0_CLIENT_SECRET="2OkzpU7LMYMllXf7cd027WFcbBpb4b_p3iNRaUfsYOQgxiYM_puwRxCddCRy_RtV"
+    USERS="davidcs@ucsc.edu,your@email.com"
+
 
 class TestConfig(BaseConfig):
     """
