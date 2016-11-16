@@ -122,6 +122,7 @@ def benchmarkOneQuery(request, repeatLimit=3, pageLimit=3):
     # return sum(times[2:])/len(times[2:])
     return min(times)
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="GA4GH reference server benchmark")
