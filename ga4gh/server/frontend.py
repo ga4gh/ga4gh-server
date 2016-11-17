@@ -643,24 +643,28 @@ def searchDatasets():
 
 
 @DisplayedRoute('/featuresets/search', postMethod=True)
+@requires_auth
 def searchFeatureSets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatureSets)
 
 
 @DisplayedRoute('/features/search', postMethod=True)
+@requires_auth
 def searchFeatures():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatures)
 
 
 @DisplayedRoute('/biosamples/search', postMethod=True)
+@requires_auth
 def searchBioSamples():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchBioSamples)
 
 
 @DisplayedRoute('/individuals/search', postMethod=True)
+@requires_auth
 def searchIndividuals():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchIndividuals)
@@ -669,6 +673,7 @@ def searchIndividuals():
 @DisplayedRoute(
     '/biosamples/<no(search):id>',
     pathDisplay='/biosamples/<id>')
+@requires_auth
 def getBioSample(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetBioSample)
@@ -677,24 +682,28 @@ def getBioSample(id):
 @DisplayedRoute(
     '/individuals/<no(search):id>',
     pathDisplay='/individuals/<id>')
+@requires_auth
 def getIndividual(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetIndividual)
 
 
 @DisplayedRoute('/rnaquantificationsets/search', postMethod=True)
+@requires_auth
 def searchRnaQuantificationSets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchRnaQuantificationSets)
 
 
 @DisplayedRoute('/rnaquantifications/search', postMethod=True)
+@requires_auth
 def searchRnaQuantifications():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchRnaQuantifications)
 
 
 @DisplayedRoute('/expressionlevels/search', postMethod=True)
+@requires_auth
 def searchExpressionLevels():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchExpressionLevels)
@@ -703,6 +712,7 @@ def searchExpressionLevels():
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
+@requires_auth
 def getVariantSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetVariantSet)
@@ -711,6 +721,7 @@ def getVariantSet(id):
 @DisplayedRoute(
     '/variants/<no(search):id>',
     pathDisplay='/variants/<id>')
+@requires_auth
 def getVariant(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetVariant)
@@ -719,12 +730,14 @@ def getVariant(id):
 @DisplayedRoute(
     '/readgroupsets/<no(search):id>',
     pathDisplay='/readgroupsets/<id>')
+@requires_auth
 def getReadGroupSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetReadGroupSet)
 
 
 @DisplayedRoute('/readgroups/<id>')
+@requires_auth
 def getReadGroup(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetReadGroup)
@@ -733,6 +746,7 @@ def getReadGroup(id):
 @DisplayedRoute(
     '/callsets/<no(search):id>',
     pathDisplay='/callsets/<id>')
+@requires_auth
 def getCallSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetCallSet)
@@ -741,6 +755,7 @@ def getCallSet(id):
 @DisplayedRoute(
     '/featuresets/<no(search):id>',
     pathDisplay='/featuresets/<id>')
+@requires_auth
 def getFeatureSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeatureSet)
@@ -749,6 +764,7 @@ def getFeatureSet(id):
 @DisplayedRoute(
     '/features/<no(search):id>',
     pathDisplay='/features/<id>')
+@requires_auth
 def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
@@ -759,6 +775,7 @@ def getFeature(id):
 @DisplayedRoute(
     '/rnaquantificationsets/<no(search):id>',
     pathDisplay='/rnaquantificationsets/<id>')
+@requires_auth
 def getRnaQuantificationSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetRnaQuantificationSet)
@@ -767,6 +784,7 @@ def getRnaQuantificationSet(id):
 @DisplayedRoute(
     '/rnaquantifications/<no(search):id>',
     pathDisplay='/rnaquantifications/<id>')
+@requires_auth
 def getRnaQuantification(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetRnaQuantification)
@@ -775,6 +793,7 @@ def getRnaQuantification(id):
 @DisplayedRoute(
     '/expressionlevels/<no(search):id>',
     pathDisplay='/expressionlevels/<id>')
+@requires_auth
 def getExpressionLevel(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetExpressionLevel)
@@ -844,6 +863,7 @@ def oidcCallback():
 @DisplayedRoute(
     '/datasets/<no(search):id>',
     pathDisplay='/datasets/<id>')
+@requires_auth
 def getDataset(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetDataset)
@@ -852,18 +872,21 @@ def getDataset(id):
 @DisplayedRoute(
     '/variantannotationsets/<no(search):id>',
     pathDisplay='/variantannotationsets/<id>')
+@requires_auth
 def getVariantAnnotationSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetVariantAnnotationSet)
 
 
 @DisplayedRoute('/phenotypes/search', postMethod=True)
+@requires_auth
 def searchPhenotypes():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchPhenotypes)
 
 
 @DisplayedRoute('/featurephenotypeassociations/search', postMethod=True)
+@requires_auth
 def searchGenotypePhenotypes():
     return handleFlaskPostRequest(
         flask.request,
@@ -871,6 +894,7 @@ def searchGenotypePhenotypes():
 
 
 @DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+@requires_auth
 def searchPhenotypeAssociationSets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchPhenotypeAssociationSets)
