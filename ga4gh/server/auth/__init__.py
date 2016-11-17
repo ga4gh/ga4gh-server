@@ -1,3 +1,10 @@
+"""
+Helps to implement authentication and authorization using Auth0.
+
+Offers functions for generating the view functions needed to implement Auth0,
+a login screen, callback maker, and a function decorator for protecting
+endpoints.
+"""
 import flask
 import requests
 import functools
@@ -9,6 +16,7 @@ import jwt
 from werkzeug.contrib.cache import SimpleCache
 cache = SimpleCache()
 
+
 def authenticate(error):
     """
     Helper function for generating unauthorized responses.
@@ -19,13 +27,15 @@ def authenticate(error):
     resp.status_code = 401
     return resp
 
+
 def authorize_email(email='davidcs@ucsc.edu'):
     """
-    Adds an email address to the list of authorized users stored in an
+    Adds an email address to the list of authorized emails stored in an
     ephemeral cache.
     :param email:
     """
     cache.set(email, {'authorized': True})
+
 
 def auth_decorator(app=None):
     """
@@ -55,29 +65,30 @@ def auth_decorator(app=None):
                 client_secret = app.config.get("AUTH0_CLIENT_SECRET")
                 auth = flask.request.headers.get('Authorization', None)
                 if not auth:
-                  return authenticate(
-                      {'code': 'authorization_header_missing',
-                       'description': 'Authorization header is expected'})
+                    return authenticate(
+                        {'code': 'authorization_header_missing',
+                         'description': 'Authorization header is expected'})
                 parts = auth.split()
 
                 if parts[0].lower() != 'bearer':
-                  return authenticate(
-                      {'code': 'invalid_header',
-                       'description': 'Authorization header must'
-                                      ' start with Bearer'})
+                    return authenticate(
+                        {'code': 'invalid_header',
+                         'description': 'Authorization header must'
+                                        ' start with Bearer'})
                 elif len(parts) == 1:
-                  return authenticate(
-                      {'code': 'invalid_header',
-                       'description': 'Token not found'})
+                    return authenticate(
+                        {'code': 'invalid_header',
+                         'description': 'Token not found'})
                 elif len(parts) > 2:
-                  return authenticate(
-                      {'code': 'invalid_header',
-                       'description': 'Authorization header must'
-                                      ' be Bearer + \s + token'})
+                    return authenticate(
+                        {'code': 'invalid_header',
+                         'description': 'Authorization header must'
+                                        ' be Bearer + \s + token'})
 
                 token = parts[1]
                 try:
-                    b64secret = client_secret.replace("_","/").replace("-","+")
+                    b64secret = client_secret.replace(
+                        "_", "/").replace("-", "+")
                     payload = jwt.decode(
                         token,
                         base64.b64decode(b64secret),
@@ -102,12 +113,13 @@ def auth_decorator(app=None):
                 flask._request_ctx_stack.top.current_user = user = payload
                 flask.session['key'] = token
                 # Now we need to make sure that on top of having a good token
-                # They are authorized, and if not kick out useful error messages
+                # They are authorized, and if not provide an error message
                 if not cache.get(user['email']):
                     message = '{} is not authorized to ' \
                               'access this resource'.format(user['email'])
                     return authenticate(
-                        {'code': 'Not authorized','description': message})
+                        {'code': 'Not authorized',
+                         'description': message})
                 if not cache.get(token):
                     return authenticate(
                         {'code': 'Not authorized',
@@ -117,6 +129,7 @@ def auth_decorator(app=None):
         return decorated
     return requires_auth
 
+
 def logout():
     """
     Logs out the current session by removing it from the cache.
@@ -125,11 +138,8 @@ def logout():
     flask.session.clear()
     return True
 
-def callback_maker(domain='david4096.auth0.com',
-                   client_id='7PyT5eQRRdaSxgM4hEYz04wzncNiXpqH',
-                   client_secret='2OkzpU7LMYMllXf7cd027WFcbBpb4b_'
-                                 'p3iNRaUfsYOQgxiYM_puwRxCddCRy_RtV',
-                   redirect_uri='http://localhost:5000/callback'):
+
+def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
     """
     This function will generate a view function that can be used to handle
     the return from Auth0. The "callback" is a redirected session from auth0
@@ -151,52 +161,53 @@ def callback_maker(domain='david4096.auth0.com',
     :return View function:
     """
     def callback_handling():
-      code = flask.request.args.get('code')
-      json_header = {'content-type': 'application/json'}
-      token_url = "https://{domain}/oauth/token".format(domain=domain)
-      token_payload = {
-        'client_id':     client_id,
-        'client_secret': client_secret,
-        'redirect_uri':  redirect_uri,
-        'code':          code,
-        'grant_type':    'authorization_code'
-      }
-      try:
-          token_info = requests.post(
-              token_url,
-              data=json.dumps(token_payload),
-              headers = json_header).json()
-          id_token = token_info['id_token']
-          access_token = token_info['access_token']
-      except Exception as e:
-          authenticate({'code': 'bad_callback',
+        code = flask.request.args.get('code')
+        json_header = {'content-type': 'application/json'}
+        token_url = "https://{domain}/oauth/token".format(domain=domain)
+        token_payload = {
+            'client_id':     client_id,
+            'client_secret': client_secret,
+            'redirect_uri':  redirect_uri,
+            'code':          code,
+            'grant_type':    'authorization_code'}
+        try:
+            token_info = requests.post(
+                token_url,
+                data=json.dumps(token_payload),
+                headers=json_header).json()
+            id_token = token_info['id_token']
+            access_token = token_info['access_token']
+        except Exception as e:
+            authenticate({'code': 'bad_callback',
                          'description': 'The callback from Auth0 did not'
                                         'include the expected tokens: \n'
                                         '{}'.format(e.message)})
 
-      try:
-          user_url = \
+        try:
+            user_url = \
               "https://{domain}/userinfo?access_token={access_token}".format(
                   domain=domain, access_token=access_token)
-          user_info = requests.get(user_url).json()
-          email = user_info['email']
-      except Exception as e:
-            authenticate({'code': 'no_user_profile',
+            user_info = requests.get(user_url).json()
+            email = user_info['email']
+        except Exception as e:
+            authenticate(
+                {'code': 'no_user_profile',
                  'description': 'The user profile from Auth0 did not contain'
                                 'the expected data: \n'
                                 '{}'.format(e.message)})
 
-      user = cache.get(email)
-      if user and user['authorized']:
-          # TODO set timeout in cache here
-          cache.set(id_token, user_info)
+        user = cache.get(email)
+        if user and user['authorized']:
+            # TODO set timeout in cache here
+            cache.set(id_token, user_info)
 
-      # Redirect to a page that presents the code.
-      # TODO make the homepage show the code
-      return flask.redirect('/?code={}'.format(id_token))
+        # Redirect to a page that presents the code.
+        return flask.redirect('/?code={}'.format(id_token))
     return callback_handling
 
-def render_login(app=None, scopes='', redirect_uri='', domain='', client_id=''):
+
+def render_login(
+        app=None, scopes='', redirect_uri='', domain='', client_id=''):
     """
     This function will generate a view function that can be used to handle
     the return from Auth0. The "callback" is a redirected session from auth0
@@ -224,6 +235,7 @@ def render_login(app=None, scopes='', redirect_uri='', domain='', client_id=''):
         domain=domain,
         client_id=client_id)
 
+
 LOGIN_HTML = """<html>
 <head>
 
@@ -235,7 +247,7 @@ LOGIN_HTML = """<html>
           redirectUrl: '{{ redirect_uri }}',
           responseType: 'code',
           params: {
-            scope: '{{ scopes }}' // Learn about scopes: https://auth0.com/docs/scopes
+            scope: '{{ scopes }}' // https://auth0.com/docs/scopes
           }
         }
       });

@@ -7,7 +7,27 @@
         <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     </head>
-    <body><div class="container">
+    <body>
+        <script>
+            function getParameterByName(name, url) {
+                // http://stackoverflow.com/questions/901115/how-can-i-get-query-string-values-in-javascript
+                if (!url) {
+                  url = window.location.href;
+                }
+                name = name.replace(/[\[\]]/g, "\\$&");
+                var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                    results = regex.exec(url);
+                if (!results) return null;
+                if (!results[2]) return '';
+                return decodeURIComponent(results[2].replace(/\+/g, " "));
+            }
+            if (getParameterByName('code')) {
+                document.write("<center><h2>API key</h2><textarea cols=120 rows=5 onClick='this.select()'>" +
+                    getParameterByName('code') + "</textarea></center>");
+            }
+
+        </script>
+    <div class="container">
         <h2>GA4GH reference server {{ info.getServerVersion() }}</h2>
         <div>
             <h3>Protocol version {{ info.getProtocolVersion() }}</h3>
