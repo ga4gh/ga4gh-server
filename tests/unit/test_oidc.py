@@ -52,6 +52,7 @@ def mockAuthorizationRequest(self, request_args, state):
 def mockRndstr(size):
     return RANDSTR
 
+
 ARESP = {'scope': u'openid profile', 'state': RANDSTR,
          'code': OICRESPONSE['code']}
 

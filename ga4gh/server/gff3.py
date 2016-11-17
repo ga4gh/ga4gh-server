@@ -35,6 +35,7 @@ class GFF3Exception(Exception):
                 message = "{}: {}".format(fileName, message)
         super(GFF3Exception, self).__init__(message)
 
+
 # characters forcing encode for columns
 _encodeColReStr = "\t|\n|\r|%|[\x00-\x1F]|\x7f"
 _encodeColRe = re.compile(_encodeColReStr)
