@@ -518,3 +518,17 @@ class TestFrontend(unittest.TestCase):
             protocol.SearchRnaQuantificationSetsResponse,
             "rna_quantification_sets",
             self.rnaQuantificationSetId)
+
+    def testNoCallback(self):
+        response = self.sendGetRequest("callback")
+        self.assertEqual(
+            response.status_code,
+            404, "Ensure that when Auth0 is turned off the callback"
+                 "URL returns a 404 but got {}".format(response.status_code))
+
+    def testNoLogin(self):
+        response = self.sendGetRequest("login")
+        self.assertEqual(
+            response.status_code,
+            404, "Ensure that when Auth0 is turned off the callback"
+                 "URL returns a 404 but got {}".format(response.status_code))

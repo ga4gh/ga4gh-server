@@ -162,6 +162,11 @@ def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
     """
     def callback_handling():
         code = flask.request.args.get('code')
+        if code is None:
+            return authenticate(
+                {'code': 'bad_code',
+                 'description': 'The callback expects a well '
+                                'formed code, {} was provided'.format(code)})
         json_header = {'content-type': 'application/json'}
         token_url = "https://{domain}/oauth/token".format(domain=domain)
         token_payload = {
@@ -178,7 +183,7 @@ def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
             id_token = token_info['id_token']
             access_token = token_info['access_token']
         except Exception as e:
-            authenticate({'code': 'bad_callback',
+            return authenticate({'code': 'bad_callback',
                          'description': 'The callback from Auth0 did not'
                                         'include the expected tokens: \n'
                                         '{}'.format(e.message)})
@@ -190,7 +195,7 @@ def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
             user_info = requests.get(user_url).json()
             email = user_info['email']
         except Exception as e:
-            authenticate(
+            return authenticate(
                 {'code': 'no_user_profile',
                  'description': 'The user profile from Auth0 did not contain'
                                 'the expected data: \n'
