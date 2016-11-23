@@ -10,7 +10,8 @@
 
 ga4gh-common==0.0.5
 ga4gh-schemas==0.0.8
-ga4gh-client==0.0.3
+#ga4gh-client==0.0.3
+git+git://github.com/david4096/ga4gh-client.git@protobuf31#egg=ga4gh-client
 
 Werkzeug==0.11.5
 MarkupSafe==0.23
@@ -40,7 +41,7 @@ pyjwkest==1.0.1
 # prefix due to a setuptools bug.
 Flask-Cors==2.0.1
 Flask==0.10.1
-protobuf==3.0.0b3
+protobuf==3.1
 humanize==0.5.1
 pysam==0.9.0
 requests==2.7.0
