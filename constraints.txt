@@ -1,0 +1,2 @@
+git+git://github.com/david4096/ga4gh-client.git@protobuf31#egg=ga4gh_client
+git+git://github.com/david4096/schemas.git@protobuf31#egg=ga4gh_schemas

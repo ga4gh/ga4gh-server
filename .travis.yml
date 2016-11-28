@@ -6,13 +6,14 @@ sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
+    - /tmp/proto3.1.0
 
 install:
   - pip install pip --upgrade
 # RDFLib requres html5lib;  html5lib requires setuptools version 18.5 or above;
   - pip install setuptools==25.1.0
   - python setup.py sdist
-  - pip install dist/ga4gh*.tar.gz
+  - pip install dist/ga4gh*.tar.gz  -c constraints.txt
 # every installable in setup.py's entry_points should be tested here
   - ga4gh_configtest --version
   - ga4gh_server --version
@@ -21,9 +22,12 @@ install:
   - ga4gh_repo --version
 
 before_script:
-  - pip install -r dev-requirements.txt
+  - pip install -r dev-requirements.txt -c constraints.txt
   - python scripts/build_test_data.py 
-
+    
+before_install:
+    - bash tools/travis-install-protoc.sh 3.1.0
+    - export PATH=/tmp/proto3.1.0/bin:$PATH
 
 # run_tests.py runs everything under the script: tag so only put commands
 # under it that we want to run (and want to be able to run) as local tests
