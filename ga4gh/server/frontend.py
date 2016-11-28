@@ -279,7 +279,10 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.serverStatus = ServerStatus()
 
     app.backend = _configure_backend(app)
-    app.secret_key = os.urandom(SECRET_KEY_LENGTH)
+    if 'SECRET_KEY' in app.config:
+        app.secret_key = app.config['SECRET_KEY']
+    else:
+        app.secret_key = 'super_secret_CHANGE_ME'
     app.oidcClient = None
     app.tokenMap = None
     app.myPort = port
