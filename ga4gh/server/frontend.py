@@ -307,7 +307,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         # If we are testing, then we allow the automatic creation of a
         # redirect uri if none is configured
         redirectUri = app.config.get('OIDC_REDIRECT_URI')
-        if redirectUri is None and 'TESTING' in app.config:
+        if redirectUri is None and app.config.get('TESTING'):
             redirectUri = 'https://{0}:{1}/oauth2callback'.format(
                 socket.gethostname(), app.myPort)
         app.oidcClient.redirect_uris = [redirectUri]
@@ -317,7 +317,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
 
         # We only support dynamic registration while testing.
         if ('registration_endpoint' in app.oidcClient.provider_info and
-           'TESTING' in app.config):
+           app.config.get('TESTING')):
             app.oidcClient.register(
                 app.oidcClient.provider_info["registration_endpoint"],
                 redirect_uris=[redirectUri])
