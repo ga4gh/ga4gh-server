@@ -12,6 +12,7 @@ import datetime
 import socket
 import urlparse
 import functools
+import shelve
 
 import flask
 import flask.ext.cors as cors
@@ -279,19 +280,21 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.serverStatus = ServerStatus()
 
     app.backend = _configure_backend(app)
-    if 'SECRET_KEY' in app.config:
+    if app.config.get('SECRET_KEY'):
         app.secret_key = app.config['SECRET_KEY']
     else:
         app.secret_key = 'super_secret_CHANGE_ME'
+    if app.config.get('SESSION_DIRECTORY'):
+        app.session_dir = app.config['SESSION_DIRECTORY']
+    else:
+        app.session_dir = '/tmp'
     app.oidcClient = None
-    app.tokenMap = None
     app.myPort = port
     if "OIDC_PROVIDER" in app.config:
         # The oic client. If we're testing, we don't want to verify
         # SSL certificates
         app.oidcClient = oic.oic.Client(
             verify_ssl=('TESTING' not in app.config))
-        app.tokenMap = {}
         try:
             app.oidcClient.provider_config(app.config['OIDC_PROVIDER'])
         except requests.exceptions.ConnectionError:
@@ -434,7 +437,10 @@ def checkAuthentication():
     if flask.request.endpoint == 'oidcCallback':
         return
     key = flask.session.get('key') or flask.request.args.get('key')
-    if app.tokenMap.get(key) is None:
+    tokenMap = shelve.open(app.session_dir + '/session.db')
+    sessionStored = tokenMap.has_key(key)
+    tokenMap.close()
+    if not sessionStored:
         if 'key' in flask.request.args:
             raise exceptions.NotAuthenticatedException()
         else:
@@ -778,7 +784,9 @@ def oidcCallback():
         raise exceptions.NotAuthenticatedException()
     key = oic.oauth2.rndstr(SECRET_KEY_LENGTH)
     flask.session['key'] = key
-    app.tokenMap[key] = aresp["code"], respState, atrDict
+    tokenMap = shelve.open(app.session_dir + '/session.db')
+    tokenMap[key] = aresp["code"], respState, atrDict
+    tokenMap.close()
     # flask.url_for is broken. It relies on SERVER_NAME for both name
     # and port, and defaults to 'localhost' if not found. Therefore
     # we need to fix the returned url
