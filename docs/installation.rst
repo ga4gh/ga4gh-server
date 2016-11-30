@@ -62,8 +62,8 @@ Download and unpack the example data:
 
 .. code-block:: bash
 
-  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data-v4.5.tar
-  $ tar -xf ga4gh-example-data-v4.5.tar
+  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data_4.6.tar
+  $ tar -xf ga4gh-example-data_4.6.tar
 
 Create the WSGI file at ``/srv/ga4gh/application.wsgi`` and write the following
 contents:
