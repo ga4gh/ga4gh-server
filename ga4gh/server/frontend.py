@@ -282,14 +282,15 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.backend = _configure_backend(app)
     if app.config.get('SECRET_KEY'):
         app.secret_key = app.config['SECRET_KEY']
-    else:
-        app.secret_key = 'super_secret_CHANGE_ME'
+    elif app.config.get('OIDC_PROVIDER'):
+        raise exceptions.ConfigurationException(
+            'OIDC configuration requires a secret key')
     if app.config.get('CACHE_DIRECTORY'):
         app.cache_dir = app.config['CACHE_DIRECTORY']
     else:
         app.cache_dir = '/tmp/ga4gh'
     app.cache = FileSystemCache(
-        app.cache_dir, threshold=500, default_timeout=300, mode=384)
+        app.cache_dir, threshold=5000, default_timeout=600, mode=384)
     app.oidcClient = None
     app.myPort = port
     if "OIDC_PROVIDER" in app.config:
