@@ -41,6 +41,7 @@ app = flask.Flask(__name__)
 assert not hasattr(app, 'urls')
 app.urls = []
 
+
 class NoConverter(werkzeug.routing.BaseConverter):
     """
     A converter that allows the routing matching algorithm to not
@@ -287,7 +288,8 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         app.cache_dir = app.config['CACHE_DIRECTORY']
     else:
         app.cache_dir = '/tmp/ga4gh'
-    app.cache = FileSystemCache(app.cache_dir, threshold=500, default_timeout=300, mode=384)
+    app.cache = FileSystemCache(
+        app.cache_dir, threshold=500, default_timeout=300, mode=384)
     app.oidcClient = None
     app.myPort = port
     if "OIDC_PROVIDER" in app.config:
@@ -442,6 +444,7 @@ def checkAuthentication():
             raise exceptions.NotAuthenticatedException()
         else:
             return startLogin()
+
 
 def handleFlaskGetRequest(id_, flaskRequest, endpoint):
     """
