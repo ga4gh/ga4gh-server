@@ -109,7 +109,8 @@ class TestFrontendOidc(unittest.TestCase):
             "DATA_SOURCE": "simulated://",
             "OIDC_CLIENT_ID": "123",
             "OIDC_CLIENT_SECRET": RANDSTR,
-            "OIDC_PROVIDER": "http://auth.com"
+            "OIDC_PROVIDER": "http://auth.com",
+            "SECRET_KEY": "secret"
             # "DEBUG" : True
         }
         frontend.reset()
