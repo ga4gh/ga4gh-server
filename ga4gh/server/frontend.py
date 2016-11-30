@@ -12,7 +12,6 @@ import datetime
 import socket
 import urlparse
 import functools
-import shelve
 
 import flask
 import flask.ext.cors as cors
@@ -24,6 +23,7 @@ import oic.oic.message as message
 import requests
 import logging
 from logging import StreamHandler
+from werkzeug.contrib.cache import FileSystemCache
 
 import ga4gh.server
 import ga4gh.server.backend as backend
@@ -40,7 +40,6 @@ SECRET_KEY_LENGTH = 24
 app = flask.Flask(__name__)
 assert not hasattr(app, 'urls')
 app.urls = []
-
 
 class NoConverter(werkzeug.routing.BaseConverter):
     """
@@ -284,10 +283,11 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         app.secret_key = app.config['SECRET_KEY']
     else:
         app.secret_key = 'super_secret_CHANGE_ME'
-    if app.config.get('SESSION_DIRECTORY'):
-        app.session_dir = app.config['SESSION_DIRECTORY']
+    if app.config.get('CACHE_DIRECTORY'):
+        app.cache_dir = app.config['CACHE_DIRECTORY']
     else:
-        app.session_dir = '/tmp'
+        app.cache_dir = '/tmp/ga4gh'
+    app.cache = FileSystemCache(app.cache_dir, threshold=500, default_timeout=300, mode=384)
     app.oidcClient = None
     app.myPort = port
     if "OIDC_PROVIDER" in app.config:
@@ -437,15 +437,11 @@ def checkAuthentication():
     if flask.request.endpoint == 'oidcCallback':
         return
     key = flask.session.get('key') or flask.request.args.get('key')
-    tokenMap = shelve.open(app.session_dir + '/session.db')
-    sessionStored = tokenMap.has_key(key)
-    tokenMap.close()
-    if not sessionStored:
+    if key is None or not app.cache.get(key):
         if 'key' in flask.request.args:
             raise exceptions.NotAuthenticatedException()
         else:
             return startLogin()
-
 
 def handleFlaskGetRequest(id_, flaskRequest, endpoint):
     """
@@ -784,9 +780,8 @@ def oidcCallback():
         raise exceptions.NotAuthenticatedException()
     key = oic.oauth2.rndstr(SECRET_KEY_LENGTH)
     flask.session['key'] = key
-    tokenMap = shelve.open(app.session_dir + '/session.db')
-    tokenMap[key] = aresp["code"], respState, atrDict
-    tokenMap.close()
+    token_data = aresp["code"], respState, atrDict
+    app.cache.set(key, token_data)
     # flask.url_for is broken. It relies on SERVER_NAME for both name
     # and port, and defaults to 'localhost' if not found. Therefore
     # we need to fix the returned url
