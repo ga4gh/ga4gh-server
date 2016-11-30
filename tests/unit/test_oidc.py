@@ -181,7 +181,7 @@ class TestFrontendOidc(unittest.TestCase):
         with self.app as app:
             with app.session_transaction() as sess:
                 sess['key'] = 'xxx'
-            app.application.tokenMap['xxx'] = RANDSTR
+            app.application.cache.set('xxx', RANDSTR)
             result = app.get('/')
             self.assertEqual(result.status_code, 200)
             self.assertEqual("text/html", result.mimetype)
@@ -193,7 +193,7 @@ class TestFrontendOidc(unittest.TestCase):
         page
         """
         with self.app as app:
-            app.application.tokenMap['xxx'] = RANDSTR
+            app.application.cache.set('xxx', RANDSTR)
             result = app.get('/?key=xxx')
             self.assertEqual(result.status_code, 200)
             self.assertEqual("text/html", result.mimetype)
