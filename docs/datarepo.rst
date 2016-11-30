@@ -21,12 +21,6 @@ the variant set, the reference set it is defined by, and other information
 necessary to implement the GA4GH protocol. This registry architecture allows us
 a lot of flexibility in the sources of data that we can use.
 
-.. todo:: Architecture diagram showing the registry DB, the server, the
-    data container objects (like HtslibVariantSet, etc), etc.
-
-.. todo:: Explain how the datamodel is structured and how names are
-    used as local identifiers.
-
 ++++++++++++
 Command Line
 ++++++++++++
@@ -248,8 +242,6 @@ providing a single directory argument that contains indexed VCF files.
 If remote URLs are used then index files in the local file system must be
 provided using the ``-I`` option.
 
-.. todo:: Document adding VariantAnnotationSets using the -a option.
-
 .. argparse::
     :module: ga4gh.server.cli.repomanager
     :func: getRepoManagerParser
@@ -270,10 +262,6 @@ corresponding indexes for these files. We associate the reference set named
 ``NCBI37`` with this new variant set. Because we do not provide a ``--name``
 argument, a name is automatically generated using the default name generation
 rules.
-
-.. todo:: Add a paragraph to the section where we discuss names above
-   where we can define the default name generation rules, and link to
-   that from here.
 
 .. code-block:: bash
 
