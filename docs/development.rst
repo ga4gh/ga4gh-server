@@ -87,6 +87,40 @@ using:
     $ virtualenv ga4gh-server-env
     $ source ga4gh-server-env/bin/activate
 
+*****************************
+Using Development Constraints
+*****************************
+
+The server uses the GA4GH schemas as a basis for serializing and deserializing 
+data. This means that the server depends on the schemas, and at times a developer
+will need to point at a specific version of the schemas to reflect a change to 
+the data model.
+
+There is a :code:`constraints.txt` file in the root of the source tree that can be
+used to pin specific dependencies for a given requirement. For example, to use 
+a specific branch of the schemas when developing the server hosted by github we can add
+the line:
+
+.. code-block:: bash
+
+    git+git://github.com/david4096/schemas.git@protobuf31#egg=ga4gh_schemas
+
+This informs the installer to resolve dependencies from github before PyPi,
+allowing the developer to work against a specific version of the schemas under
+their control.
+
+By explicitly stating a dependency, others can review changes to the data model. When
+a change has been accepted in the schemas, you can adjust your constraints to point
+at the current master branch of schemas.
+
+.. code-block:: bash
+
+    git+git://github.com/ga4gh/schemas.git@master#egg=ga4gh_schemas
+
+
+At the time of a release, the same process allows us to specify a precise released
+version of the schemas and client to develop against.
+
 ***************
 GitHub workflow
 ***************
@@ -333,22 +367,6 @@ the ``ga4gh`` directory in the project root. Within this package, the
 functionality is split between the ``client``, ``server``, ``protocol`` and
 ``cli`` modules.  The ``cli`` module contains the definitions for the
 ``ga4gh_client`` and ``ga4gh_server`` programs.
-
-An important file in the project is ``ga4gh/_protocol_definitions.py``.
-This file defines the classes for the GA4GH protocol.
-The file is generated using the ``scripts/process_schemas.py`` script,
-which takes input data from the
-`GA4GH schemas repo <https://github.com/ga4gh/schemas>`_.
-To generate a new ``_protocol_definitions.py`` file, use
-
-.. code-block:: bash
-
-   $ python scripts/process_schemas.py desiredVersion path/to/schemas 
-
-Where ``desiredVersion`` is the version that will be written to the
-``_protocol_definitions.py`` file.  This version must be in the form
-``major.minor.revision`` where major, minor and revision can be any
-alphanumeric string.
 
 .. _git-appendix:
 
