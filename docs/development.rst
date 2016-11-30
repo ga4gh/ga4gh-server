@@ -77,7 +77,15 @@ Then, test this by running:
     $ pip --version
     pip 6.0.8 from /home/username/.local/lib/python2.7/site-packages (python 2.7)
 
-We are now ready to start developing!
+From here, we suggest using `virtualenv <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ 
+to manage your python environments. You can install and activate a virtual environment
+using:
+
+.. code-block:: bash
+
+    $ pip install virtualenv
+    $ virtualenv ga4gh-server-env
+    $ source ga4gh-server-env/bin/activate
 
 ***************
 GitHub workflow
@@ -104,7 +112,9 @@ GA4GH reference server:
     $ pip install -r dev-requirements.txt --user
 
 This will take a little time as the libraries that we require are
-fetched from PyPI and built.
+fetched from PyPI and built. You can now start the server using a :code:`python server_dev.py`, 
+or by installing it to the current environment using :code:`python setup.py install` and then
+running :code:`ga4gh_server`. For more information on using the server, visit :ref:`demo`.
 
 It is also important to set up an
 `upstream remote <https://help.github.com/articles/configuring-a-remote-for-a-fork/>`_
