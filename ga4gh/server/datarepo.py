@@ -23,7 +23,8 @@ import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.exceptions as exceptions
 
 from ga4gh.server import protocol
-
+from peewee import *
+import datetime
 MODE_READ = 'r'
 MODE_WRITE = 'w'
 
@@ -430,6 +431,227 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numExpressionLevels=numExpressionLevels)
             self.addDataset(dataset)
 
+databaseProxy = Proxy()#SqliteDatabase('ga4gh-example-data/registry.db', **{})
+
+class UnknownField(object):
+    def __init__(self, *_, **__): pass
+
+class BaseModel(Model):
+    class Meta:
+        database = databaseProxy
+
+class Dataset(BaseModel):
+    description = TextField(null=True)
+    id = TextField(primary_key=True)
+    info = TextField(null=True)
+    name = TextField(unique=True)
+
+    class Meta:
+        db_table = 'Dataset'
+
+class Biosample(BaseModel):
+    created = TextField(null=True)
+    datasetid = ForeignKeyField(db_column='datasetId', rel_model=Dataset, to_field='id')
+    description = TextField(null=True)
+    disease = TextField(null=True)
+    id = TextField(primary_key=True)
+    individualid = TextField(db_column='individualId', null=True)
+    info = TextField(null=True)
+    name = TextField()
+    updated = TextField(null=True)
+
+    class Meta:
+        db_table = 'BioSample'
+        indexes = (
+            (('datasetid', 'name'), True),
+        )
+
+class Referenceset(BaseModel):
+    assemblyid = TextField(db_column='assemblyId', null=True)
+    dataurl = TextField(db_column='dataUrl')
+    description = TextField(null=True)
+    id = TextField(primary_key=True)
+    isderived = IntegerField(db_column='isDerived', null=True)
+    md5checksum = TextField(null=True)
+    name = TextField(unique=True)
+    ncbitaxonid = IntegerField(db_column='ncbiTaxonId', null=True)
+    sourceaccessions = TextField(db_column='sourceAccessions', null=True)
+    sourceuri = TextField(db_column='sourceUri', null=True)
+
+    class Meta:
+        db_table = 'ReferenceSet'
+
+class Variantset(BaseModel):
+    created = TextField(null=True)
+    dataurlindexmap = TextField(db_column='dataUrlIndexMap')
+    datasetid = ForeignKeyField(db_column='datasetId', rel_model=Dataset, to_field='id')
+    id = TextField(primary_key=True)
+    metadata = TextField(null=True)
+    name = TextField()
+    referencesetid = ForeignKeyField(db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+    updated = TextField(null=True)
+
+    class Meta:
+        db_table = 'VariantSet'
+        indexes = (
+            (('datasetid', 'name'), True),
+        )
+
+class Callset(BaseModel):
+    biosampleid = TextField(db_column='bioSampleId', null=True)
+    id = TextField(primary_key=True)
+    name = TextField()
+    variantsetid = ForeignKeyField(db_column='variantSetId', rel_model=Variantset, to_field='id')
+
+    class Meta:
+        db_table = 'CallSet'
+        indexes = (
+            (('variantsetid', 'name'), True),
+        )
+
+class Ontology(BaseModel):
+    dataurl = TextField(db_column='dataUrl')
+    id = TextField(primary_key=True)
+    name = TextField(unique=True)
+    ontologyprefix = TextField(db_column='ontologyPrefix')
+
+    class Meta:
+        db_table = 'Ontology'
+
+class Featureset(BaseModel):
+    dataurl = TextField(db_column='dataUrl')
+    datasetid = ForeignKeyField(db_column='datasetId', rel_model=Dataset, to_field='id')
+    id = TextField(primary_key=True)
+    info = TextField(null=True)
+    name = TextField()
+    ontologyid = ForeignKeyField(db_column='ontologyId', rel_model=Ontology, to_field='id')
+    referencesetid = ForeignKeyField(db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+    sourceuri = TextField(db_column='sourceUri', null=True)
+
+    class Meta:
+        db_table = 'FeatureSet'
+        indexes = (
+            (('datasetid', 'name'), True),
+        )
+
+class Individual(BaseModel):
+    created = TextField()
+    datasetid = ForeignKeyField(db_column='datasetId', rel_model=Dataset, to_field='id')
+    description = TextField(null=True)
+    id = TextField(primary_key=True)
+    info = TextField(null=True)
+    name = TextField(null=True)
+    sex = TextField(null=True)
+    species = TextField(null=True)
+    updated = TextField(null=True)
+
+    class Meta:
+        db_table = 'Individual'
+        indexes = (
+            (('datasetid', 'name'), True),
+        )
+
+class Phenotypeassociationset(BaseModel):
+    dataurl = TextField(db_column='dataUrl')
+    datasetid = ForeignKeyField(db_column='datasetId', rel_model=Dataset, to_field='id')
+    id = TextField(primary_key=True)
+    name = TextField(null=True)
+
+    class Meta:
+        db_table = 'PhenotypeAssociationSet'
+        indexes = (
+            (('datasetid', 'name'), True),
+        )
+
+class Readgroupset(BaseModel):
+    dataurl = TextField(db_column='dataUrl')
+    datasetid = ForeignKeyField(db_column='datasetId', rel_model=Dataset, to_field='id')
+    id = TextField(primary_key=True)
+    indexfile = TextField(db_column='indexFile')
+    name = TextField()
+    programs = TextField(null=True)
+    referencesetid = ForeignKeyField(db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+    stats = TextField()
+
+    class Meta:
+        db_table = 'ReadGroupSet'
+        indexes = (
+            (('datasetid', 'name'), True),
+        )
+
+class Readgroup(BaseModel):
+    biosampleid = TextField(db_column='bioSampleId', null=True)
+    created = TextField(null=True)
+    description = TextField(null=True)
+    experiment = TextField()
+    id = TextField(primary_key=True)
+    name = TextField()
+    predictedinsertsize = IntegerField(db_column='predictedInsertSize', null=True)
+    readgroupsetid = ForeignKeyField(db_column='readGroupSetId', rel_model=Readgroupset, to_field='id')
+    samplename = TextField(db_column='sampleName', null=True)
+    stats = TextField()
+    updated = TextField(null=True)
+
+    class Meta:
+        db_table = 'ReadGroup'
+        indexes = (
+            (('readgroupsetid', 'name'), True),
+        )
+
+class Reference(BaseModel):
+    id = TextField(null=True, primary_key=True)
+    isderived = IntegerField(db_column='isDerived', null=True)
+    length = IntegerField(null=True)
+    md5checksum = TextField(null=True)
+    name = TextField()
+    ncbitaxonid = IntegerField(db_column='ncbiTaxonId', null=True)
+    referencesetid = ForeignKeyField(db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+    sourceaccessions = TextField(db_column='sourceAccessions', null=True)
+    sourcedivergence = FloatField(db_column='sourceDivergence', null=True)
+    sourceuri = TextField(db_column='sourceUri', null=True)
+
+    class Meta:
+        db_table = 'Reference'
+        indexes = (
+            (('referencesetid', 'name'), True),
+        )
+
+class Rnaquantificationset(BaseModel):
+    dataurl = TextField(db_column='dataUrl')
+    datasetid = ForeignKeyField(db_column='datasetId', rel_model=Dataset, to_field='id')
+    id = TextField(primary_key=True)
+    info = TextField(null=True)
+    name = TextField()
+    referencesetid = ForeignKeyField(db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+
+    class Meta:
+        db_table = 'RnaQuantificationSet'
+        indexes = (
+            (('datasetid', 'name'), True),
+        )
+
+class System(BaseModel):
+    key = TextField(primary_key=True)
+    value = TextField()
+
+    class Meta:
+        db_table = 'System'
+
+class Variantannotationset(BaseModel):
+    analysis = TextField(null=True)
+    annotationtype = TextField(db_column='annotationType', null=True)
+    created = TextField(null=True)
+    id = TextField(primary_key=True)
+    name = TextField()
+    ontologyid = ForeignKeyField(db_column='ontologyId', rel_model=Ontology, to_field='id')
+    updated = TextField(null=True)
+    variantsetid = ForeignKeyField(db_column='variantSetId', rel_model=Variantset, to_field='id')
+
+    class Meta:
+        db_table = 'VariantAnnotationSet'
+        indexes = (
+            (('variantsetid', 'name'), True),
+        )
 
 class SqlDataRepository(AbstractDataRepository):
     """
@@ -465,6 +687,8 @@ class SqlDataRepository(AbstractDataRepository):
         self._creationTimeStamp = None
         # Connection to the DB.
         self._dbConnection = None
+        self.database = SqliteDatabase(self._dbFilename, **{})
+        databaseProxy.initialize(self.database)
 
     def _checkWriteMode(self):
         if self._openMode != MODE_WRITE:
@@ -619,46 +843,22 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
 
     def _createSystemTable(self, cursor):
-        sql = """
-            CREATE TABLE System (
-                key TEXT NOT NULL PRIMARY KEY,
-                value TEXT NOT NULL
-            );
-        """
-        cursor.execute(sql)
-        cursor.execute(
-            "INSERT INTO System VALUES "
-            "('{}', '{}')".format(
-                self.systemKeySchemaVersion, self.version))
-        cursor.execute(
-            "INSERT INTO System VALUES ('{}', datetime('now'))".format(
-                self.systemKeyCreationTimeStamp))
+        self.database.create_table(System)
+        version = System.create(key=self.systemKeySchemaVersion, value=self.version)
+        date = System.create(key=self.systemKeyCreationTimeStamp, value=datetime.datetime.now())
 
     def _readSystemTable(self, cursor):
-        sql = "SELECT key, value FROM System;"
-        cursor.execute(sql)
-        config = {}
-        for row in cursor:
-            config[row[0]] = row[1]
-        row = cursor.fetchone()
-        self._schemaVersion = config[self.systemKeySchemaVersion]
-        self._creationTimeStamp = config[self.systemKeyCreationTimeStamp]
+        self._schemaVersion = System.get(
+            System.key==self.systemKeySchemaVersion).value
+        self._creationTimeStamp = System.get(
+            System.key==self.systemKeyCreationTimeStamp).value
         schemaVersion = self.SchemaVersion(self._schemaVersion)
         if schemaVersion.major != self.version.major:
             raise exceptions.RepoSchemaVersionMismatchException(
                 schemaVersion, self.version)
 
     def _createOntologyTable(self, cursor):
-        sql = """
-            CREATE TABLE Ontology(
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                ontologyPrefix TEXT NOT NULL,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Ontology)
 
     def insertOntology(self, ontology):
         """
@@ -697,24 +897,7 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute(sql, (ontology.getName(),))
 
     def _createReferenceTable(self, cursor):
-        sql = """
-            CREATE TABLE Reference (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                length INTEGER,
-                isDerived INTEGER,
-                md5checksum TEXT,
-                ncbiTaxonId INTEGER,
-                sourceAccessions TEXT,
-                sourceDivergence REAL,
-                sourceUri TEXT,
-                UNIQUE (referenceSetId, name),
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Reference)
 
     def insertReference(self, reference):
         """
@@ -748,22 +931,7 @@ class SqlDataRepository(AbstractDataRepository):
             referenceSet.addReference(reference)
 
     def _createReferenceSetTable(self, cursor):
-        sql = """
-            CREATE TABLE ReferenceSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT,
-                assemblyId TEXT,
-                isDerived INTEGER,
-                md5checksum TEXT,
-                ncbiTaxonId INTEGER,
-                sourceAccessions TEXT,
-                sourceUri TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Referenceset)
 
     def insertReferenceSet(self, referenceSet):
         """
@@ -802,42 +970,24 @@ class SqlDataRepository(AbstractDataRepository):
             self.addReferenceSet(referenceSet)
 
     def _createDatasetTable(self, cursor):
-        sql = """
-            CREATE TABLE Dataset (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT,
-                info TEXT,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Dataset)
 
     def insertDataset(self, dataset):
         """
         Inserts the specified dataset into this repository.
         """
-        sql = """
-            INSERT INTO Dataset (id, name, description, info)
-            VALUES (?, ?, ?, ?);
-        """
-        cursor = self._dbConnection.cursor()
-        try:
-            cursor.execute(sql, (
-                dataset.getId(), dataset.getLocalId(),
-                dataset.getDescription(),
-                json.dumps(dataset.getInfo())))
-        except sqlite3.IntegrityError:
-            raise exceptions.DuplicateNameException(dataset.getLocalId())
+        Dataset.create(
+            id=dataset.getId(),
+            name=dataset.getLocalId(),
+            description=dataset.getDescription(),
+            info=json.dumps(dataset.getInfo()))
 
     def removeDataset(self, dataset):
         """
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        sql = "DELETE FROM Dataset WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (dataset.getId(),))
+        Dataset.delete().where(id==dataset.getId())
 
     def removePhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
@@ -866,25 +1016,7 @@ class SqlDataRepository(AbstractDataRepository):
             self.addDataset(dataset)
 
     def _createReadGroupTable(self, cursor):
-        sql = """
-            CREATE TABLE ReadGroup (
-                id TEXT NOT NULL PRIMARY KEY,
-                readGroupSetId TEXT NOT NULL,
-                name TEXT NOT NULL,
-                predictedInsertSize INTEGER,
-                sampleName TEXT,
-                description TEXT,
-                stats TEXT NOT NULL,
-                experiment TEXT NOT NULL,
-                biosampleId TEXT,
-                created TEXT,
-                updated TEXT,
-                UNIQUE (readGroupSetId, name),
-                FOREIGN KEY(readGroupSetId) REFERENCES ReadGroupSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Readgroup)
 
     def insertReadGroup(self, readGroup):
         """
@@ -955,23 +1087,7 @@ class SqlDataRepository(AbstractDataRepository):
             readGroupSet.addReadGroup(readGroup)
 
     def _createReadGroupSetTable(self, cursor):
-        sql = """
-            CREATE TABLE ReadGroupSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                programs TEXT,
-                stats TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                indexFile TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Readgroupset)
 
     def insertReadGroupSet(self, readGroupSet):
         """
@@ -1036,23 +1152,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addReadGroupSet(readGroupSet)
 
     def _createVariantAnnotationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE VariantAnnotationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                variantSetId TEXT NOT NULL,
-                ontologyId TEXT NOT NULL,
-                analysis TEXT,
-                annotationType TEXT,
-                created TEXT,
-                updated TEXT,
-                UNIQUE (variantSetId, name),
-                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Variantannotationset)
 
     def insertVariantAnnotationSet(self, variantAnnotationSet):
         """
@@ -1092,18 +1192,7 @@ class SqlDataRepository(AbstractDataRepository):
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
 
     def _createCallSetTable(self, cursor):
-        sql = """
-            CREATE TABLE CallSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                variantSetId TEXT NOT NULL,
-                biosampleId TEXT,
-                UNIQUE (variantSetId, name),
-                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Callset)
 
     def insertCallSet(self, callSet):
         """
@@ -1133,23 +1222,7 @@ class SqlDataRepository(AbstractDataRepository):
             variantSet.addCallSet(callSet)
 
     def _createVariantSetTable(self, cursor):
-        sql = """
-            CREATE TABLE VariantSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                created TEXT,
-                updated TEXT,
-                metadata TEXT,
-                dataUrlIndexMap TEXT NOT NULL,
-                UNIQUE (datasetID, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Variantset)
 
     def insertVariantSet(self, variantSet):
         """
@@ -1195,24 +1268,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addVariantSet(variantSet)
 
     def _createFeatureSetTable(self, cursor):
-        sql = """
-            CREATE TABLE FeatureSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                ontologyId TEXT NOT NULL,
-                info TEXT,
-                sourceUri TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Featureset)
 
     def insertFeatureSet(self, featureSet):
         """
@@ -1252,24 +1308,8 @@ class SqlDataRepository(AbstractDataRepository):
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
 
-    def _createBiosampleTable(self, cursor):
-        sql = """
-            CREATE TABLE Biosample (
-                id TEXT NOT NULL PRIMARY KEY,
-                datasetId TEXT NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                disease TEXT,
-                created TEXT,
-                updated TEXT,
-                individualId TEXT,
-                info TEXT,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+    def _createBioSampleTable(self, cursor):
+        self.database.create_table(Biosample)
 
     def insertBiosample(self, biosample):
         """
@@ -1305,23 +1345,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addBiosample(biosample)
 
     def _createIndividualTable(self, cursor):
-        sql = """
-            CREATE TABLE Individual (
-                id TEXT NOT NULL PRIMARY KEY,
-                datasetId TEXT NOT NULL,
-                name TEXT,
-                description TEXT,
-                created TEXT NOT NULL,
-                updated TEXT,
-                species TEXT,
-                sex TEXT,
-                info TEXT,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Individual)
 
     def insertIndividual(self, individual):
         """
@@ -1358,35 +1382,10 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addIndividual(individual)
 
     def _createPhenotypeAssociationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE PhenotypeAssociationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT,
-                datasetId TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Phenotypeassociationset)
 
     def _createRnaQuantificationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE RnaQuantificationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                info TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
+        self.database.create_table(Rnaquantificationset)
 
     def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
