@@ -394,6 +394,9 @@ client's libraries for use in your own programs:
     >>> client.HttpClient
     <class 'ga4gh_client.client.HttpClient'>
 
+For more examples of using the GA4GH client visit 
+`this iPython notebook <https://github.com/BD2KGenomics/bioapi-examples/blob/master/python_notebooks/1kg.ipynb>`_.
+
 
 
 OIDC Demonstration
