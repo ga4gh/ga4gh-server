@@ -445,19 +445,19 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
             reference.setLength(len(bases))
             self.addReference(reference)
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, rs):
         """
         Populates this reference set from the values in the specified DB
         row.
         """
-        self._dataUrl = row[b'dataUrl']
-        self._description = row[b'description']
-        self._assemblyId = row[b'assemblyId']
-        self._isDerived = bool(row[b'isDerived'])
-        self._md5checksum = row[b'md5checksum']
-        self._ncbiTaxonId = row[b'ncbiTaxonId']
-        self._sourceAccessions = json.loads(row[b'sourceAccessions'])
-        self._sourceUri = row[b'sourceUri']
+        self._dataUrl = rs.dataurl
+        self._description = rs.description
+        self._assemblyId = rs.assemblyid
+        self._isDerived = bool(rs.isderived)
+        self._md5checksum = rs.md5checksum
+        self._ncbiTaxonId = rs.ncbitaxonid
+        self._sourceAccessions = json.loads(rs.sourceaccessions)
+        self._sourceUri = rs.sourceuri
 
     def getDataUrl(self):
         """
@@ -483,17 +483,17 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
     def __init__(self, parentContainer, localId):
         super(HtslibReference, self).__init__(parentContainer, localId)
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, ref):
         """
         Populates this reference from the values in the specified DB row.
         """
-        self._length = row[b'length']
-        self._isDerived = bool(row[b'isDerived'])
-        self._md5checksum = row[b'md5checksum']
-        self._ncbiTaxonId = row[b'ncbiTaxonId']
-        self._sourceAccessions = json.loads(row[b'sourceAccessions'])
-        self._sourceDivergence = row[b'sourceDivergence']
-        self._sourceUri = row[b'sourceUri']
+        self._length = ref.length
+        self._isDerived = bool(ref.isderived)
+        self._md5checksum = ref.md5checksum
+        self._ncbiTaxonId = ref.ncbitaxonid
+        self._sourceAccessions = json.loads(ref.sourceaccessions)
+        self._sourceDivergence = ref.sourcedivergence
+        self._sourceUri = ref.sourceuri
 
     def getBases(self, start, end):
         self.checkQueryRange(start, end)

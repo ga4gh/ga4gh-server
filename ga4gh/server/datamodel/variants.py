@@ -49,12 +49,16 @@ class CallSet(datamodel.DatamodelObject):
         self._info = {}
         self._biosampleId = None
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, cs):
         """
         Populates this CallSet from the specified DB row.
         """
         # currently a noop
+<<<<<<< 1fc9a628091e323d541374b248ad78fa681c0efe
         self._biosampleId = row[b'biosampleId']
+=======
+        self._bioSampleId = cs.biosampleid
+>>>>>>> Adding other data types
 
     def toProtocolElement(self):
         """
@@ -459,19 +463,19 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         return set(self._chromFileMap.values())
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, vs):
         """
         Populates this VariantSet from the specified DB row.
         """
-        self._created = row[b'created']
-        self._updated = row[b'updated']
+        self._created = vs.created
+        self._updated = vs.updated
         self._chromFileMap = {}
         # We can't load directly as we want tuples to be stored
         # rather than lists.
-        for key, value in json.loads(row[b'dataUrlIndexMap']).items():
+        for key, value in json.loads(vs.dataurlindexmap).items():
             self._chromFileMap[key] = tuple(value)
         self._metadata = []
-        for jsonDict in json.loads(row[b'metadata']):
+        for jsonDict in json.loads(vs.metadata):
             metadata = protocol.fromJson(json.dumps(jsonDict),
                                          protocol.VariantSetMetadata)
             self._metadata.append(metadata)
@@ -1048,14 +1052,14 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         self._creationTime = self._analysis.created
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, vas):
         """
         Populates this VariantAnnotationSet from the specified DB row.
         """
-        self._annotationType = row[b'annotationType']
-        self._analysis = protocol.fromJson(row[b'analysis'], protocol.Analysis)
-        self._creationTime = row[b'created']
-        self._updatedTime = row[b'updated']
+        self._annotationType = vas.annotationtype
+        self._analysis = protocol.fromJson(vas.analysis, protocol.Analysis)
+        self._creationTime = vas.created
+        self._updatedTime = vas.updated
 
     def getAnnotationType(self):
         """

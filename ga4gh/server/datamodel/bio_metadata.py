@@ -66,14 +66,14 @@ class Biosample(datamodel.DatamodelObject):
             self._info[key] = {"values": protocol.toJsonDict(parsed.info[key])}
         return self
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, bs):
         # TODO coerce to types
-        self._created = row[b'created']
-        self._updated = row[b'updated']
-        self._description = row[b'description']
-        self._disease = json.loads(row[b'disease'])
-        self._individualId = row[b'individualId']
-        self._info = json.loads(row[b'info'])
+        self._created = bs.created
+        self._updated = bs.updated
+        self._description = bs.description
+        self._disease = json.loads(bs.disease)
+        self._individualId = bs.individualid
+        self._info = json.loads(bs.info)
         return self
 
     def setIndividualId(self, individualId):
@@ -146,15 +146,15 @@ class Individual(datamodel.DatamodelObject):
                 gaIndividual.info[key].values.add().string_value = value
         return gaIndividual
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, ind):
         # TODO coerce to types
-        self._name = row[b'name']
-        self._created = row[b'created']
-        self._updated = row[b'updated']
-        self._description = row[b'description']
-        self._species = json.loads(row[b'species'])
-        self._sex = json.loads(row[b'sex'])
-        self._info = json.loads(row[b'info'])
+        self._name = ind.name
+        self._created = ind.created
+        self._updated = ind.updated
+        self._description = ind.description
+        self._species = json.loads(ind.species)
+        self._sex = json.loads(ind.sex)
+        self._info = json.loads(ind.info)
         return self
 
     def populateFromJson(self, jsonString):

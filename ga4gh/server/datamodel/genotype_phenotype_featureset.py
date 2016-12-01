@@ -44,12 +44,12 @@ class PhenotypeAssociationFeatureSet(
             parentContainer, localId)
 
     # mimic featureset
-    def populateFromRow(self, row):
+    def populateFromRow(self, fs):
         """
         Populates the instance variables of this FeatureSet from the specified
         DB row.
         """
-        self._dbFilePath = row[b'dataUrl']
+        self._dbFilePath = fs.dataurl
         self.populateFromFile(self._dbFilePath)
 
     def populateFromFile(self, dataUrl):
