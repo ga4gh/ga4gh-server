@@ -134,7 +134,6 @@ class ComplianceDataMunger(object):
             reference.setSourceAccessions(
                 refMetadata['sourceAccessions'])
         self.repo.insertReferenceSet(referenceSet)
-        self.repo.commit()
 
         dataset = datasets.Dataset("brca1")
         # Some info is set, it isn't important what
@@ -230,7 +229,7 @@ class ComplianceDataMunger(object):
         sequenceOntology._id = "so-xp-simple"
         self.repo.insertOntology(sequenceOntology)
         self.repo.addOntology(sequenceOntology)
-        self.repo.commit()
+
         vcfFiles = [
             "brca1_1kgPhase3_variants.vcf",
             "brca1_WASH7P_annotation.vcf",
@@ -278,7 +277,6 @@ class ComplianceDataMunger(object):
                 dataset, "cgd", os.path.abspath(outputG2PPath))
         self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
 
-        self.repo.commit()
         dataset.addFeatureSet(gencode)
 
         # RNA Quantification
@@ -298,8 +296,6 @@ class ComplianceDataMunger(object):
         rnaQuantificationSet.setReferenceSet(referenceSet)
         rnaQuantificationSet.populateFromFile(os.path.abspath(rnaDbName))
         self.repo.insertRnaQuantificationSet(rnaQuantificationSet)
-
-        self.repo.commit()
 
     def addVariantSet(
             self, variantFileName, dataset, referenceSet,
@@ -322,11 +318,10 @@ class ComplianceDataMunger(object):
                 if biosample.getLocalId() == callSet.getLocalId():
                     callSet.setBiosampleId(biosample.getId())
         self.repo.insertVariantSet(variantSet)
-        self.repo.commit()
+
         for annotationSet in variantSet.getVariantAnnotationSets():
             annotationSet.setOntology(ontology)
             self.repo.insertVariantAnnotationSet(annotationSet)
-            self.repo.commit()
 
     def cleanup(self):
         if self.tempdir is not None:
