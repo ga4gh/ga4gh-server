@@ -23,7 +23,9 @@ import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.exceptions as exceptions
 
 from ga4gh.server import protocol
-from peewee import *
+
+import repo.models as m
+
 import datetime
 MODE_READ = 'r'
 MODE_WRITE = 'w'
@@ -431,246 +433,7 @@ class SimulatedDataRepository(AbstractDataRepository):
                 numExpressionLevels=numExpressionLevels)
             self.addDataset(dataset)
 
-databaseProxy = Proxy()#SqliteDatabase('ga4gh-example-data/registry.db', **{})
 
-class UnknownField(object):
-    def __init__(self, *_, **__): pass
-
-class BaseModel(Model):
-    class Meta:
-        database = databaseProxy
-
-class Dataset(BaseModel):
-    description = TextField(null=True)
-    id = TextField(primary_key=True)
-    info = TextField(null=True)
-    name = TextField(unique=True)
-
-    class Meta:
-        db_table = 'Dataset'
-
-class Biosample(BaseModel):
-    created = TextField(null=True)
-    datasetid = ForeignKeyField(
-        db_column='datasetId', rel_model=Dataset, to_field='id')
-    description = TextField(null=True)
-    disease = TextField(null=True)
-    id = TextField(primary_key=True)
-    individualid = TextField(db_column='individualId', null=True)
-    info = TextField(null=True)
-    name = TextField()
-    updated = TextField(null=True)
-
-    class Meta:
-        db_table = 'BioSample'
-        indexes = (
-            (('datasetid', 'name'), True),
-        )
-
-class Referenceset(BaseModel):
-    assemblyid = TextField(db_column='assemblyId', null=True)
-    dataurl = TextField(db_column='dataUrl')
-    description = TextField(null=True)
-    id = TextField(primary_key=True)
-    isderived = IntegerField(db_column='isDerived', null=True)
-    md5checksum = TextField(null=True)
-    name = TextField(unique=True)
-    ncbitaxonid = IntegerField(db_column='ncbiTaxonId', null=True)
-    sourceaccessions = TextField(db_column='sourceAccessions', null=True)
-    sourceuri = TextField(db_column='sourceUri', null=True)
-
-    class Meta:
-        db_table = 'ReferenceSet'
-
-class Variantset(BaseModel):
-    created = TextField(null=True)
-    dataurlindexmap = TextField(db_column='dataUrlIndexMap')
-    datasetid = ForeignKeyField(
-        db_column='datasetId', rel_model=Dataset, to_field='id')
-    id = TextField(primary_key=True)
-    metadata = TextField(null=True)
-    name = TextField()
-    referencesetid = ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
-    updated = TextField(null=True)
-
-    class Meta:
-        db_table = 'VariantSet'
-        indexes = (
-            (('datasetid', 'name'), True),
-        )
-
-class Callset(BaseModel):
-    biosampleid = TextField(db_column='bioSampleId', null=True)
-    id = TextField(primary_key=True)
-    name = TextField()
-    variantsetid = ForeignKeyField(
-        db_column='variantSetId', rel_model=Variantset, to_field='id')
-
-    class Meta:
-        db_table = 'CallSet'
-        indexes = (
-            (('variantsetid', 'name'), True),
-        )
-
-class Ontology(BaseModel):
-    dataurl = TextField(db_column='dataUrl')
-    id = TextField(primary_key=True)
-    name = TextField(unique=True)
-    ontologyprefix = TextField(db_column='ontologyPrefix')
-
-    class Meta:
-        db_table = 'Ontology'
-
-class Featureset(BaseModel):
-    dataurl = TextField(db_column='dataUrl')
-    datasetid = ForeignKeyField(
-        db_column='datasetId', rel_model=Dataset, to_field='id')
-    id = TextField(primary_key=True)
-    info = TextField(null=True)
-    name = TextField()
-    ontologyid = ForeignKeyField(
-        db_column='ontologyId', rel_model=Ontology, to_field='id')
-    referencesetid = ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
-    sourceuri = TextField(
-        db_column='sourceUri', null=True)
-
-    class Meta:
-        db_table = 'FeatureSet'
-        indexes = (
-            (('datasetid', 'name'), True),
-        )
-
-class Individual(BaseModel):
-    created = TextField()
-    datasetid = ForeignKeyField(
-        db_column='datasetId', rel_model=Dataset, to_field='id')
-    description = TextField(null=True)
-    id = TextField(primary_key=True)
-    info = TextField(null=True)
-    name = TextField(null=True)
-    sex = TextField(null=True)
-    species = TextField(null=True)
-    updated = TextField(null=True)
-
-    class Meta:
-        db_table = 'Individual'
-        indexes = (
-            (('datasetid', 'name'), True),
-        )
-
-class Phenotypeassociationset(BaseModel):
-    dataurl = TextField(db_column='dataUrl')
-    datasetid = ForeignKeyField(
-        db_column='datasetId', rel_model=Dataset, to_field='id')
-    id = TextField(primary_key=True)
-    name = TextField(null=True)
-
-    class Meta:
-        db_table = 'PhenotypeAssociationSet'
-        indexes = (
-            (('datasetid', 'name'), True),
-        )
-
-class Readgroupset(BaseModel):
-    dataurl = TextField(db_column='dataUrl')
-    datasetid = ForeignKeyField(
-        db_column='datasetId', rel_model=Dataset, to_field='id')
-    id = TextField(primary_key=True)
-    indexfile = TextField(db_column='indexFile')
-    name = TextField()
-    programs = TextField(null=True)
-    referencesetid = ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
-    stats = TextField()
-
-    class Meta:
-        db_table = 'ReadGroupSet'
-        indexes = (
-            (('datasetid', 'name'), True),
-        )
-
-class Readgroup(BaseModel):
-    biosampleid = TextField(db_column='bioSampleId', null=True)
-    created = TextField(null=True)
-    description = TextField(null=True)
-    experiment = TextField()
-    id = TextField(primary_key=True)
-    name = TextField()
-    predictedinsertsize = IntegerField(
-        db_column='predictedInsertSize', null=True)
-    readgroupsetid = ForeignKeyField(
-        db_column='readGroupSetId', rel_model=Readgroupset, to_field='id')
-    samplename = TextField(db_column='sampleName', null=True)
-    stats = TextField()
-    updated = TextField(null=True)
-
-    class Meta:
-        db_table = 'ReadGroup'
-        indexes = (
-            (('readgroupsetid', 'name'), True),
-        )
-
-class Reference(BaseModel):
-    id = TextField(null=True, primary_key=True)
-    isderived = IntegerField(db_column='isDerived', null=True)
-    length = IntegerField(null=True)
-    md5checksum = TextField(null=True)
-    name = TextField()
-    ncbitaxonid = IntegerField(db_column='ncbiTaxonId', null=True)
-    referencesetid = ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
-    sourceaccessions = TextField(db_column='sourceAccessions', null=True)
-    sourcedivergence = FloatField(db_column='sourceDivergence', null=True)
-    sourceuri = TextField(db_column='sourceUri', null=True)
-
-    class Meta:
-        db_table = 'Reference'
-        indexes = (
-            (('referencesetid', 'name'), True),
-        )
-
-class Rnaquantificationset(BaseModel):
-    dataurl = TextField(db_column='dataUrl')
-    datasetid = ForeignKeyField(
-        db_column='datasetId', rel_model=Dataset, to_field='id')
-    id = TextField(primary_key=True)
-    info = TextField(null=True)
-    name = TextField()
-    referencesetid = ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
-
-    class Meta:
-        db_table = 'RnaQuantificationSet'
-        indexes = (
-            (('datasetid', 'name'), True),
-        )
-
-class System(BaseModel):
-    key = TextField(primary_key=True)
-    value = TextField()
-
-    class Meta:
-        db_table = 'System'
-
-class Variantannotationset(BaseModel):
-    analysis = TextField(null=True)
-    annotationtype = TextField(db_column='annotationType', null=True)
-    created = TextField(null=True)
-    id = TextField(primary_key=True)
-    name = TextField()
-    ontologyid = ForeignKeyField(
-        db_column='ontologyId', rel_model=Ontology, to_field='id')
-    updated = TextField(null=True)
-    variantsetid = ForeignKeyField(
-        db_column='variantSetId', rel_model=Variantset, to_field='id')
-
-    class Meta:
-        db_table = 'VariantAnnotationSet'
-        indexes = (
-            (('variantsetid', 'name'), True),
-        )
 
 class SqlDataRepository(AbstractDataRepository):
     """
@@ -706,8 +469,8 @@ class SqlDataRepository(AbstractDataRepository):
         self._creationTimeStamp = None
         # Connection to the DB.
         self._dbConnection = None
-        self.database = SqliteDatabase(self._dbFilename, **{})
-        databaseProxy.initialize(self.database)
+        self.database = m.SqliteDatabase(self._dbFilename, **{})
+        m.databaseProxy.initialize(self.database)
 
     def _checkWriteMode(self):
         if self._openMode != MODE_WRITE:
@@ -855,10 +618,10 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
 
     def _createSystemTable(self):
-        self.database.create_table(System)
-        version = System.create(
+        self.database.create_table(m.System)
+        m.System.create(
             key=self.systemKeySchemaVersion, value=self.version)
-        date = System.create(
+        m.System.create(
             key=self.systemKeyCreationTimeStamp, value=datetime.datetime.now())
 
     def _readSystemTable(self):
@@ -866,11 +629,11 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoNotFoundException(
                 self._dbFilename)
         try:
-            self._schemaVersion = System.get(
-                System.key == self.systemKeySchemaVersion).value
-            self._creationTimeStamp = System.get(
-                System.key == self.systemKeyCreationTimeStamp).value
-        except OperationalError:
+            self._schemaVersion = m.System.get(
+                m.System.key == self.systemKeySchemaVersion).value
+            self._creationTimeStamp = m.System.get(
+                m.System.key == self.systemKeyCreationTimeStamp).value
+        except Exception as e:
             raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
         schemaVersion = self.SchemaVersion(self._schemaVersion)
         if schemaVersion.major != self.version.major:
@@ -879,26 +642,26 @@ class SqlDataRepository(AbstractDataRepository):
 
 
     def _createOntologyTable(self):
-        self.database.create_table(Ontology)
+        self.database.create_table(m.Ontology)
 
     def insertOntology(self, ontology):
         """
         Inserts the specified ontology into this repository.
         """
         try:
-            Ontology.create(
+            m.Ontology.create(
                     id=ontology.getName(),
                     name=ontology.getName(),
                     dataurl=ontology.getDataUrl(),
                     ontologyprefix=ontology.getOntologyPrefix())
         except Exception as e:
             raise exceptions.DuplicateNameException(
-                ontology.getLocalId())
+                ontology.getName())
         # TODO we need to create a proper ID when we're doing ID generation
         # for the rest of the container objects.
 
     def _readOntologyTable(self):
-        for ont in Ontology.select():
+        for ont in m.Ontology.select():
             ontology = ontologies.Ontology(ont.name)
             ontology.populateFromRow(ont)
             self.addOntology(ontology)
@@ -907,17 +670,17 @@ class SqlDataRepository(AbstractDataRepository):
         """
         Removes the specified ontology term map from this repository.
         """
-        q = Ontology.delete().where(id == ontology.getId())
+        q = m.Ontology.delete().where(id == ontology.getId())
         q.execute()
 
     def _createReferenceTable(self):
-        self.database.create_table(Reference)
+        self.database.create_table(m.Reference)
 
     def insertReference(self, reference):
         """
         Inserts the specified reference into this repository.
         """
-        Reference.create(
+        m.Reference.create(
             id=reference.getId(),
             referencesetid=reference.getParentContainer().getId(),
             name=reference.getLocalId(),
@@ -929,7 +692,7 @@ class SqlDataRepository(AbstractDataRepository):
             sourceuri=reference.getSourceUri())
 
     def _readReferenceTable(self):
-        for ref in Reference.select():
+        for ref in m.Reference.select():
             referenceSet = self.getReferenceSet(ref.referencesetid.id)
             reference = references.HtslibReference(referenceSet, ref.name)
             reference.populateFromRow(ref)
@@ -937,14 +700,14 @@ class SqlDataRepository(AbstractDataRepository):
             referenceSet.addReference(reference)
 
     def _createReferenceSetTable(self):
-        self.database.create_table(Referenceset)
+        self.database.create_table(m.Referenceset)
 
     def insertReferenceSet(self, referenceSet):
         """
         Inserts the specified referenceSet into this repository.
         """
         try:
-            Referenceset.create(
+            m.Referenceset.create(
                 id=referenceSet.getId(),
                 name=referenceSet.getLocalId(),
                 description=referenceSet.getDescription(),
@@ -962,7 +725,7 @@ class SqlDataRepository(AbstractDataRepository):
                 referenceSet.getLocalId())
 
     def _readReferenceSetTable(self):
-        for rs in Referenceset.select():
+        for rs in m.Referenceset.select():
             referenceSet = references.HtslibReferenceSet(rs.name)
             referenceSet.populateFromRow(rs)
             assert referenceSet.getId() == rs.id
@@ -970,14 +733,14 @@ class SqlDataRepository(AbstractDataRepository):
             self.addReferenceSet(referenceSet)
 
     def _createDatasetTable(self):
-        self.database.create_table(Dataset)
+        self.database.create_table(m.Dataset)
 
     def insertDataset(self, dataset):
         """
         Inserts the specified dataset into this repository.
         """
         try:
-            Dataset.create(
+            m.Dataset.create(
                 id=dataset.getId(),
                 name=dataset.getLocalId(),
                 description=dataset.getDescription(),
@@ -992,29 +755,27 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        print(dataset.getId())
-        for ds in Dataset.select().where(Dataset.id == dataset.getId()):
-            print(ds)
+        for ds in m.Dataset.select().where(m.Dataset.id == dataset.getId()):
             ds.delete_instance(recursive=True)
 
     def removePhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
         Remove a phenotype association set from the repo
         """
-        q = Phenotypeassociationset.delete().where(
-            Phenotypeassociationset.id==phenotypeAssociationSet.getId())
+        q = m.Phenotypeassociationset.delete().where(
+            m.Phenotypeassociationset.id==phenotypeAssociationSet.getId())
         q.execute()
 
     def removeFeatureSet(self, featureSet):
         """
         Removes the specified featureSet from this repository.
         """
-        q = Featureset.delete().where(
-            Featureset.id==featureSet.getId())
+        q = m.Featureset.delete().where(
+            m.Featureset.id==featureSet.getId())
         q.execute()
 
     def _readDatasetTable(self):
-        for dataset in Dataset.select():
+        for dataset in m.Dataset.select():
             d = datasets.Dataset(dataset.name)
             d.populateFromRow(dataset)
             assert d.getId() == dataset.id
@@ -1022,7 +783,7 @@ class SqlDataRepository(AbstractDataRepository):
             self.addDataset(d)
 
     def _createReadGroupTable(self):
-        self.database.create_table(Readgroup)
+        self.database.create_table(m.Readgroup)
 
     def insertReadGroup(self, readGroup):
         """
@@ -1032,7 +793,7 @@ class SqlDataRepository(AbstractDataRepository):
         experimentJson = json.dumps(
             protocol.toJsonDict(readGroup.getExperiment()))
         try:
-            Readgroup.create(
+            m.Readgroup.create(
                 id=readGroup.getId(),
                 readgroupsetid=readGroup.getParentContainer().getId(),
                 name=readGroup.getLocalId(),
@@ -1046,15 +807,14 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.DuplicateNameException(
                 readGroup.getLocalId(),
                 readGroup.getParentContainer().getLocalId())
->>>>>>> Adding other data types
 
     def removeReadGroupSet(self, readGroupSet):
         """
         Removes the specified readGroupSet from this repository. This performs
         a cascading removal of all items within this readGroupSet.
         """
-        for rgs in Readgroupset.select().where(
-                        Readgroupset.id == readGroupSet.getId()):
+        for rgs in m.Readgroupset.select().where(
+                        m.Readgroupset.id == readGroupSet.getId()):
             rgs.delete_instance(recursive=True)
 
 
@@ -1063,8 +823,8 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified variantSet from this repository. This performs
         a cascading removal of all items within this variantSet.
         """
-        for vs in Variantset.select().where(
-                        Variantset.id == variantSet.getId()):
+        for vs in m.Variantset.select().where(
+                        m.Variantset.id == variantSet.getId()):
             vs.delete_instance(recursive=True)
 
 
@@ -1072,18 +832,18 @@ class SqlDataRepository(AbstractDataRepository):
         """
         Removes the specified biosample from this repository.
         """
-        q = Biosample.delete().where(Biosample.id == bioSample.getId())
+        q = m.Biosample.delete().where(m.Biosample.id == bioSample.getId())
         q.execute()
 
     def removeIndividual(self, individual):
         """
         Removes the specified individual from this repository.
         """
-        q = Individual.delete().where(Individual.id == individual.getId())
+        q = m.Individual.delete().where(m.Individual.id == individual.getId())
         q.execute()
 
     def _readReadGroupTable(self):
-        for rg in Readgroup.select():
+        for rg in m.Readgroup.select():
             readGroupSet = self.getReadGroupSet(rg.readgroupsetid.id)
             readGroup = reads.HtslibReadGroup(readGroupSet, rg.name)
             # TODO set the reference set.
@@ -1093,7 +853,7 @@ class SqlDataRepository(AbstractDataRepository):
             readGroupSet.addReadGroup(readGroup)
 
     def _createReadGroupSetTable(self):
-        self.database.create_table(Readgroupset)
+        self.database.create_table(m.Readgroupset)
 
     def insertReadGroupSet(self, readGroupSet):
         """
@@ -1104,7 +864,7 @@ class SqlDataRepository(AbstractDataRepository):
              readGroupSet.getPrograms()])
         statsJson = json.dumps(protocol.toJsonDict(readGroupSet.getStats()))
         try:
-            Readgroupset.create(
+            m.Readgroupset.create(
                 id=readGroupSet.getId(),
                 datasetid=readGroupSet.getParentContainer().getId(),
                 referencesetid=readGroupSet.getReferenceSet().getId(),
@@ -1128,12 +888,11 @@ class SqlDataRepository(AbstractDataRepository):
         referenceSet can be removed.
         """
         try:
-            q = Reference.delete().where(
-                Reference.referencesetid == referenceSet.getId())
+            q = m.Reference.delete().where(
+                m.Reference.referencesetid == referenceSet.getId())
             q.execute()
-            q = Referenceset.delete().where(id == referenceSet.getId())
+            q = m.Referenceset.delete().where(m.Referenceset.id == referenceSet.getId())
             q.execute()
-
         except Exception as e:
             msg = ("Unable to delete reference set.  "
                    "There are objects currently in the registry which are "
@@ -1142,7 +901,7 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(msg)
 
     def _readReadGroupSetTable(self):
-        for rgs in Readgroupset.select():
+        for rgs in m.Readgroupset.select():
             dataset = self.getDataset(rgs.datasetid.id)
             readGroupSet = reads.HtslibReadGroupSet(dataset, rgs.name)
             referenceSet = self.getReferenceSet(rgs.referencesetid.id)
@@ -1153,7 +912,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addReadGroupSet(readGroupSet)
 
     def _createVariantAnnotationSetTable(self):
-        self.database.create_table(Variantannotationset)
+        self.database.create_table(m.Variantannotationset)
 
     def insertVariantAnnotationSet(self, variantAnnotationSet):
         """
@@ -1162,7 +921,7 @@ class SqlDataRepository(AbstractDataRepository):
         analysisJson = json.dumps(
             protocol.toJsonDict(variantAnnotationSet.getAnalysis()))
         try:
-            Variantannotationset.create(
+            m.Variantannotationset.create(
                 id=variantAnnotationSet.getId(),
                 variantsetid=variantAnnotationSet.getParentContainer().getId(),
                 ontologyid=variantAnnotationSet.getOntology().getId(),
@@ -1177,7 +936,7 @@ class SqlDataRepository(AbstractDataRepository):
                 variantAnnotationSet.getParentContainer().getLocalId())
 
     def _readVariantAnnotationSetTable(self):
-        for vas in Variantannotationset.select():
+        for vas in m.Variantannotationset.select():
             variantSet = self.getVariantSet(vas.variantsetid.id)
             ontology = self.getOntology(vas.ontologyid.id)
             variantAnnotationSet = variants.HtslibVariantAnnotationSet(
@@ -1189,14 +948,14 @@ class SqlDataRepository(AbstractDataRepository):
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
 
     def _createCallSetTable(self):
-        self.database.create_table(Callset)
+        self.database.create_table(m.Callset)
 
     def insertCallSet(self, callSet):
         """
         Inserts a the specified callSet into this repository.
         """
         try:
-            Callset.create(
+            m.Callset.create(
                 id=callSet.getId(),
                 name=callSet.getLocalId(),
                 variantsetid=callSet.getParentContainer().getId(),
@@ -1207,7 +966,7 @@ class SqlDataRepository(AbstractDataRepository):
                 callSet.getParentContainer().getLocalId())
 
     def _readCallSetTable(self):
-        for cs in Callset.select():
+        for cs in m.Callset.select():
             variantSet = self.getVariantSet(cs.variantsetid.id)
             callSet = variants.CallSet(variantSet, cs.name)
             callSet.populateFromRow(cs)
@@ -1216,7 +975,7 @@ class SqlDataRepository(AbstractDataRepository):
             variantSet.addCallSet(callSet)
 
     def _createVariantSetTable(self):
-        self.database.create_table(Variantset)
+        self.database.create_table(m.Variantset)
 
     def insertVariantSet(self, variantSet):
         """
@@ -1230,7 +989,7 @@ class SqlDataRepository(AbstractDataRepository):
              variantSet.getMetadata()])
         urlMapJson = json.dumps(variantSet.getReferenceToDataUrlIndexMap())
         try:
-            Variantset.create(
+            m.Variantset.create(
                 id=variantSet.getId(),
                 datasetid=variantSet.getParentContainer().getId(),
                 referencesetid=variantSet.getReferenceSet().getId(),
@@ -1247,7 +1006,7 @@ class SqlDataRepository(AbstractDataRepository):
             self.insertCallSet(callSet)
 
     def _readVariantSetTable(self):
-        for vs in Variantset.select():
+        for vs in m.Variantset.select():
             dataset = self.getDataset(vs.datasetid.id)
             referenceSet = self.getReferenceSet(vs.referencesetid.id)
             variantSet = variants.HtslibVariantSet(dataset, vs.name)
@@ -1258,7 +1017,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addVariantSet(variantSet)
 
     def _createFeatureSetTable(self):
-        self.database.create_table(Featureset)
+        self.database.create_table(m.Featureset)
 
     def insertFeatureSet(self, featureSet):
         """
@@ -1266,7 +1025,7 @@ class SqlDataRepository(AbstractDataRepository):
         """
         # TODO add support for info and sourceUri fields.
         try:
-            Featureset.create(
+            m.Featureset.create(
                 id=featureSet.getId(),
                 datasetid=featureSet.getParentContainer().getId(),
                 referencesetid=featureSet.getReferenceSet().getId(),
@@ -1279,7 +1038,7 @@ class SqlDataRepository(AbstractDataRepository):
                 featureSet.getParentContainer().getLocalId())
 
     def _readFeatureSetTable(self):
-        for fs in Featureset.select():
+        for fs in m.Featureset.select():
             dataset = self.getDataset(fs.datasetid.id)
             # FIXME this should be handled elsewhere
             if 'cgd' in fs.name:
@@ -1297,14 +1056,14 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addFeatureSet(featureSet)
 
     def _createBiosampleTable(self):
-        self.database.create_table(Biosample)
+        self.database.create_table(m.Biosample)
 
     def insertBiosample(self, biosample):
         """
         Inserts the specified Biosample into this repository.
         """
         try:
-            Biosample.create(
+            m.Biosample.create(
                 id=biosample.getId(),
                 datasetid=biosample.getParentContainer().getId(),
                 name=biosample.getLocalId(),
@@ -1320,7 +1079,7 @@ class SqlDataRepository(AbstractDataRepository):
                 biosample.getParentContainer().getLocalId())
 
     def _readBioSampleTable(self):
-        for bs in Biosample.select():
+        for bs in m.Biosample.select():
             dataset = self.getDataset(bs.datasetid.id)
             biosample = biodata.Biosample(
                 dataset, bs.name)
@@ -1329,7 +1088,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addBiosample(biosample)
 
     def _createIndividualTable(self):
-        self.database.create_table(Individual)
+        self.database.create_table(m.Individual)
 
     def insertIndividual(self, individual):
         """
@@ -1337,7 +1096,7 @@ class SqlDataRepository(AbstractDataRepository):
         """
         # TODO add support for info and sourceUri fields.
         try:
-            Individual.create(
+            m.Individual.create(
                 id=individual.getId(),
                 datasetId=individual.getParentContainer().getId(),
                 name=individual.getLocalId(),
@@ -1353,7 +1112,7 @@ class SqlDataRepository(AbstractDataRepository):
                 individual.getParentContainer().getLocalId())
 
     def _readIndividualTable(self):
-        for ind in Individual.select():
+        for ind in m.Individual.select():
             dataset = self.getDataset(ind.datasetid.id)
             individual = biodata.Individual(
                 dataset, ind.name)
@@ -1362,10 +1121,10 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addIndividual(individual)
 
     def _createPhenotypeAssociationSetTable(self):
-        self.database.create_table(Phenotypeassociationset)
+        self.database.create_table(m.Phenotypeassociationset)
 
     def _createRnaQuantificationSetTable(self):
-        self.database.create_table(Rnaquantificationset)
+        self.database.create_table(m.Rnaquantificationset)
 
     def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
@@ -1373,7 +1132,7 @@ class SqlDataRepository(AbstractDataRepository):
         """
         # TODO add support for info and sourceUri fields.
         try:
-            Phenotypeassociationset.create(
+            m.Phenotypeassociationset.create(
                 id=phenotypeAssociationSet.getId(),
                 name=phenotypeAssociationSet.getLocalId(),
                 datasetid=phenotypeAssociationSet.getParentContainer().getId(),
@@ -1383,7 +1142,7 @@ class SqlDataRepository(AbstractDataRepository):
                 phenotypeAssociationSet.getParentContainer().getId())
 
     def _readPhenotypeAssociationSetTable(self):
-        for pas in Phenotypeassociationset.select():
+        for pas in m.Phenotypeassociationset.select():
             dataset = self.getDataset(pas.datasetid.id)
             phenotypeAssociationSet = \
                 genotype_phenotype.RdfPhenotypeAssociationSet(
@@ -1395,7 +1154,7 @@ class SqlDataRepository(AbstractDataRepository):
         Inserts a the specified rnaQuantificationSet into this repository.
         """
         try:
-            Rnaquantificationset.create(
+            m.Rnaquantificationset.create(
                 id=rnaQuantificationSet.getId(),
                 datasetid=rnaQuantificationSet.getParentContainer().getId(),
                 referencesetid=rnaQuantificationSet.getReferenceSet().getId(),
@@ -1407,7 +1166,7 @@ class SqlDataRepository(AbstractDataRepository):
                 rnaQuantificationSet.getParentContainer().getLocalId())
 
     def _readRnaQuantificationSetTable(self):
-        for rqs in Rnaquantificationset.select():
+        for rqs in m.Rnaquantificationset.select():
             dataset = self.getDataset(rqs.datasetid.id)
             referenceSet = self.getReferenceSet(rqs.referencesetid.id)
             rnaQuantificationSet = \
@@ -1424,8 +1183,8 @@ class SqlDataRepository(AbstractDataRepository):
         performs a cascading removal of all items within this
         rnaQuantificationSet.
         """
-        q = Rnaquantificationset.delete.where(
-            Rnaquantificationset.id == rnaQuantificationSet.getId())
+        q = m.Rnaquantificationset.delete.where(
+            m.Rnaquantificationset.id == rnaQuantificationSet.getId())
         q.execute()
 
     def initialise(self):
@@ -1449,7 +1208,6 @@ class SqlDataRepository(AbstractDataRepository):
         self._createIndividualTable()
         self._createPhenotypeAssociationSetTable()
         self._createRnaQuantificationSetTable()
->>>>>>> Adding other data types
 
     def exists(self):
         """
