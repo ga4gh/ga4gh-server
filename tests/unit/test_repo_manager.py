@@ -371,7 +371,7 @@ class TestAddOntology(AbstractRepoManagerTest):
         cmd = "add-ontology {} {}".format(self._repoPath, ontologyFile)
         self.runCommand(cmd)
         self.assertRaises(
-            exceptions.RepoManagerException, self.runCommand, cmd)
+            exceptions.DuplicateNameException, self.runCommand, cmd)
         # Specified name
         cmd = "add-ontology {} {} --name=testname".format(
             self._repoPath, ontologyFile)
