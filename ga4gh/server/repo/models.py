@@ -1,17 +1,35 @@
+"""
+peewee is a lightweight ORM with SQLite, postgresql,
+and MySQL support. This file presents models for the
+registry database.
+
+Partially auto-generated using pwiz.
+
+    python -m pwiz -e sqlite ga4gh-example-data/registry.db > models.py
+
+"""
+
 import peewee as pw
 
-databaseProxy = pw.Proxy()#SqliteDatabase('ga4gh-example-data/registry.db', **{})
+# The databaseProxy is used to dynamically changed the
+# backing database and needs to be set to an actual
+# database instance to use these models.
+databaseProxy = pw.Proxy()
+
 
 class SqliteDatabase(pw.SqliteDatabase):
     def __init__(self, *_, **__):
         super(SqliteDatabase, self).__init__(*_, **__)
 
+
 class UnknownField(object):
     def __init__(self, *_, **__): pass
+
 
 class BaseModel(pw.Model):
     class Meta:
         database = databaseProxy
+
 
 class Dataset(BaseModel):
     description = pw.TextField(null=True)
@@ -21,6 +39,7 @@ class Dataset(BaseModel):
 
     class Meta:
         db_table = 'Dataset'
+
 
 class Biosample(BaseModel):
     created = pw.TextField(null=True)
@@ -40,6 +59,7 @@ class Biosample(BaseModel):
             (('datasetid', 'name'), True),
         )
 
+
 class Referenceset(BaseModel):
     assemblyid = pw.TextField(db_column='assemblyId', null=True)
     dataurl = pw.TextField(db_column='dataUrl')
@@ -54,6 +74,7 @@ class Referenceset(BaseModel):
 
     class Meta:
         db_table = 'ReferenceSet'
+
 
 class Variantset(BaseModel):
     created = pw.TextField(null=True)
@@ -73,6 +94,7 @@ class Variantset(BaseModel):
             (('datasetid', 'name'), True),
         )
 
+
 class Callset(BaseModel):
     biosampleid = pw.TextField(db_column='bioSampleId', null=True)
     id = pw.TextField(primary_key=True)
@@ -86,6 +108,7 @@ class Callset(BaseModel):
             (('variantsetid', 'name'), True),
         )
 
+
 class Ontology(BaseModel):
     dataurl = pw.TextField(db_column='dataUrl')
     id = pw.TextField(primary_key=True)
@@ -94,6 +117,7 @@ class Ontology(BaseModel):
 
     class Meta:
         db_table = 'Ontology'
+
 
 class Featureset(BaseModel):
     dataurl = pw.TextField(db_column='dataUrl')
@@ -115,6 +139,7 @@ class Featureset(BaseModel):
             (('datasetid', 'name'), True),
         )
 
+
 class Individual(BaseModel):
     created = pw.TextField()
     datasetid = pw.ForeignKeyField(
@@ -133,6 +158,7 @@ class Individual(BaseModel):
             (('datasetid', 'name'), True),
         )
 
+
 class Phenotypeassociationset(BaseModel):
     dataurl = pw.TextField(db_column='dataUrl')
     datasetid = pw.ForeignKeyField(
@@ -145,6 +171,7 @@ class Phenotypeassociationset(BaseModel):
         indexes = (
             (('datasetid', 'name'), True),
         )
+
 
 class Readgroupset(BaseModel):
     dataurl = pw.TextField(db_column='dataUrl')
@@ -163,6 +190,7 @@ class Readgroupset(BaseModel):
         indexes = (
             (('datasetid', 'name'), True),
         )
+
 
 class Readgroup(BaseModel):
     biosampleid = pw.TextField(db_column='bioSampleId', null=True)
@@ -185,6 +213,7 @@ class Readgroup(BaseModel):
             (('readgroupsetid', 'name'), True),
         )
 
+
 class Reference(BaseModel):
     id = pw.TextField(null=True, primary_key=True)
     isderived = pw.IntegerField(db_column='isDerived', null=True)
@@ -204,6 +233,7 @@ class Reference(BaseModel):
             (('referencesetid', 'name'), True),
         )
 
+
 class Rnaquantificationset(BaseModel):
     dataurl = pw.TextField(db_column='dataUrl')
     datasetid = pw.ForeignKeyField(
@@ -220,12 +250,14 @@ class Rnaquantificationset(BaseModel):
             (('datasetid', 'name'), True),
         )
 
+
 class System(BaseModel):
     key = pw.TextField(primary_key=True)
     value = pw.TextField()
 
     class Meta:
         db_table = 'System'
+
 
 class Variantannotationset(BaseModel):
     analysis = pw.TextField(null=True)

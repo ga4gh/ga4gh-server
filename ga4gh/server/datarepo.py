@@ -434,7 +434,6 @@ class SimulatedDataRepository(AbstractDataRepository):
             self.addDataset(dataset)
 
 
-
 class SqlDataRepository(AbstractDataRepository):
     """
     A data repository based on a SQL database.
@@ -500,7 +499,6 @@ class SqlDataRepository(AbstractDataRepository):
             # we load the whole DB into memory to get access to
             # the data model.
             self.load()
-
 
     def commit(self):
         """
@@ -633,13 +631,12 @@ class SqlDataRepository(AbstractDataRepository):
                 m.System.key == self.systemKeySchemaVersion).value
             self._creationTimeStamp = m.System.get(
                 m.System.key == self.systemKeyCreationTimeStamp).value
-        except Exception as e:
+        except Exception:
             raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
         schemaVersion = self.SchemaVersion(self._schemaVersion)
         if schemaVersion.major != self.version.major:
             raise exceptions.RepoSchemaVersionMismatchException(
                 schemaVersion, self.version)
-
 
     def _createOntologyTable(self):
         self.database.create_table(m.Ontology)
@@ -654,7 +651,7 @@ class SqlDataRepository(AbstractDataRepository):
                     name=ontology.getName(),
                     dataurl=ontology.getDataUrl(),
                     ontologyprefix=ontology.getOntologyPrefix())
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 ontology.getName())
         # TODO we need to create a proper ID when we're doing ID generation
@@ -715,12 +712,13 @@ class SqlDataRepository(AbstractDataRepository):
                 isderived=referenceSet.getIsDerived(),
                 md5checksum=referenceSet.getMd5Checksum(),
                 ncbitaxonid=referenceSet.getNcbiTaxonId(),
-                sourceaccessions=json.dumps(referenceSet.getSourceAccessions()),
+                sourceaccessions=json.dumps(
+                    referenceSet.getSourceAccessions()),
                 sourceuri=referenceSet.getSourceUri(),
                 dataurl=referenceSet.getDataUrl())
             for reference in referenceSet.getReferences():
                 self.insertReference(reference)
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 referenceSet.getLocalId())
 
@@ -745,10 +743,9 @@ class SqlDataRepository(AbstractDataRepository):
                 name=dataset.getLocalId(),
                 description=dataset.getDescription(),
                 info=json.dumps(dataset.getInfo()))
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 dataset.getLocalId())
-
 
     def removeDataset(self, dataset):
         """
@@ -763,7 +760,7 @@ class SqlDataRepository(AbstractDataRepository):
         Remove a phenotype association set from the repo
         """
         q = m.Phenotypeassociationset.delete().where(
-            m.Phenotypeassociationset.id==phenotypeAssociationSet.getId())
+            m.Phenotypeassociationset.id == phenotypeAssociationSet.getId())
         q.execute()
 
     def removeFeatureSet(self, featureSet):
@@ -771,7 +768,7 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified featureSet from this repository.
         """
         q = m.Featureset.delete().where(
-            m.Featureset.id==featureSet.getId())
+            m.Featureset.id == featureSet.getId())
         q.execute()
 
     def _readDatasetTable(self):
@@ -803,7 +800,7 @@ class SqlDataRepository(AbstractDataRepository):
                 stats=statsJson,
                 experiment=experimentJson,
                 biosampleid=readGroup.getBioSampleId())
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 readGroup.getLocalId(),
                 readGroup.getParentContainer().getLocalId())
@@ -817,7 +814,6 @@ class SqlDataRepository(AbstractDataRepository):
                         m.Readgroupset.id == readGroupSet.getId()):
             rgs.delete_instance(recursive=True)
 
-
     def removeVariantSet(self, variantSet):
         """
         Removes the specified variantSet from this repository. This performs
@@ -827,12 +823,11 @@ class SqlDataRepository(AbstractDataRepository):
                         m.Variantset.id == variantSet.getId()):
             vs.delete_instance(recursive=True)
 
-
     def removeBiosample(self, biosample):
         """
         Removes the specified biosample from this repository.
         """
-        q = m.Biosample.delete().where(m.Biosample.id == bioSample.getId())
+        q = m.Biosample.delete().where(m.Biosample.id == biosample.getId())
         q.execute()
 
     def removeIndividual(self, individual):
@@ -875,10 +870,11 @@ class SqlDataRepository(AbstractDataRepository):
                 indexfile=readGroupSet.getIndexFile())
             for readGroup in readGroupSet.getReadGroups():
                 self.insertReadGroup(readGroup)
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 readGroupSet.getLocalId(),
                 readGroupSet.getParentContainer().getLocalId())
+
     def removeReferenceSet(self, referenceSet):
         """
         Removes the specified referenceSet from this repository. This performs
@@ -891,9 +887,10 @@ class SqlDataRepository(AbstractDataRepository):
             q = m.Reference.delete().where(
                 m.Reference.referencesetid == referenceSet.getId())
             q.execute()
-            q = m.Referenceset.delete().where(m.Referenceset.id == referenceSet.getId())
+            q = m.Referenceset.delete().where(
+                m.Referenceset.id == referenceSet.getId())
             q.execute()
-        except Exception as e:
+        except Exception:
             msg = ("Unable to delete reference set.  "
                    "There are objects currently in the registry which are "
                    "aligned against it.  Remove these objects before removing "
@@ -930,7 +927,7 @@ class SqlDataRepository(AbstractDataRepository):
                 annotationtype=variantAnnotationSet.getAnnotationType(),
                 created=variantAnnotationSet.getCreationTime(),
                 updated=variantAnnotationSet.getUpdatedTime())
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 variantAnnotationSet.getLocalId(),
                 variantAnnotationSet.getParentContainer().getLocalId())
@@ -960,7 +957,7 @@ class SqlDataRepository(AbstractDataRepository):
                 name=callSet.getLocalId(),
                 variantsetid=callSet.getParentContainer().getId(),
                 biosampleid=callSet.getBioSampleId())
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 callSet.getLocalId(),
                 callSet.getParentContainer().getLocalId())
@@ -998,7 +995,7 @@ class SqlDataRepository(AbstractDataRepository):
                 updated=datetime.datetime.now(),
                 metadata=metadataJson,
                 dataurlindexmap=urlMapJson)
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 variantSet.getLocalId(),
                 variantSet.getParentContainer().getLocalId())
@@ -1032,7 +1029,7 @@ class SqlDataRepository(AbstractDataRepository):
                 ontologyid=featureSet.getOntology().getId(),
                 name=featureSet.getLocalId(),
                 dataurl=featureSet.getDataUrl())
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 featureSet.getLocalId(),
                 featureSet.getParentContainer().getLocalId())
@@ -1106,7 +1103,7 @@ class SqlDataRepository(AbstractDataRepository):
                 species=json.dumps(individual.getSpecies()),
                 sex=json.dumps(individual.getSex()),
                 info=json.dumps(individual.getInfo()))
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 individual.getLocalId(),
                 individual.getParentContainer().getLocalId())
@@ -1137,7 +1134,7 @@ class SqlDataRepository(AbstractDataRepository):
                 name=phenotypeAssociationSet.getLocalId(),
                 datasetid=phenotypeAssociationSet.getParentContainer().getId(),
                 dataurl=phenotypeAssociationSet._dataUrl)
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 phenotypeAssociationSet.getParentContainer().getId())
 
@@ -1160,7 +1157,7 @@ class SqlDataRepository(AbstractDataRepository):
                 referencesetid=rnaQuantificationSet.getReferenceSet().getId(),
                 name=rnaQuantificationSet.getLocalId(),
                 dataurl=rnaQuantificationSet.getDataUrl())
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 rnaQuantificationSet.getLocalId(),
                 rnaQuantificationSet.getParentContainer().getLocalId())
