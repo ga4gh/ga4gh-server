@@ -1,7 +1,7 @@
 # This file lists the requirements needed to develop on ga4gh/server.
 
 # Include the requirements.txt file
--r requirements.txt
+-r requirements.txt -c constraints.txt
 
 ### This section is for dependencies of the libraries ###
 # these libraries are the set listed by pipdeptree -f -w
