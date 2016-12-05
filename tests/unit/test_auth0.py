@@ -19,6 +19,24 @@ class TestAuth0(unittest.TestCase):
     """
     exampleUrl = 'www.example.com'
 
+    @classmethod
+    def setUpClass(cls):
+        config = {
+            "DATA_SOURCE": "simulated://",
+            "SIMULATED_BACKEND_RANDOM_SEED": 1111,
+            "SIMULATED_BACKEND_NUM_CALLS": 1,
+            "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
+            "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1
+        }
+        frontend.reset()
+        frontend.configure(
+            baseConfig="Auth0Config", extraConfig=config)
+        cls.app = frontend.app.test_client()
+        # silence usually unhelpful CORS log
+        logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
+        cls.backend = frontend.app.backend
+
+
     def sendGetRequest(self, path):
         """
         Sends a get request to the specified URL and returns the response.
@@ -28,23 +46,6 @@ class TestAuth0(unittest.TestCase):
         }
         return self.app.get(path, headers=headers)
 
-    @classmethod
-    def setUpClass(cls):
-        config = {
-            "DATA_SOURCE": "simulated://",
-            "SIMULATED_BACKEND_RANDOM_SEED": 1111,
-            "SIMULATED_BACKEND_NUM_CALLS": 1,
-            "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
-            "SIMULATED_BACKEND_NUM_VARIANT_SETS": 1,
-            "LANDING_MESSAGE_HTML": paths.landingMessageHtml
-            # "DEBUG" : True
-        }
-        frontend.reset()
-        frontend.configure(
-            baseConfig="Auth0Config", extraConfig=config)
-        cls.app = frontend.app.test_client()
-        # silence usually unhelpful CORS log
-        logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
 
     def testCallback(self):
         response = self.sendGetRequest("callback")
@@ -65,3 +66,11 @@ class TestAuth0(unittest.TestCase):
             response.status_code,
             200, "Ensure that when Auth0 is turned on the login page"
                  "returns 200 {}".format(response.status_code))
+
+    def testBadBearer(self):
+        # tests to see if a malformed bearer token fails in expected ways
+        self.assertTrue(False)
+
+    def testProtected(self):
+        # tests to see that endpoints are not accessible if logged out
+        self.assertTrue(False)
