@@ -20,8 +20,9 @@ with open("requirements.txt") as requirementsFile:
             continue
         if line[0] == '#':
             continue
-        pinnedVersion = line.split()[0]
-        install_requires.append(pinnedVersion)
+        if line.find('-c constraints.txt') == -1:
+            pinnedVersion = line.split()[0]
+            install_requires.append(pinnedVersion)
 
 dependency_links = []
 try:
@@ -32,8 +33,7 @@ try:
                 continue
             if line[0] == '#':
                 continue
-            if line.find('git') != -1:
-                dependency_links.append(line)
+            dependency_links.append(line)
 except EnvironmentError:
     print('No constraints file found, proceeding without '
           'creating dependency links.')
