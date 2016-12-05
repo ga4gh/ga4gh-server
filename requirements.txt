@@ -12,10 +12,9 @@
 # way to resolve our internal dependencies. During development,
 # the constraints file will point at the current master branch 
 # of the respective module.
--c constraints.txt
+ga4gh-client
 ga4gh-common==0.0.5
 ga4gh-schemas
-ga4gh-client
 
 Werkzeug==0.11.5
 MarkupSafe==0.23
