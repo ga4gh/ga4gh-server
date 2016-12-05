@@ -13,7 +13,7 @@ install:
 # RDFLib requres html5lib;  html5lib requires setuptools version 18.5 or above;
   - pip install setuptools==25.1.0
   - python setup.py sdist
-  - pip install dist/ga4gh*.tar.gz  -c constraints.txt
+  - pip install dist/ga4gh*.tar.gz
 # every installable in setup.py's entry_points should be tested here
   - ga4gh_configtest --version
   - ga4gh_server --version
@@ -22,7 +22,7 @@ install:
   - ga4gh_repo --version
 
 before_script:
-  - pip install -r dev-requirements.txt -c constraints.txt
+  - pip install -r dev-requirements.txt
   - python scripts/build_test_data.py 
     
 before_install:
