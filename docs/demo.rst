@@ -59,8 +59,8 @@ Now we can download some example data, which we'll use for our demo:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data_4.5.tar
-    (ga4gh-env) $ tar -xvf ga4gh-example-data_4.5.tar
+    (ga4gh-env) $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data_4.6.tar
+    (ga4gh-env) $ tar -xvf ga4gh-example-data_4.6.tar
 
 After extracting the data, we can then run the ``ga4gh_server`` application:
 
@@ -211,11 +211,6 @@ using:
 
     (ga4gh-env) $ python ga4gh-demo.py
 
-.. todo:: Add more examples of using the reads API and give
-   examples of using the references API. We should aim to have
-   a single complete example, where we start with a given
-   variant, and drill down into the reads in question programatically.
-   values as parameters which have sensible defaults.
 
 Host the 1000 Genomes VCF
 =============================
@@ -317,8 +312,6 @@ with these annotations.
         --referenceSetName NCBI37 --ontologyName so-xp
 
 
-.. todo:: Demonstrate how to generate your own sequence annotations database.
-
 Add the 1000 Genomes VCFs
 --------------------------
 
@@ -371,14 +364,43 @@ data. If the server is running via apache issue
 ``sudo service apache2 restart``. You can then visit the landing page of
 the running server to see the newly added data.
 
----------
-With OIDC
----------
 
-.. todo:: Should we move the OIDC documentation into its own section?
-    It is quite a lot of complication to add here to a beginners HOWTO.
+Use the client package
+=============================
+
+If you only want to use the client and don't need the server functionality,
+there is a seperate pypi package, `ga4gh-client
+<https://pypi.python.org/pypi/ga4gh-client>`_, which includes only the
+client.  It is also much quicker to install.  To install, simply run:
+
+.. code-block:: bash
+
+    (ga4gh-env) $ pip install --pre ga4gh_client
+
+This installs the ``ga4gh_client`` command line program, which provides
+identical functionality to the ``ga4gh_client`` which is installed via the
+``ga4gh`` package:
+
+.. code-block:: bash
+
+    (ga4gh-env) $ ga4gh_client datasets-search http://1kgenomes.ga4gh.org
+
+Installing the ``ga4gh_client`` package also gives you access to the
+client's libraries for use in your own programs:
+
+.. code-block:: python
+
+    >>> import ga4gh.client.client as client
+    >>> client.HttpClient
+    <class 'ga4gh_client.client.HttpClient'>
+
+For more examples of using the GA4GH client visit 
+`this iPython notebook <https://github.com/BD2KGenomics/bioapi-examples/blob/master/python_notebooks/1kg.ipynb>`_.
 
 
+
+OIDC Demonstration
+==================
 
 If we want authentication, we must have an OIDC authentication provider.
 One can be found in ``oidc-provider``, and run with the ``run.sh`` script.
@@ -412,33 +434,3 @@ as follows:
 
     (ga4gh-env) $ ga4gh_client --key <key from homepage> variantsets-search https://localhost:8000/current
     MWtnLXAzLXN1YnNldDptdm5jYWxs    mvncall
-
-
-Use the client package
-=============================
-
-If you only want to use the client and don't need the server functionality,
-there is a seperate pypi package, `ga4gh-client
-<https://pypi.python.org/pypi/ga4gh-client>`_, which includes only the
-client.  It is also much quicker to install.  To install, simply run:
-
-.. code-block:: bash
-
-    (ga4gh-env) $ pip install --pre ga4gh_client
-
-This installs the ``ga4gh_client`` command line program, which provides
-identical functionality to the ``ga4gh_client`` which is installed via the
-``ga4gh`` package:
-
-.. code-block:: bash
-
-    (ga4gh-env) $ ga4gh_client datasets-search http://1kgenomes.ga4gh.org
-
-Installing the ``ga4gh_client`` package also gives you access to the
-client's libraries for use in your own programs:
-
-.. code-block:: python
-
-    >>> import ga4gh.client.client as client
-    >>> client.HttpClient
-    <class 'ga4gh_client.client.HttpClient'>

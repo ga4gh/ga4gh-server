@@ -18,6 +18,7 @@ Contents
     demo
     installation
     configuration
+    datarepo
     development
     status
 
