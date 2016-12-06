@@ -23,6 +23,7 @@ import oic.oic.message as message
 import requests
 import logging
 from logging import StreamHandler
+from werkzeug.contrib.cache import FileSystemCache
 
 import ga4gh.server
 import ga4gh.server.backend as backend
@@ -279,16 +280,24 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.serverStatus = ServerStatus()
 
     app.backend = _configure_backend(app)
-    app.secret_key = os.urandom(SECRET_KEY_LENGTH)
+    if app.config.get('SECRET_KEY'):
+        app.secret_key = app.config['SECRET_KEY']
+    elif app.config.get('OIDC_PROVIDER'):
+        raise exceptions.ConfigurationException(
+            'OIDC configuration requires a secret key')
+    if app.config.get('CACHE_DIRECTORY'):
+        app.cache_dir = app.config['CACHE_DIRECTORY']
+    else:
+        app.cache_dir = '/tmp/ga4gh'
+    app.cache = FileSystemCache(
+        app.cache_dir, threshold=5000, default_timeout=600, mode=384)
     app.oidcClient = None
-    app.tokenMap = None
     app.myPort = port
     if "OIDC_PROVIDER" in app.config:
         # The oic client. If we're testing, we don't want to verify
         # SSL certificates
         app.oidcClient = oic.oic.Client(
             verify_ssl=('TESTING' not in app.config))
-        app.tokenMap = {}
         try:
             app.oidcClient.provider_config(app.config['OIDC_PROVIDER'])
         except requests.exceptions.ConnectionError:
@@ -304,7 +313,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         # If we are testing, then we allow the automatic creation of a
         # redirect uri if none is configured
         redirectUri = app.config.get('OIDC_REDIRECT_URI')
-        if redirectUri is None and 'TESTING' in app.config:
+        if redirectUri is None and app.config.get('TESTING'):
             redirectUri = 'https://{0}:{1}/oauth2callback'.format(
                 socket.gethostname(), app.myPort)
         app.oidcClient.redirect_uris = [redirectUri]
@@ -314,7 +323,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
 
         # We only support dynamic registration while testing.
         if ('registration_endpoint' in app.oidcClient.provider_info and
-           'TESTING' in app.config):
+           app.config.get('TESTING')):
             app.oidcClient.register(
                 app.oidcClient.provider_info["registration_endpoint"],
                 redirect_uris=[redirectUri])
@@ -431,7 +440,7 @@ def checkAuthentication():
     if flask.request.endpoint == 'oidcCallback':
         return
     key = flask.session.get('key') or flask.request.args.get('key')
-    if app.tokenMap.get(key) is None:
+    if key is None or not app.cache.get(key):
         if 'key' in flask.request.args:
             raise exceptions.NotAuthenticatedException()
         else:
@@ -775,7 +784,8 @@ def oidcCallback():
         raise exceptions.NotAuthenticatedException()
     key = oic.oauth2.rndstr(SECRET_KEY_LENGTH)
     flask.session['key'] = key
-    app.tokenMap[key] = aresp["code"], respState, atrDict
+    token_data = aresp["code"], respState, atrDict
+    app.cache.set(key, token_data)
     # flask.url_for is broken. It relies on SERVER_NAME for both name
     # and port, and defaults to 'localhost' if not found. Therefore
     # we need to fix the returned url

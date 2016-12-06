@@ -92,6 +92,11 @@ OIDC_AUTHZ_ENDPOINT, OIDC_TOKEN_ENDPOINT, OIDC_TOKEN_REV_ENDPOINT
     If the authorization provider has no discovery document available, you can
     set the authorization and token endpoints here.
 
+SECRET_KEY
+    The secret key used by the server to encrypt cookies. Preferably, this
+    should be a long (~24 characters) random string, however any string will
+    work.
+
 ------------------------
 OpenID Connect Providers
 ------------------------
@@ -121,6 +126,7 @@ configuration for the GA4GH server, using the `OIDC_CLIENT_ID` and
 `OIDC_CLIENT_SECRET` configuration variables. The Redirect URI should match
 the `OIDC_REDIRECT_URI` configuration variable, with the exception that the
 redirect URI shown at google does not require a port (but the configuration
-variable does)
+variable does). Finally, set the `SECRET_KEY` to any string for storing
+cookies.
 
 .. image:: images/Credentials_-_ga4gh_3.png
