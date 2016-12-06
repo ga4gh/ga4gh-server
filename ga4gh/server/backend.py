@@ -202,14 +202,30 @@ class Backend(object):
         defined by the specified request.
         """
         dataset = self.getDataRepository().getDataset(request.dataset_id)
-        results = []
-        for obj in dataset.getReadGroupSets():
+        return self._readGroupSetsGenerator(
+            request, dataset.getNumReadGroupSets(),
+            dataset.getReadGroupSetByIndex)
+
+    def _readGroupSetsGenerator(self, request, numObjects, getByIndexMethod):
+        """
+        Returns a generator over the results for the specified request, which
+        is over a set of objects of the specified size. The objects are
+        returned by call to the specified method, which must take a single
+        integer as an argument. The returned generator yields a sequence of
+        (object, nextPageToken) pairs, which allows this iteration to be picked
+        up at any point.
+        """
+        currentIndex = 0
+        if request.page_token:
+            currentIndex, = paging._parsePageToken(
+                request.page_token, 1)
+        while currentIndex < numObjects:
+            obj = getByIndexMethod(currentIndex)
             include = True
             rgsp = obj.toProtocolElement()
-            if request.name:
-                if request.name != obj.getLocalId():
-                    include = False
-            if request.bio_sample_id:
+            if request.name and request.name != obj.getLocalId():
+                include = False
+            if request.bio_sample_id and include:
                 rgsp.ClearField("read_groups")
                 for readGroup in obj.getReadGroups():
                     if request.bio_sample_id == readGroup.getBioSampleId():
@@ -220,11 +236,12 @@ class Backend(object):
                 if len(rgsp.read_groups) == 0 and \
                         len(obj.getReadGroups()) != 0:
                     include = False
-                else:
-                    include = True and include
+            currentIndex += 1
+            nextPageToken = None
+            if currentIndex < numObjects:
+                nextPageToken = str(currentIndex)
             if include:
-                results.append(rgsp)
-        return self._protocolListGenerator(request, results)
+                yield rgsp, nextPageToken
 
     def referenceSetsGenerator(self, request):
         """
