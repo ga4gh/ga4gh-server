@@ -60,6 +60,7 @@ class LocalOidConfig(DevelopmentConfig):
     """
     Configuration used for developing against a local OIDC server
     """
+    SECRET_KEY = "super_secret"
     OIDC_PROVIDER = "https://localhost:8443"
 
 
@@ -87,6 +88,7 @@ class GoogleOidcConfig(ProductionConfig):
     Configuration that is a good basis for production deployments using
     Google as the authentication provider.
     """
+    SECRET_KEY = "super_secret"
     OIDC_PROVIDER = "https://accounts.google.com"
     OIDC_REDIRECT_URI = "https://localhost/oauth2callback"
     OIDC_CLIENT_ID = "XXX"
@@ -102,6 +104,7 @@ class TestConfig(BaseConfig):
 
 
 class TestOidcConfig(TestConfig):
+    SECRET_KEY = "super_secret"
     OIDC_PROVIDER = "https://accounts.example.com"
     OIDC_CLIENT_ID = "XXX"
     OIDC_CLIENT_SECRET = "XXX"

@@ -179,6 +179,7 @@ DEBUG = True
             config += """
 TESTING = True
 OIDC_PROVIDER = "https://localhost:{0}"
+SECRET_KEY = "secret"
 """.format(oidcOpPort)
         return config
 
