@@ -34,17 +34,12 @@ def configtest_main(parser=None):
         parser = common_cli.createArgumentParser(
             "GA4GH server configuration validator")
     parser.add_argument(
-        "--config", "-c", default='DevelopmentConfig', type=str,
-        help="The configuration to use")
-    parser.add_argument(
         "--config-file", "-f", type=str, default=None,
         help="The configuration file to use")
     cli.addVersionArgument(parser)
 
     args = parser.parse_args()
-    configStr = 'ga4gh.serverconfig:{0}'.format(args.config)
 
-    configtest.TestConfig.configStr = configStr
     configtest.TestConfig.configFile = args.config_file
     configtest.TestConfig.configEnv = "GA4GH_CONFIGURATION"
 

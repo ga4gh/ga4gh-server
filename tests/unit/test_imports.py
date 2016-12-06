@@ -202,7 +202,7 @@ class ImportGraphLayerChecker(object):
         ],
         'repo': [
             'ga4gh/server/repo/rnaseq2ga.py',
-        ],
+        ]
     }
 
     # each moduleGroupName has one and only one entry here
@@ -215,7 +215,6 @@ class ImportGraphLayerChecker(object):
         ['datamodel'],
         ['repo'],
         ['exceptions'],
-        ['config'],
         ['protocol'],
     ]
 

@@ -24,7 +24,7 @@ Running the profile:
 
 .. code-block:: bash
 
-    python -m cProfile -s cumulative -o profile.out ko-server/server_dev.py -H 100.70.26.73 --dont-use-reloader --config-file /srv/ga4gh/config.py
+    python -m cProfile -s cumulative -o profile.out ko-server/server_dev.py -H 100.70.26.73 --config-file /srv/ga4gh/config.py
 
 ******************************
 Evaluating the profile output:

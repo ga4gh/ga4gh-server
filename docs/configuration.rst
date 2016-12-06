@@ -722,6 +722,13 @@ information as follows:
 Configuration Values
 ++++++++++++++++++++
 
+USE_TLS
+    Tells the server whether or not to run in SSL/TLS mode. Defaults to false.
+
+USE_RELOADER
+    During development being able to restart the server is useful if code has
+    been changed. Defaults to True.
+
 DEFAULT_PAGE_SIZE
     The default maximum number of values to fill into a page when responding
     to search queries. If a client does not specify a page size in a query,

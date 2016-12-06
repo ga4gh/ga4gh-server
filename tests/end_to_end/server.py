@@ -170,10 +170,28 @@ class Ga4ghServerForTesting(ServerForTesting):
 
     def getConfig(self):
         config = """
-SIMULATED_BACKEND_NUM_VARIANT_SETS = 10
-SIMULATED_BACKEND_VARIANT_DENSITY = 1
-DATA_SOURCE = "simulated://"
-DEBUG = True
+MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2MB
+MAX_RESPONSE_LENGTH = 1024 * 1024  # 1MB
+REQUEST_VALIDATION = True
+DEFAULT_PAGE_SIZE = 100
+DATA_SOURCE = "empty://"
+
+# Options for the simulated backend.
+SIMULATED_BACKEND_RANDOM_SEED = 0
+SIMULATED_BACKEND_NUM_CALLS = 1
+SIMULATED_BACKEND_VARIANT_DENSITY = 0.5
+SIMULATED_BACKEND_NUM_VARIANT_SETS = 1
+SIMULATED_BACKEND_NUM_REFERENCE_SETS = 1
+SIMULATED_BACKEND_NUM_REFERENCES_PER_REFERENCE_SET = 1
+SIMULATED_BACKEND_NUM_ALIGNMENTS_PER_READ_GROUP = 2
+SIMULATED_BACKEND_NUM_READ_GROUPS_PER_READ_GROUP_SET = 2
+SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATIONS = 2
+SIMULATED_BACKEND_NUM_PHENOTYPE_ASSOCIATION_SETS = 2
+SIMULATED_BACKEND_NUM_RNA_QUANTIFICATION_SETS = 2
+SIMULATED_BACKEND_NUM_EXPRESSION_LEVELS_PER_RNA_QUANT_SET = 2
+
+TESTING = True
+REQUEST_VALIDATION = True
 """
         if self.useOidc:
             config += """
@@ -191,10 +209,8 @@ OIDC_PROVIDER = "https://localhost:{0}"
         configFilePath = self.configFile.name
         cmdLine = """
 python server_dev.py
---dont-use-reloader
 --disable-urllib-warnings
 --host 0.0.0.0
---config TestConfig
 --config-file {}
 --port {} """.format(configFilePath, self.port)
         return cmdLine

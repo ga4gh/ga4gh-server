@@ -114,7 +114,7 @@ class TestFrontendOidc(unittest.TestCase):
         }
         frontend.reset()
         frontend.configure(
-            baseConfig="TestOidcConfig", extraConfig=config, port=8001)
+            configFile="config/testoidc.py", extraConfig=config, port=8001)
         cls.app = frontend.app.test_client()
 
     @classmethod

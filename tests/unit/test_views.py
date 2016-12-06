@@ -34,7 +34,7 @@ class TestFrontend(unittest.TestCase):
         }
         frontend.reset()
         frontend.configure(
-            baseConfig="TestConfig", extraConfig=config)
+            configFile="config/test.py", extraConfig=config)
         cls.app = frontend.app.test_client()
         # silence usually unhelpful CORS log
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)

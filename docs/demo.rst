@@ -392,7 +392,7 @@ In another shell on the same machine
 
 .. code-block:: bash
 
-  $ python server_dev.py -c LocalOidConfig
+  $ python server_dev.py -f ga4gh/config/local_oidc.py
 
 Make sure you know the hostname the server is running on. It can be found with
 

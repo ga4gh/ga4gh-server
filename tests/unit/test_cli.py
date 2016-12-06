@@ -20,16 +20,13 @@ class TestServerArguments(unittest.TestCase):
     Tests that the server can parse expected arguments
     """
     def testParseArguments(self):
-        cliInput = """--port 7777 --host 123.4.5.6 --config MockConfigName
-        --config-file /path/to/config --tls --dont-use-reloader"""
+        cliInput = """--port 7777 --host 123.4.5.6
+        --config-file /path/to/config"""
         parser = cli_server.getServerParser()
         args = parser.parse_args(cliInput.split())
         self.assertEqual(args.port, 7777)
         self.assertEqual(args.host, "123.4.5.6")
-        self.assertEqual(args.config, "MockConfigName")
         self.assertEqual(args.config_file, "/path/to/config")
-        self.assertTrue(args.tls)
-        self.assertTrue(args.dont_use_reloader)
 
 
 class TestGa2VcfArguments(unittest.TestCase):

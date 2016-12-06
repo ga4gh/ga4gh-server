@@ -21,7 +21,7 @@ class TestG2P(unittest.TestCase):
         }
         frontend.reset()
         frontend.configure(
-            baseConfig="DevelopmentConfig", extraConfig=config)
+            configFile="config/development.py", extraConfig=config)
         cls.app = frontend.app.test_client()
 
     def sendSearchRequest(self, path, request, responseClass):

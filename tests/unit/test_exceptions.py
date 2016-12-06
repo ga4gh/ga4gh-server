@@ -21,7 +21,7 @@ class TestExceptionHandler(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         frontend.reset()
-        frontend.configure(baseConfig="TestConfig")
+        frontend.configure(configFile="config/test.py")
         frontend.app.log_exception = mock.Mock()
 
     class UnknownException(Exception):

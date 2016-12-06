@@ -22,7 +22,6 @@ class TestConfig(unittest.TestCase):
     run.
     """
 
-    configStr = None
     configEnv = None
     configFile = None
 
@@ -32,10 +31,6 @@ class TestConfig(unittest.TestCase):
         attributes for configuration
         """
         self.app = flask.Flask(__name__)
-        try:
-            self.app.config.from_object(self.configStr)
-        except Exception:
-            self.fail("Cannot create app from {0}".format(self.configStr))
         if os.environ.get(self.configEnv) is not None:
             self.app.config.from_envvar(self.configEnv)
         if self.configFile is not None:
@@ -48,8 +43,10 @@ class TestConfig(unittest.TestCase):
         A simple test that configuration parameters are of the correct types
         and ranges
         """
-        self.assertIsInstance(self.app.config["REQUEST_VALIDATION"],
-                              bool,
-                              'REQUEST_VALIDATION is not a boolean')
-        self.assertIsNotNone(self.app.config["DATA_SOURCE"],
-                             'DATA_SOURCE must be set')
+        if self.app.config.get('REQUEST_VALIDATION'):
+            self.assertIsInstance(self.app.config["REQUEST_VALIDATION"],
+                                  bool,
+                                  'REQUEST_VALIDATION is not a boolean')
+        if self.app.config.get('DATA_SOURCE'):
+            self.assertIsNotNone(self.app.config["DATA_SOURCE"],
+                                 'DATA_SOURCE must be set')
