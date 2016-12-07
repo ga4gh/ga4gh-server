@@ -57,7 +57,7 @@ EXPOSE 80
 # Prepare container for deployment
 # The directory that the user will land in when executing an interactive shell
 WORKDIR /srv/ga4gh/server
-RUN python scripts/prepare_compliance_data.py -o ga4gh_example_data
+RUN python scripts/prepare_compliance_data.py -o ../ga4gh-compliance-data
 
 # Default action: Bring up a webserver instance to run as a daemon
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]

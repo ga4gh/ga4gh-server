@@ -224,7 +224,7 @@ From the client, the server is accessible at ``http://server/``, and the ``/tmp/
 
 .. code-block:: bash
 
-  #make a development dir and place the example client script in it
+  # make a development dir and place the example client script in it
   $ mkdir /tmp/mydev
   $ curl https://raw.githubusercontent.com/ga4gh/server/master/scripts/demo_example.py > /tmp/mydev/demo_example.py
   $ chmod +x /tmp/mydev/demo_example.py

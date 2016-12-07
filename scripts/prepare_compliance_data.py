@@ -207,7 +207,8 @@ class ComplianceDataMunger(object):
             readSrc.close()
             pysam.index(destFilePath)
             readGroupSet = reads.HtslibReadGroupSet(dataset, name)
-            readGroupSet.populateFromFile(os.path.abspath(destFilePath), os.abspath(destFilePath + ".bai"))
+            readGroupSet.populateFromFile(os.path.abspath(
+                destFilePath), os.path.abspath(destFilePath + ".bai"))
             readGroupSet.setReferenceSet(referenceSet)
             dataset.addReadGroupSet(readGroupSet)
             bioSamples = [hg00096BioSample, hg00099BioSample, hg00101BioSample]
@@ -272,8 +273,9 @@ class ComplianceDataMunger(object):
         self.repo.insertFeatureSet(featuresetG2P)
 
         # add g2p phenotypeAssociationSet
-        phenotypeAssociationSet = g2p_associationset\
-            .RdfPhenotypeAssociationSet(dataset, "cgd", outputG2PPath)
+        phenotypeAssociationSet = \
+            g2p_associationset.RdfPhenotypeAssociationSet(
+                dataset, "cgd", os.path.abspath(outputG2PPath))
         self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
 
         self.repo.commit()
@@ -312,7 +314,8 @@ class ComplianceDataMunger(object):
             dataset, variantFileName.split('_')[1])
         variantSet.setReferenceSet(referenceSet)
         variantSet.populateFromFile(
-            [os.path.abspath(outputVcf + ".gz")], [os.path.abspath(outputVcf + ".gz.tbi")])
+            [os.path.abspath(outputVcf + ".gz")],
+            [os.path.abspath(outputVcf + ".gz.tbi")])
         variantSet.checkConsistency()
         for callSet in variantSet.getCallSets():
             for bioSample in bioSamples:
