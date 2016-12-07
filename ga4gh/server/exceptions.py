@@ -176,6 +176,10 @@ class RequestValidationFailureException(BadRequestException):
         )
 
 
+class BadFeatureSetSearchRequestRegularExpression(BadRequestException):
+    message = "Malformed regular expression"
+    httpStatus = 400
+
 class BadReadsSearchRequestBothRefs(BadRequestException):
     message = "only one of referenceId and referenceName can be specified"
 
