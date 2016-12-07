@@ -122,7 +122,7 @@ class ComplianceDataMunger(object):
         referenceSet = references.HtslibReferenceSet(
             refSetMetadata['assemblyId'])
 
-        referenceSet.populateFromFile(fastaFilePath)
+        referenceSet.populateFromFile(os.path.abspath(fastaFilePath))
         referenceSet.setAssemblyId(refSetMetadata['assemblyId'])
         referenceSet.setDescription(refSetMetadata['description'])
         referenceSet.setNcbiTaxonId(refSetMetadata['ncbiTaxonId'])
@@ -207,7 +207,7 @@ class ComplianceDataMunger(object):
             readSrc.close()
             pysam.index(destFilePath)
             readGroupSet = reads.HtslibReadGroupSet(dataset, name)
-            readGroupSet.populateFromFile(destFilePath, destFilePath + ".bai")
+            readGroupSet.populateFromFile(os.path.abspath(destFilePath), os.abspath(destFilePath + ".bai"))
             readGroupSet.setReferenceSet(referenceSet)
             dataset.addReadGroupSet(readGroupSet)
             bioSamples = [hg00096BioSample, hg00099BioSample, hg00101BioSample]
@@ -225,7 +225,7 @@ class ComplianceDataMunger(object):
         shutil.copy(inputOntologyMap, outputOntologyMap)
 
         sequenceOntology = ontologies.Ontology("so-xp-simple")
-        sequenceOntology.populateFromFile(outputOntologyMap)
+        sequenceOntology.populateFromFile(os.path.abspath(outputOntologyMap))
         sequenceOntology._id = "so-xp-simple"
         self.repo.insertOntology(sequenceOntology)
         self.repo.addOntology(sequenceOntology)
@@ -250,7 +250,7 @@ class ComplianceDataMunger(object):
         dbgen.run()
         gencode = sequence_annotations.Gff3DbFeatureSet(dataset, "gencodev19")
         gencode.setOntology(sequenceOntology)
-        gencode.populateFromFile(seqAnnDest)
+        gencode.populateFromFile(os.path.abspath(seqAnnDest))
         gencode.setReferenceSet(referenceSet)
 
         self.repo.insertFeatureSet(gencode)
@@ -265,10 +265,10 @@ class ComplianceDataMunger(object):
             shutil.copy(filename, outputG2PPath)
 
         featuresetG2P = g2p_featureset.PhenotypeAssociationFeatureSet(
-            dataset, outputG2PPath)
+            dataset, os.path.abspath(outputG2PPath))
         featuresetG2P.setOntology(sequenceOntology)
         featuresetG2P.setReferenceSet(referenceSet)
-        featuresetG2P.populateFromFile(outputG2PPath)
+        featuresetG2P.populateFromFile(os.path.abspath(outputG2PPath))
         self.repo.insertFeatureSet(featuresetG2P)
 
         # add g2p phenotypeAssociationSet
@@ -294,7 +294,7 @@ class ComplianceDataMunger(object):
         rnaQuantificationSet = rna_quantification.SqliteRnaQuantificationSet(
             dataset, "rnaseq")
         rnaQuantificationSet.setReferenceSet(referenceSet)
-        rnaQuantificationSet.populateFromFile(rnaDbName)
+        rnaQuantificationSet.populateFromFile(os.path.abspath(rnaDbName))
         self.repo.insertRnaQuantificationSet(rnaQuantificationSet)
 
         self.repo.commit()
@@ -312,7 +312,7 @@ class ComplianceDataMunger(object):
             dataset, variantFileName.split('_')[1])
         variantSet.setReferenceSet(referenceSet)
         variantSet.populateFromFile(
-            [outputVcf + ".gz"], [outputVcf + ".gz.tbi"])
+            [os.path.abspath(outputVcf + ".gz")], [os.path.abspath(outputVcf + ".gz.tbi")])
         variantSet.checkConsistency()
         for callSet in variantSet.getCallSets():
             for bioSample in bioSamples:
