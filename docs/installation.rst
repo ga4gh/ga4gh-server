@@ -282,22 +282,6 @@ Build the code at server/ and run for production, serving a dataset on local hos
 Build and run the production build from above, with the demo dataset in the container
 (you will need to modify the FROM line in ``/deploy/variants/demo/Dockerfile`` if you want to use your image from above as the base):
 
-.. code-block:: bash
-
- $ cd server/deploy/variants/demo
- $ docker build -t my-repo/my-demo-image .
- $ docker run -itd -p 8000:80 --name ga4gh_demo my-repo/my-demo-image
-
-**Variants**
-
-Other Dockerfile implementations are available in the variants folder which install manually.
-To build one of these images:
-
-.. code-block:: bash
-
- $ cd server/deploy/variants/xxxx
- $ docker build -t my-repo/my-image .
- $ docker run -itd -p 8000:80 --name my_container my-repo/my-image
 
 ++++++++++++++++++++++
 Troubleshooting Docker
