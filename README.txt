@@ -5,6 +5,14 @@
 GA4GH Reference Implementation
 ==============================
 
+.. image:: https://img.shields.io/travis/ga4gh/server/master.svg
+   :alt: Current build status on Travis-CI, click for more
+   :target: https://travis-ci.org/ga4gh/server
+
+.. image:: https://img.shields.io/codecov/c/github/ga4gh/server/master.svg
+   :alt: Current code coverage of master branch, click for details
+   :target: https://codecov.io/github/ga4gh/server
+
 .. image:: https://badges.gitter.im/Join%20Chat.svg
    :alt: Join the chat at https://gitter.im/ga4gh/server
    :target: https://gitter.im/ga4gh/server?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
