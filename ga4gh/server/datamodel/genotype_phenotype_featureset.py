@@ -6,10 +6,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import re
 import bisect
 import rdflib
 from rdflib import RDF
 
+import ga4gh.server.exceptions as exceptions
 import ga4gh.server.protocol as protocol
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.server.datamodel.genotype_phenotype as g2p
@@ -143,8 +145,11 @@ class PhenotypeAssociationFeatureSet(
             referenceName, geneSymbol, name, start, end)
         featuresResults = self._rdfGraph.query(query)
         featureIds = set()
-        for row in featuresResults.bindings:
-            featureIds.add(row['feature'].toPython())
+        try:
+            for row in featuresResults.bindings:
+                featureIds.add(row['feature'].toPython())
+        except re.error:
+            raise exceptions.BadFeatureSetSearchRequestRegularExpression()
 
         if startIndex:
             startPosition = int(startIndex)
