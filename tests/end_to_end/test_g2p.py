@@ -524,3 +524,17 @@ class TestG2P(unittest.TestCase):
             self.assertNotEqual(previous_id, response.features[0].id)
             pageCount += 1
         self.assertEqual(3, pageCount)
+
+    def testGenotypesSearchByNameError(self):
+        """
+        Search for feature by name with a malformed regular expression.
+        """
+        # setup phenotype query
+        request = protocol.SearchFeaturesRequest()
+        datasetName, featureSet = self.getCGDDataSetFeatureSet()
+        request.feature_set_id = featureSet.id
+        request.name = "*"  # invalid regular expression
+
+        postUrl = "features/search"
+        response = self.sendJsonPostRequest(postUrl, protocol.toJson(request))
+        self.assertEqual(400, response.status_code)
