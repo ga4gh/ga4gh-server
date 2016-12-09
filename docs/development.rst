@@ -559,12 +559,14 @@ This entails:
 2) Once this has been merged, tag the release on GitHub (on the `releases
    <https://github.com/ga4gh/server/releases>`_ page) with the
    appropriate version number.
-3) Fetch the tag from the upstream repo, and checkout this tag.  Create the
-   distribution tarball using ``python setup.py sdist``, and then upload the
-   resulting tarball to PyPI using ``twine upload
-   dist/ga4gh-MAJOR.MINOR.PATCH.tar.gz`` (of course, using the correct file
-   name)
-4) Verify that the documentation at
+3) Fetch the tag from the upstream repo, and checkout this tag.
+4) Replace git URLs in the `constraints.txt` to point at the schemas and
+   client releases this server release is meant to depend on. 
+5) Create the distribution tarball using ``python setup.py sdist``, and then
+   upload the resulting tarball to PyPI using 
+   ``twine upload dist/ga4gh-MAJOR.MINOR.PATCH.tar.gz`` (using 
+   the correct file name).
+6) Verify that the documentation at
    http://ga4gh-reference-implementation.readthedocs.org/en/stable/
    is for the correct version (it may take a few minutes for this to
    happen after the release has been tagged on GitHub).  The release
@@ -585,6 +587,6 @@ we create a release using the following process:
 2) Fix the bug by either cherry picking the relevant commits
    from ``master``, or creating PRs against the ``release-$MAJOR.$MINOR``
    branch if the bug does not apply to ``master``.
-3) Follow steps 1-4 in the process for `Development releases`_ above,
+3) Follow steps 1-6 in the process for `Development releases`_ above,
    except using the ``release-$MAJOR.$MINOR`` branch as the base
    instead of ``master``.
