@@ -254,8 +254,8 @@ class AbstractDataRepository(object):
                         print(
                             "\t\t", quant.getLocalId(),
                             quant._description,
-                            quant._readGroupIds[0],
-                            quant._featureSetIds[0], sep="\t")
+                            ",".join(quant._readGroupIds),
+                            ",".join(quant._featureSetIds), sep="\t")
 
     def allReferences(self):
         """
