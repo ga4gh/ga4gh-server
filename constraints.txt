@@ -1,0 +1,28 @@
+# This file allows our dependencies to be against specific versions
+# or git tags. Each line is similar to a requirements.txt line, 
+# except that when installing the dependencies, the constraints.txt
+# is converted into the `dependency_links` of the setuptools
+# packaging script. This allows us to maintain dependencies across
+# repositories.
+#
+# For example, during development we use the development version
+# of the schemas with the line:
+#
+# git+git://github.com/ga4gh/schemas.git@master#egg=ga4gh_schemas
+#
+# When one has proposed a schema modification, they can change this
+# constraint to point at the branch of their proposed change:
+#
+# git+git://github.com/david4096/schemas.git@protobuf31#egg=ga4gh_schemas
+#
+# Then, when the change has been accepted at the schemas repository
+# you can change this to point back at the master branch!
+#
+# When making a release, these constraints are changed to point at
+# the released dependency.
+#
+# ga4gh-client==0.1.0
+# ga4gh-schemas==0.1.0
+#
+git+git://github.com/ga4gh/ga4gh-client.git@master#egg=ga4gh_client
+git+git://github.com/ga4gh/schemas.git@master#egg=ga4gh_schemas

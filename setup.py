@@ -20,13 +20,27 @@ with open("requirements.txt") as requirementsFile:
             continue
         if line[0] == '#':
             continue
-        pinnedVersion = line.split()[0]
-        install_requires.append(pinnedVersion)
+        if line.find('-c constraints.txt') == -1:
+            pinnedVersion = line.split()[0]
+            install_requires.append(pinnedVersion)
+
+dependency_links = []
+try:
+    with open("constraints.txt") as constraintsFile:
+        for line in constraintsFile:
+            line = line.strip()
+            if len(line) == 0:
+                continue
+            if line[0] == '#':
+                continue
+            dependency_links.append(line)
+except EnvironmentError:
+    print('No constraints file found, proceeding without '
+          'creating dependency links.')
 
 setup(
-    # END BOILERPLATE
     name="ga4gh",
-    description="A reference implementation of the ga4gh API",
+    description="A reference implementation of the GA4GH API",
     packages=["ga4gh", "ga4gh.server", "ga4gh.server.datamodel",
               "ga4gh.server.templates"],
     namespace_packages=["ga4gh"],
@@ -42,9 +56,9 @@ setup(
             'ga4gh_repo=ga4gh.server.cli.repomanager:repo_main',
         ]
     },
-    # BEGIN BOILERPLATE
     long_description=long_description,
     install_requires=install_requires,
+    dependency_links=dependency_links,
     license='Apache License 2.0',
     include_package_data=True,
     author="Global Alliance for Genomics and Health",

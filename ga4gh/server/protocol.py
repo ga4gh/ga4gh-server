@@ -100,7 +100,7 @@ def toJson(protoObject, indent=None):
     Serialises a protobuf object as json
     """
     # Using the internal method because this way we can reformat the JSON
-    js = json_format._MessageToJsonObject(protoObject, True)
+    js = json_format.MessageToDict(protoObject, True)
     return json.dumps(js, indent=indent)
 
 
