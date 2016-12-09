@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import json
 import os
 import sqlite3
+import datetime
 
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.datasets as datasets
@@ -21,12 +22,10 @@ import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.server.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.exceptions as exceptions
-
-from ga4gh.server import protocol
+import ga4gh.server.protocol as protocol
 
 import repo.models as m
 
-import datetime
 MODE_READ = 'r'
 MODE_WRITE = 'w'
 
@@ -885,10 +884,10 @@ class SqlDataRepository(AbstractDataRepository):
         """
         try:
             q = m.Reference.delete().where(
-                m.Reference.referencesetid == referenceSet.getId())
+                    m.Reference.referencesetid == referenceSet.getId())
             q.execute()
             q = m.Referenceset.delete().where(
-                m.Referenceset.id == referenceSet.getId())
+                    m.Referenceset.id == referenceSet.getId())
             q.execute()
         except Exception:
             msg = ("Unable to delete reference set.  "
