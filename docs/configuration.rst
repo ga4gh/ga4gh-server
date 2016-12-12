@@ -92,6 +92,10 @@ OIDC_AUTHZ_ENDPOINT, OIDC_TOKEN_ENDPOINT, OIDC_TOKEN_REV_ENDPOINT
     If the authorization provider has no discovery document available, you can
     set the authorization and token endpoints here.
 
+CACHE_DIRECTORY
+    This directory is used to share data between processes when the server is
+    run in a production environment. It defaults to ``/tmp/ga4gh/``.
+
 SECRET_KEY
     The secret key used by the server to encrypt cookies. Preferably, this
     should be a long (~24 characters) random string, however any string will
