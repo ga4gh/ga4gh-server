@@ -13,28 +13,10 @@ import base64
 
 import jwt
 
+import ga4gh.server.exceptions as exceptions
+
 from werkzeug.contrib.cache import SimpleCache
 cache = SimpleCache()
-
-
-def authenticate(error):
-    """
-    Helper function for generating unauthorized responses.
-    :param error: Dictionary with details of error
-    :return:
-    """
-    resp = flask.jsonify(error)
-    resp.status_code = 401
-    return resp
-
-
-def authorize_email(email='davidcs@ucsc.edu'):
-    """
-    Adds an email address to the list of authorized emails stored in an
-    ephemeral cache.
-    :param email:
-    """
-    cache.set(email, {'authorized': True})
 
 
 def auth_decorator(app=None):
@@ -63,68 +45,21 @@ def auth_decorator(app=None):
             if app.config.get('AUTH0_ENABLED', False):
                 client_id = app.config.get("AUTH0_CLIENT_ID")
                 client_secret = app.config.get("AUTH0_CLIENT_SECRET")
-                auth = flask.request.headers.get('Authorization', None)
-                if not auth:
-                    return authenticate(
-                        {'code': 'authorization_header_missing',
-                         'description': 'Authorization header is expected'})
-                parts = auth.split()
-
-                if parts[0].lower() != 'bearer':
-                    return authenticate(
-                        {'code': 'invalid_header',
-                         'description': 'Authorization header must'
-                                        ' start with Bearer'})
-                elif len(parts) == 1:
-                    return authenticate(
-                        {'code': 'invalid_header',
-                         'description': 'Token not found'})
-                elif len(parts) > 2:
-                    return authenticate(
-                        {'code': 'invalid_header',
-                         'description': 'Authorization header must'
-                                        ' be Bearer + \s + token'})
-
-                token = parts[1]
-                try:
-                    b64secret = client_secret.replace(
-                        "_", "/").replace("-", "+")
-                    payload = jwt.decode(
-                        token,
-                        base64.b64decode(b64secret),
-                        audience=client_id)
-                except jwt.ExpiredSignature:
-                    return authenticate(
-                        {'code': 'token_expired',
-                         'description': 'token is expired'})
-                except jwt.InvalidAudienceError:
-                    message = 'incorrect audience, expected: {}'.format(
-                        client_id)
-                    return authenticate(
-                        {'code': 'invalid_audience',
-                         'description': message})
-                except jwt.DecodeError:
-                    return authenticate(
-                        {'code': 'token_invalid_signature',
-                         'description': 'token signature is invalid'})
+                auth_header = flask.request.headers.get('Authorization', None)
+                # Each of these functions will throw a 401 is there is a
+                # problem decoding the token with some helpful error message.
+                token, payload = _decode_header(
+                    _well_formed(
+                        _has_token(_has_bearer(_has_header(auth_header)))),
+                    client_id, client_secret)
                 # We store the token in the session so that later
-                # stages can use it to connect identity and
-                # authorization.
+                # stages can use it to connect identity and authorization.
                 flask._request_ctx_stack.top.current_user = user = payload
                 flask.session['key'] = token
                 # Now we need to make sure that on top of having a good token
                 # They are authorized, and if not provide an error message
-                if not cache.get(user['email']):
-                    message = '{} is not authorized to ' \
-                              'access this resource'.format(user['email'])
-                    return authenticate(
-                        {'code': 'Not authorized',
-                         'description': message})
-                if not cache.get(token):
-                    return authenticate(
-                        {'code': 'Not authorized',
-                         'description': 'The token is good, '
-                                        'but you are not logged in.'})
+                is_authorized(user['email'])
+                is_active(token)
             return f(*args, **kwargs)
         return decorated
     return requires_auth
@@ -163,11 +98,11 @@ def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
     def callback_handling():
         code = flask.request.args.get('code')
         if code is None:
-            return authenticate(
-                {'code': 'bad_code',
-                 'description': 'The callback expects a well '
-                                'formed code, {} was provided'.format(code)})
+            raise exceptions.NotAuthorizedException(
+                'The callback expects a well '
+                'formatted code, {} was provided'.format(code))
         json_header = {'content-type': 'application/json'}
+        # Get auth token
         token_url = "https://{domain}/oauth/token".format(domain=domain)
         token_payload = {
             'client_id':     client_id,
@@ -183,11 +118,11 @@ def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
             id_token = token_info['id_token']
             access_token = token_info['access_token']
         except Exception as e:
-            return authenticate({'code': 'bad_callback',
-                         'description': 'The callback from Auth0 did not'
-                                        'include the expected tokens: \n'
-                                        '{}'.format(e.message)})
-
+            raise exceptions.NotAuthorizedException(
+                'The callback from Auth0 did not'
+                'include the expected tokens: \n'
+                '{}'.format(e.message))
+        # Get profile information
         try:
             user_url = \
               "https://{domain}/userinfo?access_token={access_token}".format(
@@ -195,12 +130,10 @@ def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
             user_info = requests.get(user_url).json()
             email = user_info['email']
         except Exception as e:
-            return authenticate(
-                {'code': 'no_user_profile',
-                 'description': 'The user profile from Auth0 did not contain'
-                                'the expected data: \n'
-                                '{}'.format(e.message)})
-
+            raise exceptions.NotAuthorizedException(
+                'The user profile from Auth0 did '
+                'not contain the expected data: \n {}'.format(e.message))
+        # Log token in
         user = cache.get(email)
         if user and user['authorized']:
             # TODO set timeout in cache here
@@ -239,6 +172,90 @@ def render_login(
         redirect_uri=redirect_uri,
         domain=domain,
         client_id=client_id)
+
+
+def authorize_email(email='davidcs@ucsc.edu'):
+    """
+    Adds an email address to the list of authorized emails stored in an
+    ephemeral cache.
+    :param email:
+    """
+    cache.set(email, {'authorized': True})
+
+
+def _has_header(auth_header):
+    if not auth_header:
+        raise exceptions.NotAuthorizedException(
+            'Authorization header is expected.')
+    return auth_header
+
+
+def _has_bearer(auth_header):
+    parts = auth_header.split()
+    if parts[0].lower() != 'bearer':
+        raise exceptions.NotAuthorizedException(
+            'Authorization header must start with "Bearer".')
+    return auth_header
+
+
+def _has_token(auth_header):
+    parts = auth_header.split()
+    if len(parts) == 1:
+        raise exceptions.NotAuthorizedException(
+           'Token not found in header.')
+    return auth_header
+
+
+def _well_formed(auth_header):
+    parts = auth_header.split()
+    if len(parts) > 2:
+        raise exceptions.NotAuthorizedException(
+            'Authorization header must be Bearer + \s + token.')
+    return auth_header
+
+
+def _decode_header(auth_header, client_id, client_secret):
+    """Takes the header and tries to return an active token"""
+    try:
+        token = auth_header.split()[1]
+        b64secret = client_secret.replace(
+            "_", "/").replace("-", "+")
+        payload = jwt.decode(
+            token,
+            base64.b64decode(b64secret),
+            audience=client_id)
+    except jwt.ExpiredSignature:
+        raise exceptions.NotAuthorizedException(
+            'Token has expired, please log in again.')
+    # is valid client
+    except jwt.InvalidAudienceError:
+        message = 'Incorrect audience, expected: {}'.format(
+            client_id)
+        raise exceptions.NotAuthorizedException(message)
+    # is valid token
+    except jwt.DecodeError:
+        raise exceptions.NotAuthorizedException(
+            'Token signature could not be validated.')
+    except Exception as e:
+        raise exceptions.NotAuthorizedException(
+            'Token signature was malformed. {}'.format(e.message))
+    return token, payload
+
+
+def is_authorized(email):
+    if not cache.get(email):
+        message = '{} is not authorized to ' \
+                  'access this resource'.format(email)
+        raise exceptions.NotAuthenticatedException(message)
+    return email
+
+
+def is_active(token):
+    if not cache.get(token):
+        raise exceptions.NotAuthenticatedException(
+            'The token is good, but you are not logged in. Please'
+            'try logging in again.')
+    return token
 
 
 LOGIN_HTML = """<html>

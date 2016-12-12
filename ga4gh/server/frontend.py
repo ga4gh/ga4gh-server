@@ -911,6 +911,11 @@ def searchPhenotypeAssociationSets():
 # instead of the default, html
 
 
+@app.errorhandler(401)
+def unauthorizedHandler(errorString):
+    return handleException(exceptions.UnauthorizedException(errorString))
+
+
 @app.errorhandler(404)
 def pathNotFoundHandler(errorString):
     return handleException(exceptions.PathNotFoundException())
@@ -923,4 +928,4 @@ def methodNotAllowedHandler(errorString):
 
 @app.errorhandler(403)
 def notAuthenticatedHandler(errorString):
-    return handleException(exceptions.NotAuthenticatedException())
+    return handleException(exceptions.NotAuthenticatedException(errorString))

@@ -323,8 +323,24 @@ class MethodNotAllowedException(RuntimeException):
 
 class NotAuthenticatedException(RuntimeException):
     httpStatus = 403
-    message = (
-        "Not authenticated. Use the key on the server index page.")
+
+    def __init__(self, message=None):
+        if message is None:
+            self.message = "Not authenticated. Use the " \
+                           "key on the server index page."
+        else:
+            self.message = message
+
+
+class NotAuthorizedException(RuntimeException):
+    httpStatus = 401
+
+    def __init__(self, message=None):
+        if message is None:
+            self.message = "Not authenticated. Use the " \
+                           "key on the server index page."
+        else:
+            self.message = message
 
 
 class NotImplementedException(RuntimeException):

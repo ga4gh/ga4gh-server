@@ -5,12 +5,15 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import ga4gh.server.protocol as protocol
+
 import unittest
 import logging
 
-import tests.paths as paths
-
 import ga4gh.server.frontend as frontend
+import ga4gh.server.exceptions as exceptions
+
+import ga4gh.server.auth as auth
 
 
 class TestAuth0(unittest.TestCase):
@@ -36,6 +39,18 @@ class TestAuth0(unittest.TestCase):
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
         cls.backend = frontend.app.backend
 
+    def sendPostRequest(self, path, request, extraHeaders=None):
+        """
+        Sends the specified GA request object and returns the response.
+        """
+        headers = {
+            'Content-type': 'application/json',
+            'Origin': self.exampleUrl,
+        }
+        if extraHeaders:
+            headers.update(extraHeaders)
+        return self.app.post(
+            path, headers=headers, data=protocol.toJson(request))
 
     def sendGetRequest(self, path):
         """
@@ -45,7 +60,6 @@ class TestAuth0(unittest.TestCase):
             'Origin': self.exampleUrl,
         }
         return self.app.get(path, headers=headers)
-
 
     def testCallback(self):
         response = self.sendGetRequest("callback")
@@ -59,7 +73,6 @@ class TestAuth0(unittest.TestCase):
             401, "Ensure that when the callback is hit without a code"
                  "it will return 401 but got {}".format(response.status_code))
 
-
     def testLogin(self):
         response = self.sendGetRequest("login")
         self.assertEqual(
@@ -69,8 +82,32 @@ class TestAuth0(unittest.TestCase):
 
     def testBadBearer(self):
         # tests to see if a malformed bearer token fails in expected ways
-        self.assertTrue(False)
+        protectedPath = "datasets/search"
+        request = protocol.SearchDatasetsRequest()
+        headers = {"Authorization": ""}
+        response = self.sendPostRequest(protectedPath, request, headers)
+        self.assertEquals(response.status_code, 401, "No bearer should fail"
+                                                     "with 401")
+        headers = {"Authorization": "Bearer"}
+        response = self.sendPostRequest(protectedPath, request, headers)
+        self.assertEquals(response.status_code, 401, "")
 
     def testProtected(self):
-        # tests to see that endpoints are not accessible if logged out
-        self.assertTrue(False)
+        protectedPath = "datasets/search"
+        request = protocol.SearchDatasetsRequest()
+        response = self.sendPostRequest(protectedPath, request)
+        self.assertEquals(response.status_code, 401, "If Auth0 is enabled"
+                                                     "this endpoint is not"
+                                                     "accessible with auth.")
+
+    def test_exceptions(self):
+        with self.assertRaises(exceptions.NotAuthorizedException):
+            auth._has_header('')
+        with self.assertRaises(exceptions.NotAuthorizedException):
+            auth._has_bearer('empty')
+        with self.assertRaises(exceptions.NotAuthorizedException):
+            auth._has_token('Bearer')
+        with self.assertRaises(exceptions.NotAuthorizedException):
+            auth._has_token('Bearer123')
+        with self.assertRaises(exceptions.NotAuthorizedException):
+            auth._well_formed('Bearer 123 456')
