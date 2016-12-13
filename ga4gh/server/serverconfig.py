@@ -100,6 +100,7 @@ class Auth0Config(DevelopmentConfig):
     Auth0 configuration
     """
     AUTH0_ENABLED = True
+    SECRET_KEY = "super_secret"
     AUTH0_SCOPES = "openid email"
     AUTH0_CALLBACK_URL = "http://localhost:8000/callback"
     AUTH0_HOST = "david4096.auth0.com"

@@ -298,9 +298,8 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.oidcClient = None
     app.myPort = port
     if app.config.get('AUTH0_ENABLED'):
-        map(
-            auth.authorize_email,
-            app.config.get('AUTH0_AUTHORIZED_EMAILS', '').split(','))
+        emails = app.config.get('AUTH0_AUTHORIZED_EMAILS', '').split(',')
+        [auth.authorize_email(e, app.cache) for e in emails]
     if "OIDC_PROVIDER" in app.config:
         cors.CORS(app, allow_headers='Content-Type')
         # The oic client. If we're testing, we don't want to verify
@@ -542,6 +541,7 @@ def login():
 def callback_handling():
     if app.config.get('AUTH0_ENABLED'):
         return auth.callback_maker(
+            cache=app.cache,
             domain=app.config.get('AUTH0_HOST'),
             client_id=app.config.get('AUTH0_CLIENT_ID'),
             client_secret=app.config.get('AUTH0_CLIENT_SECRET'),
@@ -554,8 +554,8 @@ def callback_handling():
 @requires_auth
 @cors.cross_origin(headers=['Content-Type', 'Authorization'])
 def logout():
-    key = flask.session['key']
-    auth.logout()
+    key = flask.session['auth0_key']
+    auth.logout(app.cache)
     url = 'https://{}/v2/logout?access_token={}&?client_id={}'.format(
         app.config.get('AUTH0_HOST'),
         key,

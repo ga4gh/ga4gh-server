@@ -15,9 +15,6 @@ import jwt
 
 import ga4gh.server.exceptions as exceptions
 
-from werkzeug.contrib.cache import SimpleCache
-cache = SimpleCache()
-
 
 def auth_decorator(app=None):
     """
@@ -42,6 +39,7 @@ def auth_decorator(app=None):
     def requires_auth(f):
         @functools.wraps(f)
         def decorated(*args, **kwargs):
+            # This decorator will only apply with AUTH0_ENABLED set to True.
             if app.config.get('AUTH0_ENABLED', False):
                 client_id = app.config.get("AUTH0_CLIENT_ID")
                 client_secret = app.config.get("AUTH0_CLIENT_SECRET")
@@ -49,32 +47,39 @@ def auth_decorator(app=None):
                 # Each of these functions will throw a 401 is there is a
                 # problem decoding the token with some helpful error message.
                 token, payload = _decode_header(
-                    _well_formed(
-                        _has_token(_has_bearer(_has_header(auth_header)))),
-                    client_id, client_secret)
+                    auth_header, client_id, client_secret)
                 # We store the token in the session so that later
                 # stages can use it to connect identity and authorization.
                 flask._request_ctx_stack.top.current_user = user = payload
-                flask.session['key'] = token
+                flask.session['auth0_key'] = token
                 # Now we need to make sure that on top of having a good token
                 # They are authorized, and if not provide an error message
-                is_authorized(user['email'])
-                is_active(token)
+                is_authorized(app.cache, user['email'])
+                is_active(app.cache, token)
             return f(*args, **kwargs)
         return decorated
     return requires_auth
 
 
-def logout():
+def decode_header(auth_header, client_id, client_secret):
+    return _decode_header(
+        _well_formed(
+            _has_token(_has_bearer(_has_header(auth_header)))),
+        client_id, client_secret)
+
+
+def logout(cache):
     """
     Logs out the current session by removing it from the cache.
     """
-    cache.set(flask.session['key'], None)
+    cache.set(flask.session['auth0_key'], None)
     flask.session.clear()
     return True
 
 
-def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
+def callback_maker(
+        cache=None, domain='', client_id='',
+        client_secret='', redirect_uri=''):
     """
     This function will generate a view function that can be used to handle
     the return from Auth0. The "callback" is a redirected session from auth0
@@ -136,7 +141,6 @@ def callback_maker(domain='', client_id='', client_secret='', redirect_uri=''):
         # Log token in
         user = cache.get(email)
         if user and user['authorized']:
-            # TODO set timeout in cache here
             cache.set(id_token, user_info)
 
         # Redirect to a page that presents the code.
@@ -174,12 +178,13 @@ def render_login(
         client_id=client_id)
 
 
-def authorize_email(email='davidcs@ucsc.edu'):
+def authorize_email(email='davidcs@ucsc.edu', cache=None):
     """
     Adds an email address to the list of authorized emails stored in an
     ephemeral cache.
     :param email:
     """
+    # TODO safely access cache
     cache.set(email, {'authorized': True})
 
 
@@ -215,7 +220,10 @@ def _well_formed(auth_header):
 
 
 def _decode_header(auth_header, client_id, client_secret):
-    """Takes the header and tries to return an active token"""
+    """
+        Takes the header and tries to return an active token and decoded
+        payload.
+    """
     try:
         token = auth_header.split()[1]
         b64secret = client_secret.replace(
@@ -242,7 +250,7 @@ def _decode_header(auth_header, client_id, client_secret):
     return token, payload
 
 
-def is_authorized(email):
+def is_authorized(cache, email):
     if not cache.get(email):
         message = '{} is not authorized to ' \
                   'access this resource'.format(email)
@@ -250,7 +258,7 @@ def is_authorized(email):
     return email
 
 
-def is_active(token):
+def is_active(cache, token):
     if not cache.get(token):
         raise exceptions.NotAuthenticatedException(
             'The token is good, but you are not logged in. Please'
@@ -258,6 +266,7 @@ def is_active(token):
     return token
 
 
+# This HTML string is used to render the login page. It is a jinja template.
 LOGIN_HTML = """<html>
 <head>
 
