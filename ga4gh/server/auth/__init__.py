@@ -46,8 +46,11 @@ def auth_decorator(app=None):
                 auth_header = flask.request.headers.get('Authorization', None)
                 # Each of these functions will throw a 401 is there is a
                 # problem decoding the token with some helpful error message.
-                token, profile = _decode_header(
-                    auth_header, client_id, client_secret)
+                if auth_header:
+                    token, profile = _decode_header(
+                        auth_header, client_id, client_secret)
+                else:
+                    raise exceptions.NotAuthorizedException()
                 # We store the token in the session so that later
                 # stages can use it to connect identity and authorization.
                 flask._request_ctx_stack.top.current_user = profile
