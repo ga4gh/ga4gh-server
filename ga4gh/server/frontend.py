@@ -400,9 +400,13 @@ def handleException(exception):
             app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
     error = serverException.toProtocolElement()
-    responseStr = protocol.toJson(error)
-
-    return getFlaskResponse(responseStr, serverException.httpStatus)
+    if flask.request.headers['Accept'].find('text/html') != -1:
+        return "<h1>401 Unauthorized</h1>" \
+               "Please try <a href=\"/login\">logging in</a>." \
+               "<pre>{}</pre>".format(protocol.toJson(error))
+    else:
+        responseStr = protocol.toJson(error)
+        return getFlaskResponse(responseStr, serverException.httpStatus)
 
 
 def startLogin():
@@ -520,6 +524,7 @@ class DisplayedRoute(object):
 
 
 @app.route('/')
+@requires_auth
 def index():
     return flask.render_template('index.html', info=app.serverStatus)
 
