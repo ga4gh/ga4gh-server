@@ -46,15 +46,15 @@ def auth_decorator(app=None):
                 auth_header = flask.request.headers.get('Authorization', None)
                 # Each of these functions will throw a 401 is there is a
                 # problem decoding the token with some helpful error message.
-                token, payload = _decode_header(
+                token, profile = _decode_header(
                     auth_header, client_id, client_secret)
                 # We store the token in the session so that later
                 # stages can use it to connect identity and authorization.
-                flask._request_ctx_stack.top.current_user = user = payload
+                flask._request_ctx_stack.top.current_user = profile
                 flask.session['auth0_key'] = token
                 # Now we need to make sure that on top of having a good token
                 # They are authorized, and if not provide an error message
-                is_authorized(app.cache, user['email'])
+                is_authorized(app.cache, profile['email'])
                 is_active(app.cache, token)
             return f(*args, **kwargs)
         return decorated
@@ -62,6 +62,15 @@ def auth_decorator(app=None):
 
 
 def decode_header(auth_header, client_id, client_secret):
+    """
+    A function that threads the header through decoding and returns a tuple
+    of the token and payload if successful. This does not fully authenticate
+    a request.
+    :param auth_header:
+    :param client_id:
+    :param client_secret:
+    :return: (token, profile)
+    """
     return _decode_header(
         _well_formed(
             _has_token(_has_bearer(_has_header(auth_header)))),
@@ -70,7 +79,8 @@ def decode_header(auth_header, client_id, client_secret):
 
 def logout(cache):
     """
-    Logs out the current session by removing it from the cache.
+    Logs out the current session by removing it from the cache. This is
+    expected to only occur when a session has authenticated itself.
     """
     cache.set(flask.session['auth0_key'], None)
     flask.session.clear()
@@ -98,7 +108,7 @@ def callback_maker(
     :param client_id:
     :param client_secret:
     :param redirect_uri:
-    :return View function:
+    :return : View function
     """
     def callback_handling():
         code = flask.request.args.get('code')
@@ -178,7 +188,7 @@ def render_login(
         client_id=client_id)
 
 
-def authorize_email(email='davidcs@ucsc.edu', cache=None):
+def authorize_email(email='', cache=None):
     """
     Adds an email address to the list of authorized emails stored in an
     ephemeral cache.
@@ -221,8 +231,12 @@ def _well_formed(auth_header):
 
 def _decode_header(auth_header, client_id, client_secret):
     """
-        Takes the header and tries to return an active token and decoded
-        payload.
+    Takes the header and tries to return an active token and decoded
+    payload.
+    :param auth_header:
+    :param client_id:
+    :param client_secret:
+    :return: (token, profile)
     """
     try:
         token = auth_header.split()[1]
@@ -251,6 +265,13 @@ def _decode_header(auth_header, client_id, client_secret):
 
 
 def is_authorized(cache, email):
+    """
+    Accepts the cache and an email string and checks to see if the email
+    has been added to the cache. If not it throws a NotAuthenticatedException.
+    :param cache:
+    :param email:
+    :return: email
+    """
     if not cache.get(email):
         message = '{} is not authorized to ' \
                   'access this resource'.format(email)
@@ -259,11 +280,20 @@ def is_authorized(cache, email):
 
 
 def is_active(cache, token):
-    if not cache.get(token):
+    """
+    Accepts the cache and ID token and checks to see if the profile is
+    currently logged in. If so, return the token, otherwise throw a
+    NotAuthenticatedException.
+    :param cache:
+    :param token:
+    :return:
+    """
+    profile = cache.get(token)
+    if not profile:
         raise exceptions.NotAuthenticatedException(
-            'The token is good, but you are not logged in. Please'
+            'The token is good, but you are not logged in. Please '
             'try logging in again.')
-    return token
+    return profile
 
 
 # This HTML string is used to render the login page. It is a jinja template.

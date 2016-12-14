@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import requests
 import subprocess
 from urlparse import urlparse
+import shutil
 
 import lxml.html as html
 
@@ -71,6 +72,7 @@ class TestOidc(server_test.ServerTestClass):
     @classmethod
     def otherTeardown(cls):
         cls.opServer.shutdown()
+        shutil.rmtree('/tmp/ga4gh', True)
 
     @classmethod
     def getServer(cls):
