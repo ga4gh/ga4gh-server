@@ -68,6 +68,7 @@ class TestOidc(server_test.ServerTestClass):
         requests.packages.urllib3.disable_warnings()
         cls.opServer = server.OidcOpServerForTesting()
         cls.opServer.start()
+        shutil.rmtree('/tmp/ga4gh', True)
 
     @classmethod
     def otherTeardown(cls):

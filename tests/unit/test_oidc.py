@@ -11,6 +11,7 @@ import mock
 import urlparse
 import logging
 import mimetypes
+import shutil
 
 import oic
 import oic.oic.message as message
@@ -117,10 +118,12 @@ class TestFrontendOidc(unittest.TestCase):
         frontend.configure(
             baseConfig="TestOidcConfig", extraConfig=config, port=8001)
         cls.app = frontend.app.test_client()
+        shutil.rmtree('/tmp/ga4gh', True)
 
     @classmethod
     def tearDownClass(cls):
         cls.app = None
+        shutil.rmtree('/tmp/ga4gh', True)
 
     def sendPostRequest(self, path, request):
         """
