@@ -280,7 +280,10 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     datamodel.fileHandleCache.setMaxCacheSize(
         app.config["FILE_HANDLE_CACHE_MAX_SIZE"])
     # Setup CORS
-
+    try:
+        cors.CORS(app, allow_headers='Content-Type')
+    except AssertionError:
+        pass
     app.serverStatus = ServerStatus()
 
     app.backend = _configure_backend(app)
@@ -301,7 +304,6 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         emails = app.config.get('AUTH0_AUTHORIZED_EMAILS', '').split(',')
         [auth.authorize_email(e, app.cache) for e in emails]
     if "OIDC_PROVIDER" in app.config:
-        cors.CORS(app, allow_headers='Content-Type')
         # The oic client. If we're testing, we don't want to verify
         # SSL certificates
         app.oidcClient = oic.oic.Client(
