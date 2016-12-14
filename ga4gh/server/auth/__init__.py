@@ -80,7 +80,7 @@ def decode_header(auth_header, client_id, client_secret):
 def logout(cache):
     """
     Logs out the current session by removing it from the cache. This is
-    expected to only occur when a session has authenticated itself.
+    expected to only occur when a session has
     """
     cache.set(flask.session['auth0_key'], None)
     flask.session.clear()
@@ -154,7 +154,7 @@ def callback_maker(
             cache.set(id_token, user_info)
 
         # Redirect to a page that presents the code.
-        return flask.redirect('/?code={}'.format(id_token))
+        return flask.redirect('/login?code={}'.format(id_token))
     return callback_handling
 
 
@@ -188,7 +188,19 @@ def render_login(
         client_id=client_id)
 
 
-def authorize_email(email='', cache=None):
+def render_key(app, key=""):
+    """
+    Renders a view from the app and a key that lets the current session grab
+    its token.
+    :param app:
+    :param key:
+    :return: Rendered view
+    """
+    return app.jinja_env.from_string(KEY_HTML).render(
+        key=key)
+
+
+def authorize_email(email='davidcs@ucsc.edu', cache=None):
     """
     Adds an email address to the list of authorized emails stored in an
     ephemeral cache.
@@ -265,13 +277,6 @@ def _decode_header(auth_header, client_id, client_secret):
 
 
 def is_authorized(cache, email):
-    """
-    Accepts the cache and an email string and checks to see if the email
-    has been added to the cache. If not it throws a NotAuthenticatedException.
-    :param cache:
-    :param email:
-    :return: email
-    """
     if not cache.get(email):
         message = '{} is not authorized to ' \
                   'access this resource'.format(email)
@@ -315,3 +320,14 @@ LOGIN_HTML = """<html>
     lock.show();
     </script>
     </div>"""
+
+KEY_HTML = """<html>
+<head>
+
+  <title>Logged in</title></head><body><div>
+  <h1>Logged in</h1>
+  <p>Your token is now active, add it as your "Authorization: bearer" header
+  when making requests to protected endpoints</p>
+  <textarea cols=120 rows=5 onClick='this.select()'>{{ key }}</textarea>
+  </div>
+"""

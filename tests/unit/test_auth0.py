@@ -93,6 +93,8 @@ class TestAuth0(unittest.TestCase):
         """
         Tests to see if a malformed bearer token fails in expected ways
         """
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 401)
         protectedPath = "datasets/search"
         request = protocol.SearchDatasetsRequest()
         headers = {"Authorization": ""}

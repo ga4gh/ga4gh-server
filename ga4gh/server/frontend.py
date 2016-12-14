@@ -532,12 +532,15 @@ def index():
 @app.route("/login")
 def login():
     if app.config.get('AUTH0_ENABLED'):
-        return auth.render_login(
-            app=app,
-            scopes=app.config.get('AUTH0_SCOPES'),
-            redirect_uri=app.config.get('AUTH0_CALLBACK_URL'),
-            domain=app.config.get('AUTH0_HOST'),
-            client_id=app.config.get('AUTH0_CLIENT_ID'))
+        if (flask.request.args.get('code')):
+            return auth.render_key(app, key=flask.request.args.get('code'))
+        else:
+            return auth.render_login(
+                app=app,
+                scopes=app.config.get('AUTH0_SCOPES'),
+                redirect_uri=app.config.get('AUTH0_CALLBACK_URL'),
+                domain=app.config.get('AUTH0_HOST'),
+                client_id=app.config.get('AUTH0_CLIENT_ID'))
     else:
         raise exceptions.NotFoundException()
 
