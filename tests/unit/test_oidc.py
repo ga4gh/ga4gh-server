@@ -114,11 +114,11 @@ class TestFrontendOidc(unittest.TestCase):
             "SECRET_KEY": "secret"
             # "DEBUG" : True
         }
+        shutil.rmtree('/tmp/ga4gh', True)
         frontend.reset()
         frontend.configure(
             baseConfig="TestOidcConfig", extraConfig=config, port=8001)
         cls.app = frontend.app.test_client()
-        shutil.rmtree('/tmp/ga4gh', True)
 
     @classmethod
     def tearDownClass(cls):

@@ -324,10 +324,10 @@ LOGIN_HTML = """<html>
 KEY_HTML = """<html>
 <head>
 
-  <title>Logged in</title></head><body><div>
-  <h1>Logged in</h1>
+  <title>GA4GH Server API Token</title></head><body><div>
+  <h1>Your API Token</h1>
   <p>Your token is now active, add it as your "Authorization: bearer" header
   when making requests to protected endpoints</p>
-  <textarea cols=120 rows=5 onClick='this.select()'>{{ key }}</textarea>
+  <textarea cols=120 rows=5 onClick='this.select()' readonly>{{ key }}</textarea>
   </div>
 """

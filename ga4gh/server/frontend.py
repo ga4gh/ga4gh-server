@@ -400,11 +400,16 @@ def handleException(exception):
             app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
     error = serverException.toProtocolElement()
+    # If the exception is being viewed by a web browser, we can render a nicer
+    # view.
     if flask.request and 'Accept' in flask.request.headers and \
-                    flask.request.headers['Accept'].find('text/html') != -1:
-        return "<h1>401 Unauthorized</h1>" \
-               "Please try <a href=\"/login\">logging in</a>." \
-               "<pre>{}</pre>".format(protocol.toJson(error))
+            flask.request.headers['Accept'].find('text/html') != -1:
+        message = "<h1>Error {}</h1><pre>{}</pre>".format(
+                    serverException.httpStatus,
+                    protocol.toJson(error))
+        if serverException.httpStatus == 401 or serverException.httpStatus == 403:
+            message += "Please try <a href=\"/login\">logging in</a>."
+        return message
     else:
         responseStr = protocol.toJson(error)
         return getFlaskResponse(responseStr, serverException.httpStatus)
