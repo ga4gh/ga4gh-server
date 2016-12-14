@@ -400,7 +400,8 @@ def handleException(exception):
             app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
     error = serverException.toProtocolElement()
-    if flask.request.headers['Accept'].find('text/html') != -1:
+    if flask.request and 'Accept' in flask.request.headers and \
+                    flask.request.headers['Accept'].find('text/html') != -1:
         return "<h1>401 Unauthorized</h1>" \
                "Please try <a href=\"/login\">logging in</a>." \
                "<pre>{}</pre>".format(protocol.toJson(error))
