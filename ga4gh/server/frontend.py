@@ -407,7 +407,8 @@ def handleException(exception):
         message = "<h1>Error {}</h1><pre>{}</pre>".format(
                     serverException.httpStatus,
                     protocol.toJson(error))
-        if serverException.httpStatus == 401 or serverException.httpStatus == 403:
+        if serverException.httpStatus == 401 \
+                or serverException.httpStatus == 403:
             message += "Please try <a href=\"/login\">logging in</a>."
         return message
     else:
