@@ -95,7 +95,7 @@ class GoogleOidcConfig(ProductionConfig):
     OIDC_CLIENT_SECRET = "XXX"
 
 
-class Auth0Config(DevelopmentConfig):
+class TestAuth0Config(DevelopmentConfig):
     """
     Auth0 configuration
     """

@@ -36,7 +36,7 @@ class TestAuth0(unittest.TestCase):
         }
         frontend.reset()
         frontend.configure(
-            baseConfig="Auth0Config", extraConfig=config)
+            baseConfig="TestAuth0Config", extraConfig=config)
         cls.app = frontend.app
         # silence usually unhelpful CORS log
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
