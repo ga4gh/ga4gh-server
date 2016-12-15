@@ -560,13 +560,15 @@ This entails:
    <https://github.com/ga4gh/server/releases>`_ page) with the
    appropriate version number.
 3) Fetch the tag from the upstream repo, and checkout this tag.
-4) Replace git URLs in the `constraints.txt` to point at the schemas and
+4) Replace git URLs in the ``constraints.txt`` to point at the schemas and
    client releases this server release is meant to depend on. 
-5) Create the distribution tarball using ``python setup.py sdist``, and then
+5) Replace git URLs in the ``docs/environment.yml`` using the same versions
+   as (4).
+6) Create the distribution tarball using ``python setup.py sdist``, and then
    upload the resulting tarball to PyPI using 
    ``twine upload dist/ga4gh-MAJOR.MINOR.PATCH.tar.gz`` (using 
    the correct file name).
-6) Verify that the documentation at
+7) Verify that the documentation at
    http://ga4gh-reference-implementation.readthedocs.org/en/stable/
    is for the correct version (it may take a few minutes for this to
    happen after the release has been tagged on GitHub).  The release
