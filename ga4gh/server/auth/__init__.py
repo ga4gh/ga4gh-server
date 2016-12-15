@@ -155,9 +155,9 @@ def callback_maker(
         user = cache.get(email)
         if user and user['authorized']:
             cache.set(id_token, user_info)
-
-        # Redirect to a page that presents the code.
-        return flask.redirect('/login?code={}'.format(id_token))
+            return flask.redirect('/login?code={}'.format(id_token))
+        else:
+            return flask.redirect('/login')
     return callback_handling
 
 
