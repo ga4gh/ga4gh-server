@@ -37,7 +37,7 @@ RUN pip install -r requirements.txt
 
 # Install the code
 COPY . /srv/ga4gh/server/
-RUN python setup.py install
+RUN pip install .
 
 # Write new apache config
 COPY deploy/001-ga4gh.conf /etc/apache2/sites-available/001-ga4gh.conf
@@ -48,7 +48,8 @@ COPY deploy/config.py /srv/ga4gh/config.py
 
 # Configure apache to serve GA4GH site
 WORKDIR /etc/apache2/sites-enabled
-RUN rm -f 000-default.conf && ln -s /etc/apache2/sites-available/001-ga4gh.conf 001-ga4gh.conf
+RUN a2dissite 000-default
+RUN a2ensite 001-ga4gh
 
 # Open port 80 for HTTP
 EXPOSE 80
@@ -56,6 +57,7 @@ EXPOSE 80
 # Prepare container for deployment
 # The directory that the user will land in when executing an interactive shell
 WORKDIR /srv/ga4gh/server
+RUN python scripts/prepare_compliance_data.py -o ../ga4gh-compliance-data
 
 # Default action: Bring up a webserver instance to run as a daemon
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
