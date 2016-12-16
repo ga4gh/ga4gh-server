@@ -261,34 +261,6 @@ exactly what a force push does.
     uses the ``--ff-only`` flag to merge a remote mainline branch into a
     local mainline branch fails.)
 
-One task that you might be asked to do before your topic branch can be
-merged is "squashing your commits."  We want the git history to be clean
-and informative, and we do that by crafting one and only one commit
-message per logical change.  In the normal course of development (unless
-one is constantly committing with the ``--amend`` flag) many intermediate
-commits can be created that should be squashed down to (usually) one before
-it can be merged.  Do this with (assuming you are in your topic branch):
-
-.. code-block:: bash
-
-    $ git rebase -i `git merge-base master HEAD`
-
-This will launch an editor that will give you control over how you want
-to structure your commits.  Usually you just want to "pick" the first
-commit and "squash" all of the subsequent commits, and then ensure that
-the final commit message is clean (best practice is to give a short
-summary of the change on the first line, a blank line, and then a more
-detailed description of the change following, with the issue number
--- if there is one -- in the detailed description).  More information
-about the interactive rebase process can be found
-`here <https://help.github.com/articles/about-git-rebase/>`__.
-Once the commits are to your liking, you can push the branch to your
-remote repository (which will require a force push if you reordered
-or deleted commits that existed in the remote version of the branch).
-
-(It usually is a good idea to squash commits before rebasing your topic
-branch on top of a mainline branch.  See the elaboration in the :ref:`Git
-Workflow Appendix <git-appendix>` on this topic.)
 
 Once your pull request has been merged into ``master``, you can close
 the pull request and delete the remote branch in the GitHub interface.
