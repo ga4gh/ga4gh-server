@@ -331,5 +331,6 @@ KEY_HTML = """<html>
 <p>Your token is now active, add it as your "Authorization: bearer $TOKEN" header
 when making requests to protected endpoints</p>
 <textarea cols=120 rows=5 onClick='this.select()' readonly>{{ key }}</textarea>
+<h3><a href="/?key={{ key }}">Visit landing page</a></h3>
 </div>
 """ # noqa

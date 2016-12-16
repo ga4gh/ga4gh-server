@@ -533,9 +533,22 @@ class DisplayedRoute(object):
 
 
 @app.route('/')
-@requires_auth
 def index():
-    return flask.render_template('index.html', info=app.serverStatus)
+    response = flask.render_template('index.html',
+                                     info=app.serverStatus)
+    if app.config.get('AUTH0_ENABLED'):
+        key = (flask.request.args.get('key'))
+        try:
+            print(key)
+            profile = app.cache.get(key)
+        except:
+            raise exceptions.NotAuthorizedException()
+        if (profile):
+            return response
+        else:
+            exceptions.NotAuthenticatedException()
+    else:
+        return response
 
 
 @app.route("/login")
