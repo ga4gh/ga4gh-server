@@ -32,6 +32,8 @@ import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datarepo as datarepo
 
+import ga4gh.server.auth as auth
+
 
 MIMETYPE = "application/json"
 SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
@@ -40,6 +42,8 @@ SECRET_KEY_LENGTH = 24
 app = flask.Flask(__name__)
 assert not hasattr(app, 'urls')
 app.urls = []
+
+requires_auth = auth.auth_decorator(app)
 
 
 class NoConverter(werkzeug.routing.BaseConverter):
@@ -276,7 +280,10 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     datamodel.fileHandleCache.setMaxCacheSize(
         app.config["FILE_HANDLE_CACHE_MAX_SIZE"])
     # Setup CORS
-    cors.CORS(app, allow_headers='Content-Type')
+    try:
+        cors.CORS(app, allow_headers='Content-Type')
+    except AssertionError:
+        pass
     app.serverStatus = ServerStatus()
 
     app.backend = _configure_backend(app)
@@ -293,6 +300,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         app.cache_dir, threshold=5000, default_timeout=600, mode=384)
     app.oidcClient = None
     app.myPort = port
+    if app.config.get('AUTH0_ENABLED'):
+        emails = app.config.get('AUTH0_AUTHORIZED_EMAILS', '').split(',')
+        [auth.authorize_email(e, app.cache) for e in emails]
     if "OIDC_PROVIDER" in app.config:
         # The oic client. If we're testing, we don't want to verify
         # SSL certificates
@@ -392,9 +402,20 @@ def handleException(exception):
             app.log_exception(exception)
         serverException = exceptions.getServerError(exception)
     error = serverException.toProtocolElement()
-    responseStr = protocol.toJson(error)
-
-    return getFlaskResponse(responseStr, serverException.httpStatus)
+    # If the exception is being viewed by a web browser, we can render a nicer
+    # view.
+    if flask.request and 'Accept' in flask.request.headers and \
+            flask.request.headers['Accept'].find('text/html') != -1:
+        message = "<h1>Error {}</h1><pre>{}</pre>".format(
+                    serverException.httpStatus,
+                    protocol.toJson(error))
+        if serverException.httpStatus == 401 \
+                or serverException.httpStatus == 403:
+            message += "Please try <a href=\"/login\">logging in</a>."
+        return message
+    else:
+        responseStr = protocol.toJson(error)
+        return getFlaskResponse(responseStr, serverException.httpStatus)
 
 
 def startLogin():
@@ -513,7 +534,64 @@ class DisplayedRoute(object):
 
 @app.route('/')
 def index():
-    return flask.render_template('index.html', info=app.serverStatus)
+    response = flask.render_template('index.html',
+                                     info=app.serverStatus)
+    if app.config.get('AUTH0_ENABLED'):
+        key = (flask.request.args.get('key'))
+        try:
+            print(key)
+            profile = app.cache.get(key)
+        except:
+            raise exceptions.NotAuthorizedException()
+        if (profile):
+            return response
+        else:
+            exceptions.NotAuthenticatedException()
+    else:
+        return response
+
+
+@app.route("/login")
+def login():
+    if app.config.get('AUTH0_ENABLED'):
+        if (flask.request.args.get('code')):
+            return auth.render_key(app, key=flask.request.args.get('code'))
+        else:
+            return auth.render_login(
+                app=app,
+                scopes=app.config.get('AUTH0_SCOPES'),
+                redirect_uri=app.config.get('AUTH0_CALLBACK_URL'),
+                domain=app.config.get('AUTH0_HOST'),
+                client_id=app.config.get('AUTH0_CLIENT_ID'))
+    else:
+        raise exceptions.NotFoundException()
+
+
+@app.route('/callback')
+def callback_handling():
+    if app.config.get('AUTH0_ENABLED'):
+        return auth.callback_maker(
+            cache=app.cache,
+            domain=app.config.get('AUTH0_HOST'),
+            client_id=app.config.get('AUTH0_CLIENT_ID'),
+            client_secret=app.config.get('AUTH0_CLIENT_SECRET'),
+            redirect_uri=app.config.get('AUTH0_CALLBACK_URL'))()
+    else:
+        raise exceptions.NotFoundException()
+
+
+@app.route("/logout")
+@requires_auth
+@cors.cross_origin(headers=['Content-Type', 'Authorization'])
+def logout():
+    key = flask.session['auth0_key']
+    auth.logout(app.cache)
+    url = 'https://{}/v2/logout?access_token={}&?client_id={}'.format(
+        app.config.get('AUTH0_HOST'),
+        key,
+        app.config.get('AUTH0_CLIENT_ID'),
+        app.config.get('AUTH0_CALLBACK_URL'))
+    return flask.redirect(url)
 
 
 @app.route('/favicon.ico')
@@ -524,6 +602,7 @@ def robots():
 
 
 @DisplayedRoute('/references/<id>')
+@requires_auth
 def getReference(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetReference)
@@ -596,30 +675,35 @@ def searchVariantAnnotations():
 
 
 @DisplayedRoute('/datasets/search', postMethod=True)
+@requires_auth
 def searchDatasets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchDatasets)
 
 
 @DisplayedRoute('/featuresets/search', postMethod=True)
+@requires_auth
 def searchFeatureSets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatureSets)
 
 
 @DisplayedRoute('/features/search', postMethod=True)
+@requires_auth
 def searchFeatures():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatures)
 
 
 @DisplayedRoute('/biosamples/search', postMethod=True)
+@requires_auth
 def searchBioSamples():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchBioSamples)
 
 
 @DisplayedRoute('/individuals/search', postMethod=True)
+@requires_auth
 def searchIndividuals():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchIndividuals)
@@ -628,6 +712,7 @@ def searchIndividuals():
 @DisplayedRoute(
     '/biosamples/<no(search):id>',
     pathDisplay='/biosamples/<id>')
+@requires_auth
 def getBioSample(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetBioSample)
@@ -636,24 +721,28 @@ def getBioSample(id):
 @DisplayedRoute(
     '/individuals/<no(search):id>',
     pathDisplay='/individuals/<id>')
+@requires_auth
 def getIndividual(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetIndividual)
 
 
 @DisplayedRoute('/rnaquantificationsets/search', postMethod=True)
+@requires_auth
 def searchRnaQuantificationSets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchRnaQuantificationSets)
 
 
 @DisplayedRoute('/rnaquantifications/search', postMethod=True)
+@requires_auth
 def searchRnaQuantifications():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchRnaQuantifications)
 
 
 @DisplayedRoute('/expressionlevels/search', postMethod=True)
+@requires_auth
 def searchExpressionLevels():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchExpressionLevels)
@@ -662,6 +751,7 @@ def searchExpressionLevels():
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
+@requires_auth
 def getVariantSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetVariantSet)
@@ -670,6 +760,7 @@ def getVariantSet(id):
 @DisplayedRoute(
     '/variants/<no(search):id>',
     pathDisplay='/variants/<id>')
+@requires_auth
 def getVariant(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetVariant)
@@ -678,12 +769,14 @@ def getVariant(id):
 @DisplayedRoute(
     '/readgroupsets/<no(search):id>',
     pathDisplay='/readgroupsets/<id>')
+@requires_auth
 def getReadGroupSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetReadGroupSet)
 
 
 @DisplayedRoute('/readgroups/<id>')
+@requires_auth
 def getReadGroup(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetReadGroup)
@@ -692,6 +785,7 @@ def getReadGroup(id):
 @DisplayedRoute(
     '/callsets/<no(search):id>',
     pathDisplay='/callsets/<id>')
+@requires_auth
 def getCallSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetCallSet)
@@ -700,6 +794,7 @@ def getCallSet(id):
 @DisplayedRoute(
     '/featuresets/<no(search):id>',
     pathDisplay='/featuresets/<id>')
+@requires_auth
 def getFeatureSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeatureSet)
@@ -708,6 +803,7 @@ def getFeatureSet(id):
 @DisplayedRoute(
     '/features/<no(search):id>',
     pathDisplay='/features/<id>')
+@requires_auth
 def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
@@ -716,6 +812,7 @@ def getFeature(id):
 @DisplayedRoute(
     '/rnaquantificationsets/<no(search):id>',
     pathDisplay='/rnaquantificationsets/<id>')
+@requires_auth
 def getRnaQuantificationSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetRnaQuantificationSet)
@@ -724,6 +821,7 @@ def getRnaQuantificationSet(id):
 @DisplayedRoute(
     '/rnaquantifications/<no(search):id>',
     pathDisplay='/rnaquantifications/<id>')
+@requires_auth
 def getRnaQuantification(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetRnaQuantification)
@@ -732,6 +830,7 @@ def getRnaQuantification(id):
 @DisplayedRoute(
     '/expressionlevels/<no(search):id>',
     pathDisplay='/expressionlevels/<id>')
+@requires_auth
 def getExpressionLevel(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetExpressionLevel)
@@ -801,6 +900,7 @@ def oidcCallback():
 @DisplayedRoute(
     '/datasets/<no(search):id>',
     pathDisplay='/datasets/<id>')
+@requires_auth
 def getDataset(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetDataset)
@@ -809,18 +909,21 @@ def getDataset(id):
 @DisplayedRoute(
     '/variantannotationsets/<no(search):id>',
     pathDisplay='/variantannotationsets/<id>')
+@requires_auth
 def getVariantAnnotationSet(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetVariantAnnotationSet)
 
 
 @DisplayedRoute('/phenotypes/search', postMethod=True)
+@requires_auth
 def searchPhenotypes():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchPhenotypes)
 
 
 @DisplayedRoute('/featurephenotypeassociations/search', postMethod=True)
+@requires_auth
 def searchGenotypePhenotypes():
     return handleFlaskPostRequest(
         flask.request,
@@ -828,6 +931,7 @@ def searchGenotypePhenotypes():
 
 
 @DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+@requires_auth
 def searchPhenotypeAssociationSets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchPhenotypeAssociationSets)
@@ -835,6 +939,11 @@ def searchPhenotypeAssociationSets():
 
 # The below methods ensure that JSON is returned for various errors
 # instead of the default, html
+
+
+@app.errorhandler(401)
+def unauthorizedHandler(errorString):
+    return handleException(exceptions.UnauthorizedException(errorString))
 
 
 @app.errorhandler(404)
@@ -849,4 +958,4 @@ def methodNotAllowedHandler(errorString):
 
 @app.errorhandler(403)
 def notAuthenticatedHandler(errorString):
-    return handleException(exceptions.NotAuthenticatedException())
+    return handleException(exceptions.NotAuthenticatedException(errorString))

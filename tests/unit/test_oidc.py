@@ -11,6 +11,7 @@ import mock
 import urlparse
 import logging
 import mimetypes
+import shutil
 
 import oic
 import oic.oic.message as message
@@ -113,6 +114,7 @@ class TestFrontendOidc(unittest.TestCase):
             "SECRET_KEY": "secret"
             # "DEBUG" : True
         }
+        shutil.rmtree('/tmp/ga4gh', True)
         frontend.reset()
         frontend.configure(
             baseConfig="TestOidcConfig", extraConfig=config, port=8001)
@@ -121,6 +123,7 @@ class TestFrontendOidc(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.app = None
+        shutil.rmtree('/tmp/ga4gh', True)
 
     def sendPostRequest(self, path, request):
         """

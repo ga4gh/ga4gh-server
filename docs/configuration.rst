@@ -92,10 +92,42 @@ OIDC_AUTHZ_ENDPOINT, OIDC_TOKEN_ENDPOINT, OIDC_TOKEN_REV_ENDPOINT
     If the authorization provider has no discovery document available, you can
     set the authorization and token endpoints here.
 
+CACHE_DIRECTORY
+    This directory is used to share data between processes when the server is
+    run in a production environment. It defaults to ``/tmp/ga4gh/``.
+
 SECRET_KEY
     The secret key used by the server to encrypt cookies. Preferably, this
     should be a long (~24 characters) random string, however any string will
     work.
+
+AUTH0_ENABLED
+    When set to true, enables authentication via Auth0.
+
+AUTH0_SCOPES
+    These are the login identity providers that an Auth0 application is 
+    configured to accept. More about scopes can be seen 
+    `here <https://auth0.com/docs/scopes>`_.
+
+AUTH0_CALLBACK_URL
+    This configuration value let's Auth0 know which URL to return a session
+    to after authentication. It should match the setting in your Auth0
+    configuration.
+
+AUTH0_HOST
+    The Auth0 host is the domain under which the Auth0 account is hosted.
+
+AUTH0_CLIENT_ID
+    Each application is authenticated to your Auth0 account using a Client
+    ID and secret. This is available in the Auth0 configuration.
+
+AUTH0_CLIENT_SECRET
+    The client secret is a preshared key between your instance of the server
+    and Auth0 and is available in the Auth0 configuration panel.
+
+AUTHORIZED_EMAILS
+    A comma separated list of user
+
 
 ------------------------
 OpenID Connect Providers

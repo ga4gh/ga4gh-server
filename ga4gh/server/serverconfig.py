@@ -95,6 +95,21 @@ class GoogleOidcConfig(ProductionConfig):
     OIDC_CLIENT_SECRET = "XXX"
 
 
+class TestAuth0Config(DevelopmentConfig):
+    """
+    Auth0 configuration
+    """
+    AUTH0_ENABLED = True
+    SECRET_KEY = "super_secret"
+    AUTH0_SCOPES = "openid email"
+    AUTH0_CALLBACK_URL = "http://localhost:8000/callback"
+    AUTH0_HOST = "david4096.auth0.com"
+    AUTH0_CLIENT_ID = "7PyT5eQRRdaSxgM4hEYz04wzncNiXpqH"
+    AUTH0_CLIENT_SECRET = \
+        "2OkzpU7LMYMllXf7cd027WFcbBpb4b_p3iNRaUfsYOQgxiYM_puwRxCddCRy_RtV"
+    AUTH0_AUTHORIZED_EMAILS = "davidcs@ucsc.edu,your@email.com"
+
+
 class TestConfig(BaseConfig):
     """
     Configuration used in frontend unit tests.
