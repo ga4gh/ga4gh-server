@@ -54,7 +54,7 @@ _valueListNameMap = {
     SearchVariantAnnotationsResponse: "variant_annotations",  # noqa
     SearchFeatureSetsResponse: "feature_sets",  # noqa
     SearchFeaturesResponse: "features",  # noqa
-    SearchBioSamplesResponse: "biosamples",  # noqa
+    SearchBiosamplesResponse: "biosamples",  # noqa
     SearchIndividualsResponse: "individuals",  # noqa
     SearchPhenotypeAssociationSetsResponse: "phenotype_association_sets",  # noqa
     SearchPhenotypesResponse: "phenotypes",  # noqa

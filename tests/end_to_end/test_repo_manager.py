@@ -21,12 +21,12 @@ class RepoManagerEndToEndTest(unittest.TestCase):
     datasetName = 'datasetOne'
     metadata = {'description': 'aDescription'}
     individualName = "test"
-    bioSampleName = "test"
+    biosampleName = "test"
     individual = protocol.toJson(protocol.Individual(
         name="test",
         created="2016-05-19T21:00:19Z",
         updated="2016-05-19T21:00:19Z"))
-    bioSample = protocol.toJson(protocol.BioSample(
+    biosample = protocol.toJson(protocol.Biosample(
         name="test",
         created="2016-05-19T21:00:19Z",
         updated="2016-05-19T21:00:19Z"))
@@ -53,8 +53,8 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         self._runCmd("add-dataset", self.datasetName)
         self._runCmd("add-biosample",
                      self.datasetName,
-                     self.bioSampleName,
-                     self.bioSample)
+                     self.biosampleName,
+                     self.biosample)
         self._runCmd("add-individual",
                      self.datasetName,
                      self.individualName,

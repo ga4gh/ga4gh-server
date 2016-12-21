@@ -84,14 +84,14 @@ class TestRepoManagerCli(unittest.TestCase):
         self.filePath = 'a/file/path'
         self.dirPath = 'a/dir/path/'
         self.individualName = "test"
-        self.bioSampleName = "test"
+        self.biosampleName = "test"
         self.individual = protocol.toJson(
             protocol.Individual(
                 name="test",
                 created="2016-05-19T21:00:19Z",
                 updated="2016-05-19T21:00:19Z"))
-        self.bioSample = protocol.toJson(
-            protocol.BioSample(
+        self.biosample = protocol.toJson(
+            protocol.Biosample(
                 name="test",
                 created="2016-05-19T21:00:19Z",
                 updated="2016-05-19T21:00:19Z"))
@@ -249,29 +249,29 @@ class TestRepoManagerCli(unittest.TestCase):
         self.assertEquals(args.runner, "removeOntology")
         self.assertEquals(args.force, False)
 
-    def testAddBioSample(self):
+    def testAddBiosample(self):
         cliInput = "add-biosample {} {} {} '{}'".format(
             self.registryPath,
             self.datasetName,
-            self.bioSampleName,
-            self.bioSample)
+            self.biosampleName,
+            self.biosample)
         args = self.parser.parse_args(shlex.split(cliInput))
         self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.bioSampleName, self.bioSampleName)
-        self.assertEquals(args.bioSample, self.bioSample)
-        self.assertEquals(args.runner, "addBioSample")
+        self.assertEquals(args.biosampleName, self.biosampleName)
+        self.assertEquals(args.biosample, self.biosample)
+        self.assertEquals(args.runner, "addBiosample")
 
-    def testRemoveBioSample(self):
+    def testRemoveBiosample(self):
         cliInput = "remove-biosample {} {} {}".format(
             self.registryPath,
             self.datasetName,
-            self.bioSampleName)
+            self.biosampleName)
         args = self.parser.parse_args(cliInput.split())
         self.assertEquals(args.registryPath, self.registryPath)
         self.assertEquals(args.datasetName, self.datasetName)
-        self.assertEquals(args.bioSampleName, self.bioSampleName)
-        self.assertEquals(args.runner, "removeBioSample")
+        self.assertEquals(args.biosampleName, self.biosampleName)
+        self.assertEquals(args.runner, "removeBiosample")
         self.assertEquals(args.force, False)
 
     def testAddIndividual(self):

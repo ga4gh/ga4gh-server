@@ -46,9 +46,9 @@ class Dataset(datamodel.DatamodelObject):
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
-        self._bioSampleIds = []
-        self._bioSampleIdMap = {}
-        self._bioSampleNameMap = {}
+        self._biosampleIds = []
+        self._biosampleIdMap = {}
+        self._biosampleNameMap = {}
         self._individualIds = []
         self._individualIdMap = {}
         self._individualNameMap = {}
@@ -89,14 +89,14 @@ class Dataset(datamodel.DatamodelObject):
         self._variantSetNameMap[variantSet.getLocalId()] = variantSet
         self._variantSetIds.append(id_)
 
-    def addBioSample(self, bioSample):
+    def addBiosample(self, biosample):
         """
-        Adds the specified bioSample to this dataset.
+        Adds the specified biosample to this dataset.
         """
-        id_ = bioSample.getId()
-        self._bioSampleIdMap[id_] = bioSample
-        self._bioSampleIds.append(id_)
-        self._bioSampleNameMap[bioSample.getName()] = bioSample
+        id_ = biosample.getId()
+        self._biosampleIdMap[id_] = biosample
+        self._biosampleIds.append(id_)
+        self._biosampleNameMap[biosample.getName()] = biosample
 
     def addIndividual(self, individual):
         """
@@ -249,41 +249,41 @@ class Dataset(datamodel.DatamodelObject):
         """
         return self._featureSetIdMap[self._featureSetIds[index]]
 
-    def getNumBioSamples(self):
+    def getNumBiosamples(self):
         """
         Returns the number of biosamples sets in this dataset.
         """
-        return len(self._bioSampleIds)
+        return len(self._biosampleIds)
 
-    def getBioSamples(self):
+    def getBiosamples(self):
         """
         Returns the list of biosamples in this dataset
         """
-        return [self._bioSampleIdMap[id_] for id_ in self._bioSampleIds]
+        return [self._biosampleIdMap[id_] for id_ in self._biosampleIds]
 
-    def getBioSampleByName(self, name):
+    def getBiosampleByName(self, name):
         """
-        Returns a BioSample with the specified name, or raises a
-        BioSampleNameNotFoundException if it does not exist.
+        Returns a Biosample with the specified name, or raises a
+        BiosampleNameNotFoundException if it does not exist.
         """
-        if name not in self._bioSampleNameMap:
-            raise exceptions.BioSampleNameNotFoundException(name)
-        return self._bioSampleNameMap[name]
+        if name not in self._biosampleNameMap:
+            raise exceptions.BiosampleNameNotFoundException(name)
+        return self._biosampleNameMap[name]
 
-    def getBioSampleByIndex(self, index):
+    def getBiosampleByIndex(self, index):
         """
         Returns the biosample at the specified index in this dataset.
         """
-        return self._bioSampleIdMap[self._bioSampleIds[index]]
+        return self._biosampleIdMap[self._biosampleIds[index]]
 
-    def getBioSample(self, id_):
+    def getBiosample(self, id_):
         """
-        Returns the BioSample with the specified id, or raises
-        a BioSampleNotFoundException otherwise.
+        Returns the Biosample with the specified id, or raises
+        a BiosampleNotFoundException otherwise.
         """
-        if id_ not in self._bioSampleIdMap:
-            raise exceptions.BioSampleNotFoundException(id_)
-        return self._bioSampleIdMap[id_]
+        if id_ not in self._biosampleIdMap:
+            raise exceptions.BiosampleNotFoundException(id_)
+        return self._biosampleIdMap[id_]
 
     def getNumIndividuals(self):
         """
@@ -440,17 +440,17 @@ class SimulatedDataset(Dataset):
             callSets = variantSet.getCallSets()
             # Add biosamples
             for callSet in callSets:
-                bioSample = biodata.BioSample(
+                biosample = biodata.Biosample(
                     self, callSet.getLocalId())
-                bioSample2 = biodata.BioSample(
+                biosample2 = biodata.Biosample(
                     self, callSet.getLocalId() + "2")
                 individual = biodata.Individual(
                     self, callSet.getLocalId())
-                bioSample.setIndividualId(individual.getId())
-                bioSample2.setIndividualId(individual.getId())
+                biosample.setIndividualId(individual.getId())
+                biosample2.setIndividualId(individual.getId())
                 self.addIndividual(individual)
-                self.addBioSample(bioSample)
-                self.addBioSample(bioSample2)
+                self.addBiosample(biosample)
+                self.addBiosample(biosample2)
             self.addVariantSet(variantSet)
             variantAnnotationSet = variants.SimulatedVariantAnnotationSet(
                 variantSet, "simVas{}".format(i), seed)
@@ -463,14 +463,14 @@ class SimulatedDataset(Dataset):
                 self, localId, referenceSet, seed,
                 numReadGroupsPerReadGroupSet, numAlignments)
             for rg in readGroupSet.getReadGroups():
-                bioSample = biodata.BioSample(
+                biosample = biodata.Biosample(
                     self, rg.getLocalId())
                 individual = biodata.Individual(
                     self, rg.getLocalId())
-                bioSample.setIndividualId(individual.getId())
-                rg.setBioSampleId(bioSample.getId())
+                biosample.setIndividualId(individual.getId())
+                rg.setBiosampleId(biosample.getId())
                 self.addIndividual(individual)
-                self.addBioSample(bioSample)
+                self.addBiosample(biosample)
             self.addReadGroupSet(readGroupSet)
         # Features
         for i in range(numFeatureSets):
