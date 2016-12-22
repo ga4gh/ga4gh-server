@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 
 import os
 import glob
-import hashlib 
+import hashlib
 
 import vcf
 
