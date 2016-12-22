@@ -42,10 +42,10 @@ class SamConverter(object):
     Converts a requested range from a GA4GH server into a SAM file.
     """
     def __init__(
-            self, client, readGroupId=None, referenceId=None,
+            self, client, readGroupIds=[], referenceId=None,
             start=None, end=None, outputFileName=None, binaryOutput=False):
         self._client = client
-        self._readGroup = self._client.get_read_group(readGroupId)
+        self._readGroupIds = readGroupIds
         self._reference = self._client.get_reference(referenceId)
         self._start = start
         self._end = end
@@ -66,7 +66,10 @@ class SamConverter(object):
             fileString = self._outputFileName
         alignmentFile = pysam.AlignmentFile(fileString, flags, header=header)
         iterator = self._client.search_reads(
-            [self._readGroup.id], self._reference.id, self._start, self._end)
+            read_group_ids=self._readGroupIds,
+            reference_id=self._reference.id,
+            start=self._start,
+            end=self._end)
         for read in iterator:
             alignedSegment = SamLine.toAlignedSegment(read, targetIds)
             alignmentFile.write(alignedSegment)
@@ -226,7 +229,7 @@ class SamLine(object):
     def _parseTagValue(cls, tag, value):
         if tag[0] in cls._tagReservedFieldPrefixes:
             # user reserved fields... not really sure what to do here
-            return protocol.getValueFromValue(value.values[0]) \
+            return str(protocol.getValueFromValue(value.values[0])) \
                 .encode(cls._encoding)
         elif tag in cls._tagIntegerFields:
             return int(protocol.getValueFromValue(value.values[0]))
