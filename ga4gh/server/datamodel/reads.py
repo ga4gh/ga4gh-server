@@ -20,6 +20,8 @@ import ga4gh.server.protocol as protocol
 
 import ga4gh.schemas.pb as pb
 
+from google.protobuf import json_format
+
 
 def parseMalformedBamHeader(headerDict):
     """
@@ -168,7 +170,18 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         ret.fragment_length = read.template_length
         ret.fragment_name = read.query_name
         for key, value in read.tags:
-            ret.info[key].values.add().string_value = str(value)
+            print("{key} {ktype}: {value}, {vtype}".format(
+                key=key, ktype=type(key), value=value, vtype=type(value)))
+            if (isinstance(value, int)):
+                ret.info[key].values.add().number_value = value
+            elif (isinstance(value, str)):
+                ret.info[key].values.add().string_value = value
+            elif (isinstance(value, bool)):
+                ret.info[key].values.add().bool_value = value
+            else:
+                # TODO log type misses for tags
+                ret.info[key].values.add().string_value = value
+
         if SamFlags.isFlagSet(read.flag, SamFlags.MATE_UNMAPPED):
             ret.next_mate_position.Clear()
         else:
