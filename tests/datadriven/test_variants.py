@@ -134,7 +134,8 @@ class VariantSetTest(datadriven.DataDrivenTest):
         genotype = convertVCFGenotype(pyvcfCall.data.GT)
         # callSetId information is not available in pyvcf.model._Call
         self.assertEqual(gaCall.call_set_name, pyvcfCall.sample)
-        self.assertEqual(gaCall.genotype, genotype)
+        self.assertEqual(
+            [x.number_value for x in gaCall.genotype.values], genotype)
         if len(pyvcfCall.data.GT.split("/")) == 1:
             # corner case when there is only a single genotype pyvcf
             # and pysam disagree
