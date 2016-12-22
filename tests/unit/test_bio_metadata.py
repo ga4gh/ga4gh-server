@@ -52,31 +52,31 @@ class TestIndividuals(unittest.TestCase):
             invalidIndividual)
 
 
-class TestBioSamples(unittest.TestCase):
+class TestBiosamples(unittest.TestCase):
     """
-    Tests the BioSamples class
+    Tests the Biosamples class
     """
     def testToProtocolElement(self):
         dataset = datasets.Dataset('dataset1')
         # Write out a valid input
-        validBioSample = protocol.BioSample(
+        validBiosample = protocol.Biosample(
             name="test",
             created="2016-05-19T21:00:19Z",
             updated="2016-05-19T21:00:19Z")
-        validBioSample.info['test'].values.add().string_value = 'test-info'
+        validBiosample.info['test'].values.add().string_value = 'test-info'
         # pass through protocol creation
-        bioSample = bioMetadata.BioSample(
+        biosample = bioMetadata.Biosample(
             dataset, "test")
-        bioSample.populateFromJson(protocol.toJson(validBioSample))
-        gaBioSample = bioSample.toProtocolElement()
+        biosample.populateFromJson(protocol.toJson(validBiosample))
+        gaBiosample = biosample.toProtocolElement()
         # Verify elements exist
-        self.assertEqual(gaBioSample.created, validBioSample.created)
-        self.assertEqual(gaBioSample.updated, validBioSample.updated)
+        self.assertEqual(gaBiosample.created, validBiosample.created)
+        self.assertEqual(gaBiosample.updated, validBiosample.updated)
         # Invalid input
-        invalidBioSample = '{"bad:", "json"}'
-        bioSample = bioMetadata.Individual(dataset, "test")
+        invalidBiosample = '{"bad:", "json"}'
+        biosample = bioMetadata.Individual(dataset, "test")
         # Should fail
         self.assertRaises(
             exceptions.InvalidJsonException,
-            bioSample.populateFromJson,
-            invalidBioSample)
+            biosample.populateFromJson,
+            invalidBiosample)

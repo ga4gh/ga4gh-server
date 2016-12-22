@@ -213,7 +213,7 @@ class AbstractRnaQuantification(datamodel.DatamodelObject):
         self._readGroupIds = []
         self._referenceSet = None
         self._programs = []
-        self._bioSampleId = ""
+        self._biosampleId = ""
 
     def toProtocolElement(self):
         """
@@ -225,7 +225,7 @@ class AbstractRnaQuantification(datamodel.DatamodelObject):
         protocolElement.description = self._description
         protocolElement.read_group_ids.extend(self._readGroupIds)
         protocolElement.programs.extend(self._programs)
-        protocolElement.bio_sample_id = self._bioSampleId
+        protocolElement.biosample_id = self._biosampleId
         protocolElement.feature_set_ids.extend(self._featureSetIds)
         protocolElement.rna_quantification_set_id = \
             self._parentContainer.getId()
@@ -240,7 +240,7 @@ class AbstractRnaQuantification(datamodel.DatamodelObject):
         self._featureSetIds = fields["feature_set_ids"].split(',')
         self._description = fields["description"]
         self._name = fields["name"]
-        self._bioSampleId = fields.get("bio_sample_id", "")
+        self._biosampleId = fields.get("biosample_id", "")
         if fields["read_group_ids"] == "":
             self._readGroupIds = []
         else:
@@ -265,14 +265,14 @@ class AbstractRnaQuantification(datamodel.DatamodelObject):
         """
         self._referenceSet = referenceSet
 
-    def setBioSampleId(self, bioSampleId):
+    def setBiosampleId(self, biosampleId):
         """
         Associates this quantification with a sample.
         """
-        self._bioSampleId = bioSampleId
+        self._biosampleId = biosampleId
 
-    def getBioSampleId(self):
-        return self._bioSampleId
+    def getBiosampleId(self):
+        return self._biosampleId
 
 
 class SqliteRnaQuantification(AbstractRnaQuantification):

@@ -392,12 +392,12 @@ RNA quantification formats supported are currently kallisto and RSEM.
 
     $ ga4gh_repo add-rnaquantification rnaseq.db data.tsv \
              kallisto ga4gh-example-data/registry.db brca1 \
-            --bioSampleName HG00096 --featureSetNames gencodev19
+            --biosampleName HG00096 --featureSetNames gencodev19
             --readGroupSetName HG00096rna --transcript
 
 Adds the data.tsv in kallisto format to the `rnaseq.db` quantification set with
 optional fields for associating a quantification with a Feature Set, Read Group
-Set, and BioSample.
+Set, and Biosample.
 
 ------------------------
 add-rnaquantificationset

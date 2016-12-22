@@ -344,13 +344,13 @@ class IndividualCompoundId(DatasetCompoundId):
     differentiator = 'i'
 
 
-class BioSampleCompoundId(DatasetCompoundId):
+class BiosampleCompoundId(DatasetCompoundId):
     """
     The compound id for a biosample
     """
     fields = DatasetCompoundId.fields + [
         CompoundId.differentiatorFieldName, 'biosample']
-    containerIds = DatasetCompoundId.containerIds + [('bio_sample_id', 2)]
+    containerIds = DatasetCompoundId.containerIds + [('biosample_id', 2)]
     differentiator = 'b'
 
 

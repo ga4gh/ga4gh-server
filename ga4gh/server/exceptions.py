@@ -235,10 +235,10 @@ class PhenotypeAssociationSetNotFoundException(NotFoundException):
                 paSetId))
 
 
-class BioSampleNotFoundException(NotFoundException):
-    def __init__(self, bioSampleId):
-        self.message = "The requested BioSample '{}' was not found".format(
-            bioSampleId)
+class BiosampleNotFoundException(NotFoundException):
+    def __init__(self, biosampleId):
+        self.message = "The requested Biosample '{}' was not found".format(
+            biosampleId)
 
 
 class IndividualNotFoundException(NotFoundException):
@@ -408,13 +408,13 @@ class ReferenceNameNotFoundException(NotFoundException):
         self.message = "Reference with name '{0}' not found".format(name)
 
 
-class BioSampleNameNotFoundException(NotFoundException):
+class BiosampleNameNotFoundException(NotFoundException):
     """
-    Indicates a request was made for a BioSample with a name that
+    Indicates a request was made for a Biosample with a name that
     does not exist.
     """
     def __init__(self, name):
-        self.message = "BioSample with name '{0}' not found".format(name)
+        self.message = "Biosample with name '{0}' not found".format(name)
 
 
 class IndividualNameNotFoundException(NotFoundException):

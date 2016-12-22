@@ -33,7 +33,7 @@ class RnaSqliteStore(object):
                        name TEXT,
                        read_group_ids TEXT,
                        programs TEXT,
-                       bio_sample_id TEXT)''')
+                       biosample_id TEXT)''')
         self._cursor.execute('''CREATE TABLE Expression (
                        id TEXT NOT NULL PRIMARY KEY,
                        rna_quantification_id TEXT,
@@ -53,7 +53,7 @@ class RnaSqliteStore(object):
         Adds an RNAQuantification to the db.  Datafields is a tuple in the
         order:
         id, feature_set_ids, description, name,
-        read_group_ids, programs, bio_sample_id
+        read_group_ids, programs, biosample_id
         """
         self._rnaValueList.append(datafields)
         if len(self._rnaValueList) >= self._batchSize:
@@ -240,12 +240,12 @@ class KallistoWriter(AbstractWriter):
 
 
 def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
-                     readGroupId="", programs="", bioSampleId=""):
+                     readGroupId="", programs="", biosampleId=""):
     if readGroupId is None:
         readGroupId = ""
     for analysisId in analysisIds:
         datafields = (analysisId, annotationId, description, analysisId,
-                      readGroupId, programs, bioSampleId)
+                      readGroupId, programs, biosampleId)
         rnaDB.addRNAQuantification(datafields)
     rnaDB.batchaddRNAQuantification()
 
@@ -258,7 +258,7 @@ def writeExpressionTable(writer, data, featureSetNames=None):
 
 def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
               dataset=None, featureType="gene", description="", programs="",
-              featureSetNames="", readGroupSetNames="", bioSampleId=""):
+              featureSetNames="", readGroupSetNames="", biosampleId=""):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
@@ -295,7 +295,7 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
     writeRnaseqTable(rnaDB, [localName], description,
                      featureSetIds,
                      readGroupId=readGroupIds, programs=programs,
-                     bioSampleId=bioSampleId)
+                     biosampleId=biosampleId)
     writeExpressionTable(
         writer, [(localName, quantificationFilename)],
         featureSetNames=featureSetNames)
