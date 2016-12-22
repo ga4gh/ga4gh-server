@@ -13,5 +13,5 @@ dependencies:
 - wheel=0.29.0=py27_0
 - zlib=1.2.8=3
 - pip:
-    - git+git://github.com/ga4gh/ga4gh-client.git@master#egg=ga4gh_client
-    - git+git://github.com/ga4gh/schemas.git@master#egg=ga4gh_schemas
+    - git+git://github.com/ga4gh/ga4gh-client.git@master#egg=ga4gh_client --upgrade
+    - git+git://github.com/ga4gh/schemas.git@master#egg=ga4gh_schemas --upgrade
