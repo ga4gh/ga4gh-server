@@ -10,6 +10,7 @@ import datetime
 import json
 import os.path
 import random
+import array
 
 import pysam
 
@@ -19,8 +20,6 @@ import ga4gh.server.exceptions as exceptions
 import ga4gh.server.protocol as protocol
 
 import ga4gh.schemas.pb as pb
-
-from google.protobuf import json_format
 
 
 def parseMalformedBamHeader(headerDict):
@@ -178,6 +177,9 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
                 ret.info[key].values.add().string_value = value
             elif (isinstance(value, bool)):
                 ret.info[key].values.add().bool_value = value
+            elif (isinstance(value, array.array)):
+                for v in value:
+                    ret.info[key].values.add().number_value = v
             else:
                 # TODO log type misses for tags
                 ret.info[key].values.add().string_value = value

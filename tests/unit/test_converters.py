@@ -75,7 +75,7 @@ class TestSamConverter(unittest.TestCase):
         """
         with tempfile.NamedTemporaryFile() as fileHandle:
             converter = converters.SamConverter(
-                self._client, readGroup.getId(), reference.getId(),
+                self._client, [readGroup.getId()], reference.getId(),
                 outputFileName=fileHandle.name)
             converter.convert()
             samFile = pysam.AlignmentFile(fileHandle.name, "r")

@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import collections
 import os
+import array
 
 import ga4gh.server.backend as backend
 import ga4gh.server.datamodel as datamodel
@@ -363,9 +364,15 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self._gaObject.getCompoundId(),
             pysamAlignment.query_name)
         self.assertEqual(gaAlignment.id, str(compoundId))
+        ret = {}
+        for key, value in pysamAlignment.tags:
+            if isinstance(value, array.array):
+                ret[key] = list(value)
+            else:
+                ret[key] = [value]
         self.assertEqual(
-            self.getDictFromMessageMap(gaAlignment.info),
-            {key: [str(value)] for key, value in pysamAlignment.tags})
+            protocol.toJsonDict(gaAlignment)['info'],
+            ret)
         if reads.SamFlags.isFlagSet(
                 pysamAlignment.flag, reads.SamFlags.MATE_UNMAPPED):
             self.assertEqual(0, gaAlignment.next_mate_position.ByteSize())
