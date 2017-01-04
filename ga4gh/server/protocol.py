@@ -88,6 +88,8 @@ def getValueFromValue(value):
     """
     Extract the currently set field from a Value structure
     """
+    if type(value) == struct_pb2.ListValue:
+        return [getValueFromValue(v) for v in value.values]
     if type(value) != struct_pb2.Value:
         raise TypeError("Expected a Value, but got {}".format(type(value)))
     if value.WhichOneof("kind") is None:

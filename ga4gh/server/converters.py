@@ -105,17 +105,6 @@ class SamLine(object):
     """
     _encoding = 'utf8'
 
-    # see tables in SAM spec, section 1.5
-    _tagReservedFieldPrefixes = set(["X", "Y", "Z", ])
-    _tagIntegerFields = set([
-        "AM", "AS", "CM", "CP", "FI", "H0", "H1", "H2", "HI", "IH", "MQ",
-        "NH", "NM", "OP", "PQ", "SM", "TC", "UQ", ])
-    _tagStringFields = set([
-        "BC", "BQ", "CC", "CO", "CQ", "CS", "CT", "E2", "FS", "LB", "MC",
-        "MD", "OQ", "OC", "PG", "PT", "PU", "QT", "Q2", "R2", "RG", "RT",
-        "SA", "U2", ])
-    _tagIntegerArrayFields = set(["FZ", ])
-
     def __init__(self):
         raise SamException("SamLine can't be instantiated")
 
@@ -226,26 +215,20 @@ class SamLine(object):
         return tuple(cigarTuples)
 
     @classmethod
-    def _parseTagValue(cls, tag, value):
-        if tag[0] in cls._tagReservedFieldPrefixes:
-            # user reserved fields... not really sure what to do here
-            return str(protocol.getValueFromValue(value.values[0])) \
-                .encode(cls._encoding)
-        elif tag in cls._tagIntegerFields:
-            return int(protocol.getValueFromValue(value.values[0]))
-        elif tag in cls._tagStringFields:
-            return protocol.getValueFromValue(value.values[0]) \
-                .encode(cls._encoding)
-        elif tag in cls._tagIntegerArrayFields:
-            return [int(integerString) for integerString in value]
+    def _parseTagValue(cls, value):
+        val = protocol.getValueFromValue(value)
+        if len(val) > 1:
+            return [v for v in val]
+        elif isinstance(val[0], (int, float, long)):
+            return val[0]
         else:
-            raise SamException("unrecognized tag '{}'".format(tag))
+            return str(val[0]).encode(cls._encoding)
 
     @classmethod
     def toTags(cls, read):
         tags = []
         for tag, value in read.info.items():
-            val = cls._parseTagValue(tag, value)
+            val = cls._parseTagValue(value)
             tags.append((tag.encode(cls._encoding), val))
         retval = tuple(tags)
         return retval

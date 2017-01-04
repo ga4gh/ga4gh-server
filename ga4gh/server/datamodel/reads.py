@@ -169,9 +169,10 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         ret.fragment_length = read.template_length
         ret.fragment_name = read.query_name
         for key, value in read.tags:
-            print("{key} {ktype}: {value}, {vtype}".format(
-                key=key, ktype=type(key), value=value, vtype=type(value)))
-            if (isinstance(value, int)):
+            # Useful for inspecting the structure of read tags
+            # print("{key} {ktype}: {value}, {vtype}".format(
+            #     key=key, ktype=type(key), value=value, vtype=type(value)))
+            if isinstance(value, (int, float, long)):
                 ret.info[key].values.add().number_value = value
             elif (isinstance(value, str)):
                 ret.info[key].values.add().string_value = value
@@ -179,9 +180,11 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
                 ret.info[key].values.add().bool_value = value
             elif (isinstance(value, array.array)):
                 for v in value:
-                    ret.info[key].values.add().number_value = v
+                    if isinstance(v, (int, float, long)):
+                        ret.info[key].values.add().number_value = v
+                    else:
+                        ret.info[key].values.add().string_value = v
             else:
-                # TODO log type misses for tags
                 ret.info[key].values.add().string_value = value
 
         if SamFlags.isFlagSet(read.flag, SamFlags.MATE_UNMAPPED):
