@@ -15,13 +15,13 @@ import random
 import re
 
 import pysam
-import google.protobuf.struct_pb2 as struct_pb2
 
 import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel as datamodel
 
 import ga4gh.schemas.pb as pb
+import ga4gh.schemas.ga4gh.common_pb2 as common_pb2
 
 
 ANNOTATIONS_VEP_V82 = "VEP_v82"
@@ -71,7 +71,8 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.name = self.getLocalId()
         gaCallSet.variant_set_ids.append(variantSet.getId())
         for key in self._info:
-            gaCallSet.info[key].values.extend(_encodeValue(self._info[key]))
+            gaCallSet.attributes.attr[key] \
+                .values.extend(_encodeValue(self._info[key]))
         return gaCallSet
 
     def getBiosampleId(self):
@@ -416,9 +417,9 @@ class SimulatedVariantSet(AbstractVariantSet):
 
 def _encodeValue(value):
     if isinstance(value, (list, tuple)):
-        return [struct_pb2.Value(string_value=str(v)) for v in value]
+        return [common_pb2.AttributeValue(string_value=str(v)) for v in value]
     else:
-        return [struct_pb2.Value(string_value=str(value))]
+        return [common_pb2.AttributeValue(string_value=str(value))]
 
 
 _nothing = object()
@@ -653,7 +654,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         call.phaseset = pb.string(phaseset)
         call.genotype_likelihood.extend(genotypeLikelihood)
         for key in info:
-            call.info[key].values.extend(info[key])
+            call.attributes.attr[key].values.extend(info[key])
         return call
 
     def convertVariant(self, record, callSetIds):
@@ -677,7 +678,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             if value is not None:
                 if isinstance(value, str):
                     value = value.split(',')
-                variant.info[key].values.extend(_encodeValue(value))
+                variant.attributes.attr[key].values.extend(_encodeValue(value))
         for callSetId in callSetIds:
             callSet = self.getCallSet(callSetId)
             pysamCall = record.samples[str(callSet.getSampleName())]
@@ -1075,19 +1076,20 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
             for contentKey, value in content:
                 key = "{0}.{1}".format(prefix, value.name)
-                if key not in analysis.info:
-                    analysis.info[key].Clear()
+                if key not in analysis.attributes.attr:
+                    analysis.attributes.attr[key].Clear()
                 if value.description is not None:
-                    analysis.info[
+                    analysis.attributes.attr[
                         key].values.add().string_value = value.description
         analysis.created = self._creationTime
         analysis.updated = self._updatedTime
         for r in header.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:
-                if r.key not in analysis.info:
-                    analysis.info[r.key].Clear()
-                analysis.info[r.key].values.add().string_value = str(r.value)
+                if r.key not in analysis.attributes.attr:
+                    analysis.attributes.attr[r.key].Clear()
+                analysis.attributes.attr[r.key] \
+                    .values.add().string_value = str(r.value)
             if r.key == "created" or r.key == "fileDate":
                 # TODO handle more date formats
                 try:

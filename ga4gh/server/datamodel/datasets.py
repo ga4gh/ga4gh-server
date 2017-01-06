@@ -16,16 +16,15 @@ import ga4gh.server.datamodel.genotype_phenotype as g2p
 import ga4gh.server.datamodel.rna_quantification as rnaQuantification
 import json
 
-import google.protobuf.struct_pb2 as struct_pb2
-
 import ga4gh.schemas.pb as pb
+import ga4gh.schemas.ga4gh.common_pb2 as common_pb2
 
 
 def _encodeValue(value):
     if isinstance(value, (list, tuple)):
-        return [struct_pb2.Value(string_value=str(v)) for v in value]
+        return [common_pb2.AttributeValue(string_value=str(v)) for v in value]
     else:
-        return [struct_pb2.Value(string_value=str(value))]
+        return [common_pb2.AttributeValue(string_value=str(value))]
 
 
 class Dataset(datamodel.DatamodelObject):
@@ -142,7 +141,8 @@ class Dataset(datamodel.DatamodelObject):
         dataset.name = pb.string(self.getLocalId())
         dataset.description = pb.string(self.getDescription())
         for key in self.getInfo():
-            dataset.info[key].values.extend(_encodeValue(self._info[key]))
+            dataset.attributes.attr[key] \
+                .values.extend(_encodeValue(self._info[key]))
         return dataset
 
     def getVariantSets(self):

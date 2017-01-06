@@ -29,7 +29,8 @@ class TestIndividuals(unittest.TestCase):
             created="2016-05-19T21:00:19Z",
             updated="2016-05-19T21:00:19Z",
             sex=term)
-        validIndividual.info['test'].values.add().string_value = 'test-info'
+        validIndividual.attributes.attr['test']. \
+            values.add().string_value = 'test-info'
         # pass through protocol creation
         individual = bioMetadata.Individual(
             dataset, "test")
@@ -59,7 +60,8 @@ class TestBiosamples(unittest.TestCase):
             name="test",
             created="2016-05-19T21:00:19Z",
             updated="2016-05-19T21:00:19Z")
-        validBiosample.info['test'].values.add().string_value = 'test-info'
+        validBiosample.attributes.attr['test']. \
+            values.add().string_value = 'test-info'
         # pass through protocol creation
         biosample = bioMetadata.Biosample(
             dataset, "test")

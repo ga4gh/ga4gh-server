@@ -12,13 +12,11 @@ from sys import modules
 
 import google.protobuf.json_format as json_format
 import google.protobuf.message as message
-import google.protobuf.struct_pb2 as struct_pb2
 
 import ga4gh.schemas.pb as pb
 
 from ga4gh.schemas._protocol_version import version  # noqa
 from ga4gh.schemas.ga4gh.common_pb2 import *  # noqa
-from ga4gh.schemas.ga4gh.assay_metadata_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.metadata_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.metadata_service_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.read_service_pb2 import *  # noqa
@@ -38,6 +36,7 @@ from ga4gh.schemas.ga4gh.genotype_phenotype_service_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.rna_quantification_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.rna_quantification_service_pb2 import *  # noqa
 
+import ga4gh.schemas.ga4gh.common_pb2 as common
 
 # A map of response objects to the name of the attribute used to
 # store the values returned.
@@ -88,11 +87,12 @@ def getValueFromValue(value):
     """
     Extract the currently set field from a Value structure
     """
-    if type(value) != struct_pb2.Value:
-        raise TypeError("Expected a Value, but got {}".format(type(value)))
-    if value.WhichOneof("kind") is None:
+    if type(value) != common.AttributeValue:
+        raise TypeError(
+            "Expected a AttributeValue, but got {}".format(type(value)))
+    if value.WhichOneof("value") is None:
         raise AttributeError("Nothing set for {}".format(value))
-    return getattr(value, value.WhichOneof("kind"))
+    return getattr(value, value.WhichOneof("value"))
 
 
 def toJson(protoObject, indent=None):

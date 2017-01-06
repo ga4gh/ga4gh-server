@@ -48,7 +48,8 @@ class Biosample(datamodel.DatamodelObject):
             disease=disease)
         for key in self.getInfo():
             for value in self.getInfo()[key]['values']:
-                biosample.info[key].values.add().string_value = value
+                biosample.attributes.attr[key] \
+                    .values.add().string_value = value
         return biosample
 
     def populateFromJson(self, jsonString):
@@ -62,8 +63,9 @@ class Biosample(datamodel.DatamodelObject):
         self._disease = protocol.toJsonDict(parsed.disease)
         self._individualId = parsed.individual_id
         self._info = {}
-        for key in parsed.info:
-            self._info[key] = {"values": protocol.toJsonDict(parsed.info[key])}
+        for key in parsed.attributes.attr:
+            self._info[key] = {
+                "values": protocol.toJsonDict(parsed.attributes.attr[key])}
         return self
 
     def populateFromRow(self, biosampleRecord):
@@ -143,7 +145,8 @@ class Individual(datamodel.DatamodelObject):
             sex=sex)
         for key in self.getInfo():
             for value in self.getInfo()[key]['values']:
-                gaIndividual.info[key].values.add().string_value = value
+                gaIndividual.attributes.attr[key] \
+                    .values.add().string_value = value
         return gaIndividual
 
     def populateFromRow(self, individualRecord):
@@ -169,8 +172,9 @@ class Individual(datamodel.DatamodelObject):
         self._species = protocol.toJsonDict(parsed.species)
         self._sex = protocol.toJsonDict(parsed.sex)
         self._info = {}
-        for key in parsed.info:
-            self._info[key] = {"values": protocol.toJsonDict(parsed.info[key])}
+        for key in parsed.attributes.attr:
+            self._info[key] = {
+                "values": protocol.toJsonDict(parsed.attributes.attr[key])}
         return self
 
     def getCreated(self):

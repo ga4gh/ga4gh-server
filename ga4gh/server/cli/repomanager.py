@@ -156,7 +156,7 @@ class RepoManager(object):
         self._openRepo()
         dataset = datasets.Dataset(self._args.datasetName)
         dataset.setDescription(self._args.description)
-        dataset.setInfo(json.loads(self._args.info))
+        dataset.setInfo(json.loads(self._args.attributes))
         self._updateRepo(self._repo.insertDataset, dataset)
 
     def addReferenceSet(self):
@@ -587,9 +587,10 @@ class RepoManager(object):
             "datasetName", help="the name of the dataset")
 
     @classmethod
-    def addDatasetInfoArgument(cls, subparser):
+    def addAttributesArgument(cls, subparser):
         subparser.add_argument(
-            "-i", "--info", default="{}", help="the info of the dataset")
+            "-A", "--attributes", default="{}",
+            help="additional attributes for the message expressed as JSON")
 
     @classmethod
     def addReferenceSetNameOption(cls, subparser, objectType):
@@ -742,7 +743,7 @@ class RepoManager(object):
         addDatasetParser.set_defaults(runner="addDataset")
         cls.addRepoArgument(addDatasetParser)
         cls.addDatasetNameArgument(addDatasetParser)
-        cls.addDatasetInfoArgument(addDatasetParser)
+        cls.addAttributesArgument(addDatasetParser)
         cls.addDescriptionOption(addDatasetParser, "dataset")
 
         removeDatasetParser = common_cli.addSubparser(
