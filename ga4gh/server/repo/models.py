@@ -8,6 +8,9 @@ Partially auto-generated using pwiz.
     python -m pwiz -e sqlite ga4gh-example-data/registry.db > models.py
 
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import peewee as pw
 

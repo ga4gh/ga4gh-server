@@ -688,11 +688,13 @@ class SqlDataRepository(AbstractDataRepository):
             sourceuri=reference.getSourceUri())
 
     def _readReferenceTable(self):
-        for ref in m.Reference.select():
-            referenceSet = self.getReferenceSet(ref.referencesetid.id)
-            reference = references.HtslibReference(referenceSet, ref.name)
-            reference.populateFromRow(ref)
-            assert reference.getId() == ref.id
+        for referenceRecord in m.Reference.select():
+            referenceSet = self.getReferenceSet(
+                referenceRecord.referencesetid.id)
+            reference = references.HtslibReference(
+                referenceSet, referenceRecord.name)
+            reference.populateFromRow(referenceRecord)
+            assert reference.getId() == referenceRecord.id
             referenceSet.addReference(reference)
 
     def _createReferenceSetTable(self):
@@ -722,10 +724,10 @@ class SqlDataRepository(AbstractDataRepository):
                 referenceSet.getLocalId())
 
     def _readReferenceSetTable(self):
-        for rs in m.Referenceset.select():
-            referenceSet = references.HtslibReferenceSet(rs.name)
-            referenceSet.populateFromRow(rs)
-            assert referenceSet.getId() == rs.id
+        for referenceSetRecord in m.Referenceset.select():
+            referenceSet = references.HtslibReferenceSet(referenceSetRecord.name)
+            referenceSet.populateFromRow(referenceSetRecord)
+            assert referenceSet.getId() == referenceSetRecord.id
             # Insert the referenceSet into the memory-based object model.
             self.addReferenceSet(referenceSet)
 
@@ -751,8 +753,8 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        for ds in m.Dataset.select().where(m.Dataset.id == dataset.getId()):
-            ds.delete_instance(recursive=True)
+        for datasetRecord in m.Dataset.select().where(m.Dataset.id == dataset.getId()):
+            datasetRecord.delete_instance(recursive=True)
 
     def removePhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
@@ -771,12 +773,12 @@ class SqlDataRepository(AbstractDataRepository):
         q.execute()
 
     def _readDatasetTable(self):
-        for dataset in m.Dataset.select():
-            d = datasets.Dataset(dataset.name)
-            d.populateFromRow(dataset)
-            assert d.getId() == dataset.id
+        for datasetRecord in m.Dataset.select():
+            dataset = datasets.Dataset(datasetRecord.name)
+            dataset.populateFromRow(datasetRecord)
+            assert dataset.getId() == datasetRecord.id
             # Insert the dataset into the memory-based object model.
-            self.addDataset(d)
+            self.addDataset(dataset)
 
     def _createReadGroupTable(self):
         self.database.create_table(m.Readgroup)
@@ -809,18 +811,18 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified readGroupSet from this repository. This performs
         a cascading removal of all items within this readGroupSet.
         """
-        for rgs in m.Readgroupset.select().where(
+        for readGroupSetRecord in m.Readgroupset.select().where(
                         m.Readgroupset.id == readGroupSet.getId()):
-            rgs.delete_instance(recursive=True)
+            readGroupSetRecord.delete_instance(recursive=True)
 
     def removeVariantSet(self, variantSet):
         """
         Removes the specified variantSet from this repository. This performs
         a cascading removal of all items within this variantSet.
         """
-        for vs in m.Variantset.select().where(
+        for variantSetRecord in m.Variantset.select().where(
                         m.Variantset.id == variantSet.getId()):
-            vs.delete_instance(recursive=True)
+            variantSetRecord.delete_instance(recursive=True)
 
     def removeBiosample(self, biosample):
         """
@@ -837,12 +839,14 @@ class SqlDataRepository(AbstractDataRepository):
         q.execute()
 
     def _readReadGroupTable(self):
-        for rg in m.Readgroup.select():
-            readGroupSet = self.getReadGroupSet(rg.readgroupsetid.id)
-            readGroup = reads.HtslibReadGroup(readGroupSet, rg.name)
+        for readGroupRecord in m.Readgroup.select():
+            readGroupSet = self.getReadGroupSet(
+                readGroupRecord.readgroupsetid.id)
+            readGroup = reads.HtslibReadGroup(
+                readGroupSet, readGroupRecord.name)
             # TODO set the reference set.
-            readGroup.populateFromRow(rg)
-            assert readGroup.getId() == rg.id
+            readGroup.populateFromRow(readGroupRecord)
+            assert readGroup.getId() == readGroupRecord.id
             # Insert the readGroupSet into the memory-based object model.
             readGroupSet.addReadGroup(readGroup)
 
@@ -897,13 +901,13 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(msg)
 
     def _readReadGroupSetTable(self):
-        for rgs in m.Readgroupset.select():
-            dataset = self.getDataset(rgs.datasetid.id)
-            readGroupSet = reads.HtslibReadGroupSet(dataset, rgs.name)
-            referenceSet = self.getReferenceSet(rgs.referencesetid.id)
+        for readGroupSetRecord in m.Readgroupset.select():
+            dataset = self.getDataset(readGroupSetRecord.datasetid.id)
+            readGroupSet = reads.HtslibReadGroupSet(dataset, readGroupSetRecord.name)
+            referenceSet = self.getReferenceSet(readGroupSetRecord.referencesetid.id)
             readGroupSet.setReferenceSet(referenceSet)
-            readGroupSet.populateFromRow(rgs)
-            assert readGroupSet.getId() == rgs.id
+            readGroupSet.populateFromRow(readGroupSetRecord)
+            assert readGroupSet.getId() == readGroupSetRecord.id
             # Insert the readGroupSet into the memory-based object model.
             dataset.addReadGroupSet(readGroupSet)
 
@@ -932,14 +936,14 @@ class SqlDataRepository(AbstractDataRepository):
                 variantAnnotationSet.getParentContainer().getLocalId())
 
     def _readVariantAnnotationSetTable(self):
-        for vas in m.Variantannotationset.select():
-            variantSet = self.getVariantSet(vas.variantsetid.id)
-            ontology = self.getOntology(vas.ontologyid.id)
+        for annotationSetRecord in m.Variantannotationset.select():
+            variantSet = self.getVariantSet(annotationSetRecord.variantsetid.id)
+            ontology = self.getOntology(annotationSetRecord.ontologyid.id)
             variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                variantSet, vas.name)
+                variantSet, annotationSetRecord.name)
             variantAnnotationSet.setOntology(ontology)
-            variantAnnotationSet.populateFromRow(vas)
-            assert variantAnnotationSet.getId() == vas.id
+            variantAnnotationSet.populateFromRow(annotationSetRecord)
+            assert variantAnnotationSet.getId() == annotationSetRecord.id
             # Insert the variantAnnotationSet into the memory-based model.
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
 
@@ -962,11 +966,11 @@ class SqlDataRepository(AbstractDataRepository):
                 callSet.getParentContainer().getLocalId())
 
     def _readCallSetTable(self):
-        for cs in m.Callset.select():
-            variantSet = self.getVariantSet(cs.variantsetid.id)
-            callSet = variants.CallSet(variantSet, cs.name)
-            callSet.populateFromRow(cs)
-            assert callSet.getId() == cs.id
+        for callSetRecord in m.Callset.select():
+            variantSet = self.getVariantSet(callSetRecord.variantsetid.id)
+            callSet = variants.CallSet(variantSet, callSetRecord.name)
+            callSet.populateFromRow(callSetRecord)
+            assert callSet.getId() == callSetRecord.id
             # Insert the callSet into the memory-based object model.
             variantSet.addCallSet(callSet)
 
@@ -1002,13 +1006,13 @@ class SqlDataRepository(AbstractDataRepository):
             self.insertCallSet(callSet)
 
     def _readVariantSetTable(self):
-        for vs in m.Variantset.select():
-            dataset = self.getDataset(vs.datasetid.id)
-            referenceSet = self.getReferenceSet(vs.referencesetid.id)
-            variantSet = variants.HtslibVariantSet(dataset, vs.name)
+        for variantSetRecord in m.Variantset.select():
+            dataset = self.getDataset(variantSetRecord.datasetid.id)
+            referenceSet = self.getReferenceSet(variantSetRecord.referencesetid.id)
+            variantSet = variants.HtslibVariantSet(dataset, variantSetRecord.name)
             variantSet.setReferenceSet(referenceSet)
-            variantSet.populateFromRow(vs)
-            assert variantSet.getId() == vs.id
+            variantSet.populateFromRow(variantSetRecord)
+            assert variantSet.getId() == variantSetRecord.id
             # Insert the variantSet into the memory-based object model.
             dataset.addVariantSet(variantSet)
 
@@ -1034,21 +1038,24 @@ class SqlDataRepository(AbstractDataRepository):
                 featureSet.getParentContainer().getLocalId())
 
     def _readFeatureSetTable(self):
-        for fs in m.Featureset.select():
-            dataset = self.getDataset(fs.datasetid.id)
+        for featureSetRecord in m.Featureset.select():
+            dataset = self.getDataset(featureSetRecord.datasetid.id)
             # FIXME this should be handled elsewhere
-            if 'cgd' in fs.name:
+            if 'cgd' in featureSetRecord.name:
                 featureSet = \
                     g2pFeatureset \
-                    .PhenotypeAssociationFeatureSet(dataset, fs.name)
+                    .PhenotypeAssociationFeatureSet(
+                        dataset, featureSetRecord.name)
             else:
                 featureSet = sequence_annotations.Gff3DbFeatureSet(
-                    dataset, fs.name)
+                    dataset, featureSetRecord.name)
             featureSet.setReferenceSet(
-                self.getReferenceSet(fs.referencesetid.id))
-            featureSet.setOntology(self.getOntology(fs.ontologyid.id))
-            featureSet.populateFromRow(fs)
-            assert featureSet.getId() == fs.id
+                self.getReferenceSet(
+                    featureSetRecord.referencesetid.id))
+            featureSet.setOntology(
+                self.getOntology(featureSetRecord.ontologyid.id))
+            featureSet.populateFromRow(featureSetRecord)
+            assert featureSet.getId() == featureSetRecord.id
             dataset.addFeatureSet(featureSet)
 
     def _createBiosampleTable(self):
@@ -1075,13 +1082,13 @@ class SqlDataRepository(AbstractDataRepository):
                 biosample.getParentContainer().getLocalId())
 
     def _readBioSampleTable(self):
-        for bs in m.Biosample.select():
-            dataset = self.getDataset(bs.datasetid.id)
-            biosample = biodata.Biosample(
-                dataset, bs.name)
-            biosample.populateFromRow(bs)
-            assert biosample.getId() == bs.id
-            dataset.addBiosample(biosample)
+        for biosampleRecord in m.Biosample.select():
+            dataset = self.getDataset(biosampleRecord.datasetid.id)
+            bioSample = biodata.BioSample(
+                dataset, biosampleRecord.name)
+            bioSample.populateFromRow(biosampleRecord)
+            assert bioSample.getId() == biosampleRecord.id
+            dataset.addBioSample(bioSample)
 
     def _createIndividualTable(self):
         self.database.create_table(m.Individual)
@@ -1108,12 +1115,12 @@ class SqlDataRepository(AbstractDataRepository):
                 individual.getParentContainer().getLocalId())
 
     def _readIndividualTable(self):
-        for ind in m.Individual.select():
-            dataset = self.getDataset(ind.datasetid.id)
+        for individualRecord in m.Individual.select():
+            dataset = self.getDataset(individualRecord.datasetid.id)
             individual = biodata.Individual(
-                dataset, ind.name)
-            individual.populateFromRow(ind)
-            assert individual.getId() == ind.id
+                dataset, individualRecord.name)
+            individual.populateFromRow(individualRecord)
+            assert individual.getId() == individualRecord.id
             dataset.addIndividual(individual)
 
     def _createPhenotypeAssociationSetTable(self):
@@ -1138,11 +1145,13 @@ class SqlDataRepository(AbstractDataRepository):
                 phenotypeAssociationSet.getParentContainer().getId())
 
     def _readPhenotypeAssociationSetTable(self):
-        for pas in m.Phenotypeassociationset.select():
-            dataset = self.getDataset(pas.datasetid.id)
+        for associationSetRecord in m.Phenotypeassociationset.select():
+            dataset = self.getDataset(associationSetRecord.datasetid.id)
             phenotypeAssociationSet = \
                 genotype_phenotype.RdfPhenotypeAssociationSet(
-                    dataset, pas.name, pas.dataurl)
+                    dataset,
+                    associationSetRecord.name,
+                    associationSetRecord.dataurl)
             dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
     def insertRnaQuantificationSet(self, rnaQuantificationSet):
@@ -1162,15 +1171,16 @@ class SqlDataRepository(AbstractDataRepository):
                 rnaQuantificationSet.getParentContainer().getLocalId())
 
     def _readRnaQuantificationSetTable(self):
-        for rqs in m.Rnaquantificationset.select():
-            dataset = self.getDataset(rqs.datasetid.id)
-            referenceSet = self.getReferenceSet(rqs.referencesetid.id)
+        for quantificationSetRecord in m.Rnaquantificationset.select():
+            dataset = self.getDataset(quantificationSetRecord.datasetid.id)
+            referenceSet = self.getReferenceSet(
+                quantificationSetRecord.referencesetid.id)
             rnaQuantificationSet = \
                 rna_quantification.SqliteRnaQuantificationSet(
-                    dataset, rqs.name)
+                    dataset, quantificationSetRecord.name)
             rnaQuantificationSet.setReferenceSet(referenceSet)
-            rnaQuantificationSet.populateFromRow(rqs)
-            assert rnaQuantificationSet.getId() == rqs.id
+            rnaQuantificationSet.populateFromRow(quantificationSetRecord)
+            assert rnaQuantificationSet.getId() == quantificationSetRecord.id
             dataset.addRnaQuantificationSet(rnaQuantificationSet)
 
     def removeRnaQuantificationSet(self, rnaQuantificationSet):
