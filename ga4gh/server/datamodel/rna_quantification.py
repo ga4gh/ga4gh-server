@@ -179,12 +179,12 @@ class SqliteRnaQuantificationSet(AbstractRnaQuantificationSet):
         self._db = SqliteRnaBackend(self._dbFilePath)
         self.addRnaQuants()
 
-    def populateFromRow(self, rqs):
+    def populateFromRow(self, quantificationSetRecord):
         """
         Populates the instance variables of this RnaQuantificationSet from the
         specified DB row.
         """
-        self._dbFilePath = rqs.dataurl
+        self._dbFilePath = quantificationSetRecord.dataurl
         self._db = SqliteRnaBackend(self._dbFilePath)
         self.addRnaQuants()
 

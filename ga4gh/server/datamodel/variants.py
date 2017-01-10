@@ -49,16 +49,11 @@ class CallSet(datamodel.DatamodelObject):
         self._info = {}
         self._biosampleId = None
 
-    def populateFromRow(self, cs):
+    def populateFromRow(self, callSetRecord):
         """
         Populates this CallSet from the specified DB row.
         """
-        # currently a noop
-<<<<<<< 1fc9a628091e323d541374b248ad78fa681c0efe
-        self._biosampleId = row[b'biosampleId']
-=======
-        self._bioSampleId = cs.biosampleid
->>>>>>> Adding other data types
+        self._biosampleId = callSetRecord.biosampleid
 
     def toProtocolElement(self):
         """
@@ -1052,14 +1047,14 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         self._creationTime = self._analysis.created
         self._updatedTime = datetime.datetime.now().isoformat() + "Z"
 
-    def populateFromRow(self, vas):
+    def populateFromRow(self, annotationSetRecord):
         """
         Populates this VariantAnnotationSet from the specified DB row.
         """
-        self._annotationType = vas.annotationtype
-        self._analysis = protocol.fromJson(vas.analysis, protocol.Analysis)
-        self._creationTime = vas.created
-        self._updatedTime = vas.updated
+        self._annotationType = annotationSetRecord.annotationtype
+        self._analysis = protocol.fromJson(annotationSetRecord.analysis, protocol.Analysis)
+        self._creationTime = annotationSetRecord.created
+        self._updatedTime = annotationSetRecord.updated
 
     def getAnnotationType(self):
         """

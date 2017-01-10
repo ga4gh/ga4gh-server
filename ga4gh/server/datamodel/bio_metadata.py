@@ -66,14 +66,14 @@ class Biosample(datamodel.DatamodelObject):
             self._info[key] = {"values": protocol.toJsonDict(parsed.info[key])}
         return self
 
-    def populateFromRow(self, bs):
+    def populateFromRow(self, biosampleRecord):
         # TODO coerce to types
-        self._created = bs.created
-        self._updated = bs.updated
-        self._description = bs.description
-        self._disease = json.loads(bs.disease)
-        self._individualId = bs.individualid
-        self._info = json.loads(bs.info)
+        self._created = biosampleRecord.created
+        self._updated = biosampleRecord.updated
+        self._description = biosampleRecord.description
+        self._disease = json.loads(biosampleRecord.disease)
+        self._individualId = biosampleRecord.individualid
+        self._info = json.loads(biosampleRecord.info)
         return self
 
     def setIndividualId(self, individualId):

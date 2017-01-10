@@ -445,19 +445,20 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
             reference.setLength(len(bases))
             self.addReference(reference)
 
-    def populateFromRow(self, rs):
+    def populateFromRow(self, referenceSetRecord):
         """
         Populates this reference set from the values in the specified DB
         row.
         """
-        self._dataUrl = rs.dataurl
-        self._description = rs.description
-        self._assemblyId = rs.assemblyid
-        self._isDerived = bool(rs.isderived)
-        self._md5checksum = rs.md5checksum
-        self._ncbiTaxonId = rs.ncbitaxonid
-        self._sourceAccessions = json.loads(rs.sourceaccessions)
-        self._sourceUri = rs.sourceuri
+        self._dataUrl = referenceSetRecord.dataurl
+        self._description = referenceSetRecord.description
+        self._assemblyId = referenceSetRecord.assemblyid
+        self._isDerived = bool(referenceSetRecord.isderived)
+        self._md5checksum = referenceSetRecord.md5checksum
+        self._ncbiTaxonId = referenceSetRecord.ncbitaxonid
+        self._sourceAccessions = json.loads(
+            referenceSetRecord.sourceaccessions)
+        self._sourceUri = referenceSetRecord.sourceuri
 
     def getDataUrl(self):
         """
