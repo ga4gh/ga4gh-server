@@ -725,7 +725,8 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readReferenceSetTable(self):
         for referenceSetRecord in m.Referenceset.select():
-            referenceSet = references.HtslibReferenceSet(referenceSetRecord.name)
+            referenceSet = references.HtslibReferenceSet(
+                referenceSetRecord.name)
             referenceSet.populateFromRow(referenceSetRecord)
             assert referenceSet.getId() == referenceSetRecord.id
             # Insert the referenceSet into the memory-based object model.
@@ -753,7 +754,8 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        for datasetRecord in m.Dataset.select().where(m.Dataset.id == dataset.getId()):
+        for datasetRecord in m.Dataset.select().where(
+                        m.Dataset.id == dataset.getId()):
             datasetRecord.delete_instance(recursive=True)
 
     def removePhenotypeAssociationSet(self, phenotypeAssociationSet):
@@ -900,8 +902,10 @@ class SqlDataRepository(AbstractDataRepository):
     def _readReadGroupSetTable(self):
         for readGroupSetRecord in m.Readgroupset.select():
             dataset = self.getDataset(readGroupSetRecord.datasetid.id)
-            readGroupSet = reads.HtslibReadGroupSet(dataset, readGroupSetRecord.name)
-            referenceSet = self.getReferenceSet(readGroupSetRecord.referencesetid.id)
+            readGroupSet = reads.HtslibReadGroupSet(
+                dataset, readGroupSetRecord.name)
+            referenceSet = self.getReferenceSet(
+                readGroupSetRecord.referencesetid.id)
             readGroupSet.setReferenceSet(referenceSet)
             readGroupSet.populateFromRow(readGroupSetRecord)
             assert readGroupSet.getId() == readGroupSetRecord.id
@@ -932,7 +936,8 @@ class SqlDataRepository(AbstractDataRepository):
 
     def _readVariantAnnotationSetTable(self):
         for annotationSetRecord in m.Variantannotationset.select():
-            variantSet = self.getVariantSet(annotationSetRecord.variantsetid.id)
+            variantSet = self.getVariantSet(
+                annotationSetRecord.variantsetid.id)
             ontology = self.getOntology(annotationSetRecord.ontologyid.id)
             variantAnnotationSet = variants.HtslibVariantAnnotationSet(
                 variantSet, annotationSetRecord.name)
@@ -999,8 +1004,10 @@ class SqlDataRepository(AbstractDataRepository):
     def _readVariantSetTable(self):
         for variantSetRecord in m.Variantset.select():
             dataset = self.getDataset(variantSetRecord.datasetid.id)
-            referenceSet = self.getReferenceSet(variantSetRecord.referencesetid.id)
-            variantSet = variants.HtslibVariantSet(dataset, variantSetRecord.name)
+            referenceSet = self.getReferenceSet(
+                variantSetRecord.referencesetid.id)
+            variantSet = variants.HtslibVariantSet(
+                dataset, variantSetRecord.name)
             variantSet.setReferenceSet(referenceSet)
             variantSet.populateFromRow(variantSetRecord)
             assert variantSet.getId() == variantSetRecord.id
