@@ -800,11 +800,10 @@ class SqlDataRepository(AbstractDataRepository):
                 description=readGroup.getDescription(),
                 stats=statsJson,
                 experiment=experimentJson,
-                biosampleid=readGroup.getBioSampleId())
-        except Exception:
-            raise exceptions.DuplicateNameException(
-                readGroup.getLocalId(),
-                readGroup.getParentContainer().getLocalId())
+                biosampleid=readGroup.getBiosampleId())
+        except Exception as e:
+            raise exceptions.RepoManagerException(
+                e)
 
     def removeReadGroupSet(self, readGroupSet):
         """
@@ -873,10 +872,8 @@ class SqlDataRepository(AbstractDataRepository):
                 indexfile=readGroupSet.getIndexFile())
             for readGroup in readGroupSet.getReadGroups():
                 self.insertReadGroup(readGroup)
-        except Exception:
-            raise exceptions.DuplicateNameException(
-                readGroupSet.getLocalId(),
-                readGroupSet.getParentContainer().getLocalId())
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
     def removeReferenceSet(self, referenceSet):
         """
@@ -930,10 +927,8 @@ class SqlDataRepository(AbstractDataRepository):
                 annotationtype=variantAnnotationSet.getAnnotationType(),
                 created=variantAnnotationSet.getCreationTime(),
                 updated=variantAnnotationSet.getUpdatedTime())
-        except Exception:
-            raise exceptions.DuplicateNameException(
-                variantAnnotationSet.getLocalId(),
-                variantAnnotationSet.getParentContainer().getLocalId())
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
     def _readVariantAnnotationSetTable(self):
         for annotationSetRecord in m.Variantannotationset.select():
@@ -959,11 +954,9 @@ class SqlDataRepository(AbstractDataRepository):
                 id=callSet.getId(),
                 name=callSet.getLocalId(),
                 variantsetid=callSet.getParentContainer().getId(),
-                biosampleid=callSet.getBioSampleId())
-        except Exception:
-            raise exceptions.DuplicateNameException(
-                callSet.getLocalId(),
-                callSet.getParentContainer().getLocalId())
+                biosampleid=callSet.getBiosampleId())
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
     def _readCallSetTable(self):
         for callSetRecord in m.Callset.select():
@@ -998,10 +991,8 @@ class SqlDataRepository(AbstractDataRepository):
                 updated=datetime.datetime.now(),
                 metadata=metadataJson,
                 dataurlindexmap=urlMapJson)
-        except Exception:
-            raise exceptions.DuplicateNameException(
-                variantSet.getLocalId(),
-                variantSet.getParentContainer().getLocalId())
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
         for callSet in variantSet.getCallSets():
             self.insertCallSet(callSet)
 
@@ -1032,10 +1023,8 @@ class SqlDataRepository(AbstractDataRepository):
                 ontologyid=featureSet.getOntology().getId(),
                 name=featureSet.getLocalId(),
                 dataurl=featureSet.getDataUrl())
-        except Exception:
-            raise exceptions.DuplicateNameException(
-                featureSet.getLocalId(),
-                featureSet.getParentContainer().getLocalId())
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
     def _readFeatureSetTable(self):
         for featureSetRecord in m.Featureset.select():
@@ -1076,19 +1065,19 @@ class SqlDataRepository(AbstractDataRepository):
                 updated=biosample.getUpdated(),
                 individualid=biosample.getIndividualId(),
                 info=json.dumps(biosample.getInfo()))
-        except Exception as e:
+        except Exception:
             raise exceptions.DuplicateNameException(
                 biosample.getLocalId(),
                 biosample.getParentContainer().getLocalId())
 
-    def _readBioSampleTable(self):
+    def _readBiosampleTable(self):
         for biosampleRecord in m.Biosample.select():
             dataset = self.getDataset(biosampleRecord.datasetid.id)
-            bioSample = biodata.BioSample(
+            biosample = biodata.Biosample(
                 dataset, biosampleRecord.name)
-            bioSample.populateFromRow(biosampleRecord)
-            assert bioSample.getId() == biosampleRecord.id
-            dataset.addBioSample(bioSample)
+            biosample.populateFromRow(biosampleRecord)
+            assert biosample.getId() == biosampleRecord.id
+            dataset.addBiosample(biosample)
 
     def _createIndividualTable(self):
         self.database.create_table(m.Individual)
@@ -1210,7 +1199,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createVariantSetTable()
         self._createVariantAnnotationSetTable()
         self._createFeatureSetTable()
-        self._createBioSampleTable()
+        self._createBiosampleTable()
         self._createIndividualTable()
         self._createPhenotypeAssociationSetTable()
         self._createRnaQuantificationSetTable()
@@ -1250,7 +1239,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._readCallSetTable()
         self._readVariantAnnotationSetTable()
         self._readFeatureSetTable()
-        self._readBioSampleTable()
+        self._readBiosampleTable()
         self._readIndividualTable()
         self._readPhenotypeAssociationSetTable()
         self._readRnaQuantificationSetTable()
