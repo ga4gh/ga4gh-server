@@ -17,14 +17,6 @@ import ga4gh.server.datamodel.rna_quantification as rnaQuantification
 import json
 
 import ga4gh.schemas.pb as pb
-import ga4gh.schemas.ga4gh.common_pb2 as common_pb2
-
-
-def _encodeValue(value):
-    if isinstance(value, (list, tuple)):
-        return [common_pb2.AttributeValue(string_value=str(v)) for v in value]
-    else:
-        return [common_pb2.AttributeValue(string_value=str(value))]
 
 
 class Dataset(datamodel.DatamodelObject):
@@ -136,7 +128,7 @@ class Dataset(datamodel.DatamodelObject):
         attributes = self.getAttributes()
         for key in attributes:
             dataset.attributes.attr[key] \
-                .values.extend(_encodeValue(attributes[key]))
+                .values.extend(protocol.encodeValue(attributes[key]))
         return dataset
 
     def getVariantSets(self):
