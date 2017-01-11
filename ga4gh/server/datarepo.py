@@ -744,7 +744,7 @@ class SqlDataRepository(AbstractDataRepository):
                 id=dataset.getId(),
                 name=dataset.getLocalId(),
                 description=dataset.getDescription(),
-                info=json.dumps(dataset.getInfo()))
+                attributes=json.dumps(dataset.getAttributes()))
         except Exception:
             raise exceptions.DuplicateNameException(
                 dataset.getLocalId())

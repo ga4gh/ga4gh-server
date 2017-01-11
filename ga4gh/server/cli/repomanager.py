@@ -156,7 +156,7 @@ class RepoManager(object):
         self._openRepo()
         dataset = datasets.Dataset(self._args.datasetName)
         dataset.setDescription(self._args.description)
-        dataset.setInfo(json.loads(self._args.attributes))
+        dataset.setAttributes(json.loads(self._args.attributes))
         self._updateRepo(self._repo.insertDataset, dataset)
 
     def addReferenceSet(self):

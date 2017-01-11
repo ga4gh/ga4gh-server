@@ -57,7 +57,6 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetIds = []
         self._rnaQuantificationSetIdMap = {}
         self._rnaQuantificationSetNameMap = {}
-        self._info = {}
 
     def populateFromRow(self, dataset):
         """
@@ -65,19 +64,13 @@ class Dataset(datamodel.DatamodelObject):
         specified database row.
         """
         self._description = dataset.description
-        self._info = json.loads(dataset.info)
+        self.setAttributes(json.loads(dataset.attributes))
 
     def setDescription(self, description):
         """
         Sets the description for this dataset to the specified value.
         """
         self._description = description
-
-    def setInfo(self, info):
-        """
-        Sets the info for this dataset to the specified value.
-        """
-        self._info = info
 
     def addVariantSet(self, variantSet):
         """
@@ -140,9 +133,10 @@ class Dataset(datamodel.DatamodelObject):
         dataset.id = self.getId()
         dataset.name = pb.string(self.getLocalId())
         dataset.description = pb.string(self.getDescription())
-        for key in self.getInfo():
+        attributes = self.getAttributes()
+        for key in attributes:
             dataset.attributes.attr[key] \
-                .values.extend(_encodeValue(self._info[key]))
+                .values.extend(_encodeValue(attributes[key]))
         return dataset
 
     def getVariantSets(self):

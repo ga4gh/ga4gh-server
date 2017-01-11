@@ -497,6 +497,7 @@ class DatamodelObject(object):
         if parentContainer is not None:
             parentId = parentContainer.getCompoundId()
         self._compoundId = self.compoundIdClass(parentId, localId)
+        self._attributes = {}
 
     def getId(self):
         """
@@ -528,6 +529,18 @@ class DatamodelObject(object):
         to.
         """
         return self._parentContainer
+
+    def setAttributes(self, attributes):
+        """
+        Sets the attributes message to the provided value.
+        """
+        self._attributes = attributes
+
+    def getAttributes(self):
+        """
+        Returns the attributes for the DatamodelObject.
+        """
+        return self._attributes
 
     def _scanDataFiles(self, dataDir, patterns):
         """

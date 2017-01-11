@@ -17,7 +17,7 @@ class TestDatasets(unittest.TestCase):
     def testToProtocolElement(self):
         datasetId = 'ds1'
         dataset = datasets.SimulatedDataset(datasetId, 1, 2, 3, 4, 5)
-        dataset.setInfo({"test": "test"})
+        dataset.setAttributes({"test": "test"})
         gaDataset = dataset.toProtocolElement()
         self.assertIsNotNone(gaDataset.attributes.attr)
         self.assertEqual(
