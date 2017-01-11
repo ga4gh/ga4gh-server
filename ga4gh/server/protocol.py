@@ -63,11 +63,13 @@ _valueListNameMap = {
     SearchExpressionLevelsResponse: "expression_levels",  # noqa
 }
 
+
 def encodeValue(value):
     if isinstance(value, (list, tuple)):
         return [common.AttributeValue(string_value=str(v)) for v in value]
     else:
         return [common.AttributeValue(string_value=str(value))]
+
 
 def getValueListName(protocolResponseClass):
     """
