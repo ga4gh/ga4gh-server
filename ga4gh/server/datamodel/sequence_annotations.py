@@ -194,8 +194,10 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         gaFeatureSet.reference_set_id = pb.string(self._referenceSet.getId())
         gaFeatureSet.name = self._name
         gaFeatureSet.source_uri = self._sourceUri
-        for key in self._info:
-            gaFeatureSet.attributes.attr[key].values.extend(self._info[key])
+        attributes = self.getAttributes()
+        for key in attributes:
+            gaFeatureSet.attributes.attr[key] \
+                .values.extend(protocol.encodeValue(attributes[key]))
         return gaFeatureSet
 
     def getCompoundIdForFeatureId(self, featureId):
@@ -344,6 +346,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         DB row.
         """
         self._dbFilePath = featureSetRecord.dataurl
+        self.setAttributesJson(featureSetRecord.attributes)
         self._db = Gff3DbBackend(self._dbFilePath)
 
     def getDataUrl(self):

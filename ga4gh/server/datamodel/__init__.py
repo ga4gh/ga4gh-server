@@ -536,6 +536,12 @@ class DatamodelObject(object):
         """
         self._attributes = attributes
 
+    def setAttributesJson(self, attributesJson):
+        """
+        Sets the attributes dictionary from a JSON string.
+        """
+        self._attributes = json.loads(attributesJson)
+
     def getAttributes(self):
         """
         Returns the attributes for the DatamodelObject.

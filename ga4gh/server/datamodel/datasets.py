@@ -14,7 +14,6 @@ import ga4gh.server.protocol as protocol
 import ga4gh.server.datamodel.bio_metadata as biodata
 import ga4gh.server.datamodel.genotype_phenotype as g2p
 import ga4gh.server.datamodel.rna_quantification as rnaQuantification
-import json
 
 import ga4gh.schemas.pb as pb
 
@@ -56,7 +55,7 @@ class Dataset(datamodel.DatamodelObject):
         specified database row.
         """
         self._description = dataset.description
-        self.setAttributes(json.loads(dataset.attributes))
+        self.setAttributesJson(dataset.attributes)
 
     def setDescription(self, description):
         """

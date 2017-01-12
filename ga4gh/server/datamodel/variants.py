@@ -53,7 +53,13 @@ class CallSet(datamodel.DatamodelObject):
         """
         Populates this CallSet from the specified DB row.
         """
+<<<<<<< a4324f553fc8d128f02fa560bcf9b1e251f1d5bd
         self._biosampleId = callSetRecord.biosampleid
+=======
+        # currently a noop
+        self._biosampleId = row[b'biosampleId']
+        self.setAttributesJson(row[b'attributes'])
+>>>>>>> Add attribute persistence
 
     def toProtocolElement(self):
         """
@@ -70,9 +76,10 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
         gaCallSet.variant_set_ids.append(variantSet.getId())
-        for key in self._info:
+        attributes = self.getAttributes()
+        for key in attributes:
             gaCallSet.attributes.attr[key] \
-                .values.extend(_encodeValue(self._info[key]))
+                .values.extend(protocol.encodeValue(attributes[key]))
         return gaCallSet
 
     def getBiosampleId(self):
@@ -252,6 +259,10 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.name = self.getLocalId()
+        attributes = self.getAttributes()
+        for key in attributes:
+            protocolElement.attributes.attr[key] \
+                .values.extend(protocol.encodeValue(attributes[key]))
         return protocolElement
 
     def getNumVariants(self):
@@ -465,6 +476,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         self._created = variantSetRecord.created
         self._updated = variantSetRecord.updated
+        self.setAttributesJson(variantSetRecord.attributes)
         self._chromFileMap = {}
         # We can't load directly as we want tuples to be stored
         # rather than lists.
@@ -885,6 +897,10 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         protocolElement.variant_set_id = self._variantSet.getId()
         protocolElement.name = self.getLocalId()
         protocolElement.analysis.CopyFrom(self.getAnalysis())
+        attributes = self.getAttributes()
+        for key in attributes:
+            protocolElement.attributes.attr[key] \
+                .values.extend(protocol.encodeValue(attributes[key]))
         return protocolElement
 
     def getTranscriptEffectId(self, gaTranscriptEffect):
@@ -1055,6 +1071,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
             annotationSetRecord.analysis, protocol.Analysis)
         self._creationTime = annotationSetRecord.created
         self._updatedTime = annotationSetRecord.updated
+        self.setAttributesJson(annotationSetRecord.attributes)
 
     def getAnnotationType(self):
         """

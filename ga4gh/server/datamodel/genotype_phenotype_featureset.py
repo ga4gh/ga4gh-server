@@ -50,6 +50,7 @@ class PhenotypeAssociationFeatureSet(
         DB row.
         """
         self._dbFilePath = featureSetRecord.dataurl
+        self.setAttributesJson(featureSetRecord.attributes)
         self.populateFromFile(self._dbFilePath)
 
     def populateFromFile(self, dataUrl):

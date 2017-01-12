@@ -75,7 +75,7 @@ class Biosample(datamodel.DatamodelObject):
         self._description = biosampleRecord.description
         self._disease = json.loads(biosampleRecord.disease)
         self._individualId = biosampleRecord.individualid
-        self.setAttributes(json.loads(biosampleRecord.attributes))
+        self.setAttributesJson(biosampleRecord.attributes)
         return self
 
     def setIndividualId(self, individualId):
@@ -153,7 +153,7 @@ class Individual(datamodel.DatamodelObject):
         self._description = individualRecord.description
         self._species = json.loads(individualRecord.species)
         self._sex = json.loads(individualRecord.sex)
-        self.setAttributes(json.loads(individualRecord.attributes))
+        self.setAttributesJson(individualRecord.attributes)
         return self
 
     def populateFromJson(self, jsonString):

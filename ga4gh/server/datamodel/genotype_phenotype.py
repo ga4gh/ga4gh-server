@@ -31,6 +31,10 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
         pas.name = self.getLocalId()
         pas.id = self.getId()
         pas.dataset_id = self.getParentContainer().getId()
+        attributes = self.getAttributes()
+        for key in attributes:
+            pas.attributes.attr[key] \
+                .values.extend(protocol.encodeValue(attributes[key]))
         return pas
 
 
