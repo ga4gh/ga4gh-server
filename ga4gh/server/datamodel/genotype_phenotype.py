@@ -403,10 +403,7 @@ class G2PUtility(object):
 
         term = protocol.OntologyTerm()
         term.term = association['evidence_type']
-        term.id = phenotype['id']
-        term.source_version = self._version
-        term.source_name = self._getPrefix(
-            self._getPrefixURL(association['id']))
+        term.term_id = phenotype['id']
         evidence.evidence_type.MergeFrom(term)
 
         evidence.description = self._getIdentifier(association['evidence'])
@@ -424,10 +421,7 @@ class G2PUtility(object):
 
         term = protocol.OntologyTerm()
         term.term = environment['id']
-        term.id = 'http://purl.obolibrary.org/obo/RO_0002606'
-        term.source_version = self._version
-        term.source_name = self._getPrefix(
-            self._getPrefixURL(association['id']))
+        term.term_id = 'http://purl.obolibrary.org/obo/RO_0002606'
         environmentalContext.environment_type.MergeFrom(term)
 
         fpa.environmental_contexts.extend([environmentalContext])
@@ -436,10 +430,7 @@ class G2PUtility(object):
         phenotypeInstance = protocol.PhenotypeInstance()
         term = protocol.OntologyTerm()
         term.term = phenotype[TYPE]
-        term.id = phenotype['id']
-        term.source_version = self._version
-        term.source_name = self._getPrefix(
-            self._getPrefixURL(association['id']))
+        term.term_id = phenotype['id']
         phenotypeInstance.type.MergeFrom(term)
 
         phenotypeInstance.description = phenotype[LABEL]
