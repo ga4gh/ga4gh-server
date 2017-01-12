@@ -111,7 +111,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             if isinstance(pyvcfValue, str):
                 self.assertEqual(compareValue, pyvcfValue)
             elif isinstance(pyvcfValue, (int, bool)):
-                self.assertEqual(compareValue, str(pyvcfValue))
+                self.assertEqual(compareValue, pyvcfValue)
             elif isinstance(pyvcfValue, float):
                 self.assertAlmostEqual(float(compareValue), float(pyvcfValue))
             elif pyvcfValue is None:

@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import datetime
 import json
 import inspect
+import array
 from sys import modules
 
 import google.protobuf.json_format as json_format
@@ -62,6 +63,31 @@ _valueListNameMap = {
     SearchRnaQuantificationsResponse: "rna_quantifications",  # noqa
     SearchExpressionLevelsResponse: "expression_levels",  # noqa
 }
+
+
+def setAttribute(values, value):
+    """
+    Takes the values of an attribute value list and attempts to append
+    attributes of the proper type, inferred from their Python type.
+    """
+    if isinstance(value, int):
+        values.add().int32_value = value
+    elif isinstance(value, float):
+        values.add().double_value = value
+    elif isinstance(value, long):
+        values.add().int64_value = value
+    elif isinstance(value, str):
+        values.add().string_value = value
+    elif isinstance(value, bool):
+        values.add().bool_value = value
+    elif isinstance(value, (list, tuple, array.array)):
+        for v in value:
+            setAttribute(values, v)
+    elif isinstance(value, dict):
+        for key in value:
+            setAttribute(values.add().attributes.attr[key].values, value[key])
+    else:
+        values.add().string_value = str(value)
 
 
 def encodeValue(value):

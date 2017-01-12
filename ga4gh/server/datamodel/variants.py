@@ -658,7 +658,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             if key == 'GL' and value is not None:
                 genotypeLikelihood = list(value)
             elif key != 'GT':
-                info[key] = _encodeValue(value)
+                info[key] = protocol.encodeValue(value)
         call = protocol.Call()
         call.call_set_name = callSet.getSampleName()
         call.call_set_id = callSet.getId()
@@ -690,7 +690,8 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             if value is not None:
                 if isinstance(value, str):
                     value = value.split(',')
-                variant.attributes.attr[key].values.extend(_encodeValue(value))
+                protocol.setAttribute(
+                    variant.attributes.attr[key].values, value)
         for callSetId in callSetIds:
             callSet = self.getCallSet(callSetId)
             pysamCall = record.samples[str(callSet.getSampleName())]
