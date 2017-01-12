@@ -212,14 +212,12 @@ class G2PUtility(object):
             terms = [terms]
         elements = []
         for term in terms:
-            if not issubclass(term.__class__, dict):
-                term = protocol.toJsonDict(term)
-            if term['id']:
+            if term.term_id:
                 elements.append('?{} = <{}> '.format(
-                    element_type, term['id']))
+                    element_type, term.term_id))
             else:
                 elements.append('?{} = <{}> '.format(
-                    element_type, self._toNamespaceURL(term['term'])))
+                    element_type, self._toNamespaceURL(term.term)))
         elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
