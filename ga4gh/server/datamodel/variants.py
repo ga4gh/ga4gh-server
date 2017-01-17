@@ -76,10 +76,7 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
         gaCallSet.variant_set_ids.append(variantSet.getId())
-        attributes = self.getAttributes()
-        for key in attributes:
-            gaCallSet.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(gaCallSet)
         return gaCallSet
 
     def getBiosampleId(self):
@@ -259,10 +256,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.name = self.getLocalId()
-        attributes = self.getAttributes()
-        for key in attributes:
-            protocolElement.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
     def getNumVariants(self):
@@ -898,10 +892,7 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         protocolElement.variant_set_id = self._variantSet.getId()
         protocolElement.name = self.getLocalId()
         protocolElement.analysis.CopyFrom(self.getAnalysis())
-        attributes = self.getAttributes()
-        for key in attributes:
-            protocolElement.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
     def getTranscriptEffectId(self, gaTranscriptEffect):

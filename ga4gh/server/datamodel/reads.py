@@ -286,10 +286,7 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         readGroupSet.name = self.getLocalId()
         readGroupSet.dataset_id = self.getParentContainer().getId()
         readGroupSet.stats.CopyFrom(self.getStats())
-        attributes = self.getAttributes()
-        for key in attributes:
-            readGroupSet.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(readGroupSet)
         return readGroupSet
 
     def getNumAlignedReads(self):
@@ -515,10 +512,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.programs.extend(self.getPrograms())
         readGroup.description = pb.string(self.getDescription())
         readGroup.experiment.CopyFrom(self.getExperiment())
-        attributes = self.getAttributes()
-        for key in attributes:
-            readGroup.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(readGroup)
         return readGroup
 
     def getStats(self):

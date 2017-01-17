@@ -216,10 +216,7 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         ret.source_accessions.extend(self.getSourceAccessions())
         ret.source_uri = pb.string(self.getSourceUri())
         ret.name = self.getLocalId()
-        attributes = self.getAttributes()
-        for key in attributes:
-            ret.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(ret)
         return ret
 
 
@@ -362,10 +359,7 @@ class AbstractReference(datamodel.DatamodelObject):
         reference.source_accessions.extend(self.getSourceAccessions())
         reference.source_divergence = pb.int(self.getSourceDivergence())
         reference.source_uri = self.getSourceUri()
-        attributes = self.getAttributes()
-        for key in attributes:
-            reference.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(reference)
         return reference
 
     def checkQueryRange(self, start, end):

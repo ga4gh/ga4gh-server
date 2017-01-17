@@ -124,10 +124,7 @@ class Dataset(datamodel.DatamodelObject):
         dataset.id = self.getId()
         dataset.name = pb.string(self.getLocalId())
         dataset.description = pb.string(self.getDescription())
-        attributes = self.getAttributes()
-        for key in attributes:
-            dataset.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(dataset)
         return dataset
 
     def getVariantSets(self):

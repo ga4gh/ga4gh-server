@@ -58,10 +58,7 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         protocolElement.score = self._score
         protocolElement.conf_interval_low = self._confIntervalLow
         protocolElement.conf_interval_high = self._confIntervalHigh
-        attributes = self.getAttributes()
-        for key in attributes:
-            protocolElement.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
 
@@ -154,10 +151,7 @@ class AbstractRnaQuantificationSet(datamodel.DatamodelObject):
         protocolElement.id = self.getId()
         protocolElement.dataset_id = self._parentContainer.getId()
         protocolElement.name = self._name
-        attributes = self.getAttributes()
-        for key in attributes:
-            protocolElement.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
 
@@ -238,10 +232,7 @@ class AbstractRnaQuantification(datamodel.DatamodelObject):
         protocolElement.feature_set_ids.extend(self._featureSetIds)
         protocolElement.rna_quantification_set_id = \
             self._parentContainer.getId()
-        attributes = self.getAttributes()
-        for key in attributes:
-            protocolElement.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
     def addRnaQuantMetadata(self, fields):

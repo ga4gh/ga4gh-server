@@ -45,10 +45,7 @@ class Biosample(datamodel.DatamodelObject):
             individual_id=self.getIndividualId(),
             name=self.getName(),
             disease=disease)
-        attributes = self.getAttributes()
-        for key in attributes:
-            biosample.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(biosample)
         return biosample
 
     def populateFromJson(self, jsonString):
@@ -139,10 +136,7 @@ class Individual(datamodel.DatamodelObject):
             name=self.getName(),
             species=species,
             sex=sex)
-        attributes = self.getAttributes()
-        for key in attributes:
-            gaIndividual.attributes.attr[key] \
-                .values.extend(protocol.encodeValue(attributes[key]))
+        self.serializeAttributes(gaIndividual)
         return gaIndividual
 
     def populateFromRow(self, individualRecord):

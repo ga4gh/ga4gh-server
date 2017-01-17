@@ -13,6 +13,7 @@ import json
 import os
 
 import ga4gh.server.exceptions as exceptions
+import ga4gh.server.protocol as protocol
 
 
 class PysamFileHandleCache(object):
@@ -541,6 +542,16 @@ class DatamodelObject(object):
         Sets the attributes dictionary from a JSON string.
         """
         self._attributes = json.loads(attributesJson)
+
+    def serializeAttributes(self, msg):
+        """
+        Sets the attrbutes of a message during serialization.
+        """
+        attributes = self.getAttributes()
+        for key in attributes:
+            protocol.setAttribute(
+                msg.attributes.attr[key].values, attributes[key])
+        return msg
 
     def getAttributes(self):
         """
