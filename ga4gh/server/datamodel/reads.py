@@ -747,18 +747,18 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         self._platformUnit = readGroupHeader.get('PU', None)
         self._runTime = readGroupHeader.get('DT', None)
 
-    def populateFromRow(self, rg):
+    def populateFromRow(self, readGroupRecord):
         """
         Populate the instance variables using the specified DB row.
         """
-        self._sampleName = rg.samplename
-        self._biosampleId = rg.biosampleid
-        self._description = rg.description
-        self._predictedInsertSize = rg.predictedinsertsize
-        stats = protocol.fromJson(rg.stats, protocol.ReadStats)
+        self._sampleName = readGroupRecord.samplename
+        self._biosampleId = readGroupRecord.biosampleid
+        self._description = readGroupRecord.description
+        self._predictedInsertSize = readGroupRecord.predictedinsertsize
+        stats = protocol.fromJson(readGroupRecord.stats, protocol.ReadStats)
         self._numAlignedReads = stats.aligned_read_count
         self._numUnalignedReads = stats.unaligned_read_count
-        experiment = protocol.fromJson(rg.experiment, protocol.Experiment)
+        experiment = protocol.fromJson(readGroupRecord.experiment, protocol.Experiment)
         self._instrumentModel = experiment.instrument_model
         self._sequencingCenter = experiment.sequencing_center
         self._experimentDescription = experiment.description

@@ -484,17 +484,17 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
     def __init__(self, parentContainer, localId):
         super(HtslibReference, self).__init__(parentContainer, localId)
 
-    def populateFromRow(self, ref):
+    def populateFromRow(self, referenceRecord):
         """
         Populates this reference from the values in the specified DB row.
         """
-        self._length = ref.length
-        self._isDerived = bool(ref.isderived)
-        self._md5checksum = ref.md5checksum
-        self._ncbiTaxonId = ref.ncbitaxonid
-        self._sourceAccessions = json.loads(ref.sourceaccessions)
-        self._sourceDivergence = ref.sourcedivergence
-        self._sourceUri = ref.sourceuri
+        self._length = referenceRecord.length
+        self._isDerived = bool(referenceRecord.isderived)
+        self._md5checksum = referenceRecord.md5checksum
+        self._ncbiTaxonId = referenceRecord.ncbitaxonid
+        self._sourceAccessions = json.loads(referenceRecord.sourceaccessions)
+        self._sourceDivergence = referenceRecord.sourcedivergence
+        self._sourceUri = referenceRecord.sourceuri
 
     def getBases(self, start, end):
         self.checkQueryRange(start, end)

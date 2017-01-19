@@ -146,15 +146,15 @@ class Individual(datamodel.DatamodelObject):
                 gaIndividual.info[key].values.add().string_value = value
         return gaIndividual
 
-    def populateFromRow(self, ind):
+    def populateFromRow(self, individualRecord):
         # TODO coerce to types
-        self._name = ind.name
-        self._created = ind.created
-        self._updated = ind.updated
-        self._description = ind.description
-        self._species = json.loads(ind.species)
-        self._sex = json.loads(ind.sex)
-        self._info = json.loads(ind.info)
+        self._name = individualRecord.name
+        self._created = individualRecord.created
+        self._updated = individualRecord.updated
+        self._description = individualRecord.description
+        self._species = json.loads(individualRecord.species)
+        self._sex = json.loads(individualRecord.sex)
+        self._info = json.loads(individualRecord.info)
         return self
 
     def populateFromJson(self, jsonString):
