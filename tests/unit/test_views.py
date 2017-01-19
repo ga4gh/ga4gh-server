@@ -276,7 +276,6 @@ class TestFrontend(unittest.TestCase):
         search command. If getDefined is False we check to see if it
         returns the correct status code.
         """
-        response = self.app.post(path)
         if not getDefined:
             getResponse = self.app.get(path)
             protocol.fromJson(
@@ -284,7 +283,7 @@ class TestFrontend(unittest.TestCase):
             self.assertEqual(405, getResponse.status_code)
 
         # Malformed requests should return 400
-        for badJson in ["", None, "JSON", "<xml/>", "{]"]:
+        for badJson in ["JSON", "<xml/>", "{]"]:
             badResponse = self.app.post(
                 path, data=badJson,
                 headers={'Content-type': 'application/json'})

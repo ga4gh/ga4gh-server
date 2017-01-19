@@ -361,7 +361,7 @@ def handleHttpPost(request, endpoint):
     if request.mimetype and request.mimetype != MIMETYPE:
         raise exceptions.UnsupportedMediaTypeException()
     request = request.get_data()
-    if request == '' or request == None:
+    if request == '' or request is None:
         request = '{}'
     responseStr = endpoint(request)
     return getFlaskResponse(responseStr)
