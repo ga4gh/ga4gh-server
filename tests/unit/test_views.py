@@ -277,9 +277,6 @@ class TestFrontend(unittest.TestCase):
         returns the correct status code.
         """
         response = self.app.post(path)
-        protocol.fromJson(
-            response.get_data(), protocol.GAException)
-        self.assertEqual(415, response.status_code)
         if not getDefined:
             getResponse = self.app.get(path)
             protocol.fromJson(
@@ -313,7 +310,6 @@ class TestFrontend(unittest.TestCase):
 
     def testRouteCallSets(self):
         path = '/callsets/search'
-        self.assertEqual(415, self.app.post(path).status_code)
         self.assertEqual(200, self.app.options(path).status_code)
         self.assertEqual(405, self.app.get(path).status_code)
 
