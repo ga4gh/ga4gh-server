@@ -23,7 +23,7 @@ libraries. On Debian or Ubuntu, we can install these using
 
 .. code-block:: bash
 
-    $ sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libssl-dev
+    sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libssl-dev
 
 .. note::
     Instructions for configuring the reference server on Mac OS X can be found here :ref:`Installation <macosinstall>`.
@@ -35,12 +35,12 @@ and the development headers for `zlib <http://www.zlib.net/>`_.
 You will also need to install Protocol Buffers 3.0 in your development
 environment.  The general process for doing the install is best described in
 the protobuf documentation here: https://github.com/google/protobuf
-If you are working on ``Mac OS X`` then there is an easy install process
-through brew:
+If you are working on Mac OS X then there is an easy install process
+through homebrew:
 
 .. code-block:: bash
 
-    $ brew update && brew install --devel protobuf
+    brew update && brew install --devel protobuf
 
 Once these basic prerequisites are in place, we can then bootstrap our
 local Python installation so that we have all of the packages we require
@@ -51,8 +51,8 @@ already on the system.
 
 .. code-block:: bash
 
-    $ wget https://bootstrap.pypa.io/get-pip.py
-    $ python get-pip.py --user
+    wget https://bootstrap.pypa.io/get-pip.py
+    python get-pip.py --user
 
 This creates a `user specific <https://www.python.org/dev/peps/pep-0370/>`_
 site-packages installation for Python, which is based in your ``~/.local``
@@ -74,8 +74,8 @@ Then, test this by running:
 
 .. code-block:: bash
 
-    $ pip --version
-    pip 6.0.8 from /home/username/.local/lib/python2.7/site-packages (python 2.7)
+    pip --version
+    #pip 6.0.8 from /home/username/.local/lib/python2.7/site-packages (python 2.7)
 
 From here, we suggest using `virtualenv <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_ 
 to manage your python environments. You can install and activate a virtual environment
@@ -83,9 +83,9 @@ using:
 
 .. code-block:: bash
 
-    $ pip install virtualenv
-    $ virtualenv ga4gh-server-env
-    $ source ga4gh-server-env/bin/activate
+    pip install virtualenv
+    virtualenv ga4gh-server-env
+    source ga4gh-server-env/bin/activate
 
 *****************************
 Using Development Constraints
@@ -135,15 +135,17 @@ local copy of this repo. This might look something like:
 
 .. code-block:: bash
 
-    $ git clone git@github.com:username/server.git
+    git clone git@github.com:username/server.git
 
 We can then install all of the packages that we need for developing the
 GA4GH reference server:
 
 .. code-block:: bash
 
-    $ cd server
-    $ pip install -r dev-requirements.txt --user
+    cd server
+    virtualenv env
+    source env/bin/activate
+    pip install -r dev-requirements.txt -c constraints.txt
 
 This will take a little time as the libraries that we require are
 fetched from PyPI and built. You can now start the server using a :code:`python server_dev.py`, 
@@ -157,7 +159,7 @@ are making:
 
 .. code-block:: bash
 
-    $ git remote add upstream https://github.com/ga4gh/server.git
+    git remote add upstream https://github.com/ga4gh/server.git
 
 All development is done against the ``master`` branch.
 
@@ -167,10 +169,10 @@ a topic branch (replace ``TOPIC_BRANCH_NAME`` appropriately):
 
 .. code-block:: bash
 
-    $ git fetch --all
-    $ git checkout master
-    $ git merge --ff-only upstream/master
-    $ git checkout -b TOPIC_BRANCH_NAME
+    git fetch --all
+    git checkout master
+    git merge --ff-only upstream/master
+    git checkout -b TOPIC_BRANCH_NAME
 
 Topic branch names should include the issue number (if there is a tracked
 issue this change is addressing) and provide some hint as to what the
@@ -184,7 +186,7 @@ making commits:
 
 .. code-block:: bash
 
-    $ git commit -m 'Awesome changes'
+    git commit -m 'Awesome changes'
 
 (You can also pass the ``--amend`` flag to ``git commit`` if you want to
 incorporate staged changes into the most recent commit.)
@@ -194,7 +196,7 @@ topic branch to GitHub:
 
 .. code-block:: bash
 
-    $ git push origin TOPIC_BRANCH_NAME
+    git push origin TOPIC_BRANCH_NAME
 
 Then create a pull request using the GitHub interface.  This pull request
 should be against the ``master`` branch (this should happen automatically).
@@ -216,11 +218,11 @@ the most recent changes from ``master`` into your branch.
 
 .. code-block:: bash
 
-    $ git fetch --all
-    $ git checkout master
-    $ git merge --ff-only upstream/master
-    $ git checkout TOPIC_BRANCH_NAME
-    $ git rebase master
+    git fetch --all
+    git checkout master
+    git merge --ff-only upstream/master
+    git checkout TOPIC_BRANCH_NAME
+    git rebase master
 
 At this point, several things could happen.  In the best case, the rebase
 will complete without problems and you can continue developing.  In other
@@ -237,7 +239,7 @@ branch again, this time using the force flag:
 
 .. code-block:: bash
 
-    $ git push --force origin TOPIC_BRANCH_NAME
+    git push --force origin TOPIC_BRANCH_NAME
 
 If you had tried to push the topic branch without using the force flag,
 it would have failed.  This is because non-force pushes only succeed when
@@ -268,7 +270,7 @@ Locally, run this command to delete the topic branch:
 
 .. code-block:: bash
 
-    $ git branch -D TOPIC_BRANCH_NAME
+    git branch -D TOPIC_BRANCH_NAME
 
 Only the tip of the iceberg of git and GitHub has been covered in this
 section, and much more can be learned by browsing their documentation.
@@ -276,7 +278,7 @@ For instance, get help on the ``git commit`` command by running:
 
 .. code-block:: bash
 
-    $ git help commit
+    git help commit
 
 To master git, we recommend reading this free book (save chapter four,
 which is about git server configuration): `Pro Git
@@ -300,12 +302,12 @@ All of the command line interface utilities have local scripts
 that simplify development: for example, we can run the local version of the
 ``ga2sam`` program by using::
 
-    $ python ga2sam_dev.py
+    python ga2sam_dev.py
 
 To run the server locally in development mode, we can use the ``server_dev.py``
 script, e.g.::
 
-    $ python server_dev.py
+    python server_dev.py
 
 will run a server using the default configuration. This default configuration
 expects a data hierarchy to exist in the ``ga4gh-example-data`` directory.
@@ -319,14 +321,14 @@ file that creates a virtualenv, installs the necessary packages, and
 runs the server. Configuration files can be found in
 ``/oidc-provider/simple_op``::
 
-    $ cd oidc-provider
-    $ ./run.sh
+    cd oidc-provider
+    ./run.sh
 
 The provider expects OIDC redirect URIs to be over HTTPS, so if the ga4gh
 server is started with OIDC enabled, it defaults to HTTPS. You can run the
 server against this using::
 
-    $ python server_dev.py -c LocalOidConfig
+    python server_dev.py -c LocalOidConfig
 
 For tips on how to profile the performance of the server see :ref:`ref_server_profiling`
 
@@ -411,7 +413,7 @@ mainline branch):
 
 .. code-block:: bash
 
-    $ git rebase -i `git merge-base master HEAD`
+    git rebase -i `git merge-base master HEAD`
 
 (``git merge-base master HEAD`` specifies the most recent commit that both
 ``master`` and your topic branch share in common.  Normally this is
@@ -424,7 +426,7 @@ And rebase with (again, assuming ``master`` as the mainline branch):
 
 .. code-block:: bash
 
-    $ git rebase master
+    git rebase master
 
 ++++++++++++++++++++++++++++++
 GitHub's broken merge/CI model
