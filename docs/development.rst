@@ -52,7 +52,7 @@ already on the system.
 .. code-block:: bash
 
     $ wget https://bootstrap.pypa.io/get-pip.py
-    $ python get-pip.py --user
+    $ python get-pip.py
 
 This creates a `user specific <https://www.python.org/dev/peps/pep-0370/>`_
 site-packages installation for Python, which is based in your ``~/.local``
