@@ -292,7 +292,7 @@ site <https://github.com/The-Sequence-Ontology/SO-Ontologies>`_.
 
 .. code-block:: bash
 
-    $ wget https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/so-xp.obo
+    $ wget https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/so-xp-dec.obo
     $ ga4gh_repo add-ontology registry.db /full/path/to/so-xp.obo -n so-xp
 
 Add sequence annotations
@@ -308,6 +308,7 @@ with these annotations.
 
 .. code-block:: bash
 
+    $ wget https://ga4ghstore.blob.core.windows.net/testing/gencode_v24lift37.db
     $ ga4gh_repo add-featureset registry.db 1kgenomes /full/path/to/gencode.v24lift37.annotation.db \
         --referenceSetName NCBI37 --ontologyName so-xp
 
@@ -322,7 +323,7 @@ release.
 .. code-block:: bash
 
     $ wget -m ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ -nd -P release -l 1
-    rm release/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+    $ rm release/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
 
 These files are already compressed and indexed. For the server to make use
 of the files in this directory we must move the `wgs` file, since it covers
