@@ -571,6 +571,15 @@ class OntologyFileFormatException(DataException):
             filename, message)
 
 
+class TimestampFormatException(DataException):
+    """
+    Exception thrown for invalid datetimes.
+    """
+    def __init__(self, timestamp, source):
+        self.message = "Error reading timestamp '{}' from {}".format(
+            timestamp, source)
+
+
 class MalformedException(DataException):
     """
     A base exception class for exceptions thrown when faulty VCF file

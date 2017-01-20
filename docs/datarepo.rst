@@ -122,11 +122,11 @@ dataset has a name, which is used to identify it in the repository manager.
 
 .. code-block:: bash
 
-    $ ga4gh_repo add-dataset registry.db 1kg -d 'Example dataset using 1000 genomes data'
+    $ ga4gh_repo add-dataset registry.db 1kg -d 'Example dataset using 1000 genomes data' -c '2007-04-05T12:30-02:00' -u '2008-04-25T18:30Z'
 
-Adds the dataset with the name ``1kg`` and description
-``'Example dataset using 1000 genomes data'`` to the
-registry database ``registry.db``.
+Adds the dataset with the name ``1kg``, description
+``'Example dataset using 1000 genomes data'``, and a creation and update time
+(in ISO 8601 format) to the registry database ``registry.db``.
 
 ----------------
 add-referenceset

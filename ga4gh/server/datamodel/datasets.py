@@ -5,6 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from datetime import datetime
+
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.reads as reads
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
@@ -15,9 +17,8 @@ import ga4gh.server.datamodel.bio_metadata as biodata
 import ga4gh.server.datamodel.genotype_phenotype as g2p
 import ga4gh.server.datamodel.rna_quantification as rnaQuantification
 import json
-
 import google.protobuf.struct_pb2 as struct_pb2
-
+import dateutil.parser as datetimeParser
 import ga4gh.schemas.pb as pb
 
 
@@ -59,6 +60,8 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetIdMap = {}
         self._rnaQuantificationSetNameMap = {}
         self._info = {}
+        self._createDateTime = None
+        self._updateDateTime = None
 
     def populateFromRow(self, row):
         """
@@ -67,12 +70,50 @@ class Dataset(datamodel.DatamodelObject):
         """
         self._description = row[b'description']
         self._info = json.loads(row[b'info'])
+        self._createDateTime = row[b'createDateTime']
+        self._updateDateTime = row[b'updateDateTime']
 
     def setDescription(self, description):
         """
         Sets the description for this dataset to the specified value.
         """
         self._description = description
+
+    def setCreateDateTime(self, datetimeStr):
+        """
+        Sets the creation DateTime for this dataset to the specified value.
+
+        The datetime parser accepts a wide variety of time formats, which
+        are converted to ISO format.
+        """
+        if datetimeStr:
+            try:
+                datetimeObj = datetimeParser.parse(datetimeStr)
+            except ValueError:
+                raise exceptions.TimestampFormatException(
+                        datetimeStr, self.getLocalId())
+            except OverflowError:
+                raise exceptions.TimestampFormatException(
+                        datetimeStr, self.getLocalId())
+            self._createDateTime = datetimeObj.isoformat()
+
+    def setUpdateDateTime(self, datetimeStr):
+        """
+        Sets the update DateTime for this dataset to the specified value.
+
+        The datetime parser accepts a wide variety of time formats, which
+        are converted to ISO format.
+        """
+        if datetimeStr:
+            try:
+                datetimeObj = datetimeParser.parse(datetimeStr)
+            except ValueError:
+                raise exceptions.TimestampFormatException(
+                        datetimeStr, self.getLocalId())
+            except OverflowError:
+                raise exceptions.TimestampFormatException(
+                        datetimeStr, self.getLocalId())
+            self._updateDateTime = datetimeObj.isoformat()
 
     def setInfo(self, info):
         """
@@ -143,6 +184,8 @@ class Dataset(datamodel.DatamodelObject):
         dataset.description = pb.string(self.getDescription())
         for key in self.getInfo():
             dataset.info[key].values.extend(_encodeValue(self._info[key]))
+        dataset.createDateTime = pb.string(self.getCreateDateTime())
+        dataset.updateDateTime = pb.string(self.getUpdateDateTime())
         return dataset
 
     def getVariantSets(self):
@@ -369,6 +412,18 @@ class Dataset(datamodel.DatamodelObject):
         """
         return self._description
 
+    def getCreateDateTime(self):
+        """
+        Returns the free text creation DateTime of this dataset.
+        """
+        return self._createDateTime
+
+    def getUpdateDateTime(self):
+        """
+        Returns the free text update DateTime of this dataset.
+        """
+        return self._updateDateTime
+
     def getNumRnaQuantificationSets(self):
         """
         Returns the number of rna quantification sets in this dataset.
@@ -422,6 +477,7 @@ class SimulatedDataset(Dataset):
             numExpressionLevels=2):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+        self.setCreateDateTime(datetime(2015, 1, 1).isoformat())
 
         for i in range(numPhenotypeAssociationSets):
             localId = "simPas{}".format(i)

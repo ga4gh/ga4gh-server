@@ -8,7 +8,6 @@
 # that are dependencies of libraries listed in the next section
 # and are not already listed in requirements.txt
 
-python-dateutil==2.5.1
 PyYAML==3.11
 
 ### This section is for the actual libraries ###

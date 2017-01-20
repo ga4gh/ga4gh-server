@@ -138,6 +138,8 @@ class ComplianceDataMunger(object):
         dataset = datasets.Dataset("brca1")
         # Some info is set, it isn't important what
         dataset.setInfo({"version": ga4gh.server.__version__})
+        dataset.setCreateDateTime('2008-04-25T18:30Z')
+        dataset.setUpdateDateTime('2016-05-15T17:34-01:00')
         self.repo.insertDataset(dataset)
 
         hg00096Individual = biodata.Individual(dataset, "HG00096")

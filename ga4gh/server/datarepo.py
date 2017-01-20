@@ -808,6 +808,8 @@ class SqlDataRepository(AbstractDataRepository):
                 name TEXT NOT NULL,
                 description TEXT,
                 info TEXT,
+                createDateTime TEXT,
+                updateDateTime TEXT,
                 UNIQUE (name)
             );
         """
@@ -818,15 +820,17 @@ class SqlDataRepository(AbstractDataRepository):
         Inserts the specified dataset into this repository.
         """
         sql = """
-            INSERT INTO Dataset (id, name, description, info)
-            VALUES (?, ?, ?, ?);
+            INSERT INTO Dataset (id, name, description, info, createDateTime,
+                updateDateTime)
+            VALUES (?, ?, ?, ?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
         try:
             cursor.execute(sql, (
                 dataset.getId(), dataset.getLocalId(),
                 dataset.getDescription(),
-                json.dumps(dataset.getInfo())))
+                json.dumps(dataset.getInfo()), dataset.getCreateDateTime(),
+                dataset.getUpdateDateTime()))
         except sqlite3.IntegrityError:
             raise exceptions.DuplicateNameException(dataset.getLocalId())
 
