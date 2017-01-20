@@ -35,8 +35,8 @@ and the development headers for `zlib <http://www.zlib.net/>`_.
 You will also need to install Protocol Buffers 3.0 in your development
 environment.  The general process for doing the install is best described in
 the protobuf documentation here: https://github.com/google/protobuf
-If you are working on ``Mac OS X`` then there is an easy install process
-through brew:
+If you are working on Mac OS X then there is an easy install process
+through homebrew:
 
 .. code-block:: bash
 
