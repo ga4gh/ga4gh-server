@@ -142,8 +142,10 @@ GA4GH reference server:
 
 .. code-block:: bash
 
-    $ cd server
-    $ pip install -r dev-requirements.txt --user
+    cd server
+    virtualenv env
+    source env/bin/activate
+    pip install -r dev-requirements.txt -c constraints.txt
 
 This will take a little time as the libraries that we require are
 fetched from PyPI and built. You can now start the server using a :code:`python server_dev.py`, 
