@@ -21,9 +21,9 @@
 # When making a release, these constraints are changed to point at
 # the released dependency.
 #
-# ga4gh-client==0.1.0
-# ga4gh-schemas==0.1.0
+# ga4gh-client==0.6.0a9
+# ga4gh-schemas==0.6.0a9post2
 #
-git+git://github.com/ga4gh/schemas.git@master#egg=ga4gh_schemas
-git+git://github.com/ga4gh/ga4gh-client.git@master#egg=ga4gh_client
+#git+git://github.com/ga4gh/schemas.git@master#egg=ga4gh_schemas
+#git+git://github.com/ga4gh/ga4gh-client.git@master#egg=ga4gh_client
 
