@@ -185,7 +185,7 @@ performed above, we can use the following code:
 
     from __future__ import print_function
 
-    import ga4gh.client.client as client
+    from ga4gh.client import client
 
     httpClient = client.HttpClient("http://localhost:8000")
     # Get the datasets on the server.
@@ -273,7 +273,7 @@ around 3GB. Next, we will add the reference set.
 .. code-block:: bash
 
     $ ga4gh_repo add-referenceset registry.db /full/path/to/hs37d5.fa.gz \
-      -d “NCBI37 assembly of the human genome” --ncbiTaxonId 9606 --name NCBI37 \
+      -d "NCBI37 assembly of the human genome" --ncbiTaxonId 9606 --name NCBI37 \
       --sourceUri "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz"
 
 A number of optional command line flags have been added. We will be
@@ -391,7 +391,7 @@ client's libraries for use in your own programs:
 
 .. code-block:: python
 
-    >>> import ga4gh.client.client as client
+    >>> from ga4gh.client import client
     >>> client.HttpClient
     <class 'ga4gh_client.client.HttpClient'>
 
