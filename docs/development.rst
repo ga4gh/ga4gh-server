@@ -528,21 +528,22 @@ patch updates are routinely and regularly released.
 
 This entails:
 
-1) Create a PR against ``master`` with the release notes; presently, the
-   release notes are located in ``docs/status.rst``
-2) Once this has been merged, tag the release on GitHub (on the `releases
+#. Create a PR against ``master`` that has the following changes: 
+
+   #. update the release notes in ``docs/status.rst`` with a description of what is in the release 
+   #. modify ``requirements.txt`` to pin the ga4gh packages to specific versions 
+   #. modify ``constraints.txt`` to comment out all the lines referencing ga4gh packages
+   #. modify ``docs/environment.yml`` to pin the ga4gh packages to specific versions
+
+#. Once this has been merged, tag the release on GitHub (on the `releases
    <https://github.com/ga4gh/server/releases>`_ page) with the
    appropriate version number.
-3) Fetch the tag from the upstream repo, and checkout this tag.
-4) Replace git URLs in the ``constraints.txt`` to point at the schemas and
-   client releases this server release is meant to depend on. 
-5) Replace git URLs in the ``docs/environment.yml`` using the same versions
-   as (4).
-6) Create the distribution tarball using ``python setup.py sdist``, and then
+#. Fetch the tag from the upstream repo, and checkout this tag.
+#. Create the distribution tarball using ``python setup.py sdist``, and then
    upload the resulting tarball to PyPI using 
-   ``twine upload dist/ga4gh-MAJOR.MINOR.PATCH.tar.gz`` (using 
+   ``twine upload dist/ga4gh-$MAJOR.$MINOR.$PATCH.tar.gz`` (using 
    the correct file name).
-7) Verify that the documentation at
+#. Verify that the documentation at
    http://ga4gh-reference-implementation.readthedocs.org/en/stable/
    is for the correct version (it may take a few minutes for this to
    happen after the release has been tagged on GitHub).  The release
@@ -558,11 +559,11 @@ in the server internals, there will be a period when the ``master`` branch is no
 in a releasable state. If a bugfix release is required during this period,
 we create a release using the following process:
 
-1) If it does not already exist, create a release branch called
-   ``release-$MAJOR.MINOR`` from the tag of the last release.
-2) Fix the bug by either cherry picking the relevant commits
+#. If it does not already exist, create a release branch called
+   ``release-$MAJOR.$MINOR`` from the tag of the last release.
+#. Fix the bug by either cherry picking the relevant commits
    from ``master``, or creating PRs against the ``release-$MAJOR.$MINOR``
    branch if the bug does not apply to ``master``.
-3) Follow steps 1-6 in the process for `Development releases`_ above,
+#. Follow steps 1-5 in the process for `Development releases`_ above,
    except using the ``release-$MAJOR.$MINOR`` branch as the base
    instead of ``master``.
