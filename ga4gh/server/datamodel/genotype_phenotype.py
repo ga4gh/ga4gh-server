@@ -11,7 +11,8 @@ import rdflib
 
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.exceptions as exceptions
-import ga4gh.server.protocol as protocol
+
+import ga4gh.schemas.protocol as protocol
 
 # annotation keys
 TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'

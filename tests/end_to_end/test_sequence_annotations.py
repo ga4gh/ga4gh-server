@@ -8,9 +8,10 @@ from __future__ import unicode_literals
 import unittest
 import logging
 
-import ga4gh.server.protocol as protocol
 import ga4gh.server.frontend as frontend
 import tests.paths as paths
+
+import ga4gh.schemas.protocol as protocol
 
 
 class TestSequenceAnnotations(unittest.TestCase):

@@ -13,12 +13,12 @@ import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.datasets as datasets
 import ga4gh.server.datamodel.reads as reads
 import ga4gh.server.datamodel.references as references
-import ga4gh.server.protocol as protocol
 import ga4gh.server.datarepo as datarepo
 import tests.datadriven as datadriven
 import tests.paths as paths
 
 import ga4gh.common.utils as utils
+import ga4gh.schemas.protocol as protocol
 
 import pysam
 

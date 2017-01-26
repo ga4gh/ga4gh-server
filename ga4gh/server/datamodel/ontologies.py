@@ -8,9 +8,10 @@ from __future__ import unicode_literals
 import collections
 import os.path
 
-import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel.obo_parser as obo_parser
+
+import ga4gh.schemas.protocol as protocol
 
 
 SEQUENCE_ONTOLOGY_PREFIX = "SO"

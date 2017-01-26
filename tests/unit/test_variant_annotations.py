@@ -9,12 +9,13 @@ from __future__ import unicode_literals
 import hashlib
 import unittest
 
-import ga4gh.server.protocol as protocol
 import ga4gh.server.datarepo as datarepo
 import ga4gh.server.datamodel.variants as variants
 import ga4gh.server.datamodel.datasets as datasets
 
 import tests.paths as paths
+
+import ga4gh.schemas.protocol as protocol
 
 
 class TestHtslibVariantAnnotationSet(unittest.TestCase):

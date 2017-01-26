@@ -12,8 +12,9 @@ import ga4gh.server.paging as paging
 import ga4gh.server.datamodel.reads as reads
 import ga4gh.server.datamodel.variants as variants
 import ga4gh.server.exceptions as exceptions
-import ga4gh.server.protocol as protocol
 import ga4gh.server.datarepo as datarepo
+
+import ga4gh.schemas.protocol as protocol
 
 
 def generateVariant():

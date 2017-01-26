@@ -9,12 +9,12 @@ from __future__ import unicode_literals
 import json
 import random
 
-import ga4gh.server.protocol as protocol
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.sqlite_backend as sqlite_backend
 import ga4gh.server.exceptions as exceptions
 
 import ga4gh.schemas.pb as pb
+import ga4gh.schemas.protocol as protocol
 
 # Note to self: There's the Feature ID as understood in a GFF3 file,
 # the Feature ID that is its server-assigned compoundId, and the

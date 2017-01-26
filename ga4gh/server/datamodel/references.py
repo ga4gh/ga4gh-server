@@ -13,10 +13,10 @@ import random
 import pysam
 
 import ga4gh.server.datamodel as datamodel
-import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 
 import ga4gh.schemas.pb as pb
+import ga4gh.schemas.protocol as protocol
 
 
 DEFAULT_REFERENCESET_NAME = "Default"
