@@ -7,6 +7,10 @@ Partially auto-generated using pwiz.
 
     python -m pwiz -e sqlite ga4gh-example-data/registry.db > models.py
 
+For more on the peewee model API see:
+
+https://peewee.readthedocs.io/en/latest/peewee/models.html
+
 """
 from __future__ import division
 from __future__ import print_function
