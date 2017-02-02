@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 import unittest
 import logging
 import random
+import json
 import ga4gh.server.datamodel.reads as reads
 import ga4gh.server.datamodel.references as references
 import ga4gh.server.datamodel.variants as variants
@@ -161,8 +162,16 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(gaReferenceSet.id, referenceSet.getId())
         self.assertEqual(
             gaReferenceSet.md5checksum, referenceSet.getMd5Checksum())
+        sp = protocol.fromJson(
+                json.dumps(referenceSet.getSpecies()), protocol.OntologyTerm)
         self.assertEqual(
-            gaReferenceSet.ncbi_taxon_id, referenceSet.getNcbiTaxonId())
+            gaReferenceSet.species.id, sp.id)
+        self.assertEqual(
+            gaReferenceSet.species.term, sp.term)
+        self.assertEqual(
+            gaReferenceSet.species.source_name, sp.source_name)
+        self.assertEqual(
+            gaReferenceSet.species.source_version, sp.source_version)
         self.assertEqual(
             gaReferenceSet.assembly_id, referenceSet.getAssemblyId())
         self.assertEqual(
@@ -193,7 +202,16 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(gaReference.name, reference.getName())
         self.assertEqual(gaReference.length, reference.getLength())
         self.assertEqual(gaReference.md5checksum, reference.getMd5Checksum())
-        self.assertEqual(gaReference.ncbi_taxon_id, reference.getNcbiTaxonId())
+        sp = protocol.fromJson(
+                json.dumps(reference.getSpecies()), protocol.OntologyTerm)
+        self.assertEqual(gaReference.species.id, sp.id)
+        self.assertEqual(gaReference.species.term, sp.term)
+        self.assertEqual(
+            gaReference.species.source_name,
+            sp.source_name)
+        self.assertEqual(
+            gaReference.species.source_version,
+            sp.source_version)
         self.assertEqual(gaReference.source_uri, reference.getSourceUri())
         self.assertEqual(
             gaReference.source_accessions, reference.getSourceAccessions())
