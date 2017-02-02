@@ -36,7 +36,9 @@ def buildTestData(
 
     pattern = os.path.join(prefix, "referenceSets", "*.fa.gz")
     for dataFile in glob.glob(pattern):
-        run("add-referenceset", repoFile, useRelativePath, dataFile)
+        run("add-referenceset", repoFile, useRelativePath, dataFile,
+            "--species ", '\'{"id": "9606", "term": "Homo sapiens", '
+                          '"sourceName": "NCBI", "sourceVersion": "1.0"}\'')
 
     pattern = os.path.join(prefix, "ontologies", "*.obo")
     for dataFile in glob.glob(pattern):

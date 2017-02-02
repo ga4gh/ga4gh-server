@@ -682,7 +682,7 @@ class SqlDataRepository(AbstractDataRepository):
             name=reference.getLocalId(),
             length=reference.getLength(),
             isderived=reference.getIsDerived(),
-            species=reference.getSpecies(),
+            species=json.dumps(reference.getSpecies()),
             md5checksum=reference.getMd5Checksum(),
             sourceaccessions=json.dumps(reference.getSourceAccessions()),
             sourceuri=reference.getSourceUri())
@@ -711,7 +711,7 @@ class SqlDataRepository(AbstractDataRepository):
                 description=referenceSet.getDescription(),
                 assemblyid=referenceSet.getAssemblyId(),
                 isderived=referenceSet.getIsDerived(),
-                species=referenceSet.getSpecies(),
+                species=json.dumps(referenceSet.getSpecies()),
                 md5checksum=referenceSet.getMd5Checksum(),
                 sourceaccessions=json.dumps(
                     referenceSet.getSourceAccessions()),
