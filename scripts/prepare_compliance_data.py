@@ -125,12 +125,16 @@ class ComplianceDataMunger(object):
         referenceSet.populateFromFile(os.path.abspath(fastaFilePath))
         referenceSet.setAssemblyId(refSetMetadata['assemblyId'])
         referenceSet.setDescription(refSetMetadata['description'])
-        referenceSet.setNcbiTaxonId(refSetMetadata['ncbiTaxonId'])
+        if refSetMetadata['species']:
+            speciesJson = json.dumps(refSetMetadata['species'])
+            referenceSet.setSpeciesFromJson(speciesJson)  # needs a string
         referenceSet.setIsDerived(refSetMetadata['isDerived'])
         referenceSet.setSourceUri(refSetMetadata['sourceUri'])
         referenceSet.setSourceAccessions(refSetMetadata['sourceAccessions'])
         for reference in referenceSet.getReferences():
-            reference.setNcbiTaxonId(refMetadata['ncbiTaxonId'])
+            if refSetMetadata['species']:
+                speciesJsonStr = json.dumps(refMetadata['species'])
+                reference.setSpeciesFromJson(speciesJsonStr)
             reference.setSourceAccessions(
                 refMetadata['sourceAccessions'])
         self.repo.insertReferenceSet(referenceSet)
@@ -185,7 +189,6 @@ class ComplianceDataMunger(object):
             hg00101Biosample.populateFromJson(jsonString.read())
         hg00101Biosample.setIndividualId(hg00101Individual.getId())
         self.repo.insertBiosample(hg00101Biosample)
-
         readFiles = [
             "brca1_HG00096.sam",
             "brca1_HG00099.sam",
@@ -278,7 +281,6 @@ class ComplianceDataMunger(object):
                 dataset, "cgd", os.path.abspath(outputG2PPath))
         self.repo.insertPhenotypeAssociationSet(phenotypeAssociationSet)
 
-        self.repo.commit()
         dataset.addFeatureSet(gencode)
 
         # RNA Quantification
@@ -298,8 +300,6 @@ class ComplianceDataMunger(object):
         rnaQuantificationSet.setReferenceSet(referenceSet)
         rnaQuantificationSet.populateFromFile(os.path.abspath(rnaDbName))
         self.repo.insertRnaQuantificationSet(rnaQuantificationSet)
-
-        self.repo.commit()
 
     def addVariantSet(
             self, variantFileName, dataset, referenceSet,
@@ -322,6 +322,7 @@ class ComplianceDataMunger(object):
                 if biosample.getLocalId() == callSet.getLocalId():
                     callSet.setBiosampleId(biosample.getId())
         self.repo.insertVariantSet(variantSet)
+
         for annotationSet in variantSet.getVariantAnnotationSets():
             annotationSet.setOntology(ontology)
             self.repo.insertVariantAnnotationSet(annotationSet)

@@ -22,22 +22,22 @@ First, we install some basic pre-requisite packages:
 
 .. code-block:: bash
 
-  $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev libssl-dev libcurl4-openssl-dev
+  sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev libssl-dev libcurl4-openssl-dev
 
 Install Apache and mod_wsgi, and enable mod_wsgi:
 
 .. code-block:: bash
 
-  $ sudo apt-get install apache2 libapache2-mod-wsgi
-  $ sudo a2enmod wsgi
+  sudo apt-get install apache2 libapache2-mod-wsgi
+  sudo a2enmod wsgi
 
 Create the Python egg cache directory, and make it writable by
 the ``www-data`` user:
 
 .. code-block:: bash
 
-  $ sudo mkdir /var/cache/apache2/python-egg-cache
-  $ sudo chown www-data:www-data /var/cache/apache2/python-egg-cache/
+  sudo mkdir /var/cache/apache2/python-egg-cache
+  sudo chown www-data:www-data /var/cache/apache2/python-egg-cache/
 
 Create a directory to hold the GA4GH server code, configuration
 and data. For convenience, we make this owned by the current user
@@ -45,25 +45,25 @@ and data. For convenience, we make this owned by the current user
 
 .. code-block:: bash
 
-  $ sudo mkdir /srv/ga4gh
-  $ sudo chown $USER /srv/ga4gh
-  $ cd /srv/ga4gh
+  sudo mkdir /srv/ga4gh
+  sudo chown $USER /srv/ga4gh
+  cd /srv/ga4gh
 
 Make a virtualenv, and install the ga4gh package:
 
 .. code-block:: bash
 
-  $ virtualenv ga4gh-server-env
-  $ source ga4gh-server-env/bin/activate
-  (ga4gh-server-env) $ pip install ga4gh
-  (ga4gh-server-env) $ deactivate
+  virtualenv ga4gh-server-env
+  source ga4gh-server-env/bin/activate
+  pip install ga4gh
+  deactivate
 
 Download and unpack the example data:
 
 .. code-block:: bash
 
-  $ wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data_4.6.tar
-  $ tar -xf ga4gh-example-data_4.6.tar
+  wget https://github.com/ga4gh/server/releases/download/data/ga4gh-example-data_4.6.tar
+  tar -xf ga4gh-example-data_4.6.tar
 
 Create the WSGI file at ``/srv/ga4gh/application.wsgi`` and write the following
 contents:
@@ -138,14 +138,14 @@ Now restart Apache:
 
 .. code-block:: bash
 
-  $ sudo service apache2 restart
+  sudo service apache2 restart
 
 We will now test to see the server started properly by requesting the
 landing page.
 
 .. code-block:: bash
 
-    $ curl http://localhost/ga4gh/ --silent | grep GA4GH
+    curl http://localhost/ga4gh/ --silent | grep GA4GH
     #         <title>GA4GH reference server 0.2.3.dev4+nge0b07f3</title>
     #    <h2>GA4GH reference server 0.2.3.dev4+nge0b07f3</h2>
     # Welcome to the GA4GH reference server landing page! This page describes
@@ -193,7 +193,7 @@ If you already have a dataset on your machine, you can download and deploy the a
 
 .. code-block:: bash
 
-  $ docker run -e GA4GH_DATA_SOURCE=/data -v /my/ga4gh_data/:/data:ro -d -p 8000:80 --name ga4gh_server ga4gh/server:latest
+  docker run -e GA4GH_DATA_SOURCE=/data -v /my/ga4gh_data/:/data:ro -d -p 8000:80 --name ga4gh_server ga4gh/server:latest
 
 Replace ``/my/ga4gh_data/`` with the path to your data.
 
@@ -213,7 +213,7 @@ If you do not have a dataset yet, you can deploy a container which includes the 
 
 .. code-block:: bash
 
-  $ docker run -d -p 8000:80 --name ga4gh_demo ga4gh/server:latest
+  docker run -d -p 8000:80 --name ga4gh_demo ga4gh/server:latest
 
 This is identical to the production container, except that a copy of the demo data is included and appropriate defaults are set.
 
@@ -225,17 +225,17 @@ From the client, the server is accessible at ``http://server/``, and the ``/tmp/
 .. code-block:: bash
 
   # make a development dir and place the example client script in it
-  $ mkdir /tmp/mydev
-  $ curl https://raw.githubusercontent.com/ga4gh/server/master/scripts/demo_example.py > /tmp/mydev/demo_example.py
-  $ chmod +x /tmp/mydev/demo_example.py
+  mkdir /tmp/mydev
+  curl https://raw.githubusercontent.com/ga4gh/server/master/scripts/demo_example.py > /tmp/mydev/demo_example.py
+  chmod +x /tmp/mydev/demo_example.py
 
   # start the server daemon
   # assumes the demo data on host at /my/ga4gh_data
-  $ docker run -e GA4GH_DEBUG=True -e GA4GH_DATA_SOURCE=/data -v /my/ga4gh_data/:/data:ro -d --name ga4gh_server ga4gh/server:latest
+  docker run -e GA4GH_DEBUG=True -e GA4GH_DATA_SOURCE=/data -v /my/ga4gh_data/:/data:ro -d --name ga4gh_server ga4gh/server:latest
 
   # start the client and drop into a bash shell, with mydev/ mounted read/write
   # --link adds a host entry for server, and --rm destroys the container when you exit
-  $ docker run -e GA4GH_DEBUG=True -v /tmp/mydev/:/app/mydev:rw -it --name ga4gh_client --link ga4gh_server:server --entrypoint=/bin/bash --rm ga4gh/server:latest
+  docker run -e GA4GH_DEBUG=True -v /tmp/mydev/:/app/mydev:rw -it --name ga4gh_client --link ga4gh_server:server --entrypoint=/bin/bash --rm ga4gh/server:latest
 
   # call the client code script
   root@md5:/app# ./mydev/demo_example.py
@@ -255,7 +255,7 @@ From a terminal on the host to forward traffic from localhost:8000 to the VM 800
 
 .. code-block:: bash
 
-  $ VBoxManage controlvm boot2docker-vm natpf1 "ga4gh,tcp,127.0.0.1,8000,,8000"
+  VBoxManage controlvm boot2docker-vm natpf1 "ga4gh,tcp,127.0.0.1,8000,,8000"
 
 For more info on port forwarding see `the VirtualBox manual <https://www.virtualbox.org/manual/ch06.html#natforward>`_ and this `wiki article <https://github.com/CenturyLinkLabs/panamax-ui/wiki/How-To%3A-Port-Forwarding-on-VirtualBox>`_.
 
@@ -275,9 +275,9 @@ Build the code at server/ and run for production, serving a dataset on local hos
 
 .. code-block:: bash
 
- $ cd server/
- $ docker build -t my-repo/my-image .
- $ docker run -e GA4GH_DATA_SOURCE=/dataset -v /my/dataset:/dataset:ro -itd -p 8000:80 --name ga4gh_server my-repo/my-image
+ cd server/
+ docker build -t my-repo/my-image .
+ docker run -e GA4GH_DATA_SOURCE=/dataset -v /my/dataset:/dataset:ro -itd -p 8000:80 --name ga4gh_server my-repo/my-image
 
 Build and run the production build from above, with the demo dataset in the container
 (you will need to modify the FROM line in ``/deploy/variants/demo/Dockerfile`` if you want to use your image from above as the base):
@@ -295,8 +295,8 @@ From a terminal on the host:
 
 .. code-block:: bash
 
-  $ eval "$(boot2docker shellinit)"
-  $ boot2docker ssh
+  eval "$(boot2docker shellinit)"
+  boot2docker ssh
   >	sudo udhcpc
   (password is tcuser)
 
@@ -306,7 +306,7 @@ To enable DEBUG on your docker server, call docker run with ``-e GA4GH_DEBUG=Tru
 
 .. code-block:: bash
 
-  $ docker run -itd -p 8000:80 --name ga4gh_demo -e GA4GH_DEBUG=True ga4gh/server:latest
+  docker run -itd -p 8000:80 --name ga4gh_demo -e GA4GH_DEBUG=True ga4gh/server:latest
 
 This will set the environment variable which is read by config.py
 
@@ -328,7 +328,7 @@ To install Homebrew, paste the following at a Terminal prompt ($):
 
 .. code-block:: bash
 
-  $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
 Now use ``brew install`` to install Python if you don't have Python 2.7
 installed and then ``pip install``, which comes with Python, can be used to
@@ -336,8 +336,8 @@ install virtual environment:
 
 .. code-block:: bash
 
-  $ brew install python
-  $ pip install virtualenv
+  brew install python
+  pip install virtualenv
 
 **Install**
 
@@ -348,22 +348,22 @@ to work from your command line.)
 
 .. code-block:: bash
 
-  $ git clone https://github.com/ga4gh/server.git
+  git clone https://github.com/ga4gh/server.git
 
 Before installing Python library dependencies, create a virtualenv sandbox to 
 isolate it from the rest of the system, and then activate it:
 
 .. code-block:: bash
 
-  $ cd server
-  $ virtualenv ga4gh-env
-  $ source ga4gh-env/bin/activate
+  cd server
+  virtualenv ga4gh-env
+  source ga4gh-env/bin/activate
 
 Install Python dependencies:
 
 .. code-block:: bash
 
-  (ga4gh-env) $ pip install -r dev-requirements.txt
+  pip install -r dev-requirements.txt -c constraints.txt
 
 **Test and run**
 
@@ -371,7 +371,7 @@ Run tests to verify the install:
 
 .. code-block:: bash
 
-  (ga4gh-env) $ python scripts/run_tests.py
+  ga4gh_run_tests
 
 Please refer to the instructions in the :ref:`demo` for how to access
 data made available by this server.
