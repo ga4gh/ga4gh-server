@@ -481,19 +481,21 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
             reference.setLength(len(bases))
             self.addReference(reference)
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, referenceSetRecord):
         """
         Populates this reference set from the values in the specified DB
         row.
         """
-        self._dataUrl = row[b'dataUrl']
-        self._description = row[b'description']
-        self._assemblyId = row[b'assemblyId']
-        self._isDerived = bool(row[b'isDerived'])
-        self._md5checksum = row[b'md5checksum']
-        self._species = json.loads(row[b'species'])
-        self._sourceAccessions = json.loads(row[b'sourceAccessions'])
-        self._sourceUri = row[b'sourceUri']
+        self._dataUrl = referenceSetRecord.dataurl
+        self._description = referenceSetRecord.description
+        self._assemblyId = referenceSetRecord.assemblyid
+        self._isDerived = bool(referenceSetRecord.isderived)
+        self._md5checksum = referenceSetRecord.md5checksum
+        if referenceSetRecord.species is not None:
+            self.setSpeciesFromJson(referenceSetRecord.species)
+        self._sourceAccessions = json.loads(
+            referenceSetRecord.sourceaccessions)
+        self._sourceUri = referenceSetRecord.sourceuri
 
     def getDataUrl(self):
         """
@@ -519,17 +521,18 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
     def __init__(self, parentContainer, localId):
         super(HtslibReference, self).__init__(parentContainer, localId)
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, referenceRecord):
         """
         Populates this reference from the values in the specified DB row.
         """
-        self._length = row[b'length']
-        self._isDerived = bool(row[b'isDerived'])
-        self._md5checksum = row[b'md5checksum']
-        self._species = json.loads(row[b'species'])
-        self._sourceAccessions = json.loads(row[b'sourceAccessions'])
-        self._sourceDivergence = row[b'sourceDivergence']
-        self._sourceUri = row[b'sourceUri']
+        self._length = referenceRecord.length
+        self._isDerived = bool(referenceRecord.isderived)
+        self._md5checksum = referenceRecord.md5checksum
+        if referenceRecord.species is not None:
+            self.setSpeciesFromJson(referenceRecord.species)
+        self._sourceAccessions = json.loads(referenceRecord.sourceaccessions)
+        self._sourceDivergence = referenceRecord.sourcedivergence
+        self._sourceUri = referenceRecord.sourceuri
 
     def getBases(self, start, end):
         self.checkQueryRange(start, end)

@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import json
 import os
 import sqlite3
+import datetime
 
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.datasets as datasets
@@ -21,8 +22,9 @@ import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.server.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.exceptions as exceptions
+import ga4gh.server.protocol as protocol
 
-from ga4gh.server import protocol
+import repo.models as m
 
 MODE_READ = 'r'
 MODE_WRITE = 'w'
@@ -465,6 +467,8 @@ class SqlDataRepository(AbstractDataRepository):
         self._creationTimeStamp = None
         # Connection to the DB.
         self._dbConnection = None
+        self.database = m.SqliteDatabase(self._dbFilename, **{})
+        m.databaseProxy.initialize(self.database)
 
     def _checkWriteMode(self):
         if self._openMode != MODE_WRITE:
@@ -489,11 +493,6 @@ class SqlDataRepository(AbstractDataRepository):
         self._openMode = mode
         if mode == MODE_READ:
             self.assertExists()
-        self._safeConnect()
-        # Turn on foreign key constraints.
-        cursor = self._dbConnection.cursor()
-        cursor.execute("PRAGMA foreign_keys = ON;")
-        self._dbConnection.commit()
         if mode == MODE_READ:
             # This is part of the transitional behaviour where
             # we load the whole DB into memory to get access to
@@ -506,7 +505,6 @@ class SqlDataRepository(AbstractDataRepository):
         this function if the repo is not opened in write-mode.
         """
         self._checkWriteMode()
-        self._dbConnection.commit()
 
     def close(self):
         """
@@ -515,8 +513,6 @@ class SqlDataRepository(AbstractDataRepository):
         if self._openMode is None:
             raise ValueError("Repo already closed")
         self._openMode = None
-        self._dbConnection.close()
-        self._dbConnection = None
 
     def verify(self):
         """
@@ -618,390 +614,268 @@ class SqlDataRepository(AbstractDataRepository):
             # raised e.g. when directory passed as dbFilename
             raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
 
-    def _createSystemTable(self, cursor):
-        sql = """
-            CREATE TABLE System (
-                key TEXT NOT NULL PRIMARY KEY,
-                value TEXT NOT NULL
-            );
-        """
-        cursor.execute(sql)
-        cursor.execute(
-            "INSERT INTO System VALUES "
-            "('{}', '{}')".format(
-                self.systemKeySchemaVersion, self.version))
-        cursor.execute(
-            "INSERT INTO System VALUES ('{}', datetime('now'))".format(
-                self.systemKeyCreationTimeStamp))
+    def _createSystemTable(self):
+        self.database.create_table(m.System)
+        m.System.create(
+            key=self.systemKeySchemaVersion, value=self.version)
+        m.System.create(
+            key=self.systemKeyCreationTimeStamp, value=datetime.datetime.now())
 
-    def _readSystemTable(self, cursor):
-        sql = "SELECT key, value FROM System;"
-        cursor.execute(sql)
-        config = {}
-        for row in cursor:
-            config[row[0]] = row[1]
-        row = cursor.fetchone()
-        self._schemaVersion = config[self.systemKeySchemaVersion]
-        self._creationTimeStamp = config[self.systemKeyCreationTimeStamp]
+    def _readSystemTable(self):
+        if not self.exists():
+            raise exceptions.RepoNotFoundException(
+                self._dbFilename)
+        try:
+            self._schemaVersion = m.System.get(
+                m.System.key == self.systemKeySchemaVersion).value
+            self._creationTimeStamp = m.System.get(
+                m.System.key == self.systemKeyCreationTimeStamp).value
+        except Exception:
+            raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
         schemaVersion = self.SchemaVersion(self._schemaVersion)
         if schemaVersion.major != self.version.major:
             raise exceptions.RepoSchemaVersionMismatchException(
                 schemaVersion, self.version)
 
-    def _createOntologyTable(self, cursor):
-        sql = """
-            CREATE TABLE Ontology(
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                ontologyPrefix TEXT NOT NULL,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
+    def _createOntologyTable(self):
+        self.database.create_table(m.Ontology)
 
     def insertOntology(self, ontology):
         """
         Inserts the specified ontology into this repository.
         """
-        sql = """
-            INSERT INTO Ontology(id, name, dataUrl, ontologyPrefix)
-            VALUES (?, ?, ?, ?);
-        """
-        cursor = self._dbConnection.cursor()
+        try:
+            m.Ontology.create(
+                    id=ontology.getName(),
+                    name=ontology.getName(),
+                    dataurl=ontology.getDataUrl(),
+                    ontologyprefix=ontology.getOntologyPrefix())
+        except Exception:
+            raise exceptions.DuplicateNameException(
+                ontology.getName())
         # TODO we need to create a proper ID when we're doing ID generation
         # for the rest of the container objects.
-        try:
-            cursor.execute(sql, (
-                ontology.getName(),
-                ontology.getName(),
-                ontology.getDataUrl(),
-                ontology.getOntologyPrefix()))
-        except sqlite3.IntegrityError:
-            raise exceptions.DuplicateNameException(ontology.getName())
 
-    def _readOntologyTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Ontology;")
-        for row in cursor:
-            ontology = ontologies.Ontology(row[b'name'])
-            ontology.populateFromRow(row)
+    def _readOntologyTable(self):
+        for ont in m.Ontology.select():
+            ontology = ontologies.Ontology(ont.name)
+            ontology.populateFromRow(ont)
             self.addOntology(ontology)
 
     def removeOntology(self, ontology):
         """
         Removes the specified ontology term map from this repository.
         """
-        sql = "DELETE FROM Ontology WHERE name=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (ontology.getName(),))
+        q = m.Ontology.delete().where(id == ontology.getId())
+        q.execute()
 
-    def _createReferenceTable(self, cursor):
-        sql = """
-            CREATE TABLE Reference (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                length INTEGER,
-                isDerived INTEGER,
-                md5checksum TEXT,
-                species TEXT,
-                sourceAccessions TEXT,
-                sourceDivergence REAL,
-                sourceUri TEXT,
-                UNIQUE (referenceSetId, name),
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+    def _createReferenceTable(self):
+        self.database.create_table(m.Reference)
 
     def insertReference(self, reference):
         """
         Inserts the specified reference into this repository.
         """
-        sql = """
-            INSERT INTO Reference (
-                id, referenceSetId, name, length, isDerived, md5checksum,
-                species, sourceAccessions, sourceUri)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            reference.getId(), reference.getParentContainer().getId(),
-            reference.getLocalId(), reference.getLength(),
-            reference.getIsDerived(), reference.getMd5Checksum(),
-            json.dumps(reference.getSpecies()),
-            # We store the list of sourceAccessions as a JSON string. Perhaps
-            # this should be another table?
-            json.dumps(reference.getSourceAccessions()),
-            reference.getSourceUri()))
+        m.Reference.create(
+            id=reference.getId(),
+            referencesetid=reference.getParentContainer().getId(),
+            name=reference.getLocalId(),
+            length=reference.getLength(),
+            isderived=reference.getIsDerived(),
+            species=reference.getSpecies(),
+            md5checksum=reference.getMd5Checksum(),
+            sourceaccessions=json.dumps(reference.getSourceAccessions()),
+            sourceuri=reference.getSourceUri())
 
-    def _readReferenceTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Reference;")
-        for row in cursor:
-            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
-            reference = references.HtslibReference(referenceSet, row[b'name'])
-            reference.populateFromRow(row)
-            assert reference.getId() == row[b"id"]
+    def _readReferenceTable(self):
+        for referenceRecord in m.Reference.select():
+            referenceSet = self.getReferenceSet(
+                referenceRecord.referencesetid.id)
+            reference = references.HtslibReference(
+                referenceSet, referenceRecord.name)
+            reference.populateFromRow(referenceRecord)
+            assert reference.getId() == referenceRecord.id
             referenceSet.addReference(reference)
 
-    def _createReferenceSetTable(self, cursor):
-        sql = """
-            CREATE TABLE ReferenceSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT,
-                assemblyId TEXT,
-                isDerived INTEGER,
-                md5checksum TEXT,
-                species TEXT,
-                sourceAccessions TEXT,
-                sourceUri TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
+    def _createReferenceSetTable(self):
+        self.database.create_table(m.Referenceset)
 
     def insertReferenceSet(self, referenceSet):
         """
         Inserts the specified referenceSet into this repository.
         """
-        sql = """
-            INSERT INTO ReferenceSet (
-                id, name, description, assemblyId, isDerived, md5checksum,
-                species, sourceAccessions, sourceUri, dataUrl)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """
-        cursor = self._dbConnection.cursor()
         try:
-            cursor.execute(sql, (
-                referenceSet.getId(), referenceSet.getLocalId(),
-                referenceSet.getDescription(), referenceSet.getAssemblyId(),
-                referenceSet.getIsDerived(), referenceSet.getMd5Checksum(),
-                json.dumps(referenceSet.getSpecies(), protocol.OntologyTerm),
-                # We store the list of sourceAccessions as a JSON string.
-                # Perhaps this should be another table?
-                json.dumps(referenceSet.getSourceAccessions()),
-                referenceSet.getSourceUri(), referenceSet.getDataUrl()))
-        except sqlite3.IntegrityError:
-            raise exceptions.DuplicateNameException(referenceSet.getLocalId())
-        for reference in referenceSet.getReferences():
-            self.insertReference(reference)
+            m.Referenceset.create(
+                id=referenceSet.getId(),
+                name=referenceSet.getLocalId(),
+                description=referenceSet.getDescription(),
+                assemblyid=referenceSet.getAssemblyId(),
+                isderived=referenceSet.getIsDerived(),
+                species=referenceSet.getSpecies(),
+                md5checksum=referenceSet.getMd5Checksum(),
+                sourceaccessions=json.dumps(
+                    referenceSet.getSourceAccessions()),
+                sourceuri=referenceSet.getSourceUri(),
+                dataurl=referenceSet.getDataUrl())
+            for reference in referenceSet.getReferences():
+                self.insertReference(reference)
+        except Exception:
+            raise exceptions.DuplicateNameException(
+                referenceSet.getLocalId())
 
-    def _readReferenceSetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM ReferenceSet;")
-        for row in cursor:
-            referenceSet = references.HtslibReferenceSet(row[b'name'])
-            referenceSet.populateFromRow(row)
-            assert referenceSet.getId() == row[b"id"]
+    def _readReferenceSetTable(self):
+        for referenceSetRecord in m.Referenceset.select():
+            referenceSet = references.HtslibReferenceSet(
+                referenceSetRecord.name)
+            referenceSet.populateFromRow(referenceSetRecord)
+            assert referenceSet.getId() == referenceSetRecord.id
             # Insert the referenceSet into the memory-based object model.
             self.addReferenceSet(referenceSet)
 
-    def _createDatasetTable(self, cursor):
-        sql = """
-            CREATE TABLE Dataset (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                description TEXT,
-                info TEXT,
-                UNIQUE (name)
-            );
-        """
-        cursor.execute(sql)
+    def _createDatasetTable(self):
+        self.database.create_table(m.Dataset)
 
     def insertDataset(self, dataset):
         """
         Inserts the specified dataset into this repository.
         """
-        sql = """
-            INSERT INTO Dataset (id, name, description, info)
-            VALUES (?, ?, ?, ?);
-        """
-        cursor = self._dbConnection.cursor()
         try:
-            cursor.execute(sql, (
-                dataset.getId(), dataset.getLocalId(),
-                dataset.getDescription(),
-                json.dumps(dataset.getInfo())))
-        except sqlite3.IntegrityError:
-            raise exceptions.DuplicateNameException(dataset.getLocalId())
+            m.Dataset.create(
+                id=dataset.getId(),
+                name=dataset.getLocalId(),
+                description=dataset.getDescription(),
+                info=json.dumps(dataset.getInfo()))
+        except Exception:
+            raise exceptions.DuplicateNameException(
+                dataset.getLocalId())
 
     def removeDataset(self, dataset):
         """
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        sql = "DELETE FROM Dataset WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (dataset.getId(),))
+        for datasetRecord in m.Dataset.select().where(
+                        m.Dataset.id == dataset.getId()):
+            datasetRecord.delete_instance(recursive=True)
 
     def removePhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
         Remove a phenotype association set from the repo
         """
-        sql = "DELETE FROM PhenotypeAssociationSet WHERE id=? "
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (phenotypeAssociationSet.getId(),))
+        q = m.Phenotypeassociationset.delete().where(
+            m.Phenotypeassociationset.id == phenotypeAssociationSet.getId())
+        q.execute()
 
     def removeFeatureSet(self, featureSet):
         """
         Removes the specified featureSet from this repository.
         """
-        sql = "DELETE FROM FeatureSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (featureSet.getId(),))
+        q = m.Featureset.delete().where(
+            m.Featureset.id == featureSet.getId())
+        q.execute()
 
-    def _readDatasetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Dataset;")
-        for row in cursor:
-            dataset = datasets.Dataset(row[b'name'])
-            dataset.populateFromRow(row)
-            assert dataset.getId() == row[b"id"]
+    def _readDatasetTable(self):
+        for datasetRecord in m.Dataset.select():
+            dataset = datasets.Dataset(datasetRecord.name)
+            dataset.populateFromRow(datasetRecord)
+            assert dataset.getId() == datasetRecord.id
             # Insert the dataset into the memory-based object model.
             self.addDataset(dataset)
 
-    def _createReadGroupTable(self, cursor):
-        sql = """
-            CREATE TABLE ReadGroup (
-                id TEXT NOT NULL PRIMARY KEY,
-                readGroupSetId TEXT NOT NULL,
-                name TEXT NOT NULL,
-                predictedInsertSize INTEGER,
-                sampleName TEXT,
-                description TEXT,
-                stats TEXT NOT NULL,
-                experiment TEXT NOT NULL,
-                biosampleId TEXT,
-                created TEXT,
-                updated TEXT,
-                UNIQUE (readGroupSetId, name),
-                FOREIGN KEY(readGroupSetId) REFERENCES ReadGroupSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+    def _createReadGroupTable(self):
+        self.database.create_table(m.Readgroup)
 
     def insertReadGroup(self, readGroup):
         """
         Inserts the specified readGroup into the DB.
         """
-        sql = """
-            INSERT INTO ReadGroup (
-                id, readGroupSetId, name, predictedInsertSize,
-                sampleName, description, stats, experiment,
-                biosampleId, created, updated)
-            VALUES
-                (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'));
-        """
-        cursor = self._dbConnection.cursor()
         statsJson = json.dumps(protocol.toJsonDict(readGroup.getStats()))
         experimentJson = json.dumps(
             protocol.toJsonDict(readGroup.getExperiment()))
-        cursor.execute(sql, (
-            readGroup.getId(), readGroup.getParentContainer().getId(),
-            readGroup.getLocalId(), readGroup.getPredictedInsertSize(),
-            readGroup.getSampleName(), readGroup.getDescription(),
-            statsJson, experimentJson, readGroup.getBiosampleId()))
+        try:
+            m.Readgroup.create(
+                id=readGroup.getId(),
+                readgroupsetid=readGroup.getParentContainer().getId(),
+                name=readGroup.getLocalId(),
+                predictedinsertedsize=readGroup.getPredictedInsertSize(),
+                samplename=readGroup.getSampleName(),
+                description=readGroup.getDescription(),
+                stats=statsJson,
+                experiment=experimentJson,
+                biosampleid=readGroup.getBiosampleId())
+        except Exception as e:
+            raise exceptions.RepoManagerException(
+                e)
 
     def removeReadGroupSet(self, readGroupSet):
         """
         Removes the specified readGroupSet from this repository. This performs
         a cascading removal of all items within this readGroupSet.
         """
-        sql = "DELETE FROM ReadGroupSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (readGroupSet.getId(),))
+        for readGroupSetRecord in m.Readgroupset.select().where(
+                        m.Readgroupset.id == readGroupSet.getId()):
+            readGroupSetRecord.delete_instance(recursive=True)
 
     def removeVariantSet(self, variantSet):
         """
         Removes the specified variantSet from this repository. This performs
         a cascading removal of all items within this variantSet.
         """
-        sql = "DELETE FROM VariantSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (variantSet.getId(),))
+        for variantSetRecord in m.Variantset.select().where(
+                        m.Variantset.id == variantSet.getId()):
+            variantSetRecord.delete_instance(recursive=True)
 
     def removeBiosample(self, biosample):
         """
         Removes the specified biosample from this repository.
         """
-        sql = "DELETE FROM Biosample WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (biosample.getId(),))
+        q = m.Biosample.delete().where(m.Biosample.id == biosample.getId())
+        q.execute()
 
     def removeIndividual(self, individual):
         """
         Removes the specified individual from this repository.
         """
-        sql = "DELETE FROM Individual WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (individual.getId(),))
+        q = m.Individual.delete().where(m.Individual.id == individual.getId())
+        q.execute()
 
-    def _readReadGroupTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM ReadGroup;")
-        for row in cursor:
-            readGroupSet = self.getReadGroupSet(row[b'readGroupSetId'])
-            readGroup = reads.HtslibReadGroup(readGroupSet, row[b'name'])
+    def _readReadGroupTable(self):
+        for readGroupRecord in m.Readgroup.select():
+            readGroupSet = self.getReadGroupSet(
+                readGroupRecord.readgroupsetid.id)
+            readGroup = reads.HtslibReadGroup(
+                readGroupSet, readGroupRecord.name)
             # TODO set the reference set.
-            readGroup.populateFromRow(row)
-            assert readGroup.getId() == row[b'id']
+            readGroup.populateFromRow(readGroupRecord)
+            assert readGroup.getId() == readGroupRecord.id
             # Insert the readGroupSet into the memory-based object model.
             readGroupSet.addReadGroup(readGroup)
 
-    def _createReadGroupSetTable(self, cursor):
-        sql = """
-            CREATE TABLE ReadGroupSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                programs TEXT,
-                stats TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                indexFile TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
+    def _createReadGroupSetTable(self):
+        self.database.create_table(m.Readgroupset)
 
     def insertReadGroupSet(self, readGroupSet):
         """
         Inserts a the specified readGroupSet into this repository.
         """
-        sql = """
-            INSERT INTO ReadGroupSet (
-                id, datasetId, referenceSetId, name, programs, stats,
-                dataUrl, indexFile)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        """
         programsJson = json.dumps(
             [protocol.toJsonDict(program) for program in
              readGroupSet.getPrograms()])
         statsJson = json.dumps(protocol.toJsonDict(readGroupSet.getStats()))
-        cursor = self._dbConnection.cursor()
         try:
-            cursor.execute(sql, (
-                readGroupSet.getId(),
-                readGroupSet.getParentContainer().getId(),
-                readGroupSet.getReferenceSet().getId(),
-                readGroupSet.getLocalId(),
-                programsJson, statsJson, readGroupSet.getDataUrl(),
-                readGroupSet.getIndexFile()))
-        except sqlite3.IntegrityError:
-            raise exceptions.DuplicateNameException(
-                readGroupSet.getLocalId(),
-                readGroupSet.getParentContainer().getLocalId())
-        for readGroup in readGroupSet.getReadGroups():
-            self.insertReadGroup(readGroup)
+            m.Readgroupset.create(
+                id=readGroupSet.getId(),
+                datasetid=readGroupSet.getParentContainer().getId(),
+                referencesetid=readGroupSet.getReferenceSet().getId(),
+                name=readGroupSet.getLocalId(),
+                programs=programsJson,
+                stats=statsJson,
+                dataurl=readGroupSet.getDataUrl(),
+                indexfile=readGroupSet.getIndexFile())
+            for readGroup in readGroupSet.getReadGroups():
+                self.insertReadGroup(readGroup)
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
     def removeReferenceSet(self, referenceSet):
         """
@@ -1011,157 +885,100 @@ class SqlDataRepository(AbstractDataRepository):
         refer to this ReferenceSet. These must be deleted before the
         referenceSet can be removed.
         """
-        sql = "DELETE FROM ReferenceSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
         try:
-            cursor.execute(sql, (referenceSet.getId(),))
-        except sqlite3.IntegrityError:
+            q = m.Reference.delete().where(
+                    m.Reference.referencesetid == referenceSet.getId())
+            q.execute()
+            q = m.Referenceset.delete().where(
+                    m.Referenceset.id == referenceSet.getId())
+            q.execute()
+        except Exception:
             msg = ("Unable to delete reference set.  "
                    "There are objects currently in the registry which are "
                    "aligned against it.  Remove these objects before removing "
                    "the reference set.")
             raise exceptions.RepoManagerException(msg)
 
-    def _readReadGroupSetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM ReadGroupSet;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
-            readGroupSet = reads.HtslibReadGroupSet(dataset, row[b'name'])
-            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
+    def _readReadGroupSetTable(self):
+        for readGroupSetRecord in m.Readgroupset.select():
+            dataset = self.getDataset(readGroupSetRecord.datasetid.id)
+            readGroupSet = reads.HtslibReadGroupSet(
+                dataset, readGroupSetRecord.name)
+            referenceSet = self.getReferenceSet(
+                readGroupSetRecord.referencesetid.id)
             readGroupSet.setReferenceSet(referenceSet)
-            readGroupSet.populateFromRow(row)
-            assert readGroupSet.getId() == row[b'id']
+            readGroupSet.populateFromRow(readGroupSetRecord)
+            assert readGroupSet.getId() == readGroupSetRecord.id
             # Insert the readGroupSet into the memory-based object model.
             dataset.addReadGroupSet(readGroupSet)
 
-    def _createVariantAnnotationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE VariantAnnotationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                variantSetId TEXT NOT NULL,
-                ontologyId TEXT NOT NULL,
-                analysis TEXT,
-                annotationType TEXT,
-                created TEXT,
-                updated TEXT,
-                UNIQUE (variantSetId, name),
-                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
-            );
-        """
-        cursor.execute(sql)
+    def _createVariantAnnotationSetTable(self):
+        self.database.create_table(m.Variantannotationset)
 
     def insertVariantAnnotationSet(self, variantAnnotationSet):
         """
         Inserts a the specified variantAnnotationSet into this repository.
         """
-        sql = """
-            INSERT INTO VariantAnnotationSet (
-                id, variantSetId, ontologyId, name, analysis, annotationType,
-                created, updated)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-        """
         analysisJson = json.dumps(
             protocol.toJsonDict(variantAnnotationSet.getAnalysis()))
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            variantAnnotationSet.getId(),
-            variantAnnotationSet.getParentContainer().getId(),
-            variantAnnotationSet.getOntology().getId(),
-            variantAnnotationSet.getLocalId(),
-            analysisJson,
-            variantAnnotationSet.getAnnotationType(),
-            variantAnnotationSet.getCreationTime(),
-            variantAnnotationSet.getUpdatedTime()))
+        try:
+            m.Variantannotationset.create(
+                id=variantAnnotationSet.getId(),
+                variantsetid=variantAnnotationSet.getParentContainer().getId(),
+                ontologyid=variantAnnotationSet.getOntology().getId(),
+                name=variantAnnotationSet.getLocalId(),
+                analysis=analysisJson,
+                annotationtype=variantAnnotationSet.getAnnotationType(),
+                created=variantAnnotationSet.getCreationTime(),
+                updated=variantAnnotationSet.getUpdatedTime())
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
-    def _readVariantAnnotationSetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM VariantAnnotationSet;")
-        for row in cursor:
-            variantSet = self.getVariantSet(row[b'variantSetId'])
-            ontology = self.getOntology(row[b'ontologyId'])
+    def _readVariantAnnotationSetTable(self):
+        for annotationSetRecord in m.Variantannotationset.select():
+            variantSet = self.getVariantSet(
+                annotationSetRecord.variantsetid.id)
+            ontology = self.getOntology(annotationSetRecord.ontologyid.id)
             variantAnnotationSet = variants.HtslibVariantAnnotationSet(
-                variantSet, row[b'name'])
+                variantSet, annotationSetRecord.name)
             variantAnnotationSet.setOntology(ontology)
-            variantAnnotationSet.populateFromRow(row)
-            assert variantAnnotationSet.getId() == row[b'id']
+            variantAnnotationSet.populateFromRow(annotationSetRecord)
+            assert variantAnnotationSet.getId() == annotationSetRecord.id
             # Insert the variantAnnotationSet into the memory-based model.
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
 
-    def _createCallSetTable(self, cursor):
-        sql = """
-            CREATE TABLE CallSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                variantSetId TEXT NOT NULL,
-                biosampleId TEXT,
-                UNIQUE (variantSetId, name),
-                FOREIGN KEY(variantSetId) REFERENCES VariantSet(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+    def _createCallSetTable(self):
+        self.database.create_table(m.Callset)
 
     def insertCallSet(self, callSet):
         """
         Inserts a the specified callSet into this repository.
         """
-        sql = """
-            INSERT INTO CallSet (
-                id, name, variantSetId, biosampleId)
-            VALUES (?, ?, ?, ?);
-        """
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            callSet.getId(),
-            callSet.getLocalId(),
-            callSet.getParentContainer().getId(),
-            callSet.getBiosampleId()))
+        try:
+            m.Callset.create(
+                id=callSet.getId(),
+                name=callSet.getLocalId(),
+                variantsetid=callSet.getParentContainer().getId(),
+                biosampleid=callSet.getBiosampleId())
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
-    def _readCallSetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM CallSet;")
-        for row in cursor:
-            variantSet = self.getVariantSet(row[b'variantSetId'])
-            callSet = variants.CallSet(variantSet, row[b'name'])
-            callSet.populateFromRow(row)
-            assert callSet.getId() == row[b'id']
+    def _readCallSetTable(self):
+        for callSetRecord in m.Callset.select():
+            variantSet = self.getVariantSet(callSetRecord.variantsetid.id)
+            callSet = variants.CallSet(variantSet, callSetRecord.name)
+            callSet.populateFromRow(callSetRecord)
+            assert callSet.getId() == callSetRecord.id
             # Insert the callSet into the memory-based object model.
             variantSet.addCallSet(callSet)
 
-    def _createVariantSetTable(self, cursor):
-        sql = """
-            CREATE TABLE VariantSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                created TEXT,
-                updated TEXT,
-                metadata TEXT,
-                dataUrlIndexMap TEXT NOT NULL,
-                UNIQUE (datasetID, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
+    def _createVariantSetTable(self):
+        self.database.create_table(m.Variantset)
 
     def insertVariantSet(self, variantSet):
         """
         Inserts a the specified variantSet into this repository.
         """
-        sql = """
-            INSERT INTO VariantSet (
-                id, datasetId, referenceSetId, name, created, updated,
-                metadata, dataUrlIndexMap)
-            VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), ?, ?);
-        """
-        cursor = self._dbConnection.cursor()
         # We cheat a little here with the VariantSetMetadata, and encode these
         # within the table as a JSON dump. These should really be stored in
         # their own table
@@ -1170,284 +987,196 @@ class SqlDataRepository(AbstractDataRepository):
              variantSet.getMetadata()])
         urlMapJson = json.dumps(variantSet.getReferenceToDataUrlIndexMap())
         try:
-            cursor.execute(sql, (
-                variantSet.getId(), variantSet.getParentContainer().getId(),
-                variantSet.getReferenceSet().getId(), variantSet.getLocalId(),
-                metadataJson, urlMapJson))
-        except sqlite3.IntegrityError:
-            raise exceptions.DuplicateNameException(
-                variantSet.getLocalId(),
-                variantSet.getParentContainer().getLocalId())
+            m.Variantset.create(
+                id=variantSet.getId(),
+                datasetid=variantSet.getParentContainer().getId(),
+                referencesetid=variantSet.getReferenceSet().getId(),
+                name=variantSet.getLocalId(),
+                created=datetime.datetime.now(),
+                updated=datetime.datetime.now(),
+                metadata=metadataJson,
+                dataurlindexmap=urlMapJson)
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
         for callSet in variantSet.getCallSets():
             self.insertCallSet(callSet)
 
-    def _readVariantSetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM VariantSet;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
-            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
-            variantSet = variants.HtslibVariantSet(dataset, row[b'name'])
+    def _readVariantSetTable(self):
+        for variantSetRecord in m.Variantset.select():
+            dataset = self.getDataset(variantSetRecord.datasetid.id)
+            referenceSet = self.getReferenceSet(
+                variantSetRecord.referencesetid.id)
+            variantSet = variants.HtslibVariantSet(
+                dataset, variantSetRecord.name)
             variantSet.setReferenceSet(referenceSet)
-            variantSet.populateFromRow(row)
-            assert variantSet.getId() == row[b'id']
+            variantSet.populateFromRow(variantSetRecord)
+            assert variantSet.getId() == variantSetRecord.id
             # Insert the variantSet into the memory-based object model.
             dataset.addVariantSet(variantSet)
 
-    def _createFeatureSetTable(self, cursor):
-        sql = """
-            CREATE TABLE FeatureSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                ontologyId TEXT NOT NULL,
-                info TEXT,
-                sourceUri TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-                FOREIGN KEY(ontologyId) REFERENCES Ontology(id)
-            );
-        """
-        cursor.execute(sql)
+    def _createFeatureSetTable(self):
+        self.database.create_table(m.Featureset)
 
     def insertFeatureSet(self, featureSet):
         """
         Inserts a the specified featureSet into this repository.
         """
         # TODO add support for info and sourceUri fields.
-        sql = """
-            INSERT INTO FeatureSet (
-                id, datasetId, referenceSetId, ontologyId, name, dataUrl)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            featureSet.getId(),
-            featureSet.getParentContainer().getId(),
-            featureSet.getReferenceSet().getId(),
-            featureSet.getOntology().getId(),
-            featureSet.getLocalId(),
-            featureSet.getDataUrl()))
+        try:
+            m.Featureset.create(
+                id=featureSet.getId(),
+                datasetid=featureSet.getParentContainer().getId(),
+                referencesetid=featureSet.getReferenceSet().getId(),
+                ontologyid=featureSet.getOntology().getId(),
+                name=featureSet.getLocalId(),
+                dataurl=featureSet.getDataUrl())
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
-    def _readFeatureSetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM FeatureSet;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
-            if 'cgd' in row[b'name']:
+    def _readFeatureSetTable(self):
+        for featureSetRecord in m.Featureset.select():
+            dataset = self.getDataset(featureSetRecord.datasetid.id)
+            # FIXME this should be handled elsewhere
+            if 'cgd' in featureSetRecord.name:
                 featureSet = \
                     g2pFeatureset \
-                    .PhenotypeAssociationFeatureSet(dataset, row[b'name'])
+                    .PhenotypeAssociationFeatureSet(
+                        dataset, featureSetRecord.name)
             else:
                 featureSet = sequence_annotations.Gff3DbFeatureSet(
-                    dataset, row[b'name'])
+                    dataset, featureSetRecord.name)
             featureSet.setReferenceSet(
-                self.getReferenceSet(row[b'referenceSetId']))
-            featureSet.setOntology(self.getOntology(row[b'ontologyId']))
-            featureSet.populateFromRow(row)
-            assert featureSet.getId() == row[b'id']
+                self.getReferenceSet(
+                    featureSetRecord.referencesetid.id))
+            featureSet.setOntology(
+                self.getOntology(featureSetRecord.ontologyid.id))
+            featureSet.populateFromRow(featureSetRecord)
+            assert featureSet.getId() == featureSetRecord.id
             dataset.addFeatureSet(featureSet)
 
-    def _createBiosampleTable(self, cursor):
-        sql = """
-            CREATE TABLE Biosample (
-                id TEXT NOT NULL PRIMARY KEY,
-                datasetId TEXT NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                disease TEXT,
-                created TEXT,
-                updated TEXT,
-                individualId TEXT,
-                info TEXT,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+    def _createBiosampleTable(self):
+        self.database.create_table(m.Biosample)
 
     def insertBiosample(self, biosample):
         """
         Inserts the specified Biosample into this repository.
         """
-        sql = """
-            INSERT INTO Biosample (
-                id, datasetId, name, description, disease,
-                created, updated, individualId, info)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            biosample.getId(),
-            biosample.getParentContainer().getId(),
-            biosample.getLocalId(),
-            biosample.getDescription(),
-            json.dumps(biosample.getDisease()),
-            biosample.getCreated(),
-            biosample.getUpdated(),
-            biosample.getIndividualId(),
-            json.dumps(biosample.getInfo())))
+        try:
+            m.Biosample.create(
+                id=biosample.getId(),
+                datasetid=biosample.getParentContainer().getId(),
+                name=biosample.getLocalId(),
+                description=biosample.getDescription(),
+                disease=json.dumps(biosample.getDisease()),
+                created=biosample.getCreated(),
+                updated=biosample.getUpdated(),
+                individualid=biosample.getIndividualId(),
+                info=json.dumps(biosample.getInfo()))
+        except Exception:
+            raise exceptions.DuplicateNameException(
+                biosample.getLocalId(),
+                biosample.getParentContainer().getLocalId())
 
-    def _readBiosampleTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Biosample;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
+    def _readBiosampleTable(self):
+        for biosampleRecord in m.Biosample.select():
+            dataset = self.getDataset(biosampleRecord.datasetid.id)
             biosample = biodata.Biosample(
-                dataset, row[b'name'])
-            biosample.populateFromRow(row)
-            assert biosample.getId() == row[b'id']
+                dataset, biosampleRecord.name)
+            biosample.populateFromRow(biosampleRecord)
+            assert biosample.getId() == biosampleRecord.id
             dataset.addBiosample(biosample)
 
-    def _createIndividualTable(self, cursor):
-        sql = """
-            CREATE TABLE Individual (
-                id TEXT NOT NULL PRIMARY KEY,
-                datasetId TEXT NOT NULL,
-                name TEXT,
-                description TEXT,
-                created TEXT NOT NULL,
-                updated TEXT,
-                species TEXT,
-                sex TEXT,
-                info TEXT,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+    def _createIndividualTable(self):
+        self.database.create_table(m.Individual)
 
     def insertIndividual(self, individual):
         """
         Inserts the specified individual into this repository.
         """
         # TODO add support for info and sourceUri fields.
-        sql = """
-            INSERT INTO Individual (
-                id, datasetId, name, description, created,
-                updated, species, sex, info)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            individual.getId(),
-            individual.getParentContainer().getId(),
-            individual.getLocalId(),
-            individual.getDescription(),
-            individual.getCreated(),
-            individual.getUpdated(),
-            json.dumps(individual.getSpecies()),
-            json.dumps(individual.getSex()),
-            json.dumps(individual.getInfo())))
+        try:
+            m.Individual.create(
+                id=individual.getId(),
+                datasetId=individual.getParentContainer().getId(),
+                name=individual.getLocalId(),
+                description=individual.getDescription(),
+                created=individual.getCreated(),
+                updated=individual.getUpdated(),
+                species=json.dumps(individual.getSpecies()),
+                sex=json.dumps(individual.getSex()),
+                info=json.dumps(individual.getInfo()))
+        except Exception:
+            raise exceptions.DuplicateNameException(
+                individual.getLocalId(),
+                individual.getParentContainer().getLocalId())
 
-    def _readIndividualTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM Individual;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
+    def _readIndividualTable(self):
+        for individualRecord in m.Individual.select():
+            dataset = self.getDataset(individualRecord.datasetid.id)
             individual = biodata.Individual(
-                dataset, row[b'name'])
-            individual.populateFromRow(row)
-            assert individual.getId() == row[b'id']
+                dataset, individualRecord.name)
+            individual.populateFromRow(individualRecord)
+            assert individual.getId() == individualRecord.id
             dataset.addIndividual(individual)
 
-    def _createPhenotypeAssociationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE PhenotypeAssociationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT,
-                datasetId TEXT NOT NULL,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE
-            );
-        """
-        cursor.execute(sql)
+    def _createPhenotypeAssociationSetTable(self):
+        self.database.create_table(m.Phenotypeassociationset)
 
-    def _createRnaQuantificationSetTable(self, cursor):
-        sql = """
-            CREATE TABLE RnaQuantificationSet (
-                id TEXT NOT NULL PRIMARY KEY,
-                name TEXT NOT NULL,
-                datasetId TEXT NOT NULL,
-                referenceSetId TEXT NOT NULL,
-                info TEXT,
-                dataUrl TEXT NOT NULL,
-                UNIQUE (datasetId, name),
-                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
-                    ON DELETE CASCADE,
-                FOREIGN KEY(referenceSetId) REFERENCES ReferenceSet(id)
-            );
-        """
-        cursor.execute(sql)
+    def _createRnaQuantificationSetTable(self):
+        self.database.create_table(m.Rnaquantificationset)
 
     def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
-        Inserts the specified individual into this repository.
+        Inserts the specified phenotype annotation set into this repository.
         """
         # TODO add support for info and sourceUri fields.
-        sql = """
-            INSERT INTO PhenotypeAssociationSet (
-                id, name, datasetId, dataUrl )
-            VALUES (?, ?, ?, ?)
-        """
-        cursor = self._dbConnection.cursor()
         try:
-            cursor.execute(sql, (
-                phenotypeAssociationSet.getId(),
-                phenotypeAssociationSet.getLocalId(),
-                phenotypeAssociationSet.getParentContainer().getId(),
-                phenotypeAssociationSet._dataUrl))
-        except sqlite3.IntegrityError:
+            m.Phenotypeassociationset.create(
+                id=phenotypeAssociationSet.getId(),
+                name=phenotypeAssociationSet.getLocalId(),
+                datasetid=phenotypeAssociationSet.getParentContainer().getId(),
+                dataurl=phenotypeAssociationSet._dataUrl)
+        except Exception:
             raise exceptions.DuplicateNameException(
                 phenotypeAssociationSet.getParentContainer().getId())
 
-    def _readPhenotypeAssociationSetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM PhenotypeAssociationSet;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
+    def _readPhenotypeAssociationSetTable(self):
+        for associationSetRecord in m.Phenotypeassociationset.select():
+            dataset = self.getDataset(associationSetRecord.datasetid.id)
             phenotypeAssociationSet = \
                 genotype_phenotype.RdfPhenotypeAssociationSet(
-                    dataset, row[b'name'], row[b'dataUrl'])
+                    dataset,
+                    associationSetRecord.name,
+                    associationSetRecord.dataurl)
             dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
     def insertRnaQuantificationSet(self, rnaQuantificationSet):
         """
         Inserts a the specified rnaQuantificationSet into this repository.
         """
-        sql = """
-            INSERT INTO RnaQuantificationSet (
-                id, datasetId, referenceSetId, name, dataUrl)
-            VALUES (?, ?, ?, ?, ?)
-        """
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (
-            rnaQuantificationSet.getId(),
-            rnaQuantificationSet.getParentContainer().getId(),
-            rnaQuantificationSet.getReferenceSet().getId(),
-            rnaQuantificationSet.getLocalId(),
-            rnaQuantificationSet.getDataUrl()))
+        try:
+            m.Rnaquantificationset.create(
+                id=rnaQuantificationSet.getId(),
+                datasetid=rnaQuantificationSet.getParentContainer().getId(),
+                referencesetid=rnaQuantificationSet.getReferenceSet().getId(),
+                name=rnaQuantificationSet.getLocalId(),
+                dataurl=rnaQuantificationSet.getDataUrl())
+        except Exception:
+            raise exceptions.DuplicateNameException(
+                rnaQuantificationSet.getLocalId(),
+                rnaQuantificationSet.getParentContainer().getLocalId())
 
-    def _readRnaQuantificationSetTable(self, cursor):
-        cursor.row_factory = sqlite3.Row
-        cursor.execute("SELECT * FROM RnaQuantificationSet;")
-        for row in cursor:
-            dataset = self.getDataset(row[b'datasetId'])
-            referenceSet = self.getReferenceSet(row[b'referenceSetId'])
+    def _readRnaQuantificationSetTable(self):
+        for quantificationSetRecord in m.Rnaquantificationset.select():
+            dataset = self.getDataset(quantificationSetRecord.datasetid.id)
+            referenceSet = self.getReferenceSet(
+                quantificationSetRecord.referencesetid.id)
             rnaQuantificationSet = \
                 rna_quantification.SqliteRnaQuantificationSet(
-                    dataset, row[b'name'])
+                    dataset, quantificationSetRecord.name)
             rnaQuantificationSet.setReferenceSet(referenceSet)
-            rnaQuantificationSet.populateFromRow(row)
-            assert rnaQuantificationSet.getId() == row[b'id']
+            rnaQuantificationSet.populateFromRow(quantificationSetRecord)
+            assert rnaQuantificationSet.getId() == quantificationSetRecord.id
             dataset.addRnaQuantificationSet(rnaQuantificationSet)
 
     def removeRnaQuantificationSet(self, rnaQuantificationSet):
@@ -1456,9 +1185,9 @@ class SqlDataRepository(AbstractDataRepository):
         performs a cascading removal of all items within this
         rnaQuantificationSet.
         """
-        sql = "DELETE FROM RnaQuantificationSet WHERE id=?"
-        cursor = self._dbConnection.cursor()
-        cursor.execute(sql, (rnaQuantificationSet.getId(),))
+        q = m.Rnaquantificationset.delete.where(
+            m.Rnaquantificationset.id == rnaQuantificationSet.getId())
+        q.execute()
 
     def initialise(self):
         """
@@ -1466,22 +1195,21 @@ class SqlDataRepository(AbstractDataRepository):
         and file paths.
         """
         self._checkWriteMode()
-        cursor = self._dbConnection
-        self._createSystemTable(cursor)
-        self._createOntologyTable(cursor)
-        self._createReferenceSetTable(cursor)
-        self._createReferenceTable(cursor)
-        self._createDatasetTable(cursor)
-        self._createReadGroupSetTable(cursor)
-        self._createReadGroupTable(cursor)
-        self._createCallSetTable(cursor)
-        self._createVariantSetTable(cursor)
-        self._createVariantAnnotationSetTable(cursor)
-        self._createFeatureSetTable(cursor)
-        self._createBiosampleTable(cursor)
-        self._createIndividualTable(cursor)
-        self._createPhenotypeAssociationSetTable(cursor)
-        self._createRnaQuantificationSetTable(cursor)
+        self._createSystemTable()
+        self._createOntologyTable()
+        self._createReferenceSetTable()
+        self._createReferenceTable()
+        self._createDatasetTable()
+        self._createReadGroupSetTable()
+        self._createReadGroupTable()
+        self._createCallSetTable()
+        self._createVariantSetTable()
+        self._createVariantAnnotationSetTable()
+        self._createFeatureSetTable()
+        self._createBiosampleTable()
+        self._createIndividualTable()
+        self._createPhenotypeAssociationSetTable()
+        self._createRnaQuantificationSetTable()
 
     def exists(self):
         """
@@ -1507,24 +1235,18 @@ class SqlDataRepository(AbstractDataRepository):
         """
         Loads this data repository into memory.
         """
-        with sqlite3.connect(self._dbFilename) as db:
-            cursor = db.cursor()
-            try:
-                self._readSystemTable(cursor)
-            except (sqlite3.OperationalError, sqlite3.DatabaseError):
-                raise exceptions.RepoInvalidDatabaseException(
-                    self._dbFilename)
-            self._readOntologyTable(cursor)
-            self._readReferenceSetTable(cursor)
-            self._readReferenceTable(cursor)
-            self._readDatasetTable(cursor)
-            self._readReadGroupSetTable(cursor)
-            self._readReadGroupTable(cursor)
-            self._readVariantSetTable(cursor)
-            self._readCallSetTable(cursor)
-            self._readVariantAnnotationSetTable(cursor)
-            self._readFeatureSetTable(cursor)
-            self._readBiosampleTable(cursor)
-            self._readIndividualTable(cursor)
-            self._readPhenotypeAssociationSetTable(cursor)
-            self._readRnaQuantificationSetTable(cursor)
+        self._readSystemTable()
+        self._readOntologyTable()
+        self._readReferenceSetTable()
+        self._readReferenceTable()
+        self._readDatasetTable()
+        self._readReadGroupSetTable()
+        self._readReadGroupTable()
+        self._readVariantSetTable()
+        self._readCallSetTable()
+        self._readVariantAnnotationSetTable()
+        self._readFeatureSetTable()
+        self._readBiosampleTable()
+        self._readIndividualTable()
+        self._readPhenotypeAssociationSetTable()
+        self._readRnaQuantificationSetTable()

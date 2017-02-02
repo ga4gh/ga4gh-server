@@ -60,13 +60,13 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetNameMap = {}
         self._info = {}
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, dataset):
         """
         Populates the instance variables of this Dataset from the
         specified database row.
         """
-        self._description = row[b'description']
-        self._info = json.loads(row[b'info'])
+        self._description = dataset.description
+        self._info = json.loads(dataset.info)
 
     def setDescription(self, description):
         """

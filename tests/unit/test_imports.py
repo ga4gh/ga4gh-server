@@ -202,6 +202,7 @@ class ImportGraphLayerChecker(object):
         ],
         'repo': [
             'ga4gh/server/repo/rnaseq2ga.py',
+            'ga4gh/server/repo/models.py',
         ],
     }
 

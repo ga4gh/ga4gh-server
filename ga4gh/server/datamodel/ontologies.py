@@ -74,12 +74,12 @@ class Ontology(object):
         self._dataUrl = dataUrl
         self._readFile()
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, ontologyRecord):
         """
         Populates this Ontology using values in the specified DB row.
         """
-        self._id = row[b'id']
-        self._dataUrl = row[b'dataUrl']
+        self._id = ontologyRecord.id
+        self._dataUrl = ontologyRecord.dataurl
         self._readFile()
         # TODO sanity check the stored values against what we have just read.
 

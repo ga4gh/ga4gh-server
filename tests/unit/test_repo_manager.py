@@ -240,7 +240,7 @@ class TestAddDataset(AbstractRepoManagerTest):
         cmd = "add-dataset {} {}".format(self._repoPath, name)
         self.runCommand(cmd)
         self.assertRaises(
-            exceptions.DuplicateNameException, self.runCommand, cmd)
+            exceptions.RepoManagerException, self.runCommand, cmd)
 
 
 class TestAddPhenotypeAssociationSet(AbstractRepoManagerTest):
@@ -256,7 +256,7 @@ class TestAddPhenotypeAssociationSet(AbstractRepoManagerTest):
     def testSameName(self):
         self.addDataset()
         self.addPhenotypeAssociationSet()
-        with self.assertRaises(exceptions.DuplicateNameException):
+        with self.assertRaises(exceptions.RepoManagerException):
             self.addPhenotypeAssociationSet()
 
 
@@ -336,7 +336,7 @@ class TestAddReferenceSet(AbstractRepoManagerTest):
             self._repoPath, fastaFile)
         self.runCommand(cmd)
         self.assertRaises(
-            exceptions.DuplicateNameException, self.runCommand, cmd)
+            exceptions.RepoManagerException, self.runCommand, cmd)
 
 
 class TestAddOntology(AbstractRepoManagerTest):
@@ -377,7 +377,7 @@ class TestAddOntology(AbstractRepoManagerTest):
             self._repoPath, ontologyFile)
         self.runCommand(cmd)
         self.assertRaises(
-            exceptions.DuplicateNameException, self.runCommand, cmd)
+            exceptions.RepoManagerException, self.runCommand, cmd)
 
     def testMissingFile(self):
         cmd = "add-ontology {} {}".format(self._repoPath, "/no/such/file")
@@ -586,7 +586,7 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
                 self._referenceSetName)
         self.runCommand(cmd)
         self.assertRaises(
-            exceptions.DuplicateNameException, self.runCommand, cmd)
+            exceptions.RepoManagerException, self.runCommand, cmd)
         # Specified name
         name = "test_rgs"
         cmd = (
@@ -596,7 +596,7 @@ class TestAddReadGroupSet(AbstractRepoManagerTest):
             self._referenceSetName, name)
         self.runCommand(cmd)
         self.assertRaises(
-            exceptions.DuplicateNameException, self.runCommand, cmd)
+            exceptions.RepoManagerException, self.runCommand, cmd)
 
     def testUrlWithMissingIndex(self):
         bamFile = "http://example.com/example.bam"
@@ -694,7 +694,7 @@ class TestAddVariantSet(AbstractRepoManagerTest):
                 self._referenceSetName)
         self.runCommand(cmd)
         self.assertRaises(
-            exceptions.DuplicateNameException, self.runCommand, cmd)
+            exceptions.RepoManagerException, self.runCommand, cmd)
         # Specified name
         name = "test_vs"
         cmd = (
@@ -704,7 +704,7 @@ class TestAddVariantSet(AbstractRepoManagerTest):
             self._referenceSetName, name)
         self.runCommand(cmd)
         self.assertRaises(
-            exceptions.DuplicateNameException, self.runCommand, cmd)
+            exceptions.RepoManagerException, self.runCommand, cmd)
 
     def testUrlWithMissingIndex(self):
         dataFile = "http://example.com/example.vcf.gz"

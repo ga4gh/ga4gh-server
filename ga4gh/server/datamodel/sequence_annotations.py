@@ -340,12 +340,12 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         self._dbFilePath = dataUrl
         self._db = Gff3DbBackend(self._dbFilePath)
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, featureSetRecord):
         """
         Populates the instance variables of this FeatureSet from the specified
         DB row.
         """
-        self._dbFilePath = row[b'dataUrl']
+        self._dbFilePath = featureSetRecord.dataurl
         self._db = Gff3DbBackend(self._dbFilePath)
 
     def getDataUrl(self):
