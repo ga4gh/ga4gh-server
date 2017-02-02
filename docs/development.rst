@@ -84,8 +84,8 @@ using:
 .. code-block:: bash
 
     pip install virtualenv
-    virtualenv ga4gh-server-env
-    source ga4gh-server-env/bin/activate
+    virtualenv env
+    source env/bin/activate
 
 *****************************
 Using Development Constraints
