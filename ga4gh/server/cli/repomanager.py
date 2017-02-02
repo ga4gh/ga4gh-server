@@ -172,7 +172,8 @@ class RepoManager(object):
         referenceSet = references.HtslibReferenceSet(name)
         referenceSet.populateFromFile(filePath)
         referenceSet.setDescription(self._args.description)
-        referenceSet.setNcbiTaxonId(self._args.ncbiTaxonId)
+        if self._args.species is not None:
+            referenceSet.setSpeciesFromJson(self._args.species)
         referenceSet.setIsDerived(self._args.isDerived)
         referenceSet.setAssemblyId(self._args.assemblyId)
         sourceAccessions = []
@@ -766,7 +767,8 @@ class RepoManager(object):
         cls.addNameOption(addReferenceSetParser, objectType)
         cls.addDescriptionOption(addReferenceSetParser, objectType)
         addReferenceSetParser.add_argument(
-            "--ncbiTaxonId", default=None, help="The NCBI Taxon Id")
+            "--species", default=None,
+            help="The species ontology term as a JSON string")
         addReferenceSetParser.add_argument(
             "--isDerived", default=False, type=bool,
             help="Indicates if this reference set is derived from another")

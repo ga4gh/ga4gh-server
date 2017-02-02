@@ -705,7 +705,7 @@ class SqlDataRepository(AbstractDataRepository):
                 length INTEGER,
                 isDerived INTEGER,
                 md5checksum TEXT,
-                ncbiTaxonId INTEGER,
+                species TEXT,
                 sourceAccessions TEXT,
                 sourceDivergence REAL,
                 sourceUri TEXT,
@@ -723,7 +723,7 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             INSERT INTO Reference (
                 id, referenceSetId, name, length, isDerived, md5checksum,
-                ncbiTaxonId, sourceAccessions, sourceUri)
+                species, sourceAccessions, sourceUri)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
@@ -731,7 +731,7 @@ class SqlDataRepository(AbstractDataRepository):
             reference.getId(), reference.getParentContainer().getId(),
             reference.getLocalId(), reference.getLength(),
             reference.getIsDerived(), reference.getMd5Checksum(),
-            reference.getNcbiTaxonId(),
+            json.dumps(reference.getSpecies()),
             # We store the list of sourceAccessions as a JSON string. Perhaps
             # this should be another table?
             json.dumps(reference.getSourceAccessions()),
@@ -756,7 +756,7 @@ class SqlDataRepository(AbstractDataRepository):
                 assemblyId TEXT,
                 isDerived INTEGER,
                 md5checksum TEXT,
-                ncbiTaxonId INTEGER,
+                species TEXT,
                 sourceAccessions TEXT,
                 sourceUri TEXT,
                 dataUrl TEXT NOT NULL,
@@ -772,7 +772,7 @@ class SqlDataRepository(AbstractDataRepository):
         sql = """
             INSERT INTO ReferenceSet (
                 id, name, description, assemblyId, isDerived, md5checksum,
-                ncbiTaxonId, sourceAccessions, sourceUri, dataUrl)
+                species, sourceAccessions, sourceUri, dataUrl)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """
         cursor = self._dbConnection.cursor()
@@ -781,7 +781,7 @@ class SqlDataRepository(AbstractDataRepository):
                 referenceSet.getId(), referenceSet.getLocalId(),
                 referenceSet.getDescription(), referenceSet.getAssemblyId(),
                 referenceSet.getIsDerived(), referenceSet.getMd5Checksum(),
-                referenceSet.getNcbiTaxonId(),
+                json.dumps(referenceSet.getSpecies(), protocol.OntologyTerm),
                 # We store the list of sourceAccessions as a JSON string.
                 # Perhaps this should be another table?
                 json.dumps(referenceSet.getSourceAccessions()),

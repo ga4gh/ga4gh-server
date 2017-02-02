@@ -346,9 +346,13 @@ class AbstractFileDownloader(object):
         referenceSet = references.HtslibReferenceSet("GRCh37-subset")
         referenceSet.populateFromFile(self.fastaFilePath)
         referenceSet.setDescription("Subset of GRCh37 used for demonstration")
-        referenceSet.setNcbiTaxonId(9606)
+        referenceSet.setSpeciesFromJson(
+                '{"id": "9606",'
+                + '"term": "Homo sapiens", "source_name": "NCBI"}')
         for reference in referenceSet.getReferences():
-            reference.setNcbiTaxonId(9606)
+            reference.setSpeciesFromJson(
+                '{"id": "9606",'
+                + '"term": "Homo sapiens", "source_name": "NCBI"}')
             reference.setSourceAccessions(
                 self.accessions[reference.getName()] + ".subset")
         repo.insertReferenceSet(referenceSet)
