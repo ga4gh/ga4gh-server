@@ -61,7 +61,7 @@ class Biosample(BaseModel):
     updated = pw.TextField(null=True)
 
     class Meta:
-        db_table = 'BioSample'
+        db_table = 'Biosample'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -75,7 +75,7 @@ class Referenceset(BaseModel):
     isderived = pw.IntegerField(db_column='isDerived', null=True)
     md5checksum = pw.TextField(null=True)
     name = pw.TextField(unique=True)
-    ncbitaxonid = pw.IntegerField(db_column='ncbiTaxonId', null=True)
+    species = pw.TextField(db_column='species', null=True)
     sourceaccessions = pw.TextField(db_column='sourceAccessions', null=True)
     sourceuri = pw.TextField(db_column='sourceUri', null=True)
 
@@ -103,7 +103,7 @@ class Variantset(BaseModel):
 
 
 class Callset(BaseModel):
-    biosampleid = pw.TextField(db_column='bioSampleId', null=True)
+    biosampleid = pw.TextField(db_column='biosampleId', null=True)
     id = pw.TextField(primary_key=True)
     name = pw.TextField()
     variantsetid = pw.ForeignKeyField(
@@ -200,7 +200,7 @@ class Readgroupset(BaseModel):
 
 
 class Readgroup(BaseModel):
-    biosampleid = pw.TextField(db_column='bioSampleId', null=True)
+    biosampleid = pw.TextField(db_column='biosampleId', null=True)
     created = pw.TextField(null=True)
     description = pw.TextField(null=True)
     experiment = pw.TextField()
@@ -227,7 +227,7 @@ class Reference(BaseModel):
     length = pw.IntegerField(null=True)
     md5checksum = pw.TextField(null=True)
     name = pw.TextField()
-    ncbitaxonid = pw.IntegerField(db_column='ncbiTaxonId', null=True)
+    species = pw.TextField(db_column='species', null=True)
     referencesetid = pw.ForeignKeyField(
         db_column='referenceSetId', rel_model=Referenceset, to_field='id')
     sourceaccessions = pw.TextField(db_column='sourceAccessions', null=True)

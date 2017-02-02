@@ -684,7 +684,6 @@ class SqlDataRepository(AbstractDataRepository):
             isderived=reference.getIsDerived(),
             species=reference.getSpecies(),
             md5checksum=reference.getMd5Checksum(),
-            ncbitaxonid=reference.getNcbiTaxonId(),
             sourceaccessions=json.dumps(reference.getSourceAccessions()),
             sourceuri=reference.getSourceUri())
 
@@ -714,7 +713,6 @@ class SqlDataRepository(AbstractDataRepository):
                 isderived=referenceSet.getIsDerived(),
                 species=referenceSet.getSpecies(),
                 md5checksum=referenceSet.getMd5Checksum(),
-                ncbitaxonid=referenceSet.getNcbiTaxonId(),
                 sourceaccessions=json.dumps(
                     referenceSet.getSourceAccessions()),
                 sourceuri=referenceSet.getSourceUri(),

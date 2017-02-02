@@ -491,7 +491,8 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
         self._assemblyId = referenceSetRecord.assemblyid
         self._isDerived = bool(referenceSetRecord.isderived)
         self._md5checksum = referenceSetRecord.md5checksum
-        self._species = json.loads(referenceSetRecord.species)
+        if referenceSetRecord.species is not None:
+            self.setSpeciesFromJson(referenceSetRecord.species)
         self._sourceAccessions = json.loads(
             referenceSetRecord.sourceaccessions)
         self._sourceUri = referenceSetRecord.sourceuri
@@ -527,7 +528,8 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
         self._length = referenceRecord.length
         self._isDerived = bool(referenceRecord.isderived)
         self._md5checksum = referenceRecord.md5checksum
-        self._species = json.loads(referenceRecord.species)
+        if referenceRecord.species is not None:
+            self.setSpeciesFromJson(referenceRecord.species)
         self._sourceAccessions = json.loads(referenceRecord.sourceaccessions)
         self._sourceDivergence = referenceRecord.sourcedivergence
         self._sourceUri = referenceRecord.sourceuri
