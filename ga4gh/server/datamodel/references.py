@@ -399,8 +399,7 @@ class SimulatedReferenceSet(AbstractReferenceSet):
         self._assemblyId = str(random.randint(0, 2**32))
         self._isDerived = bool(random.randint(0, 1))
         self._species = json.loads(
-                    '{"sourceName": "NCBI", "sourceVersion": "",'
-                    + '"term": "Homo sapiens", "id": "9606"}')
+                    '{"term": "Homo sapiens", "termId": "9606"}')
         self._sourceAccessions = []
         for i in range(random.randint(1, 3)):
                 self._sourceAccessions.append("sim_accession_{}".format(
@@ -433,8 +432,7 @@ class SimulatedReference(AbstractReference):
         if self._isDerived:
             self._sourceDivergence = rng.uniform(0, 0.1)
         self._species = json.loads(
-                            '{"sourceName": "NCBI", "sourceVersion": "",'
-                            + '"term": "Homo sapiens", "id": "9606"}')
+                            '{"term": "Homo sapiens", "termId": "9606"}')
         self._sourceAccessions = []
         for i in range(random.randint(1, 3)):
                 self._sourceAccessions.append("sim_accession_{}".format(

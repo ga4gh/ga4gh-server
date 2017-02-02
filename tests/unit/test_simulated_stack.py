@@ -165,13 +165,9 @@ class TestSimulatedStack(unittest.TestCase):
         sp = protocol.fromJson(
                 json.dumps(referenceSet.getSpecies()), protocol.OntologyTerm)
         self.assertEqual(
-            gaReferenceSet.species.id, sp.id)
+            gaReferenceSet.species.term_id, sp.term_id)
         self.assertEqual(
             gaReferenceSet.species.term, sp.term)
-        self.assertEqual(
-            gaReferenceSet.species.source_name, sp.source_name)
-        self.assertEqual(
-            gaReferenceSet.species.source_version, sp.source_version)
         self.assertEqual(
             gaReferenceSet.assembly_id, referenceSet.getAssemblyId())
         self.assertEqual(
@@ -204,14 +200,8 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(gaReference.md5checksum, reference.getMd5Checksum())
         sp = protocol.fromJson(
                 json.dumps(reference.getSpecies()), protocol.OntologyTerm)
-        self.assertEqual(gaReference.species.id, sp.id)
+        self.assertEqual(gaReference.species.term_id, sp.term_id)
         self.assertEqual(gaReference.species.term, sp.term)
-        self.assertEqual(
-            gaReference.species.source_name,
-            sp.source_name)
-        self.assertEqual(
-            gaReference.species.source_version,
-            sp.source_version)
         self.assertEqual(gaReference.source_uri, reference.getSourceUri())
         self.assertEqual(
             gaReference.source_accessions, reference.getSourceAccessions())
