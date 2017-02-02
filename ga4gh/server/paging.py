@@ -274,10 +274,10 @@ class VariantAnnotationsIntervalIterator(IntervalIterator):
         present in an annotation are equal.
         """
         return self._idPresent(requestedEffect) and (
-            effect.id == requestedEffect.id)
+            effect.term_id == requestedEffect.term_id)
 
     def _idPresent(self, requestedEffect):
-        return requestedEffect.id != ""
+        return requestedEffect.term_id != ""
 
     def _matchAnyEffects(self, effect):
         ret = False

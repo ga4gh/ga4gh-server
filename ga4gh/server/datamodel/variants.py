@@ -993,9 +993,7 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
             ("exon_variant", "SO:0001791")]
         term = protocol.OntologyTerm()
         ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
-        term.term, term.id = ontologyTuple[0], ontologyTuple[1]
-        term.source_name = "ontology"
-        term.source_version = "0"
+        term.term, term.term_id = ontologyTuple[0], ontologyTuple[1]
         return term
 
     def _addTranscriptEffectOntologyTerm(self, effect, randomNumberGenerator):

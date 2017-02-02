@@ -110,7 +110,7 @@ class PhenotypeAssociationFeatureSet(
         for featureType in sorted(feature[TYPE]):
             if "obolibrary" in featureType:
                 term.term = self._featureTypeLabel(featureType)
-                term.id = featureType
+                term.term_id = featureType
                 pbFeature.feature_type.MergeFrom(term)
                 break
 

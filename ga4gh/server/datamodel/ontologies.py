@@ -12,8 +12,6 @@ import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel.obo_parser as obo_parser
 
-import ga4gh.schemas.pb as pb
-
 
 SEQUENCE_ONTOLOGY_PREFIX = "SO"
 
@@ -137,7 +135,5 @@ class Ontology(object):
             termId = termIds[0]
         term = protocol.OntologyTerm()
         term.term = name
-        term.id = termId
-        term.source_name = self._sourceName
-        term.source_version = pb.string(self._sourceVersion)
+        term.term_id = termId
         return term
