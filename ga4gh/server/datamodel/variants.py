@@ -53,13 +53,8 @@ class CallSet(datamodel.DatamodelObject):
         """
         Populates this CallSet from the specified DB row.
         """
-<<<<<<< a4324f553fc8d128f02fa560bcf9b1e251f1d5bd
         self._biosampleId = callSetRecord.biosampleid
-=======
-        # currently a noop
-        self._biosampleId = row[b'biosampleId']
-        self.setAttributesJson(row[b'attributes'])
->>>>>>> Add attribute persistence
+        self.setAttributesJson(callSetRecord.attributes)
 
     def toProtocolElement(self):
         """
