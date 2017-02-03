@@ -8,17 +8,16 @@ from __future__ import unicode_literals
 import datetime
 import json
 import inspect
+import array
 from sys import modules
 
 import google.protobuf.json_format as json_format
 import google.protobuf.message as message
-import google.protobuf.struct_pb2 as struct_pb2
 
 import ga4gh.schemas.pb as pb
 
 from ga4gh.schemas._protocol_version import version  # noqa
 from ga4gh.schemas.ga4gh.common_pb2 import *  # noqa
-from ga4gh.schemas.ga4gh.assay_metadata_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.metadata_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.metadata_service_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.read_service_pb2 import *  # noqa
@@ -38,6 +37,7 @@ from ga4gh.schemas.ga4gh.genotype_phenotype_service_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.rna_quantification_pb2 import *  # noqa
 from ga4gh.schemas.ga4gh.rna_quantification_service_pb2 import *  # noqa
 
+import ga4gh.schemas.ga4gh.common_pb2 as common
 
 # A map of response objects to the name of the attribute used to
 # store the values returned.
@@ -65,6 +65,38 @@ _valueListNameMap = {
 }
 
 
+def setAttribute(values, value):
+    """
+    Takes the values of an attribute value list and attempts to append
+    attributes of the proper type, inferred from their Python type.
+    """
+    if isinstance(value, int):
+        values.add().int32_value = value
+    elif isinstance(value, float):
+        values.add().double_value = value
+    elif isinstance(value, long):
+        values.add().int64_value = value
+    elif isinstance(value, str):
+        values.add().string_value = value
+    elif isinstance(value, bool):
+        values.add().bool_value = value
+    elif isinstance(value, (list, tuple, array.array)):
+        for v in value:
+            setAttribute(values, v)
+    elif isinstance(value, dict):
+        for key in value:
+            setAttribute(values.add().attributes.attr[key].values, value[key])
+    else:
+        values.add().string_value = str(value)
+
+
+def encodeValue(value):
+    if isinstance(value, (list, tuple)):
+        return [common.AttributeValue(string_value=str(v)) for v in value]
+    else:
+        return [common.AttributeValue(string_value=str(value))]
+
+
 def getValueListName(protocolResponseClass):
     """
     Returns the name of the attribute in the specified protocol class
@@ -88,11 +120,12 @@ def getValueFromValue(value):
     """
     Extract the currently set field from a Value structure
     """
-    if type(value) != struct_pb2.Value:
-        raise TypeError("Expected a Value, but got {}".format(type(value)))
-    if value.WhichOneof("kind") is None:
+    if type(value) != common.AttributeValue:
+        raise TypeError(
+            "Expected a AttributeValue, but got {}".format(type(value)))
+    if value.WhichOneof("value") is None:
         raise AttributeError("Nothing set for {}".format(value))
-    return getattr(value, value.WhichOneof("kind"))
+    return getattr(value, value.WhichOneof("value"))
 
 
 def toJson(protoObject, indent=None):

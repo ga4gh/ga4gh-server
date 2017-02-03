@@ -156,7 +156,7 @@ class RepoManager(object):
         self._openRepo()
         dataset = datasets.Dataset(self._args.datasetName)
         dataset.setDescription(self._args.description)
-        dataset.setInfo(json.loads(self._args.info))
+        dataset.setAttributes(json.loads(self._args.attributes))
         self._updateRepo(self._repo.insertDataset, dataset)
 
     def addReferenceSet(self):
@@ -176,6 +176,7 @@ class RepoManager(object):
             referenceSet.setSpeciesFromJson(self._args.species)
         referenceSet.setIsDerived(self._args.isDerived)
         referenceSet.setAssemblyId(self._args.assemblyId)
+        referenceSet.setAttributes(json.loads(self._args.attributes))
         sourceAccessions = []
         if self._args.sourceAccessions is not None:
             sourceAccessions = self._args.sourceAccessions.split(",")
@@ -214,6 +215,7 @@ class RepoManager(object):
             referenceSetName = readGroupSet.getBamHeaderReferenceSetName()
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         readGroupSet.setReferenceSet(referenceSet)
+        readGroupSet.setAttributes(json.loads(self._args.attributes))
         self._updateRepo(self._repo.insertReadGroupSet, readGroupSet)
 
     def addVariantSet(self):
@@ -282,7 +284,7 @@ class RepoManager(object):
                 "VariantSet using the --referenceSetName option")
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         variantSet.setReferenceSet(referenceSet)
-
+        variantSet.setAttributes(json.loads(self._args.attributes))
         # Now check for annotations
         annotationSets = []
         if variantSet.isAnnotated() and self._args.addAnnotationSets:
@@ -315,6 +317,8 @@ class RepoManager(object):
         phenotypeAssociationSet = \
             genotype_phenotype.RdfPhenotypeAssociationSet(
                 dataset, name, self._args.dirPath)
+        phenotypeAssociationSet.setAttributes(
+            json.loads(self._args.attributes))
         self._updateRepo(
             self._repo.insertPhenotypeAssociationSet,
             phenotypeAssociationSet)
@@ -410,6 +414,7 @@ class RepoManager(object):
         self._checkSequenceOntology(ontology)
         featureSet.setOntology(ontology)
         featureSet.populateFromFile(filePath)
+        featureSet.setAttributes(json.loads(self._args.attributes))
         self._updateRepo(self._repo.insertFeatureSet, featureSet)
 
     def removeFeatureSet(self):
@@ -534,6 +539,7 @@ class RepoManager(object):
         referenceSet = self._repo.getReferenceSetByName(referenceSetName)
         rnaQuantificationSet.setReferenceSet(referenceSet)
         rnaQuantificationSet.populateFromFile(self._args.filePath)
+        rnaQuantificationSet.setAttributes(json.loads(self._args.attributes))
         self._updateRepo(
             self._repo.insertRnaQuantificationSet, rnaQuantificationSet)
 
@@ -587,9 +593,10 @@ class RepoManager(object):
             "datasetName", help="the name of the dataset")
 
     @classmethod
-    def addDatasetInfoArgument(cls, subparser):
+    def addAttributesArgument(cls, subparser):
         subparser.add_argument(
-            "-i", "--info", default="{}", help="the info of the dataset")
+            "-A", "--attributes", default="{}",
+            help="additional attributes for the message expressed as JSON")
 
     @classmethod
     def addReferenceSetNameOption(cls, subparser, objectType):
@@ -742,7 +749,7 @@ class RepoManager(object):
         addDatasetParser.set_defaults(runner="addDataset")
         cls.addRepoArgument(addDatasetParser)
         cls.addDatasetNameArgument(addDatasetParser)
-        cls.addDatasetInfoArgument(addDatasetParser)
+        cls.addAttributesArgument(addDatasetParser)
         cls.addDescriptionOption(addDatasetParser, "dataset")
 
         removeDatasetParser = common_cli.addSubparser(
@@ -763,6 +770,7 @@ class RepoManager(object):
             addReferenceSetParser,
             "The path of the FASTA file to use as a reference set. This "
             "file must be bgzipped and indexed.")
+        cls.addAttributesArgument(addReferenceSetParser)
         cls.addRelativePathOption(addReferenceSetParser)
         cls.addNameOption(addReferenceSetParser, objectType)
         cls.addDescriptionOption(addReferenceSetParser, objectType)
@@ -801,6 +809,7 @@ class RepoManager(object):
         cls.addDatasetNameArgument(addReadGroupSetParser)
         cls.addNameOption(addReadGroupSetParser, objectType)
         cls.addReferenceSetNameOption(addReadGroupSetParser, "ReadGroupSet")
+        cls.addAttributesArgument(addReadGroupSetParser)
         cls.addRelativePathOption(addReadGroupSetParser)
         addReadGroupSetParser.add_argument(
             "dataFile",
@@ -875,6 +884,7 @@ class RepoManager(object):
         cls.addNameOption(addVariantSetParser, objectType)
         cls.addReferenceSetNameOption(addVariantSetParser, objectType)
         cls.addSequenceOntologyNameOption(addVariantSetParser, objectType)
+        cls.addAttributesArgument(addVariantSetParser)
         addVariantSetParser.add_argument(
             "-a", "--addAnnotationSets", action="store_true",
             help=(
@@ -895,6 +905,7 @@ class RepoManager(object):
         addFeatureSetParser.set_defaults(runner="addFeatureSet")
         cls.addRepoArgument(addFeatureSetParser)
         cls.addDatasetNameArgument(addFeatureSetParser)
+        cls.addAttributesArgument(addFeatureSetParser)
         cls.addRelativePathOption(addFeatureSetParser)
         cls.addFilePathArgument(
             addFeatureSetParser,
@@ -970,6 +981,7 @@ class RepoManager(object):
         cls.addNameOption(addRnaQuantificationParser, "rna quantification")
         cls.addDescriptionOption(addRnaQuantificationParser, objectType)
         cls.addRnaFeatureTypeOption(addRnaQuantificationParser)
+        cls.addAttributesArgument(addRnaQuantificationParser)
 
         objectType = "RnaQuantificationSet"
         initRnaQuantificationSetParser = common_cli.addSubparser(
@@ -995,6 +1007,7 @@ class RepoManager(object):
         cls.addReferenceSetNameOption(
             addRnaQuantificationSetParser, objectType)
         cls.addNameOption(addRnaQuantificationSetParser, objectType)
+        cls.addAttributesArgument(addRnaQuantificationSetParser)
 
         removeRnaQuantificationSetParser = common_cli.addSubparser(
             subparsers, "remove-rnaquantificationset",
@@ -1020,6 +1033,7 @@ class RepoManager(object):
         cls.addNameOption(
             addPhenotypeAssociationSetParser,
             "PhenotypeAssociationSet")
+        cls.addAttributesArgument(addPhenotypeAssociationSetParser)
 
         removePhenotypeAssociationSetParser = common_cli.addSubparser(
             subparsers, "remove-phenotypeassociationset",

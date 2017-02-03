@@ -34,6 +34,8 @@ class UnknownField(object):
 
 
 class BaseModel(pw.Model):
+    attributes = pw.TextField(null=True)
+
     class Meta:
         database = databaseProxy
 

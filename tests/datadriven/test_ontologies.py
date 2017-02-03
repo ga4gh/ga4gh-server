@@ -17,7 +17,7 @@ import ga4gh.server.datamodel.ontologies as ontologies
 import tests.datadriven as datadriven
 import tests.paths as paths
 
-from ga4gh.schemas.ga4gh.metadata_pb2 import OntologyTerm
+from ga4gh.schemas.ga4gh.common_pb2 import OntologyTerm
 
 
 def testReferenceSets():

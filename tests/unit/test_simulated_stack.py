@@ -136,8 +136,10 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(gaCallSet.id, callSet.getId())
         self.assertEqual(gaCallSet.name, callSet.getLocalId())
         self.assertEqual(gaCallSet.variant_set_ids, [variantSet.getId()])
-        for key, value in gaCallSet.info.items():
-            self.assertEqual(value[0], callSet.getInfo()[key])
+        for key, value in gaCallSet.attributes.attr.items():
+            self.assertEqual(
+                protocol.getValueFromValue(value.values[0]),
+                callSet.getInfo()[key])
 
     def verifyReadGroupSetsEqual(self, gaReadGroupSet, readGroupSet):
         dataset = readGroupSet.getParentContainer()

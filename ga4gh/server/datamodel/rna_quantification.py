@@ -58,6 +58,7 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         protocolElement.score = self._score
         protocolElement.conf_interval_low = self._confIntervalLow
         protocolElement.conf_interval_high = self._confIntervalHigh
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
 
@@ -150,6 +151,7 @@ class AbstractRnaQuantificationSet(datamodel.DatamodelObject):
         protocolElement.id = self.getId()
         protocolElement.dataset_id = self._parentContainer.getId()
         protocolElement.name = self._name
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
 
@@ -185,6 +187,7 @@ class SqliteRnaQuantificationSet(AbstractRnaQuantificationSet):
         specified DB row.
         """
         self._dbFilePath = quantificationSetRecord.dataurl
+        self.setAttributesJson(quantificationSetRecord.attributes)
         self._db = SqliteRnaBackend(self._dbFilePath)
         self.addRnaQuants()
 
@@ -229,6 +232,7 @@ class AbstractRnaQuantification(datamodel.DatamodelObject):
         protocolElement.feature_set_ids.extend(self._featureSetIds)
         protocolElement.rna_quantification_set_id = \
             self._parentContainer.getId()
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
     def addRnaQuantMetadata(self, fields):

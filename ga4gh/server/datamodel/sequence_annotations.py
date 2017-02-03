@@ -194,8 +194,10 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         gaFeatureSet.reference_set_id = pb.string(self._referenceSet.getId())
         gaFeatureSet.name = self._name
         gaFeatureSet.source_uri = self._sourceUri
-        for key in self._info:
-            gaFeatureSet.info[key].values.extend(self._info[key])
+        attributes = self.getAttributes()
+        for key in attributes:
+            gaFeatureSet.attributes.attr[key] \
+                .values.extend(protocol.encodeValue(attributes[key]))
         return gaFeatureSet
 
     def getCompoundIdForFeatureId(self, featureId):
@@ -247,7 +249,7 @@ class SimulatedFeatureSet(AbstractFeatureSet):
             "gene_type": "mRNA",
             "gene_status": "UNKNOWN"}
         for key, value in attributes.items():
-            feature.attributes.vals[key].values.add().string_value = value
+            feature.attributes.attr[key].values.add().string_value = value
         return feature
 
     def getFeature(self, compoundId):
@@ -344,6 +346,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         DB row.
         """
         self._dbFilePath = featureSetRecord.dataurl
+        self.setAttributesJson(featureSetRecord.attributes)
         self._db = Gff3DbBackend(self._dbFilePath)
 
     def getDataUrl(self):
@@ -401,7 +404,7 @@ class Gff3DbFeatureSet(AbstractFeatureSet):
         # TODO: Identify which values are ExternalIdentifiers and OntologyTerms
         for key in attributes:
             for v in attributes[key]:
-                gaFeature.attributes.vals[key].values.add().string_value = v
+                gaFeature.attributes.attr[key].values.add().string_value = v
         if 'gene_name' in attributes and len(attributes['gene_name']) > 0:
             gaFeature.gene_symbol = pb.string(attributes['gene_name'][0])
         return gaFeature

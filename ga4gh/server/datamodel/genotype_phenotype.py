@@ -31,6 +31,7 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
         pas.name = self.getLocalId()
         pas.id = self.getId()
         pas.dataset_id = self.getParentContainer().getId()
+        self.serializeAttributes(pas)
         return pas
 
 

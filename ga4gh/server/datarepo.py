@@ -744,7 +744,7 @@ class SqlDataRepository(AbstractDataRepository):
                 id=dataset.getId(),
                 name=dataset.getLocalId(),
                 description=dataset.getDescription(),
-                info=json.dumps(dataset.getInfo()))
+                attributes=json.dumps(dataset.getAttributes()))
         except Exception:
             raise exceptions.DuplicateNameException(
                 dataset.getLocalId())
@@ -802,10 +802,10 @@ class SqlDataRepository(AbstractDataRepository):
                 description=readGroup.getDescription(),
                 stats=statsJson,
                 experiment=experimentJson,
-                biosampleid=readGroup.getBiosampleId())
+                biosampleid=readGroup.getBiosampleId(),
+                attributes=json.dumps(readGroup.getAttributes()))
         except Exception as e:
-            raise exceptions.RepoManagerException(
-                e)
+            raise exceptions.RepoManagerException(e)
 
     def removeReadGroupSet(self, readGroupSet):
         """
@@ -871,7 +871,8 @@ class SqlDataRepository(AbstractDataRepository):
                 programs=programsJson,
                 stats=statsJson,
                 dataurl=readGroupSet.getDataUrl(),
-                indexfile=readGroupSet.getIndexFile())
+                indexfile=readGroupSet.getIndexFile(),
+                attributes=json.dumps(readGroupSet.getAttributes()))
             for readGroup in readGroupSet.getReadGroups():
                 self.insertReadGroup(readGroup)
         except Exception as e:
@@ -930,7 +931,8 @@ class SqlDataRepository(AbstractDataRepository):
                 analysis=analysisJson,
                 annotationtype=variantAnnotationSet.getAnnotationType(),
                 created=variantAnnotationSet.getCreationTime(),
-                updated=variantAnnotationSet.getUpdatedTime())
+                updated=variantAnnotationSet.getUpdatedTime(),
+                attributes=json.dumps(variantAnnotationSet.getAttributes()))
         except Exception as e:
             raise exceptions.RepoManagerException(e)
 
@@ -959,7 +961,8 @@ class SqlDataRepository(AbstractDataRepository):
                 id=callSet.getId(),
                 name=callSet.getLocalId(),
                 variantsetid=callSet.getParentContainer().getId(),
-                biosampleid=callSet.getBiosampleId())
+                biosampleid=callSet.getBiosampleId(),
+                attributes=json.dumps(callSet.getAttributes()))
         except Exception as e:
             raise exceptions.RepoManagerException(e)
 
@@ -995,7 +998,8 @@ class SqlDataRepository(AbstractDataRepository):
                 created=datetime.datetime.now(),
                 updated=datetime.datetime.now(),
                 metadata=metadataJson,
-                dataurlindexmap=urlMapJson)
+                dataurlindexmap=urlMapJson,
+                attributes=json.dumps(variantSet.getAttributes()))
         except Exception as e:
             raise exceptions.RepoManagerException(e)
         for callSet in variantSet.getCallSets():
@@ -1029,7 +1033,8 @@ class SqlDataRepository(AbstractDataRepository):
                 referencesetid=featureSet.getReferenceSet().getId(),
                 ontologyid=featureSet.getOntology().getId(),
                 name=featureSet.getLocalId(),
-                dataurl=featureSet.getDataUrl())
+                dataurl=featureSet.getDataUrl(),
+                attributes=json.dumps(featureSet.getAttributes()))
         except Exception as e:
             raise exceptions.RepoManagerException(e)
 
@@ -1071,7 +1076,7 @@ class SqlDataRepository(AbstractDataRepository):
                 created=biosample.getCreated(),
                 updated=biosample.getUpdated(),
                 individualid=biosample.getIndividualId(),
-                info=json.dumps(biosample.getInfo()))
+                attributes=json.dumps(biosample.getAttributes()))
         except Exception:
             raise exceptions.DuplicateNameException(
                 biosample.getLocalId(),
@@ -1104,7 +1109,7 @@ class SqlDataRepository(AbstractDataRepository):
                 updated=individual.getUpdated(),
                 species=json.dumps(individual.getSpecies()),
                 sex=json.dumps(individual.getSex()),
-                info=json.dumps(individual.getInfo()))
+                attributes=json.dumps(individual.getAttributes()))
         except Exception:
             raise exceptions.DuplicateNameException(
                 individual.getLocalId(),
@@ -1130,12 +1135,15 @@ class SqlDataRepository(AbstractDataRepository):
         Inserts the specified phenotype annotation set into this repository.
         """
         # TODO add support for info and sourceUri fields.
+        datasetId = phenotypeAssociationSet.getParentContainer().getId()
+        attributes = json.dumps(phenotypeAssociationSet.getAttributes())
         try:
             m.Phenotypeassociationset.create(
                 id=phenotypeAssociationSet.getId(),
                 name=phenotypeAssociationSet.getLocalId(),
-                datasetid=phenotypeAssociationSet.getParentContainer().getId(),
-                dataurl=phenotypeAssociationSet._dataUrl)
+                datasetid=datasetId,
+                dataurl=phenotypeAssociationSet._dataUrl,
+                attributes=attributes)
         except Exception:
             raise exceptions.DuplicateNameException(
                 phenotypeAssociationSet.getParentContainer().getId())
@@ -1160,7 +1168,8 @@ class SqlDataRepository(AbstractDataRepository):
                 datasetid=rnaQuantificationSet.getParentContainer().getId(),
                 referencesetid=rnaQuantificationSet.getReferenceSet().getId(),
                 name=rnaQuantificationSet.getLocalId(),
-                dataurl=rnaQuantificationSet.getDataUrl())
+                dataurl=rnaQuantificationSet.getDataUrl(),
+                attributes=json.dumps(rnaQuantificationSet.getAttributes()))
         except Exception:
             raise exceptions.DuplicateNameException(
                 rnaQuantificationSet.getLocalId(),

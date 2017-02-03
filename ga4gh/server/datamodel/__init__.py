@@ -13,6 +13,7 @@ import json
 import os
 
 import ga4gh.server.exceptions as exceptions
+import ga4gh.server.protocol as protocol
 
 
 class PysamFileHandleCache(object):
@@ -497,6 +498,7 @@ class DatamodelObject(object):
         if parentContainer is not None:
             parentId = parentContainer.getCompoundId()
         self._compoundId = self.compoundIdClass(parentId, localId)
+        self._attributes = {}
 
     def getId(self):
         """
@@ -528,6 +530,34 @@ class DatamodelObject(object):
         to.
         """
         return self._parentContainer
+
+    def setAttributes(self, attributes):
+        """
+        Sets the attributes message to the provided value.
+        """
+        self._attributes = attributes
+
+    def setAttributesJson(self, attributesJson):
+        """
+        Sets the attributes dictionary from a JSON string.
+        """
+        self._attributes = json.loads(attributesJson)
+
+    def serializeAttributes(self, msg):
+        """
+        Sets the attrbutes of a message during serialization.
+        """
+        attributes = self.getAttributes()
+        for key in attributes:
+            protocol.setAttribute(
+                msg.attributes.attr[key].values, attributes[key])
+        return msg
+
+    def getAttributes(self):
+        """
+        Returns the attributes for the DatamodelObject.
+        """
+        return self._attributes
 
     def _scanDataFiles(self, dataDir, patterns):
         """

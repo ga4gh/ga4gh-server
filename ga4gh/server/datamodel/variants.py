@@ -15,13 +15,13 @@ import random
 import re
 
 import pysam
-import google.protobuf.struct_pb2 as struct_pb2
 
 import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel as datamodel
 
 import ga4gh.schemas.pb as pb
+import ga4gh.schemas.ga4gh.common_pb2 as common_pb2
 
 
 ANNOTATIONS_VEP_V82 = "VEP_v82"
@@ -54,6 +54,7 @@ class CallSet(datamodel.DatamodelObject):
         Populates this CallSet from the specified DB row.
         """
         self._biosampleId = callSetRecord.biosampleid
+        self.setAttributesJson(callSetRecord.attributes)
 
     def toProtocolElement(self):
         """
@@ -70,8 +71,7 @@ class CallSet(datamodel.DatamodelObject):
         gaCallSet.id = self.getId()
         gaCallSet.name = self.getLocalId()
         gaCallSet.variant_set_ids.append(variantSet.getId())
-        for key in self._info:
-            gaCallSet.info[key].values.extend(_encodeValue(self._info[key]))
+        self.serializeAttributes(gaCallSet)
         return gaCallSet
 
     def getBiosampleId(self):
@@ -251,6 +251,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()
         protocolElement.name = self.getLocalId()
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
     def getNumVariants(self):
@@ -416,9 +417,9 @@ class SimulatedVariantSet(AbstractVariantSet):
 
 def _encodeValue(value):
     if isinstance(value, (list, tuple)):
-        return [struct_pb2.Value(string_value=str(v)) for v in value]
+        return [common_pb2.AttributeValue(string_value=str(v)) for v in value]
     else:
-        return [struct_pb2.Value(string_value=str(value))]
+        return [common_pb2.AttributeValue(string_value=str(value))]
 
 
 _nothing = object()
@@ -464,6 +465,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         """
         self._created = variantSetRecord.created
         self._updated = variantSetRecord.updated
+        self.setAttributesJson(variantSetRecord.attributes)
         self._chromFileMap = {}
         # We can't load directly as we want tuples to be stored
         # rather than lists.
@@ -645,7 +647,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             if key == 'GL' and value is not None:
                 genotypeLikelihood = list(value)
             elif key != 'GT':
-                info[key] = _encodeValue(value)
+                info[key] = protocol.encodeValue(value)
         call = protocol.Call()
         call.call_set_name = callSet.getSampleName()
         call.call_set_id = callSet.getId()
@@ -653,7 +655,7 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         call.phaseset = pb.string(phaseset)
         call.genotype_likelihood.extend(genotypeLikelihood)
         for key in info:
-            call.info[key].values.extend(info[key])
+            call.attributes.attr[key].values.extend(info[key])
         return call
 
     def convertVariant(self, record, callSetIds):
@@ -677,7 +679,8 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
             if value is not None:
                 if isinstance(value, str):
                     value = value.split(',')
-                variant.info[key].values.extend(_encodeValue(value))
+                protocol.setAttribute(
+                    variant.attributes.attr[key].values, value)
         for callSetId in callSetIds:
             callSet = self.getCallSet(callSetId)
             pysamCall = record.samples[str(callSet.getSampleName())]
@@ -884,6 +887,7 @@ class AbstractVariantAnnotationSet(datamodel.DatamodelObject):
         protocolElement.variant_set_id = self._variantSet.getId()
         protocolElement.name = self.getLocalId()
         protocolElement.analysis.CopyFrom(self.getAnalysis())
+        self.serializeAttributes(protocolElement)
         return protocolElement
 
     def getTranscriptEffectId(self, gaTranscriptEffect):
@@ -1054,6 +1058,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
             annotationSetRecord.analysis, protocol.Analysis)
         self._creationTime = annotationSetRecord.created
         self._updatedTime = annotationSetRecord.updated
+        self.setAttributesJson(annotationSetRecord.attributes)
 
     def getAnnotationType(self):
         """
@@ -1075,19 +1080,20 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
             for contentKey, value in content:
                 key = "{0}.{1}".format(prefix, value.name)
-                if key not in analysis.info:
-                    analysis.info[key].Clear()
+                if key not in analysis.attributes.attr:
+                    analysis.attributes.attr[key].Clear()
                 if value.description is not None:
-                    analysis.info[
+                    analysis.attributes.attr[
                         key].values.add().string_value = value.description
         analysis.created = self._creationTime
         analysis.updated = self._updatedTime
         for r in header.records:
             # Don't add a key to info if there's nothing in the value
             if r.value is not None:
-                if r.key not in analysis.info:
-                    analysis.info[r.key].Clear()
-                analysis.info[r.key].values.add().string_value = str(r.value)
+                if r.key not in analysis.attributes.attr:
+                    analysis.attributes.attr[r.key].Clear()
+                analysis.attributes.attr[r.key] \
+                    .values.add().string_value = str(r.value)
             if r.key == "created" or r.key == "fileDate":
                 # TODO handle more date formats
                 try:

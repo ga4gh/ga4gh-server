@@ -50,6 +50,7 @@ class PhenotypeAssociationFeatureSet(
         DB row.
         """
         self._dbFilePath = featureSetRecord.dataurl
+        self.setAttributesJson(featureSetRecord.attributes)
         self.populateFromFile(self._dbFilePath)
 
     def populateFromFile(self, dataUrl):
@@ -124,7 +125,7 @@ class PhenotypeAssociationFeatureSet(
         pbFeature.attributes.MergeFrom(protocol.Attributes())
         for key in feature:
             for val in sorted(feature[key]):
-                pbFeature.attributes.vals[key].values.add().string_value = val
+                pbFeature.attributes.attr[key].values.add().string_value = val
 
         if featureId in self._locationMap:
             location = self._locationMap[featureId]
