@@ -77,6 +77,10 @@ class AbstractDataRepository(object):
         """
         return [self._datasetIdMap[id_] for id_ in self._datasetIds]
 
+    def getPeers(self, limit=100, offset=0):
+        select = m.Peer.select()
+        return select.order_by(m.Peer.id).limit(limit).offset(offset)
+
     def getNumDatasets(self):
         """
         Returns the number of datasets in this data repository.
@@ -1198,13 +1202,41 @@ class SqlDataRepository(AbstractDataRepository):
             m.Rnaquantificationset.id == rnaQuantificationSet.getId())
         q.execute()
 
+    def insertPeer(self, peer):
+        try:
+            m.Peer.create(
+                url=peer.get('url'),
+                attributes=json.dumps(peer['attributes']))
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
+
+    def removePeer(self, url):
+        q = m.Peer.delete.where(
+            m.Peer.url == url)
+        q.execute()
+
+    def insertAnnouncement(self, announcement):
+        try:
+            m.Announcement.create(
+                url=announcement.get('url'),
+                submitter=announcement.get('hostname', None),
+                submitter_json=announcement.get('submission_json', None),
+                attributes=json.dumps(announcement.get('attributes', None)))
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
+
+    def _createNetworkTables(self):
+        self.database.create_table(m.Peer)
+        self.database.create_table(m.Announcement)
+
     def initialise(self):
         """
-        Initialise this data repostitory, creating any necessary directories
+        Initialise this data repository, creating any necessary directories
         and file paths.
         """
         self._checkWriteMode()
         self._createSystemTable()
+        self._createNetworkTables()
         self._createOntologyTable()
         self._createReferenceSetTable()
         self._createReferenceTable()

@@ -708,6 +708,18 @@ def searchIndividuals():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchIndividuals)
 
+@DisplayedRoute('/peers/list', postMethod=True)
+@requires_auth
+def listPeers():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runListPeers)
+
+@DisplayedRoute('/announce', postMethod=True)
+@requires_auth
+def announce():
+    # We can't use the post handler here because we want detailed request
+    # data.
+    return app.backend.runAddAnnouncement(flask.request)
 
 @DisplayedRoute(
     '/biosamples/<no(search):id>',

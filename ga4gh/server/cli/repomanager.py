@@ -475,6 +475,26 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeIndividual, individual)
         self._confirmDelete("Individual", individual.getLocalId(), func)
 
+    def addPeer(self):
+        """
+        Adds a new individual into this repo
+        """
+        self._openRepo()
+        peer = {}
+        peer['url'] = self._args.url
+        peer['attributes'] = json.loads(self._args.attributes)
+        self._updateRepo(self._repo.insertPeer, peer)
+
+    def removePeer(self):
+        """
+        Removes an individual from this repo
+        """
+        self._openRepo()
+
+        def func():
+            self._updateRepo(self._repo.removePeer, self._args.url)
+        self._confirmDelete("Peer", self._args.url, func)
+
     def removeOntology(self):
         """
         Removes an ontology from the repo.
@@ -622,6 +642,12 @@ class RepoManager(object):
             help="the name of the ontology")
 
     @classmethod
+    def addUrlArgument(cls, subparser):
+        subparser.add_argument(
+            "url",
+            help="The URL of the given resource")
+
+    @classmethod
     def addReadGroupSetNameArgument(cls, subparser):
         subparser.add_argument(
             "readGroupSetName",
@@ -743,6 +769,20 @@ class RepoManager(object):
             subparsers, "list", "List the contents of the repo")
         listParser.set_defaults(runner="list")
         cls.addRepoArgument(listParser)
+
+        addPeerParser = common_cli.addSubparser(
+            subparsers, "add-peer", "Add a peer to the registry by URL.")
+        addPeerParser.set_defaults(runner="addPeer")
+        cls.addRepoArgument(addPeerParser)
+        cls.addUrlArgument(addPeerParser)
+        cls.addAttributesArgument(addPeerParser)
+
+        removePeerParser = common_cli.addSubparser(
+            subparsers, "remove-peer", "Remove a peer from "
+                                       "the registry by URL.")
+        removePeerParser.set_defaults(runner="removePeer")
+        cls.addRepoArgument(removePeerParser)
+        cls.addUrlArgument(removePeerParser)
 
         addDatasetParser = common_cli.addSubparser(
             subparsers, "add-dataset", "Add a dataset to the data repo")

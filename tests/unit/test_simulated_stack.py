@@ -1204,6 +1204,29 @@ class TestSimulatedStack(unittest.TestCase):
                 for clientAssoc in responseData.associations:
                     self.assertEqual(clientAssoc, repoAssoc)
 
+    def testPeersList(self):
+        path = "/peers/list"
+        peers = self.dataRepo.peers()
+        request = protocol.ListPeersRequest()
+        responseData = self.sendSearchRequest(
+            path, request, protocol.ListPeersResponse)
+        for peer in responseData.peers:
+            self.assertIn(peer, peers, "The returned peer should match what"
+                                       "is in the registry")
+
+    def testAnnounce(self):
+        path = "/announce"
+        request = protocol.AnnouncePeerRequest()
+        request.peer.uri = "http://1kgenomes.ga4gh.org"
+        responseData = self.sendSearchRequest(
+            path, request, protocol.AnnouncePeerResponse)
+        self.assertTrue(responseData.success)
+
+    def testInfo(self):
+        path = "/info"
+        responseData = self.app.get(path)
+        self.assertIsNotNone(responseData)
+
     # TODO def testSearchGenotypePhenotypes(self):
 
     # TODO def testGetExpressionLevel(self):

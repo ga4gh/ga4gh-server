@@ -17,6 +17,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import peewee as pw
+import datetime
 
 # The databaseProxy is used to dynamically changed the
 # backing database and needs to be set to an actual
@@ -39,6 +40,28 @@ class BaseModel(pw.Model):
     class Meta:
         database = databaseProxy
 
+class Peer(BaseModel):
+    id = pw.PrimaryKeyField()
+    url = pw.TextField(null=False, unique=True)
+
+class Announcement(BaseModel):
+    # Provides the storage layer for AnnouncePeerRequest
+    # Primary key for the record autoincrement
+    id = pw.PrimaryKeyField()
+    # URL submitted as a possible peer
+    url = pw.TextField(null=False)
+    # The hostname of the submitter. In the case when
+    # a server has made the announcement this will be
+    # the same as the url without the path.
+    submitter = pw.TextField(null=True)
+    # The entire submission request stored as JSON.
+    submitter_json = pw.TextField(null=True)
+    # The time at which this record was created.
+    created = pw.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        self.created = datetime.datetime.now()
+        return super(Announcement, self).save(*args, **kwargs)
 
 class Dataset(BaseModel):
     description = pw.TextField(null=True)

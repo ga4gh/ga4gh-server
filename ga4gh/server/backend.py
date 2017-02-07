@@ -11,6 +11,8 @@ import ga4gh.server.exceptions as exceptions
 import ga4gh.server.protocol as protocol
 import ga4gh.server.paging as paging
 
+import json
+
 
 class Backend(object):
     """
@@ -645,6 +647,59 @@ class Backend(object):
         variantSet = dataset.getVariantSet(compoundId.variant_set_id)
         callSet = variantSet.getCallSet(id_)
         return self.runGetRequest(callSet)
+
+    def peerToProtocol(self, peerRecord):
+        peer = protocol.Peer()
+        peer.uri = peerRecord.url
+        attributes = json.loads(peerRecord.attributes)
+        for key in attributes:
+            protocol.setAttribute(
+                peer.attributes.attr[key].values, attributes[key])
+        return peer
+
+    def runAddAnnouncement(self, request):
+        announcement = {}
+        # We want to parse the request ourselves to collect a little more
+        # data about it. We're bypassing some of the checks done in frontend
+        # and so some code is repeated here.
+
+        # Get the data off the request
+        requestData = request.get_data()
+        # validate the url
+        if (not requestData.url):
+            raise exceptions.BadRequestException("Bad URL provided")
+        announcement['url'] = requestData.url
+        #announcement['hostname'] = request
+        self.getDataRepository().insertAnnouncement(announcement)
+        return protocol.toJson(protocol.AnnounceResponse(success=True))
+
+    def runListPeers(self, request):
+        try:
+            request = protocol.fromJson(request, protocol.ListPeersRequest)
+        except:
+            raise exceptions.InvalidJsonException(request)
+        if request.page_size:
+            page_size = request.page_size
+        else:
+            page_size = self._defaultPageSize
+
+        if request.page_token:
+            # TODO better ensure this is typed right?
+            page_token = int(request.page_token)
+        else:
+            page_token = 0
+
+        peers = list(self.getDataRepository().getPeers(
+            offset=page_token * page_size,
+            limit=page_size + 1))
+
+        response = protocol.ListPeersResponse()
+        if len(peers) > page_size:
+            response.next_page_token = str(int(page_token) + 1)
+
+        response.peers.extend(map(self.peerToProtocol, peers[0:page_size]))
+
+        return protocol.toJson(response)
 
     def runGetVariant(self, id_):
         """
