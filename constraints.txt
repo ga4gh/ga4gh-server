@@ -26,4 +26,4 @@
 #
 git+git://github.com/ga4gh/ga4gh-common.git@master#egg=ga4gh_common
 git+git://github.com/ga4gh/schemas.git@master#egg=ga4gh_schemas
-git+git://github.com/ga4gh/ga4gh-client.git@master#egg=ga4gh_client
+git+git://github.com/david4096/ga4gh-client.git@unset#egg=ga4gh_client
