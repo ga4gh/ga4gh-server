@@ -25,6 +25,7 @@ import ga4gh.server.exceptions as exceptions
 import ga4gh.server.protocol as protocol
 
 import repo.models as m
+import re
 
 MODE_READ = 'r'
 MODE_WRITE = 'w'
@@ -1215,13 +1216,27 @@ class SqlDataRepository(AbstractDataRepository):
             m.Peer.url == url)
         q.execute()
 
+    def isUrl(self, urlString):
+        # http://stackoverflow.com/questions/7160737/
+        regex = re.compile(
+            r'^(?:http|ftp)s?://'  # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)'
+            r'+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+            r'localhost|'  # localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+            r'(?::\d+)?'  # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+        return regex.match(urlString)
+
     def insertAnnouncement(self, announcement):
+        if not self.isUrl(announcement.get('url')):
+            raise exceptions.BadRequestException(announcement.get('url'))
         try:
             m.Announcement.create(
                 url=announcement.get('url'),
                 submitter=announcement.get('hostname', None),
-                submitter_json=announcement.get('submission_json', None),
-                attributes=json.dumps(announcement.get('attributes', None)))
+                attributes=announcement.get('attributes', None))
         except Exception as e:
             raise exceptions.RepoManagerException(e)
 

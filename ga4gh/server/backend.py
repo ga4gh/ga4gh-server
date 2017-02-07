@@ -664,14 +664,18 @@ class Backend(object):
         # and so some code is repeated here.
 
         # Get the data off the request
-        requestData = request.get_data()
+        # TODO wrap in exception
+        requestData = protocol.fromJson(
+            request.get_data(), protocol.AnnouncePeerRequest)
         # validate the url
-        if (not requestData.url):
+        if (not requestData.peer.uri):
             raise exceptions.BadRequestException("Bad URL provided")
-        announcement['url'] = requestData.url
-        #announcement['hostname'] = request
+        announcement['url'] = requestData.peer.uri
+        announcement['attributes'] = protocol.toJson(
+            requestData.peer.attributes)
+        announcement['hostname'] = request.host_url # From flask request
         self.getDataRepository().insertAnnouncement(announcement)
-        return protocol.toJson(protocol.AnnounceResponse(success=True))
+        return protocol.toJson(protocol.AnnouncePeerResponse(success=True))
 
     def runListPeers(self, request):
         try:
