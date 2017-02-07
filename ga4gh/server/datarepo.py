@@ -31,6 +31,19 @@ MODE_READ = 'r'
 MODE_WRITE = 'w'
 
 
+def isUrl(urlString):
+    # http://stackoverflow.com/questions/7160737/
+    regex = re.compile(
+        r'^(?:http|ftp)s?://'  # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)'
+        r'+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
+        r'localhost|'  # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
+        r'(?::\d+)?'  # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
+    return regex.match(urlString)
+
 class AbstractDataRepository(object):
     """
     An abstract GA4GH data repository
@@ -45,6 +58,7 @@ class AbstractDataRepository(object):
         self._ontologyNameMap = {}
         self._ontologyIdMap = {}
         self._ontologyIds = []
+        self._peers = []
 
     def addDataset(self, dataset):
         """
@@ -78,9 +92,15 @@ class AbstractDataRepository(object):
         """
         return [self._datasetIdMap[id_] for id_ in self._datasetIds]
 
+    def insertPeer(self, peer):
+        self._peers.append(peer)
+
     def getPeers(self, limit=100, offset=0):
-        select = m.Peer.select()
-        return select.order_by(m.Peer.id).limit(limit).offset(offset)
+        return self._peers[offset:offset + limit]
+
+    def insertAnnouncement(self, announcement):
+        if not isUrl(announcement.get('url')):
+            raise exceptions.BadRequestException(announcement.get('url'))
 
     def getNumDatasets(self):
         """
@@ -482,6 +502,21 @@ class SqlDataRepository(AbstractDataRepository):
     def _checkReadMode(self):
         if self._openMode != MODE_READ:
             raise ValueError("Repo must be opened in read mode")
+
+    def getPeers(self, limit=100, offset=0):
+        select = m.Peer.select()
+        return select.order_by(m.Peer.id).limit(limit).offset(offset)
+
+    def insertAnnouncement(self, announcement):
+        if not isUrl(announcement.get('url')):
+            raise exceptions.BadRequestException(announcement.get('url'))
+        try:
+            m.Announcement.create(
+                url=announcement.get('url'),
+                submitter=announcement.get('hostname', None),
+                attributes=announcement.get('attributes', None))
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
     def open(self, mode=MODE_READ):
         """
@@ -1215,30 +1250,6 @@ class SqlDataRepository(AbstractDataRepository):
         q = m.Peer.delete.where(
             m.Peer.url == url)
         q.execute()
-
-    def isUrl(self, urlString):
-        # http://stackoverflow.com/questions/7160737/
-        regex = re.compile(
-            r'^(?:http|ftp)s?://'  # http:// or https://
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)'
-            r'+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
-            r'localhost|'  # localhost...
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-            r'(?::\d+)?'  # optional port
-            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
-        return regex.match(urlString)
-
-    def insertAnnouncement(self, announcement):
-        if not self.isUrl(announcement.get('url')):
-            raise exceptions.BadRequestException(announcement.get('url'))
-        try:
-            m.Announcement.create(
-                url=announcement.get('url'),
-                submitter=announcement.get('hostname', None),
-                attributes=announcement.get('attributes', None))
-        except Exception as e:
-            raise exceptions.RepoManagerException(e)
 
     def _createNetworkTables(self):
         self.database.create_table(m.Peer)

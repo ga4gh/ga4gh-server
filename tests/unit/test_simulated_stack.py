@@ -1206,7 +1206,8 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testPeersList(self):
         path = "/peers/list"
-        peers = self.dataRepo.peers()
+        peers = list(self.dataRepo.getPeers())
+        self.assertGreater(len(peers), 0)
         request = protocol.ListPeersRequest()
         responseData = self.sendSearchRequest(
             path, request, protocol.ListPeersResponse)
@@ -1220,7 +1221,11 @@ class TestSimulatedStack(unittest.TestCase):
         request.peer.uri = "http://1kgenomes.ga4gh.org"
         responseData = self.sendSearchRequest(
             path, request, protocol.AnnouncePeerResponse)
-        self.assertTrue(responseData.success)
+        self.assertTrue(responseData.success, "A well formed URL should post")
+        request.peer.uri = "Not a URL"
+        response = self.sendJsonPostRequest(path, protocol.toJson(request))
+        self.assertEqual(response.status_code, 400)
+
 
     def testInfo(self):
         path = "/info"
