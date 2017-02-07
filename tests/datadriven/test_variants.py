@@ -111,7 +111,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             if isinstance(pyvcfValue, str):
                 self.assertEqual(compareValue, pyvcfValue)
             elif isinstance(pyvcfValue, (int, bool)):
-                self.assertEqual(compareValue, str(pyvcfValue))
+                self.assertEqual(compareValue, pyvcfValue)
             elif isinstance(pyvcfValue, float):
                 self.assertAlmostEqual(float(compareValue), float(pyvcfValue))
             elif pyvcfValue is None:
@@ -151,7 +151,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                 gaCall.genotype_likelihood, pyvcfCall.data.GL)
         else:
             self.assertNotIn("GL", pyvcfCall.data)
-        for key, value in gaCall.info.items():
+        for key, value in gaCall.attributes.attr.items():
             if key != "GT" and key != "GL":
                 if isinstance(value.values[0], (list, tuple)):
                     self._compareTwoListFloats(value.values[0], getattr(
@@ -180,7 +180,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
             # pyvcf uses 1-based indexing.
             self.assertEqual(gaVariant.start, pyvcfVariant.POS - 1)
             self.assertEqual(gaVariant.end, pyvcfVariant.end)
-            self._verifyInfoEqual(gaVariant.info, pyvcfInfo)
+            self._verifyInfoEqual(gaVariant.attributes.attr, pyvcfInfo)
             alt = pyvcfVariant.ALT
             # PyVCF does something funny when no ALT allele is provided.
             # TODO we should clarify exactly what this means.

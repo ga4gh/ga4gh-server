@@ -14,18 +14,8 @@ import ga4gh.server.protocol as protocol
 import ga4gh.server.datamodel.bio_metadata as biodata
 import ga4gh.server.datamodel.genotype_phenotype as g2p
 import ga4gh.server.datamodel.rna_quantification as rnaQuantification
-import json
-
-import google.protobuf.struct_pb2 as struct_pb2
 
 import ga4gh.schemas.pb as pb
-
-
-def _encodeValue(value):
-    if isinstance(value, (list, tuple)):
-        return [struct_pb2.Value(string_value=str(v)) for v in value]
-    else:
-        return [struct_pb2.Value(string_value=str(value))]
 
 
 class Dataset(datamodel.DatamodelObject):
@@ -58,7 +48,6 @@ class Dataset(datamodel.DatamodelObject):
         self._rnaQuantificationSetIds = []
         self._rnaQuantificationSetIdMap = {}
         self._rnaQuantificationSetNameMap = {}
-        self._info = {}
 
     def populateFromRow(self, dataset):
         """
@@ -66,19 +55,13 @@ class Dataset(datamodel.DatamodelObject):
         specified database row.
         """
         self._description = dataset.description
-        self._info = json.loads(dataset.info)
+        self.setAttributesJson(dataset.attributes)
 
     def setDescription(self, description):
         """
         Sets the description for this dataset to the specified value.
         """
         self._description = description
-
-    def setInfo(self, info):
-        """
-        Sets the info for this dataset to the specified value.
-        """
-        self._info = info
 
     def addVariantSet(self, variantSet):
         """
@@ -141,8 +124,7 @@ class Dataset(datamodel.DatamodelObject):
         dataset.id = self.getId()
         dataset.name = pb.string(self.getLocalId())
         dataset.description = pb.string(self.getDescription())
-        for key in self.getInfo():
-            dataset.info[key].values.extend(_encodeValue(self._info[key]))
+        self.serializeAttributes(dataset)
         return dataset
 
     def getVariantSets(self):

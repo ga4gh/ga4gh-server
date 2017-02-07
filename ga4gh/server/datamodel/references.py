@@ -211,13 +211,12 @@ class AbstractReferenceSet(datamodel.DatamodelObject):
         if self.getSpecies():
             term = protocol.fromJson(
                 json.dumps(self.getSpecies()), protocol.OntologyTerm)
-            ret.species.id = term.id
+            ret.species.term_id = term.term_id
             ret.species.term = term.term
-            ret.species.source_name = term.source_name
-            ret.species.source_version = term.source_version
         ret.source_accessions.extend(self.getSourceAccessions())
         ret.source_uri = pb.string(self.getSourceUri())
         ret.name = self.getLocalId()
+        self.serializeAttributes(ret)
         return ret
 
 
@@ -355,13 +354,12 @@ class AbstractReference(datamodel.DatamodelObject):
         if self.getSpecies():
             term = protocol.fromJson(
                 json.dumps(self.getSpecies()), protocol.OntologyTerm)
-            reference.species.id = term.id
+            reference.species.term_id = term.term_id
             reference.species.term = term.term
-            reference.species.source_name = term.source_name
-            reference.species.source_version = term.source_version
         reference.source_accessions.extend(self.getSourceAccessions())
         reference.source_divergence = pb.int(self.getSourceDivergence())
         reference.source_uri = self.getSourceUri()
+        self.serializeAttributes(reference)
         return reference
 
     def checkQueryRange(self, start, end):
@@ -403,8 +401,7 @@ class SimulatedReferenceSet(AbstractReferenceSet):
         self._assemblyId = str(random.randint(0, 2**32))
         self._isDerived = bool(random.randint(0, 1))
         self._species = json.loads(
-                    '{"sourceName": "NCBI", "sourceVersion": "",'
-                    + '"term": "Homo sapiens", "id": "9606"}')
+                    '{"term": "Homo sapiens", "termId": "9606"}')
         self._sourceAccessions = []
         for i in range(random.randint(1, 3)):
                 self._sourceAccessions.append("sim_accession_{}".format(
@@ -437,8 +434,7 @@ class SimulatedReference(AbstractReference):
         if self._isDerived:
             self._sourceDivergence = rng.uniform(0, 0.1)
         self._species = json.loads(
-                            '{"sourceName": "NCBI", "sourceVersion": "",'
-                            + '"term": "Homo sapiens", "id": "9606"}')
+                            '{"term": "Homo sapiens", "termId": "9606"}')
         self._sourceAccessions = []
         for i in range(random.randint(1, 3)):
                 self._sourceAccessions.append("sim_accession_{}".format(
@@ -491,8 +487,9 @@ class HtslibReferenceSet(datamodel.PysamDatamodelMixin, AbstractReferenceSet):
         self._assemblyId = referenceSetRecord.assemblyid
         self._isDerived = bool(referenceSetRecord.isderived)
         self._md5checksum = referenceSetRecord.md5checksum
-        if referenceSetRecord.species is not None:
-            self.setSpeciesFromJson(referenceSetRecord.species)
+        species = referenceSetRecord.species
+        if species is not None and species != 'null':
+            self.setSpeciesFromJson(species)
         self._sourceAccessions = json.loads(
             referenceSetRecord.sourceaccessions)
         self._sourceUri = referenceSetRecord.sourceuri
@@ -528,8 +525,9 @@ class HtslibReference(datamodel.PysamDatamodelMixin, AbstractReference):
         self._length = referenceRecord.length
         self._isDerived = bool(referenceRecord.isderived)
         self._md5checksum = referenceRecord.md5checksum
-        if referenceRecord.species is not None:
-            self.setSpeciesFromJson(referenceRecord.species)
+        species = referenceRecord.species
+        if species is not None and species != 'null':
+            self.setSpeciesFromJson(species)
         self._sourceAccessions = json.loads(referenceRecord.sourceaccessions)
         self._sourceDivergence = referenceRecord.sourcedivergence
         self._sourceUri = referenceRecord.sourceuri

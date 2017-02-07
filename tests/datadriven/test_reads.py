@@ -364,7 +364,7 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             pysamAlignment.query_name)
         self.assertEqual(gaAlignment.id, str(compoundId))
         self.assertEqual(
-            self.getDictFromMessageMap(gaAlignment.info),
+            self.getDictFromMessageMap(gaAlignment.attributes.attr),
             {key: [str(value)] for key, value in pysamAlignment.tags})
         if reads.SamFlags.isFlagSet(
                 pysamAlignment.flag, reads.SamFlags.MATE_UNMAPPED):

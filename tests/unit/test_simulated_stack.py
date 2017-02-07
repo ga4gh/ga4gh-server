@@ -136,8 +136,10 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(gaCallSet.id, callSet.getId())
         self.assertEqual(gaCallSet.name, callSet.getLocalId())
         self.assertEqual(gaCallSet.variant_set_ids, [variantSet.getId()])
-        for key, value in gaCallSet.info.items():
-            self.assertEqual(value[0], callSet.getInfo()[key])
+        for key, value in gaCallSet.attributes.attr.items():
+            self.assertEqual(
+                protocol.getValueFromValue(value.values[0]),
+                callSet.getInfo()[key])
 
     def verifyReadGroupSetsEqual(self, gaReadGroupSet, readGroupSet):
         dataset = readGroupSet.getParentContainer()
@@ -165,13 +167,9 @@ class TestSimulatedStack(unittest.TestCase):
         sp = protocol.fromJson(
                 json.dumps(referenceSet.getSpecies()), protocol.OntologyTerm)
         self.assertEqual(
-            gaReferenceSet.species.id, sp.id)
+            gaReferenceSet.species.term_id, sp.term_id)
         self.assertEqual(
             gaReferenceSet.species.term, sp.term)
-        self.assertEqual(
-            gaReferenceSet.species.source_name, sp.source_name)
-        self.assertEqual(
-            gaReferenceSet.species.source_version, sp.source_version)
         self.assertEqual(
             gaReferenceSet.assembly_id, referenceSet.getAssemblyId())
         self.assertEqual(
@@ -204,14 +202,8 @@ class TestSimulatedStack(unittest.TestCase):
         self.assertEqual(gaReference.md5checksum, reference.getMd5Checksum())
         sp = protocol.fromJson(
                 json.dumps(reference.getSpecies()), protocol.OntologyTerm)
-        self.assertEqual(gaReference.species.id, sp.id)
+        self.assertEqual(gaReference.species.term_id, sp.term_id)
         self.assertEqual(gaReference.species.term, sp.term)
-        self.assertEqual(
-            gaReference.species.source_name,
-            sp.source_name)
-        self.assertEqual(
-            gaReference.species.source_version,
-            sp.source_version)
         self.assertEqual(gaReference.source_uri, reference.getSourceUri())
         self.assertEqual(
             gaReference.source_accessions, reference.getSourceAccessions())
@@ -651,7 +643,7 @@ class TestSimulatedStack(unittest.TestCase):
         request.end = 10
         request.reference_name = "1"
 
-        request.effects.add().id = "ThisIsNotAnEffect"
+        request.effects.add().term_id = "ThisIsNotAnEffect"
 
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data, protocol.
@@ -680,8 +672,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 5
         request.reference_name = "1"
-        request.effects.add().id = "SO:0001627"
-        request.effects.add().id = "B4DID"
+        request.effects.add().term_id = "SO:0001627"
+        request.effects.add().term_id = "B4DID"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data, protocol.
                                          SearchVariantAnnotationsResponse)
@@ -693,8 +685,8 @@ class TestSimulatedStack(unittest.TestCase):
             effectPresent = False
             for effect in ann.transcript_effects:
                 for featureType in effect.effects:
-                    if featureType.id in map(
-                            lambda e: e.id, request.effects):
+                    if featureType.term_id in map(
+                            lambda e: e.term_id, request.effects):
                         effectPresent = True
             self.assertEquals(
                 True, effectPresent,
@@ -705,8 +697,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 5
         request.reference_name = "1"
-        request.effects.add().id = "B4DID"
-        request.effects.add().id = "SO:0001627"
+        request.effects.add().term_id = "B4DID"
+        request.effects.add().term_id = "SO:0001627"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data, protocol.
                                          SearchVariantAnnotationsResponse)
@@ -718,8 +710,8 @@ class TestSimulatedStack(unittest.TestCase):
             effectPresent = False
             for effect in ann.transcript_effects:
                 for featureType in effect.effects:
-                    if featureType.id in map(
-                            lambda e: e.id, request.effects):
+                    if featureType.term_id in map(
+                            lambda e: e.term_id, request.effects):
                         effectPresent = True
             self.assertEquals(
                 True,
@@ -731,7 +723,7 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 5
         request.reference_name = "1"
-        request.effects.add().id = "SO:0001627"
+        request.effects.add().term_id = "SO:0001627"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data, protocol.
                                          SearchVariantAnnotationsResponse)
@@ -744,8 +736,8 @@ class TestSimulatedStack(unittest.TestCase):
                              "Transcript effects should be unique")
             for effect in ann.transcript_effects:
                 for featureType in effect.effects:
-                    if featureType.id in map(
-                            lambda e: e.id, request.effects):
+                    if featureType.term_id in map(
+                            lambda e: e.term_id, request.effects):
                         effectPresent = True
             self.assertEquals(True, effectPresent,
                               "The ontology term should appear at least once")
@@ -755,8 +747,8 @@ class TestSimulatedStack(unittest.TestCase):
         request.start = 0
         request.end = 10
         request.reference_name = "1"
-        request.effects.add().id = "SO:0001627"
-        request.effects.add().id = "SO:0001791"
+        request.effects.add().term_id = "SO:0001627"
+        request.effects.add().term_id = "SO:0001791"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         responseData = protocol.fromJson(response.data, protocol.
                                          SearchVariantAnnotationsResponse)

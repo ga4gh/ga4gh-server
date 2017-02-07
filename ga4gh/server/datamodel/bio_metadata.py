@@ -27,7 +27,6 @@ class Biosample(datamodel.DatamodelObject):
         self._updated = datetime.datetime.now().isoformat()
         self._description = None
         self._disease = None
-        self._info = {}
         self._name = localId
         self._individualId = None
         self._datasetId = parentContainer.getId()
@@ -46,9 +45,7 @@ class Biosample(datamodel.DatamodelObject):
             individual_id=self.getIndividualId(),
             name=self.getName(),
             disease=disease)
-        for key in self.getInfo():
-            for value in self.getInfo()[key]['values']:
-                biosample.info[key].values.add().string_value = value
+        self.serializeAttributes(biosample)
         return biosample
 
     def populateFromJson(self, jsonString):
@@ -61,9 +58,11 @@ class Biosample(datamodel.DatamodelObject):
         self._description = parsed.description
         self._disease = protocol.toJsonDict(parsed.disease)
         self._individualId = parsed.individual_id
-        self._info = {}
-        for key in parsed.info:
-            self._info[key] = {"values": protocol.toJsonDict(parsed.info[key])}
+        attributes = {}
+        for key in parsed.attributes.attr:
+            attributes[key] = {
+                "values": protocol.toJsonDict(parsed.attributes.attr[key])}
+        self.setAttributes(attributes)
         return self
 
     def populateFromRow(self, biosampleRecord):
@@ -73,7 +72,7 @@ class Biosample(datamodel.DatamodelObject):
         self._description = biosampleRecord.description
         self._disease = json.loads(biosampleRecord.disease)
         self._individualId = biosampleRecord.individualid
-        self._info = json.loads(biosampleRecord.info)
+        self.setAttributesJson(biosampleRecord.attributes)
         return self
 
     def setIndividualId(self, individualId):
@@ -97,9 +96,6 @@ class Biosample(datamodel.DatamodelObject):
         else:
             return None
 
-    def getInfo(self):
-        return self._info
-
     def getName(self):
         return self._name
 
@@ -119,7 +115,6 @@ class Individual(datamodel.DatamodelObject):
         self._description = None
         self._species = None
         self._sex = None
-        self._info = {}
         self._name = localId
         self._datasetId = parentContainer.getId()
 
@@ -141,9 +136,7 @@ class Individual(datamodel.DatamodelObject):
             name=self.getName(),
             species=species,
             sex=sex)
-        for key in self.getInfo():
-            for value in self.getInfo()[key]['values']:
-                gaIndividual.info[key].values.add().string_value = value
+        self.serializeAttributes(gaIndividual)
         return gaIndividual
 
     def populateFromRow(self, individualRecord):
@@ -154,7 +147,7 @@ class Individual(datamodel.DatamodelObject):
         self._description = individualRecord.description
         self._species = json.loads(individualRecord.species)
         self._sex = json.loads(individualRecord.sex)
-        self._info = json.loads(individualRecord.info)
+        self.setAttributesJson(individualRecord.attributes)
         return self
 
     def populateFromJson(self, jsonString):
@@ -168,9 +161,11 @@ class Individual(datamodel.DatamodelObject):
         self._description = parsed.description
         self._species = protocol.toJsonDict(parsed.species)
         self._sex = protocol.toJsonDict(parsed.sex)
-        self._info = {}
-        for key in parsed.info:
-            self._info[key] = {"values": protocol.toJsonDict(parsed.info[key])}
+        attributes = {}
+        for key in parsed.attributes.attr:
+            attributes[key] = {
+                "values": protocol.toJsonDict(parsed.attributes.attr[key])}
+        self.setAttributes(attributes)
         return self
 
     def getCreated(self):
@@ -187,9 +182,6 @@ class Individual(datamodel.DatamodelObject):
 
     def getSex(self):
         return self._sex
-
-    def getInfo(self):
-        return self._info
 
     def getName(self):
         return self._name
