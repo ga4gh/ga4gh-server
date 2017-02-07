@@ -12,8 +12,6 @@ import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel.bio_metadata as bioMetadata
 import ga4gh.server.protocol as protocol
 
-import ga4gh.schemas.pb as pb
-
 
 class TestIndividuals(unittest.TestCase):
     """
@@ -23,9 +21,7 @@ class TestIndividuals(unittest.TestCase):
         dataset = datasets.Dataset('dataset1')
         term = protocol.OntologyTerm()
         term.term = "male genotypic sex"
-        term.id = "PATO:0020001"
-        term.source_name = "PATO"
-        term.source_version = pb.string("2015-11-18")
+        term.term_id = "PATO:0020001"
         # Write out a valid input
         print(protocol.toJsonDict(term))
         validIndividual = protocol.Individual(
@@ -33,7 +29,8 @@ class TestIndividuals(unittest.TestCase):
             created="2016-05-19T21:00:19Z",
             updated="2016-05-19T21:00:19Z",
             sex=term)
-        validIndividual.info['test'].values.add().string_value = 'test-info'
+        validIndividual.attributes.attr['test']. \
+            values.add().string_value = 'test-info'
         # pass through protocol creation
         individual = bioMetadata.Individual(
             dataset, "test")
@@ -63,7 +60,8 @@ class TestBiosamples(unittest.TestCase):
             name="test",
             created="2016-05-19T21:00:19Z",
             updated="2016-05-19T21:00:19Z")
-        validBiosample.info['test'].values.add().string_value = 'test-info'
+        validBiosample.attributes.attr['test']. \
+            values.add().string_value = 'test-info'
         # pass through protocol creation
         biosample = bioMetadata.Biosample(
             dataset, "test")

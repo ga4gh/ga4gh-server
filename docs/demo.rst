@@ -273,7 +273,9 @@ around 3GB. Next, we will add the reference set.
 .. code-block:: bash
 
     $ ga4gh_repo add-referenceset registry.db /full/path/to/hs37d5.fa.gz \
-      -d "NCBI37 assembly of the human genome" --ncbiTaxonId 9606 --name NCBI37 \
+      -d “NCBI37 assembly of the human genome” \
+      --species '{"id": "9606", "term": "Homo sapiens", "source_name": "NCBI", "source_version: "1.0"}' \
+      --name NCBI37 \
       --sourceUri "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz"
 
 A number of optional command line flags have been added. We will be

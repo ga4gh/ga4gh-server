@@ -36,6 +36,7 @@ Jinja2==2.7.3
 future==0.15.2
 pyjwkest==1.0.1
 PyJWT==1.4.2
+peewee==2.8.5
 
 ### This section is for the actual libraries ###
 # these libraries are imported in code that can be reached via
