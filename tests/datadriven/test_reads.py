@@ -364,15 +364,12 @@ class ReadGroupSetTest(datadriven.DataDrivenTest):
             self._gaObject.getCompoundId(),
             pysamAlignment.query_name)
         self.assertEqual(gaAlignment.id, str(compoundId))
-        ret = {}
+        ret = protocol.ReadAlignment()
         for key, value in pysamAlignment.tags:
-            if isinstance(value, array.array):
-                ret[key] = list(value)
-            else:
-                ret[key] = [value]
+            protocol.setAttribute(ret.attributes.attr[key].values, value)
         self.assertEqual(
-            protocol.toJsonDict(gaAlignment)['attributes'],
-            ret)
+            protocol.toJson(gaAlignment.attributes),
+            protocol.toJson(ret.attributes))
         if reads.SamFlags.isFlagSet(
                 pysamAlignment.flag, reads.SamFlags.MATE_UNMAPPED):
             self.assertEqual(0, gaAlignment.next_mate_position.ByteSize())

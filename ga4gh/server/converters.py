@@ -228,7 +228,7 @@ class SamLine(object):
     def toTags(cls, read):
         tags = []
         for tag, value in read.attributes.attr.items():
-            val = cls._parseTagValue(tag, value)
+            val = cls._parseTagValue(value)
             tags.append((tag.encode(cls._encoding), val))
         retval = tuple(tags)
         return retval
