@@ -209,6 +209,11 @@ class NotFoundException(RuntimeException):
     message = "A resource was not found"
 
 
+class PeerNotFoundException(NotFoundException):
+    def __init__(self, url):
+        self.message = "A peer with url '{}' was not found".format(
+            url)
+
 class PathNotFoundException(NotFoundException):
     message = "The request path was not found"
 

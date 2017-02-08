@@ -483,6 +483,7 @@ class RepoManager(object):
         peer = {}
         peer['url'] = self._args.url
         peer['attributes'] = json.loads(self._args.attributes)
+        print('adding a peer at repomanager.py')
         self._updateRepo(self._repo.insertPeer, peer)
 
     def removePeer(self):
@@ -783,6 +784,7 @@ class RepoManager(object):
         removePeerParser.set_defaults(runner="removePeer")
         cls.addRepoArgument(removePeerParser)
         cls.addUrlArgument(removePeerParser)
+        cls.addForceOption(removePeerParser)
 
         addDatasetParser = common_cli.addSubparser(
             subparsers, "add-dataset", "Add a dataset to the data repo")

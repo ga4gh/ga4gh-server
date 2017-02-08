@@ -93,7 +93,18 @@ class AbstractDataRepository(object):
         return [self._datasetIdMap[id_] for id_ in self._datasetIds]
 
     def insertPeer(self, peer):
+        print('adding peer')
+        print(peer)
         self._peers.append(peer)
+
+    def getPeer(self, url):
+        print('getting peer')
+        peers = filter(lambda x: x.uri, self._peers)
+        print(peers)
+        print(self._peers)
+        if len(peers) == 0:
+            raise exceptions.PeerNotFoundException(url)
+        return peers[0]
 
     def getPeers(self, limit=100, offset=0):
         return self._peers[offset:offset + limit]
@@ -502,6 +513,12 @@ class SqlDataRepository(AbstractDataRepository):
     def _checkReadMode(self):
         if self._openMode != MODE_READ:
             raise ValueError("Repo must be opened in read mode")
+
+    def getPeer(self, url):
+        peers = list(m.Peer.select().where(m.Peer.url == url))
+        if len(peers) == 0:
+            raise exceptions.PeerNotFoundException(url)
+        return peers[0]
 
     def getPeers(self, limit=100, offset=0):
         select = m.Peer.select()
@@ -1234,11 +1251,12 @@ class SqlDataRepository(AbstractDataRepository):
         performs a cascading removal of all items within this
         rnaQuantificationSet.
         """
-        q = m.Rnaquantificationset.delete.where(
+        q = m.Rnaquantificationset.delete().where(
             m.Rnaquantificationset.id == rnaQuantificationSet.getId())
         q.execute()
 
     def insertPeer(self, peer):
+        print('adding a PEER SQL style')
         try:
             m.Peer.create(
                 url=peer.get('url'),
@@ -1247,7 +1265,7 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(e)
 
     def removePeer(self, url):
-        q = m.Peer.delete.where(
+        q = m.Peer.delete().where(
             m.Peer.url == url)
         q.execute()
 
