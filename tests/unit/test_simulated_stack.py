@@ -16,7 +16,8 @@ import ga4gh.server.datamodel.references as references
 import ga4gh.server.datamodel.variants as variants
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.server.frontend as frontend
-import ga4gh.server.protocol as protocol
+
+import ga4gh.schemas.protocol as protocol
 
 
 class TestSimulatedStack(unittest.TestCase):

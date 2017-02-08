@@ -11,7 +11,8 @@ import inspect
 
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.frontend as frontend
-import ga4gh.server.protocol as protocol
+
+import ga4gh.schemas.protocol as protocol
 
 
 class TestExceptionHandler(unittest.TestCase):

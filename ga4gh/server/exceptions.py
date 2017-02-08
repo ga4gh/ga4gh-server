@@ -11,7 +11,7 @@ import zlib
 import inspect
 import json
 
-import ga4gh.server.protocol as protocol
+import ga4gh.schemas.protocol as protocol
 
 
 def getExceptionClass(errorCode):

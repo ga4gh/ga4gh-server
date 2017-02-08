@@ -12,7 +12,8 @@ import ga4gh.server.cli.server as cli_server
 import ga4gh.server.cli.repomanager as cli_repomanager
 import ga4gh.server.cli.ga2vcf as cli_ga2vcf
 import ga4gh.server.cli.ga2sam as cli_ga2sam
-import ga4gh.server.protocol as protocol
+
+import ga4gh.schemas.protocol as protocol
 
 
 class TestServerArguments(unittest.TestCase):

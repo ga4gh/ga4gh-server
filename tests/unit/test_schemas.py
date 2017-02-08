@@ -4,7 +4,8 @@ from __future__ import unicode_literals
 
 import unittest
 
-import ga4gh.server.protocol as protocol
+import ga4gh.server.response_builder as response_builder
+import ga4gh.schemas.protocol as protocol
 
 
 def getValueListName(cls):
@@ -17,7 +18,6 @@ class SearchResponseBuilderTest(unittest.TestCase):
     Tests the SearchResponseBuilder class to ensure that it behaves
     correctly.
     """
-
     def testIntegrity(self):
         # Verifies that the values we put in are exactly what we get
         # back across all subclasses of SearchResponse
@@ -26,7 +26,7 @@ class SearchResponseBuilderTest(unittest.TestCase):
             instance = class_()
             valueList = getattr(instance, getValueListName(class_))
             valueList.add()
-            builder = protocol.SearchResponseBuilder(
+            builder = response_builder.SearchResponseBuilder(
                 class_, len(valueList), 2 ** 32)
             for value in valueList:
                 builder.addValue(value)
@@ -41,7 +41,7 @@ class SearchResponseBuilderTest(unittest.TestCase):
         responseClass = protocol.SearchVariantsResponse
         valueClass = protocol.Variant
         for pageSize in range(1, 10):
-            builder = protocol.SearchResponseBuilder(
+            builder = response_builder.SearchResponseBuilder(
                 responseClass, pageSize, 2 ** 32)
             self.assertEqual(builder.getPageSize(), pageSize)
             self.assertFalse(builder.isFull())
@@ -61,7 +61,7 @@ class SearchResponseBuilderTest(unittest.TestCase):
         responseClass = protocol.SearchVariantsResponse
         valueClass = protocol.Variant
         for pageSize in range(1, 10):
-            builder = protocol.SearchResponseBuilder(
+            builder = response_builder.SearchResponseBuilder(
                 responseClass, pageSize, 2 ** 32)
             self.assertEqual(builder.getPageSize(), pageSize)
             while not builder.isFull():
@@ -81,7 +81,7 @@ class SearchResponseBuilderTest(unittest.TestCase):
         typicalValueLength = typicalValue.ByteSize()
         for numValues in range(1, 10):
             maxBufferSize = numValues * typicalValueLength
-            builder = protocol.SearchResponseBuilder(
+            builder = response_builder.SearchResponseBuilder(
                 responseClass, 1000, maxBufferSize)
             self.assertEqual(
                 maxBufferSize, builder.getMaxBufferSize())
@@ -94,7 +94,7 @@ class SearchResponseBuilderTest(unittest.TestCase):
 
     def testNextPageToken(self):
         responseClass = protocol.SearchVariantsResponse
-        builder = protocol.SearchResponseBuilder(
+        builder = response_builder.SearchResponseBuilder(
             responseClass, 100, 2 ** 32)
         # If not set, pageToken should be empty string
         self.assertIsNone(builder.getNextPageToken())

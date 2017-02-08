@@ -22,9 +22,10 @@ import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.server.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.exceptions as exceptions
-import ga4gh.server.protocol as protocol
 
 import repo.models as m
+
+import ga4gh.schemas.protocol as protocol
 
 MODE_READ = 'r'
 MODE_WRITE = 'w'

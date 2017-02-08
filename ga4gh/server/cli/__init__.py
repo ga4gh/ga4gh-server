@@ -6,7 +6,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import ga4gh.server
-import ga4gh.server.protocol as protocol
+
+import ga4gh.schemas.protocol as protocol
 
 # the maximum value of a long type in avro = 2**63 - 1
 # (64 bit signed integer)

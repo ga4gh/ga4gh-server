@@ -15,9 +15,10 @@ import ga4gh.server.datamodel.datasets as datasets
 import ga4gh.server.datamodel.variants as variants
 import ga4gh.server.datamodel.references as references
 import ga4gh.server.datamodel.ontologies as ontologies
-import ga4gh.server.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
+
+import ga4gh.schemas.protocol as protocol
 
 
 def testVariantAnnotationSets():
