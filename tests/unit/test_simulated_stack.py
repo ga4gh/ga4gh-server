@@ -1206,14 +1206,14 @@ class TestSimulatedStack(unittest.TestCase):
 
     def testPeersList(self):
         path = "/peers/list"
-        peers = list(self.dataRepo.getPeers())
+        peers = list(self.dataRepo.getPeers(0, 10))
         self.assertGreater(len(peers), 0)
         request = protocol.ListPeersRequest()
+        request.page_size = 10
         responseData = self.sendSearchRequest(
             path, request, protocol.ListPeersResponse)
         for peer in responseData.peers:
-            self.assertIn(peer, peers, "The returned peer should match what"
-                                       "is in the registry")
+            self.dataRepo.getPeer(peer.uri)
 
     def testAnnounce(self):
         path = "/announce"
@@ -1226,11 +1226,13 @@ class TestSimulatedStack(unittest.TestCase):
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         self.assertEqual(response.status_code, 400)
 
-
     def testInfo(self):
         path = "/info"
-        responseData = self.app.get(path)
+        response = self.app.get(path)
+        responseData = protocol.fromJson(response.data,
+                                         protocol.GetInfoResponse)
         self.assertIsNotNone(responseData)
+        self.assertEqual(responseData.protocol_version, "0.6.0a10")
 
     # TODO def testSearchGenotypePhenotypes(self):
 

@@ -40,9 +40,11 @@ class BaseModel(pw.Model):
     class Meta:
         database = databaseProxy
 
+
 class Peer(BaseModel):
     id = pw.PrimaryKeyField()
     url = pw.TextField(null=False, unique=True)
+
 
 class Announcement(BaseModel):
     # Provides the storage layer for AnnouncePeerRequest
@@ -62,6 +64,7 @@ class Announcement(BaseModel):
     def save(self, *args, **kwargs):
         self.created = datetime.datetime.now()
         return super(Announcement, self).save(*args, **kwargs)
+
 
 class Dataset(BaseModel):
     description = pw.TextField(null=True)

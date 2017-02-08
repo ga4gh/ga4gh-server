@@ -510,6 +510,7 @@ class TestVerify(AbstractRepoManagerTest):
         cmd = "verify {}".format(self._repoPath)
         self.runCommand(cmd)
 
+
 class TestAddPeer(AbstractRepoManagerTest):
 
     def setUp(self):

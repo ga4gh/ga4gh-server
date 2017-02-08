@@ -601,6 +601,13 @@ def robots():
         app.static_folder, flask.request.path[1:])
 
 
+@DisplayedRoute('/info')
+@requires_auth
+def getInfo():
+    return handleFlaskGetRequest(
+        None, flask.request, app.backend.runGetInfo)
+
+
 @DisplayedRoute('/references/<id>')
 @requires_auth
 def getReference(id):
@@ -708,11 +715,13 @@ def searchIndividuals():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchIndividuals)
 
+
 @DisplayedRoute('/peers/list', postMethod=True)
 @requires_auth
 def listPeers():
     return handleFlaskPostRequest(
         flask.request, app.backend.runListPeers)
+
 
 @DisplayedRoute('/announce', postMethod=True)
 @requires_auth
@@ -720,6 +729,7 @@ def announce():
     # We can't use the post handler here because we want detailed request
     # data.
     return app.backend.runAddAnnouncement(flask.request)
+
 
 @DisplayedRoute(
     '/biosamples/<no(search):id>',

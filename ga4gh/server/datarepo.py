@@ -44,6 +44,13 @@ def isUrl(urlString):
 
     return regex.match(urlString)
 
+
+# http://stackoverflow.com/questions/1305532/convert-python-dict-to-object
+class Struct:
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
+
+
 class AbstractDataRepository(object):
     """
     An abstract GA4GH data repository
@@ -93,21 +100,16 @@ class AbstractDataRepository(object):
         return [self._datasetIdMap[id_] for id_ in self._datasetIds]
 
     def insertPeer(self, peer):
-        print('adding peer')
-        print(peer)
         self._peers.append(peer)
 
     def getPeer(self, url):
-        print('getting peer')
-        peers = filter(lambda x: x.uri, self._peers)
-        print(peers)
-        print(self._peers)
+        peers = filter(lambda x: x.uri == url, self.getPeers())
         if len(peers) == 0:
             raise exceptions.PeerNotFoundException(url)
         return peers[0]
 
-    def getPeers(self, limit=100, offset=0):
-        return self._peers[offset:offset + limit]
+    def getPeers(self, offset=0, limit=100):
+        return map(lambda x: Struct(**x), self._peers[offset:offset + limit])
 
     def insertAnnouncement(self, announcement):
         if not isUrl(announcement.get('url')):
@@ -439,8 +441,12 @@ class SimulatedDataRepository(AbstractDataRepository):
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
             numPhenotypeAssociations=2,
             numPhenotypeAssociationSets=1,
-            numAlignments=2, numRnaQuantSets=2, numExpressionLevels=2):
+            numAlignments=2, numRnaQuantSets=2, numExpressionLevels=2,
+            numPeers=200):
         super(SimulatedDataRepository, self).__init__()
+
+        for i in xrange(numPeers):
+            self.insertPeer({"uri": "http://test{}.org".format(i)})
 
         # References
         for i in range(numReferenceSets):
@@ -520,13 +526,14 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.PeerNotFoundException(url)
         return peers[0]
 
-    def getPeers(self, limit=100, offset=0):
+    def getPeers(self, offset=0, limit=0):
         select = m.Peer.select()
         return select.order_by(m.Peer.id).limit(limit).offset(offset)
 
     def insertAnnouncement(self, announcement):
-        if not isUrl(announcement.get('url')):
-            raise exceptions.BadRequestException(announcement.get('url'))
+        url = announcement.get('url', None)
+        if not url or not isUrl(url):
+            raise exceptions.BadRequestException(url)
         try:
             m.Announcement.create(
                 url=announcement.get('url'),
@@ -1256,7 +1263,6 @@ class SqlDataRepository(AbstractDataRepository):
         q.execute()
 
     def insertPeer(self, peer):
-        print('adding a PEER SQL style')
         try:
             m.Peer.create(
                 url=peer.get('url'),

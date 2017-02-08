@@ -650,12 +650,18 @@ class Backend(object):
 
     def peerToProtocol(self, peerRecord):
         peer = protocol.Peer()
-        peer.uri = peerRecord.url
-        attributes = json.loads(peerRecord.attributes)
-        for key in attributes:
-            protocol.setAttribute(
-                peer.attributes.attr[key].values, attributes[key])
+        peer.uri = peerRecord.uri
+        if hasattr(peerRecord, 'attributes'):
+            attributes = json.loads(peerRecord.attributes)
+            for key in attributes:
+                protocol.setAttribute(
+                    peer.attributes.attr[key].values, attributes[key])
         return peer
+
+    def runGetInfo(self, request):
+        return protocol.toJson(protocol.GetInfoResponse(
+            protocol_version="0.6.0a10"
+        ))
 
     def runAddAnnouncement(self, request):
         announcement = {}
@@ -673,7 +679,7 @@ class Backend(object):
         announcement['url'] = requestData.peer.uri
         announcement['attributes'] = protocol.toJson(
             requestData.peer.attributes)
-        announcement['hostname'] = request.host_url # From flask request
+        announcement['hostname'] = request.host_url
         self.getDataRepository().insertAnnouncement(announcement)
         return protocol.toJson(protocol.AnnouncePeerResponse(success=True))
 

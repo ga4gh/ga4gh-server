@@ -214,6 +214,7 @@ class PeerNotFoundException(NotFoundException):
         self.message = "A peer with url '{}' was not found".format(
             url)
 
+
 class PathNotFoundException(NotFoundException):
     message = "The request path was not found"
 
