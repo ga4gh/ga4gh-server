@@ -8,8 +8,10 @@ from __future__ import unicode_literals
 
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.exceptions as exceptions
-import ga4gh.server.protocol as protocol
 import ga4gh.server.paging as paging
+import ga4gh.server.response_builder as response_builder
+
+import ga4gh.schemas.protocol as protocol
 
 
 class Backend(object):
@@ -579,7 +581,7 @@ class Backend(object):
             request.page_size = self._defaultPageSize
         if request.page_size < 0:
             raise exceptions.BadPageSizeException(request.page_size)
-        responseBuilder = protocol.SearchResponseBuilder(
+        responseBuilder = response_builder.SearchResponseBuilder(
             responseClass, request.page_size, self._maxResponseLength)
         nextPageToken = None
         for obj, nextPageToken in objectGenerator(request):

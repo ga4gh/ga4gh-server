@@ -10,9 +10,10 @@ import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.datasets as datasets
 import ga4gh.server.datamodel.references as references
 import ga4gh.server.datamodel.rna_quantification as rna_quantification
-import ga4gh.server.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
+
+import ga4gh.schemas.protocol as protocol
 
 
 _datasetName = "ds"

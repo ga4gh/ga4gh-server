@@ -13,9 +13,9 @@ import os
 import inspect
 
 import google.protobuf.json_format as json_format
-import ga4gh.server.protocol as protocol
 
 import ga4gh.schemas.pb as pb
+import ga4gh.schemas.protocol as protocol
 
 
 def _wrapTestMethod(method):

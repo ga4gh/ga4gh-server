@@ -28,11 +28,11 @@ from werkzeug.contrib.cache import FileSystemCache
 import ga4gh.server
 import ga4gh.server.backend as backend
 import ga4gh.server.datamodel as datamodel
-import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datarepo as datarepo
-
 import ga4gh.server.auth as auth
+
+import ga4gh.schemas.protocol as protocol
 
 
 MIMETYPE = "application/json"

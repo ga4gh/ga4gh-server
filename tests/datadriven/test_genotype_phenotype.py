@@ -10,9 +10,10 @@ import rdflib
 
 import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.server.datamodel.datasets as datasets
-import ga4gh.server.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
+
+import ga4gh.schemas.protocol as protocol
 
 
 def testG2P():

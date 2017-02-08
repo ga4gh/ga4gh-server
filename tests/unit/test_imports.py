@@ -171,6 +171,7 @@ class ImportGraphLayerChecker(object):
             'ga4gh/server/backend.py',
             'ga4gh/server/datarepo.py',
             'ga4gh/server/paging.py',
+            'ga4gh/server/response_builder.py',
         ],
         'exceptions': [
             'ga4gh/server/exceptions.py',
@@ -194,9 +195,6 @@ class ImportGraphLayerChecker(object):
             'ga4gh/server/converters.py',
             'ga4gh/server/configtest.py',
         ],
-        'protocol': [
-            'ga4gh/server/protocol.py',
-        ],
         'config': [
             'ga4gh/server/serverconfig.py',
         ],
@@ -217,7 +215,6 @@ class ImportGraphLayerChecker(object):
         ['repo'],
         ['exceptions'],
         ['config'],
-        ['protocol'],
     ]
 
     def __init__(self, graph):

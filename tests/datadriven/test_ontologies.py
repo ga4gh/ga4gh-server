@@ -11,13 +11,13 @@ import os.path
 # accessing ontology information, since this is the method we use
 # in the main code. However, other libraries have very heavy dependencies.
 import ga4gh.server.datamodel.obo_parser as obo_parser
-import ga4gh.server.protocol as protocol
 import ga4gh.server.datamodel.ontologies as ontologies
 
 import tests.datadriven as datadriven
 import tests.paths as paths
 
 from ga4gh.schemas.ga4gh.common_pb2 import OntologyTerm
+import ga4gh.schemas.protocol as protocol
 
 
 def testReferenceSets():
