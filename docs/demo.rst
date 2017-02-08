@@ -185,7 +185,7 @@ performed above, we can use the following code:
 
     from __future__ import print_function
 
-    import ga4gh.client.client as client
+    from ga4gh.client import client
 
     httpClient = client.HttpClient("http://localhost:8000")
     # Get the datasets on the server.
@@ -273,7 +273,9 @@ around 3GB. Next, we will add the reference set.
 .. code-block:: bash
 
     $ ga4gh_repo add-referenceset registry.db /full/path/to/hs37d5.fa.gz \
-      -d “NCBI37 assembly of the human genome” --ncbiTaxonId 9606 --name NCBI37 \
+      -d “NCBI37 assembly of the human genome” \
+      --species '{"id": "9606", "term": "Homo sapiens", "source_name": "NCBI", "source_version: "1.0"}' \
+      --name NCBI37 \
       --sourceUri "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/hs37d5.fa.gz"
 
 A number of optional command line flags have been added. We will be
@@ -292,7 +294,7 @@ site <https://github.com/The-Sequence-Ontology/SO-Ontologies>`_.
 
 .. code-block:: bash
 
-    $ wget https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/so-xp.obo
+    $ wget https://raw.githubusercontent.com/The-Sequence-Ontology/SO-Ontologies/master/so-xp-dec.obo
     $ ga4gh_repo add-ontology registry.db /full/path/to/so-xp.obo -n so-xp
 
 Add sequence annotations
@@ -308,6 +310,7 @@ with these annotations.
 
 .. code-block:: bash
 
+    $ wget https://ga4ghstore.blob.core.windows.net/testing/gencode_v24lift37.db
     $ ga4gh_repo add-featureset registry.db 1kgenomes /full/path/to/gencode.v24lift37.annotation.db \
         --referenceSetName NCBI37 --ontologyName so-xp
 
@@ -322,7 +325,7 @@ release.
 .. code-block:: bash
 
     $ wget -m ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/ -nd -P release -l 1
-    rm release/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+    $ rm release/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
 
 These files are already compressed and indexed. For the server to make use
 of the files in this directory we must move the `wgs` file, since it covers
@@ -390,7 +393,7 @@ client's libraries for use in your own programs:
 
 .. code-block:: python
 
-    >>> import ga4gh.client.client as client
+    >>> from ga4gh.client import client
     >>> client.HttpClient
     <class 'ga4gh_client.client.HttpClient'>
 

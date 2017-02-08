@@ -9,6 +9,7 @@ import mock
 import os
 import tempfile
 import unittest
+import json
 
 import ga4gh.server.cli.repomanager as cli_repomanager
 import tests.paths as paths
@@ -30,6 +31,7 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         name="test",
         created="2016-05-19T21:00:19Z",
         updated="2016-05-19T21:00:19Z"))
+    attributes = {"key1": "value1", "key2": "value2"}
 
     def setUp(self):
         _, self.repoFile = tempfile.mkstemp(
@@ -49,8 +51,10 @@ class RepoManagerEndToEndTest(unittest.TestCase):
         self._runCmd("add-ontology", paths.ontologyPath)
         self._runCmd(
             "add-referenceset", paths.faPath,
-            '-n', paths.referenceSetName)
-        self._runCmd("add-dataset", self.datasetName)
+            '-n', paths.referenceSetName,
+            '-A', json.dumps(self.attributes))
+        self._runCmd("add-dataset", self.datasetName,
+                     '-A', json.dumps(self.attributes))
         self._runCmd("add-biosample",
                      self.datasetName,
                      self.biosampleName,
@@ -61,27 +65,32 @@ class RepoManagerEndToEndTest(unittest.TestCase):
                      self.individual)
         self._runCmd(
             "add-readgroupset", self.datasetName, paths.bamPath,
-            '-R', paths.referenceSetName, '-n', paths.readGroupSetName)
+            '-R', paths.referenceSetName, '-n', paths.readGroupSetName,
+            '-A', json.dumps(self.attributes))
         self._runCmd(
             "add-featureset", self.datasetName, paths.featuresPath,
-            '-R', paths.referenceSetName, '-O', paths.ontologyName)
+            '-R', paths.referenceSetName, '-O', paths.ontologyName,
+            '-A', json.dumps(self.attributes))
         # ensure we can handle trailing slashes
         vcfPath = paths.vcfDirPath + '/'
         self._runCmd(
             "add-variantset", self.datasetName,
-            vcfPath, '-R', paths.referenceSetName)
+            vcfPath, '-R', paths.referenceSetName,
+            '-A', json.dumps(self.attributes))
         variantAnnotationSetName = "vas"
         self._runCmd(
             "add-variantset", self.datasetName,
             paths.annotatedVcfPath, '-R', paths.referenceSetName,
-            "-aO", paths.ontologyName, "-n", variantAnnotationSetName)
+            "-aO", paths.ontologyName, "-n", variantAnnotationSetName,
+            '-A', json.dumps(self.attributes))
         phenotypeAssociationSetName = "paSet"
         self._runCmd(
             "add-phenotypeassociationset",
             self.datasetName,
             paths.phenotypeAssociationSetPath,
             "-n",
-            phenotypeAssociationSetName)
+            phenotypeAssociationSetName,
+            '-A', json.dumps(self.attributes))
 
         self._runCmd("verify")
         self._runCmd("list")

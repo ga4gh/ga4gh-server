@@ -172,20 +172,7 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
             # Useful for inspecting the structure of read tags
             # print("{key} {ktype}: {value}, {vtype}".format(
             #     key=key, ktype=type(key), value=value, vtype=type(value)))
-            if isinstance(value, (int, float, long)):
-                ret.info[key].values.add().number_value = value
-            elif (isinstance(value, str)):
-                ret.info[key].values.add().string_value = value
-            elif (isinstance(value, bool)):
-                ret.info[key].values.add().bool_value = value
-            elif (isinstance(value, array.array)):
-                for v in value:
-                    if isinstance(v, (int, float, long)):
-                        ret.info[key].values.add().number_value = v
-                    else:
-                        ret.info[key].values.add().string_value = v
-            else:
-                ret.info[key].values.add().string_value = value
+            protocol.setAttribute(ret.attributes.attr[key].values, value)
 
         if SamFlags.isFlagSet(read.flag, SamFlags.MATE_UNMAPPED):
             ret.next_mate_position.Clear()
@@ -304,6 +291,7 @@ class AbstractReadGroupSet(datamodel.DatamodelObject):
         readGroupSet.name = self.getLocalId()
         readGroupSet.dataset_id = self.getParentContainer().getId()
         readGroupSet.stats.CopyFrom(self.getStats())
+        self.serializeAttributes(readGroupSet)
         return readGroupSet
 
     def getNumAlignedReads(self):
@@ -400,19 +388,19 @@ class HtslibReadGroupSet(AlignmentDataMixin, AbstractReadGroupSet):
         """
         return self._bamHeaderReferenceSetName
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, readGroupSetRecord):
         """
         Populates the instance variables of this ReadGroupSet from the
         specified database row.
         """
-        self._dataUrl = row[b'dataUrl']
-        self._indexFile = row[b'indexFile']
+        self._dataUrl = readGroupSetRecord.dataurl
+        self._indexFile = readGroupSetRecord.indexfile
         self._programs = []
-        for jsonDict in json.loads(row[b'programs']):
+        for jsonDict in json.loads(readGroupSetRecord.programs):
             program = protocol.fromJson(json.dumps(jsonDict),
                                         protocol.Program)
             self._programs.append(program)
-        stats = protocol.fromJson(row[b'stats'], protocol.ReadStats)
+        stats = protocol.fromJson(readGroupSetRecord.stats, protocol.ReadStats)
         self._numAlignedReads = stats.aligned_read_count
         self._numUnalignedReads = stats.unaligned_read_count
 
@@ -529,6 +517,7 @@ class AbstractReadGroup(datamodel.DatamodelObject):
         readGroup.programs.extend(self.getPrograms())
         readGroup.description = pb.string(self.getDescription())
         readGroup.experiment.CopyFrom(self.getExperiment())
+        self.serializeAttributes(readGroup)
         return readGroup
 
     def getStats(self):
@@ -765,18 +754,19 @@ class HtslibReadGroup(AlignmentDataMixin, AbstractReadGroup):
         self._platformUnit = readGroupHeader.get('PU', None)
         self._runTime = readGroupHeader.get('DT', None)
 
-    def populateFromRow(self, row):
+    def populateFromRow(self, readGroupRecord):
         """
         Populate the instance variables using the specified DB row.
         """
-        self._sampleName = row[b'sampleName']
-        self._biosampleId = row[b'biosampleId']
-        self._description = row[b'description']
-        self._predictedInsertSize = row[b'predictedInsertSize']
-        stats = protocol.fromJson(row[b'stats'], protocol.ReadStats)
+        self._sampleName = readGroupRecord.samplename
+        self._biosampleId = readGroupRecord.biosampleid
+        self._description = readGroupRecord.description
+        self._predictedInsertSize = readGroupRecord.predictedinsertsize
+        stats = protocol.fromJson(readGroupRecord.stats, protocol.ReadStats)
         self._numAlignedReads = stats.aligned_read_count
         self._numUnalignedReads = stats.unaligned_read_count
-        experiment = protocol.fromJson(row[b'experiment'], protocol.Experiment)
+        experiment = protocol.fromJson(
+            readGroupRecord.experiment, protocol.Experiment)
         self._instrumentModel = experiment.instrument_model
         self._sequencingCenter = experiment.sequencing_center
         self._experimentDescription = experiment.description

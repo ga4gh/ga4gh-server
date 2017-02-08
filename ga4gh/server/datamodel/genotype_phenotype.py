@@ -31,6 +31,7 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
         pas.name = self.getLocalId()
         pas.id = self.getId()
         pas.dataset_id = self.getParentContainer().getId()
+        self.serializeAttributes(pas)
         return pas
 
 
@@ -212,14 +213,12 @@ class G2PUtility(object):
             terms = [terms]
         elements = []
         for term in terms:
-            if not issubclass(term.__class__, dict):
-                term = protocol.toJsonDict(term)
-            if term['id']:
+            if term.term_id:
                 elements.append('?{} = <{}> '.format(
-                    element_type, term['id']))
+                    element_type, term.term_id))
             else:
                 elements.append('?{} = <{}> '.format(
-                    element_type, self._toNamespaceURL(term['term'])))
+                    element_type, self._toNamespaceURL(term.term)))
         elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
@@ -403,10 +402,7 @@ class G2PUtility(object):
 
         term = protocol.OntologyTerm()
         term.term = association['evidence_type']
-        term.id = phenotype['id']
-        term.source_version = self._version
-        term.source_name = self._getPrefix(
-            self._getPrefixURL(association['id']))
+        term.term_id = phenotype['id']
         evidence.evidence_type.MergeFrom(term)
 
         evidence.description = self._getIdentifier(association['evidence'])
@@ -424,10 +420,7 @@ class G2PUtility(object):
 
         term = protocol.OntologyTerm()
         term.term = environment['id']
-        term.id = 'http://purl.obolibrary.org/obo/RO_0002606'
-        term.source_version = self._version
-        term.source_name = self._getPrefix(
-            self._getPrefixURL(association['id']))
+        term.term_id = 'http://purl.obolibrary.org/obo/RO_0002606'
         environmentalContext.environment_type.MergeFrom(term)
 
         fpa.environmental_contexts.extend([environmentalContext])
@@ -436,10 +429,7 @@ class G2PUtility(object):
         phenotypeInstance = protocol.PhenotypeInstance()
         term = protocol.OntologyTerm()
         term.term = phenotype[TYPE]
-        term.id = phenotype['id']
-        term.source_version = self._version
-        term.source_name = self._getPrefix(
-            self._getPrefixURL(association['id']))
+        term.term_id = phenotype['id']
         phenotypeInstance.type.MergeFrom(term)
 
         phenotypeInstance.description = phenotype[LABEL]

@@ -44,12 +44,13 @@ class PhenotypeAssociationFeatureSet(
             parentContainer, localId)
 
     # mimic featureset
-    def populateFromRow(self, row):
+    def populateFromRow(self, featureSetRecord):
         """
         Populates the instance variables of this FeatureSet from the specified
         DB row.
         """
-        self._dbFilePath = row[b'dataUrl']
+        self._dbFilePath = featureSetRecord.dataurl
+        self.setAttributesJson(featureSetRecord.attributes)
         self.populateFromFile(self._dbFilePath)
 
     def populateFromFile(self, dataUrl):
@@ -110,7 +111,7 @@ class PhenotypeAssociationFeatureSet(
         for featureType in sorted(feature[TYPE]):
             if "obolibrary" in featureType:
                 term.term = self._featureTypeLabel(featureType)
-                term.id = featureType
+                term.term_id = featureType
                 pbFeature.feature_type.MergeFrom(term)
                 break
 
@@ -124,7 +125,7 @@ class PhenotypeAssociationFeatureSet(
         pbFeature.attributes.MergeFrom(protocol.Attributes())
         for key in feature:
             for val in sorted(feature[key]):
-                pbFeature.attributes.vals[key].values.add().string_value = val
+                pbFeature.attributes.attr[key].values.add().string_value = val
 
         if featureId in self._locationMap:
             location = self._locationMap[featureId]
