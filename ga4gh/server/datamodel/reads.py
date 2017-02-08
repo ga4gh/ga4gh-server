@@ -10,7 +10,6 @@ import datetime
 import json
 import os.path
 import random
-import array
 
 import pysam
 

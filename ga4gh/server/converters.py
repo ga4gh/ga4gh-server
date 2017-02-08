@@ -216,19 +216,20 @@ class SamLine(object):
 
     @classmethod
     def _parseTagValue(cls, value):
-        val = protocol.getValueFromValue(value)
-        if len(val) > 1:
-            return [v for v in val]
-        elif isinstance(val[0], (int, float, long)):
-            return val[0]
+        if len(value) > 1:
+            return [protocol.getValueFromValue(v) for v in value]
+        elif isinstance(
+                protocol.getValueFromValue(value[0]), (int, float, long)):
+            return protocol.getValueFromValue(value[0])
         else:
-            return str(val[0]).encode(cls._encoding)
+            return str(
+                protocol.getValueFromValue(value[0])).encode(cls._encoding)
 
     @classmethod
     def toTags(cls, read):
         tags = []
-        for tag, value in read.attributes.attr.items():
-            val = cls._parseTagValue(value)
+        for tag, values in read.attributes.attr.items():
+            val = cls._parseTagValue(list(values.values))
             tags.append((tag.encode(cls._encoding), val))
         retval = tuple(tags)
         return retval

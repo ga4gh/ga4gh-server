@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 
 import collections
 import os
-import array
 
 import ga4gh.server.backend as backend
 import ga4gh.server.datamodel as datamodel
