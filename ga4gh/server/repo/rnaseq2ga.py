@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 import sqlite3
 import csv
-import uuid
 
 import ga4gh.server.exceptions as exceptions
 
@@ -35,7 +34,7 @@ class RnaSqliteStore(object):
                        programs TEXT,
                        biosample_id TEXT)''')
         self._cursor.execute('''CREATE TABLE Expression (
-                       id TEXT NOT NULL PRIMARY KEY,
+                       id INTEGER,
                        rna_quantification_id TEXT,
                        name TEXT,
                        feature_id TEXT,
@@ -45,7 +44,8 @@ class RnaSqliteStore(object):
                        score REAL,
                        units INTEGER,
                        conf_low REAL,
-                       conf_hi REAL)''')
+                       conf_hi REAL,
+                       PRIMARY KEY (id, rna_quantification_Id))''')
         self._dbConn.commit()
 
     def addRNAQuantification(self, datafields):
@@ -83,6 +83,22 @@ class RnaSqliteStore(object):
             self._dbConn.commit()
             self._expressionValueList = []
 
+    def createIndices(self):
+        """
+        Index columns that are queried. The expression index can
+        take a long time.
+        """
+
+        sql = '''CREATE INDEX feature_id_index
+                 ON Expression (feature_id)'''
+        self._cursor.execute(sql)
+        self._dbConn.commit()
+
+        sql = '''CREATE INDEX expression_index
+                 ON Expression (expression)'''
+        self._cursor.execute(sql)
+        self._dbConn.commit()
+
 
 class AbstractWriter(object):
     """
@@ -109,6 +125,16 @@ class AbstractWriter(object):
         elif units == "tpm":
             self._units = 2
 
+    def setColNum(self, header, name, defaultNum=None):
+        colNum = defaultNum
+        try:
+            colNum = header.index(name)
+        except:
+            if defaultNum is None:
+                raise exceptions.RepoManagerException(
+                       "Missing {} column in expression table.".format(name))
+        return colNum
+
     def writeExpression(self, rnaQuantificationId, quantfilename,
                         featureSetNames=None):
         """
@@ -124,24 +150,31 @@ class AbstractWriter(object):
                 featureSets.append(
                     self._dataset.getFeatureSetByName(annotationName))
         with open(quantfilename, "r") as quantFile:
-            quantificationReader = csv.DictReader(quantFile, delimiter=b"\t")
+            quantificationReader = csv.reader(quantFile, delimiter=b"\t")
+            header = next(quantificationReader)
+            expressionLevelColNum = self.setColNum(
+                                        header, self._expressionLevelCol)
+            nameColNum = self.setColNum(header, self._nameCol)
+            countColNum = self.setColNum(header, self._countCol, -1)
+            confColLowNum = self.setColNum(header, self._confColLow, -1)
+            confColHiNum = self.setColNum(header, self._confColHi, -1)
+            featureColNum = self.setColNum(header, self._featureCol)
+            expressionId = 0
             for expression in quantificationReader:
-                expressionLevel = expression[self._expressionLevelCol]
-                expressionId = str(uuid.uuid4())
-                name = expression[self._nameCol]
+                expressionLevel = expression[expressionLevelColNum]
+                name = expression[nameColNum]
                 rawCount = 0.0
-                if self._countCol in expression.keys():
-                    rawCount = expression[self._countCol]
+                if countColNum != -1:
+                    rawCount = expression[countColNum]
                 confidenceLow = 0.0
                 confidenceHi = 0.0
                 score = 0.0
-                if (self._confColLow in expression.keys() and
-                        self._confColHi in expression.keys()):
-                    confidenceLow = float(expression[self._confColLow])
-                    confidenceHi = float(expression[self._confColHi])
+                if confColLowNum != -1 and confColHiNum != -1:
+                    confidenceLow = float(expression[confColLowNum])
+                    confidenceHi = float(expression[confColHiNum])
                     score = (confidenceLow + confidenceHi)/2
 
-                featureName = expression[self._featureCol]
+                featureName = expression[featureColNum]
                 featureId = ""
                 if featureSets is not None:
                     for featureSet in featureSets:
@@ -157,6 +190,7 @@ class AbstractWriter(object):
                               rawCount, score, units, confidenceLow,
                               confidenceHi)
                 self._db.addExpression(datafields)
+                expressionId += 1
             self._db.batchAddExpression()
 
 
@@ -257,8 +291,9 @@ def writeExpressionTable(writer, data, featureSetNames=None):
 
 
 def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
-              dataset=None, featureType="gene", description="", programs="",
-              featureSetNames="", readGroupSetNames="", biosampleId=""):
+              dataset=None, featureType="gene",
+              description="", programs="", featureSetNames="",
+              readGroupSetNames="", biosampleId=""):
     """
     Reads RNA Quantification data in one of several formats and stores the data
     in a sqlite database for use by the GA4GH reference server.
@@ -292,8 +327,7 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
         writer = KallistoWriter(rnaDB, featureType, dataset=dataset)
     elif rnaType == "rsem":
         writer = RsemWriter(rnaDB, featureType, dataset=dataset)
-    writeRnaseqTable(rnaDB, [localName], description,
-                     featureSetIds,
+    writeRnaseqTable(rnaDB, [localName], description, featureSetIds,
                      readGroupId=readGroupIds, programs=programs,
                      biosampleId=biosampleId)
     writeExpressionTable(

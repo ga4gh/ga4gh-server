@@ -5,7 +5,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import tempfile
+import os
+import shutil
+
 import ga4gh.server.datarepo as datarepo
+import ga4gh.server.repo.rnaseq2ga as rnaseq2ga
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.datasets as datasets
 import ga4gh.server.datamodel.references as references
@@ -175,3 +180,22 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         self.assertEqual(
             _expressionTestData["num_expression_entries"],
             len(expressionLevels))
+
+    def testLoadRsemData(self):
+        """
+        Test ingest of rsem data.
+        """
+        tempDir = tempfile.mkdtemp(prefix="ga4gh_rna_quant",
+                                   dir=tempfile.gettempdir())
+        dbName = os.path.join(tempDir, "rnaQuantDB")
+        storeDb = rnaseq2ga.RnaSqliteStore(dbName)
+        storeDb.createTables()
+
+        testTsvFile = os.path.join(
+                            paths.testDataDir,
+                            "datasets/dataset1/rnaQuant/rsem_test_data.tsv")
+        rnaQuantId = "rqsId"
+        rnaseq2ga.rnaseq2ga(testTsvFile, dbName, rnaQuantId,
+                            'rsem', featureType="gene")
+
+        shutil.rmtree(tempDir)

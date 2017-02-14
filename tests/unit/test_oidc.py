@@ -110,7 +110,7 @@ class TestFrontendOidc(unittest.TestCase):
             "DATA_SOURCE": "simulated://",
             "OIDC_CLIENT_ID": "123",
             "OIDC_CLIENT_SECRET": RANDSTR,
-            "OIDC_PROVIDER": "http://auth.com",
+            "OIDC_PROVIDER": "https://accounts.example.com",
             "SECRET_KEY": "secret"
             # "DEBUG" : True
         }
