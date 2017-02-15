@@ -16,10 +16,11 @@ import unittest
 import pysam
 
 import ga4gh.server.datamodel.references as references
-import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import tests.datadriven as datadriven
 import tests.paths as paths
+
+import ga4gh.schemas.protocol as protocol
 
 
 def testReferenceSets():

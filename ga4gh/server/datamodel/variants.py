@@ -16,12 +16,12 @@ import re
 
 import pysam
 
-import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel as datamodel
 
 import ga4gh.schemas.pb as pb
 import ga4gh.schemas.ga4gh.common_pb2 as common_pb2
+import ga4gh.schemas.protocol as protocol
 
 
 ANNOTATIONS_VEP_V82 = "VEP_v82"

@@ -6,15 +6,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import unittest
-
 import json
 
-import ga4gh.server.protocol as protocol
 import ga4gh.server.backend as backend
 import ga4gh.server.datarepo as datarepo
 
 import ga4gh.client.client as client
 import ga4gh.common.utils as utils
+import ga4gh.schemas.protocol as protocol
 
 
 class DatamodelObjectWrapper(object):

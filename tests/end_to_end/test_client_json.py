@@ -10,17 +10,17 @@ from __future__ import unicode_literals
 import datetime
 import json
 import unittest
+import freezegun
 
 import ga4gh.client.client as client
 import ga4gh.server.backend as backend
 import ga4gh.client.cli as cli_client
-import ga4gh.server.protocol as protocol
 import ga4gh.server.datarepo as datarepo
 import ga4gh.common.utils as utils
 import tests.paths as paths
 import server
 
-import freezegun
+import ga4gh.schemas.protocol as protocol
 
 
 def setUpModule():

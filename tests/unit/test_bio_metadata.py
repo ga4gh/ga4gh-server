@@ -10,7 +10,8 @@ import unittest
 import ga4gh.server.datamodel.datasets as datasets
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel.bio_metadata as bioMetadata
-import ga4gh.server.protocol as protocol
+
+import ga4gh.schemas.protocol as protocol
 
 
 class TestIndividuals(unittest.TestCase):

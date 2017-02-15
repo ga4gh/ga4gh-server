@@ -5,17 +5,15 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import ga4gh.server.protocol as protocol
-
+import shutil
 import unittest
 import logging
 
 import ga4gh.server.frontend as frontend
 import ga4gh.server.exceptions as exceptions
-
 import ga4gh.server.auth as auth
 
-import shutil
+import ga4gh.schemas.protocol as protocol
 
 
 class TestAuth0(unittest.TestCase):
