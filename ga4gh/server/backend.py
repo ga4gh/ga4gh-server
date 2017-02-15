@@ -650,12 +650,13 @@ class Backend(object):
 
     def peerToProtocol(self, peerRecord):
         peer = protocol.Peer()
-        peer.uri = peerRecord.uri
+        peer.uri = peerRecord.url
         if hasattr(peerRecord, 'attributes'):
             attributes = json.loads(peerRecord.attributes)
-            for key in attributes:
-                protocol.setAttribute(
-                    peer.attributes.attr[key].values, attributes[key])
+            if attributes:
+                for key in attributes:
+                    protocol.setAttribute(
+                        peer.attributes.attr[key].values, attributes[key])
         return peer
 
     def runGetInfo(self, request):

@@ -1266,7 +1266,7 @@ class SqlDataRepository(AbstractDataRepository):
         try:
             m.Peer.create(
                 url=peer.get('url'),
-                attributes=json.dumps(peer['attributes']))
+                attributes=json.dumps(peer.get('attributes', None)))
         except Exception as e:
             raise exceptions.RepoManagerException(e)
 

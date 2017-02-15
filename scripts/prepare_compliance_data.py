@@ -97,6 +97,8 @@ class ComplianceDataMunger(object):
         self.repo.open("w")
         self.repo.initialise()
 
+        self.repo.insertPeer({"url": "http://1kgenomes.ga4gh.org"})
+
         referenceFileName = "ref_brca1.fa"
         inputRef = os.path.join(
             self.inputDirectory, referenceFileName)
