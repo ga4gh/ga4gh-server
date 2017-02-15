@@ -652,7 +652,7 @@ class Backend(object):
 
     def peerToProtocol(self, peerRecord):
         peer = protocol.Peer()
-        peer.uri = peerRecord.url
+        peer.url = peerRecord.url
         if hasattr(peerRecord, 'attributes'):
             attributes = json.loads(peerRecord.attributes)
             if attributes:
@@ -677,12 +677,13 @@ class Backend(object):
         requestData = protocol.fromJson(
             request.get_data(), protocol.AnnouncePeerRequest)
         # validate the url
-        if (not requestData.peer.uri):
+        if (not requestData.peer.url):
             raise exceptions.BadRequestException("Bad URL provided")
-        announcement['url'] = requestData.peer.uri
+        announcement['url'] = requestData.peer.url
         announcement['attributes'] = protocol.toJson(
             requestData.peer.attributes)
         announcement['hostname'] = request.host_url
+        # announcement['submitter_json'] = #request
         self.getDataRepository().insertAnnouncement(announcement)
         return protocol.toJson(protocol.AnnouncePeerResponse(success=True))
 

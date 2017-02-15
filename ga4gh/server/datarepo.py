@@ -104,7 +104,7 @@ class AbstractDataRepository(object):
         self._peers.append(peer)
 
     def getPeer(self, url):
-        peers = filter(lambda x: x.uri == url, self.getPeers())
+        peers = filter(lambda x: x.url == url, self.getPeers())
         if len(peers) == 0:
             raise exceptions.PeerNotFoundException(url)
         return peers[0]
@@ -447,7 +447,7 @@ class SimulatedDataRepository(AbstractDataRepository):
         super(SimulatedDataRepository, self).__init__()
 
         for i in xrange(numPeers):
-            self.insertPeer({"uri": "http://test{}.org".format(i)})
+            self.insertPeer({"url": "http://test{}.org".format(i)})
 
         # References
         for i in range(numReferenceSets):
