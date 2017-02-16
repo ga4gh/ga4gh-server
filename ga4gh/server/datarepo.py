@@ -21,6 +21,7 @@ import ga4gh.server.datamodel.bio_metadata as biodata
 import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.server.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.server.datamodel.rna_quantification as rna_quantification
+import ga4gh.server.datamodel.peers as peers
 import ga4gh.server.exceptions as exceptions
 
 import repo.models as m
@@ -110,7 +111,7 @@ class AbstractDataRepository(object):
         return peers[0]
 
     def getPeers(self, offset=0, limit=100):
-        return map(lambda x: Struct(**x), self._peers[offset:offset + limit])
+        return self._peers[offset:offset + limit]
 
     def insertAnnouncement(self, announcement):
         if not isUrl(announcement.get('url')):
@@ -447,7 +448,8 @@ class SimulatedDataRepository(AbstractDataRepository):
         super(SimulatedDataRepository, self).__init__()
 
         for i in xrange(numPeers):
-            self.insertPeer({"url": "http://test{}.org".format(i)})
+            peer = peers.Peer("http://test{}.org".format(i))
+            self.insertPeer(peer)
 
         # References
         for i in range(numReferenceSets):
@@ -1266,8 +1268,8 @@ class SqlDataRepository(AbstractDataRepository):
     def insertPeer(self, peer):
         try:
             m.Peer.create(
-                url=peer.get('url'),
-                attributes=json.dumps(peer.get('attributes', None)))
+                url=peer.getUrl(),
+                attributes=json.dumps(peer.getAttributes()))
         except Exception as e:
             raise exceptions.RepoManagerException(e)
 

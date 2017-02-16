@@ -38,6 +38,7 @@ class BaseConfig(object):
     FILE_HANDLE_CACHE_MAX_SIZE = 50
 
     LANDING_MESSAGE_HTML = "landing_message.html"
+    PEER_LIST = "peerlist.txt"
 
 
 class ComplianceConfig(BaseConfig):

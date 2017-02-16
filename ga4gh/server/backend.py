@@ -13,8 +13,6 @@ import ga4gh.server.response_builder as response_builder
 
 import ga4gh.schemas.protocol as protocol
 
-import json
-
 
 class Backend(object):
     """
@@ -650,21 +648,9 @@ class Backend(object):
         callSet = variantSet.getCallSet(id_)
         return self.runGetRequest(callSet)
 
-    def peerToProtocol(self, peerRecord):
-        peer = protocol.Peer()
-        peer.url = peerRecord.url
-        if hasattr(peerRecord, 'attributes'):
-            attributes = json.loads(peerRecord.attributes)
-            if attributes:
-                for key in attributes:
-                    protocol.setAttribute(
-                        peer.attributes.attr[key].values, attributes[key])
-        return peer
-
     def runGetInfo(self, request):
         return protocol.toJson(protocol.GetInfoResponse(
-            protocol_version="0.6.0a10"
-        ))
+            protocol_version=protocol.version))
 
     def runAddAnnouncement(self, request):
         announcement = {}
@@ -698,11 +684,12 @@ class Backend(object):
             page_size = self._defaultPageSize
 
         if request.page_token:
-            # TODO better ensure this is typed right?
             page_token = int(request.page_token)
         else:
             page_token = 0
 
+        # We use SQL to do the paging directly. Asking for one more than the
+        # page tells us whether to set a nextPageToken.
         peers = list(self.getDataRepository().getPeers(
             offset=page_token * page_size,
             limit=page_size + 1))
@@ -711,7 +698,8 @@ class Backend(object):
         if len(peers) > page_size:
             response.next_page_token = str(int(page_token) + 1)
 
-        response.peers.extend(map(self.peerToProtocol, peers[0:page_size]))
+        response.peers.extend(
+            map(lambda x: x.toProtocolElement(), peers[0:page_size]))
 
         return protocol.toJson(response)
 
