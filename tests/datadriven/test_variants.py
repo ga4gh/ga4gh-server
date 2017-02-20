@@ -386,8 +386,10 @@ class VariantSetTest(datadriven.DataDrivenTest):
                         keyMap[key].type, content[contentKey].type)
                     self.assertEqual(keyMap[key].number, convertPyvcfNumber(
                         content[contentKey].num))
+                    # pysam introduces opinionated stripping
                     self.assertEqual(
-                        keyMap[key].description, content[contentKey].desc)
+                        keyMap[key].description,
+                        content[contentKey].desc.rstrip())
         testMetaLength = (
             1 + len(self._formats) + len(self._infos) - gtCounter)
         self.assertEqual(len(keyMap), testMetaLength)

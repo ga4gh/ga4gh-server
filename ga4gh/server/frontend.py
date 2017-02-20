@@ -15,7 +15,6 @@ import functools
 
 import flask
 import flask.ext.cors as cors
-import humanize
 import werkzeug
 import oic
 import oic.oauth2
@@ -109,12 +108,6 @@ class ServerStatus(object):
         except:
             html = flask.render_template("landing_message.html")
         return html
-
-    def getNaturalUptime(self):
-        """
-        Returns the uptime in a human-readable format.
-        """
-        return humanize.naturaltime(self.startupTime)
 
     def getProtocolVersion(self):
         """

@@ -26,8 +26,10 @@ PyVCF==0.6.7
 freezegun==0.3.6
 guppy==0.1.10
 snakefood==1.4
+lxml==3.4.4
 Sphinx==1.4.6
 sphinx_rtd_theme
+sphinx-argparse==0.1.15
 
 # Requirements for OIDC provider
 pyaml==15.03.1
