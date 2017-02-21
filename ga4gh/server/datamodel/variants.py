@@ -16,12 +16,11 @@ import re
 
 import pysam
 
-import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel as datamodel
 
 import ga4gh.schemas.pb as pb
-import ga4gh.schemas.ga4gh.common_pb2 as common_pb2
+import ga4gh.schemas.protocol as protocol
 
 
 ANNOTATIONS_VEP_V82 = "VEP_v82"
@@ -29,12 +28,22 @@ ANNOTATIONS_VEP_V77 = "VEP_v77"
 ANNOTATIONS_SNPEFF = "SNPEff"
 
 
+# Utility functions for module
+
 def isUnspecified(str):
     """
     Checks whether a string is None or an
     empty string. Returns a boolean.
     """
     return str == "" or str is None
+
+
+_nothing = object()
+
+
+def isEmptyIter(it):
+    """Return True iff the iterator is empty or exhausted"""
+    return next(it, _nothing) is _nothing
 
 
 class CallSet(datamodel.DatamodelObject):
@@ -413,21 +422,6 @@ class SimulatedVariantSet(AbstractVariantSet):
             call.genotype_likelihood.extend([-100, -100, -100])
         variant.id = self.getVariantId(variant)
         return variant
-
-
-def _encodeValue(value):
-    if isinstance(value, (list, tuple)):
-        return [common_pb2.AttributeValue(string_value=str(v)) for v in value]
-    else:
-        return [common_pb2.AttributeValue(string_value=str(value))]
-
-
-_nothing = object()
-
-
-def isEmptyIter(it):
-    """Return True iff the iterator is empty or exhausted"""
-    return next(it, _nothing) is _nothing
 
 
 class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
@@ -993,16 +987,19 @@ class SimulatedVariantAnnotationSet(AbstractVariantAnnotationSet):
     def _getRandomOntologyTerm(self, randomNumberGenerator):
         # TODO more mock options from simulated seqOnt?
         ontologyTuples = [
-            ("intron_variant", "SO:0001627"),
-            ("exon_variant", "SO:0001791")]
+            ("intron_variant", "SO:0001627", "LOW"),
+            ("exon_variant", "SO:0001791", "LOW"),
+            ("misense_variant", "SO:0001583", "MODERATE"),
+            ("stop_gained", "SO:0001587", "HIGH")]
         term = protocol.OntologyTerm()
-        ontologyTuple = randomNumberGenerator.choice(ontologyTuples)
-        term.term, term.term_id = ontologyTuple[0], ontologyTuple[1]
-        return term
+        picked = randomNumberGenerator.choice(ontologyTuples)
+        term.term, term.term_id, impact = picked
+        return term, impact
 
     def _addTranscriptEffectOntologyTerm(self, effect, randomNumberGenerator):
-        effect.effects.add().CopyFrom(
-            self._getRandomOntologyTerm(randomNumberGenerator))
+        term, impact = self._getRandomOntologyTerm(randomNumberGenerator)
+        effect.effects.add().CopyFrom(term)
+        protocol.setAttribute(effect.attributes.attr["impact"].values, impact)
         return effect
 
     def _generateAnalysisResult(self, effect, ann, randomNumberGenerator):
@@ -1040,6 +1037,33 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
     Class representing a single variant annotation derived from an
     annotated variant set.
     """
+    CSQ_FIELDS = ("alternate_bases", "gene", "feature_id",
+                  "featureType", "effects", "cdnaPos", "cdsPos",
+                  "protPos", "aminos", "codons", "existingVar",
+                  "distance", "strand", "sift", "polyPhen",
+                  "motifName", "motifPos", "highInfPos",
+                  "motifScoreChange")
+    VEP_FIELDS = ("alternate_bases", "effects", "impact", "symbol",
+                  "geneName", "featureType", "feature_id",
+                  "trBiotype", "exon", "intron",
+                  "hgvs_annotation.transcript",
+                  "hgvs_annotation.protein", "cdnaPos", "cdsPos",
+                  "protPos", "aminos", "codons", "existingVar",
+                  "distance", "strand", "symbolSource", "hgncId",
+                  "hgvsOffset")
+    SNPEFF_FIELDS = ("alternate_bases", "effects", "impact",
+                     "geneName", "geneId", "featureType",
+                     "feature_id", "trBiotype", "rank",
+                     "hgvs_annotation.transcript",
+                     "hgvs_annotation.protein", "cdnaPos", "cdsPos",
+                     "protPos", "distance", "errsWarns")
+    EXCLUDED_FIELDS = ("effects", "geneName", "gene", "geneId", "featureType",
+                       "trBiotype", "rank", "cdnaPos", "cdsPos",
+                       "protPos", "distance", "exon", "intron",
+                       "aminos", "codons", "existingVar", "distance",
+                       "strand", "symbolSource", "hgncId",
+                       "hgvsOffset")
+
     def __init__(self, variantSet, localId):
         super(HtslibVariantAnnotationSet, self).__init__(variantSet, localId)
 
@@ -1126,19 +1150,10 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         :param endPosition:
         :return: generator of protocol.VariantAnnotation
         """
-        # TODO Refactor this so that we use the annotationType information
-        # where it makes most sense, and rename the various methods so that
-        # it's clear what program/version combination they operate on.
         variantIter = self._variantSet.getPysamVariants(
             referenceName, startPosition, endPosition)
-        if self._annotationType == ANNOTATIONS_SNPEFF:
-            transcriptConverter = self.convertTranscriptEffectSnpEff
-        elif self._annotationType == ANNOTATIONS_VEP_V82:
-            transcriptConverter = self.convertTranscriptEffectVEP
-        else:
-            transcriptConverter = self.convertTranscriptEffectCSQ
         for record in variantIter:
-            yield self.convertVariantAnnotation(record, transcriptConverter)
+            yield self.convertVariantAnnotation(record)
 
     def convertLocation(self, pos):
         """
@@ -1244,69 +1259,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         self.addProteinLocation(effect, protPos)
         return effect
 
-    def convertTranscriptEffectCSQ(self, annStr, hgvsG):
-        """
-        Takes the consequence string of an annotated VCF using a
-        CSQ field as opposed to ANN and returns an array of
-        transcript effects.
-        :param annStr: String
-        :param hgvsG: String
-        :return: [protocol.TranscriptEffect]
-        """
-        # Allele|Gene|Feature|Feature_type|Consequence|cDNA_position|
-        # CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|
-        # DISTANCE|STRAND|SIFT|PolyPhen|MOTIF_NAME|MOTIF_POS|HIGH_INF_POS|MOTIF_SCORE_CHANGE
-
-        (alt, gene, featureId, featureType, effects, cdnaPos,
-         cdsPos, protPos, aminos, codons, existingVar, distance,
-         strand, sift, polyPhen, motifName, motifPos,
-         highInfPos, motifScoreChange) = annStr.split('|')
-        terms = effects.split("&")
-        transcriptEffects = []
-        for term in terms:
-            transcriptEffects.append(
-                self._createCsqTranscriptEffect(
-                    alt, term, protPos,
-                    cdnaPos, featureId))
-        return transcriptEffects
-
-    def _createCsqTranscriptEffect(
-            self, alt, term, protPos, cdnaPos, featureId):
-        effect = self._createGaTranscriptEffect()
-        effect.alternate_bases = alt
-        effect.effects.extend(self.convertSeqOntology(term))
-        effect.feature_id = featureId
-        # These are not present in the data
-        self.addLocations(effect, protPos, cdnaPos)
-        effect.id = self.getTranscriptEffectId(effect)
-        return effect
-
-    def convertTranscriptEffectVEP(self, annStr, hgvsG):
-        """
-        Takes the ANN string of a VEP generated VCF, splits it
-        and returns a populated GA4GH transcript effect object.
-        :param annStr: String
-        :param hgvsG: String
-        :return: effect protocol.TranscriptEffect
-        """
-        effect = self._createGaTranscriptEffect()
-        (alt, effects, impact, symbol, geneName, featureType,
-         featureId, trBiotype, exon, intron, hgvsC, hgvsP,
-         cdnaPos, cdsPos, protPos, aminos, codons,
-         existingVar, distance, strand, symbolSource,
-         hgncId, hgvsOffset) = annStr.split('|')
-        effect.alternate_bases = alt
-        effect.effects.extend(self.convertSeqOntology(effects))
-        effect.feature_id = featureId
-        effect.hgvs_annotation.CopyFrom(protocol.HGVSAnnotation())
-        effect.hgvs_annotation.genomic = hgvsG
-        effect.hgvs_annotation.transcript = hgvsC
-        effect.hgvs_annotation.protein = hgvsP
-        self.addLocations(effect, protPos, cdnaPos)
-        effect.id = self.getTranscriptEffectId(effect)
-        return effect
-
-    def convertTranscriptEffectSnpEff(self, annStr, hgvsG):
+    def convertTranscriptEffect(self, annStr, hgvsG):
         """
         Takes the ANN string of a SnpEff generated VCF, splits it
         and returns a populated GA4GH transcript effect object.
@@ -1315,17 +1268,25 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         :return: effect protocol.TranscriptEffect()
         """
         effect = self._createGaTranscriptEffect()
-        # SnpEff and VEP don't agree on this :)
-        (alt, effects, impact, geneName, geneId, featureType,
-            featureId, trBiotype, rank, hgvsC, hgvsP, cdnaPos,
-            cdsPos, protPos, distance, errsWarns) = annStr.split('|')
-        effect.alternate_bases = alt
-        effect.effects.extend(self.convertSeqOntology(effects))
-        effect.feature_id = featureId
-        effect.hgvs_annotation.genomic = hgvsG
-        effect.hgvs_annotation.transcript = hgvsC
-        effect.hgvs_annotation.protein = hgvsP
-        self.addLocations(effect, protPos, cdnaPos)
+        effect.hgvs_annotation.CopyFrom(protocol.HGVSAnnotation())
+        annDict = dict()
+        if self._annotationType == ANNOTATIONS_SNPEFF:
+            annDict = dict(zip(self. SNPEFF_FIELDS, annStr.split("|")))
+        elif self._annotationType == ANNOTATIONS_VEP_V82:
+            annDict = dict(zip(self.VEP_FIELDS, annStr.split("|")))
+        else:
+            annDict = dict(zip(self.CSQ_FIELDS, annStr.split("|")))
+        annDict["hgvs_annotation.genomic"] = hgvsG if hgvsG else u''
+        for key, val in annDict.items():
+            try:
+                protocol.deepSetAttr(effect, key, val)
+            except AttributeError:
+                if val and key not in self.EXCLUDED_FIELDS:
+                    protocol.setAttribute(
+                        effect.attributes.attr[key].values, val)
+        effect.effects.extend(self.convertSeqOntology(annDict.get('effects')))
+        self.addLocations(
+            effect, annDict.get('protPos'), annDict.get('cdnaPos'))
         effect.id = self.getTranscriptEffectId(effect)
         return effect
 
@@ -1341,7 +1302,7 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
             self._ontology.getGaTermByName(soName)
             for soName in seqOntStr.split('&')]
 
-    def convertVariantAnnotation(self, record, transcriptConverter):
+    def convertVariantAnnotation(self, record):
         """
         Converts the specfied pysam variant record into a GA4GH variant
         annotation object using the specified function to convert the
@@ -1350,33 +1311,13 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         variant = self._variantSet.convertVariant(record, [])
         annotation = self._createGaVariantAnnotation()
         annotation.variant_id = variant.id
+        gDots = record.info.get(b'HGVS.g')
         # Convert annotations from INFO field into TranscriptEffect
         transcriptEffects = []
-        hgvsG = record.info.get(b'HGVS.g')
-        if transcriptConverter != self.convertTranscriptEffectCSQ:
-            annotations = record.info.get(b'ANN')
-            transcriptEffects = self._convertAnnotations(
-                annotations, variant, hgvsG, transcriptConverter)
-        else:
-            annotations = record.info.get('CSQ'.encode())
-            transcriptEffects = []
-            for ann in annotations:
-                transcriptEffects.extend(
-                    self.convertTranscriptEffectCSQ(ann, hgvsG))
+        annotations = record.info.get(b'ANN') or record.info.get(b'CSQ')
+        for i, ann in enumerate(annotations):
+            hgvsG = gDots[i % len(variant.alternate_bases)] if gDots else None
+            transcriptEffects.append(self.convertTranscriptEffect(ann, hgvsG))
         annotation.transcript_effects.extend(transcriptEffects)
         annotation.id = self.getVariantAnnotationId(variant, annotation)
         return variant, annotation
-
-    def _convertAnnotations(
-            self, annotations, variant, hgvsG, transcriptConverter):
-        transcriptEffects = []
-        if annotations is not None:
-            for index, ann in enumerate(annotations):
-                altshgvsG = ""
-                if hgvsG is not None:
-                    # The HGVS.g field contains an element for
-                    # each alternate allele
-                    altshgvsG = hgvsG[index % len(variant.alternate_bases)]
-                transcriptEffects.append(
-                    transcriptConverter(ann, altshgvsG))
-        return transcriptEffects

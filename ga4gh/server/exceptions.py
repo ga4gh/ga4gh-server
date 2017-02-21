@@ -11,7 +11,7 @@ import zlib
 import inspect
 import json
 
-import ga4gh.server.protocol as protocol
+import ga4gh.schemas.protocol as protocol
 
 
 def getExceptionClass(errorCode):
@@ -477,6 +477,18 @@ class FeatureSetNotSpecifiedException(BadRequestException):
         self.message = (
             "One of featureSetId or parentId must be supplied."
         )
+
+
+class ContinuousSetNotFoundException(NotFoundException):
+    def __init__(self, continuousSetId):
+        self.message = (
+            "ContinuousSet with id '{0}' not found".format(continuousSetId))
+
+
+class ContinuousSetNameNotFoundException(NotFoundException):
+    def __init__(self, continuousSetId):
+        self.message = (
+            "ContinuousSet with name '{0}' not found".format(continuousSetId))
 
 
 class SequenceAnnotationNotFoundException(NotFoundException):

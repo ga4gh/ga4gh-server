@@ -10,17 +10,17 @@ from __future__ import unicode_literals
 import datetime
 import json
 import unittest
+import freezegun
 
 import ga4gh.client.client as client
 import ga4gh.server.backend as backend
 import ga4gh.client.cli as cli_client
-import ga4gh.server.protocol as protocol
 import ga4gh.server.datarepo as datarepo
 import ga4gh.common.utils as utils
 import tests.paths as paths
 import server
 
-import freezegun
+import ga4gh.schemas.protocol as protocol
 
 
 def setUpModule():
@@ -421,6 +421,34 @@ class TestClientJson(TestClientOutput):
             iterator = self._client.search_feature_sets(dataset.id)
             self.verifyParsedOutputsEqual(
                 iterator, "featuresets-search",
+                "--datasetId {}".format(dataset.id))
+
+    def testSearchContinuous(self):
+        for dataset in self._client.search_datasets():
+            datasetId = dataset.id
+            for continuousSet in self._client.search_continuous_sets(
+                                                datasetId):
+                iterator = self._client.search_continuous(
+                                continuousSet.id, 'chr19', 49305897, 49306090)
+                self.verifyParsedOutputsEqual(
+                    iterator, "continuous-search",
+                    "--continuousSetId {} --referenceName {}"
+                    " --start {} --end {}".format(
+                        continuousSet.id, 'chr19', 49305897, 49306090))
+
+    def testGetContinuousSets(self):
+        for dataset in self._client.search_datasets():
+            datasetId = dataset.id
+            for continuousSet in self._client.search_continuous_sets(
+                                                datasetId):
+                self.verifyParsedOutputsEqual(
+                    [continuousSet], "continuoussets-get", continuousSet.id)
+
+    def testSearchContinuousSets(self):
+        for dataset in self._client.search_datasets():
+            iterator = self._client.search_continuous_sets(dataset.id)
+            self.verifyParsedOutputsEqual(
+                iterator, "continuoussets-search",
                 "--datasetId {}".format(dataset.id))
 
     def testSearchGenotypePhenotype(self):

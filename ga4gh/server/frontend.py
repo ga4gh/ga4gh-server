@@ -28,11 +28,11 @@ from werkzeug.contrib.cache import FileSystemCache
 import ga4gh.server
 import ga4gh.server.backend as backend
 import ga4gh.server.datamodel as datamodel
-import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datarepo as datarepo
-
 import ga4gh.server.auth as auth
+
+import ga4gh.schemas.protocol as protocol
 
 
 MIMETYPE = "application/json"
@@ -155,6 +155,13 @@ class ServerStatus(object):
         """
         return app.backend.getDataRepository().getDataset(
             datasetId).getFeatureSets()
+
+    def getContinuousSets(self, datasetId):
+        """
+        Returns the list of continuous sets for the dataset
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getContinuousSets()
 
     def getReadGroupSets(self, datasetId):
         """
@@ -698,6 +705,20 @@ def searchFeatures():
         flask.request, app.backend.runSearchFeatures)
 
 
+@DisplayedRoute('/continuoussets/search', postMethod=True)
+@requires_auth
+def searchContinuousSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchContinuousSets)
+
+
+@DisplayedRoute('/continuous/search', postMethod=True)
+@requires_auth
+def searchContinuous():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchContinuous)
+
+
 @DisplayedRoute('/biosamples/search', postMethod=True)
 @requires_auth
 def searchBiosamples():
@@ -810,6 +831,15 @@ def getFeatureSet(id):
 def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
+
+
+@DisplayedRoute(
+    '/continuoussets/<no(search):id>',
+    pathDisplay='/continuoussets/<id>')
+@requires_auth
+def getcontinuousSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetContinuousSet)
 
 
 @DisplayedRoute(

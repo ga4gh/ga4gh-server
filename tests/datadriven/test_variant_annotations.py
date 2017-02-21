@@ -15,9 +15,10 @@ import ga4gh.server.datamodel.datasets as datasets
 import ga4gh.server.datamodel.variants as variants
 import ga4gh.server.datamodel.references as references
 import ga4gh.server.datamodel.ontologies as ontologies
-import ga4gh.server.protocol as protocol
 import tests.datadriven as datadriven
 import tests.paths as paths
+
+import ga4gh.schemas.protocol as protocol
 
 
 def testVariantAnnotationSets():
@@ -108,6 +109,7 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
                       "hgvsP", "cdnaPos", "cdsPos", "protPos",
                       "distance", "errsWarns"]
         values = annfield.split('|')
+        values[1] = values[1].split('&')  # split effects
         return dict(zip(fields, values))
 
     def getDataModelInstance(self, localId, dataPath):
@@ -154,35 +156,43 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
             if 'ANN' in pyvcfVariant.INFO:
                 pyvcfAnn = pyvcfVariant.INFO['ANN']
                 i = 0
-                for pyvcfEffect, gaEffect in \
+                for pyvcfEffect, gaEff in \
                         zip(pyvcfAnn, gaVariantAnnotation.transcript_effects):
                     effectDict = self.splitAnnField(pyvcfEffect)
                     self.assertEqual(
-                        gaEffect.alternate_bases, effectDict['alt'])
+                        map(lambda e: e.term, gaEff.effects),
+                        effectDict['effects'])
                     self.assertEqual(
-                        gaEffect.feature_id, effectDict['featureId'])
+                        gaEff.attributes.attr['impact'].values[0].string_value,
+                        effectDict['impact'])
                     self.assertEqual(
-                        gaEffect.hgvs_annotation.transcript,
+                        gaEff.alternate_bases, effectDict['alt'])
+                    self.assertEqual(
+                        gaEff.feature_id, effectDict['featureId'])
+                    self.assertEqual(
+                        gaEff.hgvs_annotation.transcript,
                         effectDict['hgvsC'])
                     self.assertEqual(
-                        gaEffect.hgvs_annotation.protein, effectDict['hgvsP'])
+                        gaEff.hgvs_annotation.protein, effectDict['hgvsP'])
                     if 'HGVS.g' in pyvcfVariant.INFO:
                         # Not all VCF have this field
                         index = i % len(pyvcfVariant.INFO['HGVS.g'])
                         self.assertEqual(
-                            gaEffect.hgvs_annotation.genomic,
+                            gaEff.hgvs_annotation.genomic,
                             pyvcfVariant.INFO['HGVS.g'][index])
                     i += 1
             elif 'CSQ' in pyvcfVariant.INFO:
                 pyvcfAnn = pyvcfVariant.INFO['CSQ']
-                transcriptEffects = []
-                for ann in pyvcfAnn:
-                    transcriptEffects += self._splitCsqEffects(ann)
-                for treff, gaEffect in zip(
+                transcriptEffects = [
+                    self._splitCsqEffects(ann) for ann in pyvcfAnn]
+                for treff, gaEff in zip(
                         transcriptEffects,
                         gaVariantAnnotation.transcript_effects):
-                    self.assertEqual(gaEffect.alternate_bases, treff['alt'])
-                    self.assertEqual(gaEffect.feature_id, treff['featureId'])
+                    self.assertEqual(
+                        map(lambda e: e.term, gaEff.effects),
+                        treff['effects'])
+                    self.assertEqual(gaEff.alternate_bases, treff['alt'])
+                    self.assertEqual(gaEff.feature_id, treff['featureId'])
             self.assertGreater(len(gaVariantAnnotation.transcript_effects), 0)
 
     def _splitCsqEffects(self, annStr):
@@ -191,14 +201,11 @@ class VariantAnnotationSetTest(datadriven.DataDrivenTest):
             distance, strand, sift, polyPhen, motifName,
             motifPos, highInfPos,
             motifScoreChange) = annStr.split('|')
-        terms = effects.split("&")
-        treffs = []
-        for term in terms:
-            effect = {}
-            effect['featureId'] = featureId
-            effect['alt'] = alt
-            treffs.append(effect)
-        return treffs
+        effect = {}
+        effect['featureId'] = featureId
+        effect['alt'] = alt
+        effect['effects'] = effects.split("&")
+        return effect
 
     def testVariantsValid(self):
         end = datamodel.PysamDatamodelMixin.vcfMax

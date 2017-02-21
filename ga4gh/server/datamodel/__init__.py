@@ -13,7 +13,8 @@ import json
 import os
 
 import ga4gh.server.exceptions as exceptions
-import ga4gh.server.protocol as protocol
+
+import ga4gh.schemas.protocol as protocol
 
 
 class PysamFileHandleCache(object):
@@ -415,6 +416,14 @@ class FeatureCompoundId(FeatureSetCompoundId):
     The compound id class for a feature
     """
     fields = FeatureSetCompoundId.fields + ['featureId']
+
+
+class ContinuousSetCompoundId(DatasetCompoundId):
+    """
+    The compound id for a continuous set
+    """
+    fields = DatasetCompoundId.fields + ['continuous_set']
+    containerIds = DatasetCompoundId.containerIds + [('continuous_set_id', 1)]
 
 
 class ReadGroupSetCompoundId(DatasetCompoundId):

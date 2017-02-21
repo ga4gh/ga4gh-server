@@ -7,9 +7,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import ga4gh.server.datamodel as datamodel
-import ga4gh.server.protocol as protocol
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.sqlite_backend as sqlite_backend
+
+import ga4gh.schemas.protocol as protocol
 
 
 """
@@ -68,7 +69,7 @@ class SqliteExpressionLevel(AbstractExpressionLevel):
     """
     def __init__(self, parentContainer, record):
         super(SqliteExpressionLevel, self).__init__(
-            parentContainer, record["id"])
+            parentContainer, str(record["id"]))
         self._expression = record["expression"]
         self._featureId = record["feature_id"]
         # sqlite stores booleans as int (False = 0, True = 1)
