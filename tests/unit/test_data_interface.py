@@ -123,6 +123,10 @@ class TestInterfacingLayer(unittest.TestCase):
             feature = self._client.get_feature(featureId)
             self.assertEqual(repoFeature, feature)
 
+    def testGetContinuousSet(self):
+        self._testGetMethod(
+            self._repo.allContinuousSets, self._client.get_continuous_set)
+
     def testGetReferenceSet(self):
         self._testGetMethod(
             self._repo.getReferenceSets, self._client.get_reference_set)
@@ -214,6 +218,12 @@ class TestInterfacingLayer(unittest.TestCase):
         self._testSearchMethodInContainer(
             'getFeatureSets',
             self._client.search_feature_sets,
+            self._repo.getDatasets())
+
+    def testSearchContinuousSets(self):
+        self._testSearchMethodInContainer(
+            'getContinuousSets',
+            self._client.search_continuous_sets,
             self._repo.getDatasets())
 
     def testSearchCallSets(self):

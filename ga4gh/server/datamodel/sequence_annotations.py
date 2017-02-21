@@ -168,7 +168,6 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         self._name = localId
         self._sourceUri = ""
         self._referenceSet = None
-        self._info = {}
 
     def getReferenceSet(self):
         """

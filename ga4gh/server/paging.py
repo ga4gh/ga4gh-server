@@ -420,3 +420,31 @@ class FeaturesIterator(SequenceIterator):
 
     def _prepare(self, obj):
         return obj
+
+
+class ContinuousIterator(SequenceIterator):
+    """
+    Iterates through continuous data
+    """
+    def __init__(self, request, continuousSet):
+        self._continuousSet = continuousSet
+        super(ContinuousIterator, self).__init__(request)
+
+    def _initialize(self):
+        if self._request.start == self._request.end == 0:
+            self._start = self._end = None
+        else:
+            self._start = self._request.start
+            self._end = self._request.end
+        self._startIndex = self._request.page_token
+        self._maxResults = self._request.page_size
+
+    def _search(self):
+        iterator = list(self._continuousSet.getContinuous(
+            self._request.reference_name,
+            self._start,
+            self._end))
+        return iterator
+
+    def _prepare(self, obj):
+        return obj

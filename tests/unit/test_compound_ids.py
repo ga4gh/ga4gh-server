@@ -17,6 +17,7 @@ import ga4gh.server.datamodel.references as references
 import ga4gh.server.datamodel.reads as reads
 import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel.continuous as continuous
 
 
 class ExampleCompoundId(datamodel.CompoundId):
@@ -189,6 +190,10 @@ class TestCompoundIds(unittest.TestCase):
     def getFeatureSet(self):
         return sequence_annotations.AbstractFeatureSet(
             self.getDataset(), "featureSet")
+
+    def getContinuousSet(self):
+        return continuous.AbstractContinuousSet(
+            self.getDataset(), "continuousSet")
 
     def getRnaQuantificationSet(self):
         return rna_quantification.AbstractRnaQuantificationSet(
@@ -460,6 +465,28 @@ class TestCompoundIds(unittest.TestCase):
         self.assertEqual(cid.dataset, "a")
         self.assertEqual(cid.feature_set, "b")
         self.verifyParseFailure(idStr, datamodel.FeatureSetCompoundId)
+
+    def testContinuousSet(self):
+        continuousSet = self.getContinuousSet()
+        dataset = continuousSet.getParentContainer()
+        localId = "continuousSet"
+        cid = datamodel.ContinuousSetCompoundId(
+            dataset.getCompoundId(), localId)
+        self.assertRaises(
+            ValueError, datamodel.ContinuousSetCompoundId,
+            dataset.getCompoundId())
+        self.assertEqual(cid.dataset, dataset.getLocalId())
+        self.assertEqual(cid.continuous_set, continuousSet.getLocalId())
+        self.assertEqual(cid.dataset_id, dataset.getId())
+        self.assertEqual(cid.continuous_set_id, continuousSet.getId())
+
+    def testContinuous(self):
+        idStr = '["a","b"]'
+        obfuscated = datamodel.CompoundId.obfuscate(idStr)
+        cid = datamodel.ContinuousSetCompoundId.parse(obfuscated)
+        self.assertEqual(cid.dataset, "a")
+        self.assertEqual(cid.continuous_set, "b")
+        self.verifyParseFailure(idStr, datamodel.ContinuousSetCompoundId)
 
     def testRnaQuantification(self):
         rnaQuantification = self.getRnaQuantification()

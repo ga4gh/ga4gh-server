@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.reads as reads
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel.continuous as continuous
 import ga4gh.server.datamodel.variants as variants
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datamodel.bio_metadata as biodata
@@ -33,6 +34,9 @@ class Dataset(datamodel.DatamodelObject):
         self._featureSetIds = []
         self._featureSetIdMap = {}
         self._featureSetNameMap = {}
+        self._continuousSetIds = []
+        self._continuousSetIdMap = {}
+        self._continuousSetNameMap = {}
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
@@ -92,13 +96,23 @@ class Dataset(datamodel.DatamodelObject):
 
     def addFeatureSet(self, featureSet):
         """
-        Adds the specified variantSet to this dataset.
+        Adds the specified featureSet to this dataset.
         """
         id_ = featureSet.getId()
         self._featureSetIdMap[id_] = featureSet
         self._featureSetIds.append(id_)
         name = featureSet.getLocalId()
         self._featureSetNameMap[name] = featureSet
+
+    def addContinuousSet(self, continuousSet):
+        """
+        Adds the specified continuousSet to this dataset.
+        """
+        id_ = continuousSet.getId()
+        self._continuousSetIdMap[id_] = continuousSet
+        self._continuousSetIds.append(id_)
+        name = continuousSet.getLocalId()
+        self._continuousSetNameMap[name] = continuousSet
 
     def addReadGroupSet(self, readGroupSet):
         """
@@ -230,6 +244,43 @@ class Dataset(datamodel.DatamodelObject):
         Returns the feature set at the specified index in this dataset.
         """
         return self._featureSetIdMap[self._featureSetIds[index]]
+
+    def getContinuousSets(self):
+        """
+        Returns the list of ContinuousSets in this dataset
+        """
+        return [self._continuousSetIdMap[id_]
+                for id_ in self._continuousSetIds]
+
+    def getNumContinuousSets(self):
+        """
+        Returns the number of continuous sets in this dataset.
+        """
+        return len(self._continuousSetIds)
+
+    def getContinuousSet(self, id_):
+        """
+        Returns the ContinuousSet with the specified id, or raises a
+        ContinuousSetNotFoundException otherwise.
+        """
+        if id_ not in self._continuousSetIdMap:
+            raise exceptions.ContinuousSetNotFoundException(id_)
+        return self._continuousSetIdMap[id_]
+
+    def getContinuousSetByName(self, name):
+        """
+        Returns the ContinuousSet with the specified name, or raises
+        an exception otherwise.
+        """
+        if name not in self._continuousSetNameMap:
+            raise exceptions.ContinuousSetNameNotFoundException(name)
+        return self._continuousSetNameMap[name]
+
+    def getContinuousSetByIndex(self, index):
+        """
+        Returns the continuous set at the specified index in this dataset.
+        """
+        return self._continuousSetIdMap[self._continuousSetIds[index]]
 
     def getNumBiosamples(self):
         """
@@ -399,7 +450,8 @@ class SimulatedDataset(Dataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1, numFeatureSets=1, numPhenotypeAssociationSets=1,
+            numAlignments=1, numFeatureSets=1, numContinuousSets=1,
+            numPhenotypeAssociationSets=1,
             numPhenotypeAssociations=2, numRnaQuantSets=2,
             numExpressionLevels=2):
         super(SimulatedDataset, self).__init__(localId)
@@ -462,6 +514,14 @@ class SimulatedDataset(Dataset):
                 self, localId, seed)
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
+        # Continuous
+        for i in range(numContinuousSets):
+            localId = "simConts{}".format(i)
+            seed = randomSeed + i
+            continuousSet = continuous.SimulatedContinuousSet(
+                self, localId, seed)
+            continuousSet.setReferenceSet(referenceSet)
+            self.addContinuousSet(continuousSet)
         # RnaQuantificationSets
         for i in range(numRnaQuantSets):
             localId = 'simRqs{}'.format(i)

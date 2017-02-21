@@ -127,6 +127,15 @@ class AbstractRepoManagerTest(unittest.TestCase):
             self._referenceSetName, self._ontologyName)
         self.runCommand(cmd)
 
+    def addContinuousSet(self):
+        continuousPath = paths.continuousPath
+        self._continuousSetName = paths.continuousSetName
+        cmd = (
+            "add-continuousset {} {} {} --referenceSetName={} ").format(
+            self._repoPath, self._datasetName, continuousPath,
+            self._referenceSetName)
+        self.runCommand(cmd)
+
     def addPhenotypeAssociationSet(self):
         phenotypeAssociationSetPath = paths.phenotypeAssociationSetPath
         self._phenotypeAssociationSetName = "test_phenotypeAssociationSet"
@@ -143,6 +152,12 @@ class AbstractRepoManagerTest(unittest.TestCase):
         dataset = repo.getDatasetByName(self._datasetName)
         featureSet = dataset.getFeatureSetByName(self._featureSetName)
         return featureSet
+
+    def getContinuousSet(self):
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        continuousSet = dataset.getContinuousSetByName(self._continuousSetName)
+        return continuousSet
 
 
 class TestAddFeatureSet(AbstractRepoManagerTest):
@@ -220,6 +235,61 @@ class TestRemoveFeatureSet(AbstractRepoManagerTest):
         self.runCommand(cmd)
         with self.assertRaises(exceptions.FeatureSetNameNotFoundException):
             self.getFeatureSet()
+
+
+class TestAddContinuousSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddContinuousSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+
+    def testAddContinuousSet(self):
+        self.addContinuousSet()
+        continuousSet = self.getContinuousSet()
+        self.assertEqual(continuousSet.getLocalId(), self._continuousSetName)
+        self.assertEqual(
+            continuousSet._parentContainer.getLocalId(), self._datasetName)
+        self.assertEqual(
+            continuousSet.getReferenceSet().getLocalId(),
+            self._referenceSetName)
+        # self.assertEqual(
+        #         continuousSet.getSourceUri(), self._sourceUri)
+
+    def testAddContinuousSetNoReferenceSet(self):
+        continuousPath = paths.continuousPath
+        cmd = "add-continuousset {} {} {}".format(
+            self._repoPath, self._datasetName, continuousPath)
+        self.assertRaises(
+            exceptions.RepoManagerException, self.runCommand, cmd)
+
+    def testAddContinuousSetBadReferenceSet(self):
+        continuousPath = paths.continuousPath
+        cmd = (
+            "add-continuousset {} {} {} --referenceSetName=notafefset"
+            ).format(self._repoPath, self._datasetName, continuousPath)
+        self.assertRaises(
+            exceptions.ReferenceSetNameNotFoundException,
+            self.runCommand, cmd)
+
+
+class TestRemoveContinuousSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveContinuousSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+        self.addContinuousSet()
+
+    def testRemoveContinuousSet(self):
+        continuousSet = self.getContinuousSet()
+        cmd = "remove-continuousset {} {} {} -f".format(
+            self._repoPath, self._datasetName, continuousSet.getLocalId())
+        self.runCommand(cmd)
+        with self.assertRaises(exceptions.ContinuousSetNameNotFoundException):
+            self.getContinuousSet()
 
 
 class TestAddDataset(AbstractRepoManagerTest):
@@ -500,6 +570,7 @@ class TestVerify(AbstractRepoManagerTest):
         self.addReferenceSet()
         self.addReadGroupSet()
         self.addFeatureSet()
+        self.addContinuousSet()
         self.addVariantSet()
         cmd = "verify {}".format(self._repoPath)
         self.runCommand(cmd)
@@ -857,6 +928,22 @@ class TestDuplicateNameDelete(AbstractRepoManagerTest):
         self.readDatasets()
         self.assertEqual(len(self.dataset1.getFeatureSets()), 0)
         self.assertEqual(len(self.dataset2.getFeatureSets()), 1)
+
+    def testContinuousSetDelete(self):
+        cmdString = "add-continuousset {} {} {} -R {}"
+        addContinuousSetCmd1 = cmdString.format(
+            self._repoPath, self.dataset1Name, paths.continuousPath,
+            self._referenceSetName)
+        self.runCommand(addContinuousSetCmd1)
+        addContinuousSetCmd2 = cmdString.format(
+            self._repoPath, self.dataset2Name, paths.continuousPath,
+            self._referenceSetName)
+        self.runCommand(addContinuousSetCmd2)
+        removeCmd = "remove-continuousset {} {} {} -f".format(
+            self._repoPath, self.dataset1Name, paths.continuousSetName)
+        self.runCommand(removeCmd)
+        self.readDatasets()
+        self.assertEqual(len(self.dataset1.getContinuousSets()), 0)
 
 
 class TestInvalidVariantIndexFile(AbstractRepoManagerTest):

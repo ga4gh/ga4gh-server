@@ -423,6 +423,34 @@ class TestClientJson(TestClientOutput):
                 iterator, "featuresets-search",
                 "--datasetId {}".format(dataset.id))
 
+    def testSearchContinuous(self):
+        for dataset in self._client.search_datasets():
+            datasetId = dataset.id
+            for continuousSet in self._client.search_continuous_sets(
+                                                datasetId):
+                iterator = self._client.search_continuous(
+                                continuousSet.id, 'chr19', 49305897, 49306090)
+                self.verifyParsedOutputsEqual(
+                    iterator, "continuous-search",
+                    "--continuousSetId {} --referenceName {}"
+                    " --start {} --end {}".format(
+                        continuousSet.id, 'chr19', 49305897, 49306090))
+
+    def testGetContinuousSets(self):
+        for dataset in self._client.search_datasets():
+            datasetId = dataset.id
+            for continuousSet in self._client.search_continuous_sets(
+                                                datasetId):
+                self.verifyParsedOutputsEqual(
+                    [continuousSet], "continuoussets-get", continuousSet.id)
+
+    def testSearchContinuousSets(self):
+        for dataset in self._client.search_datasets():
+            iterator = self._client.search_continuous_sets(dataset.id)
+            self.verifyParsedOutputsEqual(
+                iterator, "continuoussets-search",
+                "--datasetId {}".format(dataset.id))
+
     def testSearchGenotypePhenotype(self):
         phenotype_id = "http://ohsu.edu/cgd/87795e43"
         test_executed = 0

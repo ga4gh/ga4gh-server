@@ -479,6 +479,18 @@ class FeatureSetNotSpecifiedException(BadRequestException):
         )
 
 
+class ContinuousSetNotFoundException(NotFoundException):
+    def __init__(self, continuousSetId):
+        self.message = (
+            "ContinuousSet with id '{0}' not found".format(continuousSetId))
+
+
+class ContinuousSetNameNotFoundException(NotFoundException):
+    def __init__(self, continuousSetId):
+        self.message = (
+            "ContinuousSet with name '{0}' not found".format(continuousSetId))
+
+
 class SequenceAnnotationNotFoundException(NotFoundException):
     def __init__(self, name):
         self.message = (

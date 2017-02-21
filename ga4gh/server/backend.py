@@ -425,6 +425,24 @@ class Backend(object):
             request, featureSet, parentId)
         return iterator
 
+    def continuousGenerator(self, request):
+        """
+        Returns a generator over the (continuous, nextPageToken) pairs
+        defined by the (JSON string) request.
+        """
+        compoundId = None
+        if request.continuous_set_id != "":
+            compoundId = datamodel.ContinuousSetCompoundId.parse(
+                request.continuous_set_id)
+        if compoundId is None:
+            raise exceptions.ContinuousSetNotSpecifiedException()
+
+        dataset = self.getDataRepository().getDataset(
+            compoundId.dataset_id)
+        continuousSet = dataset.getContinuousSet(request.continuous_set_id)
+        iterator = paging.ContinuousIterator(request, continuousSet)
+        return iterator
+
     def phenotypesGenerator(self, request):
         """
         Returns a generator over the (phenotypes, nextPageToken) pairs
@@ -488,6 +506,16 @@ class Backend(object):
         return self._topLevelObjectGenerator(
             request, dataset.getNumFeatureSets(),
             dataset.getFeatureSetByIndex)
+
+    def continuousSetsGenerator(self, request):
+        """
+        Returns a generator over the (continuousSet, nextPageToken) pairs
+        defined by the specified request.
+        """
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumContinuousSets(),
+            dataset.getContinuousSetByIndex)
 
     def rnaQuantificationSetsGenerator(self, request):
         """
@@ -746,6 +774,15 @@ class Backend(object):
         featureSet = dataset.getFeatureSet(id_)
         return self.runGetRequest(featureSet)
 
+    def runGetContinuousSet(self, id_):
+        """
+        Runs a getContinuousSet request for the specified ID.
+        """
+        compoundId = datamodel.ContinuousSetCompoundId.parse(id_)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        continuousSet = dataset.getContinuousSet(id_)
+        return self.runGetRequest(continuousSet)
+
     def runGetDataset(self, id_):
         """
         Runs a getDataset request for the specified ID.
@@ -928,6 +965,29 @@ class Backend(object):
             request, protocol.SearchFeaturesRequest,
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
+
+    def runSearchContinuousSets(self, request):
+        """
+        Returns a SearchContinuousSetsResponse for the specified
+        SearchContinuousSetsRequest object.
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchContinuousSetsRequest,
+            protocol.SearchContinuousSetsResponse,
+            self.continuousSetsGenerator)
+
+    def runSearchContinuous(self, request):
+        """
+        Returns a SearchContinuousResponse for the specified
+        SearchContinuousRequest object.
+
+        :param request: JSON string representing searchContinuousRequest
+        :return: JSON string representing searchContinuousResponse
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchContinuousRequest,
+            protocol.SearchContinuousResponse,
+            self.continuousGenerator)
 
     def runSearchGenotypePhenotypes(self, request):
         return self.runSearchRequest(

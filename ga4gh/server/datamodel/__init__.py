@@ -418,6 +418,14 @@ class FeatureCompoundId(FeatureSetCompoundId):
     fields = FeatureSetCompoundId.fields + ['featureId']
 
 
+class ContinuousSetCompoundId(DatasetCompoundId):
+    """
+    The compound id for a continuous set
+    """
+    fields = DatasetCompoundId.fields + ['continuous_set']
+    containerIds = DatasetCompoundId.containerIds + [('continuous_set_id', 1)]
+
+
 class ReadGroupSetCompoundId(DatasetCompoundId):
     """
     The compound id for a read group set

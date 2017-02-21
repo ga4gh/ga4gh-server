@@ -34,6 +34,7 @@ import ga4gh.server.datamodel.variants as variants  # NOQA
 import ga4gh.server.datamodel.reads as reads  # NOQA
 import ga4gh.server.datamodel.ontologies as ontologies  # NOQA
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations  # NOQA
+import ga4gh.server.datamodel.continuous as continuous # NOQA
 import ga4gh.server.datamodel.bio_metadata as biodata  # NOQA
 import ga4gh.server.datamodel.genotype_phenotype_featureset as g2p_featureset  # NOQA
 import ga4gh.server.datamodel.genotype_phenotype as g2p_associationset  # NOQA
@@ -258,6 +259,19 @@ class ComplianceDataMunger(object):
         gencode.setReferenceSet(referenceSet)
 
         self.repo.insertFeatureSet(gencode)
+
+        # Continuous data
+        continuousFile = ("wgEncodeCaltechRnaSeqNhekR1x75dTh1014Ilna"
+                          "MinusSignalRep1.bigWig")
+        continuousFileSrc = os.path.join(
+                            self.inputDirectory, continuousFile)
+        continuousFileDest = os.path.join(
+                            self.outputDirectory, continuousFile)
+        shutil.copy(continuousFileSrc, continuousFileDest)
+        signalData = continuous.FileContinuousSet(dataset, "signalData")
+        signalData.populateFromFile(os.path.abspath(continuousFileDest))
+        signalData.setReferenceSet(referenceSet)
+        self.repo.insertContinuousSet(signalData)
 
         # add g2p featureSet
         g2pPath = os.path.join(self.inputDirectory, "cgd")

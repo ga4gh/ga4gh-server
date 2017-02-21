@@ -17,6 +17,7 @@ import ga4gh.server.datamodel.reads as reads
 import ga4gh.server.datamodel.references as references
 import ga4gh.server.datamodel.variants as variants
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
+import ga4gh.server.datamodel.continuous as continuous
 import ga4gh.server.datamodel.bio_metadata as biodata
 import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.server.datamodel.genotype_phenotype_featureset as g2pFeatureset
@@ -240,6 +241,13 @@ class AbstractDataRepository(object):
                     featureSet.getOntology().getName(),
                     featureSet.getId(),
                     sep="\t")
+            print("\tContinuousSets:")
+            for continuousSet in dataset.getContinuousSets():
+                print(
+                    "\t", continuousSet.getLocalId(),
+                    continuousSet.getReferenceSet().getLocalId(),
+                    continuousSet.getId(),
+                    sep="\t")
             print("\tPhenotypeAssociationSets:")
             for phenotypeAssociationSet in \
                     dataset.getPhenotypeAssociationSets():
@@ -325,6 +333,14 @@ class AbstractDataRepository(object):
             for featureSet in dataset.getFeatureSets():
                 for feature in featureSet.getFeatures():
                     yield feature
+
+    def allContinuousSets(self):
+        """
+        Return an iterator over all continuous sets in the data repo
+        """
+        for dataset in self.getDatasets():
+            for continuousSet in dataset.getContinuousSets():
+                yield continuousSet
 
     def allCallSets(self):
         """
@@ -554,6 +570,8 @@ class SqlDataRepository(AbstractDataRepository):
                         reference.getLocalId(), 0, length, None, 3)
                     for feature in features:
                         print("\t{}".format(feature))
+            # for continuousSet in dataset.getContinuousSets():
+            # -- there is no getContinuous
             for readGroupSet in dataset.getReadGroupSets():
                 print(
                     "\tVerifying ReadGroupSet", readGroupSet.getLocalId(),
@@ -773,6 +791,14 @@ class SqlDataRepository(AbstractDataRepository):
         """
         q = m.Featureset.delete().where(
             m.Featureset.id == featureSet.getId())
+        q.execute()
+
+    def removeContinuousSet(self, continuousSet):
+        """
+        Removes the specified continuousSet from this repository.
+        """
+        q = m.ContinuousSet.delete().where(
+            m.ContinuousSet.id == continuousSet.getId())
         q.execute()
 
     def _readDatasetTable(self):
@@ -1060,6 +1086,37 @@ class SqlDataRepository(AbstractDataRepository):
             assert featureSet.getId() == featureSetRecord.id
             dataset.addFeatureSet(featureSet)
 
+    def _createContinuousSetTable(self):
+        self.database.create_table(m.ContinuousSet)
+
+    def insertContinuousSet(self, continuousSet):
+        """
+        Inserts a the specified continuousSet into this repository.
+        """
+        # TODO add support for info and sourceUri fields.
+        try:
+            m.ContinuousSet.create(
+                id=continuousSet.getId(),
+                datasetid=continuousSet.getParentContainer().getId(),
+                referencesetid=continuousSet.getReferenceSet().getId(),
+                name=continuousSet.getLocalId(),
+                dataurl=continuousSet.getDataUrl(),
+                attributes=json.dumps(continuousSet.getAttributes()))
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
+
+    def _readContinuousSetTable(self):
+        for continuousSetRecord in m.ContinuousSet.select():
+            dataset = self.getDataset(continuousSetRecord.datasetid.id)
+            continuousSet = continuous.FileContinuousSet(
+                    dataset, continuousSetRecord.name)
+            continuousSet.setReferenceSet(
+                self.getReferenceSet(
+                    continuousSetRecord.referencesetid.id))
+            continuousSet.populateFromRow(continuousSetRecord)
+            assert continuousSet.getId() == continuousSetRecord.id
+            dataset.addContinuousSet(continuousSet)
+
     def _createBiosampleTable(self):
         self.database.create_table(m.Biosample)
 
@@ -1216,6 +1273,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createVariantSetTable()
         self._createVariantAnnotationSetTable()
         self._createFeatureSetTable()
+        self._createContinuousSetTable()
         self._createBiosampleTable()
         self._createIndividualTable()
         self._createPhenotypeAssociationSetTable()
@@ -1256,6 +1314,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._readCallSetTable()
         self._readVariantAnnotationSetTable()
         self._readFeatureSetTable()
+        self._readContinuousSetTable()
         self._readBiosampleTable()
         self._readIndividualTable()
         self._readPhenotypeAssociationSetTable()

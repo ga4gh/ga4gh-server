@@ -186,6 +186,7 @@ class ImportGraphLayerChecker(object):
             'ga4gh/server/datamodel/ontologies.py',
             'ga4gh/server/datamodel/obo_parser.py',
             'ga4gh/server/datamodel/sequence_annotations.py',
+            'ga4gh/server/datamodel/continuous.py',
             'ga4gh/server/datamodel/genotype_phenotype.py',
             'ga4gh/server/datamodel/genotype_phenotype_featureset.py',
             'ga4gh/server/gff3.py',
