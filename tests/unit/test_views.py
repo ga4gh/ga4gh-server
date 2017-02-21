@@ -12,8 +12,7 @@ import tests.paths as paths
 
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.frontend as frontend
-
-import ga4gh.schemas.protocol as protocol
+import ga4gh.server.protocol as protocol
 
 
 class TestFrontend(unittest.TestCase):
@@ -528,3 +527,11 @@ class TestFrontend(unittest.TestCase):
             response.status_code,
             404, "Ensure that when Auth0 is turned off the callback"
                  "URL returns a 404 but got {}".format(response.status_code))
+
+    def testSimplePost(self):
+        path = "/datasets/search"
+        response = protocol.fromJson(self.app.post(
+            path, headers={}).get_data(), protocol.SearchDatasetsResponse)
+        self.assertIsNotNone(response.datasets, "When an empty JSON document "
+                                                "without a mimetype is sent we can still"
+                                                "get datasets.")
