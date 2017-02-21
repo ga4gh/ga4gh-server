@@ -12,8 +12,8 @@ import tests.paths as paths
 
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.frontend as frontend
-
 import ga4gh.schemas.protocol as protocol
+import ga4gh.server.exceptions as exceptions
 
 
 class TestFrontend(unittest.TestCase):
@@ -277,10 +277,6 @@ class TestFrontend(unittest.TestCase):
         search command. If getDefined is False we check to see if it
         returns the correct status code.
         """
-        response = self.app.post(path)
-        protocol.fromJson(
-            response.get_data(), protocol.GAException)
-        self.assertEqual(415, response.status_code)
         if not getDefined:
             getResponse = self.app.get(path)
             protocol.fromJson(
@@ -288,7 +284,7 @@ class TestFrontend(unittest.TestCase):
             self.assertEqual(405, getResponse.status_code)
 
         # Malformed requests should return 400
-        for badJson in ["", None, "JSON", "<xml/>", "{]"]:
+        for badJson in ["JSON", "<xml/>", "{]"]:
             badResponse = self.app.post(
                 path, data=badJson,
                 headers={'Content-type': 'application/json'})
@@ -314,7 +310,6 @@ class TestFrontend(unittest.TestCase):
 
     def testRouteCallSets(self):
         path = '/callsets/search'
-        self.assertEqual(415, self.app.post(path).status_code)
         self.assertEqual(200, self.app.options(path).status_code)
         self.assertEqual(405, self.app.get(path).status_code)
 
@@ -533,3 +528,30 @@ class TestFrontend(unittest.TestCase):
             response.status_code,
             404, "Ensure that when Auth0 is turned off the callback"
                  "URL returns a 404 but got {}".format(response.status_code))
+
+    def testSimplePost(self):
+        path = "/datasets/search"
+        response = protocol.fromJson(self.app.post(
+            path, headers={}).get_data(), protocol.SearchDatasetsResponse)
+        self.assertIsNotNone(
+            response.datasets,
+            "When an empty JSON document "
+            "without a mimetype is sent we can still"
+            "get datasets.")
+
+    def testHandleHttpPost(self):
+
+        class Mock(object):
+            pass
+        request = Mock()
+        request.mimetype = "garbage"
+        # A bad mimetype should throw an exception
+        with self.assertRaises(exceptions.UnsupportedMediaTypeException):
+            response = frontend.handleHttpPost(request, lambda x: x)
+
+        # An empty mimetype should work OK
+        request = Mock()
+        request.mimetype = None
+        request.get_data = lambda: "data"
+        response = frontend.handleHttpPost(request, lambda x: x)
+        self.assertEquals(response.get_data(), "data")
