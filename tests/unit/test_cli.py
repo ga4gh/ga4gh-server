@@ -62,7 +62,7 @@ class TestGa2SamArguments(unittest.TestCase):
     def testParseArguments(self):
         cliInput = """--key KEY --outputFormat sam
         --pageSize 1 --start 2 --end 3 --outputFile OUT.SAM
-        --referenceId REFERENCEID BASEURL READGROUPID"""
+        --referenceId REFERENCEID BASEURL READGROUPIDS"""
         parser = cli_ga2sam.getGa2SamParser()
         args = parser.parse_args(cliInput.split())
         self.assertEqual(args.key, "KEY")
@@ -73,7 +73,7 @@ class TestGa2SamArguments(unittest.TestCase):
         self.assertEqual(args.end, 3)
         self.assertEqual(args.pageSize, 1)
         self.assertEquals(args.baseUrl, "BASEURL")
-        self.assertEquals(args.readGroupId, "READGROUPID")
+        self.assertEquals(args.readGroupIds, "READGROUPIDS")
 
 
 class TestRepoManagerCli(unittest.TestCase):

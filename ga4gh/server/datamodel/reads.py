@@ -168,7 +168,11 @@ class AlignmentDataMixin(datamodel.PysamDatamodelMixin):
         ret.fragment_length = read.template_length
         ret.fragment_name = read.query_name
         for key, value in read.tags:
-            ret.attributes.attr[key].values.add().string_value = str(value)
+            # Useful for inspecting the structure of read tags
+            # print("{key} {ktype}: {value}, {vtype}".format(
+            #     key=key, ktype=type(key), value=value, vtype=type(value)))
+            protocol.setAttribute(ret.attributes.attr[key].values, value)
+
         if SamFlags.isFlagSet(read.flag, SamFlags.MATE_UNMAPPED):
             ret.next_mate_position.Clear()
         else:
