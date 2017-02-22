@@ -147,6 +147,17 @@ class AbstractRepoManagerTest(unittest.TestCase):
                 self._phenotypeAssociationSetName)
         self.runCommand(cmd)
 
+    def addRnaQuantificationSet(self):
+        self._rnaQuantificationSetPath = paths.rnaQuantificationSetDbPath
+        cmd = (
+            "add-rnaquantificationset {} {} {} -R {} -n {}").format(
+                self._repoPath,
+                self._datasetName,
+                paths.rnaQuantificationSetDbPath,
+                self._referenceSetName,
+                "rnaseq")
+        self.runCommand(cmd)
+
     def getFeatureSet(self):
         repo = self.readRepo()
         dataset = repo.getDatasetByName(self._datasetName)
@@ -158,6 +169,59 @@ class AbstractRepoManagerTest(unittest.TestCase):
         dataset = repo.getDatasetByName(self._datasetName)
         continuousSet = dataset.getContinuousSetByName(self._continuousSetName)
         return continuousSet
+
+
+class TestAddRnaQuantificationSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddRnaQuantificationSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+
+    def testDefaults(self):
+        name = "rnaseq"
+        self.runCommand(
+            "add-rnaquantificationset {} {} {} -R {} --name {}".format(
+                self._repoPath,
+                self._datasetName,
+                paths.rnaQuantificationSetDbPath,
+                self._referenceSetName,
+                name))
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        rnaQuantificationSet = dataset.getRnaQuantificationSetByName(name)
+        self.assertEqual(rnaQuantificationSet.getLocalId(), name)
+
+
+class TestRemoveRnaQuantificationSet(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemoveRnaQuantificationSet, self).setUp()
+        self.init()
+        self.addDataset()
+        self.addReferenceSet()
+
+    def testDefaults(self):
+        name = "rnaseq"
+        cmd = (
+            "add-rnaquantificationset {} {} {} -R {} -n {}").format(
+                self._repoPath,
+                self._datasetName,
+                paths.rnaQuantificationSetDbPath,
+                self._referenceSetName,
+                name)
+        self.runCommand(cmd)
+        self.runCommand("remove-rnaquantificationset {} {} {} -f".format(
+            self._repoPath,
+            self._datasetName,
+            name))
+        repo = self.readRepo()
+        dataset = repo.getDatasetByName(self._datasetName)
+        self.assertRaises(
+                exceptions.RnaQuantificationSetNameNotFoundException,
+                dataset.getRnaQuantificationSetByName,
+                name)
 
 
 class TestAddFeatureSet(AbstractRepoManagerTest):
@@ -572,6 +636,7 @@ class TestVerify(AbstractRepoManagerTest):
         self.addFeatureSet()
         self.addContinuousSet()
         self.addVariantSet()
+        self.addRnaQuantificationSet()
         cmd = "verify {}".format(self._repoPath)
         self.runCommand(cmd)
 
