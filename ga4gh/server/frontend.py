@@ -156,6 +156,13 @@ class ServerStatus(object):
         return app.backend.getDataRepository().getDataset(
             datasetId).getFeatureSets()
 
+    def getContinuousSets(self, datasetId):
+        """
+        Returns the list of continuous sets for the dataset
+        """
+        return app.backend.getDataRepository().getDataset(
+            datasetId).getContinuousSets()
+
     def getReadGroupSets(self, datasetId):
         """
         Returns the list of ReadGroupSets for the dataset
@@ -358,9 +365,12 @@ def handleHttpPost(request, endpoint):
     Handles the specified HTTP POST request, which maps to the specified
     protocol handler endpoint and protocol request class.
     """
-    if request.mimetype != MIMETYPE:
+    if request.mimetype and request.mimetype != MIMETYPE:
         raise exceptions.UnsupportedMediaTypeException()
-    responseStr = endpoint(request.get_data())
+    request = request.get_data()
+    if request == '' or request is None:
+        request = '{}'
+    responseStr = endpoint(request)
     return getFlaskResponse(responseStr)
 
 
@@ -695,6 +705,20 @@ def searchFeatures():
         flask.request, app.backend.runSearchFeatures)
 
 
+@DisplayedRoute('/continuoussets/search', postMethod=True)
+@requires_auth
+def searchContinuousSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchContinuousSets)
+
+
+@DisplayedRoute('/continuous/search', postMethod=True)
+@requires_auth
+def searchContinuous():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchContinuous)
+
+
 @DisplayedRoute('/biosamples/search', postMethod=True)
 @requires_auth
 def searchBiosamples():
@@ -807,6 +831,15 @@ def getFeatureSet(id):
 def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
+
+
+@DisplayedRoute(
+    '/continuoussets/<no(search):id>',
+    pathDisplay='/continuoussets/<id>')
+@requires_auth
+def getcontinuousSet(id):
+    return handleFlaskGetRequest(
+        id, flask.request, app.backend.runGetContinuousSet)
 
 
 @DisplayedRoute(

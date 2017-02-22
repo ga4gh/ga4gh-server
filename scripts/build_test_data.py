@@ -67,6 +67,13 @@ def buildTestData(
             dataFile, "-R NCBI37", "-O", sequenceOntologyName,
             "-C ga4gh.datamodel.sequence_annotations.Gff3DbFeatureSet")
 
+    pattern = os.path.join(
+        prefix, "datasets/dataset1/continuous", "*.bw")
+    for dataFile in glob.glob(pattern):
+        run("add-continuousset", repoFile, datasetName, useRelativePath,
+            dataFile, "-R NCBI37",
+            "-C ga4gh.datamodel.continuous.FileContinuousSet")
+
     pattern = os.path.join(prefix, "datasets/dataset1/phenotypes", "*")
     for dataFile in glob.glob(pattern):
         # coordinate featureset name and g2p name
