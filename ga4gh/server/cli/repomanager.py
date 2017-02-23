@@ -24,6 +24,7 @@ import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.server.datamodel.continuous as continuous
 import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.datamodel.peers as peers
 import ga4gh.server.datarepo as datarepo
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.repo.rnaseq2ga as rnaseq2ga
@@ -513,10 +514,7 @@ class RepoManager(object):
         Adds a new individual into this repo
         """
         self._openRepo()
-        peer = {}
-        peer['url'] = self._args.url
-        peer['attributes'] = json.loads(self._args.attributes)
-        print('adding a peer at repomanager.py')
+        peer = peers.Peer(self._args.url, self._args.attributes)
         self._updateRepo(self._repo.insertPeer, peer)
 
     def removePeer(self):
