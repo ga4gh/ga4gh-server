@@ -17,7 +17,6 @@ class Ga2SamRunner(cli_client.SearchReadsRunner):
     Runner class for the ga2vcf
     """
     def __init__(self, args):
-        args.readGroupIds = args.readGroupId
         super(Ga2SamRunner, self).__init__(args)
         self._outputFile = args.outputFile
         self._binaryOutput = False
@@ -26,7 +25,7 @@ class Ga2SamRunner(cli_client.SearchReadsRunner):
 
     def run(self):
         samConverter = converters.SamConverter(
-            self._client, readGroupId=self._readGroupIds[0],
+            self._client, readGroupIds=self._readGroupIds,
             referenceId=self._referenceId, start=self._start, end=self._end,
             outputFileName=self._outputFile, binaryOutput=self._binaryOutput)
         samConverter.convert()
@@ -37,8 +36,9 @@ def getGa2SamParser():
     cli_client.addClientGlobalOptions(parser)
     cli_client.addUrlArgument(parser)
     parser.add_argument(
-        "readGroupId",
-        help="The ReadGroup to convert to SAM/BAM format.")
+        "readGroupIds",
+        help="The ReadGroupIDs to convert to SAM/BAM format separated "
+             "by commas.")
     cli_client.addPageSizeArgument(parser)
     cli_client.addStartArgument(parser)
     cli_client.addEndArgument(parser)

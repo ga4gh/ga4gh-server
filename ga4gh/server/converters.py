@@ -43,10 +43,10 @@ class SamConverter(object):
     Converts a requested range from a GA4GH server into a SAM file.
     """
     def __init__(
-            self, client, readGroupId=None, referenceId=None,
+            self, client, readGroupIds=[], referenceId=None,
             start=None, end=None, outputFileName=None, binaryOutput=False):
         self._client = client
-        self._readGroup = self._client.get_read_group(readGroupId)
+        self._readGroupIds = readGroupIds
         self._reference = self._client.get_reference(referenceId)
         self._start = start
         self._end = end
@@ -67,7 +67,10 @@ class SamConverter(object):
             fileString = self._outputFileName
         alignmentFile = pysam.AlignmentFile(fileString, flags, header=header)
         iterator = self._client.search_reads(
-            [self._readGroup.id], self._reference.id, self._start, self._end)
+            read_group_ids=self._readGroupIds,
+            reference_id=self._reference.id,
+            start=self._start,
+            end=self._end)
         for read in iterator:
             alignedSegment = SamLine.toAlignedSegment(read, targetIds)
             alignmentFile.write(alignedSegment)
@@ -102,17 +105,6 @@ class SamLine(object):
     Methods for processing a line in a SAM file
     """
     _encoding = 'utf8'
-
-    # see tables in SAM spec, section 1.5
-    _tagReservedFieldPrefixes = set(["X", "Y", "Z", ])
-    _tagIntegerFields = set([
-        "AM", "AS", "CM", "CP", "FI", "H0", "H1", "H2", "HI", "IH", "MQ",
-        "NH", "NM", "OP", "PQ", "SM", "TC", "UQ", ])
-    _tagStringFields = set([
-        "BC", "BQ", "CC", "CO", "CQ", "CS", "CT", "E2", "FS", "LB", "MC",
-        "MD", "OQ", "OC", "PG", "PT", "PU", "QT", "Q2", "R2", "RG", "RT",
-        "SA", "U2", ])
-    _tagIntegerArrayFields = set(["FZ", ])
 
     def __init__(self):
         raise SamException("SamLine can't be instantiated")
@@ -224,26 +216,21 @@ class SamLine(object):
         return tuple(cigarTuples)
 
     @classmethod
-    def _parseTagValue(cls, tag, value):
-        if tag[0] in cls._tagReservedFieldPrefixes:
-            # user reserved fields... not really sure what to do here
-            return protocol.getValueFromValue(value.values[0]) \
-                .encode(cls._encoding)
-        elif tag in cls._tagIntegerFields:
-            return int(protocol.getValueFromValue(value.values[0]))
-        elif tag in cls._tagStringFields:
-            return protocol.getValueFromValue(value.values[0]) \
-                .encode(cls._encoding)
-        elif tag in cls._tagIntegerArrayFields:
-            return [int(integerString) for integerString in value]
+    def _parseTagValue(cls, value):
+        if len(value) > 1:
+            return [protocol.getValueFromValue(v) for v in value]
+        elif isinstance(
+                protocol.getValueFromValue(value[0]), (int, float, long)):
+            return protocol.getValueFromValue(value[0])
         else:
-            raise SamException("unrecognized tag '{}'".format(tag))
+            return str(
+                protocol.getValueFromValue(value[0])).encode(cls._encoding)
 
     @classmethod
     def toTags(cls, read):
         tags = []
-        for tag, value in read.attributes.attr.items():
-            val = cls._parseTagValue(tag, value)
+        for tag, values in read.attributes.attr.items():
+            val = cls._parseTagValue(list(values.values))
             tags.append((tag.encode(cls._encoding), val))
         retval = tuple(tags)
         return retval

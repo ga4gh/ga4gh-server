@@ -69,7 +69,7 @@ class SqliteExpressionLevel(AbstractExpressionLevel):
     """
     def __init__(self, parentContainer, record):
         super(SqliteExpressionLevel, self).__init__(
-            parentContainer, record["id"])
+            parentContainer, str(record["id"]))
         self._expression = record["expression"]
         self._featureId = record["feature_id"]
         # sqlite stores booleans as int (False = 0, True = 1)

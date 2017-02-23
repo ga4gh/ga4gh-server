@@ -123,6 +123,19 @@
                     </tr>
                     {% endfor %}
                 </table>
+                <h6>ContinuousSets</h6>
+                <table class="table table-striped">
+                    <tr>
+                        <th>Name</th>
+                        <th>Id</th>
+                    </tr>
+                    {% for continuousSet in info.getContinuousSets(dataset.getId()) %}
+                    <tr>
+                        <td>{{ continuousSet.getLocalId() }}</td>
+                        <td>{{ continuousSet.getId() }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
                 <h6>ReadGroupSets</h6>
                 <table class="table table-striped">
                     <tr>

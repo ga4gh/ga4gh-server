@@ -60,11 +60,9 @@ class TestSamConverter(unittest.TestCase):
             # self.assertEqual(
             #     source.next_reference_start,
             #     converted.next_reference_start)
-            # TODO can't uncomment until round trip tags are fixed;
-            # see schemas issue 758
-            # self.assertEqual(
-            #     source.tags,
-            #     converted.tags)
+            sourceDictionary = dict((x, y) for x, y in source.tags)
+            convertedDictionary = dict((x, y) for x, y in converted.tags)
+            self.assertDictEqual(sourceDictionary, convertedDictionary)
 
     def verifyFullConversion(self, readGroupSet, readGroup, reference):
         """
@@ -75,7 +73,7 @@ class TestSamConverter(unittest.TestCase):
         """
         with tempfile.NamedTemporaryFile() as fileHandle:
             converter = converters.SamConverter(
-                self._client, readGroup.getId(), reference.getId(),
+                self._client, [readGroup.getId()], reference.getId(),
                 outputFileName=fileHandle.name)
             converter.convert()
             samFile = pysam.AlignmentFile(fileHandle.name, "r")

@@ -151,3 +151,26 @@ class TestSequenceAnnotations(unittest.TestCase):
         return self.app.post(
             path, headers={'Content-type': 'application/json'},
             data=data)
+
+    def getAllContinuousSets(self):
+        datasetId = self.getAllDatasets()[0].id
+        path = 'continuoussets/search'
+        request = protocol.SearchContinuousSetsRequest()
+        request.dataset_id = datasetId
+        responseData = self.sendSearchRequest(
+            path, request, protocol.SearchContinuousSetsResponse)
+        return responseData.continuous_sets
+
+    def testSearchContinuous(self):
+        continuousSets = self.getAllContinuousSets()
+        for continuousSet in continuousSets:
+            path = "continuous/search"
+            request = protocol.SearchContinuousRequest()
+            request.continuous_set_id = continuousSet.id
+            request.start = 49200000
+            request.end = 49308000
+            request.reference_name = "chr19"
+            responseData = self.sendSearchRequest(
+                path, request, protocol.SearchContinuousResponse)
+            for continuous in responseData.continuous:
+                self.assertGreater(len(continuous.values), 0)
