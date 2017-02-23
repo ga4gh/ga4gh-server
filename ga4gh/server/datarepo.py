@@ -105,15 +105,25 @@ class AbstractDataRepository(object):
         self._peers.append(peer)
 
     def getPeer(self, url):
-        peers = filter(lambda x: x.url == url, self.getPeers())
+        """
+        Select the first peer in the datarepo with the given url.
+        """
+        print(self.getPeers())
+        peers = filter(lambda x: x.getUrl() == url, self.getPeers())
         if len(peers) == 0:
             raise exceptions.PeerNotFoundException(url)
         return peers[0]
 
     def getPeers(self, offset=0, limit=100):
+        """
+        Returns the list of peers with an optional offset and limit.
+        """
         return self._peers[offset:offset + limit]
 
     def insertAnnouncement(self, announcement):
+        """
+        A placeholder function to simulate receving an announcement.
+        """
         if not isUrl(announcement.get('url')):
             raise exceptions.BadRequestException(announcement.get('url'))
 
@@ -1165,7 +1175,6 @@ class SqlDataRepository(AbstractDataRepository):
         """
         Inserts the specified individual into this repository.
         """
-        # TODO add support for info and sourceUri fields.
         try:
             m.Individual.create(
                 id=individual.getId(),
@@ -1201,7 +1210,6 @@ class SqlDataRepository(AbstractDataRepository):
         """
         Inserts the specified phenotype annotation set into this repository.
         """
-        # TODO add support for info and sourceUri fields.
         datasetId = phenotypeAssociationSet.getParentContainer().getId()
         attributes = json.dumps(phenotypeAssociationSet.getAttributes())
         try:

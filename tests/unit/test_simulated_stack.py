@@ -1214,16 +1214,16 @@ class TestSimulatedStack(unittest.TestCase):
         responseData = self.sendSearchRequest(
             path, request, protocol.ListPeersResponse)
         for peer in responseData.peers:
-            self.dataRepo.getPeer(peer.uri)
+            self.dataRepo.getPeer(peer.url)
 
     def testAnnounce(self):
         path = "/announce"
         request = protocol.AnnouncePeerRequest()
-        request.peer.uri = "http://1kgenomes.ga4gh.org"
+        request.peer.url = "http://1kgenomes.ga4gh.org"
         responseData = self.sendSearchRequest(
             path, request, protocol.AnnouncePeerResponse)
         self.assertTrue(responseData.success, "A well formed URL should post")
-        request.peer.uri = "Not a URL"
+        request.peer.url = "Not a URL"
         response = self.sendJsonPostRequest(path, protocol.toJson(request))
         self.assertEqual(response.status_code, 400)
 

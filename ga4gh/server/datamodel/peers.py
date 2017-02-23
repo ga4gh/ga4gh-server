@@ -41,6 +41,8 @@ class Peer():
         else:
             raise exceptions.BadUrlException(url)
 
+    def getUrl(self):
+        return self._url
 
     def setAttributes(self, attributes):
         """
