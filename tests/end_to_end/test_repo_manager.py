@@ -48,6 +48,7 @@ class RepoManagerEndToEndTest(unittest.TestCase):
 
     def testEndToEnd(self):
         self._runCmd("init")
+        self._runCmd("add-peer", paths.peerUrl)
         self._runCmd("add-ontology", paths.ontologyPath)
         self._runCmd(
             "add-referenceset", paths.faPath,
@@ -94,7 +95,7 @@ class RepoManagerEndToEndTest(unittest.TestCase):
 
         self._runCmd("verify")
         self._runCmd("list")
-
+        self._runCmd("remove-peer", paths.peerUrl)
         self._runCmd(
             "remove-phenotypeassociationset",
             self.datasetName, phenotypeAssociationSetName, "-f")

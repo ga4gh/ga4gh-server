@@ -25,6 +25,7 @@ class TestGestalt(server_test.ServerTest):
     def testEndToEnd(self):
         # extract ids from a simulated data repo with the same config
         repo = datarepo.SimulatedDataRepository()
+        peer = repo.getPeers()[0]
         dataset = repo.getDatasets()[0]
         datasetId = dataset.getId()
         variantSet = dataset.getVariantSets()[0]
@@ -37,6 +38,7 @@ class TestGestalt(server_test.ServerTest):
         variantAnnotationSetId = \
             variantSet.getVariantAnnotationSets()[0].getId()
 
+        self.simulatedPeerUrl = peer.getUrl()
         self.simulatedDatasetId = datasetId
         self.simulatedVariantSetId = variantSetId
         self.simulatedReadGroupId = readGroupId
@@ -44,6 +46,7 @@ class TestGestalt(server_test.ServerTest):
         self.simulatedReferenceId = referenceId
         self.simulatedVariantAnnotationSetId = variantAnnotationSetId
         self.client = client.ClientForTesting(self.server.getUrl())
+        self.runPeersRequests()
         self.runVariantsRequest()
         self.assertLogsWritten()
         self.runReadsRequest()
@@ -138,4 +141,15 @@ class TestGestalt(server_test.ServerTest):
     def runVariantSetsRequestDatasetTwo(self):
         cmd = "variantsets-search"
         args = "--datasetId {}".format(self.simulatedDatasetId)
+        self.runClientCmd(self.client, cmd, args)
+
+    def runPeersRequests(self):
+        cmd = "peers-list"
+        self.runClientCmd(self.client, cmd)
+
+        cmd = "info"
+        self.runClientCmd(self.client, cmd)
+
+        cmd = "announce"
+        args = "http://1kgenomes.ga4gh.org"
         self.runClientCmd(self.client, cmd, args)

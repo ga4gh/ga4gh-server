@@ -515,7 +515,8 @@ class RepoManager(object):
         """
         self._openRepo()
         try:
-            peer = peers.Peer(self._args.url, json.loads(self._args.attributes))
+            peer = peers.Peer(
+                self._args.url, json.loads(self._args.attributes))
         except exceptions.BadUrlException:
             raise exceptions.RepoManagerException("The URL for the peer was "
                                                   "malformed.")

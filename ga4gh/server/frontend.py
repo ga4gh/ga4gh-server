@@ -330,14 +330,15 @@ def configure(configFile=None, baseConfig="ProductionConfig",
             try:
                 peer = datamodel.peers.Peer(initialPeer)
                 insertPeer(peer)
-            except exceptions.RepoManagerException as e:
+            except exceptions.RepoManagerException as exc:
                 app.logger.debug(
                     "Peer already in registry {} {}".format(
-                        peer.getUrl(), e))
-            except exceptions.BadUrlException as e:
-                app.logger.debug("A URL in the initial peer list {} was "
-                                 "malformed. {}".format(
-                    app.config.get('INITIAL_PEERS'), e))
+                        peer.getUrl(), exc))
+            except exceptions.BadUrlException as exc:
+                app.logger.debug(
+                    "A URL in the initial peer list {} was "
+                    "malformed. {}".format(app.config.get(
+                        'INITIAL_PEERS'), exc))
     app.oidcClient = None
     app.myPort = port
     if app.config.get('AUTH0_ENABLED'):

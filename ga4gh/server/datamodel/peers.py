@@ -25,6 +25,7 @@ def isUrl(urlString):
 
     return regex.match(urlString)
 
+
 class Peer():
     """
     This class represents an abstract Peer object.
@@ -54,7 +55,10 @@ class Peer():
         """
         Sets the attributes dictionary from a JSON string.
         """
-        self._attributes = json.loads(attributesJson)
+        try:
+            self._attributes = json.loads(attributesJson)
+        except:
+            raise exceptions.InvalidJsonException(attributesJson)
 
     def serializeAttributes(self, msg):
         """
