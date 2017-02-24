@@ -557,7 +557,12 @@ class SqlDataRepository(AbstractDataRepository):
 
     def getPeers(self, offset=0, limit=0):
         select = m.Peer.select()
-        return select.order_by(m.Peer.id).limit(limit).offset(offset)
+        ret = []
+        for record in select.order_by(m.Peer.url).limit(limit).offset(offset):
+            peer = datamodel.peers.Peer(record.url)
+            peer.populateFromRow(record)
+            ret.append(peer)
+        return ret
 
     def insertAnnouncement(self, announcement):
         url = announcement.get('url', None)

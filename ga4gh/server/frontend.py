@@ -209,6 +209,23 @@ def reset():
     app.config.from_object(configStr)
 
 
+def getInitialPeerList(app):
+    filePath = app.config.get('INITIAL_PEERS')
+    try:
+        textFile = open(filePath, 'r')
+        text = textFile.read()
+        textFile.close()
+        ret = text.split("\n")
+    except:
+        app.logger.warn("Couldn't load the initial "
+                        "peer list. Try adding a "
+                        "file named 'initial_peers.txt' "
+                        "to {}".format(os.getcwd()))
+        ret = []
+    # Remove lines that start with a hash or are empty.
+    return filter(lambda x: x != "" and not x.find("#") != 0, ret)
+
+
 def _configure_backend(app):
     """A helper function used just to help modularize the code a bit."""
     # Allocate the backend
@@ -305,6 +322,22 @@ def configure(configFile=None, baseConfig="ProductionConfig",
         app.cache_dir = '/tmp/ga4gh'
     app.cache = FileSystemCache(
         app.cache_dir, threshold=5000, default_timeout=600, mode=384)
+    # Peer service initialization
+    initialPeers = getInitialPeerList(app)
+    if initialPeers is not None and len(initialPeers) > 0:
+        for initialPeer in initialPeers:
+            insertPeer = app.backend.getDataRepository().insertPeer
+            try:
+                peer = datamodel.peers.Peer(initialPeer)
+                insertPeer(peer)
+            except exceptions.RepoManagerException as e:
+                app.logger.debug(
+                    "Peer already in registry {} {}".format(
+                        peer.getUrl(), e))
+            except exceptions.BadUrlException as e:
+                app.logger.debug("A URL in the initial peer list {} was "
+                                 "malformed. {}".format(
+                    app.config.get('INITIAL_PEERS'), e))
     app.oidcClient = None
     app.myPort = port
     if app.config.get('AUTH0_ENABLED'):

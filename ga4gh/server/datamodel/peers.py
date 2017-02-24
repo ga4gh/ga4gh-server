@@ -32,7 +32,7 @@ class Peer():
     toProtocolElement function.
     """
     def __init__(self, url, attributes={}):
-        self._url = url
+        self.setUrl(url)
         self.setAttributes(attributes)
 
     def setUrl(self, url):

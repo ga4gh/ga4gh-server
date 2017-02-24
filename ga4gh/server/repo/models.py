@@ -42,8 +42,7 @@ class BaseModel(pw.Model):
 
 
 class Peer(BaseModel):
-    id = pw.PrimaryKeyField()
-    url = pw.TextField(null=False, unique=True)
+    url = pw.TextField(primary_key=True, null=False, unique=True)
 
 
 class Announcement(BaseModel):
