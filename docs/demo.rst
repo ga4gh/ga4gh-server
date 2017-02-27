@@ -50,7 +50,7 @@ installed.
 
 .. code-block:: bash
 
-    (ga4gh-env) $ pip install ga4gh --pre
+    (ga4gh-env) $ pip install ga4gh-server --pre
 
 (Older versions of `pip <https://pip.pypa.io/en/latest/>`_ might not recognise
 the ``--pre`` argument; if not, it is safe to remove it.)
