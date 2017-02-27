@@ -55,7 +55,7 @@ Make a virtualenv, and install the ga4gh package:
 
   virtualenv ga4gh-server-env
   source ga4gh-server-env/bin/activate
-  pip install ga4gh
+  pip install ga4gh-server
   deactivate
 
 Download and unpack the example data:
