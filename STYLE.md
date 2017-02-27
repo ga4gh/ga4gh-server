@@ -4,7 +4,9 @@ The code follows the guidelines of [PEP 8]
 (<http://legacy.python.org/dev/peps/pep-0008>) in most cases. The only notable
 difference is the use of camel case over underscore delimited identifiers; this
 is done for consistency with the GA4GH API. Code should be checked for compliance
-using the [pep8](<https://pypi.python.org/pypi/pep8>) tool.
+using the [pep8](<https://pypi.python.org/pypi/pep8>) tool.  In practice, we are
+a bit inconsistent about this since switching over to protobuf, which uses
+snake_cased names.
 
 ## Naming
 Short variable names are OK when the scope is small (less than five lines)
@@ -19,7 +21,8 @@ Imports should be structured into the following groups:
 1. Any ```__future__``` imports
 2. Any standard library imports
 3. Any third party library imports
-4. Any package level imports
+4. Any package level imports from the current package
+5. Any imports from other ga4gh packages
 
 The preferred approach is to import modules, and use this module
 as a prefix to make it clear where a function or
