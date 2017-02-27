@@ -524,9 +524,10 @@ happen when significant changes are required to the server codebase,
 which will result in a significant departure from the previously
 released version, either in code layout or in functionality. During
 the normal process of development within a minor version series,
-patch updates are routinely and regularly released.
+patch updates are routinely and regularly released.  (In some cases bugfix
+releases can also come with a suffix, e.g. ``0.6.0a9.post1``.)
 
-This entails:
+Making a release entails the following steps:
 
 #. Create a PR against ``master`` that has the following changes: 
 
@@ -549,6 +550,10 @@ This entails:
    happen after the release has been tagged on GitHub).  The release
    notes docs should have changed, so that is a good section to look at
    to confirm the change.
+
+All of the above steps after the tag is dropped on the target commit are now
+`automated <https://docs.travis-ci.com/user/deployment/pypi/>`_ using
+Travis' capability to deploy to Pypi.
 
 +++++++++++++++++++++
 Stable bugfix release
