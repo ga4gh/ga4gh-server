@@ -33,22 +33,6 @@ MODE_READ = 'r'
 MODE_WRITE = 'w'
 
 
-def isUrl(urlString):
-    """
-    Attempts to return whether a given URL string is valid by applying
-    a regex match. From http://stackoverflow.com/questions/7160737/
-    """
-    regex = re.compile(
-        r'^(?:http|ftp)s?://'  # http:// or https://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)'
-        r'+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'  # domain...
-        r'localhost|'  # localhost...
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-        r'(?::\d+)?'  # optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    return regex.match(urlString)
-
-
 class AbstractDataRepository(object):
     """
     An abstract GA4GH data repository
@@ -120,10 +104,10 @@ class AbstractDataRepository(object):
 
     def insertAnnouncement(self, announcement):
         """
-        A placeholder function to simulate receving an announcement.
+        A placeholder function to simulate receiving an announcement. It
+        will throw an exception is the URL is invalid.
         """
-        if not isUrl(announcement.get('url')):
-            raise exceptions.BadRequestException(announcement.get('url'))
+        peers.Peer(announcement.get('url'))
 
     def getNumDatasets(self):
         """
@@ -568,8 +552,10 @@ class SqlDataRepository(AbstractDataRepository):
         Adds an announcement to the registry for later analysis.
         """
         url = announcement.get('url', None)
-        if not url or not isUrl(url):
-            raise exceptions.BadRequestException(url)
+        try:
+            peers.Peer(url)
+        except:
+            raise exceptions.BadUrlException(url)
         try:
             # TODO get more details about the user agent
             m.Announcement.create(

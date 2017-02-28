@@ -677,6 +677,9 @@ class Backend(object):
         return self.runGetRequest(callSet)
 
     def runGetInfo(self, request):
+        """
+        Returns information about the service including protocol version.
+        """
         return protocol.toJson(protocol.GetInfoResponse(
             protocol_version=protocol.version))
 
@@ -689,17 +692,15 @@ class Backend(object):
         """
         announcement = {}
         # We want to parse the request ourselves to collect a little more
-        # data about it. We're bypassing some of the checks done in frontend
-        # and so some code is repeated here.
-
-        # Get the data off the request
+        # data about it.
         try:
             requestData = protocol.fromJson(
                 flaskrequest.get_data(), protocol.AnnouncePeerRequest)
             announcement['hostname'] = flaskrequest.host_url
         except AttributeError:
             # Sometimes in testing we will send protocol requests instead
-            # of flask requests.
+            # of flask requests and so the hostname and user agent won't
+            # be present.
             try:
                 requestData = protocol.fromJson(
                     flaskrequest, protocol.AnnouncePeerRequest)
@@ -707,10 +708,11 @@ class Backend(object):
                 raise exceptions.InvalidJsonException(e)
         except Exception as e:
             raise exceptions.InvalidJsonException(e)
-        # validate the url
+
+        # Validate the url before accepting the announcement
         peer = datamodel.peers.Peer(requestData.peer.url)
         peer.setAttributesJson(protocol.toJson(
-            requestData.peer.attributes))
+                requestData.peer.attributes))
         announcement['url'] = peer.getUrl()
         announcement['attributes'] = peer.getAttributes()
         # TODO get user agent from submission
@@ -727,16 +729,11 @@ class Backend(object):
         Takes a ListPeersRequest and returns a ListPeersResponse using
         a page_token and page_size if provided.
         """
-        def peersGenerator(request):
-            intervalIterator = paging.PeerIterator(
-                request, self.getDataRepository())
-            return intervalIterator
-
         return self.runSearchRequest(
             request,
             protocol.ListPeersRequest,
             protocol.ListPeersResponse,
-            peersGenerator)
+            paging.PeerIterator(request, self.getDataRepository()))
 
     def runGetVariant(self, id_):
         """
