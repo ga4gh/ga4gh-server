@@ -192,9 +192,10 @@ class DatamodelValidationException(BadRequestException):
     """
 
 
-class BadUrlException(BaseServerException):
+class BadUrlException(RuntimeException):
     def __init__(self, url):
         self.message = "The URL: '{}' was malformed".format(url)
+        self.httpStatus = 400
 
 
 class ReadGroupSetNotMappedToReferenceSetException(BadRequestException):

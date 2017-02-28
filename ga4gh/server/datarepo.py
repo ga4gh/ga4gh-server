@@ -575,7 +575,7 @@ class SqlDataRepository(AbstractDataRepository):
             m.Announcement.create(
                 url=announcement.get('url'),
                 submitter=announcement.get('hostname', None),
-                attributes=announcement.get('attributes', None))
+                attributes=json.dumps(announcement.get('attributes', None)))
         except Exception as e:
             raise exceptions.RepoManagerException(e)
 

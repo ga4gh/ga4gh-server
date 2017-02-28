@@ -705,12 +705,14 @@ class Backend(object):
                     flaskrequest, protocol.AnnouncePeerRequest)
             except Exception as e:
                 raise exceptions.InvalidJsonException(e)
+        except Exception as e:
+            raise exceptions.InvalidJsonException(e)
         # validate the url
-        if (not requestData.peer.url):
-            raise exceptions.BadRequestException("Bad URL provided")
-        announcement['url'] = requestData.peer.url
-        announcement['attributes'] = protocol.toJson(
-            requestData.peer.attributes)
+        peer = datamodel.peers.Peer(requestData.peer.url)
+        peer.setAttributesJson(protocol.toJson(
+            requestData.peer.attributes))
+        announcement['url'] = peer.getUrl()
+        announcement['attributes'] = peer.getAttributes()
         # TODO get user agent from submission
         # announcement['submitter_json'] = #request
         success = True
