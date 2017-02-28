@@ -46,9 +46,9 @@ class TestGestalt(server_test.ServerTest):
         self.simulatedReferenceId = referenceId
         self.simulatedVariantAnnotationSetId = variantAnnotationSetId
         self.client = client.ClientForTesting(self.server.getUrl())
-        self.runPeersRequests()
         self.runVariantsRequest()
         self.assertLogsWritten()
+        self.runPeersRequests()
         self.runReadsRequest()
         self.runReferencesRequest()
         self.runVariantSetsRequestDatasetTwo()
@@ -144,10 +144,10 @@ class TestGestalt(server_test.ServerTest):
         self.runClientCmd(self.client, cmd, args)
 
     def runPeersRequests(self):
-        cmd = "peers-list"
+        cmd = "list-peers"
         self.runClientCmd(self.client, cmd)
 
-        cmd = "info"
+        cmd = "get-info"
         self.runClientCmd(self.client, cmd)
 
         cmd = "announce"

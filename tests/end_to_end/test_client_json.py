@@ -577,3 +577,9 @@ class TestClientJson(TestClientOutput):
         info = self._client.get_info()
         cliString = "get-info"
         self.verifyParsedOutputsEqual([info], cliString)
+
+    def testAnnounce(self):
+        url = "http://1kgenomes.ga4gh.org"
+        response = self._client.announce(url)
+        cliString = "announce"
+        self.verifyParsedOutputsEqual([response], cliString, url)

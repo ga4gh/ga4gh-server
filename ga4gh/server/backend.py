@@ -680,23 +680,31 @@ class Backend(object):
         return protocol.toJson(protocol.GetInfoResponse(
             protocol_version=protocol.version))
 
-    def runAddAnnouncement(self, request):
+    def runAddAnnouncement(self, flaskrequest):
         announcement = {}
         # We want to parse the request ourselves to collect a little more
         # data about it. We're bypassing some of the checks done in frontend
         # and so some code is repeated here.
 
         # Get the data off the request
-        # TODO wrap in exception
-        requestData = protocol.fromJson(
-            request.get_data(), protocol.AnnouncePeerRequest)
+        try:
+            requestData = protocol.fromJson(
+                flaskrequest.get_data(), protocol.AnnouncePeerRequest)
+            announcement['hostname'] = flaskrequest.host_url
+        except AttributeError:
+            # Sometimes in testing we will send protocol requests instead
+            # of flask requests
+            try:
+                requestData = protocol.fromJson(
+                    flaskrequest, protocol.AnnouncePeerRequest)
+            except Exception as e:
+                raise exceptions.InvalidJsonException(e)
         # validate the url
         if (not requestData.peer.url):
             raise exceptions.BadRequestException("Bad URL provided")
         announcement['url'] = requestData.peer.url
         announcement['attributes'] = protocol.toJson(
             requestData.peer.attributes)
-        announcement['hostname'] = request.host_url
         # announcement['submitter_json'] = #request
         self.getDataRepository().insertAnnouncement(announcement)
         return protocol.toJson(protocol.AnnouncePeerResponse(success=True))

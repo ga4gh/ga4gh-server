@@ -95,7 +95,7 @@ class RepoManagerEndToEndTest(unittest.TestCase):
 
         self._runCmd("verify")
         self._runCmd("list")
-        self._runCmd("remove-peer", paths.peerUrl)
+        self._runCmd("remove-peer", paths.peerUrl, "-f")
         self._runCmd(
             "remove-phenotypeassociationset",
             self.datasetName, phenotypeAssociationSetName, "-f")
