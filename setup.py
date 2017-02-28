@@ -39,7 +39,7 @@ except EnvironmentError:
           'creating dependency links.')
 
 setup(
-    name="ga4gh",
+    name="ga4gh-server",
     description="A reference implementation of the GA4GH API",
     packages=["ga4gh", "ga4gh.server", "ga4gh.server.datamodel",
               "ga4gh.server.templates"],
