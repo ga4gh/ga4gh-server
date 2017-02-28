@@ -236,7 +236,7 @@ def _getInitialPeerList(app):
                         "to {}".format(os.getcwd()))
         ret = []
     # Remove lines that start with a hash or are empty.
-    return filter(lambda x: x != "" and not x.find("#") != 0, ret)
+    return filter(lambda x: x != "" and not x.find("#") != -1, ret)
 
 
 def _insertInitialPeer(app, url):

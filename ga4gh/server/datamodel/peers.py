@@ -35,9 +35,13 @@ class Peer:
     It sets default values and getters, as well as the
     toProtocolElement function.
     """
-    def __init__(self, url, attributes={}):
-        self.setUrl(url)
-        self.setAttributes(attributes)
+    def __init__(self, url, attributes={}, record=None):
+        self._url = ""
+        self._attributes = {}
+        self.setUrl(url) \
+            .setAttributes(attributes)
+        if record is not None:
+            self.populateFromRow(record)
 
     def setUrl(self, url):
         """
@@ -47,6 +51,7 @@ class Peer:
             self._url = url
         else:
             raise exceptions.BadUrlException(url)
+        return self
 
     def getUrl(self):
         return self._url
@@ -56,6 +61,7 @@ class Peer:
         Sets the attributes message to the provided value.
         """
         self._attributes = attributes
+        return self
 
     def setAttributesJson(self, attributesJson):
         """
@@ -65,6 +71,7 @@ class Peer:
             self._attributes = json.loads(attributesJson)
         except:
             raise exceptions.InvalidJsonException(attributesJson)
+        return self
 
     def serializeAttributes(self, msg):
         """
@@ -92,6 +99,6 @@ class Peer:
         """
         This method accepts a model record and sets class variables.
         """
-        self._url = self.setUrl(peerRecord.url)
-        self.setAttributesJson(peerRecord.attributes)
+        self.setUrl(peerRecord.url) \
+            .setAttributesJson(peerRecord.attributes)
         return self

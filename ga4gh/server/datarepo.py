@@ -555,18 +555,13 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.PeerNotFoundException(url)
         return peers[0]
 
-    def getPeers(self, offset=0, limit=0):
+    def getPeers(self, offset=0, limit=1000):
         """
         Get the list of peers using an SQL offset and limit. Returns a list
         of peer datamodel objects in a list.
         """
-        select = m.Peer.select()
-        ret = []
-        for record in select.order_by(m.Peer.url).limit(limit).offset(offset):
-            peer = datamodel.peers.Peer(record.url)
-            peer.populateFromRow(record)
-            ret.append(peer)
-        return ret
+        select = m.Peer.select().order_by(m.Peer.url).limit(limit).offset(offset)
+        return [peers.Peer(p.url, record=p) for p in select]
 
     def insertAnnouncement(self, announcement):
         """
@@ -1364,9 +1359,7 @@ class SqlDataRepository(AbstractDataRepository):
         q.execute()
 
     def _createNetworkTables(self):
-        """
-        Creates tables used for managing the network service.
-        """
+        """"""
         self.database.create_table(m.Peer)
         self.database.create_table(m.Announcement)
 

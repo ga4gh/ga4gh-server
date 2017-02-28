@@ -725,34 +725,16 @@ class Backend(object):
         Takes a ListPeersRequest and returns a ListPeersResponse using
         a page_token and page_size if provided.
         """
-        try:
-            request = protocol.fromJson(request, protocol.ListPeersRequest)
-        except:
-            raise exceptions.InvalidJsonException(request)
-        if request.page_size:
-            page_size = request.page_size
-        else:
-            page_size = self._defaultPageSize
+        def peersGenerator(request):
+            intervalIterator = paging.PeerIterator(
+                request, self.getDataRepository())
+            return intervalIterator
 
-        if request.page_token:
-            page_token = int(request.page_token)
-        else:
-            page_token = 0
-
-        # We use SQL to do the paging directly. Asking for one more than the
-        # requested page tells us whether to set a nextPageToken.
-        peers = list(self.getDataRepository().getPeers(
-            offset=page_token * page_size,
-            limit=page_size + 1))
-
-        response = protocol.ListPeersResponse()
-        if len(peers) > page_size:
-            response.next_page_token = str(int(page_token) + 1)
-
-        response.peers.extend(
-            map(lambda x: x.toProtocolElement(), peers[0:page_size]))
-
-        return protocol.toJson(response)
+        return self.runSearchRequest(
+            request,
+            protocol.ListPeersRequest,
+            protocol.ListPeersResponse,
+            peersGenerator)
 
     def runGetVariant(self, id_):
         """
