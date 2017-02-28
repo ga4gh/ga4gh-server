@@ -654,7 +654,6 @@ class TestAddPeer(AbstractRepoManagerTest):
         self.init()
 
     def testDefaults(self):
-        print('tryna run command')
         self.runCommand("add-peer {} {}".format(
             self._repoPath, self._peerUrl))
         repo = self.readRepo()

@@ -511,7 +511,7 @@ class RepoManager(object):
 
     def addPeer(self):
         """
-        Adds a new individual into this repo
+        Adds a new peer into this repo
         """
         self._openRepo()
         try:
@@ -528,7 +528,7 @@ class RepoManager(object):
 
     def removePeer(self):
         """
-        Removes an individual from this repo
+        Removes a peer by URL from this repo
         """
         self._openRepo()
 

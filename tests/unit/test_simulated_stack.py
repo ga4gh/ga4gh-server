@@ -1248,8 +1248,11 @@ class TestSimulatedStack(unittest.TestCase):
         request.page_size = 10
         responseData = self.sendSearchRequest(
             path, request, protocol.ListPeersResponse)
+        urls = map(lambda p: p.url, responseData.peers)
         for peer in responseData.peers:
-            self.dataRepo.getPeer(peer.url)
+            self.assertIn(peer.url, urls)
+            repoPeer = self.dataRepo.getPeer(peer.url)
+            self.assertEqual(repoPeer.getUrl(), peer.url)
 
     def testAnnounce(self):
         path = "/announce"
@@ -1268,7 +1271,7 @@ class TestSimulatedStack(unittest.TestCase):
         responseData = protocol.fromJson(response.data,
                                          protocol.GetInfoResponse)
         self.assertIsNotNone(responseData)
-        self.assertEqual(responseData.protocol_version, "0.6.0a10")
+        self.assertEqual(responseData.protocol_version, protocol.version)
 
     # TODO def testSearchGenotypePhenotypes(self):
 

@@ -1,5 +1,5 @@
 """
-Biodata objects
+Peer datamodel for exchanging data about GA4GH services.
 """
 from __future__ import division
 from __future__ import print_function
@@ -7,13 +7,17 @@ from __future__ import unicode_literals
 
 import json
 import re
+
 import ga4gh.server.exceptions as exceptions
 
 import ga4gh.schemas.protocol as protocol
 
 
 def isUrl(urlString):
-    # http://stackoverflow.com/questions/7160737/
+    """
+    Attempts to return whether a given URL string is valid by applying
+    a regex match. From http://stackoverflow.com/questions/7160737/
+    """
     regex = re.compile(
         r'^(?:http|ftp)s?://'  # http:// or https://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)'
@@ -22,11 +26,10 @@ def isUrl(urlString):
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
     return regex.match(urlString)
 
 
-class Peer():
+class Peer:
     """
     This class represents an abstract Peer object.
     It sets default values and getters, as well as the
@@ -37,6 +40,9 @@ class Peer():
         self.setAttributes(attributes)
 
     def setUrl(self, url):
+        """
+        Attempt to safely set the URL by string.
+        """
         if isUrl(url):
             self._url = url
         else:
@@ -83,6 +89,9 @@ class Peer():
         return peer
 
     def populateFromRow(self, peerRecord):
-        self._url = peerRecord.url
+        """
+        This method accepts a model record and sets class variables.
+        """
+        self._url = self.setUrl(peerRecord.url)
         self.setAttributesJson(peerRecord.attributes)
         return self

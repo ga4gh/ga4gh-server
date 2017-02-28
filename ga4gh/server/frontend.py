@@ -209,7 +209,20 @@ def reset():
     app.config.from_object(configStr)
 
 
-def getInitialPeerList(app):
+def _getInitialPeerList(app):
+    """
+    Attempts to get a list of peers from a file specified in configuration.
+
+    This file has one URL per line and can contain newlines and comments.
+
+        # Main ga4gh node
+        http://1kgenomes.ga4gh.org
+        # Local intranet peer
+        https://192.168.1.1
+
+    The server will attempt to add URLs in this file to its registry at
+    startup and will log a warning if the file isn't found.
+    """
     filePath = app.config.get('INITIAL_PEERS')
     try:
         textFile = open(filePath, 'r')
@@ -224,6 +237,27 @@ def getInitialPeerList(app):
         ret = []
     # Remove lines that start with a hash or are empty.
     return filter(lambda x: x != "" and not x.find("#") != 0, ret)
+
+
+def _insertInitialPeer(app, url):
+    """
+    Takes the app object and a URL and attempts to add a peer by that
+    URL to the registry. Used when loading the list of initial peers.
+    """
+    insertPeer = app.backend.getDataRepository().insertPeer
+    try:
+        peer = datamodel.peers.Peer(url)
+        insertPeer(peer)
+    except exceptions.RepoManagerException as exc:
+        app.logger.debug(
+            "Peer already in registry {} {}".format(
+                peer.getUrl(), exc))
+    except exceptions.BadUrlException as exc:
+        app.logger.debug(
+            "A URL in the initial peer list {} was "
+            "malformed. {}".format(app.config.get(
+                'INITIAL_PEERS'), exc))
+        return app
 
 
 def _configure_backend(app):
@@ -323,22 +357,10 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.cache = FileSystemCache(
         app.cache_dir, threshold=5000, default_timeout=600, mode=384)
     # Peer service initialization
-    initialPeers = getInitialPeerList(app)
+    initialPeers = _getInitialPeerList(app)
     if initialPeers is not None and len(initialPeers) > 0:
         for initialPeer in initialPeers:
-            insertPeer = app.backend.getDataRepository().insertPeer
-            try:
-                peer = datamodel.peers.Peer(initialPeer)
-                insertPeer(peer)
-            except exceptions.RepoManagerException as exc:
-                app.logger.debug(
-                    "Peer already in registry {} {}".format(
-                        peer.getUrl(), exc))
-            except exceptions.BadUrlException as exc:
-                app.logger.debug(
-                    "A URL in the initial peer list {} was "
-                    "malformed. {}".format(app.config.get(
-                        'INITIAL_PEERS'), exc))
+            _insertInitialPeer(app, initialPeer)
     app.oidcClient = None
     app.myPort = port
     if app.config.get('AUTH0_ENABLED'):

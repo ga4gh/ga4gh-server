@@ -38,7 +38,7 @@ class BaseConfig(object):
     FILE_HANDLE_CACHE_MAX_SIZE = 50
 
     LANDING_MESSAGE_HTML = "landing_message.html"
-    INITIAL_PEERS = "initial_peers.txt"
+    INITIAL_PEERS = "ga4gh/server/templates/initial_peers.txt"
 
 
 class ComplianceConfig(BaseConfig):

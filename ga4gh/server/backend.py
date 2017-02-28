@@ -681,6 +681,12 @@ class Backend(object):
             protocol_version=protocol.version))
 
     def runAddAnnouncement(self, flaskrequest):
+        """
+        Takes a flask request from the frontend and attempts to parse
+        into an AnnouncePeerRequest. If successful, it will log the
+        announcement to the `announcement` table with some other metadata
+        gathered from the request.
+        """
         announcement = {}
         # We want to parse the request ourselves to collect a little more
         # data about it. We're bypassing some of the checks done in frontend
@@ -693,7 +699,7 @@ class Backend(object):
             announcement['hostname'] = flaskrequest.host_url
         except AttributeError:
             # Sometimes in testing we will send protocol requests instead
-            # of flask requests
+            # of flask requests.
             try:
                 requestData = protocol.fromJson(
                     flaskrequest, protocol.AnnouncePeerRequest)
@@ -705,11 +711,20 @@ class Backend(object):
         announcement['url'] = requestData.peer.url
         announcement['attributes'] = protocol.toJson(
             requestData.peer.attributes)
+        # TODO get user agent from submission
         # announcement['submitter_json'] = #request
-        self.getDataRepository().insertAnnouncement(announcement)
-        return protocol.toJson(protocol.AnnouncePeerResponse(success=True))
+        success = True
+        try:
+            self.getDataRepository().insertAnnouncement(announcement)
+        except:
+            success = False
+        return protocol.toJson(protocol.AnnouncePeerResponse(success=success))
 
     def runListPeers(self, request):
+        """
+        Takes a ListPeersRequest and returns a ListPeersResponse using
+        a page_token and page_size if provided.
+        """
         try:
             request = protocol.fromJson(request, protocol.ListPeersRequest)
         except:
@@ -725,7 +740,7 @@ class Backend(object):
             page_token = 0
 
         # We use SQL to do the paging directly. Asking for one more than the
-        # page tells us whether to set a nextPageToken.
+        # requested page tells us whether to set a nextPageToken.
         peers = list(self.getDataRepository().getPeers(
             offset=page_token * page_size,
             limit=page_size + 1))

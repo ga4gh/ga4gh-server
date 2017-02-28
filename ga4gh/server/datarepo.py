@@ -9,6 +9,7 @@ import json
 import os
 import sqlite3
 import datetime
+import re
 
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.datasets as datasets
@@ -24,9 +25,7 @@ import ga4gh.server.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.datamodel.peers as peers
 import ga4gh.server.exceptions as exceptions
-
-import repo.models as m
-import re
+import ga4gh.server.repo.models as m
 
 import ga4gh.schemas.protocol as protocol
 
@@ -35,7 +34,10 @@ MODE_WRITE = 'w'
 
 
 def isUrl(urlString):
-    # http://stackoverflow.com/questions/7160737/
+    """
+    Attempts to return whether a given URL string is valid by applying
+    a regex match. From http://stackoverflow.com/questions/7160737/
+    """
     regex = re.compile(
         r'^(?:http|ftp)s?://'  # http:// or https://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)'
@@ -44,14 +46,7 @@ def isUrl(urlString):
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
     return regex.match(urlString)
-
-
-# http://stackoverflow.com/questions/1305532/convert-python-dict-to-object
-class Struct:
-    def __init__(self, **entries):
-        self.__dict__.update(entries)
 
 
 class AbstractDataRepository(object):
@@ -103,13 +98,15 @@ class AbstractDataRepository(object):
         return [self._datasetIdMap[id_] for id_ in self._datasetIds]
 
     def insertPeer(self, peer):
+        """
+        Adds a peer to the list of peers in the repository.
+        """
         self._peers.append(peer)
 
     def getPeer(self, url):
         """
         Select the first peer in the datarepo with the given url.
         """
-        print(self.getPeers())
         peers = filter(lambda x: x.getUrl() == url, self.getPeers())
         if len(peers) == 0:
             raise exceptions.PeerNotFoundException(url)
@@ -550,12 +547,19 @@ class SqlDataRepository(AbstractDataRepository):
             raise ValueError("Repo must be opened in read mode")
 
     def getPeer(self, url):
+        """
+        Finds a peer by URL and return the first peer record with that URL.
+        """
         peers = list(m.Peer.select().where(m.Peer.url == url))
         if len(peers) == 0:
             raise exceptions.PeerNotFoundException(url)
         return peers[0]
 
     def getPeers(self, offset=0, limit=0):
+        """
+        Get the list of peers using an SQL offset and limit. Returns a list
+        of peer datamodel objects in a list.
+        """
         select = m.Peer.select()
         ret = []
         for record in select.order_by(m.Peer.url).limit(limit).offset(offset):
@@ -565,10 +569,14 @@ class SqlDataRepository(AbstractDataRepository):
         return ret
 
     def insertAnnouncement(self, announcement):
+        """
+        Adds an announcement to the registry for later analysis.
+        """
         url = announcement.get('url', None)
         if not url or not isUrl(url):
             raise exceptions.BadRequestException(url)
         try:
+            # TODO get more details about the user agent
             m.Announcement.create(
                 url=announcement.get('url'),
                 submitter=announcement.get('hostname', None),
@@ -1336,6 +1344,9 @@ class SqlDataRepository(AbstractDataRepository):
         q.execute()
 
     def insertPeer(self, peer):
+        """
+        Accepts a peer datamodel object and adds it to the registry.
+        """
         try:
             m.Peer.create(
                 url=peer.getUrl(),
@@ -1344,11 +1355,18 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(e)
 
     def removePeer(self, url):
+        """
+        Remove peers by URL.
+        :return:
+        """
         q = m.Peer.delete().where(
             m.Peer.url == url)
         q.execute()
 
     def _createNetworkTables(self):
+        """
+        Creates tables used for managing the network service.
+        """
         self.database.create_table(m.Peer)
         self.database.create_table(m.Announcement)
 

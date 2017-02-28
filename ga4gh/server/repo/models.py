@@ -16,8 +16,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import peewee as pw
 import datetime
+import peewee as pw
 
 # The databaseProxy is used to dynamically changed the
 # backing database and needs to be set to an actual
@@ -55,7 +55,7 @@ class Announcement(BaseModel):
     # a server has made the announcement this will be
     # the same as the url without the path.
     submitter = pw.TextField(null=True)
-    # The entire submission request stored as JSON.
+    # Other information about the request stored as JSON.
     submitter_json = pw.TextField(null=True)
     # The time at which this record was created.
     created = pw.DateTimeField()
