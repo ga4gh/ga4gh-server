@@ -31,6 +31,7 @@ import ga4gh.server.datamodel as datamodel
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.datarepo as datarepo
 import ga4gh.server.auth as auth
+import ga4gh.server.network as network
 
 import ga4gh.schemas.protocol as protocol
 
@@ -207,58 +208,6 @@ def reset():
     configStr = 'ga4gh.server.serverconfig:FlaskDefaultConfig'
     app.config.from_object(configStr)
 
-
-def _getInitialPeerList(app):
-    """
-    Attempts to get a list of peers from a file specified in configuration.
-
-    This file has one URL per line and can contain newlines and comments.
-
-        # Main ga4gh node
-        http://1kgenomes.ga4gh.org
-        # Local intranet peer
-        https://192.168.1.1
-
-    The server will attempt to add URLs in this file to its registry at
-    startup and will log a warning if the file isn't found.
-    """
-    filePath = app.config.get('INITIAL_PEERS')
-    try:
-        textFile = open(filePath, 'r')
-        text = textFile.read()
-        textFile.close()
-        ret = text.split("\n")
-    except:
-        app.logger.warn("Couldn't load the initial "
-                        "peer list. Try adding a "
-                        "file named 'initial_peers.txt' "
-                        "to {}".format(os.getcwd()))
-        ret = []
-    # Remove lines that start with a hash or are empty.
-    return filter(lambda x: x != "" and not x.find("#") != -1, ret)
-
-
-def _insertInitialPeer(app, url):
-    """
-    Takes the app object and a URL and attempts to add a peer by that
-    URL to the registry. Used when loading the list of initial peers.
-    """
-    insertPeer = app.backend.getDataRepository().insertPeer
-    try:
-        peer = datamodel.peers.Peer(url)
-        insertPeer(peer)
-    except exceptions.RepoManagerException as exc:
-        app.logger.debug(
-            "Peer already in registry {} {}".format(
-                peer.getUrl(), exc))
-    except exceptions.BadUrlException as exc:
-        app.logger.debug(
-            "A URL in the initial peer list {} was "
-            "malformed. {}".format(app.config.get(
-                'INITIAL_PEERS'), exc))
-        return app
-
-
 def _configure_backend(app):
     """A helper function used just to help modularize the code a bit."""
     # Allocate the backend
@@ -356,20 +305,10 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     app.cache = FileSystemCache(
         app.cache_dir, threshold=5000, default_timeout=600, mode=384)
     # Peer service initialization
-    initialPeers = _getInitialPeerList(app)
-    if initialPeers is not None and len(initialPeers) > 0:
-        for initialPeer in initialPeers:
-            try:
-                headers = {'content-type': 'application/json'}
-                data = {"peer": {"url": initialPeer}}
-                url = "{}/announce".format(initialPeer.rstrip("/"))
-                requests.post(url,
-                    headers=headers,
-                    json=data)
-            except Exception as e:
-                app.logger.info("Couldn't announce to initial peer {}".format(
-                    e))
-            _insertInitialPeer(app, initialPeer)
+    network.initialize(
+        app.config.get('INITIAL_PEERS'),
+        app.backend.getDataRepository(),
+        app.logger)
     app.oidcClient = None
     app.myPort = port
     if app.config.get('AUTH0_ENABLED'):
