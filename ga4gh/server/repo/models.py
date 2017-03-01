@@ -51,12 +51,9 @@ class Announcement(BaseModel):
     id = pw.PrimaryKeyField()
     # URL submitted as a possible peer
     url = pw.TextField(null=False)
-    # The hostname of the submitter. In the case when
-    # a server has made the announcement this will be
-    # the same as the url without the path.
-    submitter = pw.TextField(null=True)
     # Other information about the request stored as JSON.
-    submitter_json = pw.TextField(null=True)
+    remote_addr = pw.TextField(null=True)
+    user_agent = pw.TextField(null=True)
     # The time at which this record was created.
     created = pw.DateTimeField()
 

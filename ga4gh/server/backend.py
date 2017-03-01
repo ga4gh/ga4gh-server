@@ -571,6 +571,15 @@ class Backend(object):
             request, rnaQuant)
         return iterator
 
+    def peersGenerator(self, request):
+        """
+        Returns a generator over the (peer, nextPageToken) pairs
+        defined by the specified request.
+        """
+        return paging.PeerIterator(
+            request,
+            self.getDataRepository())
+
     ###########################################################
     #
     # Public API methods. Each of these methods implements the
@@ -697,6 +706,8 @@ class Backend(object):
             requestData = protocol.fromJson(
                 flaskrequest.get_data(), protocol.AnnouncePeerRequest)
             announcement['hostname'] = flaskrequest.host_url
+            announcement['remote_addr'] = flaskrequest.remote_addr
+            announcement['user_agent'] = flaskrequest.headers.get('User-Agent')
         except AttributeError:
             # Sometimes in testing we will send protocol requests instead
             # of flask requests and so the hostname and user agent won't
@@ -715,14 +726,12 @@ class Backend(object):
                 requestData.peer.attributes))
         announcement['url'] = peer.getUrl()
         announcement['attributes'] = peer.getAttributes()
-        # TODO get user agent from submission
-        # announcement['submitter_json'] = #request
-        success = True
         try:
             self.getDataRepository().insertAnnouncement(announcement)
         except:
-            success = False
-        return protocol.toJson(protocol.AnnouncePeerResponse(success=success))
+            raise exceptions.BadRequestException(announcement['url'])
+        return protocol.toJson(
+            protocol.AnnouncePeerResponse(success=True))
 
     def runListPeers(self, request):
         """
@@ -733,7 +742,7 @@ class Backend(object):
             request,
             protocol.ListPeersRequest,
             protocol.ListPeersResponse,
-            paging.PeerIterator(request, self.getDataRepository()))
+            self.peersGenerator)
 
     def runGetVariant(self, id_):
         """

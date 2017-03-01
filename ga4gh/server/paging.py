@@ -467,7 +467,8 @@ class PeerIterator(SequenceIterator):
 
     def _search(self):
         iterator = self._dataRepo.getPeers(
-            offset=int(self._startIndex))
+            offset=int(self._startIndex),
+            limit=self._maxResults)
         return iterator
 
     def _prepare(self, obj):
