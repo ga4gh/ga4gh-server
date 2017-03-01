@@ -102,6 +102,44 @@ well in their repository.
 
     $ ga4gh_repo verify registry.db
 
+--------
+add-peer
+--------
+
+The server maintains a list of known peers. To add a peer to this list use
+the ``add-peer`` command.
+
+.. argparse::
+   :module: ga4gh.server.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-peer
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-peer http://1kgenomes.ga4gh.org
+
+-----------
+remove-peer
+-----------
+
+You can remove a peer from the list of peers by its URL.
+
+.. argparse::
+   :module: ga4gh.server.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-peer
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-peer http://1kgenomes.ga4gh.org
 
 -----------
 add-dataset
