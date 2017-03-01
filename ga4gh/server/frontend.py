@@ -33,7 +33,6 @@ import ga4gh.server.datarepo as datarepo
 import ga4gh.server.auth as auth
 
 import ga4gh.schemas.protocol as protocol
-from ga4gh.client import client
 
 MIMETYPE = "application/json"
 SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
@@ -361,8 +360,12 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     if initialPeers is not None and len(initialPeers) > 0:
         for initialPeer in initialPeers:
             try:
-                c = client.HttpClient(initialPeer, verbosity=0)
-                c.announce(initialPeer).next()
+                headers = {'content-type': 'application/json'}
+                data = {"peer": {"url": initialPeer}}
+                url = "{}/announce".format(initialPeer.rstrip("/"))
+                requests.post(url,
+                    headers=headers,
+                    json=data)
             except Exception as e:
                 app.logger.info("Couldn't announce to initial peer {}".format(
                     e))
