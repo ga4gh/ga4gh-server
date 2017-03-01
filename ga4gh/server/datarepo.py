@@ -83,13 +83,15 @@ class AbstractDataRepository(object):
 
     def insertPeer(self, peer):
         """
-        Adds a peer to the list of peers in the repository.
+        Adds a peer to the list of peers in the repository. Used only in
+        testing.
         """
         self._peers.append(peer)
 
     def getPeer(self, url):
         """
-        Select the first peer in the datarepo with the given url.
+        Select the first peer in the datarepo with the given url simulating
+        the behavior of selecting by URL. This is only used during testing.
         """
         peers = filter(lambda x: x.getUrl() == url, self.getPeers())
         if len(peers) == 0:
@@ -98,14 +100,15 @@ class AbstractDataRepository(object):
 
     def getPeers(self, offset=0, limit=100):
         """
-        Returns the list of peers with an optional offset and limit.
+        Returns the list of peers with an optional offset and limit
+        simulating the SQL registry for testing.
         """
         return self._peers[offset:offset + limit]
 
     def insertAnnouncement(self, announcement):
         """
-        A placeholder function to simulate receiving an announcement. It
-        will throw an exception is the URL is invalid.
+        A placeholder function to simulate receiving an announcement used
+        in testing. It will throw an exception if the URL is invalid.
         """
         peers.Peer(announcement.get('url'))
 
