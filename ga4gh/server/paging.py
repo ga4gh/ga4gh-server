@@ -378,7 +378,7 @@ class ExpressionLevelsIterator(SequenceIterator):
     def _search(self):
         iterator = list(self._rnaQuant.getExpressionLevels(
             threshold=self._request.threshold,
-            featureIds=self._request.feature_ids,
+            names=self._request.names,
             startIndex=self._startIndex,
             maxResults=self._maxResults))
         return iterator

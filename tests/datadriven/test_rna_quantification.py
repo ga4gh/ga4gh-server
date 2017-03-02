@@ -42,8 +42,7 @@ _expressionTestData = {
     "name": "ENSG00000076984.13",
     "rna_quantification_id": "",
     "expression": 24.52,
-    "feature_id": "ENSG00000076984.13",
-    "feature_ids": ["ENSG00000076984.14", "ENSG00000076984.13"],
+    "names": ["ENSG00000076984.14", "ENSG00000076984.13"],
     "is_normalized": True,
     "raw_read_count": 4317.0,
     "score": 24.35,
@@ -143,7 +142,6 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
         compoundId = datamodel.ExpressionLevelCompoundId.parse(idString)
         self.assertEqual(gaExpression.id, str(compoundId))
         self.assertEqual(gaExpression.name, testData["name"])
-        self.assertEqual(gaExpression.feature_id, testData["feature_id"])
         self.assertEqual(
             gaExpression.rna_quantification_id,
             str(gaExpressionObj.getParentContainer().getCompoundId()))
@@ -172,11 +170,11 @@ class RnaQuantificationTest(datadriven.DataDrivenTest):
             _expressionTestData["num_entries_over_threshold"],
             len(overThreshold))
 
-    def testSearchExpressionLevelsWithFeatureIds(self):
+    def testSearchExpressionLevelsWithNames(self):
         rnaQuantification = self._gaObject.getRnaQuantificationByIndex(0)
-        featureIds = _expressionTestData["feature_ids"]
+        names = _expressionTestData["names"]
         expressionLevels = rnaQuantification.getExpressionLevels(
-            featureIds=featureIds)
+            names=names)
         self.assertEqual(
             _expressionTestData["num_expression_entries"],
             len(expressionLevels))

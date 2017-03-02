@@ -37,7 +37,6 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         super(AbstractExpressionLevel, self).__init__(
             parentContainer, localId)
         self._expression = 0.0
-        self._featureId = ""
         self._isNormalized = ""
         self._rawReadCount = 0.0
         self._score = 0.0
@@ -50,7 +49,6 @@ class AbstractExpressionLevel(datamodel.DatamodelObject):
         protocolElement = protocol.ExpressionLevel()
         protocolElement.id = self.getId()
         protocolElement.name = self._name
-        protocolElement.feature_id = self._featureId
         protocolElement.rna_quantification_id = self._parentContainer.getId()
         protocolElement.raw_read_count = self._rawReadCount
         protocolElement.expression = self._expression
@@ -71,7 +69,6 @@ class SqliteExpressionLevel(AbstractExpressionLevel):
         super(SqliteExpressionLevel, self).__init__(
             parentContainer, str(record["id"]))
         self._expression = record["expression"]
-        self._featureId = record["feature_id"]
         # sqlite stores booleans as int (False = 0, True = 1)
         self._isNormalized = bool(record["is_normalized"])
         self._rawReadCount = record["raw_read_count"]
@@ -326,7 +323,7 @@ class SqliteRnaQuantification(AbstractRnaQuantification):
         return self._dbFilePath
 
     def getExpressionLevels(
-            self, threshold=0.0, featureIds=[], startIndex=0, maxResults=0):
+            self, threshold=0.0, names=[], startIndex=0, maxResults=0):
         """
         Returns the list of ExpressionLevels in this RNA Quantification.
         """
@@ -334,7 +331,7 @@ class SqliteRnaQuantification(AbstractRnaQuantification):
         with self._db as dataSource:
             expressionsReturned = dataSource.searchExpressionLevelsInDb(
                 rnaQuantificationId,
-                featureIds=featureIds,
+                names=names,
                 threshold=threshold,
                 startIndex=startIndex,
                 maxResults=maxResults)
@@ -392,7 +389,7 @@ class SqliteRnaBackend(sqlite_backend.SqliteBackedDataSource):
                 rnaQuantificationId)
 
     def searchExpressionLevelsInDb(
-            self, rnaQuantId, featureIds=[], threshold=0.0, startIndex=0,
+            self, rnaQuantId, names=[], threshold=0.0, startIndex=0,
             maxResults=0):
         """
         :param rnaQuantId: string restrict search by quantification id
@@ -403,12 +400,12 @@ class SqliteRnaBackend(sqlite_backend.SqliteBackedDataSource):
                "rna_quantification_id = ? "
                "AND expression > ? ")
         sql_args = (rnaQuantId, threshold)
-        if len(featureIds) > 0:
-            sql += "AND feature_id in ("
-            sql += ",".join(['?' for featureId in featureIds])
+        if len(names) > 0:
+            sql += "AND name in ("
+            sql += ",".join(['?' for name in names])
             sql += ") "
-            for featureId in featureIds:
-                sql_args += (featureId,)
+            for name in names:
+                sql_args += (name,)
         sql += sqlite_backend.limitsSql(
             startIndex=startIndex, maxResults=maxResults)
         query = self._dbconn.execute(sql, sql_args)
@@ -468,7 +465,7 @@ class SimulatedRnaQuantification(AbstractRnaQuantification):
 
     # TODO this makes very little sense
     def getExpressionLevels(
-            self, threshold=0.0, featureIds=[],
+            self, threshold=0.0, names=[],
             startIndex=0, maxResults=0):  # NOQA
         return [self._expressionLevelIdMap[id_] for
                 id_ in self._expressionLevelIds]
