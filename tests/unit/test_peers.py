@@ -16,6 +16,7 @@ class TestPeers(unittest.TestCase):
     Unit tests for the peer datamodel.
     """
     def testBadUrlException(self):
+        peers.Peer("https://1kgenomes.ga4gh.org")
         with (self.assertRaises(exceptions.BadUrlException)):
             peers.Peer("ht9://1kgenomes.ga4gh.org")
         with (self.assertRaises(exceptions.BadUrlException)):

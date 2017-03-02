@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 
 import json
 import re
+import urlparse
 
 import ga4gh.server.exceptions as exceptions
 
@@ -15,9 +16,14 @@ import ga4gh.schemas.protocol as protocol
 
 def isUrl(urlString):
     """
-    Attempts to return whether a given URL string is valid by applying
-    a regex match. From http://stackoverflow.com/questions/7160737/
+    Attempts to return whether a given URL string is valid by checking
+    for the presence of the URL scheme and netloc using the urlparse
+    module, and then using a regex.
+
+    From http://stackoverflow.com/questions/7160737/
     """
+    parsed = urlparse.urlparse(urlString)
+    urlparseValid = parsed.netloc != '' and parsed.scheme != ''
     regex = re.compile(
         r'^(?:http|ftp)s?://'  # http:// or https://
         r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)'
@@ -26,7 +32,8 @@ def isUrl(urlString):
         r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
         r'(?::\d+)?'  # optional port
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-    return regex.match(urlString)
+
+    return regex.match(urlString) and urlparseValid
 
 
 class Peer:
