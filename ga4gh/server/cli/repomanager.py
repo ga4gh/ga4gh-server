@@ -129,6 +129,20 @@ class RepoManager(object):
         # TODO this is _very_ crude. We need much more options and detail here.
         self._repo.printSummary()
 
+    def listAnnouncements(self):
+        """
+        Lists all the announcements the repo has received.
+        """
+        self._openRepo()
+        self._repo.printAnnouncements()
+
+    def clearAnnouncements(self):
+        """
+        Clears the list of announcements from the repo.
+        """
+        self._openRepo()
+        self._repo.clearAnnouncements()
+
     def verify(self):
         """
         Checks that the data pointed to in the repository works and
@@ -816,6 +830,18 @@ class RepoManager(object):
             subparsers, "list", "List the contents of the repo")
         listParser.set_defaults(runner="list")
         cls.addRepoArgument(listParser)
+
+        listAnnouncementsParser = common_cli.addSubparser(
+            subparsers, "list-announcements", "List the announcements in"
+                                              "the repo.")
+        listAnnouncementsParser.set_defaults(runner="listAnnouncements")
+        cls.addRepoArgument(listAnnouncementsParser)
+
+        clearAnnouncementsParser = common_cli.addSubparser(
+            subparsers, "clear-announcements", "List the announcements in"
+                                               "the repo.")
+        clearAnnouncementsParser.set_defaults(runner="clearAnnouncements")
+        cls.addRepoArgument(clearAnnouncementsParser)
 
         addPeerParser = common_cli.addSubparser(
             subparsers, "add-peer", "Add a peer to the registry by URL.")

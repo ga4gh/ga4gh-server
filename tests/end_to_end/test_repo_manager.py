@@ -48,6 +48,8 @@ class RepoManagerEndToEndTest(unittest.TestCase):
 
     def testEndToEnd(self):
         self._runCmd("init")
+        self._runCmd("list-announcements")
+        self._runCmd("clear-announcements")
         self._runCmd("add-peer", paths.peerUrl)
         self._runCmd("add-ontology", paths.ontologyPath)
         self._runCmd(
