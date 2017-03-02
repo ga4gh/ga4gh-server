@@ -1,6 +1,5 @@
 """
 Provides methods to initialize the server's peer to peer connections.
-
 """
 from __future__ import division
 from __future__ import print_function
@@ -9,7 +8,8 @@ from __future__ import unicode_literals
 import os
 import requests
 
-from ga4gh.server import datamodel, exceptions
+import ga4gh.server.datamodel as datamodel
+import ga4gh.server.exceptions as exceptions
 
 
 def getInitialPeerList(filePath, logger=None):
@@ -26,19 +26,15 @@ def getInitialPeerList(filePath, logger=None):
     The server will attempt to add URLs in this file to its registry at
     startup and will log a warning if the file isn't found.
     """
-
-    try:
-        textFile = open(filePath, 'r')
-        text = textFile.read()
-        textFile.close()
-        ret = text.split("\n")
-    except:
+    ret = []
+    with open(filePath) as textFile:
+        ret = textFile.readlines()
+    if len(ret) == 0:
         if logger:
             logger.warn("Couldn't load the initial "
                         "peer list. Try adding a "
                         "file named 'initial_peers.txt' "
                         "to {}".format(os.getcwd()))
-        ret = []
     # Remove lines that start with a hash or are empty.
     return filter(lambda x: x != "" and not x.find("#") != -1, ret)
 

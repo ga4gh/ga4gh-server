@@ -36,7 +36,7 @@ def isUrl(urlString):
     return regex.match(urlString) and urlparseValid
 
 
-class Peer:
+class Peer(object):
     """
     This class represents an abstract Peer object.
     It sets default values and getters, as well as the
