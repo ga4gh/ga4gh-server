@@ -20,6 +20,45 @@ Release Notes
 +++++++++++++
 
 *****
+0.3.6
+*****
+
+This an alpha pre-release that contains some major updates. The most important 
+changes are highlighted in **bold** below. We have also made some updates to 
+the documentation.
+
+Features:
+
+- **Rename package from “ga4gh” to “ga4gh-server”** #1582, #1583
+
+- Added **support for BigWig files** in a new Continuous Data object #1573
+
+- Add **ability to list and join peer server networks** #1507
+
+- Remove feature_id from ExpressionLevel #1580
+
+- Replaced info fields with rich type Attributes fields #1521
+
+- Replace NCBI taxon ID integer with ontology term #1551
+
+- Changed ontology term “id” to “term_id” #1513
+
+Documentation:
+
+- Document auto-releases, constraint instructions #1578
+
+- Improved development document for virtualenv command #1550
+
+Infrastructure:
+
+- Automatically deploy tagged releases to Pypi from Travis #1576
+
+- Refactor transcript annotation #1334
+
+- Speedups to rna quantification ingest #1564
+
+
+*****
 0.3.5
 *****
 
