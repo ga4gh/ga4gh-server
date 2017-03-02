@@ -9,7 +9,6 @@ import json
 import os
 import sqlite3
 import datetime
-import re
 
 import ga4gh.server.datamodel as datamodel
 import ga4gh.server.datamodel.datasets as datasets
@@ -547,7 +546,8 @@ class SqlDataRepository(AbstractDataRepository):
         Get the list of peers using an SQL offset and limit. Returns a list
         of peer datamodel objects in a list.
         """
-        select = m.Peer.select().order_by(m.Peer.url).limit(limit).offset(offset)
+        select = m.Peer.select().order_by(
+            m.Peer.url).limit(limit).offset(offset)
         return [peers.Peer(p.url, record=p) for p in select]
 
     def insertAnnouncement(self, announcement):

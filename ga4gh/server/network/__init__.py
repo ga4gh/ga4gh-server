@@ -11,6 +11,7 @@ import requests
 
 from ga4gh.server import datamodel, exceptions
 
+
 def getInitialPeerList(filePath, logger=None):
     """
     Attempts to get a list of peers from a file specified in configuration.
@@ -34,9 +35,9 @@ def getInitialPeerList(filePath, logger=None):
     except:
         if logger:
             logger.warn("Couldn't load the initial "
-                            "peer list. Try adding a "
-                            "file named 'initial_peers.txt' "
-                            "to {}".format(os.getcwd()))
+                        "peer list. Try adding a "
+                        "file named 'initial_peers.txt' "
+                        "to {}".format(os.getcwd()))
         ret = []
     # Remove lines that start with a hash or are empty.
     return filter(lambda x: x != "" and not x.find("#") != -1, ret)
@@ -54,33 +55,22 @@ def insertInitialPeer(dataRepository, url, logger=None):
     except exceptions.RepoManagerException as exc:
         if logger:
             logger.debug(
-                "Peer already in registry {} {}".format(
-                    peer.getUrl(), exc))
+                "Peer already in registry {} {}".format(peer.getUrl(), exc))
     except exceptions.BadUrlException as exc:
         if logger:
-            logger.debug(
-                "A URL in the initial peer list {} was "
-                "malformed. {}".format(app.config.get(
-                    'INITIAL_PEERS'), exc))
+            logger.debug("A URL in the initial "
+                         "peer list {} was malformed. {}".format(url), exc)
 
 
 def initialize(filePath, dataRepository, logger=None):
-    initialPeers = getInitialPeerList(filePath)
-    if initialPeers is not None and len(initialPeers) > 0:
-        for initialPeer in initialPeers:
-            try:
-                headers = {'content-type': 'application/json'}
-                data = {"peer": {"url": initialPeer}}
-                url = "{}/announce".format(initialPeer.rstrip("/"))
-                requests.post(url,
-                              headers=headers,
-                              json=data)
-            except Exception as e:
-                if logger:
-                    logger.info("Couldn't announce "
-                                "to initial peer {}".format(
-                        (e, url)))
-            insertInitialPeer(
-                dataRepository,
-                initialPeer,
-                logger)
+    for initialPeer in getInitialPeerList(filePath):
+        try:
+            headers = {'content-type': 'application/json'}
+            data = {"peer": {"url": initialPeer}}
+            url = "{}/announce".format(initialPeer.rstrip("/"))
+            requests.post(url, headers=headers, json=data)
+        except Exception as e:
+            if logger:
+                logger.info("Couldn't announce to initial peer {}".format(
+                    (e, url)))
+        insertInitialPeer(dataRepository, initialPeer, logger)

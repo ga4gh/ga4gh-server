@@ -208,6 +208,7 @@ def reset():
     configStr = 'ga4gh.server.serverconfig:FlaskDefaultConfig'
     app.config.from_object(configStr)
 
+
 def _configure_backend(app):
     """A helper function used just to help modularize the code a bit."""
     # Allocate the backend
