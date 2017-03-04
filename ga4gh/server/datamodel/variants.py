@@ -689,11 +689,20 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
                 variant.filters_failed.extend(filterKeys)
         # record.qual is also available, when supported by GAVariant.
         for key, value in record.info.iteritems():
-            if value is not None:
-                if isinstance(value, str):
-                    value = value.split(',')
-                protocol.setAttribute(
-                    variant.attributes.attr[key].values, value)
+            if value is None:
+                continue
+            if key == 'SVTYPE':
+                variant.variant_type = value
+            elif key == 'SVLEN':
+                variant.svlen = int(value[0])
+            elif key == 'CIPOS':
+                variant.cipos.extend(value)
+            elif key == 'CIEND':
+                variant.ciend.extend(value)
+            elif isinstance(value, str):
+                value = value.split(',')
+            protocol.setAttribute(
+                variant.attributes.attr[key].values, value)
         for callSetId in callSetIds:
             callSet = self.getCallSet(callSetId)
             pysamCall = record.samples[str(callSet.getSampleName())]

@@ -131,6 +131,29 @@ class VariantSetTest(datadriven.DataDrivenTest):
             else:
                 self.assertEqual(len(gaObjectInfo[key].values), 1)
 
+    def _verifyStructuralInfo(self, gaVariant, pyvcfInfo):
+        pyvcfType = None
+        pyvcfLen = None
+        pyvcfPos = None
+        pyvcfEnd = None
+        for key, value in pyvcfInfo.iteritems():
+            if key == 'SVTYPE':
+                pyvcfType = value
+            elif key == 'SVLEN':
+                pyvcfLen = value[0]
+            elif key == 'CIPOS':
+                pyvcfPos = value
+            elif key == 'CIEND':
+                pyvcfEnd = value
+        if gaVariant.variant_type is not None or pyvcfType is not None:
+            self.assertEqual(gaVariant.variant_type, pyvcfType)
+        if gaVariant.svlen != 0 or pyvcfLen is not None:
+            self.assertEqual(gaVariant.svlen, pyvcfLen)
+        if len(gaVariant.cipos) != 0 or pyvcfPos is not None:
+            self.assertEqual(gaVariant.cipos, pyvcfPos)
+        if len(gaVariant.ciend) != 0 or pyvcfEnd is not None:
+            self.assertEqual(gaVariant.ciend, pyvcfEnd)
+
     def _verifyVariantCallEqual(self, gaCall, pyvcfCall):
         genotype = convertVCFGenotype(pyvcfCall.data.GT)
         # callSetId information is not available in pyvcf.model._Call
@@ -193,6 +216,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
                     self.assertEqual(str(alt1), str(alt2))
             else:
                 self.assertEqual(gaVariant.alternate_bases, alt)
+            self._verifyStructuralInfo(gaVariant, pyvcfInfo)
             if not gaVariant.filters_applied:
                 self.assertEqual(pyvcfVariant.FILTER, None)
             elif gaVariant.filters_passed:
