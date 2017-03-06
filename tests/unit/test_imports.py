@@ -189,6 +189,7 @@ class ImportGraphLayerChecker(object):
             'ga4gh/server/datamodel/continuous.py',
             'ga4gh/server/datamodel/genotype_phenotype.py',
             'ga4gh/server/datamodel/genotype_phenotype_featureset.py',
+            'ga4gh/server/datamodel/peers.py',
             'ga4gh/server/gff3.py',
             'ga4gh/server/sqlite_backend.py',
         ],

@@ -34,6 +34,8 @@ def buildTestData(
     useRelativePath = '-r' if relativePaths else ''
     run("init", "-f", repoFile)
 
+    run("add-peer", repoFile, useRelativePath, "http://example.ga4gh.org")
+
     pattern = os.path.join(prefix, "referenceSets", "*.fa.gz")
     for dataFile in glob.glob(pattern):
         run("add-referenceset", repoFile, useRelativePath, dataFile,

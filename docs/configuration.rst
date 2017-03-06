@@ -65,6 +65,12 @@ REQUEST_VALIDATION
     they conform to the protocol. This may result in clients with poor standards
     compliance receiving errors rather than the expected results.
 
+INITIAL_PEERS
+    When starting, you can set a list of initial peers to contact using a
+    simple text file. Add a URL per line for peers you would like to add to
+    the registry as initial peers. Each time the server starts, this set of
+    peers will be announced and added to the registry.
+
 LANDING_MESSAGE_HTML
     The server provides a simple landing page at its root. By setting this
     value to point at a file containing an HTML block element it is possible to
