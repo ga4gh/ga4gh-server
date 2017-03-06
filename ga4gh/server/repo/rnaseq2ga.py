@@ -37,7 +37,6 @@ class RnaSqliteStore(object):
                        id INTEGER,
                        rna_quantification_id TEXT,
                        name TEXT,
-                       feature_id TEXT,
                        expression REAL,
                        is_normalized BOOLEAN,
                        raw_read_count REAL,
@@ -69,7 +68,7 @@ class RnaSqliteStore(object):
     def addExpression(self, datafields):
         """
         Adds an Expression to the db.  Datafields is a tuple in the order:
-        id, rna_quantification_id, name, feature_id, expression,
+        id, rna_quantification_id, name, expression,
         is_normalized, raw_read_count, score, units, conf_low, conf_hi
         """
         self._expressionValueList.append(datafields)
@@ -78,7 +77,7 @@ class RnaSqliteStore(object):
 
     def batchAddExpression(self):
         if len(self._expressionValueList) > 0:
-            sql = "INSERT INTO Expression VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+            sql = "INSERT INTO Expression VALUES (?,?,?,?,?,?,?,?,?,?)"
             self._cursor.executemany(sql, self._expressionValueList)
             self._dbConn.commit()
             self._expressionValueList = []
@@ -89,8 +88,8 @@ class RnaSqliteStore(object):
         take a long time.
         """
 
-        sql = '''CREATE INDEX feature_id_index
-                 ON Expression (feature_id)'''
+        sql = '''CREATE INDEX name_index
+                 ON Expression (name)'''
         self._cursor.execute(sql)
         self._dbConn.commit()
 
@@ -111,7 +110,6 @@ class AbstractWriter(object):
         self._expressionLevelCol = None
         self._idCol = None
         self._nameCol = None
-        self._featureCol = None
         self._countCol = None
         self._confColLow = None
         self._confColHi = None
@@ -135,20 +133,13 @@ class AbstractWriter(object):
                        "Missing {} column in expression table.".format(name))
         return colNum
 
-    def writeExpression(self, rnaQuantificationId, quantfilename,
-                        featureSetNames=None):
+    def writeExpression(self, rnaQuantificationId, quantfilename):
         """
         Reads the quantification results file and adds entries to the
         specified database.
         """
         isNormalized = self._isNormalized
         units = self._units
-        featureSets = None
-        if self._dataset and featureSetNames:
-            featureSets = []
-            for annotationName in featureSetNames.split(","):
-                featureSets.append(
-                    self._dataset.getFeatureSetByName(annotationName))
         with open(quantfilename, "r") as quantFile:
             quantificationReader = csv.reader(quantFile, delimiter=b"\t")
             header = next(quantificationReader)
@@ -158,7 +149,6 @@ class AbstractWriter(object):
             countColNum = self.setColNum(header, self._countCol, -1)
             confColLowNum = self.setColNum(header, self._confColLow, -1)
             confColHiNum = self.setColNum(header, self._confColHi, -1)
-            featureColNum = self.setColNum(header, self._featureCol)
             expressionId = 0
             for expression in quantificationReader:
                 expressionLevel = expression[expressionLevelColNum]
@@ -174,21 +164,9 @@ class AbstractWriter(object):
                     confidenceHi = float(expression[confColHiNum])
                     score = (confidenceLow + confidenceHi)/2
 
-                featureName = expression[featureColNum]
-                featureId = ""
-                if featureSets is not None:
-                    for featureSet in featureSets:
-                        if featureId == "":
-                            for feature in featureSet.getFeatures(
-                                    name=featureName):
-                                featureId = feature.id
-                                break
-                        else:
-                            break
                 datafields = (expressionId, rnaQuantificationId, name,
-                              featureId, expressionLevel, isNormalized,
-                              rawCount, score, units, confidenceLow,
-                              confidenceHi)
+                              expressionLevel, isNormalized, rawCount, score,
+                              units, confidenceLow, confidenceHi)
                 self._db.addExpression(datafields)
                 expressionId += 1
             self._db.batchAddExpression()
@@ -210,8 +188,7 @@ class CufflinksWriter(AbstractWriter):
         self._isNormalized = True
         self._expressionLevelCol = "FPKM"
         self._idCol = "tracking_id"
-        self._nameCol = "gene_short_name"
-        self._featureCol = "gene_id"
+        self._nameCol = "tracking_id"
         self._confColLow = "FPKM_conf_lo"
         self._confColHi = "FPKM_conf_hi"
         self.setUnits(units)
@@ -241,7 +218,6 @@ class RsemWriter(AbstractWriter):
             rnaDB, featureType=featureType, dataset=dataset)
         self._isNormalized = True
         self._expressionLevelCol = "TPM"
-        self._featureCol = "gene_id"
         self._confColLow = "TPM_ci_lower_bound"
         self._confColHi = "TPM_ci_upper_bound"
         self._countCol = "expected_count"
@@ -268,7 +244,6 @@ class KallistoWriter(AbstractWriter):
         self._expressionLevelCol = "tpm"
         self._idCol = "target_id"
         self._nameCol = "target_id"
-        self._featureCol = "target_id"
         self._countCol = "est_counts"
         self.setUnits(units)
 
@@ -284,10 +259,9 @@ def writeRnaseqTable(rnaDB, analysisIds, description, annotationId,
     rnaDB.batchaddRNAQuantification()
 
 
-def writeExpressionTable(writer, data, featureSetNames=None):
-    for rnaQuantId, quantfilename in data:
-        writer.writeExpression(
-            rnaQuantId, quantfilename, featureSetNames=featureSetNames)
+def writeExpressionTable(writer, data):
+    for rnaQuantId, quantFilename in data:
+        writer.writeExpression(rnaQuantId, quantFilename)
 
 
 def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
@@ -299,7 +273,7 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
     in a sqlite database for use by the GA4GH reference server.
 
     Supports the following quantification output types:
-    Cufflinks, kallisto, RSEM
+    Cufflinks, kallisto, RSEM.
     """
     readGroupSetName = ""
     if readGroupSetNames:
@@ -330,6 +304,4 @@ def rnaseq2ga(quantificationFilename, sqlFilename, localName, rnaType,
     writeRnaseqTable(rnaDB, [localName], description, featureSetIds,
                      readGroupId=readGroupIds, programs=programs,
                      biosampleId=biosampleId)
-    writeExpressionTable(
-        writer, [(localName, quantificationFilename)],
-        featureSetNames=featureSetNames)
+    writeExpressionTable(writer, [(localName, quantificationFilename)])

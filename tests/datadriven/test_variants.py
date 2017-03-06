@@ -83,6 +83,7 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self._vcfVersion = metadata["fileformat"]
         self._infos = vcfReader.infos
         self._formats = vcfReader.formats
+        self._filters = vcfReader.filters
         self.vcfSamples = vcfReader.samples
         for record in vcfReader:
             self._reference_names.add(record.CHROM)
@@ -129,6 +130,29 @@ class VariantSetTest(datadriven.DataDrivenTest):
                     _assertEquivalentGaVCFValues(gaValue, pyvcfValue)
             else:
                 self.assertEqual(len(gaObjectInfo[key].values), 1)
+
+    def _verifyStructuralInfo(self, gaVariant, pyvcfInfo):
+        pyvcfType = None
+        pyvcfLen = None
+        pyvcfPos = None
+        pyvcfEnd = None
+        for key, value in pyvcfInfo.iteritems():
+            if key == 'SVTYPE':
+                pyvcfType = value
+            elif key == 'SVLEN':
+                pyvcfLen = value[0]
+            elif key == 'CIPOS':
+                pyvcfPos = value
+            elif key == 'CIEND':
+                pyvcfEnd = value
+        if gaVariant.variant_type is not None or pyvcfType is not None:
+            self.assertEqual(gaVariant.variant_type, pyvcfType)
+        if gaVariant.svlen != 0 or pyvcfLen is not None:
+            self.assertEqual(gaVariant.svlen, pyvcfLen)
+        if len(gaVariant.cipos) != 0 or pyvcfPos is not None:
+            self.assertEqual(gaVariant.cipos, pyvcfPos)
+        if len(gaVariant.ciend) != 0 or pyvcfEnd is not None:
+            self.assertEqual(gaVariant.ciend, pyvcfEnd)
 
     def _verifyVariantCallEqual(self, gaCall, pyvcfCall):
         genotype = convertVCFGenotype(pyvcfCall.data.GT)
@@ -192,6 +216,15 @@ class VariantSetTest(datadriven.DataDrivenTest):
                     self.assertEqual(str(alt1), str(alt2))
             else:
                 self.assertEqual(gaVariant.alternate_bases, alt)
+            self._verifyStructuralInfo(gaVariant, pyvcfInfo)
+            if not gaVariant.filters_applied:
+                self.assertEqual(pyvcfVariant.FILTER, None)
+            elif gaVariant.filters_passed:
+                self.assertEqual(len(pyvcfVariant.FILTER), 0)
+            else:
+                self.assertEqual(
+                        len(gaVariant.filters_failed),
+                        len(pyvcfVariant.FILTER))
 
             pyvcfCallMap = {}
             for call in pyvcfVariant:
@@ -375,21 +408,30 @@ class VariantSetTest(datadriven.DataDrivenTest):
         self.assertEqual(metadata.value, self._vcfVersion)
 
         gtCounter = 0
+        hasPass = False
         for prefix, content in [("FORMAT", self._formats),
-                                ("INFO", self._infos)]:
+                                ("INFO", self._infos),
+                                ("FILTER", self._filters)]:
             for contentKey in content.keys():
                 key = "{0}.{1}".format(prefix, contentKey)
                 if key == "FORMAT.GT":
                     gtCounter += 1
+                elif key == "FILTER.PASS":
+                    hasPass = True
                 else:
                     self.assertEqual(
-                        keyMap[key].type, content[contentKey].type)
-                    self.assertEqual(keyMap[key].number, convertPyvcfNumber(
-                        content[contentKey].num))
-                    self.assertEqual(
                         keyMap[key].description, content[contentKey].desc)
+                    if prefix != "FILTER":
+                        self.assertEqual(
+                            keyMap[key].type, content[contentKey].type)
+                        self.assertEqual(
+                                keyMap[key].number,
+                                convertPyvcfNumber(content[contentKey].num))
         testMetaLength = (
-            1 + len(self._formats) + len(self._infos) - gtCounter)
+            1 + len(self._formats) + len(self._infos) + len(self._filters)
+            - gtCounter)
+        if not hasPass:  # meta-data always has FILTER.PASS
+            testMetaLength += 1
         self.assertEqual(len(keyMap), testMetaLength)
 
     def testGetVariantsCallSets(self):
