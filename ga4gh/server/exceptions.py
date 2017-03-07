@@ -192,6 +192,12 @@ class DatamodelValidationException(BadRequestException):
     """
 
 
+class BadUrlException(RuntimeException):
+    def __init__(self, url):
+        self.message = "The URL: '{}' was malformed".format(url)
+        self.httpStatus = 400
+
+
 class ReadGroupSetNotMappedToReferenceSetException(BadRequestException):
 
     def __init__(self, readGroupSetId):
@@ -207,6 +213,12 @@ class NotFoundException(RuntimeException):
     """
     httpStatus = 404
     message = "A resource was not found"
+
+
+class PeerNotFoundException(NotFoundException):
+    def __init__(self, url):
+        self.message = "A peer with url '{}' was not found".format(
+            url)
 
 
 class PathNotFoundException(NotFoundException):

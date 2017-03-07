@@ -1,0 +1,10 @@
+# Put a list of initial peers you would like to add here.
+# You can also manage the peer list via the registry.
+#
+#  ga4gh_repo add-peer registry.db http://1kgenomes.ga4gh.org
+#
+# Every time you start the server it will attempt to
+# read this file to bootstrap the p2p network and will announce
+# to these peers.
+#
+http://1kgenomes.ga4gh.org

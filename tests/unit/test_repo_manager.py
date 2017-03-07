@@ -77,11 +77,16 @@ class AbstractRepoManagerTest(unittest.TestCase):
         return repo
 
     def init(self):
+        self._peerUrl = paths.peerUrl
         self.runCommand("init {}".format(self._repoPath))
 
     def addOntology(self):
         self._ontologyName = paths.ontologyName
         cmd = "add-ontology {} {}".format(self._repoPath, paths.ontologyPath)
+        self.runCommand(cmd)
+
+    def addPeer(self):
+        cmd = "add-peer {} {}".format(self._repoPath, paths.peerUrl)
         self.runCommand(cmd)
 
     def addDataset(self, datasetName=None):
@@ -629,6 +634,7 @@ class TestVerify(AbstractRepoManagerTest):
 
     def testVerify(self):
         self.init()
+        self.addPeer()
         self.addDataset()
         self.addOntology()
         self.addReferenceSet()
@@ -639,6 +645,39 @@ class TestVerify(AbstractRepoManagerTest):
         self.addRnaQuantificationSet()
         cmd = "verify {}".format(self._repoPath)
         self.runCommand(cmd)
+
+
+class TestAddPeer(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestAddPeer, self).setUp()
+        self.init()
+
+    def testDefaults(self):
+        self.runCommand("add-peer {} {}".format(
+            self._repoPath, self._peerUrl))
+        repo = self.readRepo()
+        peer = repo.getPeer(self._peerUrl)
+        self.assertEqual(peer.url, self._peerUrl)
+
+
+class TestRemovePeer(AbstractRepoManagerTest):
+
+    def setUp(self):
+        super(TestRemovePeer, self).setUp()
+        self.init()
+        self.addPeer()
+
+    def assertPeerRemoved(self):
+        repo = self.readRepo()
+        self.assertRaises(
+            exceptions.PeerNotFoundException,
+            repo.getPeer, self._peerUrl)
+
+    def testDefaults(self):
+        self.runCommand("remove-peer {} {} -f".format(
+            self._repoPath, self._peerUrl))
+        self.assertPeerRemoved()
 
 
 class TestRemoveOntology(AbstractRepoManagerTest):

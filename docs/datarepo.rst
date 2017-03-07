@@ -72,6 +72,46 @@ understand the structure of the repository that they are managing.
 
     $ ga4gh_repo list registry.db
 
+------------------
+list-announcements
+------------------
+
+To view the announcements the server has received, use this command. It will
+output the announcements as a TSV that can be imported into a spreadsheet
+application.
+
+.. argparse::
+   :module: ga4gh.server.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: list-announcements
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo list-announcements registry.db > announcements.tsv
+
+-------------------
+clear-announcements
+-------------------
+
+To clear the received announcements run this command. This cannot be undone.
+
+.. argparse::
+   :module: ga4gh.server.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: clear-announcements
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo clear-announcements registry.db
+
 
 ------
 verify
@@ -102,6 +142,44 @@ well in their repository.
 
     $ ga4gh_repo verify registry.db
 
+--------
+add-peer
+--------
+
+The server maintains a list of known peers. To add a peer to this list use
+the ``add-peer`` command.
+
+.. argparse::
+   :module: ga4gh.server.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-peer
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-peer http://1kgenomes.ga4gh.org
+
+-----------
+remove-peer
+-----------
+
+You can remove a peer from the list of peers by its URL.
+
+.. argparse::
+   :module: ga4gh.server.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: remove-peer
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-peer http://1kgenomes.ga4gh.org
 
 -----------
 add-dataset

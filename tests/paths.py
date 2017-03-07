@@ -85,3 +85,5 @@ rnaQuantificationSetDbPath = os.path.join(rnaQuantDir, "ENCFF305LZB.db")
 
 # misc.
 landingMessageHtml = os.path.join(testDataDir, "test.html")
+
+peerUrl = "http://1kgenomes.ga4gh.org"
