@@ -1232,7 +1232,7 @@ def repo_main(args=None):
         # Uncaught exception: this is a bug
         message = """
 An internal error has occurred.  Please file a bug report at
-https://github.com/ga4gh/server/issues
+https://github.com/ga4gh/ga4gh-server/issues
 with all the relevant details, and the following stack trace.
 """
         print("{}: error:".format(sys.argv[0]), file=sys.stderr)
