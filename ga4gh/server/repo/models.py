@@ -83,6 +83,7 @@ class Biosample(BaseModel):
     info = pw.TextField(null=True)
     name = pw.TextField()
     updated = pw.TextField(null=True)
+    individualAgeAtCollection = pw.TextField(null=True)
 
     class Meta:
         db_table = 'Biosample'
