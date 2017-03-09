@@ -303,7 +303,7 @@ class TestFrontendOidc(unittest.TestCase):
         typically ["/etc/mime.types","/etc/httpd/conf/mime.types",...]
         If this test fails, see the results of `mimetypes.knownfiles`
         on your host and ensure configuration set up
-        see https://github.com/ga4gh/server/issues/501
+        see https://github.com/ga4gh/ga4gh-server/issues/501
         """
         content_type, encoding = mimetypes.guess_type("foo.json")
         self.assertEqual(content_type, "application/json")

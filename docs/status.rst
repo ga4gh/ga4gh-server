@@ -13,7 +13,7 @@ reads API. Some missing features are:
 - Searching over multiple ReadGroups in different ReadGroupSets.
 
 For more detail on individual development issues, please see the project's
-`issue page <https://github.com/ga4gh/server/issues>`_.
+`issue page <https://github.com/ga4gh/ga4gh-server/issues>`_.
 
 +++++++++++++
 Release Notes

@@ -3,10 +3,11 @@
 Thank you for taking the time to contribute. We appreciate it!
 
 There are two ways to contribute to this effort. The first way is to use this 
-project's [Issues Page](https://github.com/ga4gh/server/issues), which we 
-use as a forum to discuss both major and minor issues related to developing 
-the GA4GH reference implementation. See the [Issue Resolution](#issue_resolution) 
-section below for specifics on how issues are resolved by the community.
+project's [Issues Page](https://github.com/ga4gh/ga4gh-server/issues),
+which we use as a forum to discuss both major and minor issues related to
+developing the GA4GH reference implementation. See the [Issue
+Resolution](#issue_resolution) section below for specifics on how issues are
+resolved by the community.
 
 A second way to contribute to the project is to directly contribute 
 development effort. Please refer to the next section, 

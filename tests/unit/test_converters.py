@@ -84,7 +84,8 @@ class TestSamConverter(unittest.TestCase):
                 # and
                 # [W::sam_parse1] mapped mate cannot have zero coordinate;
                 # treated as unmapped
-                # see discussion in https://github.com/ga4gh/server/pull/789
+                # see discussion in
+                # https://github.com/ga4gh/ga4gh-server/pull/789
                 with utils.suppressOutput():
                     convertedReads = list(samFile.fetch())
             finally:

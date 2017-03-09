@@ -1245,7 +1245,9 @@ class SqlDataRepository(AbstractDataRepository):
                 created=biosample.getCreated(),
                 updated=biosample.getUpdated(),
                 individualid=biosample.getIndividualId(),
-                attributes=json.dumps(biosample.getAttributes()))
+                attributes=json.dumps(biosample.getAttributes()),
+                individualAgeAtCollection=json.dumps(
+                        biosample.getIndividualAgeAtCollection()))
         except Exception:
             raise exceptions.DuplicateNameException(
                 biosample.getLocalId(),

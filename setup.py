@@ -45,7 +45,7 @@ setup(
               "ga4gh.server.templates"],
     namespace_packages=["ga4gh"],
     zip_safe=False,
-    url="https://github.com/ga4gh/server",
+    url="https://github.com/ga4gh/ga4gh-server",
     use_scm_version={"write_to": "ga4gh/server/_version.py"},
     entry_points={
         'console_scripts': [

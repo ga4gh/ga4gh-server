@@ -1,4 +1,4 @@
-# This file lists the requirements needed to develop on ga4gh/server.
+# This file lists the requirements needed to develop on ga4gh/ga4gh-server.
 
 # Include the requirements.txt file
 -r requirements.txt -c constraints.txt

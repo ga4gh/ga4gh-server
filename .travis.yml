@@ -55,5 +55,5 @@ deploy:
         secure: YgK4+2+LKACoDW5EOjd18QdJktq4U9g6SCVk36X7iBDrqwJuYVbVsKbjEALHm7TgPYny03uzGW7/rN/a0HLrmBNKowZ7Tw9s1lU5PhEwt9/mH/uy6EgrWWFFkTipIe/xyig3IhDEyy9Ak5zAydV/epFDoCRkgYbqjq4QAk4RmaQ=
     skip_upload_docs: true
     on:
-        repo: ga4gh/server
+        repo: ga4gh/ga4gh-server
         tags: true
