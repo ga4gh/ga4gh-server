@@ -17,8 +17,6 @@ install:
 # every installable in setup.py's entry_points should be tested here
   - ga4gh_configtest --version
   - ga4gh_server --version
-  - ga2vcf --version
-  - ga2sam --version
   - ga4gh_repo --version
 
 before_script:
@@ -33,7 +31,7 @@ before_install:
 # under it that we want to run (and want to be able to run) as local tests
 script: 
   - flake8 configtest_dev.py convert_error_code.py
-           ga2sam_dev.py ga2vcf_dev.py repo_dev.py server_dev.py
+           repo_dev.py server_dev.py
            setup.py
            tests ga4gh scripts
   - python -mnose tests 

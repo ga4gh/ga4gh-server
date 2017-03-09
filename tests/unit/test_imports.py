@@ -155,8 +155,6 @@ class ImportGraphLayerChecker(object):
             'ga4gh/server/cli/client.py',
             'ga4gh/server/cli/common.py',
             'ga4gh/server/cli/configtest.py',
-            'ga4gh/server/cli/ga2sam.py',
-            'ga4gh/server/cli/ga2vcf.py',
             'ga4gh/server/cli/repomanager.py',
             'ga4gh/server/cli/server.py',
         ],
