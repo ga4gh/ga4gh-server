@@ -298,14 +298,8 @@ use.
 Development utilities
 *********************
 
-All of the command line interface utilities have local scripts
-that simplify development: for example, we can run the local version of the
-``ga2sam`` program by using::
-
-    python ga2sam_dev.py
-
-To run the server locally in development mode, we can use the ``server_dev.py``
-script, e.g.::
+All of the command line interface utilities have local scripts that
+simplify development. To run the server locally in development mode, we can use the ``server_dev.py`` script, e.g.::
 
     python server_dev.py
 

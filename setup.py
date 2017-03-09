@@ -51,8 +51,6 @@ setup(
         'console_scripts': [
             'ga4gh_configtest=ga4gh.server.cli.configtest:configtest_main',
             'ga4gh_server=ga4gh.server.cli.server:server_main',
-            'ga2vcf=ga4gh.server.cli.ga2vcf:ga2vcf_main',
-            'ga2sam=ga4gh.server.cli.ga2sam:ga2sam_main',
             'ga4gh_repo=ga4gh.server.cli.repomanager:repo_main',
         ]
     },
