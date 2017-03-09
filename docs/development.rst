@@ -23,7 +23,7 @@ libraries. On Debian or Ubuntu, we can install these using
 
 .. code-block:: bash
 
-    sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libssl-dev
+    sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libssl-dev curl libcurl4-openssl-dev
 
 .. note::
     Instructions for configuring the reference server on Mac OS X can be found here :ref:`Installation <macosinstall>`.
