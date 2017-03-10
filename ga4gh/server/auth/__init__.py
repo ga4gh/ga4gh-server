@@ -9,7 +9,6 @@ import flask
 import requests
 import functools
 import json
-import base64
 
 import jwt
 
