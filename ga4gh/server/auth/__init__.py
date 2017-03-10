@@ -47,7 +47,7 @@ def auth_decorator(app=None):
                 # Each of these functions will throw a 401 is there is a
                 # problem decoding the token with some helpful error message.
                 if auth_header:
-                    token, profile = _decode_header(
+                    token, profile = decode_header(
                         auth_header, client_id, client_secret)
                 else:
                     raise exceptions.NotAuthorizedException()
