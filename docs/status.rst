@@ -31,17 +31,54 @@ Features:
 
 - **Rename package from “ga4gh” to “ga4gh-server”** #1582, #1583
 
-- Added **support for BigWig files** in a new Continuous Data object #1573
+- Added **support for BigWig files** in a new Continuous Data object #1573  New endpoints and message types include:
+ - `POST /continuoussets/search`
+ - `GET /continuoussets/{id}`
+ - `POST /continuous/search`
+ - Continuous (new)
+ - ContinuousSet (new)
+ 
+- Add **ability to list and join peer server networks** #1507  New endpoints and message types include:
+ - `POST /peers/list`
+ - `POST /peers/announce`
+ - `GET /info`
+ - ListPeersResponse (new)
+ - Peer (new)
+ - AnnouncePeerResponse (new)
+ - GetInfoResponse (new)
 
-- Add **ability to list and join peer server networks** #1507
+- Remove feature_id from ExpressionLevel #1580  Impacts
+ - 'POST /expressionlevels/search'
+ - `GET /expressionlevels/{id}`
 
-- Remove feature_id from ExpressionLevel #1580
+- Replaced info fields with rich type Attributes fields #1521  Impacts the following message types:
+ - TranscriptEffect
+ - VariantAnnotation
+ - Individual
+ - Biosample
+ - Experiment (new)
+ - Analysis (new)
+ - Dataset
+ - ReadGroup
+ - ReadGroupSet
+ - ReadAlignment
+ - Reference
+ - ReferrenceSet
+ - RnaQuantificationSet
+ - RnaQuantification
+ - ExpressionLevel
+ - Feature
+ - VariantSetMetadata
+ - CallSet
+ - Call
+ - Variant
 
-- Replaced info fields with rich type Attributes fields #1521
+- Replace NCBI taxon ID integer with ontology term #1551  Impacts the following message types:
+ - Reference
+ - ReferenceSet
 
-- Replace NCBI taxon ID integer with ontology term #1551
-
-- Changed ontology term “id” to “term_id” #1513
+- Changed ontology term “id” to “term_id” #1513  Impacts the following message types:
+ - OntologyTerm
 
 Documentation:
 
