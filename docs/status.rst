@@ -47,7 +47,7 @@ Features:
  - AnnouncePeerResponse (new)
  - GetInfoResponse (new)
 
-- Remove feature_id from ExpressionLevel #1580  Impacts
+- Remove feature_id from ExpressionLevel and add ability to search by the Name ffield #1580  Impacts
  - 'POST /expressionlevels/search'
  - `GET /expressionlevels/{id}`
 
