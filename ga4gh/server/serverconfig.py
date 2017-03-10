@@ -105,9 +105,9 @@ class TestAuth0Config(DevelopmentConfig):
     AUTH0_SCOPES = "openid email"
     AUTH0_CALLBACK_URL = "http://localhost:8000/callback"
     AUTH0_HOST = "david4096.auth0.com"
-    AUTH0_CLIENT_ID = "7PyT5eQRRdaSxgM4hEYz04wzncNiXpqH"
+    AUTH0_CLIENT_ID = "r99hdj5hhkazgePB5oMYK9Sv4NaUwwYp"
     AUTH0_CLIENT_SECRET = \
-        "2OkzpU7LMYMllXf7cd027WFcbBpb4b_p3iNRaUfsYOQgxiYM_puwRxCddCRy_RtV"
+        "KeV2tMyGaSgLeOhpoGs_XLH65Tfw43yBjT8DIpaTxXAKmd_bguJwXA6T7D0iYfgB"
     AUTH0_AUTHORIZED_EMAILS = "davidcs@ucsc.edu,your@email.com"
 
 

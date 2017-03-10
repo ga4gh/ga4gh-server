@@ -47,7 +47,7 @@ def auth_decorator(app=None):
                 # Each of these functions will throw a 401 is there is a
                 # problem decoding the token with some helpful error message.
                 if auth_header:
-                    token, profile = decode_header(
+                    token, profile = _decode_header(
                         auth_header, client_id, client_secret)
                 else:
                     raise exceptions.NotAuthorizedException()
@@ -254,11 +254,9 @@ def _decode_header(auth_header, client_id, client_secret):
     """
     try:
         token = auth_header.split()[1]
-        b64secret = client_secret.replace(
-            "_", "/").replace("-", "+")
         payload = jwt.decode(
             token,
-            base64.b64decode(b64secret),
+            client_secret,
             audience=client_id)
     except jwt.ExpiredSignature:
         raise exceptions.NotAuthorizedException(
