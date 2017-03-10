@@ -151,14 +151,6 @@ class WiggleReader:
                 self._data.values.append(val)
             self._position += self._span
 
-    def fillEnd(self):
-        """
-        Pad end values with NaN to fill a query range.
-        """
-        while self._position < self._queryEnd:
-                self._data.values.append(float('NaN'))
-                self._position += 1
-
     def wiggleFileHandleToProtocol(self, fileHandle):
         """
         Return a continuous protocol object satsifiying the given query
@@ -166,7 +158,6 @@ class WiggleReader:
         """
         for line in fileHandle:
             self.readWiggleLine(line)
-        # self.fillEnd()
         return self._data
 
     def wiggleFileToProtocol(self, fileName):
@@ -297,7 +288,6 @@ class BigWigDataSource:
         except:
             raise Exception("bigWigToWig failed to run")
 
-        # wiggleReader.fillEnd()
         return wiggleReader.getData()
 
     def bigWigToProtocol(self, reference, start, end):

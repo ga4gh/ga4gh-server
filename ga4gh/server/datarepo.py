@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 
 import json
 import os
-import sqlite3
 import datetime
 
 import ga4gh.server.datamodel as datamodel
@@ -518,19 +517,13 @@ class SqlDataRepository(AbstractDataRepository):
         # Values filled in using the DB. These will all be None until
         # we have called load()
         self._schemaVersion = None
-        self._creationTimeStamp = None
         # Connection to the DB.
-        self._dbConnection = None
         self.database = models.SqliteDatabase(self._dbFilename, **{})
         models.databaseProxy.initialize(self.database)
 
     def _checkWriteMode(self):
         if self._openMode != MODE_WRITE:
             raise ValueError("Repo must be opened in write mode")
-
-    def _checkReadMode(self):
-        if self._openMode != MODE_READ:
-            raise ValueError("Repo must be opened in read mode")
 
     def getPeer(self, url):
         """
@@ -733,14 +726,6 @@ class SqlDataRepository(AbstractDataRepository):
                 # TODO - please improve this verification,
                 #        print out number of tuples in graph
 
-    def _safeConnect(self):
-        try:
-            # The next line creates the file if it did not exist previously
-            self._dbConnection = sqlite3.connect(self._dbFilename)
-        except sqlite3.OperationalError:
-            # raised e.g. when directory passed as dbFilename
-            raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
-
     def _createSystemTable(self):
         self.database.create_table(models.System)
         models.System.create(
@@ -755,8 +740,6 @@ class SqlDataRepository(AbstractDataRepository):
         try:
             self._schemaVersion = models.System.get(
                 models.System.key == self.systemKeySchemaVersion).value
-            self._creationTimeStamp = models.System.get(
-                models.System.key == self.systemKeyCreationTimeStamp).value
         except Exception:
             raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
         schemaVersion = self.SchemaVersion(self._schemaVersion)
