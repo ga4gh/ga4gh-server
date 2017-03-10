@@ -1,3 +1,4 @@
+name: server-conda-env
 channels:
 - ioos
 dependencies:
