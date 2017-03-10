@@ -63,16 +63,6 @@ class Backend(object):
         """
         pass
 
-    def validateRequest(self, jsonDict, requestClass):
-        """
-        Ensures the jsonDict corresponds to a valid instance of requestClass
-        Throws an error if the data is invalid
-        """
-        if self._requestValidation:
-            if not protocol.validate(jsonDict, requestClass):
-                raise exceptions.RequestValidationFailureException(
-                    jsonDict, requestClass)
-
     ###########################################################
     #
     # Iterators over the data hierarchy. These methods help to
@@ -138,19 +128,6 @@ class Backend(object):
         """
         return self._topLevelObjectGenerator(
             request, len(objectList), lambda index: objectList[index])
-
-    def _singleObjectGenerator(self, datamodelObject):
-        """
-        Returns a generator suitable for a search method in which the
-        result set is a single object.
-        """
-        yield (datamodelObject.toProtocolElement(), None)
-
-    def _noObjectGenerator(self):
-        """
-        Returns a generator yielding no results
-        """
-        return iter([])
 
     def datasetsGenerator(self, request):
         """

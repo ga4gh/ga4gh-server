@@ -584,28 +584,6 @@ class RdfPhenotypeAssociationSet(G2PUtility, AbstractPhenotypeAssociationSet):
 
         return filters
 
-    def _filterSearchGenotypesRequest(self, request):
-        """
-        Filters the request for genotype search requests
-        """
-        filters = []
-        if request.id:
-            filters.append("?feature = <{}>".format(request.id))
-
-        if request.reference_name:
-            filters.append(
-                'regex(?feature_label, "{}")'.format(request.reference_name))
-
-        featureClause = self._formatExternalIdentifiers(request, 'external_id')
-        if featureClause:
-            filters.append(featureClause)
-        # OntologyTerms
-        featureOntologytermsClause = self._formatOntologyTerm(
-            request, 'feature')
-        if featureOntologytermsClause:
-            filters.append(featureOntologytermsClause)
-        return filters
-
     def _filterSearchPhenotypesRequest(self, request):
         """
         Filters request for phenotype search requests

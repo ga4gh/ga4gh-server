@@ -21,7 +21,6 @@ class SearchResponseBuilder(object):
         approximate limit on the overall length of the serialised
         response.
         """
-        self._responseClass = responseClass
         self._pageSize = pageSize
         self._maxBufferSize = maxBufferSize
         self._numElements = 0
