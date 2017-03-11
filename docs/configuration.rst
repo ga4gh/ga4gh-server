@@ -148,14 +148,14 @@ On tab ``Client`` click in ``Create Client``. Give a name for your
 Client and choose the ``Non Interactive Clients`` client type. Click
 ``Create``.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23128816/0c753c58-f75f-11e6-94a2-c89d6bc1b8b6.png
+.. figure:: images/auth0-create-client.png
    :alt: create\_client
 
 
 In ``Settings`` tab copy the ``Domain``, ``Client ID`` and
 ``Client Secret`` data.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23128957/9eb48510-f75f-11e6-9487-74684023331f.png
+.. figure:: images/auth0-create-client-details.png
    :alt: get\_client\_secret\_domain
 
 
@@ -168,7 +168,7 @@ Fill ``Allowed Callback URLs``, ``Allowed Logout URLs`` and
 ``Allowed Origins (CORS)`` with the web address of server endpoint plus
 the related path.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/22839443/9a62f994-efb0-11e6-8533-ed93db81871e.PNG
+.. figure:: images/auth0-create-client-details-callback.PNG
    :alt: allow\_address
 
 ++++++++++++
@@ -179,13 +179,13 @@ Go to ``APIs`` tab and click in ``Create API``. The ``Identifier``
 should be the URL of server endpoint (the landing page). For this
 example I am using root path and TCP port 80.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23130019/a375722c-f763-11e6-9325-8b2e10af1b8a.png
+.. figure:: images/auth0-create-api.png
    :alt: create\_api
 
 
 On ``Scopes`` tab, create two scopes: ``openid`` and ``email``.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23130083/dd674b7c-f763-11e6-859a-ddc97a28b4fd.png
+.. figure:: images/auth0-ga4gh-scopes.png
    :alt: create\_scopes
 
 
@@ -193,7 +193,7 @@ On ``Non Interactive Clients`` tab, authorize the previous created
 Client. Select both scopes ``openid`` and ``email``. Click ``Update``
 then ``Continue``.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23130173/3a0da0c4-f764-11e6-8451-3f68ff175f7f.png
+.. figure:: images/auth0-ga4gh-api-details.png
    :alt: authorize\_client
 
 +++++++++++++++++++++++++++++
@@ -204,14 +204,14 @@ Go to ``Connections-Database`` tab and click ``Create DB Connection``. I
 disabled sign ups because I want to have control over user creation
 allowing only certain people/software to have access on server.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23130287/9a8584bc-f764-11e6-9e57-64e4e94413b2.png
+.. figure:: images/auth0-new-database.png
    :alt: create\_database
 
 
 In ``Clients`` tab, activate the connection between the Client and the
 Database.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23130354/e5242154-f764-11e6-8664-1dfb531d92c8.png
+.. figure:: images/auth0-database-details.png
    :alt: client\_db
 
 ++++++++++++++
@@ -223,7 +223,7 @@ Go to ``Users`` tab and click ``Create User``. Fill the fields.
 send requesting to verify. I recommend creating your own user for
 testing purposes.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23130421/18c14636-f765-11e6-88cb-bce870f4afc1.png
+.. figure:: images/auth0-create-user.png
    :alt: create\_user
 
 +++++++++++++++++++++++++++++++++++++++++++
@@ -258,13 +258,13 @@ login. At login page, use the same email and password used to create a
 user. Note that it does not have an option to create a user (it can be
 changed).
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/22840399/886dbff4-efb4-11e6-89ed-653feeb7a340.PNG
+.. figure:: images/auth0-testing.PNG
    :alt: login
 
 
 After login you will see the token page.
 
-.. figure:: https://cloud.githubusercontent.com/assets/645272/23130576/c2b5f6aa-f765-11e6-980b-a1978462487e.png
+.. figure:: images/auth0-token.png
    :alt: token
 
 
