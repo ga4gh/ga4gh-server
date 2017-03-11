@@ -9,7 +9,6 @@ import flask
 import requests
 import functools
 import json
-import base64
 
 import jwt
 
@@ -254,11 +253,9 @@ def _decode_header(auth_header, client_id, client_secret):
     """
     try:
         token = auth_header.split()[1]
-        b64secret = client_secret.replace(
-            "_", "/").replace("-", "+")
         payload = jwt.decode(
             token,
-            base64.b64decode(b64secret),
+            client_secret,
             audience=client_id)
     except jwt.ExpiredSignature:
         raise exceptions.NotAuthorizedException(

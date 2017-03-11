@@ -134,6 +134,139 @@ AUTH0_CLIENT_SECRET
 AUTHORIZED_EMAILS
     A comma separated list of user
 
+-------------------------
+Configuring Auth0 Service
+-------------------------
+
+First login or sign up in Auth0 website: https://auth0.com/
+
++++++++++++++++
+Creating Client
++++++++++++++++
+
+On tab ``Client`` click in ``Create Client``. Give a name for your
+Client and choose the ``Non Interactive Clients`` client type. Click
+``Create``.
+
+.. figure:: images/auth0-create-client.png
+   :alt: create\_client
+
+
+In ``Settings`` tab copy the ``Domain``, ``Client ID`` and
+``Client Secret`` data.
+
+.. figure:: images/auth0-create-client-details.png
+   :alt: get\_client\_secret\_domain
+
+
+These data will be used to set the following server configuration values
+(`reference <http://ga4gh-reference-implementation.readthedocs.io/en/latest/configuration.html#configuration-values>`__):
+- ``AUTH0_HOST`` with ``Domain``; - ``AUTH0_CLIENT_ID`` with
+``Client ID``; - ``AUTH0_CLIENT_SECRET`` with ``Client Secret``.
+
+Fill ``Allowed Callback URLs``, ``Allowed Logout URLs`` and
+``Allowed Origins (CORS)`` with the web address of server endpoint plus
+the related path.
+
+.. figure:: images/auth0-create-client-details-callback.PNG
+   :alt: allow\_address
+
+++++++++++++
+Creating API
+++++++++++++
+
+Go to ``APIs`` tab and click in ``Create API``. The ``Identifier``
+should be the URL of server endpoint (the landing page). For this
+example I am using root path and TCP port 80.
+
+.. figure:: images/auth0-create-api.png
+   :alt: create\_api
+
+
+On ``Scopes`` tab, create two scopes: ``openid`` and ``email``.
+
+.. figure:: images/auth0-ga4gh-scopes.png
+   :alt: create\_scopes
+
+
+On ``Non Interactive Clients`` tab, authorize the previous created
+Client. Select both scopes ``openid`` and ``email``. Click ``Update``
+then ``Continue``.
+
+.. figure:: images/auth0-ga4gh-api-details.png
+   :alt: authorize\_client
+
++++++++++++++++++++++++++++++
+Creating Database Connections
++++++++++++++++++++++++++++++
+
+Go to ``Connections-Database`` tab and click ``Create DB Connection``. I
+disabled sign ups because I want to have control over user creation
+allowing only certain people/software to have access on server.
+
+.. figure:: images/auth0-new-database.png
+   :alt: create\_database
+
+
+In ``Clients`` tab, activate the connection between the Client and the
+Database.
+
+.. figure:: images/auth0-database-details.png
+   :alt: client\_db
+
+++++++++++++++
+Creating Users
+++++++++++++++
+
+Go to ``Users`` tab and click ``Create User``. Fill the fields.
+``Connection`` should be same one previously created. An email will be
+send requesting to verify. I recommend creating your own user for
+testing purposes.
+
+.. figure:: images/auth0-create-user.png
+   :alt: create\_user
+
++++++++++++++++++++++++++++++++++++++++++++
+Setting up GA4GH server with authentication
++++++++++++++++++++++++++++++++++++++++++++
+
+Append the following server configuration values to ``config.py`` file
+(`reference <https://github.com/ga4gh/server/pull/1470>`__). Remember to
+update the fields correctly. Create a SECRET\_KEY. I didn’t understand
+the field ``AUTH0_AUTHORIZED_EMAILS``. I just used the same email I used
+to login into Auth0 website.
+
+::
+
+    AUTH0_ENABLED = True
+    SECRET_KEY = "super_secret"
+    AUTH0_SCOPES = "openid email"
+    AUTH0_CALLBACK_URL = "http://192.168.0.5/callback"
+    AUTH0_HOST = "USER.auth0.com"
+    AUTH0_CLIENT_ID = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    AUTH0_CLIENT_SECRET = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    AUTH0_AUTHORIZED_EMAILS = "name@host.com"
+
+Restart the server.
+
++++++++
+Testing
++++++++
+
+Finally access server landing page. It will show an error and a link to
+login. At login page, use the same email and password used to create a
+user. Note that it does not have an option to create a user (it can be
+changed).
+
+.. figure:: images/auth0-testing.PNG
+   :alt: login
+
+
+After login you will see the token page.
+
+.. figure:: images/auth0-token.png
+   :alt: token
+
 
 ------------------------
 OpenID Connect Providers
