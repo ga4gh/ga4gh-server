@@ -140,8 +140,9 @@ Configuring Auth0 Service
 
 First login or sign up in Auth0 website: https://auth0.com/
 
++++++++++++++++
 Creating Client
-===============
++++++++++++++++
 
 On tab ``Client`` click in ``Create Client``. Give a name for your
 Client and choose the ``Non Interactive Clients`` client type. Click
@@ -170,9 +171,9 @@ the related path.
 .. figure:: https://cloud.githubusercontent.com/assets/645272/22839443/9a62f994-efb0-11e6-8533-ed93db81871e.PNG
    :alt: allow\_address
 
-
+++++++++++++
 Creating API
-============
+++++++++++++
 
 Go to ``APIs`` tab and click in ``Create API``. The ``Identifier``
 should be the URL of server endpoint (the landing page). For this
@@ -195,9 +196,9 @@ then ``Continue``.
 .. figure:: https://cloud.githubusercontent.com/assets/645272/23130173/3a0da0c4-f764-11e6-8451-3f68ff175f7f.png
    :alt: authorize\_client
 
-
++++++++++++++++++++++++++++++
 Creating Database Connections
-=============================
++++++++++++++++++++++++++++++
 
 Go to ``Connections-Database`` tab and click ``Create DB Connection``. I
 disabled sign ups because I want to have control over user creation
@@ -213,9 +214,9 @@ Database.
 .. figure:: https://cloud.githubusercontent.com/assets/645272/23130354/e5242154-f764-11e6-8664-1dfb531d92c8.png
    :alt: client\_db
 
-
+++++++++++++++
 Creating Users
-==============
+++++++++++++++
 
 Go to ``Users`` tab and click ``Create User``. Fill the fields.
 ``Connection`` should be same one previously created. An email will be
@@ -225,9 +226,9 @@ testing purposes.
 .. figure:: https://cloud.githubusercontent.com/assets/645272/23130421/18c14636-f765-11e6-88cb-bce870f4afc1.png
    :alt: create\_user
 
-
++++++++++++++++++++++++++++++++++++++++++++
 Setting up GA4GH server with authentication
-===========================================
++++++++++++++++++++++++++++++++++++++++++++
 
 Append the following server configuration values to ``config.py`` file
 (`reference <https://github.com/ga4gh/server/pull/1470>`__). Remember to
@@ -248,8 +249,9 @@ to login into Auth0 website.
 
 Restart the server.
 
++++++++
 Testing
-=======
++++++++
 
 Finally access server landing page. It will show an error and a link to
 login. At login page, use the same email and password used to create a
