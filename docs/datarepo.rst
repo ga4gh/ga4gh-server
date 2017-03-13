@@ -429,6 +429,60 @@ Adds a new readgroups set based on a 1000 genomes BAM directly from the NCBI
 FTP server. Because this readgroup set uses a remote FTP URL, we must specify
 the location of the ``.bai`` index file on the local file system.
 
+------------------------
+add-featureset
+------------------------
+
+Adds a feature set to a named dataset in a repository. Feature sets
+must be in a '.db' file. An appropriate '.db' file can
+be generate from a GFF3 file using scripts/generate_gff3_db.py.
+
+.. argparse::
+   :module: ga4gh.server.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-featureset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-featureset registry.db 1KG gencode.db \
+        -R hg37 -O so-xp-simple
+
+Adds the feature set `gencode` to the registry under the `1KG`
+dataset. The flags set the reference genome to be hg37 and the ontology to
+use to `so-xp-simple`.
+
+------------------------
+add-continuousset
+------------------------
+
+Adds a continuous set to a named dataset in a repository. Continuous sets
+must be in a bigWig file. The bigWig format is described here:
+http://genome.ucsc.edu/goldenPath/help/bigWig.html. There are directions for
+converting wiggle files to bigWig files on the page also. 
+Files in the bedGraph format can be converted using bedGraphToBigWig
+(https://www.encodeproject.org/software/bedgraphtobigwig/).
+
+.. argparse::
+   :module: ga4gh.server.cli.repomanager
+   :func: getRepoManagerParser
+   :prog: ga4gh_repo
+   :path: add-continuousset
+   :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo add-continuousset registry.db 1KG continuous.bw \
+        -R hg37
+
+Adds the continuous set `continuous` to the registry under the `1KG`
+dataset. The flags set the reference genome to be hg37.
+
 -------------------------
 init-rnaquantificationset
 -------------------------
@@ -685,6 +739,50 @@ Removes a read group set from the repository.
 
 Deletes the readgroup set named ``HG00114`` from the dataset named
 ``dataset1`` from the repository represented by ``registry.db``.
+
+-----------------
+remove-featureset
+-----------------
+
+Removes a feature set from the repository.
+
+.. argparse::
+    :module: ga4gh.server.cli.repomanager
+    :func: getRepoManagerParser
+    :prog: ga4gh_repo
+    :path: remove-featureset
+    :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-featureset registry.db 1KG gencode-genes
+
+Deletes the feature set named ``gencode-genes`` from the dataset
+named ``1KG`` from the repository represented by ``registry.db``.
+
+--------------------
+remove-continuousset
+--------------------
+
+Removes a continuous set from the repository.
+
+.. argparse::
+    :module: ga4gh.server.cli.repomanager
+    :func: getRepoManagerParser
+    :prog: ga4gh_repo
+    :path: remove-continuousset
+    :nodefault:
+
+**Examples:**
+
+.. code-block:: bash
+
+    $ ga4gh_repo remove-continuousset registry.db 1KG continuous
+
+Deletes the feature set named ``continuous`` from the dataset
+named ``1KG`` from the repository represented by ``registry.db``.
 
 ---------------------------
 remove-rnaquantificationset
