@@ -29,29 +29,29 @@ the documentation.
 
 Features:
 
-- **Rename package from “ga4gh” to “ga4gh-server”** #1582, #1583
+- **Rename package from “ga4gh” to “ga4gh-server”** `#1582 <https://github.com/ga4gh/ga4gh-server/issues/1582>`__, `#1583 <https://github.com/ga4gh/ga4gh-server/issues/1583>`__
 
-- Added **support for BigWig files** in a new Continuous Data object #1573  New endpoints and message types include:
- - `POST /continuoussets/search`
- - `GET /continuoussets/{id}`
- - `POST /continuous/search`
+- Added **support for BigWig files** in a new Continuous Data object `#1573 <https://github.com/ga4gh/ga4gh-server/issues/1573>`__  New endpoints and message types include:
+ - ``POST /continuoussets/search``
+ - ``GET /continuoussets/{id}``
+ - ``POST /continuous/search``
  - Continuous (new)
  - ContinuousSet (new)
  
-- Add **ability to list and join peer server networks** #1507  New endpoints and message types include:
- - `POST /peers/list`
- - `POST /peers/announce`
- - `GET /info`
+- Add **ability to list and join peer server networks** `#1507 <https://github.com/ga4gh/ga4gh-server/issues/1507>`__  New endpoints and message types include:
+ - ``POST /peers/list``
+ - ``POST /peers/announce``
+ - ``GET /info``
  - ListPeersResponse (new)
  - Peer (new)
  - AnnouncePeerResponse (new)
  - GetInfoResponse (new)
 
-- Remove feature_id from ExpressionLevel and add ability to search by the Name field #1580  Impacts
- - 'POST /expressionlevels/search'
- - `GET /expressionlevels/{id}`
+- Remove feature_id from ExpressionLevel and add ability to search by the Name field `#1580  <https://github.com/ga4gh/ga4gh-server/issues/1580>`__  Impacts
+ - ``POST /expressionlevels/search``
+ - ``GET /expressionlevels/{id}``
 
-- Replaced info fields with rich type Attributes fields #1521  Impacts the following message types:
+- Replaced info fields with rich type Attributes fields `#1521 <https://github.com/ga4gh/ga4gh-server/issues/1521>`__  Impacts the following message types:
  - TranscriptEffect
  - VariantAnnotation
  - Individual
@@ -73,26 +73,26 @@ Features:
  - Call
  - Variant
 
-- Replace NCBI taxon ID integer with ontology term #1551  Impacts the following message types:
+- Replace NCBI taxon ID integer with ontology term `#1551 <https://github.com/ga4gh/ga4gh-server/issues/1551>`__  Impacts the following message types:
  - Reference
  - ReferenceSet
 
-- Changed ontology term “id” to “term_id” #1513  Impacts the following message types:
+- Changed ontology term “id” to “term_id” `#1513 <https://github.com/ga4gh/ga4gh-server/issues/1513>`__  Impacts the following message types:
  - OntologyTerm
 
 Documentation:
 
-- Document auto-releases, constraint instructions #1578
+- Document auto-releases, constraint instructions `#1578 <https://github.com/ga4gh/ga4gh-server/issues/1578>`__
 
-- Improved development document for virtualenv command #1550
+- Improved development document for virtualenv command `#1550 <https://github.com/ga4gh/ga4gh-server/issues/1550>`__
 
 Infrastructure:
 
-- Automatically deploy tagged releases to Pypi from Travis #1576
+- Automatically deploy tagged releases to Pypi from Travis `#1576 <https://github.com/ga4gh/ga4gh-server/issues/1576>`__
 
-- Refactor transcript annotation #1334
+- Refactor transcript annotation `#1334 <https://github.com/ga4gh/ga4gh-server/issues/1334>`__
 
-- Speedups to rna quantification ingest #1564
+- Speedups to rna quantification ingest `#1564 <https://github.com/ga4gh/ga4gh-server/issues/1564>`__
 
 
 *****
