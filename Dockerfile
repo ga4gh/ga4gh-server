@@ -5,17 +5,19 @@
 FROM ubuntu
 
 # Originally created by Steve Hershman GitHub @hershman
-# previously maintained by Alastair Firth
-# currently maintained by Maciek Smuga-Otto at UCSC Genomics Institute
-MAINTAINER Maciek Smuga-Otto <maciek@soe.ucsc.edu>
+# previously maintained by Alastair Firth, and Maciek Smuga-Otto of the
+# UCSC Genomics Institute
+MAINTAINER David Steinberg <david@resium.com>
 
 # Update the sources list
-RUN apt-get update
+RUN apt-get update  --fix-missing
+RUN apt-get upgrade --yes
 
 # Install packages
-RUN apt-get install -y tar git curl wget dialog net-tools build-essential \
-    python python-dev python-distribute python-pip zlib1g-dev \
-    apache2 libapache2-mod-wsgi libxslt1-dev libffi-dev libssl-dev
+RUN apt-get install -y tar git curl libcurl4-openssl-dev wget dialog \
+    net-tools build-essential python python-dev python-distribute \
+    python-pip zlib1g-dev apache2 libapache2-mod-wsgi libxslt1-dev \
+    libffi-dev libssl-dev
 
 # Enable wsgi module
 RUN a2enmod wsgi
@@ -33,11 +35,12 @@ WORKDIR /srv/ga4gh/server
 # to the GA4GH Server codebase do not trigger a full rebuild of the
 # pip requirements.
 COPY requirements.txt /srv/ga4gh/server/
-RUN pip install -r requirements.txt
+COPY constraints.txt /srv/ga4gh/server/
+RUN pip install -r requirements.txt -c constraints.txt
 
 # Install the code
 COPY . /srv/ga4gh/server/
-RUN pip install .
+RUN pip install . -c constraints.txt
 
 # Write new apache config
 COPY deploy/001-ga4gh.conf /etc/apache2/sites-available/001-ga4gh.conf

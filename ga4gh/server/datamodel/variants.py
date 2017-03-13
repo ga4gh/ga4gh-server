@@ -408,6 +408,16 @@ class SimulatedVariantSet(AbstractVariantSet):
         alt = randomNumberGenerator.choice(
             [base for base in bases if base != ref])
         variant.alternate_bases.append(alt)
+        randChoice = randomNumberGenerator.randint(0, 2)
+        if randChoice == 0:
+            variant.filters_applied = False
+        elif randChoice == 1:
+            variant.filters_applied = True
+            variant.filters_passed = True
+        else:
+            variant.filters_applied = True
+            variant.filters_passed = False
+            variant.filters_failed.append('q10')
         for callSet in self.getCallSets():
             call = variant.calls.add()
             call.call_set_id = callSet.getId()
@@ -667,14 +677,32 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         variant.reference_bases = record.ref
         if record.alts is not None:
             variant.alternate_bases.extend(list(record.alts))
-        # record.filter and record.qual are also available, when supported
-        # by GAVariant.
+        filterKeys = record.filter.keys()
+        if len(filterKeys) == 0:
+            variant.filters_applied = False
+        else:
+            variant.filters_applied = True
+            if len(filterKeys) == 1 and filterKeys[0] == 'PASS':
+                variant.filters_passed = True
+            else:
+                variant.filters_passed = False
+                variant.filters_failed.extend(filterKeys)
+        # record.qual is also available, when supported by GAVariant.
         for key, value in record.info.iteritems():
-            if value is not None:
-                if isinstance(value, str):
-                    value = value.split(',')
-                protocol.setAttribute(
-                    variant.attributes.attr[key].values, value)
+            if value is None:
+                continue
+            if key == 'SVTYPE':
+                variant.variant_type = value
+            elif key == 'SVLEN':
+                variant.svlen = int(value[0])
+            elif key == 'CIPOS':
+                variant.cipos.extend(value)
+            elif key == 'CIEND':
+                variant.ciend.extend(value)
+            elif isinstance(value, str):
+                value = value.split(',')
+            protocol.setAttribute(
+                variant.attributes.attr[key].values, value)
         for callSetId in callSetIds:
             callSet = self.getCallSet(callSetId)
             pysamCall = record.samples[str(callSet.getSampleName())]
@@ -771,15 +799,20 @@ class HtslibVariantSet(datamodel.PysamDatamodelMixin, AbstractVariantSet):
         ret.append(buildMetadata(key="version", value=header.version))
         formats = header.formats.items()
         infos = header.info.items()
+        filters = header.filters.items()
         # TODO: currently ALT field is not implemented through pysam
         # NOTE: contigs field is different between vcf files,
         # so it's not included in metadata
-        # NOTE: filters in not included in metadata unless needed
-        for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
+        for prefix, content in [("FORMAT", formats), ("INFO", infos),
+                                ("FILTER", filters)]:
             for contentKey, value in content:
                 description = value.description.strip('"')
                 key = "{0}.{1}".format(prefix, value.name)
-                if key != "FORMAT.GT":
+                if prefix == "FILTER":
+                    ret.append(buildMetadata(
+                        key=key,
+                        description=description))
+                elif key != "FORMAT.GT":
                     ret.append(buildMetadata(
                         key=key, type_=value.type,
                         number="{}".format(value.number),
@@ -1101,7 +1134,9 @@ class HtslibVariantAnnotationSet(AbstractVariantAnnotationSet):
         analysis = protocol.Analysis()
         formats = header.formats.items()
         infos = header.info.items()
-        for prefix, content in [("FORMAT", formats), ("INFO", infos)]:
+        filters = header.filters.items()
+        for prefix, content in [("FORMAT", formats), ("INFO", infos),
+                                ("FILTER", filters)]:
             for contentKey, value in content:
                 key = "{0}.{1}".format(prefix, value.name)
                 if key not in analysis.attributes.attr:

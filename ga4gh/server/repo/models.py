@@ -16,6 +16,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import datetime
 import peewee as pw
 
 # The databaseProxy is used to dynamically changed the
@@ -29,10 +30,6 @@ class SqliteDatabase(pw.SqliteDatabase):
         super(SqliteDatabase, self).__init__(*_, **__)
 
 
-class UnknownField(object):
-    def __init__(self, *_, **__): pass
-
-
 class BaseModel(pw.Model):
     attributes = pw.TextField(null=True)
 
@@ -40,14 +37,32 @@ class BaseModel(pw.Model):
         database = databaseProxy
 
 
+class Peer(BaseModel):
+    url = pw.TextField(primary_key=True, null=False, unique=True)
+
+
+class Announcement(BaseModel):
+    # Provides the storage layer for AnnouncePeerRequest
+    # Primary key for the record autoincrement
+    id = pw.PrimaryKeyField()
+    # URL submitted as a possible peer
+    url = pw.TextField(null=False)
+    # Other information about the request stored as JSON.
+    remote_addr = pw.TextField(null=True)
+    user_agent = pw.TextField(null=True)
+    # The time at which this record was created.
+    created = pw.DateTimeField()
+
+    def save(self, *args, **kwargs):
+        self.created = datetime.datetime.now()
+        return super(Announcement, self).save(*args, **kwargs)
+
+
 class Dataset(BaseModel):
     description = pw.TextField(null=True)
     id = pw.TextField(primary_key=True)
     info = pw.TextField(null=True)
     name = pw.TextField(unique=True)
-
-    class Meta:
-        db_table = 'Dataset'
 
 
 class Biosample(BaseModel):
@@ -61,9 +76,9 @@ class Biosample(BaseModel):
     info = pw.TextField(null=True)
     name = pw.TextField()
     updated = pw.TextField(null=True)
+    individualAgeAtCollection = pw.TextField(null=True)
 
     class Meta:
-        db_table = 'Biosample'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -81,9 +96,6 @@ class Referenceset(BaseModel):
     sourceaccessions = pw.TextField(db_column='sourceAccessions', null=True)
     sourceuri = pw.TextField(db_column='sourceUri', null=True)
 
-    class Meta:
-        db_table = 'ReferenceSet'
-
 
 class Variantset(BaseModel):
     created = pw.TextField(null=True)
@@ -98,7 +110,6 @@ class Variantset(BaseModel):
     updated = pw.TextField(null=True)
 
     class Meta:
-        db_table = 'VariantSet'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -112,7 +123,6 @@ class Callset(BaseModel):
         db_column='variantSetId', rel_model=Variantset, to_field='id')
 
     class Meta:
-        db_table = 'CallSet'
         indexes = (
             (('variantsetid', 'name'), True),
         )
@@ -123,9 +133,6 @@ class Ontology(BaseModel):
     id = pw.TextField(primary_key=True)
     name = pw.TextField(unique=True)
     ontologyprefix = pw.TextField(db_column='ontologyPrefix')
-
-    class Meta:
-        db_table = 'Ontology'
 
 
 class Featureset(BaseModel):
@@ -143,7 +150,6 @@ class Featureset(BaseModel):
         db_column='sourceUri', null=True)
 
     class Meta:
-        db_table = 'FeatureSet'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -162,7 +168,6 @@ class ContinuousSet(BaseModel):
         db_column='sourceUri', null=True)
 
     class Meta:
-        db_table = 'ContinuousSet'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -181,7 +186,6 @@ class Individual(BaseModel):
     updated = pw.TextField(null=True)
 
     class Meta:
-        db_table = 'Individual'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -195,7 +199,6 @@ class Phenotypeassociationset(BaseModel):
     name = pw.TextField(null=True)
 
     class Meta:
-        db_table = 'PhenotypeAssociationSet'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -214,7 +217,6 @@ class Readgroupset(BaseModel):
     stats = pw.TextField()
 
     class Meta:
-        db_table = 'ReadGroupSet'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -236,7 +238,6 @@ class Readgroup(BaseModel):
     updated = pw.TextField(null=True)
 
     class Meta:
-        db_table = 'ReadGroup'
         indexes = (
             (('readgroupsetid', 'name'), True),
         )
@@ -256,7 +257,6 @@ class Reference(BaseModel):
     sourceuri = pw.TextField(db_column='sourceUri', null=True)
 
     class Meta:
-        db_table = 'Reference'
         indexes = (
             (('referencesetid', 'name'), True),
         )
@@ -273,7 +273,6 @@ class Rnaquantificationset(BaseModel):
         db_column='referenceSetId', rel_model=Referenceset, to_field='id')
 
     class Meta:
-        db_table = 'RnaQuantificationSet'
         indexes = (
             (('datasetid', 'name'), True),
         )
@@ -282,9 +281,6 @@ class Rnaquantificationset(BaseModel):
 class System(BaseModel):
     key = pw.TextField(primary_key=True)
     value = pw.TextField()
-
-    class Meta:
-        db_table = 'System'
 
 
 class Variantannotationset(BaseModel):
@@ -300,7 +296,6 @@ class Variantannotationset(BaseModel):
         db_column='variantSetId', rel_model=Variantset, to_field='id')
 
     class Meta:
-        db_table = 'VariantAnnotationSet'
         indexes = (
             (('variantsetid', 'name'), True),
         )

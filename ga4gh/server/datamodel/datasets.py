@@ -282,12 +282,6 @@ class Dataset(datamodel.DatamodelObject):
         """
         return self._continuousSetIdMap[self._continuousSetIds[index]]
 
-    def getNumBiosamples(self):
-        """
-        Returns the number of biosamples sets in this dataset.
-        """
-        return len(self._biosampleIds)
-
     def getBiosamples(self):
         """
         Returns the list of biosamples in this dataset
@@ -303,12 +297,6 @@ class Dataset(datamodel.DatamodelObject):
             raise exceptions.BiosampleNameNotFoundException(name)
         return self._biosampleNameMap[name]
 
-    def getBiosampleByIndex(self, index):
-        """
-        Returns the biosample at the specified index in this dataset.
-        """
-        return self._biosampleIdMap[self._biosampleIds[index]]
-
     def getBiosample(self, id_):
         """
         Returns the Biosample with the specified id, or raises
@@ -317,12 +305,6 @@ class Dataset(datamodel.DatamodelObject):
         if id_ not in self._biosampleIdMap:
             raise exceptions.BiosampleNotFoundException(id_)
         return self._biosampleIdMap[id_]
-
-    def getNumIndividuals(self):
-        """
-        Returns the number of individuals sets in this dataset.
-        """
-        return len(self._individualIds)
 
     def getIndividuals(self):
         """
@@ -338,12 +320,6 @@ class Dataset(datamodel.DatamodelObject):
         if name not in self._individualNameMap:
             raise exceptions.IndividualNameNotFoundException(name)
         return self._individualNameMap[name]
-
-    def getIndividualByIndex(self, index):
-        """
-        Returns the individual at the specified index in this dataset.
-        """
-        return self._individualIdMap[self._individualIds[index]]
 
     def getIndividual(self, id_):
         """

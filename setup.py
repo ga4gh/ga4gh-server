@@ -45,14 +45,12 @@ setup(
               "ga4gh.server.templates"],
     namespace_packages=["ga4gh"],
     zip_safe=False,
-    url="https://github.com/ga4gh/server",
+    url="https://github.com/ga4gh/ga4gh-server",
     use_scm_version={"write_to": "ga4gh/server/_version.py"},
     entry_points={
         'console_scripts': [
             'ga4gh_configtest=ga4gh.server.cli.configtest:configtest_main',
             'ga4gh_server=ga4gh.server.cli.server:server_main',
-            'ga2vcf=ga4gh.server.cli.ga2vcf:ga2vcf_main',
-            'ga2sam=ga4gh.server.cli.ga2sam:ga2sam_main',
             'ga4gh_repo=ga4gh.server.cli.repomanager:repo_main',
         ]
     },

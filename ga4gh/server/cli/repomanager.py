@@ -24,6 +24,7 @@ import ga4gh.server.datamodel.rna_quantification as rna_quantification
 import ga4gh.server.datamodel.sequence_annotations as sequence_annotations
 import ga4gh.server.datamodel.continuous as continuous
 import ga4gh.server.datamodel.variants as variants
+import ga4gh.server.datamodel.peers as peers
 import ga4gh.server.datarepo as datarepo
 import ga4gh.server.exceptions as exceptions
 import ga4gh.server.repo.rnaseq2ga as rnaseq2ga
@@ -127,6 +128,20 @@ class RepoManager(object):
         self._openRepo()
         # TODO this is _very_ crude. We need much more options and detail here.
         self._repo.printSummary()
+
+    def listAnnouncements(self):
+        """
+        Lists all the announcements the repo has received.
+        """
+        self._openRepo()
+        self._repo.printAnnouncements()
+
+    def clearAnnouncements(self):
+        """
+        Clears the list of announcements from the repo.
+        """
+        self._openRepo()
+        self._repo.clearAnnouncements()
 
     def verify(self):
         """
@@ -508,6 +523,33 @@ class RepoManager(object):
             self._updateRepo(self._repo.removeIndividual, individual)
         self._confirmDelete("Individual", individual.getLocalId(), func)
 
+    def addPeer(self):
+        """
+        Adds a new peer into this repo
+        """
+        self._openRepo()
+        try:
+            peer = peers.Peer(
+                self._args.url, json.loads(self._args.attributes))
+        except exceptions.BadUrlException:
+            raise exceptions.RepoManagerException("The URL for the peer was "
+                                                  "malformed.")
+        except ValueError as e:
+            raise exceptions.RepoManagerException(
+                "The attributes message "
+                "was malformed. {}".format(e))
+        self._updateRepo(self._repo.insertPeer, peer)
+
+    def removePeer(self):
+        """
+        Removes a peer by URL from this repo
+        """
+        self._openRepo()
+
+        def func():
+            self._updateRepo(self._repo.removePeer, self._args.url)
+        self._confirmDelete("Peer", self._args.url, func)
+
     def removeOntology(self):
         """
         Removes an ontology from the repo.
@@ -655,6 +697,12 @@ class RepoManager(object):
             help="the name of the ontology")
 
     @classmethod
+    def addUrlArgument(cls, subparser):
+        subparser.add_argument(
+            "url",
+            help="The URL of the given resource")
+
+    @classmethod
     def addReadGroupSetNameArgument(cls, subparser):
         subparser.add_argument(
             "readGroupSetName",
@@ -782,6 +830,33 @@ class RepoManager(object):
             subparsers, "list", "List the contents of the repo")
         listParser.set_defaults(runner="list")
         cls.addRepoArgument(listParser)
+
+        listAnnouncementsParser = common_cli.addSubparser(
+            subparsers, "list-announcements", "List the announcements in"
+                                              "the repo.")
+        listAnnouncementsParser.set_defaults(runner="listAnnouncements")
+        cls.addRepoArgument(listAnnouncementsParser)
+
+        clearAnnouncementsParser = common_cli.addSubparser(
+            subparsers, "clear-announcements", "List the announcements in"
+                                               "the repo.")
+        clearAnnouncementsParser.set_defaults(runner="clearAnnouncements")
+        cls.addRepoArgument(clearAnnouncementsParser)
+
+        addPeerParser = common_cli.addSubparser(
+            subparsers, "add-peer", "Add a peer to the registry by URL.")
+        addPeerParser.set_defaults(runner="addPeer")
+        cls.addRepoArgument(addPeerParser)
+        cls.addUrlArgument(addPeerParser)
+        cls.addAttributesArgument(addPeerParser)
+
+        removePeerParser = common_cli.addSubparser(
+            subparsers, "remove-peer", "Remove a peer from "
+                                       "the registry by URL.")
+        removePeerParser.set_defaults(runner="removePeer")
+        cls.addRepoArgument(removePeerParser)
+        cls.addUrlArgument(removePeerParser)
+        cls.addForceOption(removePeerParser)
 
         addDatasetParser = common_cli.addSubparser(
             subparsers, "add-dataset", "Add a dataset to the data repo")
@@ -1157,7 +1232,7 @@ def repo_main(args=None):
         # Uncaught exception: this is a bug
         message = """
 An internal error has occurred.  Please file a bug report at
-https://github.com/ga4gh/server/issues
+https://github.com/ga4gh/ga4gh-server/issues
 with all the relevant details, and the following stack trace.
 """
         print("{}: error:".format(sys.argv[0]), file=sys.stderr)

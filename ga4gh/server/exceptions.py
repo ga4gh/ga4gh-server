@@ -153,7 +153,6 @@ class Validator(object):
 
     def __init__(self, class_):
         self.class_ = class_
-        self.schema = class_.DESCRIPTOR
 
     def getInvalidFields(self, jsonDict):
         # FIXME: get the proper list of fields
@@ -181,15 +180,17 @@ class BadFeatureSetSearchRequestRegularExpression(BadRequestException):
     httpStatus = 400
 
 
-class BadReadsSearchRequestBothRefs(BadRequestException):
-    message = "only one of referenceId and referenceName can be specified"
-
-
 class DatamodelValidationException(BadRequestException):
     """
     Some bad data was passed to us by the client that made no sense
     in the context of a particular datamodel object
     """
+
+
+class BadUrlException(RuntimeException):
+    def __init__(self, url):
+        self.message = "The URL: '{}' was malformed".format(url)
+        self.httpStatus = 400
 
 
 class ReadGroupSetNotMappedToReferenceSetException(BadRequestException):
@@ -207,6 +208,12 @@ class NotFoundException(RuntimeException):
     """
     httpStatus = 404
     message = "A resource was not found"
+
+
+class PeerNotFoundException(NotFoundException):
+    def __init__(self, url):
+        self.message = "A peer with url '{}' was not found".format(
+            url)
 
 
 class PathNotFoundException(NotFoundException):
@@ -491,12 +498,6 @@ class ContinuousSetNameNotFoundException(NotFoundException):
             "ContinuousSet with name '{0}' not found".format(continuousSetId))
 
 
-class SequenceAnnotationNotFoundException(NotFoundException):
-    def __init__(self, name):
-        self.message = (
-            "SequenceAnnotation with name '{0}' not found".format(name))
-
-
 class RnaQuantificationSetNotFoundException(NotFoundException):
     def __init__(self, name):
         self.message = (
@@ -510,12 +511,6 @@ class RnaQuantificationSetNameNotFoundException(NotFoundException):
 
 
 class RnaQuantificationNotFoundException(NotFoundException):
-    def __init__(self, name):
-        self.message = (
-            "RnaQuantification with name '{0}' not found".format(name))
-
-
-class RnaQuantificationNameNotFoundException(NotFoundException):
     def __init__(self, name):
         self.message = (
             "RnaQuantification with name '{0}' not found".format(name))
@@ -648,18 +643,6 @@ class InconsistentCallSetIdException(MalformedException):
             "Inconsistent sample names found in {}. Sample IDs must be"
             " consistent within the same VariantSet"
             " directory.".format(fileName))
-
-
-class ReadGroupReferenceNotFound(MalformedException):
-    """
-    A BAM file contains reference names that are not in the linked
-    ReadGroupSet.
-    """
-    def __init__(self, fileName, referenceName, referenceSetName):
-        self.message = (
-            "The BAM file '{}' contains the reference '{}' which "
-            "is not present in the ReferenceSet  '{}'".format(
-                fileName, referenceName, referenceSetName))
 
 
 class MultipleReferenceSetsInReadGroupSet(MalformedException):

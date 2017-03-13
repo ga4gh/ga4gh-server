@@ -1240,6 +1240,39 @@ class TestSimulatedStack(unittest.TestCase):
                 for clientAssoc in responseData.associations:
                     self.assertEqual(clientAssoc, repoAssoc)
 
+    def testPeersList(self):
+        path = "/peers/list"
+        peers = list(self.dataRepo.getPeers(0, 10))
+        self.assertGreater(len(peers), 0)
+        request = protocol.ListPeersRequest()
+        request.page_size = 10
+        responseData = self.sendSearchRequest(
+            path, request, protocol.ListPeersResponse)
+        urls = map(lambda p: p.url, responseData.peers)
+        for peer in responseData.peers:
+            self.assertIn(peer.url, urls)
+            repoPeer = self.dataRepo.getPeer(peer.url)
+            self.assertEqual(repoPeer.getUrl(), peer.url)
+
+    def testAnnounce(self):
+        path = "/announce"
+        request = protocol.AnnouncePeerRequest()
+        request.peer.url = "http://1kgenomes.ga4gh.org"
+        responseData = self.sendSearchRequest(
+            path, request, protocol.AnnouncePeerResponse)
+        self.assertTrue(responseData.success, "A well formed URL should post")
+        request.peer.url = "Not a URL"
+        response = self.sendJsonPostRequest(path, protocol.toJson(request))
+        self.assertEqual(response.status_code, 400)
+
+    def testInfo(self):
+        path = "/info"
+        response = self.app.get(path)
+        responseData = protocol.fromJson(response.data,
+                                         protocol.GetInfoResponse)
+        self.assertIsNotNone(responseData)
+        self.assertEqual(responseData.protocol_version, protocol.version)
+
     # TODO def testSearchGenotypePhenotypes(self):
 
     # TODO def testGetExpressionLevel(self):

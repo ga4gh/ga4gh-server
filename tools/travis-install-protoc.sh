@@ -4,7 +4,7 @@
 
 # bash tools/travis-install-protoc.sh 3.0.0-beta-3.1
 #   
-# From https://github.com/ga4gh/schemas/blob/667978e7dd3bfc6d10bfd5c1d64a395c5741e313/tools/travis-install-protoc.sh
+# From https://github.com/ga4gh/ga4gh-schemas/blob/667978e7dd3bfc6d10bfd5c1d64a395c5741e313/tools/travis-install-protoc.sh
 
 # make bash more robust.
 set -beEux -o pipefail

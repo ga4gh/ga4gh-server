@@ -65,12 +65,6 @@ class PysamFileHandleCache(object):
         handle.close()
         return dataFile
 
-    def getCachedFiles(self):
-        """
-        Returns all file names stored in the cache.
-        """
-        return self._memoTable.keys()
-
     def getFileHandle(self, dataFile, openMethod):
         """
         Returns handle associated to the filename. If the file is
@@ -314,16 +308,6 @@ class PhenotypeAssociationSetCompoundId(CompoundId):
     fields = DatasetCompoundId.fields + ['phenotypeAssociationSet']
     containerIds = DatasetCompoundId.containerIds + [
         ('phenotypeAssociationSetId', 1)]
-
-
-class PhenotypeAssociationCompoundId(CompoundId):
-    """
-    The compound id for a data set
-    """
-    fields = PhenotypeAssociationSetCompoundId.fields + [
-        'phenotypeAssociation']
-    containerIds = PhenotypeAssociationSetCompoundId.containerIds + [
-        ('phenotypeAssociationId', 2)]
 
 
 class VariantSetCompoundId(DatasetCompoundId):
@@ -596,12 +580,6 @@ class PysamDatamodelMixin(object):
 
     vcfMin = -2**31
     vcfMax = 2**31 - 1
-
-    fastaMin = 0
-    fastaMax = 2**30 - 1
-
-    rNameMin = 0
-    rNameMax = 85
 
     maxStringLength = 2**10  # arbitrary
 

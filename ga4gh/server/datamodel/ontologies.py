@@ -38,7 +38,6 @@ class Ontology(object):
     def __init__(self, name):
         self._id = None
         self._name = name
-        self._sourceName = name
         self._sourceVersion = None
         self._ontologyPrefix = None
         self._dataUrl = None
@@ -95,12 +94,6 @@ class Ontology(object):
         ontology and "GO" for gene a ontology.
         """
         return self._ontologyPrefix
-
-    def getSourceVersion(self):
-        """
-        The version of the ontology derived from the OBO file.
-        """
-        return self._sourceVersion
 
     def getDataUrl(self):
         return self._dataUrl

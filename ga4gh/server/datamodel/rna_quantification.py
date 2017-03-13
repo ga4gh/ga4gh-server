@@ -96,12 +96,6 @@ class AbstractRnaQuantificationSet(datamodel.DatamodelObject):
         self._rnaQuantificationIdMap = {}
         self._rnaQuantificationIds = []
 
-    def getNumRnaQuantifications(self):
-        """
-        Returns the number of rna quantifications in this set.
-        """
-        return len(self._rnaQuantificationIds)
-
     def getRnaQuantificationByIndex(self, index):
         """
         Returns the rna quantification at the specified index in this set.
@@ -281,7 +275,7 @@ class SqliteRnaQuantification(AbstractRnaQuantification):
     """
     Class representing a single RnaQuantification in the GA4GH data model.
     """
-    def __init__(self, parentContainer, localId, rnaQuantDataPath=None):
+    def __init__(self, parentContainer, localId):
         super(SqliteRnaQuantification, self).__init__(parentContainer, localId)
         self._dbFilePath = None
         self._db = None

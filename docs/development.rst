@@ -8,7 +8,7 @@ Thanks for your interest in helping us develop the GA4GH reference
 implementation! There are lots of ways to contribute, and it's easy
 to get up and running. This page should provide the basic information
 required to get started; if you encounter any difficulties
-`please let us know <https://github.com/ga4gh/server/issues>`_
+`please let us know <https://github.com/ga4gh/ga4gh-server/issues>`_
 
 .. warning::
 
@@ -23,7 +23,7 @@ libraries. On Debian or Ubuntu, we can install these using
 
 .. code-block:: bash
 
-    sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libssl-dev
+    sudo apt-get install python-dev git zlib1g-dev libxslt1-dev libffi-dev libssl-dev curl libcurl4-openssl-dev
 
 .. note::
     Instructions for configuring the reference server on Mac OS X can be found here :ref:`Installation <macosinstall>`.
@@ -125,7 +125,7 @@ version of the schemas and client to develop against.
 GitHub workflow
 ***************
 
-First, go to https://github.com/ga4gh/server and click on the 'Fork'
+First, go to https://github.com/ga4gh/ga4gh-server and click on the 'Fork'
 button in the top right-hand corner. This will allow you to create
 your own private fork of the server project where you can work.
 See the `GitHub documentation <https://help.github.com/articles/fork-a-repo/>`_
@@ -159,7 +159,7 @@ are making:
 
 .. code-block:: bash
 
-    git remote add upstream https://github.com/ga4gh/server.git
+    git remote add upstream https://github.com/ga4gh/ga4gh-server.git
 
 All development is done against the ``master`` branch.
 
@@ -298,14 +298,8 @@ use.
 Development utilities
 *********************
 
-All of the command line interface utilities have local scripts
-that simplify development: for example, we can run the local version of the
-``ga2sam`` program by using::
-
-    python ga2sam_dev.py
-
-To run the server locally in development mode, we can use the ``server_dev.py``
-script, e.g.::
+All of the command line interface utilities have local scripts that
+simplify development. To run the server locally in development mode, we can use the ``server_dev.py`` script, e.g.::
 
     python server_dev.py
 
@@ -492,15 +486,15 @@ branch will be assigned a branch manager.  This person is responsible for
 keeping the branch reasonably up to date with changes that happen in the
 trunk branch off of which it is branched.  The list of long running
 branches and their corresponding branch managers can be found `here
-<https://github.com/ga4gh/server/wiki/Long-running-topic-branches-and-branch-managers>`_.
+<https://github.com/ga4gh/ga4gh-server/wiki/Long-running-topic-branches-and-branch-managers>`_.
 
 It is up to the branch manager how frequently the topic branch pulls in
 changes from the trunk branch.  All topic branches are hosted on the
-ga4gh/server repository and are GitHub protected branches.  That is, there can
-be no force pushes to the branches, so they must be updated using ``git
-merge`` rather than ``git rebase``.  Updates to topic branches must be done via
-pull requests (rather than directly on the command line) so that the Travis CI
-runs and passes prior to merging.
+ga4gh/ga4gh-server repository and are GitHub protected branches.  That is,
+there can be no force pushes to the branches, so they must be updated using
+``git merge`` rather than ``git rebase``.  Updates to topic branches must be
+done via pull requests (rather than directly on the command line) so that the
+Travis CI runs and passes prior to merging.
 
 ***************
 Release process
@@ -537,7 +531,7 @@ Making a release entails the following steps:
    #. modify ``docs/environment.yml`` to pin the ga4gh packages to specific versions
 
 #. Once this has been merged, tag the release on GitHub (on the `releases
-   <https://github.com/ga4gh/server/releases>`_ page) with the
+   <https://github.com/ga4gh/ga4gh-server/releases>`_ page) with the
    appropriate version number.
 #. Fetch the tag from the upstream repo, and checkout this tag.
 #. Create the distribution tarball using ``python setup.py sdist``, and then
@@ -545,7 +539,7 @@ Making a release entails the following steps:
    ``twine upload dist/ga4gh-$MAJOR.$MINOR.$PATCH.tar.gz`` (using 
    the correct file name).
 #. Verify that the documentation at
-   http://ga4gh-reference-implementation.readthedocs.org/en/stable/
+   http://ga4gh-server.readthedocs.org/en/stable/
    is for the correct version (it may take a few minutes for this to
    happen after the release has been tagged on GitHub).  The release
    notes docs should have changed, so that is a good section to look at

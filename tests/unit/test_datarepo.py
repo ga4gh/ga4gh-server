@@ -88,7 +88,7 @@ class TestBadDatabaseNoSetup(unittest.TestCase):
         with self.assertRaises(exceptions.RepoInvalidDatabaseException):
             repo.open(datarepo.MODE_READ)
 
-    def testNonexistantFile(self):
+    def testNonexistentFile(self):
         repo = datarepo.SqlDataRepository("aFilePathThatDoesNotExist")
         with self.assertRaises(exceptions.RepoNotFoundException):
             repo.open(datarepo.MODE_READ)

@@ -9,7 +9,6 @@ import flask
 import requests
 import functools
 import json
-import base64
 
 import jwt
 
@@ -47,13 +46,12 @@ def auth_decorator(app=None):
                 # Each of these functions will throw a 401 is there is a
                 # problem decoding the token with some helpful error message.
                 if auth_header:
-                    token, profile = _decode_header(
+                    token, profile = decode_header(
                         auth_header, client_id, client_secret)
                 else:
                     raise exceptions.NotAuthorizedException()
                 # We store the token in the session so that later
                 # stages can use it to connect identity and authorization.
-                flask._request_ctx_stack.top.current_user = profile
                 flask.session['auth0_key'] = token
                 # Now we need to make sure that on top of having a good token
                 # They are authorized, and if not provide an error message
@@ -255,11 +253,9 @@ def _decode_header(auth_header, client_id, client_secret):
     """
     try:
         token = auth_header.split()[1]
-        b64secret = client_secret.replace(
-            "_", "/").replace("-", "+")
         payload = jwt.decode(
             token,
-            base64.b64decode(b64secret),
+            client_secret,
             audience=client_id)
     except jwt.ExpiredSignature:
         raise exceptions.NotAuthorizedException(

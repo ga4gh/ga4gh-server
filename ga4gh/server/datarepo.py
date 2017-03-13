@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 
 import json
 import os
-import sqlite3
 import datetime
 
 import ga4gh.server.datamodel as datamodel
@@ -22,9 +21,9 @@ import ga4gh.server.datamodel.bio_metadata as biodata
 import ga4gh.server.datamodel.genotype_phenotype as genotype_phenotype
 import ga4gh.server.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.server.datamodel.rna_quantification as rna_quantification
+import ga4gh.server.datamodel.peers as peers
 import ga4gh.server.exceptions as exceptions
-
-import repo.models as m
+import ga4gh.server.repo.models as models
 
 import ga4gh.schemas.protocol as protocol
 
@@ -46,6 +45,7 @@ class AbstractDataRepository(object):
         self._ontologyNameMap = {}
         self._ontologyIdMap = {}
         self._ontologyIds = []
+        self._peers = []
 
     def addDataset(self, dataset):
         """
@@ -78,6 +78,37 @@ class AbstractDataRepository(object):
         Returns a list of datasets in this data repository
         """
         return [self._datasetIdMap[id_] for id_ in self._datasetIds]
+
+    def insertPeer(self, peer):
+        """
+        Adds a peer to the list of peers in the repository. Used only in
+        testing.
+        """
+        self._peers.append(peer)
+
+    def getPeer(self, url):
+        """
+        Select the first peer in the datarepo with the given url simulating
+        the behavior of selecting by URL. This is only used during testing.
+        """
+        peers = filter(lambda x: x.getUrl() == url, self.getPeers())
+        if len(peers) == 0:
+            raise exceptions.PeerNotFoundException(url)
+        return peers[0]
+
+    def getPeers(self, offset=0, limit=100):
+        """
+        Returns the list of peers with an optional offset and limit
+        simulating the SQL registry for testing.
+        """
+        return self._peers[offset:offset + limit]
+
+    def insertAnnouncement(self, announcement):
+        """
+        A placeholder function to simulate receiving an announcement used
+        in testing. It will throw an exception if the URL is invalid.
+        """
+        peers.Peer(announcement.get('url'))
 
     def getNumDatasets(self):
         """
@@ -420,8 +451,13 @@ class SimulatedDataRepository(AbstractDataRepository):
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
             numPhenotypeAssociations=2,
             numPhenotypeAssociationSets=1,
-            numAlignments=2, numRnaQuantSets=2, numExpressionLevels=2):
+            numAlignments=2, numRnaQuantSets=2, numExpressionLevels=2,
+            numPeers=200):
         super(SimulatedDataRepository, self).__init__()
+
+        for i in xrange(numPeers):
+            peer = peers.Peer("http://test{}.org".format(i))
+            self.insertPeer(peer)
 
         # References
         for i in range(numReferenceSets):
@@ -481,19 +517,84 @@ class SqlDataRepository(AbstractDataRepository):
         # Values filled in using the DB. These will all be None until
         # we have called load()
         self._schemaVersion = None
-        self._creationTimeStamp = None
         # Connection to the DB.
-        self._dbConnection = None
-        self.database = m.SqliteDatabase(self._dbFilename, **{})
-        m.databaseProxy.initialize(self.database)
+        self.database = models.SqliteDatabase(self._dbFilename, **{})
+        models.databaseProxy.initialize(self.database)
 
     def _checkWriteMode(self):
         if self._openMode != MODE_WRITE:
             raise ValueError("Repo must be opened in write mode")
 
-    def _checkReadMode(self):
-        if self._openMode != MODE_READ:
-            raise ValueError("Repo must be opened in read mode")
+    def getPeer(self, url):
+        """
+        Finds a peer by URL and return the first peer record with that URL.
+        """
+        peers = list(models.Peer.select().where(models.Peer.url == url))
+        if len(peers) == 0:
+            raise exceptions.PeerNotFoundException(url)
+        return peers[0]
+
+    def getPeers(self, offset=0, limit=1000):
+        """
+        Get the list of peers using an SQL offset and limit. Returns a list
+        of peer datamodel objects in a list.
+        """
+        select = models.Peer.select().order_by(
+            models.Peer.url).limit(limit).offset(offset)
+        return [peers.Peer(p.url, record=p) for p in select]
+
+    def tableToTsv(self, model):
+        """
+        Takes a model class and attempts to create a table in TSV format
+        that can be imported into a spreadsheet program.
+        """
+        first = True
+        for item in model.select():
+            if first:
+                header = "".join(
+                    ["{}\t".format(x) for x in model._meta.fields.keys()])
+                print(header)
+                first = False
+            row = "".join(
+                ["{}\t".format(
+                    getattr(item, key)) for key in model._meta.fields.keys()])
+            print(row)
+
+    def printAnnouncements(self):
+        """
+        Prints the announcement table to the log in tsv format.
+        """
+        self.tableToTsv(models.Announcement)
+
+    def clearAnnouncements(self):
+        """
+        Flushes the announcement table.
+        """
+        try:
+            q = models.Announcement.delete().where(
+                models.Announcement.id > 0)
+            q.execute()
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
+
+    def insertAnnouncement(self, announcement):
+        """
+        Adds an announcement to the registry for later analysis.
+        """
+        url = announcement.get('url', None)
+        try:
+            peers.Peer(url)
+        except:
+            raise exceptions.BadUrlException(url)
+        try:
+            # TODO get more details about the user agent
+            models.Announcement.create(
+                url=announcement.get('url'),
+                attributes=json.dumps(announcement.get('attributes', {})),
+                remote_addr=announcement.get('remote_addr', None),
+                user_agent=announcement.get('user_agent', None))
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
 
     def open(self, mode=MODE_READ):
         """
@@ -625,19 +726,11 @@ class SqlDataRepository(AbstractDataRepository):
                 # TODO - please improve this verification,
                 #        print out number of tuples in graph
 
-    def _safeConnect(self):
-        try:
-            # The next line creates the file if it did not exist previously
-            self._dbConnection = sqlite3.connect(self._dbFilename)
-        except sqlite3.OperationalError:
-            # raised e.g. when directory passed as dbFilename
-            raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
-
     def _createSystemTable(self):
-        self.database.create_table(m.System)
-        m.System.create(
+        self.database.create_table(models.System)
+        models.System.create(
             key=self.systemKeySchemaVersion, value=self.version)
-        m.System.create(
+        models.System.create(
             key=self.systemKeyCreationTimeStamp, value=datetime.datetime.now())
 
     def _readSystemTable(self):
@@ -645,10 +738,8 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoNotFoundException(
                 self._dbFilename)
         try:
-            self._schemaVersion = m.System.get(
-                m.System.key == self.systemKeySchemaVersion).value
-            self._creationTimeStamp = m.System.get(
-                m.System.key == self.systemKeyCreationTimeStamp).value
+            self._schemaVersion = models.System.get(
+                models.System.key == self.systemKeySchemaVersion).value
         except Exception:
             raise exceptions.RepoInvalidDatabaseException(self._dbFilename)
         schemaVersion = self.SchemaVersion(self._schemaVersion)
@@ -657,14 +748,14 @@ class SqlDataRepository(AbstractDataRepository):
                 schemaVersion, self.version)
 
     def _createOntologyTable(self):
-        self.database.create_table(m.Ontology)
+        self.database.create_table(models.Ontology)
 
     def insertOntology(self, ontology):
         """
         Inserts the specified ontology into this repository.
         """
         try:
-            m.Ontology.create(
+            models.Ontology.create(
                     id=ontology.getName(),
                     name=ontology.getName(),
                     dataurl=ontology.getDataUrl(),
@@ -676,7 +767,7 @@ class SqlDataRepository(AbstractDataRepository):
         # for the rest of the container objects.
 
     def _readOntologyTable(self):
-        for ont in m.Ontology.select():
+        for ont in models.Ontology.select():
             ontology = ontologies.Ontology(ont.name)
             ontology.populateFromRow(ont)
             self.addOntology(ontology)
@@ -685,17 +776,17 @@ class SqlDataRepository(AbstractDataRepository):
         """
         Removes the specified ontology term map from this repository.
         """
-        q = m.Ontology.delete().where(id == ontology.getId())
+        q = models.Ontology.delete().where(id == ontology.getId())
         q.execute()
 
     def _createReferenceTable(self):
-        self.database.create_table(m.Reference)
+        self.database.create_table(models.Reference)
 
     def insertReference(self, reference):
         """
         Inserts the specified reference into this repository.
         """
-        m.Reference.create(
+        models.Reference.create(
             id=reference.getId(),
             referencesetid=reference.getParentContainer().getId(),
             name=reference.getLocalId(),
@@ -707,7 +798,7 @@ class SqlDataRepository(AbstractDataRepository):
             sourceuri=reference.getSourceUri())
 
     def _readReferenceTable(self):
-        for referenceRecord in m.Reference.select():
+        for referenceRecord in models.Reference.select():
             referenceSet = self.getReferenceSet(
                 referenceRecord.referencesetid.id)
             reference = references.HtslibReference(
@@ -717,14 +808,14 @@ class SqlDataRepository(AbstractDataRepository):
             referenceSet.addReference(reference)
 
     def _createReferenceSetTable(self):
-        self.database.create_table(m.Referenceset)
+        self.database.create_table(models.Referenceset)
 
     def insertReferenceSet(self, referenceSet):
         """
         Inserts the specified referenceSet into this repository.
         """
         try:
-            m.Referenceset.create(
+            models.Referenceset.create(
                 id=referenceSet.getId(),
                 name=referenceSet.getLocalId(),
                 description=referenceSet.getDescription(),
@@ -743,7 +834,7 @@ class SqlDataRepository(AbstractDataRepository):
                 referenceSet.getLocalId())
 
     def _readReferenceSetTable(self):
-        for referenceSetRecord in m.Referenceset.select():
+        for referenceSetRecord in models.Referenceset.select():
             referenceSet = references.HtslibReferenceSet(
                 referenceSetRecord.name)
             referenceSet.populateFromRow(referenceSetRecord)
@@ -752,14 +843,14 @@ class SqlDataRepository(AbstractDataRepository):
             self.addReferenceSet(referenceSet)
 
     def _createDatasetTable(self):
-        self.database.create_table(m.Dataset)
+        self.database.create_table(models.Dataset)
 
     def insertDataset(self, dataset):
         """
         Inserts the specified dataset into this repository.
         """
         try:
-            m.Dataset.create(
+            models.Dataset.create(
                 id=dataset.getId(),
                 name=dataset.getLocalId(),
                 description=dataset.getDescription(),
@@ -773,36 +864,37 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified dataset from this repository. This performs
         a cascading removal of all items within this dataset.
         """
-        for datasetRecord in m.Dataset.select().where(
-                        m.Dataset.id == dataset.getId()):
+        for datasetRecord in models.Dataset.select().where(
+                        models.Dataset.id == dataset.getId()):
             datasetRecord.delete_instance(recursive=True)
 
     def removePhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
         Remove a phenotype association set from the repo
         """
-        q = m.Phenotypeassociationset.delete().where(
-            m.Phenotypeassociationset.id == phenotypeAssociationSet.getId())
+        q = models.Phenotypeassociationset.delete().where(
+            models.Phenotypeassociationset.id ==
+            phenotypeAssociationSet.getId())
         q.execute()
 
     def removeFeatureSet(self, featureSet):
         """
         Removes the specified featureSet from this repository.
         """
-        q = m.Featureset.delete().where(
-            m.Featureset.id == featureSet.getId())
+        q = models.Featureset.delete().where(
+            models.Featureset.id == featureSet.getId())
         q.execute()
 
     def removeContinuousSet(self, continuousSet):
         """
         Removes the specified continuousSet from this repository.
         """
-        q = m.ContinuousSet.delete().where(
-            m.ContinuousSet.id == continuousSet.getId())
+        q = models.ContinuousSet.delete().where(
+            models.ContinuousSet.id == continuousSet.getId())
         q.execute()
 
     def _readDatasetTable(self):
-        for datasetRecord in m.Dataset.select():
+        for datasetRecord in models.Dataset.select():
             dataset = datasets.Dataset(datasetRecord.name)
             dataset.populateFromRow(datasetRecord)
             assert dataset.getId() == datasetRecord.id
@@ -810,7 +902,7 @@ class SqlDataRepository(AbstractDataRepository):
             self.addDataset(dataset)
 
     def _createReadGroupTable(self):
-        self.database.create_table(m.Readgroup)
+        self.database.create_table(models.Readgroup)
 
     def insertReadGroup(self, readGroup):
         """
@@ -820,7 +912,7 @@ class SqlDataRepository(AbstractDataRepository):
         experimentJson = json.dumps(
             protocol.toJsonDict(readGroup.getExperiment()))
         try:
-            m.Readgroup.create(
+            models.Readgroup.create(
                 id=readGroup.getId(),
                 readgroupsetid=readGroup.getParentContainer().getId(),
                 name=readGroup.getLocalId(),
@@ -839,8 +931,8 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified readGroupSet from this repository. This performs
         a cascading removal of all items within this readGroupSet.
         """
-        for readGroupSetRecord in m.Readgroupset.select().where(
-                        m.Readgroupset.id == readGroupSet.getId()):
+        for readGroupSetRecord in models.Readgroupset.select().where(
+                        models.Readgroupset.id == readGroupSet.getId()):
             readGroupSetRecord.delete_instance(recursive=True)
 
     def removeVariantSet(self, variantSet):
@@ -848,26 +940,28 @@ class SqlDataRepository(AbstractDataRepository):
         Removes the specified variantSet from this repository. This performs
         a cascading removal of all items within this variantSet.
         """
-        for variantSetRecord in m.Variantset.select().where(
-                        m.Variantset.id == variantSet.getId()):
+        for variantSetRecord in models.Variantset.select().where(
+                        models.Variantset.id == variantSet.getId()):
             variantSetRecord.delete_instance(recursive=True)
 
     def removeBiosample(self, biosample):
         """
         Removes the specified biosample from this repository.
         """
-        q = m.Biosample.delete().where(m.Biosample.id == biosample.getId())
+        q = models.Biosample.delete().where(
+            models.Biosample.id == biosample.getId())
         q.execute()
 
     def removeIndividual(self, individual):
         """
         Removes the specified individual from this repository.
         """
-        q = m.Individual.delete().where(m.Individual.id == individual.getId())
+        q = models.Individual.delete().where(
+            models.Individual.id == individual.getId())
         q.execute()
 
     def _readReadGroupTable(self):
-        for readGroupRecord in m.Readgroup.select():
+        for readGroupRecord in models.Readgroup.select():
             readGroupSet = self.getReadGroupSet(
                 readGroupRecord.readgroupsetid.id)
             readGroup = reads.HtslibReadGroup(
@@ -879,7 +973,7 @@ class SqlDataRepository(AbstractDataRepository):
             readGroupSet.addReadGroup(readGroup)
 
     def _createReadGroupSetTable(self):
-        self.database.create_table(m.Readgroupset)
+        self.database.create_table(models.Readgroupset)
 
     def insertReadGroupSet(self, readGroupSet):
         """
@@ -890,7 +984,7 @@ class SqlDataRepository(AbstractDataRepository):
              readGroupSet.getPrograms()])
         statsJson = json.dumps(protocol.toJsonDict(readGroupSet.getStats()))
         try:
-            m.Readgroupset.create(
+            models.Readgroupset.create(
                 id=readGroupSet.getId(),
                 datasetid=readGroupSet.getParentContainer().getId(),
                 referencesetid=readGroupSet.getReferenceSet().getId(),
@@ -914,11 +1008,11 @@ class SqlDataRepository(AbstractDataRepository):
         referenceSet can be removed.
         """
         try:
-            q = m.Reference.delete().where(
-                    m.Reference.referencesetid == referenceSet.getId())
+            q = models.Reference.delete().where(
+                    models.Reference.referencesetid == referenceSet.getId())
             q.execute()
-            q = m.Referenceset.delete().where(
-                    m.Referenceset.id == referenceSet.getId())
+            q = models.Referenceset.delete().where(
+                    models.Referenceset.id == referenceSet.getId())
             q.execute()
         except Exception:
             msg = ("Unable to delete reference set.  "
@@ -928,7 +1022,7 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(msg)
 
     def _readReadGroupSetTable(self):
-        for readGroupSetRecord in m.Readgroupset.select():
+        for readGroupSetRecord in models.Readgroupset.select():
             dataset = self.getDataset(readGroupSetRecord.datasetid.id)
             readGroupSet = reads.HtslibReadGroupSet(
                 dataset, readGroupSetRecord.name)
@@ -941,7 +1035,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addReadGroupSet(readGroupSet)
 
     def _createVariantAnnotationSetTable(self):
-        self.database.create_table(m.Variantannotationset)
+        self.database.create_table(models.Variantannotationset)
 
     def insertVariantAnnotationSet(self, variantAnnotationSet):
         """
@@ -950,7 +1044,7 @@ class SqlDataRepository(AbstractDataRepository):
         analysisJson = json.dumps(
             protocol.toJsonDict(variantAnnotationSet.getAnalysis()))
         try:
-            m.Variantannotationset.create(
+            models.Variantannotationset.create(
                 id=variantAnnotationSet.getId(),
                 variantsetid=variantAnnotationSet.getParentContainer().getId(),
                 ontologyid=variantAnnotationSet.getOntology().getId(),
@@ -964,7 +1058,7 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(e)
 
     def _readVariantAnnotationSetTable(self):
-        for annotationSetRecord in m.Variantannotationset.select():
+        for annotationSetRecord in models.Variantannotationset.select():
             variantSet = self.getVariantSet(
                 annotationSetRecord.variantsetid.id)
             ontology = self.getOntology(annotationSetRecord.ontologyid.id)
@@ -977,14 +1071,14 @@ class SqlDataRepository(AbstractDataRepository):
             variantSet.addVariantAnnotationSet(variantAnnotationSet)
 
     def _createCallSetTable(self):
-        self.database.create_table(m.Callset)
+        self.database.create_table(models.Callset)
 
     def insertCallSet(self, callSet):
         """
         Inserts a the specified callSet into this repository.
         """
         try:
-            m.Callset.create(
+            models.Callset.create(
                 id=callSet.getId(),
                 name=callSet.getLocalId(),
                 variantsetid=callSet.getParentContainer().getId(),
@@ -994,7 +1088,7 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(e)
 
     def _readCallSetTable(self):
-        for callSetRecord in m.Callset.select():
+        for callSetRecord in models.Callset.select():
             variantSet = self.getVariantSet(callSetRecord.variantsetid.id)
             callSet = variants.CallSet(variantSet, callSetRecord.name)
             callSet.populateFromRow(callSetRecord)
@@ -1003,7 +1097,7 @@ class SqlDataRepository(AbstractDataRepository):
             variantSet.addCallSet(callSet)
 
     def _createVariantSetTable(self):
-        self.database.create_table(m.Variantset)
+        self.database.create_table(models.Variantset)
 
     def insertVariantSet(self, variantSet):
         """
@@ -1017,7 +1111,7 @@ class SqlDataRepository(AbstractDataRepository):
              variantSet.getMetadata()])
         urlMapJson = json.dumps(variantSet.getReferenceToDataUrlIndexMap())
         try:
-            m.Variantset.create(
+            models.Variantset.create(
                 id=variantSet.getId(),
                 datasetid=variantSet.getParentContainer().getId(),
                 referencesetid=variantSet.getReferenceSet().getId(),
@@ -1033,7 +1127,7 @@ class SqlDataRepository(AbstractDataRepository):
             self.insertCallSet(callSet)
 
     def _readVariantSetTable(self):
-        for variantSetRecord in m.Variantset.select():
+        for variantSetRecord in models.Variantset.select():
             dataset = self.getDataset(variantSetRecord.datasetid.id)
             referenceSet = self.getReferenceSet(
                 variantSetRecord.referencesetid.id)
@@ -1046,7 +1140,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addVariantSet(variantSet)
 
     def _createFeatureSetTable(self):
-        self.database.create_table(m.Featureset)
+        self.database.create_table(models.Featureset)
 
     def insertFeatureSet(self, featureSet):
         """
@@ -1054,7 +1148,7 @@ class SqlDataRepository(AbstractDataRepository):
         """
         # TODO add support for info and sourceUri fields.
         try:
-            m.Featureset.create(
+            models.Featureset.create(
                 id=featureSet.getId(),
                 datasetid=featureSet.getParentContainer().getId(),
                 referencesetid=featureSet.getReferenceSet().getId(),
@@ -1066,7 +1160,7 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(e)
 
     def _readFeatureSetTable(self):
-        for featureSetRecord in m.Featureset.select():
+        for featureSetRecord in models.Featureset.select():
             dataset = self.getDataset(featureSetRecord.datasetid.id)
             # FIXME this should be handled elsewhere
             if 'cgd' in featureSetRecord.name:
@@ -1087,7 +1181,7 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addFeatureSet(featureSet)
 
     def _createContinuousSetTable(self):
-        self.database.create_table(m.ContinuousSet)
+        self.database.create_table(models.ContinuousSet)
 
     def insertContinuousSet(self, continuousSet):
         """
@@ -1095,7 +1189,7 @@ class SqlDataRepository(AbstractDataRepository):
         """
         # TODO add support for info and sourceUri fields.
         try:
-            m.ContinuousSet.create(
+            models.ContinuousSet.create(
                 id=continuousSet.getId(),
                 datasetid=continuousSet.getParentContainer().getId(),
                 referencesetid=continuousSet.getReferenceSet().getId(),
@@ -1106,7 +1200,7 @@ class SqlDataRepository(AbstractDataRepository):
             raise exceptions.RepoManagerException(e)
 
     def _readContinuousSetTable(self):
-        for continuousSetRecord in m.ContinuousSet.select():
+        for continuousSetRecord in models.ContinuousSet.select():
             dataset = self.getDataset(continuousSetRecord.datasetid.id)
             continuousSet = continuous.FileContinuousSet(
                     dataset, continuousSetRecord.name)
@@ -1118,14 +1212,14 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addContinuousSet(continuousSet)
 
     def _createBiosampleTable(self):
-        self.database.create_table(m.Biosample)
+        self.database.create_table(models.Biosample)
 
     def insertBiosample(self, biosample):
         """
         Inserts the specified Biosample into this repository.
         """
         try:
-            m.Biosample.create(
+            models.Biosample.create(
                 id=biosample.getId(),
                 datasetid=biosample.getParentContainer().getId(),
                 name=biosample.getLocalId(),
@@ -1134,14 +1228,16 @@ class SqlDataRepository(AbstractDataRepository):
                 created=biosample.getCreated(),
                 updated=biosample.getUpdated(),
                 individualid=biosample.getIndividualId(),
-                attributes=json.dumps(biosample.getAttributes()))
+                attributes=json.dumps(biosample.getAttributes()),
+                individualAgeAtCollection=json.dumps(
+                        biosample.getIndividualAgeAtCollection()))
         except Exception:
             raise exceptions.DuplicateNameException(
                 biosample.getLocalId(),
                 biosample.getParentContainer().getLocalId())
 
     def _readBiosampleTable(self):
-        for biosampleRecord in m.Biosample.select():
+        for biosampleRecord in models.Biosample.select():
             dataset = self.getDataset(biosampleRecord.datasetid.id)
             biosample = biodata.Biosample(
                 dataset, biosampleRecord.name)
@@ -1150,15 +1246,14 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addBiosample(biosample)
 
     def _createIndividualTable(self):
-        self.database.create_table(m.Individual)
+        self.database.create_table(models.Individual)
 
     def insertIndividual(self, individual):
         """
         Inserts the specified individual into this repository.
         """
-        # TODO add support for info and sourceUri fields.
         try:
-            m.Individual.create(
+            models.Individual.create(
                 id=individual.getId(),
                 datasetId=individual.getParentContainer().getId(),
                 name=individual.getLocalId(),
@@ -1174,7 +1269,7 @@ class SqlDataRepository(AbstractDataRepository):
                 individual.getParentContainer().getLocalId())
 
     def _readIndividualTable(self):
-        for individualRecord in m.Individual.select():
+        for individualRecord in models.Individual.select():
             dataset = self.getDataset(individualRecord.datasetid.id)
             individual = biodata.Individual(
                 dataset, individualRecord.name)
@@ -1183,20 +1278,19 @@ class SqlDataRepository(AbstractDataRepository):
             dataset.addIndividual(individual)
 
     def _createPhenotypeAssociationSetTable(self):
-        self.database.create_table(m.Phenotypeassociationset)
+        self.database.create_table(models.Phenotypeassociationset)
 
     def _createRnaQuantificationSetTable(self):
-        self.database.create_table(m.Rnaquantificationset)
+        self.database.create_table(models.Rnaquantificationset)
 
     def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
         """
         Inserts the specified phenotype annotation set into this repository.
         """
-        # TODO add support for info and sourceUri fields.
         datasetId = phenotypeAssociationSet.getParentContainer().getId()
         attributes = json.dumps(phenotypeAssociationSet.getAttributes())
         try:
-            m.Phenotypeassociationset.create(
+            models.Phenotypeassociationset.create(
                 id=phenotypeAssociationSet.getId(),
                 name=phenotypeAssociationSet.getLocalId(),
                 datasetid=datasetId,
@@ -1207,7 +1301,7 @@ class SqlDataRepository(AbstractDataRepository):
                 phenotypeAssociationSet.getParentContainer().getId())
 
     def _readPhenotypeAssociationSetTable(self):
-        for associationSetRecord in m.Phenotypeassociationset.select():
+        for associationSetRecord in models.Phenotypeassociationset.select():
             dataset = self.getDataset(associationSetRecord.datasetid.id)
             phenotypeAssociationSet = \
                 genotype_phenotype.RdfPhenotypeAssociationSet(
@@ -1221,7 +1315,7 @@ class SqlDataRepository(AbstractDataRepository):
         Inserts a the specified rnaQuantificationSet into this repository.
         """
         try:
-            m.Rnaquantificationset.create(
+            models.Rnaquantificationset.create(
                 id=rnaQuantificationSet.getId(),
                 datasetid=rnaQuantificationSet.getParentContainer().getId(),
                 referencesetid=rnaQuantificationSet.getReferenceSet().getId(),
@@ -1234,7 +1328,7 @@ class SqlDataRepository(AbstractDataRepository):
                 rnaQuantificationSet.getParentContainer().getLocalId())
 
     def _readRnaQuantificationSetTable(self):
-        for quantificationSetRecord in m.Rnaquantificationset.select():
+        for quantificationSetRecord in models.Rnaquantificationset.select():
             dataset = self.getDataset(quantificationSetRecord.datasetid.id)
             referenceSet = self.getReferenceSet(
                 quantificationSetRecord.referencesetid.id)
@@ -1252,17 +1346,42 @@ class SqlDataRepository(AbstractDataRepository):
         performs a cascading removal of all items within this
         rnaQuantificationSet.
         """
-        q = m.Rnaquantificationset.delete().where(
-            m.Rnaquantificationset.id == rnaQuantificationSet.getId())
+        q = models.Rnaquantificationset.delete().where(
+            models.Rnaquantificationset.id == rnaQuantificationSet.getId())
         q.execute()
+
+    def insertPeer(self, peer):
+        """
+        Accepts a peer datamodel object and adds it to the registry.
+        """
+        try:
+            models.Peer.create(
+                url=peer.getUrl(),
+                attributes=json.dumps(peer.getAttributes()))
+        except Exception as e:
+            raise exceptions.RepoManagerException(e)
+
+    def removePeer(self, url):
+        """
+        Remove peers by URL.
+        """
+        q = models.Peer.delete().where(
+            models.Peer.url == url)
+        q.execute()
+
+    def _createNetworkTables(self):
+        """"""
+        self.database.create_table(models.Peer)
+        self.database.create_table(models.Announcement)
 
     def initialise(self):
         """
-        Initialise this data repostitory, creating any necessary directories
+        Initialise this data repository, creating any necessary directories
         and file paths.
         """
         self._checkWriteMode()
         self._createSystemTable()
+        self._createNetworkTables()
         self._createOntologyTable()
         self._createReferenceSetTable()
         self._createReferenceTable()

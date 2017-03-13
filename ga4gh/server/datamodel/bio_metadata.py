@@ -31,12 +31,17 @@ class Biosample(datamodel.DatamodelObject):
         self._name = localId
         self._individualId = None
         self._datasetId = parentContainer.getId()
+        self._individualAgeAtCollection = None
 
     def toProtocolElement(self):
         disease = None
         if self.getDisease():
             disease = protocol.fromJson(
                 json.dumps(self.getDisease()), protocol.OntologyTerm)
+        individualAgeAtCollection = None
+        if self.getIndividualAgeAtCollection():
+            individualAgeAtCollection = protocol.fromJson(
+                json.dumps(self.getIndividualAgeAtCollection()), protocol.Age)
         biosample = protocol.Biosample(
             dataset_id=self._datasetId,
             created=self.getCreated(),
@@ -45,7 +50,8 @@ class Biosample(datamodel.DatamodelObject):
             id=self.getId(),
             individual_id=self.getIndividualId(),
             name=self.getName(),
-            disease=disease)
+            disease=disease,
+            individual_age_at_collection=individualAgeAtCollection)
         self.serializeAttributes(biosample)
         return biosample
 
@@ -59,6 +65,8 @@ class Biosample(datamodel.DatamodelObject):
         self._description = parsed.description
         self._disease = protocol.toJsonDict(parsed.disease)
         self._individualId = parsed.individual_id
+        self._individualAgeAtCollection = protocol.toJsonDict(
+                                           parsed.individual_age_at_collection)
         attributes = {}
         for key in parsed.attributes.attr:
             attributes[key] = {
@@ -74,6 +82,8 @@ class Biosample(datamodel.DatamodelObject):
         self._disease = json.loads(biosampleRecord.disease)
         self._individualId = biosampleRecord.individualid
         self.setAttributesJson(biosampleRecord.attributes)
+        self._individualAgeAtCollection = json.loads(
+                                biosampleRecord.individualAgeAtCollection)
         return self
 
     def setIndividualId(self, individualId):
@@ -99,6 +109,12 @@ class Biosample(datamodel.DatamodelObject):
 
     def getName(self):
         return self._name
+
+    def getIndividualAgeAtCollection(self):
+        if self._individualAgeAtCollection is not {}:
+            return self._individualAgeAtCollection
+        else:
+            return None
 
 
 class Individual(datamodel.DatamodelObject):
