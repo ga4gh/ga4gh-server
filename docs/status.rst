@@ -32,6 +32,7 @@ Features:
 - **Rename package from “ga4gh” to “ga4gh-server”** `#1582 <https://github.com/ga4gh/ga4gh-server/issues/1582>`__, `#1583 <https://github.com/ga4gh/ga4gh-server/issues/1583>`__
 
 - Added **support for BigWig files** in a new Continuous Data object `#1573 <https://github.com/ga4gh/ga4gh-server/issues/1573>`__  New endpoints and message types include:
+
  - ``POST /continuoussets/search``
  - ``GET /continuoussets/{id}``
  - ``POST /continuous/search``
@@ -39,6 +40,7 @@ Features:
  - ContinuousSet (new)
  
 - Add **ability to list and join peer server networks** `#1507 <https://github.com/ga4gh/ga4gh-server/issues/1507>`__  New endpoints and message types include:
+
  - ``POST /peers/list``
  - ``POST /peers/announce``
  - ``GET /info``
@@ -48,10 +50,12 @@ Features:
  - GetInfoResponse (new)
 
 - Remove feature_id from ExpressionLevel and add ability to search by the Name field `#1580  <https://github.com/ga4gh/ga4gh-server/issues/1580>`__  Impacts
+
  - ``POST /expressionlevels/search``
  - ``GET /expressionlevels/{id}``
 
 - Replaced info fields with rich type Attributes fields `#1521 <https://github.com/ga4gh/ga4gh-server/issues/1521>`__  Impacts the following message types:
+
  - TranscriptEffect
  - VariantAnnotation
  - Individual
@@ -74,10 +78,12 @@ Features:
  - Variant
 
 - Replace NCBI taxon ID integer with ontology term `#1551 <https://github.com/ga4gh/ga4gh-server/issues/1551>`__  Impacts the following message types:
+
  - Reference
  - ReferenceSet
 
 - Changed ontology term “id” to “term_id” `#1513 <https://github.com/ga4gh/ga4gh-server/issues/1513>`__  Impacts the following message types:
+
  - OntologyTerm
 
 Documentation:
