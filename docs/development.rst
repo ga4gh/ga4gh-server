@@ -539,7 +539,7 @@ Making a release entails the following steps:
    ``twine upload dist/ga4gh-$MAJOR.$MINOR.$PATCH.tar.gz`` (using 
    the correct file name).
 #. Verify that the documentation at
-   http://ga4gh-reference-implementation.readthedocs.org/en/stable/
+   http://ga4gh-server.readthedocs.org/en/stable/
    is for the correct version (it may take a few minutes for this to
    happen after the release has been tagged on GitHub).  The release
    notes docs should have changed, so that is a good section to look at

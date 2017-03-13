@@ -9,8 +9,8 @@ GA4GH Reference Implementation
    :target: https://pypi.python.org/pypi/ga4gh/
    :alt: Current PyPi Release
 
-.. image:: https://readthedocs.org/projects/ga4gh-reference-implementation/badge/?version=latest
-   :target: http://ga4gh-reference-implementation.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/ga4gh-server/badge/?version=latest
+   :target: http://ga4gh-server.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation Status
 
 .. image:: https://badges.gitter.im/Join%20Chat.svg
@@ -35,16 +35,16 @@ If you would like to help, please check out our list of
 `issues <https://github.com/ga4gh/ga4gh-server/issues>`_!
 
 The latest bleeding-edge documentation is available at `read-the-docs.org
-<http://ga4gh-reference-implementation.readthedocs.org/en/latest>`_.
+<http://ga4gh-server.readthedocs.org/en/latest>`_.
 
 - For a quick start with the GA4GH API, please see our
-  `demo <http://ga4gh-reference-implementation.readthedocs.org/en/latest/demo.html>`_.
+  `demo <http://ga4gh-server.readthedocs.org/en/latest/demo.html>`_.
 - To configure and deploy the GA4GH server in production
   please see the
   `installation
-  <http://ga4gh-reference-implementation.readthedocs.org/en/latest/installation.html>`_
+  <http://ga4gh-server.readthedocs.org/en/latest/installation.html>`_
   page.
 - If you would like to contribute to the project, please see the
   `development
-  <http://ga4gh-reference-implementation.readthedocs.org/en/latest/development.html>`_
+  <http://ga4gh-server.readthedocs.org/en/latest/development.html>`_
   page.
