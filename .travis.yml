@@ -50,7 +50,7 @@ deploy:
     provider: pypi
     user: dannycolligan
     password:
-        secure: YgK4+2+LKACoDW5EOjd18QdJktq4U9g6SCVk36X7iBDrqwJuYVbVsKbjEALHm7TgPYny03uzGW7/rN/a0HLrmBNKowZ7Tw9s1lU5PhEwt9/mH/uy6EgrWWFFkTipIe/xyig3IhDEyy9Ak5zAydV/epFDoCRkgYbqjq4QAk4RmaQ=
+        secure: ffTNL0M96N0j4rLNxnBXUFg8R+7r0FJG2yXOsog/9QIK5NNIKrgI/a0CfIMxR4TCdTkK3x2O+k6gwrjiNmGAVi93brOIJHV5D5nq5PM5P0TnugIHVY6iwufltvWZn1NN2/8n93RKjNXya77nR53sUhamIGLad8LK8eQGlOU5EMg=
     skip_upload_docs: true
     on:
         repo: ga4gh/ga4gh-server
