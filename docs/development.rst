@@ -528,6 +528,7 @@ Making a release entails the following steps:
    #. update the release notes in ``docs/status.rst`` with a description of what is in the release 
    #. modify ``requirements.txt`` to pin the ga4gh packages to specific versions 
    #. modify ``constraints.txt`` to comment out all the lines referencing ga4gh packages
+   #. modify ``constraints.txt.default`` to have the same contents as ``constraints.txt``
    #. modify ``docs/environment.yml`` to pin the ga4gh packages to specific versions
 
 #. Once this has been merged, tag the release on GitHub (on the `releases
@@ -549,6 +550,8 @@ All of the above steps after the tag is dropped on the target commit are now
 `automated <https://docs.travis-ci.com/user/deployment/pypi/>`_ using
 Travis' capability to deploy to Pypi.
 
+Note that once a filename is uploaded to pypi, it can not be reuploaded (`see this pypi issue <https://github.com/pypa/packaging-problems/issues/74>`_), so if a mistake is made in uploading a particular tag, a new tag will need to be created to perform the upload.  Usually this means revving the ``post`` number at the end of the tag.
+
 +++++++++++++++++++++
 Stable bugfix release
 +++++++++++++++++++++
@@ -566,3 +569,14 @@ we create a release using the following process:
 #. Follow steps 1-5 in the process for `Development releases`_ above,
    except using the ``release-$MAJOR.$MINOR`` branch as the base
    instead of ``master``.
+
++++++++++++++++++++++++++++++++
+Releasing multiple repositories
++++++++++++++++++++++++++++++++
+
+If releasing multiple repositories, releases must be done in order so that
+downstream ga4gh packages can be verified that they work with the upstream
+ga4gh package versions to which they are pinned before releasing them.
+Given our current repositories, if doing a release of all ga4gh packages, the
+following package order must be followed: ``ga4gh-common``,
+``ga4gh-schemas``, ``ga4gh-client``, ``ga4gh-server``.
