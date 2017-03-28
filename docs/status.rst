@@ -110,7 +110,7 @@ some bug fixes and some minor protocol updates in this release.
 
 - Restructuring: We have reorganized our codebase to separate out the schemas,
    client, and server components as separately installable Python components.
-   Running 'pip install ga4gh --pre' will still automatically install all
+   Running 'pip install ga4gh-server --pre' will still automatically install all
    required packages. But now developers who wish to leverage the Python
    libraries around the schemas can just use 'pip install ga4gh-schemas',
    and developers of client code can gain access to the client API library

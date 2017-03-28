@@ -275,6 +275,9 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     """
     file_handler = StreamHandler()
     file_handler.setLevel(logging.WARNING)
+    logging.warning(
+        "The pypi `ga4gh` module is being replaced with `ga4gh-server`. To "
+        "continue to receive updates, please update your `requirements.txt`.")
     app.logger.addHandler(file_handler)
     configStr = 'ga4gh.server.serverconfig:{0}'.format(baseConfig)
     app.config.from_object(configStr)
