@@ -35,6 +35,8 @@ Some general rules to follow:
   followed by an empty line and then any details that you want to share about 
   the commit.
 * Please try to follow the existing syntax style
+* We recommend using a ```pre push``` hook like the one found [here](https://gist.githubusercontent.com/pixelhandler/5718585/raw/1ee3948c6676b704fb9da424c65a767f2c88ae37/pre-push.sh)
+  to keep our master branch safe from force pushing.
 
 When you submit or change your pull request, the Travis build system will 
 automatically run tests to ensure valid schema syntax. If your pull request 
