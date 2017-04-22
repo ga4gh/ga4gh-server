@@ -38,6 +38,7 @@ script:
               --with-coverage --cover-package ga4gh.server
               --cover-inclusive --cover-min-percentage 85
               --cover-branches --cover-erase
+  - python scripts/prepare_compliance_data.py
   - make clean -C docs
   - make -C docs
 
