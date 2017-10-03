@@ -1,6 +1,11 @@
 
 .. image:: http://genomicsandhealth.org/files/logo_ga.png
 
+=================================================
+THIS REPOSITORY HAS BEEN DEPRECATED FOR NEW WORK
+=================================================
+Due to a GA4GH move to produce smaller, tightly defined, standards in smaller bites, future work on the reference server implementation will cease. This repository is no longer suitable as a place for future work. Please see the 'GA4GH website <https://ga4gh.org>' for further details on the GA4GH Connect operational structure (which includes details on Work Streams), lists of existing standards and contact details should you have further queries. 
+
 ==============================
 GA4GH Reference Implementation
 ==============================
