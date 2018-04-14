@@ -8,9 +8,9 @@
 # these libraries are the set listed by pipdeptree -f -w
 # that are dependencies of libraries listed in the next section
 
-# Adding the constraints.txt allows you to choose a specific 
+# Adding the constraints.txt allows you to choose a specific
 # way to resolve our internal dependencies. During development,
-# the constraints file will point at the current master branch 
+# the constraints file will point at the current master branch
 # of the respective module.
 ga4gh-common==0.0.7
 ga4gh-schemas==0.6.0a10.post1
@@ -37,6 +37,7 @@ future==0.15.2
 pyjwkest==1.0.1
 PyJWT==1.4.2
 peewee==2.8.5
+gunicorn==19.7.0
 
 ### This section is for the actual libraries ###
 # these libraries are imported in code that can be reached via

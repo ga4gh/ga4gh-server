@@ -194,6 +194,7 @@ SECRET_KEY = "secret"
 python server_dev.py
 --dont-use-reloader
 --disable-urllib-warnings
+-d
 --host 0.0.0.0
 --config TestConfig
 --config-file {}

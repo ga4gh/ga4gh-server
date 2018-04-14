@@ -7,6 +7,33 @@ Configuration
 The GA4GH reference server `Configuration file`_. allows Flask and application
 specific configuration values to be set.
 
+-------------------
+Starting the server
+-------------------
+
+The ``ga4gh_server`` command looks attempts to start a server for a given
+configuration. Please see below for mandatory configuration settings, including
+``DATA_SOURCE``.
+
+.. argparse::
+   :module: ga4gh.server.cli.server
+   :func: getServerParser
+   :prog: ga4gh_server
+   :nodefault:
+
+++++++++++++++++++++
+Gunicorn WSGI Server
+++++++++++++++++++++
+
+Using the ``-g`` option allows one to run the server in an experimental
+mode behind the http://gunicorn.org/ WSGI HTTP Server. This allows multiple
+workers to spawn to handle simultaneous requests. For some purposes, this will
+allow an implementor to avoid the need to configure an Apache or nginx process.
+
+This feature is experimental. Please post your issues to https://github.com/ga4gh/schemas/issues .
+Currently, the logging facility and TLS mode are known to not work under
+gunicorn.
+
 ------------------
 Configuration file
 ------------------
