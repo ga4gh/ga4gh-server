@@ -169,19 +169,6 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         self._sourceUri = ""
         self._referenceSet = None
 
-    def getReferenceSet(self):
-        """
-        Returns the reference set associated with this FeatureSet.
-        """
-        return self._referenceSet
-
-    def setReferenceSet(self, referenceSet):
-        """
-        Sets the reference set associated with this FeatureSet to the
-        specified value.
-        """
-        self._referenceSet = referenceSet
-
     def toProtocolElement(self):
         """
         Returns the representation of this FeatureSet as the corresponding
@@ -190,7 +177,8 @@ class AbstractFeatureSet(datamodel.DatamodelObject):
         gaFeatureSet = protocol.FeatureSet()
         gaFeatureSet.id = self.getId()
         gaFeatureSet.dataset_id = self.getParentContainer().getId()
-        gaFeatureSet.reference_set_id = pb.string(self._referenceSet.getId())
+        gaFeatureSet.reference_set_id = pb.string(
+            self.safeGetReferenceSetId())
         gaFeatureSet.name = self._name
         gaFeatureSet.source_uri = self._sourceUri
         attributes = self.getAttributes()

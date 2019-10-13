@@ -524,6 +524,39 @@ class DatamodelObject(object):
         """
         return self._parentContainer
 
+    def safeGetReferenceSetId(self):
+        """
+        Checks for the presence of a reference set on the class object
+        and returns the ID if found. Otherwise, return a blank string.
+        """
+        if hasattr(self, "_referenceSet") and self._referenceSet:
+            return self._referenceSet.getId()
+        else:
+            return ""
+
+    def safeGetReferenceSetName(self):
+        """
+        Checks for the presence of a reference set on the class object
+        and returns the ID if found. Otherwise, return a blank string.
+        """
+        if self._referenceSet and self._referenceSet:
+            return self._referenceSet.getLocalId()
+        else:
+            return ""
+
+    def getReferenceSet(self):
+        """
+        Returns the reference set associated with this FeatureSet.
+        """
+        return self._referenceSet
+
+    def setReferenceSet(self, referenceSet):
+        """
+        Sets the reference set associated with this FeatureSet to the
+        specified value.
+        """
+        self._referenceSet = referenceSet
+
     def setAttributes(self, attributes):
         """
         Sets the attributes message to the provided value.

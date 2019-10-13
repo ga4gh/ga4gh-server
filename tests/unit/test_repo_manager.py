@@ -155,11 +155,10 @@ class AbstractRepoManagerTest(unittest.TestCase):
     def addRnaQuantificationSet(self):
         self._rnaQuantificationSetPath = paths.rnaQuantificationSetDbPath
         cmd = (
-            "add-rnaquantificationset {} {} {} -R {} -n {}").format(
+            "add-rnaquantificationset {} {} {} -n {}").format(
                 self._repoPath,
                 self._datasetName,
                 paths.rnaQuantificationSetDbPath,
-                self._referenceSetName,
                 "rnaseq")
         self.runCommand(cmd)
 
@@ -182,16 +181,14 @@ class TestAddRnaQuantificationSet(AbstractRepoManagerTest):
         super(TestAddRnaQuantificationSet, self).setUp()
         self.init()
         self.addDataset()
-        self.addReferenceSet()
 
     def testDefaults(self):
         name = "rnaseq"
         self.runCommand(
-            "add-rnaquantificationset {} {} {} -R {} --name {}".format(
+            "add-rnaquantificationset {} {} {} --name {}".format(
                 self._repoPath,
                 self._datasetName,
                 paths.rnaQuantificationSetDbPath,
-                self._referenceSetName,
                 name))
         repo = self.readRepo()
         dataset = repo.getDatasetByName(self._datasetName)
@@ -205,16 +202,14 @@ class TestRemoveRnaQuantificationSet(AbstractRepoManagerTest):
         super(TestRemoveRnaQuantificationSet, self).setUp()
         self.init()
         self.addDataset()
-        self.addReferenceSet()
 
     def testDefaults(self):
         name = "rnaseq"
         cmd = (
-            "add-rnaquantificationset {} {} {} -R {} -n {}").format(
+            "add-rnaquantificationset {} {} {} -n {}").format(
                 self._repoPath,
                 self._datasetName,
                 paths.rnaQuantificationSetDbPath,
-                self._referenceSetName,
                 name)
         self.runCommand(cmd)
         self.runCommand("remove-rnaquantificationset {} {} {} -f".format(

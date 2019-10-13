@@ -106,7 +106,7 @@ class Variantset(BaseModel):
     metadata = pw.TextField(null=True)
     name = pw.TextField()
     referencesetid = pw.ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+        db_column='referenceSetId', rel_model=Referenceset, to_field='id', null=True)
     updated = pw.TextField(null=True)
 
     class Meta:
@@ -145,7 +145,7 @@ class Featureset(BaseModel):
     ontologyid = pw.ForeignKeyField(
         db_column='ontologyId', rel_model=Ontology, to_field='id')
     referencesetid = pw.ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+        db_column='referenceSetId', rel_model=Referenceset, to_field='id', null=True)
     sourceuri = pw.TextField(
         db_column='sourceUri', null=True)
 
@@ -163,7 +163,7 @@ class ContinuousSet(BaseModel):
     info = pw.TextField(null=True)
     name = pw.TextField()
     referencesetid = pw.ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+        db_column='referenceSetId', rel_model=Referenceset, to_field='id', null=True)
     sourceuri = pw.TextField(
         db_column='sourceUri', null=True)
 
@@ -270,7 +270,7 @@ class Rnaquantificationset(BaseModel):
     info = pw.TextField(null=True)
     name = pw.TextField()
     referencesetid = pw.ForeignKeyField(
-        db_column='referenceSetId', rel_model=Referenceset, to_field='id')
+        db_column='referenceSetId', rel_model=Referenceset, to_field='id', null=True)
 
     class Meta:
         indexes = (

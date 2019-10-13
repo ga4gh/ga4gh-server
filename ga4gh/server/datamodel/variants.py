@@ -165,18 +165,6 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         return self._variantAnnotationSetIdMap[
             self._variantAnnotationSetIds[index]]
 
-    def setReferenceSet(self, referenceSet):
-        """
-        Sets the ReferenceSet for this VariantSet to the specified value.
-        """
-        self._referenceSet = referenceSet
-
-    def getReferenceSet(self):
-        """
-        Returns the reference set associated with this VariantSet.
-        """
-        return self._referenceSet
-
     def getCreationTime(self):
         """
         Returns the creation time for this variant set.
@@ -255,7 +243,7 @@ class AbstractVariantSet(datamodel.DatamodelObject):
         protocolElement = protocol.VariantSet()
         protocolElement.id = self.getId()
         protocolElement.dataset_id = self.getParentContainer().getId()
-        protocolElement.reference_set_id = self._referenceSet.getId()
+        protocolElement.reference_set_id = self.safeGetReferenceSetId()
         protocolElement.metadata.extend(self.getMetadata())
         protocolElement.dataset_id = self.getParentContainer().getId()
         protocolElement.reference_set_id = self._referenceSet.getId()

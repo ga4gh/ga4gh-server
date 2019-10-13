@@ -308,19 +308,6 @@ class AbstractContinuousSet(datamodel.DatamodelObject):
         self._sourceUri = ""
         self._referenceSet = None
 
-    def getReferenceSet(self):
-        """
-        Returns the reference set associated with this ContinuousSet.
-        """
-        return self._referenceSet
-
-    def setReferenceSet(self, referenceSet):
-        """
-        Sets the reference set associated with this ContinuousSet to the
-        specified value.
-        """
-        self._referenceSet = referenceSet
-
     def toProtocolElement(self):
         """
         Returns the representation of this ContinuousSet as the corresponding
@@ -330,7 +317,7 @@ class AbstractContinuousSet(datamodel.DatamodelObject):
         gaContinuousSet.id = self.getId()
         gaContinuousSet.dataset_id = self.getParentContainer().getId()
         gaContinuousSet.reference_set_id = pb.string(
-                                            self._referenceSet.getId())
+                                            self.safeGetReferenceSetId())
         gaContinuousSet.name = self._name
         gaContinuousSet.source_uri = self._sourceUri
         attributes = self.getAttributes()
